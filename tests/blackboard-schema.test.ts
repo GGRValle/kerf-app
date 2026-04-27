@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  DECISION_ALTITUDES,
   createMemoryEventLog,
+  type DecisionAltitude,
   type Event,
   type InvoiceFollowupDetectedPayload,
   type WorkflowKind,
@@ -27,6 +29,79 @@ test('seed events carry V1 classification and decision metadata', () => {
   assert.equal(decisions.length, 1);
   assert.equal(decisions[0].decisionAuthority.role, 'owner');
   assert.equal(decisions[0].actionClass, 'approve_under_ceiling');
+  assert.equal(decisions[0].decisionAltitude, 'L1');
+
+  const surfaced = events.find((event) => event.kind === 'decision.surfaced');
+  assert.equal(surfaced?.decision_altitude, 'L1');
+  assert.equal(surfaced?.entity.decision_altitude, 'L1');
+  assert.equal(
+    (surfaced?.payload as { decision_altitude?: DecisionAltitude } | undefined)?.decision_altitude,
+    'L1',
+  );
+});
+
+test('decision altitude classes are typed and projected with explicit precedence', () => {
+  const altitudes = ['L0', 'L1', 'L2', 'L3', 'L4'] satisfies DecisionAltitude[];
+  assert.deepEqual([...DECISION_ALTITUDES], altitudes);
+
+  function decisionEvent(params: {
+    id: string;
+    entityAltitude?: DecisionAltitude;
+    eventAltitude?: DecisionAltitude;
+    payloadAltitude?: DecisionAltitude;
+  }): Event {
+    return {
+      id: `evt_${params.id}`,
+      at: '2026-04-28T09:00:00.000Z',
+      actor: ACTORS.estimatorAgent,
+      kind: 'decision.surfaced',
+      entity: {
+        id: params.id,
+        kind: 'decision',
+        decision_authority: { role: 'owner' },
+        action_class: 'draft',
+        ...(params.entityAltitude ? { decision_altitude: params.entityAltitude } : {}),
+      },
+      payload: {
+        id: params.id,
+        title: params.id,
+        question: 'Pick one?',
+        options: [{ id: 'yes', label: 'Yes' }],
+        blocks: ['proj_clem_kitchen'],
+        requiredRole: 'owner',
+        impact: 1,
+        urgency: 1,
+        ...(params.payloadAltitude ? { decision_altitude: params.payloadAltitude } : {}),
+      },
+      data_class: 'internal',
+      retention_policy: 'until_close+7y',
+      privilege_class: null,
+      decision_authority: { role: 'owner' },
+      action_class: 'draft',
+      ...(params.eventAltitude ? { decision_altitude: params.eventAltitude } : {}),
+    };
+  }
+
+  const decisions = projectDecisions(
+    [
+      decisionEvent({
+        id: 'payload_wins',
+        entityAltitude: 'L1',
+        eventAltitude: 'L2',
+        payloadAltitude: 'L3',
+      }),
+      decisionEvent({ id: 'event_fallback', entityAltitude: 'L1', eventAltitude: 'L2' }),
+      decisionEvent({ id: 'entity_fallback', entityAltitude: 'L1' }),
+      decisionEvent({ id: 'default_fallback' }),
+    ],
+    { actorRole: 'owner', now: new Date('2026-04-28T09:00:00.000Z') },
+  );
+  const byId = new Map(decisions.map((decision) => [decision.id, decision]));
+
+  assert.equal(byId.get('payload_wins')?.decisionAltitude, 'L3');
+  assert.equal(byId.get('event_fallback')?.decisionAltitude, 'L2');
+  assert.equal(byId.get('entity_fallback')?.decisionAltitude, 'L1');
+  assert.equal(byId.get('default_fallback')?.decisionAltitude, 'L0');
 });
 
 test('invoice follow-up events are typed Blackboard events', async () => {
@@ -52,6 +127,7 @@ test('invoice follow-up events are typed Blackboard events', async () => {
       kind: 'invoice_followup',
       decision_authority: { role: 'office' },
       action_class: 'draft',
+      decision_altitude: 'L0',
     },
     payload: {
       invoiceId: 'inv_GGR_2026_0042',
@@ -68,6 +144,7 @@ test('invoice follow-up events are typed Blackboard events', async () => {
     workflow: 'invoice_followup',
     decision_authority: { role: 'office' },
     action_class: 'draft',
+    decision_altitude: 'L0',
     sources: [{ kind: 'external', uri: 'qbo://invoice/GGR-2026-0042' }],
   } satisfies Event<InvoiceFollowupDetectedPayload>;
 
@@ -82,6 +159,8 @@ test('invoice follow-up events are typed Blackboard events', async () => {
   assert.equal(appended.retention_policy, 'until_close+7y');
   assert.equal(appended.decision_authority?.role, 'office');
   assert.equal(appended.action_class, 'draft');
+  assert.equal(appended.decision_altitude, 'L0');
+  assert.equal(appended.entity.decision_altitude, 'L0');
   assert.equal(Object.isFrozen(appended), true);
   const storedPayload = stored?.payload as InvoiceFollowupDetectedPayload | undefined;
   assert.equal(storedPayload?.remainingCents, 150_000);

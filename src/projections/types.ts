@@ -1,6 +1,7 @@
 import type {
   ActionClass,
   Actor,
+  DecisionAltitude,
   DecisionAuthority,
   EntityId,
   ISO8601,
@@ -28,6 +29,7 @@ export interface Decision {
   requiredRole: Role;
   decisionAuthority: DecisionAuthority;
   actionClass?: ActionClass;
+  decisionAltitude: DecisionAltitude;
   impact: number;            // 0..1 (normalized dollars/schedule)
   urgency: number;           // 0..1 (deadline proximity)
   staleness: number;         // 0..1 (saturates at 48h)

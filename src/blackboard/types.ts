@@ -33,6 +33,11 @@ export type ActionClass =
   | 'approve_any'
   | 'send_external';
 
+// Decision altitude — Right Hand / One Thing elevation model.
+// L0 is routine operational approval; L4 is existential owner judgment.
+export const DECISION_ALTITUDES = ['L0', 'L1', 'L2', 'L3', 'L4'] as const;
+export type DecisionAltitude = (typeof DECISION_ALTITUDES)[number];
+
 // Privilege class — vendor protection / LLM-gateway bypass.
 // Distinct from `data_class` (privacy / PII / retention) and `sensitive`
 // (permission-matrix filtering on read paths). Events with non-null
@@ -84,6 +89,7 @@ export interface BlackboardEntityRef {
   kind: EntityKind;
   decision_authority?: DecisionAuthority;
   action_class?: ActionClass;
+  decision_altitude?: DecisionAltitude;
 }
 
 export type EventKind =
@@ -151,6 +157,7 @@ export interface Event<TPayload = unknown> {
   workflow?: WorkflowKind;
   decision_authority?: DecisionAuthority;
   action_class?: ActionClass;
+  decision_altitude?: DecisionAltitude;
   sources?: SourceRef[];
   sensitive?: boolean;      // filtered by permission matrix
   jurisdiction?: string;    // e.g. 'US-CA', 'US-TX'
