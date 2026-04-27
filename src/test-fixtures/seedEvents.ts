@@ -28,6 +28,7 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     payload: { label: PROJECTS.clemKitchen.label },
     data_class: 'internal',
     retention_policy: 'until_close+7y',
+    privilege_class: null,
   });
 
   // 2. Estimator agent surfaces a decision blocking the project.
@@ -60,6 +61,7 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     },
     data_class: 'internal',
     retention_policy: 'until_close+7y',
+    privilege_class: null,
     workflow: 'proposal_generation',
     decision_authority: { role: 'owner' },
     action_class: 'approve_under_ceiling',
@@ -76,6 +78,7 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     payload: { body: 'Clem confirmed budget ceiling is firm at $95k.' },
     data_class: 'internal',
     retention_policy: 'until_close+7y',
+    privilege_class: null,
   });
 
   // 4. Decision → project relation (feeds graph projection).
@@ -92,6 +95,7 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     },
     data_class: 'internal',
     retention_policy: 'until_close+7y',
+    privilege_class: null,
   });
 
   return events;

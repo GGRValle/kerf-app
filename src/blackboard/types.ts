@@ -33,6 +33,17 @@ export type ActionClass =
   | 'approve_any'
   | 'send_external';
 
+// Privilege class — vendor protection / LLM-gateway bypass.
+// Distinct from `data_class` (privacy / PII / retention) and `sensitive`
+// (permission-matrix filtering on read paths). Events with non-null
+// `privilege_class` MUST be filtered from any LLM payload at the consumer's
+// gateway. See `isPrivilegedEvent` for the canonical check.
+export type PrivilegeClass =
+  | 'attorney_client'
+  | 'hr'
+  | 'capital'
+  | 'margin';
+
 export type Role =
   | 'owner'
   | 'moo'           // manager of operations (scaling role, V2.0α)
@@ -136,6 +147,7 @@ export interface Event<TPayload = unknown> {
   payload: TPayload;
   data_class: DataClass;
   retention_policy: RetentionPolicy;
+  privilege_class: PrivilegeClass | null;
   workflow?: WorkflowKind;
   decision_authority?: DecisionAuthority;
   action_class?: ActionClass;

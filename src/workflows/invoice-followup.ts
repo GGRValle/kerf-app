@@ -9,6 +9,7 @@ import type {
   ISO8601,
   InvoiceFollowupDetectedPayload,
   InvoiceFollowupDraftedPayload,
+  PrivilegeClass,
   RetentionPolicy,
   SourceRef,
 } from '../blackboard/types.js';
@@ -92,6 +93,7 @@ export interface BlackboardEventTemplate<TPayload> {
   payload: TPayload;
   data_class: DataClass;
   retention_policy: RetentionPolicy;
+  privilege_class: PrivilegeClass | null;
   workflow: 'invoice_followup';
   decision_authority: DecisionAuthority;
   action_class: ActionClass;
@@ -184,6 +186,7 @@ export interface InvoiceFollowupApprovalResult {
 const DEFAULT_DECISION_AUTHORITY: DecisionAuthority = { role: 'owner' };
 const DEFAULT_DATA_CLASS: DataClass = 'internal';
 const DEFAULT_RETENTION_POLICY: RetentionPolicy = 'until_close+7y';
+const DEFAULT_PRIVILEGE_CLASS: PrivilegeClass | null = null;
 
 export function calculateInvoiceFollowupDaysPastDue(dueDate: Date, asOf: Date): number {
   return Math.max(0, Math.floor((utcDay(asOf) - utcDay(dueDate)) / MS_DAY));
@@ -495,6 +498,7 @@ function eventTemplate<TPayload>(params: {
     payload: params.payload,
     data_class: DEFAULT_DATA_CLASS,
     retention_policy: DEFAULT_RETENTION_POLICY,
+    privilege_class: DEFAULT_PRIVILEGE_CLASS,
     workflow: 'invoice_followup',
     decision_authority: params.decisionAuthority,
     action_class: params.actionClass,

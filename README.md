@@ -42,9 +42,11 @@ src/
 - Money is `Cents` (integer). Helpers in `shared/money.ts` are the only blessed math.
 - Every render-to-user string is an `I18nKey`. User-entered data (decision titles, memory body) is NOT i18n.
 - Events are `Object.freeze`d on append. Append-only enforced at runtime.
+- Every event declares `data_class`, `retention_policy`, and `privilege_class` (`null` for non-privileged).
+- Privileged events (non-null `privilege_class`) MUST bypass the LLM gateway. Consumer LLM gateways are responsible for filtering — call `isPrivilegedEvent(event)` before any model send. This is the architectural "privileged-class bypass" layer of vendor protection, not policy.
 - `OWNER_MONEY_CEILING_CENTS = 200_000` ($2,000) lives in `permissions/matrix.ts`.
 - Margin is a first-class permission resource — only owner + MoO can view.
-- Platform contract versioned: `KERF_PLATFORM_CONTRACT_VERSION`. Bump on any field change.
+- Platform contract versioned: `KERF_PLATFORM_CONTRACT_VERSION`. Bump only when `src/contracts/platform/*` wire shapes change. Internal Blackboard schema changes (new event/entity kinds, new required metadata fields) do NOT trigger a bump — see `kerf-cos/.claude/memory/project_kerf_contract_versioning.md`.
 
 ## Boundary (parallel build)
 
