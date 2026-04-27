@@ -72,7 +72,8 @@ export type EntityKind =
   | 'scope_draft'
   | 'space_capture'
   | 'consent_record'
-  | 'memory_note';
+  | 'memory_note'
+  | 'cost_kb_entry';
 
 // Lifecycle — Architecture Principle #2.
 // Agents write 'draft'. Humans promote to 'recommended' / 'approved'.
@@ -116,6 +117,7 @@ export type EventKind =
   | 'invoice_followup.approved'
   | 'invoice_followup.rejected'
   | 'invoice_followup.sent'
+  | 'cost_override'
   | 'relation.created';
 
 // SourceRef — trust signal. Every agent-authored event should carry at least one.
@@ -142,6 +144,58 @@ export interface InvoiceFollowupDetectedPayload {
 
 export interface InvoiceFollowupDraftedPayload extends InvoiceFollowupDetectedPayload {
   message: string;
+}
+
+// Cost knowledge base — curated unit-cost entries that estimators consult
+// instead of re-researching every line. Master doc §8.
+//
+// V1 ships the SCHEMA only. The curation agent that keeps entries fresh, the
+// QBO seed import, and the cross-tenant aggregation layer all land V1.5+.
+
+/**
+ * Region identifier. V1 uses ad-hoc strings (e.g., 'US-CA-92064',
+ * 'US-CA-SAN_DIEGO_METRO', 'US-NATIONAL'); a tighter zip-to-metro mapping
+ * may land V1.5+. Open string keeps V1 flexible without locking in a taxonomy.
+ */
+export type CostKbRegion = string;
+
+/**
+ * Trade category. V1 expects values like 'general_contractor', 'cabinetry',
+ * 'finishing' for GGR/Valle/HPG mapping. V1.5+ expansion adds 'electrical',
+ * 'plumbing', 'hvac', 'restoration', 'roofing', 'landscape', 'mep',
+ * 'specialty' per master doc §10.2. Open string keeps V1 lean and
+ * extensible without freezing the taxonomy.
+ */
+export type CostKbTrade = string;
+
+/**
+ * A curated cost knowledge-base entry — region × trade × line_item →
+ * unit_cost + last_verified_at. Source-or-silent: every entry MUST carry at
+ * least one `SourceRef` (enforced at the type level via the non-empty
+ * tuple). The CSI MasterFormat 19-phase taxonomy is the V1 reference for
+ * `lineItem` codes.
+ */
+export interface CostKbEntryPayload {
+  region: CostKbRegion;
+  trade: CostKbTrade;
+  lineItem: string;          // CSI MasterFormat code or human-readable descriptor
+  unit: string;              // 'sqft', 'each', 'hour', 'lf', 'cy', etc.
+  unitCostCents: Cents;
+  last_verified_at: ISO8601;
+  sources: readonly [SourceRef, ...SourceRef[]];
+}
+
+/**
+ * A user override on a Cost KB entry, applied per-estimate. Master doc §8.1
+ * "user override authority": the tenant always wins on pricing; the
+ * curated KB is a recommendation layer, not a constraint.
+ */
+export interface CostOverridePayload {
+  costKbEntryId: EntityId;
+  overrideUnitCostCents: Cents;
+  reason: string;
+  estimateId?: EntityId;
+  appliedAt: ISO8601;
 }
 
 export interface Event<TPayload = unknown> {
