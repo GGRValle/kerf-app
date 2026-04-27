@@ -16,6 +16,7 @@ src/
 │   └── platform/      # Kerf ↔ Platform boundary — versioned types + stub client
 ├── shared/            # ids, time, money, errors (no module rolls its own)
 ├── i18n/              # keys, en, es — Spanish first-class from day one
+├── tenant/            # tenant key wrap/unwrap boundary (V1 stub, V2.0α KMS)
 ├── test-fixtures/     # seedActors, seedProjects, seedEvents (deterministic)
 └── examples/
     └── smoke.ts       # wire-up demo — `npm run smoke`
@@ -35,6 +36,7 @@ src/
 | `contracts/platform` | V1 stub | Real types, stub client. Versioned: `2026-04-23.0`. |
 | `shared` | V1 | `createIdFactory`, `fixedClock`, `dollars`, `applyMargin`, error hierarchy. |
 | `i18n` | V1 | EN + ES entries for every key. Typecheck enforces parity. |
+| `tenant/keys` | V1 stub | `wrap` / `unwrap` boundary for operator-private writes. Stub preserves plaintext; real KMS wrapper lands V2.0α as a single-file swap. |
 | `test-fixtures` | V1 | Deterministic seed (`seedWorld`) — same inputs = same outputs. |
 
 ## Invariants
