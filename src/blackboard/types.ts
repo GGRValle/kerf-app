@@ -73,6 +73,9 @@ export type EntityKind =
   | 'space_capture'
   | 'consent_record'
   | 'memory_note'
+  | 'mood_board'
+  | 'client_share'
+  | 'design_revision'
   | 'cost_kb_entry';
 
 // Lifecycle — Architecture Principle #2.
@@ -117,6 +120,7 @@ export type EventKind =
   | 'invoice_followup.approved'
   | 'invoice_followup.rejected'
   | 'invoice_followup.sent'
+  | 'client_decision'
   | 'cost_override'
   | 'relation.created';
 
