@@ -11,6 +11,7 @@ src/
 ├── blackboard/        # Layer A event log (in-memory W1, durable W3)
 ├── permissions/       # Matrix + pure evaluator
 ├── projections/       # Read models: decisions, systemState, liveMemory, graph
+├── workflows/         # Pure workflow logic; no integrations or side effects
 ├── contracts/
 │   └── platform/      # Kerf ↔ Platform boundary — versioned types + stub client
 ├── shared/            # ids, time, money, errors (no module rolls its own)
@@ -30,6 +31,7 @@ src/
 | `projections/systemState` | V1 | Green/amber/red tiles. Label is an `I18nKey`. |
 | `projections/liveMemory` | V1 flat | `groupByCausality` stubbed for V1.5. |
 | `projections/graph` | V1 shape | Explicit relation edges only. Causal inference V1.5. |
+| `workflows/invoice-followup` | V1 pure | Candidate → draft → approval request → approval action; no Slack/Gmail/DB. |
 | `contracts/platform` | V1 stub | Real types, stub client. Versioned: `2026-04-23.0`. |
 | `shared` | V1 | `createIdFactory`, `fixedClock`, `dollars`, `applyMargin`, error hierarchy. |
 | `i18n` | V1 | EN + ES entries for every key. Typecheck enforces parity. |
