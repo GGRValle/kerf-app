@@ -77,6 +77,7 @@ export type EntityKind =
   | 'client_share'
   | 'design_revision'
   | 'cost_kb_entry'
+  | 'compliance_kb_entry'
   | 'tenant_subscription';
 
 // Lifecycle — Architecture Principle #2.
@@ -123,6 +124,7 @@ export type EventKind =
   | 'invoice_followup.sent'
   | 'client_decision'
   | 'cost_override'
+  | 'compliance_event'
   | 'usage_event'
   | 'relation.created';
 
@@ -202,6 +204,52 @@ export interface CostOverridePayload {
   reason: string;
   estimateId?: EntityId;
   appliedAt: ISO8601;
+}
+
+// Compliance knowledge base -- curated regulation / policy entries that the
+// Sentry/Watch compliance agent will consult. Master doc §4.2 #8 + §3.5.
+//
+// V1 ships SCHEMA + KB scaffolding only. Passive monitoring is V1.5+; active
+// gating is V2.0α.
+
+/**
+ * Regulatory jurisdiction identifier. V1 expects values like 'OSHA',
+ * 'CA-IIPP', 'CSLB', 'EPA', 'state', 'federal', 'local', and 'industry',
+ * but this remains an open string so tenants and future verticals can add
+ * city/county/industry-specific authorities without a schema migration.
+ */
+export type ComplianceJurisdiction = string;
+
+export const COMPLIANCE_EVENT_SEVERITIES = [
+  'info',
+  'warning',
+  'violation',
+] as const;
+export type ComplianceEventSeverity = (typeof COMPLIANCE_EVENT_SEVERITIES)[number];
+
+/**
+ * A curated compliance KB entry. Source-or-silent: every entry MUST carry at
+ * least one source reference, enforced by the non-empty tuple.
+ */
+export interface ComplianceKbEntryPayload {
+  jurisdiction: ComplianceJurisdiction;
+  code: string;
+  title: string;
+  summary: string;
+  last_verified_at: ISO8601;
+  sources: readonly [SourceRef, ...SourceRef[]];
+}
+
+/**
+ * A logged compliance observation against a KB entry. Runtime detection and
+ * escalation are intentionally out of scope for V1.
+ */
+export interface ComplianceEventPayload {
+  kbEntryId: EntityId;
+  severity: ComplianceEventSeverity;
+  detectedAt: ISO8601;
+  attestationId?: EntityId;
+  remediation?: string;
 }
 
 // Usage tiers — subscription-level automation ceilings. Master doc §4.2 #11
