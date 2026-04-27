@@ -69,6 +69,7 @@ export type EntityKind =
   | 'decision'
   | 'approval'
   | 'money_event'
+  | 'automation'
   | 'scope_draft'
   | 'space_capture'
   | 'consent_record'
@@ -126,6 +127,8 @@ export type EventKind =
   | 'cost_override'
   | 'compliance_event'
   | 'usage_event'
+  | 'automation_run'
+  | 'guardrail_trip'
   | 'relation.created';
 
 // SourceRef — trust signal. Every agent-authored event should carry at least one.
@@ -292,6 +295,57 @@ export interface UsageEventPayload {
   occurredAt: ISO8601;
   essential: boolean;
   ceilingState: UsageCeilingState;
+}
+
+// Automation guardrails -- schema for the three gateway-enforced layers in
+// master doc §3.4: action-class allowlist, per-action token caps, and chain /
+// spend ceilings. V1 ships schema only; runtime enforcement is V1.5+.
+export interface AutomationPayload {
+  id: EntityId;
+  name: string;
+  allowedActionClasses: readonly ActionClass[];
+  maxInputTokensPerAction: number;
+  maxOutputTokensPerAction: number;
+  maxInvocationsPerChain: number;
+  monthlySpendCapCents?: Cents;
+  subscriptionId?: EntityId;
+  createdAt: ISO8601;
+  active: boolean;
+}
+
+export type AutomationRunOutcome = 'completed' | 'checkpointed';
+
+export interface AutomationRunPayload {
+  automationId: EntityId;
+  invocationId: EntityId;
+  workflow?: WorkflowKind;
+  actionClass: ActionClass;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  latencyMs: number;
+  startedAt: ISO8601;
+  completedAt: ISO8601;
+  outcome: AutomationRunOutcome;
+}
+
+export const GUARDRAIL_TRIP_TYPES = [
+  'token_cap_per_action',
+  'invocation_cap_per_chain',
+  'monthly_spend_cap',
+  'action_class_denied',
+  'authority_denied',
+] as const;
+export type GuardrailTripType = (typeof GUARDRAIL_TRIP_TYPES)[number];
+
+export interface GuardrailTripPayload {
+  automationId: EntityId;
+  invocationId: EntityId;
+  tripType: GuardrailTripType;
+  blocked: boolean;
+  detail: string;
+  trippedAt: ISO8601;
+  escalatedTo?: ActorId;
 }
 
 export interface Event<TPayload = unknown> {
