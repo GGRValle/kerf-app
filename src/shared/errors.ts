@@ -40,3 +40,10 @@ export class MoneyError extends KerfError {
     this.name = 'MoneyError';
   }
 }
+
+export class TenantKeyError extends KerfError {
+  constructor(message: string, cause?: unknown) {
+    super('TENANT_KEY_VIOLATION', message, cause);
+    this.name = 'TenantKeyError';
+  }
+}
