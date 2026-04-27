@@ -12,6 +12,7 @@ src/
 ├── permissions/       # Matrix + pure evaluator
 ├── projections/       # Read models: decisions, systemState, liveMemory, graph
 ├── workflows/         # Pure workflow logic; no integrations or side effects
+├── audit/             # read-audit log primitives (in-memory V1)
 ├── contracts/
 │   └── platform/      # Kerf ↔ Platform boundary — versioned types + stub client
 ├── shared/            # ids, time, money, errors (no module rolls its own)
@@ -33,6 +34,7 @@ src/
 | `projections/liveMemory` | V1 flat | `groupByCausality` stubbed for V1.5. |
 | `projections/graph` | V1 shape | Explicit relation edges only. Causal inference V1.5. |
 | `workflows/invoice-followup` | V1 pure | Candidate → draft → approval request → approval action; no Slack/Gmail/DB. |
+| `audit/readLog` | V1 | In-memory read audit log + EventLog read wrapper; durable store lands later. |
 | `contracts/platform` | V1 stub | Real types, stub client. Versioned: `2026-04-23.0`. |
 | `shared` | V1 | `createIdFactory`, `fixedClock`, `dollars`, `applyMargin`, error hierarchy. |
 | `i18n` | V1 | EN + ES entries for every key. Typecheck enforces parity. |
@@ -44,6 +46,7 @@ src/
 - Money is `Cents` (integer). Helpers in `shared/money.ts` are the only blessed math.
 - Every render-to-user string is an `I18nKey`. User-entered data (decision titles, memory body) is NOT i18n.
 - Events are `Object.freeze`d on append. Append-only enforced at runtime.
+- Blackboard reads that go through `withReadAudit` record actor, role, timestamp, target, and result count without copying event payloads.
 - Every event declares `data_class`, `retention_policy`, and `privilege_class` (`null` for non-privileged).
 - Privileged events (non-null `privilege_class`) MUST bypass the LLM gateway. Consumer LLM gateways are responsible for filtering — call `isPrivilegedEvent(event)` before any model send. This is the architectural "privileged-class bypass" layer of vendor protection, not policy.
 - `OWNER_MONEY_CEILING_CENTS = 200_000` ($2,000) lives in `permissions/matrix.ts`.

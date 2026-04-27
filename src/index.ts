@@ -5,6 +5,7 @@ export * from './blackboard/index.js';
 export * from './permissions/index.js';
 export * from './projections/index.js';
 export * from './contracts/index.js';
+export * from './audit/index.js';
 export * from './shared/index.js';
 export * from './i18n/index.js';
 export * from './tenant/index.js';
