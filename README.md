@@ -34,6 +34,7 @@ src/
 | `projections/systemState` | V1 | Green/amber/red tiles. Label is an `I18nKey`. |
 | `projections/liveMemory` | V1 flat | `groupByCausality` stubbed for V1.5. |
 | `projections/graph` | V1 shape | Explicit relation edges only. Causal inference V1.5. |
+| `blackboard/compliance-kb` | V1 schema | `compliance_kb_entry` + `compliance_event`; V1.5+ Sentry/Watch runtime, V2.0α active gating. |
 | `workflows/invoice-followup` | V1 pure | Candidate → draft → approval request → approval action; no Slack/Gmail/DB. |
 | `audit/readLog` | V1 | In-memory read audit log + EventLog read wrapper; durable store lands later. |
 | `authority/profile` | V1 | Per-role × per-tenant authority bands + dollar ceilings + escalation chain. `canAuthorize()` is pure. Per-tenant overlays land V1.5+. |
