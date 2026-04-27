@@ -42,6 +42,7 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
       kind: 'decision',
       decision_authority: { role: 'owner' },
       action_class: 'approve_under_ceiling',
+      decision_altitude: 'L1',
     },
     payload: {
       id: 'dec_cabinet_finish',
@@ -55,6 +56,7 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
       requiredRole: 'owner',
       decision_authority: { role: 'owner' },
       action_class: 'approve_under_ceiling',
+      decision_altitude: 'L1',
       impact: 0.7,
       urgency: 0.6,
       confidence: 0.82,
@@ -65,6 +67,7 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     workflow: 'proposal_generation',
     decision_authority: { role: 'owner' },
     action_class: 'approve_under_ceiling',
+    decision_altitude: 'L1',
     sources: [{ kind: 'transcript', excerpt: 'client prefers factory finish if similar price' }],
   });
 

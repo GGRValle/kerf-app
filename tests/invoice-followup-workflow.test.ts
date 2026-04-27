@@ -41,6 +41,8 @@ test('detects an eligible overdue unpaid invoice', () => {
   assert.equal(candidates[0].event.kind, 'invoice_followup.detected');
   assert.equal(candidates[0].event.workflow, 'invoice_followup');
   assert.equal(candidates[0].event.action_class, 'read_only');
+  assert.equal(candidates[0].event.decision_altitude, 'L0');
+  assert.equal(candidates[0].event.entity.decision_altitude, 'L0');
 });
 
 test('excludes paid, void, draft, and not-yet-due invoices', () => {
@@ -195,6 +197,7 @@ test('approval request carries decision authority and action metadata', () => {
   );
   assert.equal(request.event.kind, 'invoice_followup.approval_requested');
   assert.equal(request.event.decision_authority.actorId, 'u-christian');
+  assert.equal(request.event.decision_altitude, 'L0');
 });
 
 test('approve, edit, and reject are pure state transitions', () => {
@@ -212,6 +215,7 @@ test('approve, edit, and reject are pure state transitions', () => {
   assert.equal(approved.approvedMessage, draft.message);
   assert.equal(approved.event.kind, 'invoice_followup.approved');
   assert.equal(approved.event.action_class, 'send_external');
+  assert.equal(approved.event.decision_altitude, 'L0');
 
   const edited = applyInvoiceFollowupApprovalAction(
     request,

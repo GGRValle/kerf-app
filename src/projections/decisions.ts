@@ -1,4 +1,10 @@
-import type { ActionClass, DecisionAuthority, Event, Role } from '../blackboard/types.js';
+import type {
+  ActionClass,
+  DecisionAltitude,
+  DecisionAuthority,
+  Event,
+  Role,
+} from '../blackboard/types.js';
 import type { Decision, DecisionOption } from './types.js';
 
 // Decision Agent projection.
@@ -24,6 +30,7 @@ interface DecisionPayload {
   requiredRole?: Role;
   decision_authority?: DecisionAuthority;
   action_class?: ActionClass;
+  decision_altitude?: DecisionAltitude;
   impact?: number;
   urgency?: number;
   confidence?: number;
@@ -40,6 +47,9 @@ export function projectDecisions(events: readonly Event[], opts: ProjectDecision
       const decisionAuthority = p.decision_authority ??
         e.decision_authority ??
         e.entity.decision_authority ?? { role: p.requiredRole ?? 'owner' };
+      const decisionAltitude = p.decision_altitude ??
+        e.decision_altitude ??
+        e.entity.decision_altitude ?? 'L0';
       open.set(p.id, {
         id: p.id,
         title: p.title ?? '',
@@ -49,6 +59,7 @@ export function projectDecisions(events: readonly Event[], opts: ProjectDecision
         requiredRole: decisionAuthority.role,
         decisionAuthority,
         actionClass: p.action_class ?? e.action_class ?? e.entity.action_class,
+        decisionAltitude,
         impact: clamp01(p.impact ?? 0),
         urgency: clamp01(p.urgency ?? 0),
         staleness: 0,

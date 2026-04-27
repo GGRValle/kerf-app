@@ -3,6 +3,7 @@ import type {
   BlackboardEntityRef,
   Cents,
   DataClass,
+  DecisionAltitude,
   DecisionAuthority,
   EntityId,
   EventKind,
@@ -97,6 +98,7 @@ export interface BlackboardEventTemplate<TPayload> {
   workflow: 'invoice_followup';
   decision_authority: DecisionAuthority;
   action_class: ActionClass;
+  decision_altitude?: DecisionAltitude;
   sources: SourceRef[];
 }
 
@@ -187,6 +189,7 @@ const DEFAULT_DECISION_AUTHORITY: DecisionAuthority = { role: 'owner' };
 const DEFAULT_DATA_CLASS: DataClass = 'internal';
 const DEFAULT_RETENTION_POLICY: RetentionPolicy = 'until_close+7y';
 const DEFAULT_PRIVILEGE_CLASS: PrivilegeClass | null = null;
+const DEFAULT_DECISION_ALTITUDE: DecisionAltitude = 'L0';
 
 export function calculateInvoiceFollowupDaysPastDue(dueDate: Date, asOf: Date): number {
   return Math.max(0, Math.floor((utcDay(asOf) - utcDay(dueDate)) / MS_DAY));
@@ -494,6 +497,7 @@ function eventTemplate<TPayload>(params: {
       kind: 'invoice_followup',
       decision_authority: params.decisionAuthority,
       action_class: params.actionClass,
+      decision_altitude: DEFAULT_DECISION_ALTITUDE,
     },
     payload: params.payload,
     data_class: DEFAULT_DATA_CLASS,
@@ -502,6 +506,7 @@ function eventTemplate<TPayload>(params: {
     workflow: 'invoice_followup',
     decision_authority: params.decisionAuthority,
     action_class: params.actionClass,
+    decision_altitude: DEFAULT_DECISION_ALTITUDE,
     sources: params.sources,
   };
 }
