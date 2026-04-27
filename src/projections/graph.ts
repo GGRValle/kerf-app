@@ -1,5 +1,5 @@
-import type { EntityId, Event } from '../blackboard/types';
-import type { GraphEdge, GraphNode, GraphNodeKind, GraphProjection } from './types';
+import type { EntityId, Event } from '../blackboard/types.js';
+import type { GraphEdge, GraphNode, GraphNodeKind, GraphProjection } from './types.js';
 
 // Graph projection over the Blackboard.
 // V1 ships the SHAPE so UI scaffolding compiles. Projector emits:

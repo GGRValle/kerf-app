@@ -1,4 +1,4 @@
-import type { TranslationMap } from './keys';
+import type { TranslationMap } from './keys.js';
 
 export const EN: TranslationMap = {
   'systemState.projects.label': 'Active projects',

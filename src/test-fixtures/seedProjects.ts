@@ -1,6 +1,6 @@
-import type { EntityId } from '../blackboard/types';
-import type { Cents } from '../blackboard/types';
-import type { Brand } from '../shared/money';
+import type { EntityId } from '../blackboard/types.js';
+import type { Cents } from '../blackboard/types.js';
+import type { Brand } from '../shared/money.js';
 
 export interface SeedProject {
   id: EntityId;

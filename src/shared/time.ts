@@ -1,4 +1,4 @@
-import type { ISO8601 } from '../blackboard/types';
+import type { ISO8601 } from '../blackboard/types.js';
 
 // Time primitives. Every module that needs "now" goes through a Clock instead
 // of reaching for `new Date()` directly. Tests inject fixedClock.

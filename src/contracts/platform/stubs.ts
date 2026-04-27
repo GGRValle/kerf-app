@@ -8,7 +8,7 @@ import type {
   MoneyProposeReq,
   MoneyProposeRes,
   PlatformClient,
-} from './types';
+} from './types.js';
 
 // Stub Platform client. Accepts every call, mints synthetic IDs.
 // Used by Kerf dev + tests until the Platform HTTP client lands (W3).

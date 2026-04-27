@@ -1,8 +1,8 @@
-import type { Event } from '../blackboard/types';
-import { ACTORS } from './seedActors';
-import { PROJECTS } from './seedProjects';
-import { fixedClock } from '../shared/time';
-import { createIdFactory } from '../shared/ids';
+import type { Event } from '../blackboard/types.js';
+import { ACTORS } from './seedActors.js';
+import { PROJECTS } from './seedProjects.js';
+import { fixedClock } from '../shared/time.js';
+import { createIdFactory } from '../shared/ids.js';
 
 // Deterministic event seed. Given a fixed clock + seeded id factory, the same
 // inputs produce the same outputs. Keeps smoke runs + tests reproducible.

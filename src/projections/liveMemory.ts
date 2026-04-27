@@ -1,6 +1,6 @@
-import type { Actor, Event } from '../blackboard/types';
-import type { CausalGroup, MemoryNote } from './types';
-import type { PermissionProvider } from '../permissions';
+import type { Actor, Event } from '../blackboard/types.js';
+import type { CausalGroup, MemoryNote } from './types.js';
+import type { PermissionProvider } from '../permissions/index.js';
 
 // Live Memory — Operating Surface Layer 3.
 // V1 = flat list, permission-filtered, sorted by time desc.

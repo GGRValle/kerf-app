@@ -1,5 +1,5 @@
-import type { Cents } from '../blackboard/types';
-import { MoneyError } from './errors';
+import type { Cents } from '../blackboard/types.js';
+import { MoneyError } from './errors.js';
 
 // Money helpers. Every number representing money in Kerf is `Cents` (integer).
 // These helpers exist so no module invents its own math and accidentally uses

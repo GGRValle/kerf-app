@@ -1,4 +1,4 @@
-import type { Role, Actor, Cents } from '../blackboard/types';
+import type { Role, Actor, Cents } from '../blackboard/types.js';
 
 // Resource catalog — the set of things permissions gate in Kerf.
 // `margin` is a first-class resource because it must be withheld client-side.

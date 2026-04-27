@@ -1,18 +1,18 @@
 // Smoke wire-up. Not a test — a runnable example of how the W1 pieces compose.
 // `npm run smoke`. Deterministic output given fixed clock + seeded RNG.
 
-import { createMemoryEventLog } from '../blackboard';
-import { createPermissionProvider } from '../permissions';
+import { createMemoryEventLog } from '../blackboard/index.js';
+import { createPermissionProvider } from '../permissions/index.js';
 import {
   projectDecisions,
   projectGraph,
   projectLiveMemory,
   projectSystemState,
-} from '../projections';
-import { createStubPlatformClient } from '../contracts/platform';
-import { createTranslator } from '../i18n';
-import { ACTORS, seedWorld } from '../test-fixtures';
-import { fixedClock } from '../shared';
+} from '../projections/index.js';
+import { createStubPlatformClient } from '../contracts/platform/index.js';
+import { createTranslator } from '../i18n/index.js';
+import { ACTORS, seedWorld } from '../test-fixtures/index.js';
+import { fixedClock } from '../shared/index.js';
 
 async function main() {
   const clock = fixedClock('2026-04-28T09:00:00.000Z');

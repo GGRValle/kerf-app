@@ -5,9 +5,9 @@ import {
   type Event,
   type InvoiceFollowupDetectedPayload,
   type WorkflowKind,
-} from '../src/blackboard';
-import { projectDecisions } from '../src/projections';
-import { ACTORS, seedWorld } from '../src/test-fixtures';
+} from '../src/blackboard/index.js';
+import { projectDecisions } from '../src/projections/index.js';
+import { ACTORS, seedWorld } from '../src/test-fixtures/index.js';
 
 test('seed events carry V1 classification and decision metadata', () => {
   const events = seedWorld();

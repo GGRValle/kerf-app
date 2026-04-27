@@ -7,8 +7,8 @@ import type {
   LifecycleState,
   Role,
   SourceRef,
-} from '../blackboard/types';
-import type { I18nKey } from '../i18n/keys';
+} from '../blackboard/types.js';
+import type { I18nKey } from '../i18n/keys.js';
 
 // ---- Decision Agent (Operating Surface Layer 1) ----
 // Filter per spec §0.7: permission-owner-required ∧ blocks-something ∧ has-action.

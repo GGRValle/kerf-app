@@ -2,4 +2,4 @@
 // W1 ships `platform` only. Future: `qbo` (via Platform), `quickbooks-desktop`
 // (if we ever go direct), `calendar`, etc.
 
-export * from './platform';
+export * from './platform/index.js';

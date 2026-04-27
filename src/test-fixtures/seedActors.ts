@@ -1,4 +1,4 @@
-import type { Actor } from '../blackboard/types';
+import type { Actor } from '../blackboard/types.js';
 
 // Canonical test actors. Use these in smoke runs, unit tests, and demo data.
 // Keep the set small — more actors = fuzzier tests.

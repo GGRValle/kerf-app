@@ -1,4 +1,4 @@
-import type { TranslationMap } from './keys';
+import type { TranslationMap } from './keys.js';
 
 // Spanish — first-class from day one. These entries ship in V2.1 Paid Beta but
 // exist in the codebase now so no key lands English-only.

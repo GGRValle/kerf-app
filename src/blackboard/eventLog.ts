@@ -1,4 +1,4 @@
-import type { Event, EventId, EntityId } from './types';
+import type { Event, EventId, EntityId } from './types.js';
 
 // Layer A — append-only event log. W1 ships in-memory; W3 swaps to durable store.
 // Interface is the stable contract; implementations change underneath.

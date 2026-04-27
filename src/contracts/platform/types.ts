@@ -1,4 +1,4 @@
-import type { Actor, Cents, ISO8601 } from '../../blackboard/types';
+import type { Actor, Cents, ISO8601 } from '../../blackboard/types.js';
 
 // ============================================================================
 // Kerf ↔ Platform interface contract — VERSIONED.

@@ -1,8 +1,8 @@
-export * from './types';
-export { projectDecisions } from './decisions';
-export type { ProjectDecisionsOpts } from './decisions';
-export { projectSystemState } from './systemState';
-export { projectLiveMemory, groupByCausality } from './liveMemory';
-export type { ProjectLiveMemoryOpts } from './liveMemory';
-export { projectGraph } from './graph';
-export type { ProjectGraphOpts } from './graph';
+export * from './types.js';
+export { projectDecisions } from './decisions.js';
+export type { ProjectDecisionsOpts } from './decisions.js';
+export { projectSystemState } from './systemState.js';
+export { projectLiveMemory, groupByCausality } from './liveMemory.js';
+export type { ProjectLiveMemoryOpts } from './liveMemory.js';
+export { projectGraph } from './graph.js';
+export type { ProjectGraphOpts } from './graph.js';

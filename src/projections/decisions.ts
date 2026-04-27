@@ -1,5 +1,5 @@
-import type { ActionClass, DecisionAuthority, Event, Role } from '../blackboard/types';
-import type { Decision, DecisionOption } from './types';
+import type { ActionClass, DecisionAuthority, Event, Role } from '../blackboard/types.js';
+import type { Decision, DecisionOption } from './types.js';
 
 // Decision Agent projection.
 // Filter: permission-owner-required ∧ blocks-something ∧ has-action.

@@ -1,10 +1,10 @@
-import type { I18nKey, Locale, TranslationMap } from './keys';
-import { EN } from './en';
-import { ES } from './es';
+import type { I18nKey, Locale, TranslationMap } from './keys.js';
+import { EN } from './en.js';
+import { ES } from './es.js';
 
-export type { I18nKey, Locale, TranslationMap } from './keys';
-export { EN } from './en';
-export { ES } from './es';
+export type { I18nKey, Locale, TranslationMap } from './keys.js';
+export { EN } from './en.js';
+export { ES } from './es.js';
 
 const REGISTRY: Record<Locale, TranslationMap> = { en: EN, es: ES };
 

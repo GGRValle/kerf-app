@@ -1,6 +1,6 @@
-import type { Actor } from '../blackboard/types';
-import type { Action, PermissionContext, PermissionRule, Resource } from './types';
-import { DEFAULT_MATRIX } from './matrix';
+import type { Actor } from '../blackboard/types.js';
+import type { Action, PermissionContext, PermissionRule, Resource } from './types.js';
+import { DEFAULT_MATRIX } from './matrix.js';
 
 // Permission provider — pure evaluator over a matrix.
 // No I/O. No state. Matrix is injected so tests can pass a scoped matrix.

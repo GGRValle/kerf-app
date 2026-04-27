@@ -1,3 +1,3 @@
-export * from './types';
-export { createMemoryEventLog } from './eventLog';
-export type { EventLog, EventLogQuery } from './eventLog';
+export * from './types.js';
+export { createMemoryEventLog } from './eventLog.js';
+export type { EventLog, EventLogQuery } from './eventLog.js';

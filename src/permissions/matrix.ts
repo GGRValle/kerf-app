@@ -1,4 +1,4 @@
-import type { PermissionRule } from './types';
+import type { PermissionRule } from './types.js';
 
 // Default V1 permission matrix. Hardcoded by design — V1.5 moves this into a
 // Policy store so customers can customize. Until then, these are the invariants.

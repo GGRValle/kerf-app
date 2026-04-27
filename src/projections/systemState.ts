@@ -1,5 +1,5 @@
-import type { Event } from '../blackboard/types';
-import type { SystemStateTile } from './types';
+import type { Event } from '../blackboard/types.js';
+import type { SystemStateTile } from './types.js';
 
 // System State — Operating Surface Layer 2.
 // V1 emits four hardcoded tiles. V1.5 makes the tile set customer-configurable.
