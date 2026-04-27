@@ -76,7 +76,8 @@ export type EntityKind =
   | 'mood_board'
   | 'client_share'
   | 'design_revision'
-  | 'cost_kb_entry';
+  | 'cost_kb_entry'
+  | 'tenant_subscription';
 
 // Lifecycle — Architecture Principle #2.
 // Agents write 'draft'. Humans promote to 'recommended' / 'approved'.
@@ -122,6 +123,7 @@ export type EventKind =
   | 'invoice_followup.sent'
   | 'client_decision'
   | 'cost_override'
+  | 'usage_event'
   | 'relation.created';
 
 // SourceRef — trust signal. Every agent-authored event should carry at least one.
@@ -200,6 +202,48 @@ export interface CostOverridePayload {
   reason: string;
   estimateId?: EntityId;
   appliedAt: ISO8601;
+}
+
+// Usage tiers — subscription-level automation ceilings. Master doc §4.2 #11
+// + usage-tier memory. V1 ships schema only; billing, upgrades, and
+// enforcement live in later service layers.
+export const USAGE_TIERS = [
+  'owner_on_the_go',
+  'team_starter',
+  'team_pro',
+  'team_enterprise',
+  'custom',
+] as const;
+export type UsageTier = (typeof USAGE_TIERS)[number];
+
+export type MonthlyAutomationTokenBudget = number | 'metered';
+export type UsageCeilingState = 'within_limit' | 'soft_ceiling' | 'hard_ceiling';
+
+export interface TenantSubscriptionPayload {
+  tenantId: EntityId;
+  tier: UsageTier;
+  monthlyAutomationTokenBudget: MonthlyAutomationTokenBudget;
+  actionClassCeiling: ActionClass;
+  currentPeriodStart: ISO8601;
+  currentPeriodEnd: ISO8601;
+  meteredOverageEnabled: boolean;
+}
+
+export interface UsageEventPayload {
+  tenantId: EntityId;
+  subscriptionId: EntityId;
+  invocationId: EntityId;
+  agentId: ActorId;
+  workflow?: WorkflowKind;
+  modelProvider: string;
+  model?: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  latencyMs?: number;
+  occurredAt: ISO8601;
+  essential: boolean;
+  ceilingState: UsageCeilingState;
 }
 
 export interface Event<TPayload = unknown> {
