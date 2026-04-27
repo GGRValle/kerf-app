@@ -26,6 +26,8 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     kind: 'entity.created',
     entity: { id: PROJECTS.clemKitchen.id, kind: 'project' },
     payload: { label: PROJECTS.clemKitchen.label },
+    data_class: 'internal',
+    retention_policy: 'until_close+7y',
   });
 
   // 2. Estimator agent surfaces a decision blocking the project.
@@ -34,7 +36,12 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     at,
     actor: ACTORS.estimatorAgent,
     kind: 'decision.surfaced',
-    entity: { id: 'dec_cabinet_finish', kind: 'decision' },
+    entity: {
+      id: 'dec_cabinet_finish',
+      kind: 'decision',
+      decision_authority: { role: 'owner' },
+      action_class: 'approve_under_ceiling',
+    },
     payload: {
       id: 'dec_cabinet_finish',
       title: 'Cabinet finish direction',
@@ -45,10 +52,17 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
       ],
       blocks: [PROJECTS.clemKitchen.id],
       requiredRole: 'owner',
+      decision_authority: { role: 'owner' },
+      action_class: 'approve_under_ceiling',
       impact: 0.7,
       urgency: 0.6,
       confidence: 0.82,
     },
+    data_class: 'internal',
+    retention_policy: 'until_close+7y',
+    workflow: 'proposal_generation',
+    decision_authority: { role: 'owner' },
+    action_class: 'approve_under_ceiling',
     sources: [{ kind: 'transcript', excerpt: 'client prefers factory finish if similar price' }],
   });
 
@@ -60,6 +74,8 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
     kind: 'memory.noted',
     entity: { id: ids.mint('mem'), kind: 'memory_note' },
     payload: { body: 'Clem confirmed budget ceiling is firm at $95k.' },
+    data_class: 'internal',
+    retention_policy: 'until_close+7y',
   });
 
   // 4. Decision → project relation (feeds graph projection).
@@ -74,6 +90,8 @@ export function seedWorld(opts: SeedWorldOpts = {}): Event[] {
       to: PROJECTS.clemKitchen.id,
       kind: 'blocked_by',
     },
+    data_class: 'internal',
+    retention_policy: 'until_close+7y',
   });
 
   return events;

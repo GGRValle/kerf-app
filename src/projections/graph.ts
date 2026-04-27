@@ -57,6 +57,10 @@ function mapEntityKindToNode(k: string): GraphNodeKind | undefined {
       return 'project';
     case 'intake':
       return 'intake';
+    case 'invoice':
+      return 'invoice';
+    case 'invoice_followup':
+      return 'invoice_followup';
     case 'estimate':
       return 'estimator';
     case 'decision':

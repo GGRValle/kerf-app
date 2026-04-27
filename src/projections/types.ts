@@ -1,4 +1,13 @@
-import type { EntityId, ISO8601, Role, LifecycleState, SourceRef, Actor } from '../blackboard/types';
+import type {
+  ActionClass,
+  Actor,
+  DecisionAuthority,
+  EntityId,
+  ISO8601,
+  LifecycleState,
+  Role,
+  SourceRef,
+} from '../blackboard/types';
 import type { I18nKey } from '../i18n/keys';
 
 // ---- Decision Agent (Operating Surface Layer 1) ----
@@ -17,6 +26,8 @@ export interface Decision {
   options: DecisionOption[];
   blocks: EntityId[];        // entities waiting on this decision
   requiredRole: Role;
+  decisionAuthority: DecisionAuthority;
+  actionClass?: ActionClass;
   impact: number;            // 0..1 (normalized dollars/schedule)
   urgency: number;           // 0..1 (deadline proximity)
   staleness: number;         // 0..1 (saturates at 48h)
@@ -62,6 +73,8 @@ export interface CausalGroup {
 export type GraphNodeKind =
   | 'project'
   | 'intake'
+  | 'invoice'
+  | 'invoice_followup'
   | 'estimator'
   | 'decision'
   | 'approval'

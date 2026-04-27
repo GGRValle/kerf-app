@@ -8,6 +8,31 @@ export type EntityId = string;
 export type ISO8601 = string;
 export type Cents = number; // money is ALWAYS integer cents
 
+export type DataClass =
+  | 'public'
+  | 'internal'
+  | 'pii'
+  | 'sensitive_pii'
+  | 'privileged';
+
+export type RetentionPolicy =
+  | 'permanent'
+  | 'until_close+7y'
+  | 'until_request'
+  | 'session_only';
+
+export type WorkflowKind =
+  | 'invoice_followup'
+  | 'proposal_generation'
+  | 'drift_detection';
+
+export type ActionClass =
+  | 'read_only'
+  | 'draft'
+  | 'approve_under_ceiling'
+  | 'approve_any'
+  | 'send_external';
+
 export type Role =
   | 'owner'
   | 'moo'           // manager of operations (scaling role, V2.0α)
@@ -20,6 +45,8 @@ export type Role =
 export type EntityKind =
   | 'project'
   | 'intake'
+  | 'invoice'
+  | 'invoice_followup'
   | 'change_order'
   | 'proposal'
   | 'estimate'
@@ -35,6 +62,18 @@ export type EntityKind =
 // Agents write 'draft'. Humans promote to 'recommended' / 'approved'.
 // Only the Platform writes 'locked' (audit of record).
 export type LifecycleState = 'draft' | 'recommended' | 'approved' | 'locked';
+
+export interface DecisionAuthority {
+  role: Role;
+  actorId?: ActorId;
+}
+
+export interface BlackboardEntityRef {
+  id: EntityId;
+  kind: EntityKind;
+  decision_authority?: DecisionAuthority;
+  action_class?: ActionClass;
+}
 
 export type EventKind =
   | 'entity.created'
@@ -54,6 +93,12 @@ export type EventKind =
   | 'lidar.scanned'
   | 'lidar.edited'
   | 'memory.noted'
+  | 'invoice_followup.detected'
+  | 'invoice_followup.drafted'
+  | 'invoice_followup.approval_requested'
+  | 'invoice_followup.approved'
+  | 'invoice_followup.rejected'
+  | 'invoice_followup.sent'
   | 'relation.created';
 
 // SourceRef — trust signal. Every agent-authored event should carry at least one.
@@ -68,13 +113,32 @@ export interface Actor {
   role: Role;
 }
 
+export interface InvoiceFollowupDetectedPayload {
+  invoiceId: EntityId;
+  invoiceNumber?: string | null;
+  clientId?: EntityId;
+  projectId?: EntityId;
+  remainingCents: Cents;
+  dueDate: ISO8601;
+  daysPastDue: number;
+}
+
+export interface InvoiceFollowupDraftedPayload extends InvoiceFollowupDetectedPayload {
+  message: string;
+}
+
 export interface Event<TPayload = unknown> {
   id: EventId;
   at: ISO8601;
   actor: Actor;
   kind: EventKind;
-  entity: { id: EntityId; kind: EntityKind };
+  entity: BlackboardEntityRef;
   payload: TPayload;
+  data_class: DataClass;
+  retention_policy: RetentionPolicy;
+  workflow?: WorkflowKind;
+  decision_authority?: DecisionAuthority;
+  action_class?: ActionClass;
   sources?: SourceRef[];
   sensitive?: boolean;      // filtered by permission matrix
   jurisdiction?: string;    // e.g. 'US-CA', 'US-TX'

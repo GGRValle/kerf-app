@@ -1,4 +1,4 @@
-import type { Event, Role } from '../blackboard/types';
+import type { ActionClass, DecisionAuthority, Event, Role } from '../blackboard/types';
 import type { Decision, DecisionOption } from './types';
 
 // Decision Agent projection.
@@ -22,6 +22,8 @@ interface DecisionPayload {
   options?: DecisionOption[];
   blocks?: string[];
   requiredRole?: Role;
+  decision_authority?: DecisionAuthority;
+  action_class?: ActionClass;
   impact?: number;
   urgency?: number;
   confidence?: number;
@@ -35,13 +37,18 @@ export function projectDecisions(events: readonly Event[], opts: ProjectDecision
     if (e.kind === 'decision.surfaced') {
       const p = e.payload as DecisionPayload;
       if (!p.id) continue;
+      const decisionAuthority = p.decision_authority ??
+        e.decision_authority ??
+        e.entity.decision_authority ?? { role: p.requiredRole ?? 'owner' };
       open.set(p.id, {
         id: p.id,
         title: p.title ?? '',
         question: p.question ?? '',
         options: p.options ?? [],
         blocks: p.blocks ?? [],
-        requiredRole: p.requiredRole ?? 'owner',
+        requiredRole: decisionAuthority.role,
+        decisionAuthority,
+        actionClass: p.action_class ?? e.action_class ?? e.entity.action_class,
         impact: clamp01(p.impact ?? 0),
         urgency: clamp01(p.urgency ?? 0),
         staleness: 0,
