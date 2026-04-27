@@ -176,15 +176,24 @@ export function getBand(
  * Pure decision: can this role authorize this resource action at this amount?
  *
  * Routing rules:
+ *   - missing band → 'denied'
  *   - `observe` band → 'denied'
- *   - `recommend` band → 'requires_escalation'
- *   - `approve_any` or `delegate` band → 'allowed'
+ *   - `recommend` band → 'requires_escalation' if `canEscalateTo` non-empty,
+ *     else 'denied' (a recommend band with no escalation chain has nowhere
+ *     to route the decision; fail closed rather than dangle the consumer)
+ *   - `approve_any` band → 'allowed'
+ *   - `delegate` band → 'requires_escalation' if `canEscalateTo` non-empty,
+ *     else 'denied'. `delegate` does NOT self-authorize; it routes the
+ *     decision to the delegation targets in `canEscalateTo`. (Distinct
+ *     from `approve_any`, which authorizes directly at any amount.)
  *   - `approve_under_ceiling` band:
- *       * no `amountCents` provided → 'allowed' (no money in play)
+ *       * no `amountCents` provided → 'denied' (the band is gated on amount;
+ *         calling canAuthorize without one is ill-formed for this action class)
+ *       * `amountCents < 0` → 'denied' (negative cents are invalid input;
+ *         refunds and reversals belong on a different code path)
  *       * `amountCents <= maxAmountCents` → 'allowed'
  *       * otherwise + `canEscalateTo` non-empty → 'requires_escalation'
  *       * otherwise → 'denied'
- *   - missing band → 'denied'
  */
 export function canAuthorize(
   profile: AuthorityProfile,
@@ -197,17 +206,30 @@ export function canAuthorize(
   const band = getBand(profile, params.role, params.resource);
   if (!band) return 'denied';
 
+  const escalateOrDeny = (): AuthorizationOutcome =>
+    band.canEscalateTo && band.canEscalateTo.length > 0
+      ? 'requires_escalation'
+      : 'denied';
+
   switch (band.actionClass) {
     case 'observe':
       return 'denied';
     case 'recommend':
-      return 'requires_escalation';
+      return escalateOrDeny();
     case 'approve_any':
-    case 'delegate':
       return 'allowed';
+    case 'delegate':
+      // Delegate does NOT self-authorize. It routes the decision to whoever
+      // is in `canEscalateTo`; absent a chain, fail closed.
+      return escalateOrDeny();
     case 'approve_under_ceiling': {
       if (params.amountCents === undefined) {
-        return 'allowed';
+        // Money-gated band requires an amount; treat absence as ill-formed.
+        return 'denied';
+      }
+      if (params.amountCents < 0) {
+        // Negative cents are invalid input (refunds/reversals route elsewhere).
+        return 'denied';
       }
       if (
         band.maxAmountCents !== undefined &&
@@ -215,10 +237,7 @@ export function canAuthorize(
       ) {
         return 'allowed';
       }
-      if (band.canEscalateTo && band.canEscalateTo.length > 0) {
-        return 'requires_escalation';
-      }
-      return 'denied';
+      return escalateOrDeny();
     }
   }
 }
