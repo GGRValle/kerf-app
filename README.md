@@ -13,6 +13,7 @@ src/
 ├── projections/       # Read models: decisions, systemState, liveMemory, graph
 ├── workflows/         # Pure workflow logic; no integrations or side effects
 ├── audit/             # read-audit log primitives (in-memory V1)
+├── authority/         # per-role × per-tenant authority profile + canAuthorize
 ├── contracts/
 │   └── platform/      # Kerf ↔ Platform boundary — versioned types + stub client
 ├── shared/            # ids, time, money, errors (no module rolls its own)
@@ -35,6 +36,7 @@ src/
 | `projections/graph` | V1 shape | Explicit relation edges only. Causal inference V1.5. |
 | `workflows/invoice-followup` | V1 pure | Candidate → draft → approval request → approval action; no Slack/Gmail/DB. |
 | `audit/readLog` | V1 | In-memory read audit log + EventLog read wrapper; durable store lands later. |
+| `authority/profile` | V1 | Per-role × per-tenant authority bands + dollar ceilings + escalation chain. `canAuthorize()` is pure. Per-tenant overlays land V1.5+. |
 | `contracts/platform` | V1 stub | Real types, stub client. Versioned: `2026-04-23.0`. |
 | `shared` | V1 | `createIdFactory`, `fixedClock`, `dollars`, `applyMargin`, error hierarchy. |
 | `i18n` | V1 | EN + ES entries for every key. Typecheck enforces parity. |
