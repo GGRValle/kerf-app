@@ -16,6 +16,7 @@ test('seed events carry V1 classification and decision metadata', () => {
   for (const event of events) {
     assert.ok(event.data_class);
     assert.ok(event.retention_policy);
+    assert.ok('privilege_class' in event);
   }
 
   const decisions = projectDecisions(events, {
@@ -63,6 +64,7 @@ test('invoice follow-up events are typed Blackboard events', async () => {
     },
     data_class: 'internal',
     retention_policy: 'until_close+7y',
+    privilege_class: null,
     workflow: 'invoice_followup',
     decision_authority: { role: 'office' },
     action_class: 'draft',
