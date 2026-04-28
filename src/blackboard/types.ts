@@ -81,7 +81,9 @@ export type EntityKind =
   | 'design_revision'
   | 'cost_kb_entry'
   | 'compliance_kb_entry'
-  | 'tenant_subscription';
+  | 'tenant_subscription'
+  | 'signal'
+  | 'drift_alert';
 
 // Lifecycle — Architecture Principle #2.
 // Agents write 'draft'. Humans promote to 'recommended' / 'approved'.
@@ -131,6 +133,12 @@ export type EventKind =
   | 'proposal_followup.approved'
   | 'proposal_followup.rejected'
   | 'proposal_followup.sent'
+  | 'signal.captured'
+  | 'drift.detected'
+  | 'drift.surfaced'
+  | 'drift.acted'
+  | 'drift.noted'
+  | 'drift.false_positive'
   | 'client_decision'
   | 'cost_override'
   | 'compliance_event'
@@ -207,6 +215,134 @@ export interface ProposalFollowupDetectedPayload {
 
 export interface ProposalFollowupDraftedPayload extends ProposalFollowupDetectedPayload {
   message: string;
+}
+
+// Drift detection -- W3 schema scaffold. Master doc §11.2 + V1 Alpha
+// Execution Plan §"Week 3 — Drift detection". Mostly pure runtime LLM:
+// signals are normalized inputs from external systems (Slack, email,
+// calendar, QBO, project notes); the frontier-tier LLM reads the signal
+// window and emits drift alerts; alerts surface to Christian via Slack
+// for disposition (act / noted / false_positive). The Kerf side owns
+// shapes + invariants + audit; the Platform side owns the actual
+// reads, the Claude API call, and the Slack send.
+//
+// Signal sources are the V1 closed set per the execution plan. New
+// sources land as a code change in V1.5+ (e.g., voice daily-log feeds).
+export const SIGNAL_SOURCE_TYPES = [
+  'slack',
+  'email',
+  'calendar',
+  'qbo',
+  'notes',
+] as const;
+export type SignalSourceType = (typeof SIGNAL_SOURCE_TYPES)[number];
+
+// Drift patterns are the V1 closed set per the execution plan. Pattern
+// vocabulary is part of the prompt template -- new patterns land as a
+// code change paired with prompt updates, not as ad-hoc LLM emissions.
+export const DRIFT_PATTERNS = [
+  'commitment_not_followed',
+  'stalled_approval',
+  'permit_deadline_approaching',
+  'callback_promised',
+] as const;
+export type DriftPattern = (typeof DRIFT_PATTERNS)[number];
+
+// Severity ladder. Surfacing layer sorts alerts by severity desc, then
+// by detectedAt asc. 'critical' is reserved for items with hard external
+// deadlines (permits expiring, regulatory dates) -- the V1 surfacing
+// layer renders these distinctly.
+export const DRIFT_SEVERITIES = ['low', 'medium', 'high', 'critical'] as const;
+export type DriftSeverity = (typeof DRIFT_SEVERITIES)[number];
+
+// Disposition is the closed set Christian picks from in the V1 Slack
+// surface. 'act' triggers follow-through (V1 = manual; V1.5+ may auto-
+// dispatch the recommended action). 'noted' files for awareness with
+// no further action. 'false_positive' feeds the manual prompt-tuning
+// loop -- V1 keeps the loop manual per the execution plan.
+export const DRIFT_DISPOSITIONS = ['act', 'noted', 'false_positive'] as const;
+export type DriftDisposition = (typeof DRIFT_DISPOSITIONS)[number];
+
+// Canonical language tag for a captured signal. Per master doc v3.3 §4
+// (Whisper auto-detect) and §8 (i18n parity). The signal carries the
+// language it was authored in; downstream rendering applies i18n keys.
+export type SignalCanonicalLanguage = 'en' | 'es';
+
+export interface SignalCapturedPayload {
+  signalId: EntityId;
+  sourceType: SignalSourceType;
+  // External identifier in the source system (e.g., Slack ts, email
+  // message id, calendar event id, QBO invoice id, notes id). Lets the
+  // Platform-side adapter re-fetch raw content without storing it here.
+  sourceRef: string;
+  capturedAt: ISO8601;
+  // When the signal originally occurred in its source system. Often
+  // earlier than capturedAt (e.g., a 7-day-old Slack message read on
+  // capture). Used for staleness scoring in the reasoning layer.
+  observedAt: ISO8601;
+  actorHint?: string | null;
+  canonicalLanguage: SignalCanonicalLanguage;
+  // Optional short content excerpt for audit + reasoning hints. Length
+  // is the adapter's responsibility; the schema does not cap it. Raw
+  // long-form content stays in the source system. data_class on the
+  // event governs privacy treatment.
+  contentSnippet?: string | null;
+  // Optional refs to related entities (project, client, invoice,
+  // proposal). Lets the reasoning layer correlate signals to the
+  // workflow surface without re-resolving the source.
+  contextRefs?: BlackboardEntityRef[];
+}
+
+export interface DriftDetectedPayload {
+  alertId: EntityId;
+  pattern: DriftPattern;
+  severity: DriftSeverity;
+  // LLM-reported confidence on the 0..1 interval. Surfacing layer may
+  // suppress low-confidence alerts per per-tenant policy (V1.5+).
+  confidence: number;
+  // The signals that fed this alert. Source-or-silent: at least one
+  // ref is required. The reasoning layer enforces this; the schema
+  // documents the invariant (and the test suite asserts it).
+  signalRefs: EntityId[];
+  contextRefs?: BlackboardEntityRef[];
+  // 1-2 sentence summary of what was detected, in the canonical
+  // language. Free text -- not an i18n key (LLM-generated, per-alert).
+  summary: string;
+  // 1-line shaped recommendation. Free text per above.
+  recommendedAction: string;
+  detectedAt: ISO8601;
+}
+
+export interface DriftSurfacedPayload {
+  alertId: EntityId;
+  surfacedAt: ISO8601;
+  // V1 = 'slack' only. 'email' reserved for V1.5+ off-channel
+  // notifications (e.g., Christian on PTO).
+  channel: 'slack' | 'email';
+  // Recipient identifier in the surfacing channel (e.g., Slack user
+  // id). The Platform-side adapter resolves this from the actor map.
+  recipient: string;
+  // The rendered message that went to the recipient. Captured for
+  // audit + replay; not re-derived from the alert at read time.
+  surfaceMessage: string;
+}
+
+export interface DriftDispositionedPayload {
+  alertId: EntityId;
+  // The disposition. Matches the EventKind discriminator (drift.acted
+  // implies 'act', etc.). The redundancy is intentional: kind drives
+  // routing in projections; the field documents the decision in the
+  // payload itself for downstream consumers.
+  disposition: DriftDisposition;
+  dispositionedBy: ActorId;
+  dispositionedAt: ISO8601;
+  // For 'false_positive': optional human-written reason that feeds the
+  // manual prompt-tuning loop (V1 keeps this manual per the execution
+  // plan). Ignored for 'act' / 'noted'.
+  promptTuningHint?: string | null;
+  // For 'act' or 'noted': optional context the human added at
+  // disposition time (e.g., "called client, waiting on response").
+  followUpNote?: string | null;
 }
 
 // Cost knowledge base — curated unit-cost entries that estimators consult
