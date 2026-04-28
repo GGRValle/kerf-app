@@ -33,10 +33,7 @@ const signalCapturedPayload: SignalCapturedPayload = {
   actorHint: 'u-client-clem',
   canonicalLanguage: 'en',
   contentSnippet: 'Hey - any update on the kitchen timeline? Last we spoke you were going to call back Friday.',
-  contextRefs: [
-    { id: 'proj_clem_kitchen', kind: 'project' },
-    { id: 'client_clem', kind: 'client' as EntityKind },
-  ],
+  contextRefs: [{ id: 'proj_clem_kitchen', kind: 'project' }],
 };
 
 const driftDetectedPayload: DriftDetectedPayload = {
