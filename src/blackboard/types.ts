@@ -24,6 +24,7 @@ export type RetentionPolicy =
 export type WorkflowKind =
   | 'invoice_followup'
   | 'proposal_generation'
+  | 'proposal_followup'
   | 'drift_detection';
 
 export type ActionClass =
@@ -63,6 +64,7 @@ export type EntityKind =
   | 'intake'
   | 'invoice'
   | 'invoice_followup'
+  | 'proposal_followup'
   | 'change_order'
   | 'proposal'
   | 'estimate'
@@ -123,6 +125,12 @@ export type EventKind =
   | 'invoice_followup.approved'
   | 'invoice_followup.rejected'
   | 'invoice_followup.sent'
+  | 'proposal_followup.detected'
+  | 'proposal_followup.drafted'
+  | 'proposal_followup.approval_requested'
+  | 'proposal_followup.approved'
+  | 'proposal_followup.rejected'
+  | 'proposal_followup.sent'
   | 'client_decision'
   | 'cost_override'
   | 'compliance_event'
@@ -154,6 +162,50 @@ export interface InvoiceFollowupDetectedPayload {
 }
 
 export interface InvoiceFollowupDraftedPayload extends InvoiceFollowupDetectedPayload {
+  message: string;
+}
+
+// Proposal follow-up -- W2 schema scaffold. Distinct from
+// `proposal_generation`, which covers intake-to-proposal creation.
+export const PROPOSAL_FOLLOWUP_PROPOSAL_STATUSES = [
+  'draft',
+  'sent',
+  'viewed',
+  'accepted',
+  'declined',
+  'expired',
+] as const;
+export type ProposalFollowupProposalStatus = (
+  typeof PROPOSAL_FOLLOWUP_PROPOSAL_STATUSES
+)[number];
+
+export const PROPOSAL_FOLLOWUP_TRIGGERS = [
+  'sent_no_view',
+  'viewed_no_decision',
+  'near_expiry',
+  'change_requested',
+] as const;
+export type ProposalFollowupTrigger = (typeof PROPOSAL_FOLLOWUP_TRIGGERS)[number];
+
+export const PROPOSAL_FOLLOWUP_ELIGIBLE_STATUSES = [
+  'sent',
+  'viewed',
+] as const satisfies readonly ProposalFollowupProposalStatus[];
+
+export interface ProposalFollowupDetectedPayload {
+  proposalId: EntityId;
+  proposalNumber?: string | null;
+  clientId?: EntityId;
+  projectId?: EntityId;
+  status: ProposalFollowupProposalStatus;
+  sentAt: ISO8601;
+  viewedAt?: ISO8601 | null;
+  daysSinceSent: number;
+  daysSinceViewed?: number | null;
+  trigger: ProposalFollowupTrigger;
+}
+
+export interface ProposalFollowupDraftedPayload extends ProposalFollowupDetectedPayload {
   message: string;
 }
 
