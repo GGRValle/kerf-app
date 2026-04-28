@@ -24,10 +24,13 @@ const CLOCK = fixedClock('2026-04-28T09:00:00.000Z');
 const ACTOR_CHRISTIAN = 'u-christian';
 
 function baseCandidate(overrides: Partial<LlmDriftCandidate> = {}): LlmDriftCandidate {
+  // contextRefs is intentionally absent from LlmDriftCandidate per the
+  // tightened LLM-boundary contract: the Platform-side adapter injects
+  // contextRefs via AssembleDriftAlertOpts (see the assembleDriftAlert
+  // tests below for the propagation check).
   return {
     pattern: 'callback_promised',
     signalRefs: ['sig_clem_callback_2026_04_22'],
-    contextRefs: [{ id: 'proj_clem_kitchen', kind: 'project' }],
     confidence: 0.82,
     summary:
       'Callback promised to Clem on Apr 17 has not been executed; follow-up signal Apr 22 escalated tone.',
@@ -95,6 +98,26 @@ test('validateLlmDriftCandidate rejects empty summary or recommendedAction', () 
   assert.throws(
     () => validateLlmDriftCandidate({ ...baseCandidate(), recommendedAction: '' }),
     ValidationError,
+  );
+});
+
+test('validateLlmDriftCandidate ignores contextRefs in raw LLM input (strict-shape parse)', () => {
+  // contextRefs is NOT part of LlmDriftCandidate -- it is adapter-injected
+  // at assembleDriftAlert. If a future raw response includes contextRefs
+  // (intentional or accidental), strip them rather than pass through.
+  // Otherwise malformed refs like { id: 123, kind: 'made_up' } would slip
+  // past the LLM boundary and into the typed payload.
+  const rawWithMalformedContextRefs = {
+    ...baseCandidate(),
+    contextRefs: [
+      { id: 123, kind: 'made_up' }, // malformed: id is number, kind is invalid
+    ],
+  };
+  const out = validateLlmDriftCandidate(rawWithMalformedContextRefs);
+  assert.equal(
+    'contextRefs' in out,
+    false,
+    'validateLlmDriftCandidate must not echo contextRefs through to the parsed candidate',
   );
 });
 
@@ -247,6 +270,33 @@ test('assembleDriftAlert respects severity + recommendedAction overrides', () =>
   });
   assert.equal(alert.payload.severity, 'critical');
   assert.equal(alert.payload.recommendedAction, 'Custom override action.');
+});
+
+test('assembleDriftAlert propagates adapter-supplied contextRefs into the payload', () => {
+  // contextRefs are injected by the trusted Platform adapter via opts,
+  // NOT by the LLM. The adapter owns signal-to-context mapping and
+  // resolves entity refs from its own bookkeeping. The candidate has no
+  // contextRefs field; the propagation path is opts.contextRefs only.
+  const alert = assembleDriftAlert(baseCandidate(), {
+    clock: CLOCK,
+    severityContext: { daysOverdue: 6 },
+    contextRefs: [
+      { id: 'proj_clem_kitchen', kind: 'project' },
+      { id: 'inv_001', kind: 'invoice' },
+    ],
+  });
+  assert.deepEqual(alert.payload.contextRefs, [
+    { id: 'proj_clem_kitchen', kind: 'project' },
+    { id: 'inv_001', kind: 'invoice' },
+  ]);
+});
+
+test('assembleDriftAlert leaves contextRefs undefined when the adapter supplies none', () => {
+  const alert = assembleDriftAlert(baseCandidate(), {
+    clock: CLOCK,
+    severityContext: { daysOverdue: 6 },
+  });
+  assert.equal(alert.payload.contextRefs, undefined);
 });
 
 test('assembleDriftAlert calls the runtime guard and rejects margin language', () => {

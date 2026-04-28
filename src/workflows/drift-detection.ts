@@ -42,11 +42,16 @@ import { systemClock } from '../shared/time.js';
  * JSON response into this shape and hands it to assembleDriftAlert(). We
  * validate at the boundary; downstream functions assume the candidate has
  * already passed validateLlmDriftCandidate().
+ *
+ * Note on contextRefs: the LLM does NOT emit contextRefs. The Platform-side
+ * adapter — which already owns the signal-to-context mapping — injects
+ * contextRefs via AssembleDriftAlertOpts.contextRefs. This keeps the
+ * trust boundary tight: the LLM emits judgment (pattern, summary,
+ * recommendedAction); the adapter resolves the entity graph.
  */
 export interface LlmDriftCandidate {
   pattern: DriftPattern;
   signalRefs: EntityId[];
-  contextRefs?: BlackboardEntityRef[];
   /** 0..1, LLM-reported. validateLlmDriftCandidate rejects values outside. */
   confidence: number;
   /**
@@ -229,16 +234,14 @@ export function validateLlmDriftCandidate(raw: unknown): LlmDriftCandidate {
       'LlmDriftCandidate.recommendedAction must be a non-empty string',
     );
   }
-  if (c.contextRefs !== undefined && !Array.isArray(c.contextRefs)) {
-    throw new ValidationError(
-      'LlmDriftCandidate.contextRefs must be an array if present',
-    );
-  }
+  // contextRefs deliberately not part of LlmDriftCandidate: the adapter
+  // injects them at assembleDriftAlert() from its trusted entity-resolution
+  // layer (see AssembleDriftAlertOpts.contextRefs). If a future raw response
+  // includes contextRefs, ignore them — strict-shape parse, not pass-through.
 
   return {
     pattern: c.pattern as DriftPattern,
     signalRefs: c.signalRefs as EntityId[],
-    contextRefs: c.contextRefs as BlackboardEntityRef[] | undefined,
     confidence: c.confidence,
     summary: c.summary,
     recommendedAction: c.recommendedAction,
@@ -348,6 +351,14 @@ export interface AssembleDriftAlertOpts {
   recommendedAction?: string;
   /** Severity-classification context (days-to-deadline / days-overdue). */
   severityContext?: Omit<DriftSeverityContext, 'confidence'>;
+  /**
+   * Optional context refs to attach to the alert (project / client /
+   * invoice / proposal entity refs). Sourced from the Platform-side
+   * adapter's trusted entity-resolution layer — NOT from the LLM
+   * response. The adapter knows the signal-to-context mapping and
+   * injects refs here so the LLM does not need to invent them.
+   */
+  contextRefs?: BlackboardEntityRef[];
   decisionAuthority?: DecisionAuthority;
   sources?: SourceRef[];
 }
@@ -386,7 +397,7 @@ export function assembleDriftAlert(
     severity,
     confidence: candidate.confidence,
     signalRefs: [...candidate.signalRefs],
-    contextRefs: candidate.contextRefs ? [...candidate.contextRefs] : undefined,
+    contextRefs: opts.contextRefs ? [...opts.contextRefs] : undefined,
     summary: candidate.summary,
     recommendedAction,
     detectedAt,
