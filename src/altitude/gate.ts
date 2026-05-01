@@ -4,6 +4,7 @@ import type {
   AltitudeProposedActionType,
   AltitudeRoleVisibility,
   AltitudeWorkflowKind,
+  InferenceLabel,
   DecisionPacket,
   PolicyGateResult,
   ReviewRequirement,
@@ -64,6 +65,12 @@ const REVIEW_ONLY_PRICING_SOURCE_CLASSES = [
   'kerf_seed',
   'model_inference',
 ] as const;
+
+const MODEL_INFERENCE_SAFE_LABELS = [
+  'INFERRED',
+  'MODEL_GUESS',
+  'NEEDS_REVIEW',
+] as const satisfies readonly InferenceLabel[];
 
 export interface TokenBudgetOptions {
   perActionTokenCap?: number;
@@ -217,6 +224,67 @@ export function runV6RoleRedaction(
   return validatorResult('V6', true, false, { durationMs: Date.now() - started });
 }
 
+export function runV7SourceBasisRequired(packet: AltitudePacket): ValidatorResult {
+  const started = Date.now();
+  const hasCompleteSourceBasis =
+    packet.source_refs.length > 0 && packet.evidence_ids.length > 0 && packet.claim_ids.length > 0;
+
+  if (!hasCompleteSourceBasis) {
+    return validatorResult('V7', false, true, {
+      reason: 'source_basis_required',
+      fieldCorrected: {
+        field: 'status',
+        from: 'READY_FOR_REVIEW',
+        to: 'BLOCKED_PENDING_SOURCE',
+      },
+      durationMs: Date.now() - started,
+    });
+  }
+
+  return validatorResult('V7', true, false, { durationMs: Date.now() - started });
+}
+
+export function runV8ModelInferenceLabeling(packet: AltitudePacket): ValidatorResult {
+  const started = Date.now();
+  if (!hasModelInferenceSource(packet)) {
+    return validatorResult('V8', true, false, { durationMs: Date.now() - started });
+  }
+
+  if (packet.model_inference_label === 'DIRECT_EVIDENCE') {
+    return validatorResult('V8', false, true, {
+      reason: 'model_inference_marked_direct_evidence',
+      durationMs: Date.now() - started,
+    });
+  }
+
+  if (packet.model_inference_label === undefined) {
+    return validatorResult('V8', true, false, {
+      fieldCorrected: {
+        field: 'model_inference_label',
+        from: undefined,
+        to: 'NEEDS_REVIEW',
+      },
+      durationMs: Date.now() - started,
+    });
+  }
+
+  if (
+    packet.classification.confidence_band === 'HIGH' &&
+    MODEL_INFERENCE_SAFE_LABELS.includes(packet.model_inference_label)
+  ) {
+    return validatorResult('V8', true, false, {
+      fieldCorrected: {
+        field: 'classification.confidence_band',
+        from: 'HIGH',
+        to: 'MEDIUM',
+      },
+      durationMs: Date.now() - started,
+    });
+  }
+
+  return validatorResult('V8', true, false, { durationMs: Date.now() - started });
+}
+
 export function runV17TokenBudgetCheck(
   packet: AltitudePacket,
   options: TokenBudgetOptions = {},
@@ -275,9 +343,11 @@ export function runPolicyGate(
   const v1 = runV1PricingSourceClass(packet);
   const v2 = runV2ExternalSendApproval(packet);
   const v6 = runV6RoleRedaction(packet, roleVisibility);
+  const v7 = runV7SourceBasisRequired(packet);
+  const v8 = runV8ModelInferenceLabeling(packet);
   const v17 = runV17TokenBudgetCheck(packet, options.tokenBudget);
   const v18 = runV18AltitudeAssignment(packet);
-  const validatorResults = [v1, v2, v6, v17, v18.result];
+  const validatorResults = [v1, v2, v6, v7, v8, v17, v18.result];
   const criticalFailures = validatorResults
     .filter((result) => !result.passed && result.critical)
     .map((result) => result.validator_id);
@@ -287,6 +357,8 @@ export function runPolicyGate(
   const allowed = blockedReasons.length === 0;
   const reviewRequirement = deriveReviewRequirement(v18.assignment.systemFinalAltitude, packet);
   const requiredHumanApproval = reviewRequirement !== 'AUTONOMOUS';
+  const correctedFields = deriveCorrectedFields(v18.assignment, validatorResults);
+  const decisionStatus = criticalFailures.includes('V7') ? 'BLOCKED_PENDING_SOURCE' : 'READY_FOR_REVIEW';
   const gateResult: PolicyGateResult = {
     packet_id: packet.packet_id,
     gate_run_id: options.gateRunId ?? packet.packet_id + ':gate:' + evaluatedAt,
@@ -294,10 +366,7 @@ export function runPolicyGate(
     allowed,
     blocked_reasons: blockedReasons,
     required_human_approval: requiredHumanApproval,
-    corrected_fields: {
-      system_baseline_altitude: { from: undefined, to: v18.assignment.systemBaselineAltitude },
-      system_final_altitude: { from: undefined, to: v18.assignment.systemFinalAltitude },
-    },
+    corrected_fields: correctedFields,
     safe_next_action: deriveSafeNextAction({
       allowed,
       criticalFailures,
@@ -349,7 +418,7 @@ export function runPolicyGate(
     role_visibility: roleVisibility,
     source_model: packet.source_model,
     token_usage: packet.token_usage,
-    status: 'READY_FOR_REVIEW',
+    status: decisionStatus,
     created_at: packet.created_at,
     policy_gate_result: gateResult,
   };
@@ -374,6 +443,25 @@ function validatorResult(
     ...(options.fieldCorrected ? { field_corrected: options.fieldCorrected } : {}),
     duration_ms: options.durationMs ?? 0,
   };
+}
+
+function deriveCorrectedFields(
+  assignment: AltitudeAssignmentResult,
+  validatorResults: readonly ValidatorResult[],
+): NonNullable<PolicyGateResult['corrected_fields']> {
+  const correctedFields: Record<string, { from: unknown; to: unknown }> = {
+    system_baseline_altitude: { from: undefined, to: assignment.systemBaselineAltitude },
+    system_final_altitude: { from: undefined, to: assignment.systemFinalAltitude },
+  };
+
+  for (const result of validatorResults) {
+    const correction = result.field_corrected;
+    if (correction !== undefined) {
+      correctedFields[correction.field] = { from: correction.from, to: correction.to };
+    }
+  }
+
+  return correctedFields;
 }
 
 function classifyDivergence(
@@ -411,6 +499,15 @@ function isRestrictedFinanceRole(role: AltitudeRoleVisibility): boolean {
   return RESTRICTED_FINANCE_ROLES.includes(role as (typeof RESTRICTED_FINANCE_ROLES)[number]);
 }
 
+function hasModelInferenceSource(packet: AltitudePacket): boolean {
+  return (
+    packet.money_fields?.source_class === 'model_inference' ||
+    packet.model_inference_label === 'INFERRED' ||
+    packet.model_inference_label === 'MODEL_GUESS' ||
+    packet.model_inference_label === 'NEEDS_REVIEW'
+  );
+}
+
 function deriveReviewRequirement(
   systemFinalAltitude: AltitudeLevel,
   packet: AltitudePacket,
@@ -435,8 +532,8 @@ function deriveSafeNextAction(input: {
   systemFinalAltitude: AltitudeLevel;
 }): SafeNextAction {
   if (input.criticalFailures.length > 0) {
-    // Critical-failure precedence follows the W1 send-safety lane:
-    // external send > pricing > role visibility > token budget > generic remediation.
+    // Critical-failure precedence follows the W1 safety lane:
+    // external send > pricing > role visibility > source basis > inference labeling > token budget > generic remediation.
     if (input.criticalFailures.includes('V2')) {
       return 'block_external_send';
     }
@@ -445,6 +542,12 @@ function deriveSafeNextAction(input: {
     }
     if (input.criticalFailures.includes('V6')) {
       return 'block_role_visibility';
+    }
+    if (input.criticalFailures.includes('V7')) {
+      return 'block_promotion';
+    }
+    if (input.criticalFailures.includes('V8')) {
+      return 'request_human_review';
     }
     if (input.criticalFailures.includes('V17')) {
       return 'block_token_budget';

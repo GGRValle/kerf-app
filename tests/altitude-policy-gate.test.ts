@@ -101,7 +101,7 @@ test('V18 raises external-send decisions to owner review', () => {
   assert.equal(decision.system_final_altitude, 'L3');
   assert.equal(decision.review_requirement, 'OWNER_REVIEW');
   assert.equal(decision.policy_gate_result.safe_next_action, 'request_owner_approval');
-  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V17', 'V18']);
+  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V7', 'V8', 'V17', 'V18']);
 });
 
 test('V18 first-cut applies the money mutation escalation floor', () => {
@@ -241,6 +241,7 @@ test('V1 allows review-only pricing source classes for later validators and rout
   for (const sourceClass of ['public_reference', 'kerf_seed', 'model_inference'] as const) {
     const decision = runPolicyGate(
       basePacket({
+        model_inference_label: sourceClass === 'model_inference' ? 'NEEDS_REVIEW' : 'DIRECT_EVIDENCE',
         money_fields: {
           amount_cents: 150_000,
           source_class: sourceClass,
@@ -332,6 +333,118 @@ test('V6 passes privileged finance fields with default owner/admin visibility', 
   assert.equal(decision.role_visibility.includes('owner'), true);
   assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V6')?.passed, true);
   assert.equal(decision.policy_gate_result.allowed, true);
+});
+
+test('V7 blocks DecisionPacket promotion when source basis is incomplete', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      source_refs: [],
+      evidence_ids: ['qbo_invoice_0042'],
+      claim_ids: ['claim_invoice_due_date'],
+    }),
+    { evaluatedAt: '2026-04-30T19:42:00.000Z' },
+  );
+
+  const v7 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V7');
+  assert.equal(v7?.passed, false);
+  assert.equal(v7?.critical, true);
+  assert.equal(v7?.reason, 'source_basis_required');
+  assert.deepEqual(v7?.field_corrected, {
+    field: 'status',
+    from: 'READY_FOR_REVIEW',
+    to: 'BLOCKED_PENDING_SOURCE',
+  });
+  assert.equal(decision.status, 'BLOCKED_PENDING_SOURCE');
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_promotion');
+  assert.deepEqual(decision.policy_gate_result.corrected_fields?.status, {
+    from: 'READY_FOR_REVIEW',
+    to: 'BLOCKED_PENDING_SOURCE',
+  });
+});
+
+test('V7 passes when source_refs, evidence_ids, and claim_ids are all present', () => {
+  const decision = runPolicyGate(basePacket(), {
+    evaluatedAt: '2026-04-30T19:42:30.000Z',
+  });
+
+  assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V7')?.passed, true);
+  assert.equal(decision.status, 'READY_FOR_REVIEW');
+});
+
+test('V8 blocks model inference that is mislabeled as direct evidence', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      model_inference_label: 'DIRECT_EVIDENCE',
+      money_fields: {
+        amount_cents: 150_000,
+        source_class: 'model_inference',
+        source_status: 'needs_review',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:43:00.000Z' },
+  );
+
+  const v8 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V8');
+  assert.equal(v8?.passed, false);
+  assert.equal(v8?.critical, true);
+  assert.equal(v8?.reason, 'model_inference_marked_direct_evidence');
+  assert.equal(decision.policy_gate_result.safe_next_action, 'request_human_review');
+});
+
+test('V8 defaults missing model inference label to NEEDS_REVIEW', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      model_inference_label: undefined,
+      money_fields: {
+        amount_cents: 0,
+        source_class: 'model_inference',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:44:00.000Z' },
+  );
+
+  const v8 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V8');
+  assert.equal(v8?.passed, true);
+  assert.deepEqual(v8?.field_corrected, {
+    field: 'model_inference_label',
+    from: undefined,
+    to: 'NEEDS_REVIEW',
+  });
+  assert.deepEqual(decision.policy_gate_result.corrected_fields?.model_inference_label, {
+    from: undefined,
+    to: 'NEEDS_REVIEW',
+  });
+});
+
+test('V8 downgrades high confidence model inference claims for review', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      model_inference_label: 'INFERRED',
+      classification: {
+        intent: 'draft an overdue invoice reminder',
+        urgency: 'normal',
+        confidence: 0.91,
+        confidence_band: 'HIGH',
+      },
+      money_fields: {
+        amount_cents: 0,
+        source_class: 'model_inference',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:45:00.000Z' },
+  );
+
+  const v8 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V8');
+  assert.equal(v8?.passed, true);
+  assert.deepEqual(v8?.field_corrected, {
+    field: 'classification.confidence_band',
+    from: 'HIGH',
+    to: 'MEDIUM',
+  });
+  assert.deepEqual(decision.policy_gate_result.corrected_fields?.['classification.confidence_band'], {
+    from: 'HIGH',
+    to: 'MEDIUM',
+  });
 });
 
 test('critical failure precedence prefers external send before pricing and role visibility', () => {
