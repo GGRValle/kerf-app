@@ -41,6 +41,9 @@ export const ALTITUDE_PROPOSED_ACTION_TYPES = [
 ] as const;
 export type AltitudeProposedActionType = (typeof ALTITUDE_PROPOSED_ACTION_TYPES)[number];
 
+// Blackboard rails are repeated here because Validator Spec v0.3 owns the
+// Altitude Engine routing vocabulary. Re-export a shared blackboard rail
+// source later if the Blackboard module grows its own runtime rail API.
 export const BLACKBOARD_RAILS = [
   'movement',
   'whos_where',
@@ -269,12 +272,21 @@ export interface AltitudeProposedAction {
   reason: string;
 }
 
+export const MUTATION_INTENTS = [
+  'read',
+  'quote',
+  'propose',
+  'approve',
+  'commit',
+] as const;
+export type MutationIntent = (typeof MUTATION_INTENTS)[number];
+
 export interface MoneyFields {
   amount_cents?: Cents;
   source_status?: SourceStatus;
   source_class?: PricingSourceClass;
   privileged_fields?: readonly PrivilegedMoneyField[];
-  mutation_intent?: 'read' | 'quote' | 'propose' | 'approve' | 'commit';
+  mutation_intent?: MutationIntent;
 }
 
 export interface ExternalSend {
@@ -292,6 +304,8 @@ export interface RecordingIntent {
   captured_party_count?: number;
 }
 
+// Estimated tokens are available before the model call for V17 pre-flight;
+// actual tokens are populated after the call for audit and estimator drift.
 export interface AltitudeTokenUsage {
   estimated_input_tokens?: number;
   estimated_output_tokens?: number;
