@@ -1,4 +1,7 @@
 import type {
+  AltitudePacket,
+} from '../altitude/index.js';
+import type {
   ActionClass,
   BlackboardEntityRef,
   Cents,
@@ -183,6 +186,85 @@ export interface InvoiceFollowupApprovalResult {
   rejectionReason: string | null;
   decidedAt: ISO8601;
   event: BlackboardEventTemplate<InvoiceFollowupApprovalActionPayload>;
+}
+
+export interface InvoiceFollowupPacketOpts {
+  tenantId: EntityId;
+  evaluatedAt: ISO8601;
+  modelSourceId?: string;
+  jurisdiction?: string;
+  packetIdSuffix?: string;
+}
+
+export function invoiceCandidateToAltitudePacket(
+  candidate: InvoiceFollowupCandidate,
+  draft: InvoiceFollowupDraft,
+  opts: InvoiceFollowupPacketOpts,
+): AltitudePacket {
+  const packetId = candidate.id + (opts.packetIdSuffix ?? ':pkt');
+  const invoiceIdSegment = idSegment(candidate.invoiceId);
+
+  return {
+    packet_id: packetId,
+    event_id: packetId + ':event',
+    tenant_id: opts.tenantId,
+    project_id: candidate.projectId,
+    workflow: 'invoice_followup',
+    classification: {
+      intent: 'draft an overdue invoice reminder',
+      urgency: candidate.daysPastDue > 30 ? 'high' : 'normal',
+      confidence: 0.92,
+      confidence_band: 'HIGH',
+    },
+    extracted_facts: {
+      client_name: candidate.clientName,
+      project_id: candidate.projectId,
+      invoice_id: candidate.invoiceId,
+      invoice_number: candidate.invoiceNumber ?? null,
+      amount_cents: candidate.remainingCents,
+      due_date: candidate.dueDate,
+      days_past_due: candidate.daysPastDue,
+      project_name: candidate.projectName,
+      draft_message: draft.message,
+    },
+    proposed_action: {
+      type: 'draft_client_message',
+      description: 'Draft a payment reminder for human approval.',
+      reason: 'Invoice past due.',
+    },
+    model_suggested_altitude: 'L2',
+    model_suggested_blackboard_rail: 'holding',
+    model_inference_label: 'DIRECT_EVIDENCE',
+    money_fields: {
+      amount_cents: candidate.remainingCents,
+      source_status: 'current',
+      source_class: 'tenant_catalog',
+      mutation_intent: 'propose',
+    },
+    external_send: {
+      requested: true,
+      channel: 'email',
+      recipient_class: 'client',
+      recipient_id: candidate.clientId,
+    },
+    jurisdiction: opts.jurisdiction ?? 'US-CA',
+    source_refs: invoiceAltitudeSourceRefs(candidate),
+    evidence_ids: ['qbo_invoice_' + invoiceIdSegment],
+    claim_ids: [
+      'claim_invoice_' + invoiceIdSegment + '_due_date',
+      'claim_invoice_' + invoiceIdSegment + '_balance',
+      'claim_invoice_' + invoiceIdSegment + '_status',
+    ],
+    source_model: opts.modelSourceId ?? 'qwen2.5-7b-instruct',
+    token_usage: {
+      estimated_input_tokens: 580,
+      estimated_output_tokens: 140,
+      input_tokens: 0,
+      output_tokens: 0,
+    },
+    status: 'READY_FOR_GATE',
+    created_at: opts.evaluatedAt,
+  };
 }
 
 const DEFAULT_DECISION_AUTHORITY: DecisionAuthority = { role: 'owner' };
@@ -415,6 +497,29 @@ function sumInvoicePayments(
 
 function invoiceFollowupId(invoiceId: EntityId): EntityId {
   return `if_${invoiceId}`;
+}
+
+function invoiceAltitudeSourceRefs(candidate: InvoiceFollowupCandidate): SourceRef[] {
+  const invoiceLabel = candidate.invoiceNumber ?? candidate.invoiceId;
+  const dueDate = sourceFactValue(candidate.sourceFacts, 'Due date') ?? candidate.dueDate;
+  return [
+    {
+      kind: 'external',
+      uri: `qbo://invoice/${candidate.invoiceId}`,
+      excerpt: `QBO invoice ${invoiceLabel} due ${String(dueDate).slice(0, 10)} remains open ${candidate.daysPastDue} days past due.`,
+    },
+  ];
+}
+
+function sourceFactValue(
+  sourceFacts: readonly SourceFact[],
+  label: string,
+): SourceFact['value'] | undefined {
+  return sourceFacts.find((fact) => fact.label === label)?.value;
+}
+
+function idSegment(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_]+/g, '_');
 }
 
 function utcDay(date: Date): number {
