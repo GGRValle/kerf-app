@@ -68,6 +68,23 @@ Platform → Kerf via webhooks (`PlatformWebhook` in same file).
 
 The authoritative copy of the contract lives in a shared Google Drive folder (TBD path). This repo imports from that file; the Platform repo imports from that file. Neither side edits its own copy independently.
 
+## W1 UI DecisionPacket Fixture
+
+Track C can build pure UI components against generated DecisionPacket data before real invoice integration lands:
+
+```tsx
+import { invoiceDecisionPacketFixture } from './src/test-fixtures/index.js';
+
+<DecisionCard
+  packet={invoiceDecisionPacketFixture}
+  onApprove={(packetId) => console.log(packetId)}
+  onReject={(packetId) => console.log(packetId)}
+  onEdit={(packetId) => console.log(packetId)}
+/>
+```
+
+The fixture is generated from a typed `AltitudePacket` through `runPolicyGate` with a fixed clock/options. Do not copy its shape into UI-local types; consume `DecisionPacket` from `src/altitude/types.ts`.
+
 ## Commands
 
 ```bash
