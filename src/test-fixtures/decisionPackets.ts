@@ -49,7 +49,7 @@ function baseInvoiceAltitudePacket(
       confidence_band: 'HIGH',
     },
     extracted_facts: {
-      client_name: 'Josefina Rivera',
+      client_name: 'Demo Client Rivera',
       project_id: 'proj_ggr_kitchen_001',
       invoice_id: 'qbo_invoice_1001',
       invoice_number: 'INV-1001',
@@ -76,7 +76,7 @@ function baseInvoiceAltitudePacket(
       requested: true,
       channel: 'email',
       recipient_class: 'client',
-      recipient_id: 'client_josefina_rivera',
+      recipient_id: 'client_w1_demo',
       approved_by: 'u_christian',
       approved_at: '2026-05-02T09:05:00.000Z',
     },
@@ -113,7 +113,7 @@ function invoiceAltitudePacketForScenario(
         requested: true,
         channel: 'email',
         recipient_class: 'client',
-        recipient_id: 'client_josefina_rivera',
+        recipient_id: 'client_w1_demo',
       },
     };
   }

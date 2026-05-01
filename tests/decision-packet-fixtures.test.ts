@@ -117,7 +117,7 @@ test('primary invoice fixture output is a stable regression snapshot', () => {
       requested: true,
       channel: 'email',
       recipient_class: 'client',
-      recipient_id: 'client_josefina_rivera',
+      recipient_id: 'client_w1_demo',
       approved_by: 'u_christian',
       approved_at: '2026-05-02T09:05:00.000Z',
     },
