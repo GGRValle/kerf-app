@@ -37,7 +37,7 @@ src/
 | `projections/graph` | V1 shape | Explicit relation edges only. Causal inference V1.5. |
 | `blackboard/compliance-kb` | V1 schema | `compliance_kb_entry` + `compliance_event`; V1.5+ Sentry/Watch runtime, V2.0α active gating. |
 | `workflows/invoice-followup` | V1 pure | Candidate → draft → approval request → approval action; no Slack/Gmail/DB. |
-| `altitude` | W1 schema | AltitudePacket → DecisionPacket core types, PolicyGateResult, ValidatorResult, V1-V18 vocabulary. Runtime validators land separately. |
+| `altitude` | W1 skeleton | AltitudePacket → DecisionPacket core types plus Policy Gate shell with V17 token-budget and V18 altitude-assignment first cuts. |
 | `audit/readLog` | V1 | In-memory read audit log + EventLog read wrapper; durable store lands later. |
 | `authority/profile` | V1 | Per-role × per-tenant authority bands + dollar ceilings + escalation chain. `canAuthorize()` is pure. Per-tenant overlays land V1.5+. |
 | `contracts/platform` | V1 stub | Real types, stub client. Versioned: `2026-04-23.0`. |
