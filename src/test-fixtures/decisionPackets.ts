@@ -87,7 +87,7 @@ function baseInvoiceAltitudePacket(
         excerpt: 'QBO invoice INV-1001 due 2026-04-17 remains unpaid.',
       },
     ],
-    evidence_ids: ['qbo_invoice_1001', 'qbo_customer_josefina_rivera'],
+    evidence_ids: ['qbo_invoice_1001', 'qbo_customer_w1_demo'],
     claim_ids: ['claim_invoice_1001_due_date', 'claim_invoice_1001_balance'],
     source_model: 'fixture:invoice-followup',
     token_usage: {
