@@ -148,6 +148,57 @@ export function assignAltitude(packet: AltitudePacket): AltitudeAssignmentResult
   };
 }
 
+export function runV1PricingSourceClass(packet: AltitudePacket): ValidatorResult {
+  const started = Date.now();
+  const amount = packet.money_fields?.amount_cents ?? 0;
+  const sourceClass = packet.money_fields?.source_class;
+  if (
+    amount > 0 &&
+    (sourceClass === undefined ||
+      sourceClass === 'placeholder' ||
+      sourceClass === 'unsupported' ||
+      sourceClass === 'missing')
+  ) {
+    return validatorResult('V1', false, true, {
+      reason: 'pricing source class invalid',
+      durationMs: Date.now() - started,
+    });
+  }
+  return validatorResult('V1', true, false, { durationMs: Date.now() - started });
+}
+
+export function runV2ExternalSendApproval(packet: AltitudePacket): ValidatorResult {
+  const started = Date.now();
+  if (
+    packet.external_send?.requested === true &&
+    (packet.external_send.approved_by === undefined || packet.external_send.approved_at === undefined)
+  ) {
+    return validatorResult('V2', false, true, {
+      reason: 'external send requires human approval',
+      durationMs: Date.now() - started,
+    });
+  }
+  return validatorResult('V2', true, false, { durationMs: Date.now() - started });
+}
+
+export function runV6RoleRedaction(
+  packet: AltitudePacket,
+  roleVisibility: readonly AltitudeRoleVisibility[],
+): ValidatorResult {
+  const started = Date.now();
+  const privilegedFields = packet.money_fields?.privileged_fields ?? [];
+  const visibleToRestrictedRole = roleVisibility.some(
+    (role) => role === 'field' || role === 'sub' || role === 'client',
+  );
+  if (privilegedFields.length > 0 && visibleToRestrictedRole) {
+    return validatorResult('V6', false, true, {
+      reason: 'privileged finance fields cannot be visible to field/sub/client roles',
+      durationMs: Date.now() - started,
+    });
+  }
+  return validatorResult('V6', true, false, { durationMs: Date.now() - started });
+}
+
 export function runV17TokenBudgetCheck(
   packet: AltitudePacket,
   options: TokenBudgetOptions = {},
@@ -211,9 +262,13 @@ export function runPolicyGate(
 ): DecisionPacket {
   const started = Date.now();
   const evaluatedAt = options.evaluatedAt ?? new Date().toISOString();
+  const roleVisibility = options.defaultRoleVisibility ?? ['owner', 'admin'];
+  const v1 = runV1PricingSourceClass(packet);
+  const v2 = runV2ExternalSendApproval(packet);
+  const v6 = runV6RoleRedaction(packet, roleVisibility);
   const v17 = runV17TokenBudgetCheck(packet, options.tokenBudget);
   const v18 = runV18AltitudeAssignment(packet);
-  const validatorResults = [v17, v18.result];
+  const validatorResults = [v1, v2, v6, v17, v18.result];
   const criticalFailures = validatorResults
     .filter((result) => !result.passed && result.critical)
     .map((result) => result.validator_id);
@@ -282,7 +337,7 @@ export function runPolicyGate(
     evidence_ids: packet.evidence_ids,
     claim_ids: packet.claim_ids,
     review_requirement: reviewRequirement,
-    role_visibility: options.defaultRoleVisibility ?? ['owner', 'admin'],
+    role_visibility: roleVisibility,
     source_model: packet.source_model,
     token_usage: packet.token_usage,
     status: 'READY_FOR_REVIEW',
@@ -367,6 +422,17 @@ function deriveSafeNextAction(input: {
   systemFinalAltitude: AltitudeLevel;
 }): SafeNextAction {
   if (input.criticalFailures.length > 0) {
+    // Critical-failure precedence follows the W1 send-safety lane:
+    // external send > pricing > role visibility > token budget > generic remediation.
+    if (input.criticalFailures.includes('V2')) {
+      return 'block_external_send';
+    }
+    if (input.criticalFailures.includes('V1')) {
+      return 'block_pricing_use';
+    }
+    if (input.criticalFailures.includes('V6')) {
+      return 'block_role_visibility';
+    }
     if (input.criticalFailures.includes('V17')) {
       return 'block_token_budget';
     }

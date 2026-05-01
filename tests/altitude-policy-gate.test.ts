@@ -81,6 +81,8 @@ test('V18 raises external-send decisions to owner review', () => {
         channel: 'email',
         recipient_class: 'client',
         recipient_id: 'client_clem',
+        approved_by: 'u_christian',
+        approved_at: '2026-04-30T19:30:30.000Z',
       },
       model_suggested_altitude: 'L1',
     }),
@@ -91,7 +93,7 @@ test('V18 raises external-send decisions to owner review', () => {
   assert.equal(decision.system_final_altitude, 'L3');
   assert.equal(decision.review_requirement, 'OWNER_REVIEW');
   assert.equal(decision.policy_gate_result.safe_next_action, 'request_owner_approval');
-  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V17', 'V18']);
+  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V17', 'V18']);
 });
 
 test('V18 first-cut applies the money mutation escalation floor', () => {
@@ -173,4 +175,146 @@ test('V17 compact-prompt failure is non-critical and blocks until remediation', 
   assert.equal(decision.policy_gate_result.has_critical_failure, false);
   assert.deepEqual(decision.policy_gate_result.blocked_reasons, ['compact_prompt_required_at_low_altitude']);
   assert.equal(decision.policy_gate_result.safe_next_action, 'block_with_remediation');
+});
+
+
+test('V1 blocks unsupported pricing source classes when money is present', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      money_fields: {
+        amount_cents: 150_000,
+        source_class: 'placeholder',
+        source_status: 'current',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:35:00.000Z' },
+  );
+
+  assert.equal(decision.policy_gate_result.allowed, false);
+  assert.deepEqual(decision.policy_gate_result.critical_failures, ['V1']);
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_pricing_use');
+  assert.match(decision.policy_gate_result.blocked_reasons[0] ?? '', /pricing source class invalid/);
+});
+
+test('V1 passes zero-dollar records regardless of pricing source class', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      money_fields: {
+        amount_cents: 0,
+        source_class: 'placeholder',
+        source_status: 'missing',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:36:00.000Z' },
+  );
+
+  assert.equal(decision.policy_gate_result.allowed, true);
+  assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V1')?.passed, true);
+});
+
+test('V2 blocks external send when human approval metadata is missing', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      proposed_action: {
+        type: 'draft_client_message',
+        description: 'Draft a client payment reminder.',
+        reason: 'The reminder must be human-approved before send.',
+      },
+      external_send: {
+        requested: true,
+        channel: 'email',
+        recipient_class: 'client',
+        recipient_id: 'client_clem',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:37:00.000Z' },
+  );
+
+  assert.equal(decision.policy_gate_result.allowed, false);
+  assert.deepEqual(decision.policy_gate_result.critical_failures, ['V2']);
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_external_send');
+});
+
+test('V2 passes external send when human approval metadata is present', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      external_send: {
+        requested: true,
+        channel: 'email',
+        recipient_class: 'client',
+        recipient_id: 'client_clem',
+        approved_by: 'u_christian',
+        approved_at: '2026-04-30T19:37:30.000Z',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:38:00.000Z' },
+  );
+
+  assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V2')?.passed, true);
+  assert.equal(decision.policy_gate_result.safe_next_action, 'request_owner_approval');
+});
+
+test('V6 blocks privileged finance fields for restricted role visibility', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      money_fields: {
+        amount_cents: 0,
+        privileged_fields: ['margin'],
+      },
+    }),
+    {
+      defaultRoleVisibility: ['field'],
+      evaluatedAt: '2026-04-30T19:39:00.000Z',
+    },
+  );
+
+  assert.equal(decision.policy_gate_result.allowed, false);
+  assert.deepEqual(decision.policy_gate_result.critical_failures, ['V6']);
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_role_visibility');
+});
+
+test('V6 passes privileged finance fields with default owner/admin visibility', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      money_fields: {
+        amount_cents: 0,
+        privileged_fields: ['margin'],
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:40:00.000Z' },
+  );
+
+  assert.equal(decision.role_visibility.includes('owner'), true);
+  assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V6')?.passed, true);
+  assert.equal(decision.policy_gate_result.allowed, true);
+});
+
+test('critical failure precedence prefers external send before pricing and role visibility', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      proposed_action: {
+        type: 'draft_client_message',
+        description: 'Draft a client payment reminder.',
+        reason: 'The reminder must be human-approved before send.',
+      },
+      external_send: {
+        requested: true,
+        channel: 'email',
+        recipient_class: 'client',
+        recipient_id: 'client_clem',
+      },
+      money_fields: {
+        amount_cents: 150_000,
+        source_class: 'placeholder',
+        privileged_fields: ['margin'],
+      },
+    }),
+    {
+      defaultRoleVisibility: ['client'],
+      evaluatedAt: '2026-04-30T19:41:00.000Z',
+    },
+  );
+
+  assert.deepEqual(decision.policy_gate_result.critical_failures, ['V1', 'V2', 'V6']);
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_external_send');
 });
