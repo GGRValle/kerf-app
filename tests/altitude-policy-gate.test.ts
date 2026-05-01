@@ -66,6 +66,14 @@ test('V18 baseline ignores model-suggested altitude and uses workflow plus actio
   assert.equal(baseline.systemBaselineAltitude, 'L1');
   assert.equal(assignment.systemFinalAltitude, 'L1');
   assert.equal(assignment.divergenceClass, 'model_overcaution');
+
+  const decision = runPolicyGate(packet, { evaluatedAt: '2026-04-30T19:30:15.000Z' });
+  const v18 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V18');
+  assert.equal(v18?.field_corrected, undefined);
+  assert.deepEqual(decision.policy_gate_result.corrected_fields?.system_final_altitude, {
+    from: undefined,
+    to: 'L1',
+  });
 });
 
 test('V18 raises external-send decisions to owner review', () => {
@@ -177,7 +185,6 @@ test('V17 compact-prompt failure is non-critical and blocks until remediation', 
   assert.equal(decision.policy_gate_result.safe_next_action, 'block_with_remediation');
 });
 
-
 test('V1 blocks unsupported pricing source classes when money is present', () => {
   const decision = runPolicyGate(
     basePacket({
@@ -193,7 +200,25 @@ test('V1 blocks unsupported pricing source classes when money is present', () =>
   assert.equal(decision.policy_gate_result.allowed, false);
   assert.deepEqual(decision.policy_gate_result.critical_failures, ['V1']);
   assert.equal(decision.policy_gate_result.safe_next_action, 'block_pricing_use');
-  assert.match(decision.policy_gate_result.blocked_reasons[0] ?? '', /pricing source class invalid/);
+  assert.match(decision.policy_gate_result.blocked_reasons[0] ?? '', /pricing_source_class_invalid/);
+});
+
+test('V1 blocks missing, placeholder, and unsupported pricing source classes', () => {
+  for (const sourceClass of [undefined, 'missing', 'placeholder', 'unsupported'] as const) {
+    const decision = runPolicyGate(
+      basePacket({
+        money_fields: {
+          amount_cents: 150_000,
+          ...(sourceClass ? { source_class: sourceClass } : {}),
+          source_status: 'current',
+        },
+      }),
+      { evaluatedAt: '2026-04-30T19:35:30.000Z' },
+    );
+
+    assert.equal(decision.policy_gate_result.safe_next_action, 'block_pricing_use');
+    assert.deepEqual(decision.policy_gate_result.critical_failures, ['V1']);
+  }
 });
 
 test('V1 passes zero-dollar records regardless of pricing source class', () => {
@@ -210,6 +235,24 @@ test('V1 passes zero-dollar records regardless of pricing source class', () => {
 
   assert.equal(decision.policy_gate_result.allowed, true);
   assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V1')?.passed, true);
+});
+
+test('V1 allows review-only pricing source classes for later validators and routing', () => {
+  for (const sourceClass of ['public_reference', 'kerf_seed', 'model_inference'] as const) {
+    const decision = runPolicyGate(
+      basePacket({
+        money_fields: {
+          amount_cents: 150_000,
+          source_class: sourceClass,
+          source_status: 'current',
+        },
+      }),
+      { evaluatedAt: '2026-04-30T19:36:30.000Z' },
+    );
+
+    assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V1')?.passed, true);
+    assert.equal(decision.policy_gate_result.critical_failures.includes('V1'), false);
+  }
 });
 
 test('V2 blocks external send when human approval metadata is missing', () => {
@@ -233,6 +276,7 @@ test('V2 blocks external send when human approval metadata is missing', () => {
   assert.equal(decision.policy_gate_result.allowed, false);
   assert.deepEqual(decision.policy_gate_result.critical_failures, ['V2']);
   assert.equal(decision.policy_gate_result.safe_next_action, 'block_external_send');
+  assert.deepEqual(decision.policy_gate_result.blocked_reasons, ['external_send_approval_missing']);
 });
 
 test('V2 passes external send when human approval metadata is present', () => {
@@ -271,6 +315,7 @@ test('V6 blocks privileged finance fields for restricted role visibility', () =>
   assert.equal(decision.policy_gate_result.allowed, false);
   assert.deepEqual(decision.policy_gate_result.critical_failures, ['V6']);
   assert.equal(decision.policy_gate_result.safe_next_action, 'block_role_visibility');
+  assert.deepEqual(decision.policy_gate_result.blocked_reasons, ['privileged_finance_role_leak']);
 });
 
 test('V6 passes privileged finance fields with default owner/admin visibility', () => {
