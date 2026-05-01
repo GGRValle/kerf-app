@@ -57,6 +57,14 @@ const TWO_PARTY_CONSENT_JURISDICTIONS = new Set([
   'US-WA',
 ]);
 
+export const RESTRICTED_FINANCE_ROLES = ['field', 'sub', 'client'] as const;
+
+const REVIEW_ONLY_PRICING_SOURCE_CLASSES = [
+  'public_reference',
+  'kerf_seed',
+  'model_inference',
+] as const;
+
 export interface TokenBudgetOptions {
   perActionTokenCap?: number;
   lowAltitudeCompactPromptThreshold?: number;
@@ -160,10 +168,22 @@ export function runV1PricingSourceClass(packet: AltitudePacket): ValidatorResult
       sourceClass === 'missing')
   ) {
     return validatorResult('V1', false, true, {
-      reason: 'pricing source class invalid',
+      reason: 'pricing_source_class_invalid',
       durationMs: Date.now() - started,
     });
   }
+
+  // public_reference, kerf_seed, and model_inference are allowed through V1.
+  // Later validators and review routing decide whether they can support an artifact.
+  if (
+    sourceClass !== undefined &&
+    REVIEW_ONLY_PRICING_SOURCE_CLASSES.includes(
+      sourceClass as (typeof REVIEW_ONLY_PRICING_SOURCE_CLASSES)[number],
+    )
+  ) {
+    return validatorResult('V1', true, false, { durationMs: Date.now() - started });
+  }
+
   return validatorResult('V1', true, false, { durationMs: Date.now() - started });
 }
 
@@ -174,7 +194,7 @@ export function runV2ExternalSendApproval(packet: AltitudePacket): ValidatorResu
     (packet.external_send.approved_by === undefined || packet.external_send.approved_at === undefined)
   ) {
     return validatorResult('V2', false, true, {
-      reason: 'external send requires human approval',
+      reason: 'external_send_approval_missing',
       durationMs: Date.now() - started,
     });
   }
@@ -187,12 +207,10 @@ export function runV6RoleRedaction(
 ): ValidatorResult {
   const started = Date.now();
   const privilegedFields = packet.money_fields?.privileged_fields ?? [];
-  const visibleToRestrictedRole = roleVisibility.some(
-    (role) => role === 'field' || role === 'sub' || role === 'client',
-  );
+  const visibleToRestrictedRole = roleVisibility.some(isRestrictedFinanceRole);
   if (privilegedFields.length > 0 && visibleToRestrictedRole) {
     return validatorResult('V6', false, true, {
-      reason: 'privileged finance fields cannot be visible to field/sub/client roles',
+      reason: 'privileged_finance_role_leak',
       durationMs: Date.now() - started,
     });
   }
@@ -239,18 +257,9 @@ export function runV18AltitudeAssignment(packet: AltitudePacket): {
 } {
   const started = Date.now();
   const assignment = assignAltitude(packet);
-  const corrected = assignment.divergenceClass === 'match'
-    ? undefined
-    : {
-        field: 'system_final_altitude',
-        from: packet.model_suggested_altitude,
-        to: assignment.systemFinalAltitude,
-      };
-
   return {
     assignment,
     result: validatorResult('V18', true, false, {
-      fieldCorrected: corrected,
       durationMs: Date.now() - started,
     }),
   };
@@ -396,6 +405,10 @@ function requiresTwoPartyConsent(packet: AltitudePacket): boolean {
     return false;
   }
   return packet.recording_intent.consent_state !== 'all_party_captured';
+}
+
+function isRestrictedFinanceRole(role: AltitudeRoleVisibility): boolean {
+  return RESTRICTED_FINANCE_ROLES.includes(role as (typeof RESTRICTED_FINANCE_ROLES)[number]);
 }
 
 function deriveReviewRequirement(
