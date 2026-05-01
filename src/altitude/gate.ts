@@ -72,6 +72,16 @@ const MODEL_INFERENCE_SAFE_LABELS = [
   'NEEDS_REVIEW',
 ] as const satisfies readonly InferenceLabel[];
 
+const EXPECTED_OTHER_W1_VALIDATOR_ORDER = [
+  'V1',
+  'V2',
+  'V6',
+  'V7',
+  'V8',
+  'V17',
+  'V18',
+] as const satisfies readonly ValidatorId[];
+
 export interface TokenBudgetOptions {
   perActionTokenCap?: number;
   lowAltitudeCompactPromptThreshold?: number;
@@ -285,6 +295,22 @@ export function runV8ModelInferenceLabeling(packet: AltitudePacket): ValidatorRe
   return validatorResult('V8', true, false, { durationMs: Date.now() - started });
 }
 
+export function runV12AuditTrailCompleteness(
+  otherResults: readonly ValidatorResult[],
+): ValidatorResult {
+  const started = Date.now();
+  const failureReason = validateW1AuditTrail(otherResults);
+
+  if (failureReason !== undefined) {
+    return validatorResult('V12', false, true, {
+      reason: failureReason,
+      durationMs: Date.now() - started,
+    });
+  }
+
+  return validatorResult('V12', true, false, { durationMs: Date.now() - started });
+}
+
 export function runV17TokenBudgetCheck(
   packet: AltitudePacket,
   options: TokenBudgetOptions = {},
@@ -347,7 +373,9 @@ export function runPolicyGate(
   const v8 = runV8ModelInferenceLabeling(packet);
   const v17 = runV17TokenBudgetCheck(packet, options.tokenBudget);
   const v18 = runV18AltitudeAssignment(packet);
-  const validatorResults = [v1, v2, v6, v7, v8, v17, v18.result];
+  const otherValidatorResults = [v1, v2, v6, v7, v8, v17, v18.result];
+  const v12 = runV12AuditTrailCompleteness(otherValidatorResults);
+  const validatorResults = [v1, v2, v6, v7, v8, v12, v17, v18.result];
   const criticalFailures = validatorResults
     .filter((result) => !result.passed && result.critical)
     .map((result) => result.validator_id);
@@ -445,6 +473,67 @@ function validatorResult(
   };
 }
 
+function validateW1AuditTrail(otherResults: readonly ValidatorResult[]): string | undefined {
+  const seen = new Set<ValidatorId>();
+  for (const result of otherResults) {
+    if (seen.has(result.validator_id)) {
+      return 'audit_trail_duplicate: ' + result.validator_id;
+    }
+    seen.add(result.validator_id);
+  }
+
+  for (const expected of EXPECTED_OTHER_W1_VALIDATOR_ORDER) {
+    if (!seen.has(expected)) {
+      return 'audit_trail_incomplete: missing ' + expected;
+    }
+  }
+
+  for (const result of otherResults) {
+    if (!isExpectedOtherW1ValidatorId(result.validator_id)) {
+      return 'audit_trail_incomplete: unexpected ' + result.validator_id;
+    }
+  }
+
+  for (let index = 0; index < EXPECTED_OTHER_W1_VALIDATOR_ORDER.length; index += 1) {
+    const expected = EXPECTED_OTHER_W1_VALIDATOR_ORDER[index];
+    const actual = otherResults[index]?.validator_id;
+    if (actual !== expected) {
+      return 'audit_trail_out_of_order: expected ' + expected + '@' + (index + 1) + ' got ' + String(actual) + '@' + (index + 1);
+    }
+  }
+
+  for (const result of otherResults) {
+    const idForReason = typeof result.validator_id === 'string' && result.validator_id.length > 0
+      ? result.validator_id
+      : 'unknown';
+    if (typeof result.validator_id !== 'string' || result.validator_id.length === 0) {
+      return 'audit_trail_field_missing: ' + idForReason + '.validator_id';
+    }
+    if (typeof result.validator_name !== 'string' || result.validator_name.length === 0) {
+      return 'audit_trail_field_missing: ' + idForReason + '.validator_name';
+    }
+    if (typeof result.passed !== 'boolean') {
+      return 'audit_trail_field_missing: ' + idForReason + '.passed';
+    }
+    if (typeof result.critical !== 'boolean') {
+      return 'audit_trail_field_missing: ' + idForReason + '.critical';
+    }
+    if (typeof result.duration_ms !== 'number' || !Number.isFinite(result.duration_ms) || result.duration_ms < 0) {
+      return 'audit_trail_field_missing: ' + idForReason + '.duration_ms';
+    }
+  }
+
+  return undefined;
+}
+
+function isExpectedOtherW1ValidatorId(
+  validatorId: ValidatorId,
+): validatorId is (typeof EXPECTED_OTHER_W1_VALIDATOR_ORDER)[number] {
+  return EXPECTED_OTHER_W1_VALIDATOR_ORDER.includes(
+    validatorId as (typeof EXPECTED_OTHER_W1_VALIDATOR_ORDER)[number],
+  );
+}
+
 function deriveCorrectedFields(
   assignment: AltitudeAssignmentResult,
   validatorResults: readonly ValidatorResult[],
@@ -533,7 +622,7 @@ function deriveSafeNextAction(input: {
 }): SafeNextAction {
   if (input.criticalFailures.length > 0) {
     // Critical-failure precedence follows the W1 safety lane:
-    // external send > pricing > role visibility > source basis > inference labeling > token budget > generic remediation.
+    // external send > pricing > role visibility > source basis > inference labeling > token budget > audit trail > generic remediation.
     if (input.criticalFailures.includes('V2')) {
       return 'block_external_send';
     }
@@ -551,6 +640,9 @@ function deriveSafeNextAction(input: {
     }
     if (input.criticalFailures.includes('V17')) {
       return 'block_token_budget';
+    }
+    if (input.criticalFailures.includes('V12')) {
+      return 'request_human_review';
     }
     return 'block_with_remediation';
   }

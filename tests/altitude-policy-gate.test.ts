@@ -6,9 +6,38 @@ import {
   deriveEscalationFloor,
   deriveSystemBaselineAltitude,
   runPolicyGate,
+  runV12AuditTrailCompleteness,
   runV17TokenBudgetCheck,
   type AltitudePacket,
+  type ValidatorId,
+  type ValidatorResult,
 } from '../src/altitude/index.js';
+
+function makeValidatorResult(
+  validatorId: ValidatorId,
+  overrides: Partial<ValidatorResult> = {},
+): ValidatorResult {
+  return {
+    validator_id: validatorId,
+    validator_name: validatorId + ' validator',
+    passed: true,
+    critical: false,
+    duration_ms: 0,
+    ...overrides,
+  };
+}
+
+function expectedOtherW1ValidatorResults(): ValidatorResult[] {
+  return [
+    makeValidatorResult('V1'),
+    makeValidatorResult('V2'),
+    makeValidatorResult('V6'),
+    makeValidatorResult('V7'),
+    makeValidatorResult('V8'),
+    makeValidatorResult('V17'),
+    makeValidatorResult('V18'),
+  ];
+}
 
 function basePacket(overrides: Partial<AltitudePacket> = {}): AltitudePacket {
   return {
@@ -101,7 +130,7 @@ test('V18 raises external-send decisions to owner review', () => {
   assert.equal(decision.system_final_altitude, 'L3');
   assert.equal(decision.review_requirement, 'OWNER_REVIEW');
   assert.equal(decision.policy_gate_result.safe_next_action, 'request_owner_approval');
-  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V7', 'V8', 'V17', 'V18']);
+  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V7', 'V8', 'V12', 'V17', 'V18']);
 });
 
 test('V18 first-cut applies the money mutation escalation floor', () => {
@@ -445,6 +474,68 @@ test('V8 downgrades high confidence model inference claims for review', () => {
     from: 'HIGH',
     to: 'MEDIUM',
   });
+});
+
+test('V12 passes when the Policy Gate emits the canonical W1 validator audit trail', () => {
+  const decision = runPolicyGate(basePacket(), {
+    evaluatedAt: '2026-04-30T19:46:00.000Z',
+  });
+
+  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), [
+    'V1',
+    'V2',
+    'V6',
+    'V7',
+    'V8',
+    'V12',
+    'V17',
+    'V18',
+  ]);
+  const v12 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V12');
+  assert.equal(v12?.passed, true);
+  assert.equal(v12?.critical, false);
+});
+
+test('V12 blocks an audit trail missing V7', () => {
+  const results = expectedOtherW1ValidatorResults().filter((result) => result.validator_id !== 'V7');
+  const v12 = runV12AuditTrailCompleteness(results);
+
+  assert.equal(v12.passed, false);
+  assert.equal(v12.critical, true);
+  assert.match(v12.reason ?? '', /audit_trail_incomplete.*V7/);
+});
+
+test('V12 blocks a duplicate V8 audit result', () => {
+  const results = expectedOtherW1ValidatorResults();
+  results[5] = makeValidatorResult('V8');
+  const v12 = runV12AuditTrailCompleteness(results);
+
+  assert.equal(v12.passed, false);
+  assert.equal(v12.critical, true);
+  assert.match(v12.reason ?? '', /audit_trail_duplicate.*V8/);
+});
+
+test('V12 blocks out-of-order validator results', () => {
+  const results = expectedOtherW1ValidatorResults();
+  [results[3], results[4]] = [results[4]!, results[3]!];
+  const v12 = runV12AuditTrailCompleteness(results);
+
+  assert.equal(v12.passed, false);
+  assert.equal(v12.critical, true);
+  assert.match(v12.reason ?? '', /audit_trail_out_of_order/);
+});
+
+test('V12 blocks malformed per-result audit fields', () => {
+  const results = expectedOtherW1ValidatorResults();
+  results[2] = {
+    ...results[2]!,
+    duration_ms: Number.NaN,
+  };
+  const v12 = runV12AuditTrailCompleteness(results);
+
+  assert.equal(v12.passed, false);
+  assert.equal(v12.critical, true);
+  assert.match(v12.reason ?? '', /audit_trail_field_missing.*V6\.duration_ms/);
 });
 
 test('critical failure precedence prefers external send before pricing and role visibility', () => {
