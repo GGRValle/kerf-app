@@ -22,6 +22,7 @@ export const PROPOSAL_DECISION_PACKET_FIXTURE_SCENARIOS = [
   'external_send_blocked',
   'source_basis_blocked',
   'near_expiry_review',
+  'model_inference_review',
 ] as const;
 export type ProposalDecisionPacketFixtureScenario =
   (typeof PROPOSAL_DECISION_PACKET_FIXTURE_SCENARIOS)[number];
@@ -38,6 +39,7 @@ const PROPOSAL_SCENARIO_LABELS: Readonly<Record<ProposalDecisionPacketFixtureSce
   external_send_blocked: 'proposal follow-up approval missing',
   source_basis_blocked: 'proposal source basis missing',
   near_expiry_review: 'proposal near expiry',
+  model_inference_review: 'proposal model inference needs review',
 };
 
 function fixedInvoicePolicyGateOptions(
@@ -274,6 +276,30 @@ function proposalAltitudePacketForScenario(
       source_refs: [],
       evidence_ids: [],
       claim_ids: [],
+    };
+  }
+
+  if (scenario === 'model_inference_review') {
+    return {
+      ...packet,
+      extracted_facts: {
+        ...packet.extracted_facts,
+        amount_cents: 0,
+      },
+      model_inference_label: 'INFERRED',
+      money_fields: {
+        amount_cents: 0,
+        source_status: 'needs_review',
+        source_class: 'model_inference',
+        mutation_intent: 'read',
+      },
+      external_send: {
+        requested: false,
+      },
+      proposed_action: {
+        ...packet.proposed_action,
+        reason: 'The proposal follow-up signal came from model inference and needs review.',
+      },
     };
   }
 

@@ -33,12 +33,12 @@ test('DecisionQueue view model summarizes the invoice DecisionPacket fixture lis
 test('DecisionQueue view model summarizes the mixed invoice/proposal fixture list', () => {
   const queue = buildDecisionQueueViewModel(mixedFixtureViews());
 
-  assert.equal(queue.summary.total, 8);
-  assert.equal(queue.summary.allowed + queue.summary.blocked, 8);
+  assert.equal(queue.summary.total, 9);
+  assert.equal(queue.summary.allowed + queue.summary.blocked, 9);
   assert.equal(queue.summary.blocked, 4);
   assert.equal(queue.summary.ownerReview, 7);
   assert.equal(queue.summary.critical, 4);
-  assert.equal(queue.cards.filter((card) => card.workflow === 'proposal_followup').length, 4);
+  assert.equal(queue.cards.filter((card) => card.workflow === 'proposal_followup').length, 5);
 });
 
 test('renderDecisionQueueHtml renders one DecisionCard per view', () => {
@@ -62,8 +62,8 @@ test('renderDecisionQueueHtml renders proposal follow-up cards from mixed fixtur
   });
   const html = renderDecisionQueueHtml(queue);
 
-  assert.match(html, /data-kerf-decision-queue-count="8"/);
-  assert.equal((html.match(/class="kerf-decision-card"/g) ?? []).length, 8);
+  assert.match(html, /data-kerf-decision-queue-count="9"/);
+  assert.equal((html.match(/class="kerf-decision-card"/g) ?? []).length, 9);
   assert.match(html, /Demo Client Stone/);
   assert.match(html, /PROP-2042/);
   assert.match(html, /viewed, no decision/);
@@ -113,5 +113,5 @@ test('DecisionQueue module does not import Policy Gate or fixtures', () => {
 });
 
 test('proposal DecisionPacket fixtures are imported for queue coverage', () => {
-  assert.equal(proposalDecisionPacketListFixture.length, 4);
+  assert.equal(proposalDecisionPacketListFixture.length, 5);
 });

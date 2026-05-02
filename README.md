@@ -91,7 +91,7 @@ import { invoiceDecisionPacketFixture } from './src/test-fixtures/index.js';
 />
 ```
 
-The invoice and proposal fixtures are generated from typed `AltitudePacket`s through `runPolicyGate` with a fixed clock/options. `mixedDecisionPacketListFixture` combines both workflows for queue demos. Do not copy their shape into UI-local types; consume `DecisionPacket` from `src/altitude/types.ts`.
+The invoice and proposal fixtures are generated from typed `AltitudePacket`s through `runPolicyGate` with a fixed clock/options. `mixedDecisionPacketListFixture` combines both workflows for queue demos, including one model-inference review scenario per workflow so V8 correction renders across workflow types. Do not copy their shape into UI-local types; consume `DecisionPacket` from `src/altitude/types.ts`.
 
 ## Commands
 
