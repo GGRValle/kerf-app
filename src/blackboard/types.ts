@@ -25,7 +25,12 @@ export type WorkflowKind =
   | 'invoice_followup'
   | 'proposal_generation'
   | 'proposal_followup'
-  | 'drift_detection';
+  | 'drift_detection'
+  | 'intake'
+  | 'compliance'
+  | 'voice_tour'
+  | 'memory_promotion'
+  | 'blackboard_update';
 
 export type ActionClass =
   | 'read_only'
@@ -82,6 +87,7 @@ export type EntityKind =
   | 'cost_kb_entry'
   | 'compliance_kb_entry'
   | 'tenant_subscription'
+  | 'learning_signal'
   | 'signal'
   | 'drift_alert';
 
@@ -145,6 +151,7 @@ export type EventKind =
   | 'usage_event'
   | 'automation_run'
   | 'guardrail_trip'
+  | 'learning_signal.drafted'
   | 'relation.created';
 
 // SourceRef — trust signal. Every agent-authored event should carry at least one.
@@ -483,6 +490,18 @@ export interface UsageEventPayload {
   occurredAt: ISO8601;
   essential: boolean;
   ceilingState: UsageCeilingState;
+}
+
+export interface LearningSignalDraftedPayload {
+  draftId: EntityId;
+  packetId: EntityId;
+  workflow: WorkflowKind;
+  sourceValidatorId: string;
+  reason: string;
+  summary: string;
+  sourceModel: string;
+  createdAt: ISO8601;
+  metadata: Readonly<Record<string, unknown>>;
 }
 
 // Automation guardrails -- schema for the three gateway-enforced layers in
