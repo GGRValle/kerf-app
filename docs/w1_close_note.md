@@ -33,6 +33,45 @@ DecisionQueue. Operator-facing copy is workflow-aware at every layer:
   card. See [`docs/product/decision_card_operator_copy_rules.md`](./product/decision_card_operator_copy_rules.md)
   for the canonical copy table.
 
+## F&F Core Path
+
+For Friends-and-Family fundraising and the first paying-tenant
+conversations, **proposal follow-up is the lead revenue path.** Contractors
+close more dollars when proposals get reviewed and sent faster; that's the
+primary unlock the demo should anchor on. The architectural parity above
+(one gate, three workflows) is real and provable; the commercial pitch
+order is not parity.
+
+The F&F core path:
+
+```
+Proposal review / follow-up
+  → operator approve / edit / reject (workflow-aware operator summary)
+  → audit event chain
+     (proposal_followup.detected → drafted → approval_requested → approved/rejected)
+  → future: send tracking + client reply attribution (W2+)
+```
+
+Invoice follow-up and drift detection are **supporting loops** that prove
+the gate generalizes:
+
+- **invoice_followup** — cash recovery on already-billed work. Operational
+  hygiene; not the lead revenue unlock for new contractor adoption.
+- **drift_detection** — operational excellence (stalled commitments,
+  near-deadline permits, callback promises). Demonstrates the gate handles
+  internal-only autonomous workflows; not a sales lead.
+
+**Pitch order for the demo.** Lead with a proposal card, walk through its
+operator summary and approval flow, then move to invoice and drift as
+proof the same gate / wall / UI handles different workflow shapes. Don't
+open the demo with the invoice card.
+
+**W2 prioritization implication.** Proposal-flow enhancements lead the next
+cycle: live data wiring, send tracking, client reply attribution, and the
+proposal lifecycle persistence work that PR #58's operator decision event
+templates set up. Invoice and drift get hardening and edge-case coverage,
+not new feature surface, until proposal lifecycle persistence ships.
+
 ## Demo path (what to run on Monday)
 
 ```bash
