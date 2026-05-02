@@ -24,3 +24,13 @@ test('w1 demo imports fixtures only from test-fixtures entry', () => {
   assert.match(src, /from '\.\.\/test-fixtures\/index\.js'/);
   assert.equal(/test-fixtures\/decisionPackets/.test(src), false);
 });
+
+
+test('w1 standard UI demo CSS keeps polish scoped and keyboard-visible', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.match(css, /--kerf-w1-bg:/);
+  assert.match(css, /--kerf-w1-brand:/);
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-btn:focus-visible/);
+  assert.equal(/^body\s*\{/m.test(css), false);
+});

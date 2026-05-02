@@ -2,19 +2,27 @@
  * W1 Standard UI shell — layout/visual match for the local interactive demo.
  * Reference: _docs/wireframes/kerf_wireframes_web_v2.html (app shell, topbar, panel tones, compact actions).
  *
- * Load after decision-card.css + decision-queue.css (uses existing :root tokens; no new CSS variables).
+ * Load after decision-card.css + decision-queue.css. This shell keeps its
+ * wireframe-only palette scoped to .kerf-w1-standard-ui so shared UI styles
+ * stay generic.
  * All rules scoped under .kerf-w1-standard-ui so production-style sheets stay generic.
  */
 
-body {
-  background: #0a0d11;
-}
-
 .kerf-w1-standard-ui {
+  --kerf-w1-bg: #0a0d11;
+  --kerf-w1-panel: #1a1f26;
+  --kerf-w1-panel-raised: #232932;
+  --kerf-w1-brand: #d4923a;
+  --kerf-w1-brand-muted: #c9a876;
+  --kerf-w1-action: #c28a32;
+  --kerf-w1-action-hover: #e0a051;
+  --kerf-w1-action-active: #a87628;
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   color: var(--kerf-fg);
+  background: var(--kerf-w1-bg);
 }
 
 /* —— Top bar (wireframe .topbar / .app row 1) —— */
@@ -33,7 +41,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.12em;
-  color: #d4923a;
+  color: var(--kerf-w1-brand);
 }
 
 .kerf-w1-brand-lockup {
@@ -117,10 +125,10 @@ body {
 
 /* Authoritative gate readout — primary visual anchor */
 .kerf-w1-main-column .kerf-authoritative {
-  border-left: 3px solid rgba(212, 146, 58, 0.9);
+  border-left: 3px solid color-mix(in srgb, var(--kerf-w1-brand) 90%, transparent);
   padding-left: 0.65rem;
   margin-left: -0.05rem;
-  background: rgba(212, 146, 58, 0.07);
+  background: color-mix(in srgb, var(--kerf-w1-brand) 7%, transparent);
   border-radius: 0 6px 6px 0;
 }
 
@@ -147,20 +155,25 @@ body {
 }
 
 .kerf-w1-standard-ui .kerf-btn-primary {
-  background: #c28a32;
-  border-color: #d4923a;
-  color: #0a0d11;
+  background: var(--kerf-w1-action);
+  border-color: var(--kerf-w1-brand);
+  color: var(--kerf-w1-bg);
   font-weight: 600;
 }
 
 .kerf-w1-standard-ui .kerf-btn-primary:hover {
-  background: #e0a051;
-  border-color: #e0a051;
+  background: var(--kerf-w1-action-hover);
+  border-color: var(--kerf-w1-action-hover);
 }
 
 .kerf-w1-standard-ui .kerf-btn-primary:active {
-  background: #a87628;
-  border-color: #a87628;
+  background: var(--kerf-w1-action-active);
+  border-color: var(--kerf-w1-action-active);
+}
+
+.kerf-w1-standard-ui .kerf-btn:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: 2px;
 }
 
 /* —— Right rail: action / audit log (wireframe cos-rail tone) —— */
@@ -172,7 +185,7 @@ body {
   max-height: calc(100vh - 62px);
   border: 1px solid var(--kerf-border);
   border-radius: 6px;
-  background: #1a1f26;
+  background: var(--kerf-w1-panel);
   overflow: hidden;
 }
 
@@ -180,7 +193,7 @@ body {
   flex-shrink: 0;
   padding: 12px 14px;
   border-bottom: 1px solid var(--kerf-border);
-  background: #232932;
+  background: var(--kerf-w1-panel-raised);
 }
 
 .kerf-w1-log-rail-head h2 {
@@ -189,7 +202,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #c9a876;
+  color: var(--kerf-w1-brand-muted);
 }
 
 .kerf-w1-log-rail-sub {
