@@ -9,6 +9,7 @@ import {
 import {
   buildDecisionCardViewModel,
   formatDecisionCardText,
+  escapeHtml,
   renderDecisionCardViewHtml,
   wireDecisionCardHandlers,
 } from '../src/ui/index.js';
@@ -38,7 +39,7 @@ test('DecisionCard view model renders proposal follow-up titles and subtitles', 
 
   assert.equal(view.workflow, 'proposal_followup');
   assert.equal(view.title, 'Demo Client Stone · PROP-2042');
-  assert.equal(view.subtitle, 'viewed_no_decision · 6 days since viewed · $14,500.00');
+  assert.equal(view.subtitle, 'viewed, no decision · 6 days since viewed · $14,500.00');
   assert.equal(view.recipient.recipientLabel, 'Demo Client Stone');
   assert.equal(view.sourceBasis.sourceRefs[0], 'platform://proposal/platform_proposal_2042');
   assert.match(view.artifactPreview ?? '', /checking in on proposal PROP-2042/);
@@ -169,7 +170,11 @@ test('renderDecisionCardViewHtml has no inline script handlers', () => {
   assert.doesNotMatch(html, /javascript:/i);
 });
 
-test('escapeHtml neutralizes angle brackets', () => {
+test('escapeHtml neutralizes HTML-sensitive characters directly', () => {
+  assert.equal(escapeHtml(`<tag attr="x">O'Hara & Sons</tag>`), '&lt;tag attr=&quot;x&quot;&gt;O&#39;Hara &amp; Sons&lt;/tag&gt;');
+});
+
+test('escapeHtml is applied to rendered titles', () => {
   const html = renderDecisionCardViewHtml({
     ...buildDecisionCardViewModel(invoiceDecisionPacketFixture),
     title: '<unsafe>',
