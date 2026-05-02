@@ -27,6 +27,11 @@ export interface DecisionCardViewModel {
     description: string;
     reason: string;
   };
+  actions: {
+    approveLabel: string;
+    rejectLabel: string;
+    editLabel: string;
+  };
   artifactPreview: string | null;
   money: {
     amountLabel: string | null;
@@ -77,6 +82,7 @@ export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCard
       description: packet.proposed_action.description,
       reason: packet.proposed_action.reason,
     },
+    actions: actionLabelsForWorkflow(packet.workflow),
     artifactPreview: stringFact(packet, 'draft_message') ?? stringFact(packet, 'summary'),
     money: {
       amountLabel,
@@ -155,6 +161,24 @@ export function wireDecisionCardHandlers(
     edit() {
       handlers.onEdit?.(packet.packet_id);
     },
+  };
+}
+
+function actionLabelsForWorkflow(
+  workflow: DecisionPacket['workflow'],
+): DecisionCardViewModel['actions'] {
+  if (workflow === 'drift_detection') {
+    return {
+      approveLabel: 'Acknowledge',
+      rejectLabel: 'False positive',
+      editLabel: 'Act',
+    };
+  }
+
+  return {
+    approveLabel: 'Approve',
+    rejectLabel: 'Reject',
+    editLabel: 'Edit',
   };
 }
 
