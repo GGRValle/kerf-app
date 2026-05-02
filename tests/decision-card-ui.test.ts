@@ -40,6 +40,13 @@ test('DecisionCard view model renders authoritative gate output separately from 
   assert.equal(view.recipient.recipientLabel, 'Demo Client Rivera');
   assert.equal(view.sourceBasis.sourceRefs[0], 'qbo://invoice/1001');
   assert.equal(view.badge, undefined);
+  assert.deepEqual(view.learningSignals, [
+    {
+      sourceValidatorId: 'V18',
+      reason: 'altitude_divergence',
+      summary: 'V18 detected model_undercaution for invoice_followup.',
+    },
+  ]);
 });
 
 test('DecisionCard view model renders proposal follow-up titles and subtitles', () => {
@@ -52,6 +59,13 @@ test('DecisionCard view model renders proposal follow-up titles and subtitles', 
   assert.equal(view.sourceBasis.sourceRefs[0], 'platform://proposal/platform_proposal_2042');
   assert.match(view.artifactPreview ?? '', /checking in on proposal PROP-2042/);
   assert.equal(view.badge, undefined);
+  assert.deepEqual(view.learningSignals, [
+    {
+      sourceValidatorId: 'V18',
+      reason: 'altitude_divergence',
+      summary: 'V18 detected model_undercaution for proposal_followup.',
+    },
+  ]);
 });
 
 test('DecisionCard view model renders drift detection titles and subtitles', () => {
@@ -69,6 +83,7 @@ test('DecisionCard view model renders drift detection titles and subtitles', () 
   assert.equal(view.sourceBasis.sourceRefs[0], 'slack://project/proj_ggr_kitchen_001/thread/callback');
   assert.match(view.artifactPreview ?? '', /client callback was promised/);
   assert.deepEqual(view.badge, { label: 'Medium', tone: 'info' });
+  assert.deepEqual(view.learningSignals, []);
 });
 
 test('DecisionCard drift high-severity fixture exposes High warning badge', () => {
@@ -77,6 +92,78 @@ test('DecisionCard drift high-severity fixture exposes High warning badge', () =
 
   assert.equal(view.workflow, 'drift_detection');
   assert.deepEqual(view.badge, { label: 'High', tone: 'warning' });
+});
+
+test('DecisionCard view model exposes V9 learning signal drafts when present', () => {
+  const packet: DecisionPacket = {
+    ...invoiceDecisionPacketFixture,
+    policy_gate_result: {
+      ...invoiceDecisionPacketFixture.policy_gate_result,
+      learning_signal_drafts: [
+        {
+          draft_id: 'ls_v9_altitude_divergence_001',
+          packet_id: invoiceDecisionPacketFixture.packet_id,
+          workflow: invoiceDecisionPacketFixture.workflow,
+          source_validator_id: 'V9',
+          reason: 'altitude_divergence',
+          summary: 'V18 altitude_divergence: baseline L2 diverged from final L3 for owner review.',
+          source_model: invoiceDecisionPacketFixture.source_model,
+          created_at: invoiceDecisionPacketFixture.policy_gate_result.evaluated_at,
+          metadata: {},
+        },
+      ],
+    },
+  };
+
+  const view = buildDecisionCardViewModel(packet);
+  assert.deepEqual(view.learningSignals, [
+    {
+      sourceValidatorId: 'V9',
+      reason: 'altitude_divergence',
+      summary: 'V18 altitude_divergence: baseline L2 diverged from final L3 for owner review.',
+    },
+  ]);
+});
+
+test('renderDecisionCardViewHtml renders Learning signals block when drafts are present', () => {
+  const packet: DecisionPacket = {
+    ...invoiceDecisionPacketFixture,
+    policy_gate_result: {
+      ...invoiceDecisionPacketFixture.policy_gate_result,
+      learning_signal_drafts: [
+        {
+          draft_id: 'ls_v9_altitude_divergence_002',
+          packet_id: invoiceDecisionPacketFixture.packet_id,
+          workflow: invoiceDecisionPacketFixture.workflow,
+          source_validator_id: 'V9',
+          reason: 'altitude_divergence',
+          summary: 'V18 altitude_divergence summary from DecisionCard test fixture packet.',
+          source_model: invoiceDecisionPacketFixture.source_model,
+          created_at: invoiceDecisionPacketFixture.policy_gate_result.evaluated_at,
+          metadata: {},
+        },
+      ],
+    },
+  };
+
+  const html = renderDecisionCardViewHtml(buildDecisionCardViewModel(packet));
+  assert.match(html, /Learning signals/);
+  assert.match(html, /V18 altitude_divergence summary/);
+  assert.match(html, /V9/);
+  assert.match(html, /altitude_divergence/);
+});
+
+test('renderDecisionCardViewHtml omits Learning signals block when no drafts exist', () => {
+  const packet: DecisionPacket = {
+    ...invoiceDecisionPacketFixture,
+    policy_gate_result: {
+      ...invoiceDecisionPacketFixture.policy_gate_result,
+      learning_signal_drafts: [],
+    },
+  };
+  const html = renderDecisionCardViewHtml(buildDecisionCardViewModel(packet));
+
+  assert.doesNotMatch(html, /Learning signals/);
 });
 
 test('DecisionCard text calls out authoritative vs non-authoritative model state', () => {

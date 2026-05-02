@@ -100,6 +100,20 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
     .filter(Boolean)
     .join('');
 
+  const learningSignalsHtml =
+    view.learningSignals.length > 0
+      ? `<div class="kerf-learning-signals">
+      <h4 class="kerf-h4">Learning signals</h4>
+      <ul class="kerf-list">
+        ${view.learningSignals
+          .map(
+            (signal) => `<li><strong>${escapeHtml(signal.sourceValidatorId)}</strong> · ${escapeHtml(signal.reason)} · ${escapeHtml(signal.summary)}</li>`,
+          )
+          .join('')}
+      </ul>
+    </div>`
+      : '';
+
   const badgeHtml =
     view.badge !== undefined && view.badge !== null
       ? `<span class="kerf-card-badge ${badgeToneClass(view.badge.tone)}">${escapeHtml(view.badge.label)}</span>`
@@ -160,6 +174,7 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
     <summary>Audit / model (non-authoritative)</summary>
     <div class="kerf-audit-body">
       ${auditDetails}
+      ${learningSignalsHtml}
     </div>
   </details>
 

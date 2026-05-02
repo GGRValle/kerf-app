@@ -73,6 +73,11 @@ export interface DecisionCardViewModel {
     sourceModel: string;
     validatorOrder: readonly ValidatorId[];
   };
+  learningSignals: Array<{
+    sourceValidatorId: string;
+    reason: string;
+    summary: string;
+  }>;
 }
 
 export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCardViewModel {
@@ -127,6 +132,11 @@ export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCard
         (result) => result.validator_id,
       ),
     },
+    learningSignals: (packet.policy_gate_result.learning_signal_drafts ?? []).map((draft) => ({
+      sourceValidatorId: draft.source_validator_id,
+      reason: draft.reason,
+      summary: draft.summary,
+    })),
   };
 }
 
