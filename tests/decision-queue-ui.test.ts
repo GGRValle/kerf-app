@@ -66,7 +66,8 @@ test('renderDecisionQueueHtml renders proposal follow-up cards from mixed fixtur
   assert.equal((html.match(/class="kerf-decision-card"/g) ?? []).length, 8);
   assert.match(html, /Demo Client Stone/);
   assert.match(html, /PROP-2042/);
-  assert.match(html, /viewed_no_decision/);
+  assert.match(html, /viewed, no decision/);
+  assert.match(html, /near expiry/);
 });
 
 test('renderDecisionQueueHtml includes summary counts and blocked cards', () => {

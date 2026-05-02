@@ -167,7 +167,7 @@ function titleAndSubtitle(
     const proposalNumber = stringFact(packet, 'proposal_number');
     const proposalId = stringFact(packet, 'proposal_id');
     const proposalLabel = proposalNumber ?? proposalId ?? packet.packet_id;
-    const trigger = stringFact(packet, 'trigger') ?? 'proposal follow-up';
+    const trigger = proposalTriggerLabel(stringFact(packet, 'trigger'));
     const daysSinceViewed = numberFact(packet, 'days_since_viewed');
     const daysSinceSent = numberFact(packet, 'days_since_sent');
     const ageLabel = daysSinceViewed !== null
@@ -205,6 +205,21 @@ function titleAndSubtitle(
 
 function dayCountLabel(days: number, suffix: string): string {
   return days === 1 ? `1 day ${suffix}` : `${days} days ${suffix}`;
+}
+
+function proposalTriggerLabel(trigger: string | null): string {
+  switch (trigger) {
+    case 'sent_no_view':
+      return 'sent, not viewed';
+    case 'viewed_no_decision':
+      return 'viewed, no decision';
+    case 'near_expiry':
+      return 'near expiry';
+    case 'change_requested':
+      return 'change requested';
+    default:
+      return 'proposal follow-up';
+  }
 }
 
 function stringFact(packet: DecisionPacket, key: string): string | null {
