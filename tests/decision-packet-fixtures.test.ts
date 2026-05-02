@@ -4,8 +4,12 @@ import { readFileSync } from 'node:fs';
 import type { DecisionPacket } from '../src/index.js';
 import {
   createInvoiceDecisionPacketFixture,
+  createProposalDecisionPacketFixture,
   invoiceDecisionPacketFixture,
   invoiceDecisionPacketListFixture,
+  mixedDecisionPacketListFixture,
+  proposalDecisionPacketFixture,
+  proposalDecisionPacketListFixture,
 } from '../src/test-fixtures/index.js';
 
 const CANONICAL_W1_VALIDATOR_ORDER = [
@@ -51,8 +55,18 @@ test('invoice DecisionPacket fixture is typed from the real DecisionPacket contr
   assert.equal(packet.policy_gate_result.gate_run_id, 'gate_invoice_fixture_owner_review');
 });
 
-test('invoice DecisionPacket fixtures keep the canonical W1 validator order', () => {
-  for (const packet of invoiceDecisionPacketListFixture) {
+test('proposal DecisionPacket fixture is typed from the real DecisionPacket contract', () => {
+  const packet: DecisionPacket = proposalDecisionPacketFixture;
+
+  assert.equal(packet.workflow, 'proposal_followup');
+  assert.equal(packet.proposed_action.type, 'draft_client_message');
+  assert.equal(packet.policy_gate_result.gate_run_id, 'gate_proposal_fixture_viewed_owner_review');
+  assert.equal(packet.system_baseline_altitude, 'L2');
+  assert.equal(packet.system_final_altitude, 'L3');
+});
+
+test('DecisionPacket fixtures keep the canonical W1 validator order', () => {
+  for (const packet of mixedDecisionPacketListFixture) {
     assert.deepEqual(validatorOrder(packet), [...CANONICAL_W1_VALIDATOR_ORDER]);
   }
 });
@@ -61,6 +75,12 @@ test('primary invoice fixture carries non-empty source basis for UI source rende
   assert.equal(invoiceDecisionPacketFixture.source_refs.length > 0, true);
   assert.equal(invoiceDecisionPacketFixture.evidence_ids.length > 0, true);
   assert.equal(invoiceDecisionPacketFixture.claim_ids.length > 0, true);
+});
+
+test('primary proposal fixture carries non-empty source basis for UI source rendering', () => {
+  assert.equal(proposalDecisionPacketFixture.source_refs.length > 0, true);
+  assert.equal(proposalDecisionPacketFixture.evidence_ids.length > 0, true);
+  assert.equal(proposalDecisionPacketFixture.claim_ids.length > 0, true);
 });
 
 test('blocked source-basis fixture is blocked pending source', () => {
@@ -75,9 +95,27 @@ test('blocked source-basis fixture is blocked pending source', () => {
   });
 });
 
+test('blocked proposal source-basis fixture is blocked pending source', () => {
+  const packet = createProposalDecisionPacketFixture('source_basis_blocked');
+
+  assert.equal(packet.workflow, 'proposal_followup');
+  assert.equal(packet.status, 'BLOCKED_PENDING_SOURCE');
+  assert.equal(packet.policy_gate_result.safe_next_action, 'block_promotion');
+  assert.deepEqual(packet.policy_gate_result.critical_failures, ['V7']);
+});
+
 test('external-send blocked fixture shows the V2 approval gate state', () => {
   const packet = createInvoiceDecisionPacketFixture('external_send_blocked');
 
+  assert.equal(packet.policy_gate_result.safe_next_action, 'block_external_send');
+  assert.deepEqual(packet.policy_gate_result.blocked_reasons, ['external_send_approval_missing']);
+  assert.deepEqual(packet.policy_gate_result.critical_failures, ['V2']);
+});
+
+test('external-send blocked proposal fixture shows the V2 approval gate state', () => {
+  const packet = createProposalDecisionPacketFixture('external_send_blocked');
+
+  assert.equal(packet.workflow, 'proposal_followup');
   assert.equal(packet.policy_gate_result.safe_next_action, 'block_external_send');
   assert.deepEqual(packet.policy_gate_result.blocked_reasons, ['external_send_approval_missing']);
   assert.deepEqual(packet.policy_gate_result.critical_failures, ['V2']);
@@ -95,6 +133,14 @@ test('model-inference fixture carries the V8 needs-review correction', () => {
       ?.field_corrected?.field,
     'model_inference_label',
   );
+});
+
+test('mixed DecisionPacket fixture list includes invoice and proposal scenarios', () => {
+  assert.equal(invoiceDecisionPacketListFixture.length, 4);
+  assert.equal(proposalDecisionPacketListFixture.length, 4);
+  assert.equal(mixedDecisionPacketListFixture.length, 8);
+  assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'invoice_followup').length, 4);
+  assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'proposal_followup').length, 4);
 });
 
 test('primary invoice fixture output is a stable regression snapshot', () => {
@@ -130,6 +176,46 @@ test('primary invoice fixture output is a stable regression snapshot', () => {
     ],
     evidence_ids: ['qbo_invoice_1001', 'qbo_customer_w1_demo'],
     claim_ids: ['claim_invoice_1001_due_date', 'claim_invoice_1001_balance'],
+  });
+});
+
+test('primary proposal fixture output is a stable regression snapshot', () => {
+  assert.deepEqual(primaryFixtureSnapshot(proposalDecisionPacketFixture), {
+    packet_id: 'altpkt_proposal_fixture_viewed_owner_review',
+    workflow: 'proposal_followup',
+    status: 'READY_FOR_REVIEW',
+    review_requirement: 'OWNER_REVIEW',
+    safe_next_action: 'request_owner_approval',
+    system_baseline_altitude: 'L2',
+    system_final_altitude: 'L3',
+    blocked_reasons: [],
+    critical_failures: [],
+    corrected_fields: {
+      system_baseline_altitude: { from: undefined, to: 'L2' },
+      system_final_altitude: { from: undefined, to: 'L3' },
+    },
+    validator_order: [...CANONICAL_W1_VALIDATOR_ORDER],
+    external_send: {
+      requested: true,
+      channel: 'email',
+      recipient_class: 'client',
+      recipient_id: 'client_w2_demo',
+      approved_by: 'u_christian',
+      approved_at: '2026-05-02T09:06:00.000Z',
+    },
+    source_refs: [
+      {
+        kind: 'external',
+        uri: 'platform://proposal/platform_proposal_2042',
+        excerpt: 'Proposal PROP-2042 was viewed and has no recorded decision.',
+      },
+    ],
+    evidence_ids: ['platform_proposal_2042', 'platform_client_w2_demo'],
+    claim_ids: [
+      'claim_proposal_2042_sent_at',
+      'claim_proposal_2042_status',
+      'claim_proposal_2042_trigger',
+    ],
   });
 });
 

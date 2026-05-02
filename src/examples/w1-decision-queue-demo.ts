@@ -3,7 +3,7 @@
  * Browser entry for the W1 interactive DecisionQueue demo.
  * Fixture imports stay in this example boundary only (not in UI components).
  */
-import { invoiceDecisionPacketListFixture } from '../test-fixtures/index.js';
+import { mixedDecisionPacketListFixture } from '../test-fixtures/index.js';
 import type { DecisionPacket } from '../index.js';
 import type { DecisionCardActions } from '../ui/index.js';
 import type { DecisionQueueActionsByPacketId } from '../ui/components/DecisionQueue.js';
@@ -182,11 +182,11 @@ function boot(): void {
     throw new Error('w1 demo: missing #kerf-queue-root or #kerf-action-log');
   }
 
-  const packets = invoiceDecisionPacketListFixture;
+  const packets = mixedDecisionPacketListFixture;
   const views = packets.map((packet) => buildDecisionCardViewModel(packet));
   const queue = buildDecisionQueueViewModel(views, {
-    title: 'W1 Invoice Decision Queue',
-    subtitle: 'Interactive browser-local harness (fixtures → view models → mount).',
+    title: 'Kerf Decision Queue',
+    subtitle: 'Interactive browser-local harness (invoice + proposal fixtures → view models → mount).',
   });
 
   const actionsByPacketId = buildActionsByPacketId(packets, log);
