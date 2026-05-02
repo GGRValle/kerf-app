@@ -49,6 +49,15 @@
   color: var(--kerf-fg, #e8ecf1);
 }
 
+/* Long titles / subtitles — avoid horizontal overflow in narrow viewports */
+.kerf-w1-standard-ui .kerf-queue-title,
+.kerf-w1-standard-ui .kerf-queue-subtitle,
+.kerf-w1-standard-ui .kerf-decision-card .kerf-title,
+.kerf-w1-standard-ui .kerf-decision-card .kerf-subtitle {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* —— Top bar (wireframe .topbar / .app row 1) —— */
 .kerf-w1-topbar {
   flex-shrink: 0;
@@ -205,11 +214,7 @@
   font-weight: 600;
 }
 
-/* Model / audit — clearly secondary */
-.kerf-w1-main-column .kerf-audit-details {
-  opacity: 0.93;
-}
-
+/* Audit: secondary via smaller summary only — avoid parent opacity + fg-muted (low contrast). */
 .kerf-w1-main-column .kerf-audit-details summary {
   font-size: 0.76rem;
 }
@@ -330,6 +335,7 @@
   font-size: 10px;
   line-height: 1.4;
   color: var(--kerf-fg-muted);
+  overflow-wrap: anywhere;
 }
 
 /* Action log toolbar — clear / reset (demo-only) */
