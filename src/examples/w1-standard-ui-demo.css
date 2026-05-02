@@ -1,0 +1,224 @@
+/**
+ * W1 Standard UI shell — layout/visual match for the local interactive demo.
+ * Reference: _docs/wireframes/kerf_wireframes_web_v2.html (app shell, topbar, panel tones, compact actions).
+ *
+ * Load after decision-card.css + decision-queue.css (uses existing :root tokens; no new CSS variables).
+ * All rules scoped under .kerf-w1-standard-ui so production-style sheets stay generic.
+ */
+
+body {
+  background: #0a0d11;
+}
+
+.kerf-w1-standard-ui {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--kerf-fg);
+}
+
+/* —— Top bar (wireframe .topbar / .app row 1) —— */
+.kerf-w1-topbar {
+  flex-shrink: 0;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  background: var(--kerf-bg-card);
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-w1-brand-mark {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: #d4923a;
+}
+
+.kerf-w1-brand-lockup {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.kerf-w1-brand-tag {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-topbar-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kerf-fg);
+}
+
+.kerf-w1-topbar-spacer {
+  flex: 1;
+}
+
+.kerf-w1-topbar-pill {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--kerf-fg-muted);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--kerf-border);
+  background: var(--kerf-bg-elevated);
+}
+
+/* —— Main + right rail (wireframe main column + rail proportions) —— */
+.kerf-w1-demo-shell {
+  flex: 1;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 22px 28px 40px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .kerf-w1-demo-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+    gap: 24px;
+  }
+}
+
+.kerf-w1-main-column {
+  min-width: 0;
+}
+
+/* Queue is the primary workspace — full width, no outer max-width shrink */
+.kerf-w1-main-column .kerf-decision-queue {
+  margin: 0;
+  max-width: none;
+  padding: 0;
+}
+
+.kerf-w1-main-column .kerf-queue-header {
+  margin-bottom: 1.1rem;
+}
+
+/* Card stack — slightly tighter rhythm, scannable stack */
+.kerf-w1-main-column .kerf-decision-queue-list {
+  gap: 1.125rem;
+}
+
+.kerf-w1-main-column .kerf-decision-card {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+/* Authoritative gate readout — primary visual anchor */
+.kerf-w1-main-column .kerf-authoritative {
+  border-left: 3px solid rgba(212, 146, 58, 0.9);
+  padding-left: 0.65rem;
+  margin-left: -0.05rem;
+  background: rgba(212, 146, 58, 0.07);
+  border-radius: 0 6px 6px 0;
+}
+
+.kerf-w1-main-column .kerf-altitude-final {
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+/* Model / audit — clearly secondary */
+.kerf-w1-main-column .kerf-audit-details {
+  opacity: 0.93;
+}
+
+.kerf-w1-main-column .kerf-audit-details summary {
+  font-size: 0.76rem;
+}
+
+/* Actions: wireframe-sized, not oversized */
+.kerf-w1-standard-ui .kerf-btn {
+  padding: 0.38rem 0.72rem;
+  font-size: 0.8rem;
+  min-height: 2rem;
+  border-radius: 5px;
+}
+
+.kerf-w1-standard-ui .kerf-btn-primary {
+  background: #c28a32;
+  border-color: #d4923a;
+  color: #0a0d11;
+  font-weight: 600;
+}
+
+.kerf-w1-standard-ui .kerf-btn-primary:hover {
+  background: #e0a051;
+  border-color: #e0a051;
+}
+
+.kerf-w1-standard-ui .kerf-btn-primary:active {
+  background: #a87628;
+  border-color: #a87628;
+}
+
+/* —— Right rail: action / audit log (wireframe cos-rail tone) —— */
+.kerf-w1-log-panel {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 62px);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  background: #1a1f26;
+  overflow: hidden;
+}
+
+.kerf-w1-log-rail-head {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--kerf-border);
+  background: #232932;
+}
+
+.kerf-w1-log-rail-head h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c9a876;
+}
+
+.kerf-w1-log-rail-sub {
+  margin: 5px 0 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-log-entries {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.kerf-w1-log-entry {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.38;
+  color: var(--kerf-fg);
+  word-break: break-word;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-w1-log-entry:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}

@@ -3,76 +3,46 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kerf — W1 Interactive DecisionQueue</title>
+    <title>Kerf — W1 Standard UI · DecisionQueue</title>
     <link rel="stylesheet" href="../ui/styles/decision-card.css" />
     <link rel="stylesheet" href="../ui/styles/decision-queue.css" />
-    <style>
-      .kerf-w1-demo-shell {
-        max-width: 58rem;
-        margin: 0 auto;
-        padding: 1rem 1rem 2rem;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.25rem;
-      }
-      @media (min-width: 960px) {
-        .kerf-w1-demo-shell {
-          grid-template-columns: 1fr 18rem;
-          align-items: start;
-        }
-      }
-      .kerf-w1-log-panel {
-        position: sticky;
-        top: 1rem;
-        border: 1px solid var(--kerf-border, #343c4a);
-        border-radius: 8px;
-        background: var(--kerf-bg-elevated, #222831);
-        padding: 0.65rem 0.75rem;
-        max-height: min(70vh, 32rem);
-        overflow: auto;
-      }
-      .kerf-w1-log-panel h2 {
-        margin: 0 0 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--kerf-fg-muted, #9aa3b2);
-      }
-      .kerf-w1-log-entries {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-      }
-      .kerf-w1-log-entry {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 0.72rem;
-        line-height: 1.35;
-        color: var(--kerf-fg, #e8ecf1);
-        word-break: break-word;
-        border-bottom: 1px solid var(--kerf-border, #343c4a);
-        padding-bottom: 0.35rem;
-      }
-      .kerf-w1-log-entry:last-child {
-        border-bottom: 0;
-      }
-    </style>
+    <link rel="stylesheet" href="./w1-standard-ui-demo.css" />
     <!--
+      Layout matches Standard UI wireframe surface
+      (_docs/wireframes/kerf_wireframes_web_v2.html — app shell, panels, compact actions).
+
       Build the browser bundle first:
         npm run demo:w1-queue
 
-      Then open this file from disk (file://). The bundled script is classic
-      browser JavaScript, not a module, so direct file open works.
+      Then open this file from disk (file://). Bundle: ./w1-decision-queue-demo.bundle.js
     -->
     <script src="./w1-decision-queue-demo.bundle.js"></script>
   </head>
   <body>
-    <div class="kerf-w1-demo-shell">
-      <div id="kerf-queue-root" aria-live="polite"></div>
-      <aside class="kerf-w1-log-panel" aria-label="Action log">
-        <h2>Action log</h2>
-        <div id="kerf-action-log" class="kerf-w1-log-entries"></div>
-      </aside>
+    <div class="kerf-w1-standard-ui">
+      <header class="kerf-w1-topbar" role="banner">
+        <span class="kerf-w1-brand-mark" aria-hidden="true">KERF</span>
+        <div class="kerf-w1-brand-lockup">
+          <span class="kerf-w1-topbar-title">W1 · Decision surface</span>
+          <span class="kerf-w1-brand-tag">Standard UI demo</span>
+        </div>
+        <span class="kerf-w1-topbar-spacer" aria-hidden="true"></span>
+        <span class="kerf-w1-topbar-pill">Local only</span>
+      </header>
+
+      <div class="kerf-w1-demo-shell">
+        <main class="kerf-w1-main-column" aria-label="Decision queue">
+          <div id="kerf-queue-root" aria-live="polite"></div>
+        </main>
+
+        <aside class="kerf-w1-log-panel" aria-label="Action and audit log">
+          <div class="kerf-w1-log-rail-head">
+            <h2>Action log</h2>
+            <p class="kerf-w1-log-rail-sub">Approve / reject / edit callbacks append here. No network.</p>
+          </div>
+          <div id="kerf-action-log" class="kerf-w1-log-entries"></div>
+        </aside>
+      </div>
     </div>
   </body>
 </html>
