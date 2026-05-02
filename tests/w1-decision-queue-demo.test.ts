@@ -58,6 +58,32 @@ test('w1 interactive demo wires reject reason capture in the example boundary', 
   assert.match(src, /originalActions\.reject\(textarea\.value\.trim\(\)\)/);
 });
 
+test('w1 interactive demo HTML exposes action log clear and reset controls', () => {
+  const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
+
+  assert.match(html, /data-kerf-w1-action-log-clear/);
+  assert.match(html, /data-kerf-w1-action-log-reset/);
+  assert.match(html, /Clear log/);
+  assert.match(html, /Reset demo/);
+});
+
+test('w1 interactive demo wires action log clear and reset handlers', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /\[data-kerf-w1-action-log-clear\]/);
+  assert.match(src, /\[data-kerf-w1-action-log-reset\]/);
+  assert.match(src, /wireActionLogControls/);
+  assert.match(src, /clearActionLog/);
+  assert.match(src, /resetW1DemoHarness/);
+});
+
+test('w1 standard UI demo CSS scopes action log control styles', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-action-log-controls/);
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-log-control-btn/);
+});
+
 test('w1 standard UI demo CSS styles reject reason capture and focus', () => {
   const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
 
