@@ -13,7 +13,7 @@ smoke output, and browser artifacts that prove it.
 Last verified on **May 2, 2026** from `main` at:
 
 ```bash
-a72713e feat(decisions): add operator decision event templates (#58)
+382bf5f fix(demo): keep W1 card text readable in Safari (#62)
 ```
 
 Expected green gate at this baseline:
@@ -26,6 +26,10 @@ The browser demo is local-only. It uses generated DecisionPacket fixtures and
 does not call QBO, Platform, Slack, Gmail, or any backend. The right-side action
 log is browser-local demo evidence. Backend audit evidence comes from
 `npm run smoke` and workflow tests.
+
+This close baseline includes the W1 proof packet screenshots and the Safari
+readability fix for file-open demos. The proof artifacts live under
+[`evidence/2026-05-02-w1/`](./evidence/2026-05-02-w1/).
 
 ## Fresh Checkout Run
 

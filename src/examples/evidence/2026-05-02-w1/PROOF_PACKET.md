@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Capture date | 2026-05-02 |
-| Main SHA | [`a72713e`](https://github.com/GGRValle/kerf-app/commit/a72713e) — `feat(decisions): add operator decision event templates (#58)` |
+| Main SHA | [`382bf5f`](https://github.com/GGRValle/kerf-app/commit/382bf5f) — `fix(demo): keep W1 card text readable in Safari (#62)` |
 | Test gate | **252 / 252 passing** |
 | Prepared by | Christian Asdal · GGRValle |
 | Captured on | `ggr-mac-mini` (gate) + MacBook Pro (browser screenshots) |
@@ -32,7 +32,7 @@ deadline.
 
 ## 2. Verification gate (captured 2026-05-02 on `ggr-mac-mini`)
 
-Run from a fresh checkout of `main` at `a72713e`:
+Run from a fresh checkout of `main` at `382bf5f`:
 
 ```bash
 cd ~/code/kerf-app
@@ -60,9 +60,12 @@ git rev-parse --short main
 | `npm run build` | clean |
 | `npm run test-fixtures:validate` | `seed produced 4 events` |
 | `git diff --check` | clean (no whitespace issues, no diff) |
-| `git rev-parse --short main` | `a72713e` |
+| `git rev-parse --short main` | `382bf5f` |
 
 ---
+
+Close-verification note: #62 changed demo CSS only; typecheck, tests, smoke,
+build, fixture validation, and diff-check were rerun at `382bf5f`.
 
 ## 3. Smoke output excerpts
 
@@ -194,8 +197,6 @@ V9 emitted **one learning signal draft** for this gate run — fired by V18's al
 
 Captured on MacBook Pro, Safari rendering `src/examples/w1-decision-queue-demo.html` from the bundle built on `ggr-mac-mini`.
 
-> _Screenshots dropped into `screenshots/` directory before merge. Filenames match the references below._
-
 ### 4.1 All-filter queue · 13 cards · summary counts match expected
 
 ![Full queue with All filter](screenshots/01-all-queue.png)
@@ -304,7 +305,7 @@ Same `data-kerf-decision-action` attributes drive both label sets — only the d
 |---|---|
 | **Captured by** | Christian Asdal · GGRValle |
 | **Date** | 2026-05-02 |
-| **Main SHA at capture** | `a72713e` |
+| **Main SHA at capture** | `382bf5f` |
 | **Test gate** | 252 / 252 passing |
 | **W1 close target** | Mon May 4 EOD — **hit ahead of schedule** (2 weeks early on visible spine, on schedule for full safety wall) |
 
