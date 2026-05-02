@@ -1,3 +1,4 @@
 node_modules/
 dist/
 .DS_Store
+src/examples/w1-decision-queue-demo.bundle.mjs
