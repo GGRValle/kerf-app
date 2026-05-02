@@ -1,6 +1,7 @@
 import type {
   DecisionCardActions,
   DecisionCardBadgeTone,
+  DecisionCardOperatorSummaryTone,
   DecisionCardViewModel,
 } from './DecisionCard.js';
 
@@ -35,6 +36,21 @@ function badgeToneClass(tone: DecisionCardBadgeTone): string {
       return 'kerf-card-badge-danger';
     default:
       return 'kerf-card-badge-neutral';
+  }
+}
+
+function operatorSummaryToneClass(tone: DecisionCardOperatorSummaryTone): string {
+  switch (tone) {
+    case 'action':
+      return 'kerf-operator-summary-action';
+    case 'blocked':
+      return 'kerf-operator-summary-blocked';
+    case 'review':
+      return 'kerf-operator-summary-review';
+    case 'neutral':
+      return 'kerf-operator-summary-neutral';
+    default:
+      return 'kerf-operator-summary-neutral';
   }
 }
 
@@ -129,6 +145,12 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
     </div>
     <p class="kerf-subtitle">${escapeHtml(view.subtitle)}</p>
   </header>
+
+  <section class="kerf-section kerf-operator-summary ${operatorSummaryToneClass(view.operatorSummary.tone)}" aria-label="Operator summary">
+    <h3>Next step</h3>
+    <p class="kerf-operator-summary-headline">${escapeHtml(view.operatorSummary.headline)}</p>
+    <p class="kerf-operator-summary-detail">${escapeHtml(view.operatorSummary.detail)}</p>
+  </section>
 
   <section class="kerf-section kerf-status" aria-label="Status">
     <div class="kerf-status-row">
