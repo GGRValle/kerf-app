@@ -5,6 +5,7 @@
  */
 import { mixedDecisionPacketListFixture } from '../test-fixtures/index.js';
 import type { DecisionPacket } from '../index.js';
+import type { DecisionCardViewModel } from '../ui/components/DecisionCard.js';
 import type { DecisionCardActions } from '../ui/index.js';
 import type { DecisionQueueActionsByPacketId } from '../ui/components/DecisionQueue.js';
 import {
@@ -15,8 +16,25 @@ import {
   wireDecisionCardHandlers,
 } from '../ui/index.js';
 
+const allPackets = mixedDecisionPacketListFixture;
+
+type DemoQueueFilter =
+  | 'all'
+  | 'blocked'
+  | 'owner_review'
+  | 'invoice'
+  | 'proposal'
+  | 'drift';
+
+const QUEUE_OPTIONS = {
+  title: 'Kerf Decision Queue',
+  subtitle: 'Interactive browser-local harness (invoice + proposal + drift fixtures → view models → mount).',
+} as const;
+
 /** Footers currently showing the reject-reason form (demo-only); reset clears these. */
 const activeRejectRestores = new Map<string, () => void>();
+
+let unmountQueue: (() => void) | undefined;
 
 function formatTimestamp(): string {
   return new Date().toISOString();
@@ -37,12 +55,16 @@ function clearActionLog(log: HTMLElement): void {
   log.replaceChildren();
 }
 
-function resetW1DemoHarness(log: HTMLElement): void {
+function closeAllRejectForms(): void {
   const restores = [...activeRejectRestores.values()];
   activeRejectRestores.clear();
   for (const restore of restores) {
     restore();
   }
+}
+
+function resetW1DemoHarness(log: HTMLElement): void {
+  closeAllRejectForms();
   clearActionLog(log);
 }
 
@@ -59,6 +81,81 @@ function wireActionLogControls(log: HTMLElement): void {
       resetW1DemoHarness(log);
     });
   }
+}
+
+function viewMatchesFilter(view: DecisionCardViewModel, filter: DemoQueueFilter): boolean {
+  switch (filter) {
+    case 'all':
+      return true;
+    case 'blocked':
+      return !view.authoritative.allowed || view.authoritative.blockedReasons.length > 0;
+    case 'owner_review':
+      return view.authoritative.reviewRequirement === 'OWNER_REVIEW';
+    case 'invoice':
+      return view.workflow === 'invoice_followup';
+    case 'proposal':
+      return view.workflow === 'proposal_followup';
+    case 'drift':
+      return view.workflow === 'drift_detection';
+  }
+}
+
+function filterPackets(filter: DemoQueueFilter): readonly DecisionPacket[] {
+  if (filter === 'all') {
+    return allPackets;
+  }
+  return allPackets.filter((packet) =>
+    viewMatchesFilter(buildDecisionCardViewModel(packet), filter),
+  );
+}
+
+function remountQueue(root: HTMLElement, log: HTMLElement, filter: DemoQueueFilter): void {
+  closeAllRejectForms();
+  unmountQueue?.();
+  const packets = filterPackets(filter);
+  const views = packets.map((packet) => buildDecisionCardViewModel(packet));
+  const queue = buildDecisionQueueViewModel(views, { ...QUEUE_OPTIONS });
+  const actionsByPacketId = buildActionsByPacketId(packets, log);
+  unmountQueue = mountDecisionQueue(root, { queue, actionsByPacketId });
+}
+
+function syncFilterAria(active: DemoQueueFilter): void {
+  const buttons = document.querySelectorAll('[data-kerf-w1-queue-filter]');
+  for (const btn of buttons) {
+    if (!(btn instanceof HTMLButtonElement)) {
+      continue;
+    }
+    const key = btn.getAttribute('data-kerf-w1-queue-filter');
+    if (key === null) {
+      continue;
+    }
+    btn.setAttribute('aria-pressed', key === active ? 'true' : 'false');
+  }
+}
+
+function wireFilterBar(root: HTMLElement, log: HTMLElement): void {
+  const buttons = document.querySelectorAll('[data-kerf-w1-queue-filter]');
+
+  const apply = (filter: DemoQueueFilter) => {
+    remountQueue(root, log, filter);
+    syncFilterAria(filter);
+  };
+
+  for (const btn of buttons) {
+    if (!(btn instanceof HTMLButtonElement)) {
+      continue;
+    }
+    const raw = btn.getAttribute('data-kerf-w1-queue-filter');
+    if (raw === null) {
+      continue;
+    }
+    const filter = raw as DemoQueueFilter;
+    btn.addEventListener('click', () => {
+      apply(filter);
+    });
+  }
+
+  apply('all');
 }
 
 function wireDecisionCardWithReasonCapture(
@@ -182,15 +279,7 @@ function boot(): void {
     throw new Error('w1 demo: missing #kerf-queue-root or #kerf-action-log');
   }
 
-  const packets = mixedDecisionPacketListFixture;
-  const views = packets.map((packet) => buildDecisionCardViewModel(packet));
-  const queue = buildDecisionQueueViewModel(views, {
-    title: 'Kerf Decision Queue',
-    subtitle: 'Interactive browser-local harness (invoice + proposal + drift fixtures → view models → mount).'
-  });
-
-  const actionsByPacketId = buildActionsByPacketId(packets, log);
-  mountDecisionQueue(root, { queue, actionsByPacketId });
+  wireFilterBar(root, log);
   wireActionLogControls(log);
 }
 

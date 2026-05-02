@@ -92,3 +92,36 @@ test('w1 standard UI demo CSS styles reject reason capture and focus', () => {
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-reject-textarea/);
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-reject-textarea:focus-visible/);
 });
+
+test('w1 interactive demo HTML exposes queue filter controls', () => {
+  const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
+
+  assert.match(html, /class="kerf-w1-filter-bar"/);
+  assert.match(html, /data-kerf-w1-queue-filter="all"/);
+  assert.match(html, /data-kerf-w1-queue-filter="blocked"/);
+  assert.match(html, /data-kerf-w1-queue-filter="owner_review"/);
+  assert.match(html, /data-kerf-w1-queue-filter="invoice"/);
+  assert.match(html, /data-kerf-w1-queue-filter="proposal"/);
+  assert.match(html, /data-kerf-w1-queue-filter="drift"/);
+});
+
+test('w1 interactive demo implements queue filters with typed view-model matching', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /type DemoQueueFilter/);
+  assert.match(src, /'blocked'/);
+  assert.match(src, /'owner_review'/);
+  assert.match(src, /'invoice'/);
+  assert.match(src, /'proposal'/);
+  assert.match(src, /'drift'/);
+  assert.match(src, /viewMatchesFilter/);
+  assert.match(src, /remountQueue/);
+  assert.match(src, /data-kerf-w1-queue-filter/);
+});
+
+test('w1 standard UI demo CSS scopes queue filter bar and selected state', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-bar/);
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-btn\[aria-pressed="true"\]/);
+});

@@ -32,6 +32,26 @@
 
       <div class="kerf-w1-demo-shell">
         <main class="kerf-w1-main-column" aria-label="Decision queue">
+          <div class="kerf-w1-filter-bar" role="toolbar" aria-label="Queue filters">
+            <button type="button" class="kerf-btn kerf-w1-filter-btn" data-kerf-w1-queue-filter="all" aria-pressed="true">
+              All
+            </button>
+            <button type="button" class="kerf-btn kerf-w1-filter-btn" data-kerf-w1-queue-filter="blocked" aria-pressed="false">
+              Blocked
+            </button>
+            <button type="button" class="kerf-btn kerf-w1-filter-btn" data-kerf-w1-queue-filter="owner_review" aria-pressed="false">
+              Owner Review
+            </button>
+            <button type="button" class="kerf-btn kerf-w1-filter-btn" data-kerf-w1-queue-filter="invoice" aria-pressed="false">
+              Invoice
+            </button>
+            <button type="button" class="kerf-btn kerf-w1-filter-btn" data-kerf-w1-queue-filter="proposal" aria-pressed="false">
+              Proposal
+            </button>
+            <button type="button" class="kerf-btn kerf-w1-filter-btn" data-kerf-w1-queue-filter="drift" aria-pressed="false">
+              Drift
+            </button>
+          </div>
           <div id="kerf-queue-root" aria-live="polite"></div>
         </main>
 

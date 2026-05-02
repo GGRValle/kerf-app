@@ -103,6 +103,33 @@
   min-width: 0;
 }
 
+/* Queue filters — compact operator-console strip (demo-only) */
+.kerf-w1-standard-ui .kerf-w1-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--kerf-border);
+  background: var(--kerf-bg-card);
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-btn {
+  font-size: 0.72rem;
+  padding: 0.24rem 0.5rem;
+  min-height: 1.65rem;
+  border-radius: 4px;
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-btn[aria-pressed="true"] {
+  background: var(--kerf-w1-action);
+  border-color: var(--kerf-w1-brand);
+  color: var(--kerf-w1-bg);
+  font-weight: 600;
+}
+
 /* Queue is the primary workspace — full width, no outer max-width shrink */
 .kerf-w1-main-column .kerf-decision-queue {
   margin: 0;
