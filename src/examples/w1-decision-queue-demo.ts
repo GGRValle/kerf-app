@@ -15,6 +15,9 @@ import {
   wireDecisionCardHandlers,
 } from '../ui/index.js';
 
+/** Footers currently showing the reject-reason form (demo-only); reset clears these. */
+const activeRejectRestores = new Map<string, () => void>();
+
 function formatTimestamp(): string {
   return new Date().toISOString();
 }
@@ -28,6 +31,34 @@ function appendLog(container: HTMLElement, action: string, packetId: string, rea
   }
   row.textContent = parts.join('  ');
   container.prepend(row);
+}
+
+function clearActionLog(log: HTMLElement): void {
+  log.replaceChildren();
+}
+
+function resetW1DemoHarness(log: HTMLElement): void {
+  const restores = [...activeRejectRestores.values()];
+  activeRejectRestores.clear();
+  for (const restore of restores) {
+    restore();
+  }
+  clearActionLog(log);
+}
+
+function wireActionLogControls(log: HTMLElement): void {
+  const clearBtn = document.querySelector('[data-kerf-w1-action-log-clear]');
+  const resetBtn = document.querySelector('[data-kerf-w1-action-log-reset]');
+  if (clearBtn instanceof HTMLElement) {
+    clearBtn.addEventListener('click', () => {
+      clearActionLog(log);
+    });
+  }
+  if (resetBtn instanceof HTMLElement) {
+    resetBtn.addEventListener('click', () => {
+      resetW1DemoHarness(log);
+    });
+  }
 }
 
 function wireDecisionCardWithReasonCapture(
@@ -81,15 +112,22 @@ function showRejectReasonForm(
     return;
   }
 
+  const finalizeRejectForm = () => {
+    activeRejectRestores.delete(packetId);
+    restoreFooter();
+  };
+
+  activeRejectRestores.set(packetId, finalizeRejectForm);
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     originalActions.reject(textarea.value.trim());
-    restoreFooter();
+    finalizeRejectForm();
   }, { once: true });
 
   if (cancel instanceof HTMLElement) {
     cancel.addEventListener('click', () => {
-      restoreFooter();
+      finalizeRejectForm();
     }, { once: true });
   }
 
@@ -153,6 +191,7 @@ function boot(): void {
 
   const actionsByPacketId = buildActionsByPacketId(packets, log);
   mountDecisionQueue(root, { queue, actionsByPacketId });
+  wireActionLogControls(log);
 }
 
 if (typeof document !== 'undefined') {

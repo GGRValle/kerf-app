@@ -281,6 +281,20 @@
   color: var(--kerf-fg-muted);
 }
 
+/* Action log toolbar — clear / reset (demo-only) */
+.kerf-w1-standard-ui .kerf-w1-action-log-controls {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-log-control-btn {
+  font-size: 0.72rem;
+  padding: 0.28rem 0.55rem;
+  min-height: 1.75rem;
+}
+
 .kerf-w1-log-entries {
   flex: 1;
   overflow-y: auto;
