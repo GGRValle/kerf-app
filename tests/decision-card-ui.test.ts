@@ -193,6 +193,15 @@ test('DecisionCard handlers only call provided callbacks with the packet id', ()
   ]);
 });
 
+test('DecisionCard CSS styles V9 learning signals as a subdued audit subsection', () => {
+  const css = readFileSync(new URL('../src/ui/styles/decision-card.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.kerf-learning-signals \{/);
+  assert.match(css, /border-top: 1px dashed var\(--kerf-border\)/);
+  assert.match(css, /\.kerf-learning-signals \.kerf-list li/);
+  assert.match(css, /color: var\(--kerf-fg-muted\)/);
+});
+
 test('DecisionCard UI module does not import Policy Gate or test-fixture generation', () => {
   const source = readFileSync(new URL('../src/ui/components/DecisionCard.ts', import.meta.url), 'utf8');
 
