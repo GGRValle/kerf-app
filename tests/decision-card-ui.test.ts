@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { DecisionPacket } from '../src/index.js';
 import {
+  driftDecisionPacketFixture,
   invoiceDecisionPacketFixture,
   proposalDecisionPacketFixture,
 } from '../src/test-fixtures/index.js';
@@ -43,6 +44,17 @@ test('DecisionCard view model renders proposal follow-up titles and subtitles', 
   assert.equal(view.recipient.recipientLabel, 'Demo Client Stone');
   assert.equal(view.sourceBasis.sourceRefs[0], 'platform://proposal/platform_proposal_2042');
   assert.match(view.artifactPreview ?? '', /checking in on proposal PROP-2042/);
+});
+
+test('DecisionCard view model renders drift detection titles and subtitles', () => {
+  const view = buildDecisionCardViewModel(driftDecisionPacketFixture);
+
+  assert.equal(view.workflow, 'drift_detection');
+  assert.equal(view.title, 'Drift · callback promised');
+  assert.equal(view.subtitle, 'medium severity · detected 2026-05-02');
+  assert.equal(view.recipient.recipientLabel, null);
+  assert.equal(view.sourceBasis.sourceRefs[0], 'slack://project/proj_ggr_kitchen_001/thread/callback');
+  assert.match(view.artifactPreview ?? '', /client callback was promised/);
 });
 
 test('DecisionCard text calls out authoritative vs non-authoritative model state', () => {

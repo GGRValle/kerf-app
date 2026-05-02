@@ -75,7 +75,11 @@ The authoritative copy of the contract lives in a shared Google Drive folder (TB
 Track C can build pure UI components against generated DecisionPacket data while workflow integrations land:
 
 ```tsx
-import { invoiceDecisionPacketFixture } from './src/test-fixtures/index.js';
+import {
+  driftDecisionPacketFixture,
+  invoiceDecisionPacketFixture,
+  proposalDecisionPacketFixture,
+} from './src/test-fixtures/index.js';
 
 <DecisionCard
   packet={invoiceDecisionPacketFixture}
@@ -90,9 +94,16 @@ import { invoiceDecisionPacketFixture } from './src/test-fixtures/index.js';
   onReject={(packetId) => console.log(packetId)}
   onEdit={(packetId) => console.log(packetId)}
 />
+
+<DecisionCard
+  packet={driftDecisionPacketFixture}
+  onApprove={(packetId) => console.log(packetId)}
+  onReject={(packetId) => console.log(packetId)}
+  onEdit={(packetId) => console.log(packetId)}
+/>
 ```
 
-The invoice and proposal fixtures are generated from typed `AltitudePacket`s through `runPolicyGate` with a fixed clock/options. `mixedDecisionPacketListFixture` combines both workflows for queue demos, including one model-inference review scenario per workflow so V8 correction renders across workflow types. Do not copy their shape into UI-local types; consume `DecisionPacket` from `src/altitude/types.ts`.
+The invoice, proposal, and drift fixtures are generated from typed `AltitudePacket`s through `runPolicyGate` with a fixed clock/options. `mixedDecisionPacketListFixture` combines all three workflows for queue demos, including model-inference review scenarios so V8 correction renders across workflow types. Do not copy their shape into UI-local types; consume `DecisionPacket` from `src/altitude/types.ts`.
 
 ## Commands
 

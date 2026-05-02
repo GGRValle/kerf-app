@@ -77,7 +77,7 @@ export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCard
       description: packet.proposed_action.description,
       reason: packet.proposed_action.reason,
     },
-    artifactPreview: stringFact(packet, 'draft_message'),
+    artifactPreview: stringFact(packet, 'draft_message') ?? stringFact(packet, 'summary'),
     money: {
       amountLabel,
       sourceClass: packet.money_fields?.source_class ?? null,
@@ -181,6 +181,17 @@ function titleAndSubtitle(
     };
   }
 
+  if (packet.workflow === 'drift_detection') {
+    const pattern = driftPatternLabel(stringFact(packet, 'pattern'));
+    const severity = driftSeverityLabel(stringFact(packet, 'severity'));
+    const detectedAt = stringFact(packet, 'detected_at');
+    const detectedLabel = detectedAt === null ? 'detected time unknown' : `detected ${detectedAt.slice(0, 10)}`;
+    return {
+      title: `Drift · ${pattern}`,
+      subtitle: `${severity} · ${detectedLabel}`,
+    };
+  }
+
   if (packet.workflow === 'invoice_followup') {
     const invoiceNumber = stringFact(packet, 'invoice_number');
     const invoiceId = stringFact(packet, 'invoice_id');
@@ -219,6 +230,36 @@ function proposalTriggerLabel(trigger: string | null): string {
       return 'change requested';
     default:
       return 'proposal follow-up';
+  }
+}
+
+function driftPatternLabel(pattern: string | null): string {
+  switch (pattern) {
+    case 'permit_deadline_approaching':
+      return 'permit deadline approaching';
+    case 'stalled_approval':
+      return 'stalled approval';
+    case 'callback_promised':
+      return 'callback promised';
+    case 'commitment_not_followed':
+      return 'commitment not followed';
+    default:
+      return 'drift signal';
+  }
+}
+
+function driftSeverityLabel(severity: string | null): string {
+  switch (severity) {
+    case 'critical':
+      return 'critical severity';
+    case 'high':
+      return 'high severity';
+    case 'medium':
+      return 'medium severity';
+    case 'low':
+      return 'low severity';
+    default:
+      return 'severity unknown';
   }
 }
 

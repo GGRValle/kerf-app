@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  driftDecisionPacketListFixture,
   invoiceDecisionPacketListFixture,
   mixedDecisionPacketListFixture,
   proposalDecisionPacketListFixture,
@@ -30,15 +31,16 @@ test('DecisionQueue view model summarizes the invoice DecisionPacket fixture lis
   assert.equal(queue.cards.length, 4);
 });
 
-test('DecisionQueue view model summarizes the mixed invoice/proposal fixture list', () => {
+test('DecisionQueue view model summarizes the mixed invoice/proposal/drift fixture list', () => {
   const queue = buildDecisionQueueViewModel(mixedFixtureViews());
 
-  assert.equal(queue.summary.total, 9);
-  assert.equal(queue.summary.allowed + queue.summary.blocked, 9);
-  assert.equal(queue.summary.blocked, 4);
+  assert.equal(queue.summary.total, 13);
+  assert.equal(queue.summary.allowed + queue.summary.blocked, 13);
+  assert.equal(queue.summary.blocked, 5);
   assert.equal(queue.summary.ownerReview, 7);
-  assert.equal(queue.summary.critical, 4);
+  assert.equal(queue.summary.critical, 5);
   assert.equal(queue.cards.filter((card) => card.workflow === 'proposal_followup').length, 5);
+  assert.equal(queue.cards.filter((card) => card.workflow === 'drift_detection').length, 4);
 });
 
 test('renderDecisionQueueHtml renders one DecisionCard per view', () => {
@@ -55,19 +57,21 @@ test('renderDecisionQueueHtml renders one DecisionCard per view', () => {
   assert.equal((html.match(/data-kerf-decision-action="approve"/g) ?? []).length, 4);
 });
 
-test('renderDecisionQueueHtml renders proposal follow-up cards from mixed fixtures', () => {
+test('renderDecisionQueueHtml renders proposal and drift cards from mixed fixtures', () => {
   const queue = buildDecisionQueueViewModel(mixedFixtureViews(), {
     title: 'Kerf Decisions',
-    subtitle: 'Invoice and proposal follow-ups.',
+    subtitle: 'Invoice, proposal, and drift workflows.',
   });
   const html = renderDecisionQueueHtml(queue);
 
-  assert.match(html, /data-kerf-decision-queue-count="9"/);
-  assert.equal((html.match(/class="kerf-decision-card"/g) ?? []).length, 9);
+  assert.match(html, /data-kerf-decision-queue-count="13"/);
+  assert.equal((html.match(/class="kerf-decision-card"/g) ?? []).length, 13);
   assert.match(html, /Demo Client Stone/);
   assert.match(html, /PROP-2042/);
   assert.match(html, /viewed, no decision/);
   assert.match(html, /near expiry/);
+  assert.match(html, /Drift · callback promised/);
+  assert.match(html, /permit deadline approaching/);
 });
 
 test('renderDecisionQueueHtml includes summary counts and blocked cards', () => {
@@ -112,6 +116,7 @@ test('DecisionQueue module does not import Policy Gate or fixtures', () => {
   assert.equal(/test-fixtures/.test(source), false);
 });
 
-test('proposal DecisionPacket fixtures are imported for queue coverage', () => {
+test('proposal and drift DecisionPacket fixtures are imported for queue coverage', () => {
   assert.equal(proposalDecisionPacketListFixture.length, 5);
+  assert.equal(driftDecisionPacketListFixture.length, 4);
 });

@@ -4,6 +4,13 @@ import {
   type DecisionPacket,
   type PolicyGateOptions,
 } from '../altitude/index.js';
+import { fixedClock } from '../shared/index.js';
+import {
+  assembleDriftAlert,
+  driftAlertToAltitudePacket,
+  type AssembleDriftAlertOpts,
+  type LlmDriftCandidate,
+} from '../workflows/index.js';
 
 export const FIXED_DECISION_PACKET_EVALUATED_AT = '2026-05-02T09:15:00.000Z';
 const FIXED_DECISION_PACKET_NOW_MS = Date.parse(FIXED_DECISION_PACKET_EVALUATED_AT);
@@ -27,6 +34,15 @@ export const PROPOSAL_DECISION_PACKET_FIXTURE_SCENARIOS = [
 export type ProposalDecisionPacketFixtureScenario =
   (typeof PROPOSAL_DECISION_PACKET_FIXTURE_SCENARIOS)[number];
 
+export const DRIFT_DECISION_PACKET_FIXTURE_SCENARIOS = [
+  'callback_internal_summary',
+  'high_confidence_review',
+  'source_basis_blocked',
+  'permit_deadline_review',
+] as const;
+export type DriftDecisionPacketFixtureScenario =
+  (typeof DRIFT_DECISION_PACKET_FIXTURE_SCENARIOS)[number];
+
 const INVOICE_SCENARIO_LABELS: Readonly<Record<InvoiceDecisionPacketFixtureScenario, string>> = {
   owner_review: 'ready for owner review',
   external_send_blocked: 'external send approval missing',
@@ -40,6 +56,13 @@ const PROPOSAL_SCENARIO_LABELS: Readonly<Record<ProposalDecisionPacketFixtureSce
   source_basis_blocked: 'proposal source basis missing',
   near_expiry_review: 'proposal near expiry',
   model_inference_review: 'proposal model inference needs review',
+};
+
+const DRIFT_SCENARIO_LABELS: Readonly<Record<DriftDecisionPacketFixtureScenario, string>> = {
+  callback_internal_summary: 'callback promise drift surfaced',
+  high_confidence_review: 'high-confidence drift inference',
+  source_basis_blocked: 'drift source basis missing',
+  permit_deadline_review: 'permit deadline drift surfaced',
 };
 
 function fixedInvoicePolicyGateOptions(
@@ -57,6 +80,15 @@ function fixedProposalPolicyGateOptions(
   return {
     evaluatedAt: FIXED_DECISION_PACKET_EVALUATED_AT,
     gateRunId: 'gate_proposal_fixture_' + scenario,
+  };
+}
+
+function fixedDriftPolicyGateOptions(
+  scenario: DriftDecisionPacketFixtureScenario,
+): PolicyGateOptions {
+  return {
+    evaluatedAt: FIXED_DECISION_PACKET_EVALUATED_AT,
+    gateRunId: 'gate_drift_fixture_' + scenario,
   };
 }
 
@@ -208,6 +240,30 @@ function baseProposalAltitudePacket(
   };
 }
 
+function baseDriftAltitudePacket(
+  scenario: DriftDecisionPacketFixtureScenario,
+): AltitudePacket {
+  const alert = assembleDriftAlert(
+    driftCandidateForScenario(scenario),
+    driftAlertOptionsForScenario(scenario),
+  );
+  const packet = driftAlertToAltitudePacket(alert, {
+    tenantId: 'tenant_ggr',
+    evaluatedAt: FIXED_DECISION_PACKET_EVALUATED_AT,
+    modelSourceId: 'fixture:drift-detection',
+    packetIdSuffix: '_pkt',
+  });
+
+  return {
+    ...packet,
+    extracted_facts: {
+      ...packet.extracted_facts,
+      fixture_scenario: DRIFT_SCENARIO_LABELS[scenario],
+    },
+    created_at: '2026-05-02T09:12:00.000Z',
+  };
+}
+
 function invoiceAltitudePacketForScenario(
   scenario: InvoiceDecisionPacketFixtureScenario,
 ): AltitudePacket {
@@ -306,6 +362,105 @@ function proposalAltitudePacketForScenario(
   return packet;
 }
 
+function driftAltitudePacketForScenario(
+  scenario: DriftDecisionPacketFixtureScenario,
+): AltitudePacket {
+  const packet = baseDriftAltitudePacket(scenario);
+
+  if (scenario === 'source_basis_blocked') {
+    return {
+      ...packet,
+      source_refs: [],
+      evidence_ids: [],
+      claim_ids: [],
+    };
+  }
+
+  return packet;
+}
+
+function driftCandidateForScenario(
+  scenario: DriftDecisionPacketFixtureScenario,
+): LlmDriftCandidate {
+  if (scenario === 'high_confidence_review') {
+    return {
+      pattern: 'commitment_not_followed',
+      signalRefs: ['sig_clem_commitment_2026_05_01'],
+      confidence: 0.91,
+      summary: 'The cabinet touch-up commitment appears unresolved after the promised update window.',
+      recommendedAction: 'Ask the project lead to confirm the cabinet touch-up status before the next client update.',
+    };
+  }
+
+  if (scenario === 'permit_deadline_review') {
+    return {
+      pattern: 'permit_deadline_approaching',
+      signalRefs: ['sig_permit_deadline_2026_05_04'],
+      confidence: 0.83,
+      summary: 'The permit response window is close and no submission confirmation is recorded.',
+      recommendedAction: 'Verify permit submission status and document the next permitting step today.',
+    };
+  }
+
+  return {
+    pattern: 'callback_promised',
+    signalRefs: ['sig_clem_callback_2026_04_30'],
+    confidence: 0.72,
+    summary: 'A client callback was promised last week and no completed callback signal is present.',
+    recommendedAction: 'Call the client today or record why the callback is no longer needed.',
+  };
+}
+
+function driftAlertOptionsForScenario(
+  scenario: DriftDecisionPacketFixtureScenario,
+): AssembleDriftAlertOpts {
+  const base = {
+    alertId: 'drift_fixture_' + scenario,
+    clock: fixedClock('2026-05-02T09:00:00.000Z'),
+    contextRefs: [{ id: 'proj_ggr_kitchen_001', kind: 'project' }],
+  } satisfies AssembleDriftAlertOpts;
+
+  if (scenario === 'high_confidence_review') {
+    return {
+      ...base,
+      severityContext: { daysOverdue: 9 },
+      sources: [
+        {
+          kind: 'external',
+          uri: 'slack://project/proj_ggr_kitchen_001/thread/cabinet-touchup',
+          excerpt: 'Cabinet touch-up follow-up remained unresolved after the promised update.',
+        },
+      ],
+    };
+  }
+
+  if (scenario === 'permit_deadline_review') {
+    return {
+      ...base,
+      severityContext: { daysToDeadline: 2 },
+      sources: [
+        {
+          kind: 'external',
+          uri: 'calendar://permits/proj_ggr_kitchen_001/2026-05-04',
+          excerpt: 'Permit response deadline is two days away with no recorded confirmation.',
+        },
+      ],
+    };
+  }
+
+  return {
+    ...base,
+    severityContext: { daysOverdue: 6 },
+    sources: [
+      {
+        kind: 'external',
+        uri: 'slack://project/proj_ggr_kitchen_001/thread/callback',
+        excerpt: 'Callback was promised and no completion event is present.',
+      },
+    ],
+  };
+}
+
 function withFixedPolicyGateClock<T>(run: () => T): T {
   const originalNow = Date.now;
   Date.now = () => FIXED_DECISION_PACKET_NOW_MS;
@@ -332,6 +487,14 @@ export function createProposalDecisionPacketFixture(
   );
 }
 
+export function createDriftDecisionPacketFixture(
+  scenario: DriftDecisionPacketFixtureScenario = 'callback_internal_summary',
+): DecisionPacket {
+  return withFixedPolicyGateClock(() =>
+    runPolicyGate(driftAltitudePacketForScenario(scenario), fixedDriftPolicyGateOptions(scenario)),
+  );
+}
+
 export const invoiceDecisionPacketFixture = createInvoiceDecisionPacketFixture();
 
 export const invoiceDecisionPacketListFixture =
@@ -346,7 +509,15 @@ export const proposalDecisionPacketListFixture =
     createProposalDecisionPacketFixture(scenario),
   );
 
+export const driftDecisionPacketFixture = createDriftDecisionPacketFixture();
+
+export const driftDecisionPacketListFixture =
+  DRIFT_DECISION_PACKET_FIXTURE_SCENARIOS.map((scenario) =>
+    createDriftDecisionPacketFixture(scenario),
+  );
+
 export const mixedDecisionPacketListFixture = [
   ...invoiceDecisionPacketListFixture,
   ...proposalDecisionPacketListFixture,
+  ...driftDecisionPacketListFixture,
 ];

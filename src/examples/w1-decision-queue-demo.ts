@@ -186,7 +186,7 @@ function boot(): void {
   const views = packets.map((packet) => buildDecisionCardViewModel(packet));
   const queue = buildDecisionQueueViewModel(views, {
     title: 'Kerf Decision Queue',
-    subtitle: 'Interactive browser-local harness (invoice + proposal fixtures → view models → mount).',
+    subtitle: 'Interactive browser-local harness (invoice + proposal + drift fixtures → view models → mount).'
   });
 
   const actionsByPacketId = buildActionsByPacketId(packets, log);
