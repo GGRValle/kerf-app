@@ -17,7 +17,27 @@ import {
   wireDecisionCardHandlers,
 } from '../ui/index.js';
 
-const allPackets = mixedDecisionPacketListFixture;
+/** Demo-only ordering: proposal (revenue wedge) → invoice → drift. Lower = earlier. */
+export function workflowDemoRank(workflow: DecisionPacket['workflow']): number {
+  if (workflow === 'proposal_followup') return 0;
+  if (workflow === 'invoice_followup') return 1;
+  if (workflow === 'drift_detection') return 2;
+  return 99;
+}
+
+/** Stable sort by workflow rank; preserves relative order within each workflow. */
+export function sortPacketsForW1Demo(packets: readonly DecisionPacket[]): DecisionPacket[] {
+  return [...packets]
+    .map((packet, index) => ({ packet, index }))
+    .sort((a, b) => {
+      const diff = workflowDemoRank(a.packet.workflow) - workflowDemoRank(b.packet.workflow);
+      if (diff !== 0) return diff;
+      return a.index - b.index;
+    })
+    .map(({ packet }) => packet);
+}
+
+const allPackets = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
 
 type DemoQueueFilter =
   | 'all'
