@@ -31,6 +31,11 @@ test('DecisionCard view model renders authoritative gate output separately from 
     invoiceDecisionPacketFixture.policy_gate_result.validator_results.map((result) => result.validator_id),
   );
   assert.equal(view.artifactPreview, null);
+  assert.deepEqual(view.actions, {
+    approveLabel: 'Approve',
+    rejectLabel: 'Reject',
+    editLabel: 'Edit',
+  });
   assert.equal(view.recipient.recipientLabel, 'Demo Client Rivera');
   assert.equal(view.sourceBasis.sourceRefs[0], 'qbo://invoice/1001');
 });
@@ -53,6 +58,11 @@ test('DecisionCard view model renders drift detection titles and subtitles', () 
   assert.equal(view.title, 'Drift · callback promised');
   assert.equal(view.subtitle, 'medium severity · detected 2026-05-02');
   assert.equal(view.recipient.recipientLabel, null);
+  assert.deepEqual(view.actions, {
+    approveLabel: 'Acknowledge',
+    rejectLabel: 'False positive',
+    editLabel: 'Act',
+  });
   assert.equal(view.sourceBasis.sourceRefs[0], 'slack://project/proj_ggr_kitchen_001/thread/callback');
   assert.match(view.artifactPreview ?? '', /client callback was promised/);
 });
@@ -110,6 +120,14 @@ test('renderDecisionCardViewHtml includes authoritative block and data-action ho
   assert.match(html, /data-kerf-decision-action="approve"/);
   assert.match(html, /data-kerf-decision-action="reject"/);
   assert.match(html, /data-kerf-decision-action="edit"/);
+});
+
+test('renderDecisionCardViewHtml uses workflow-aware action labels without changing hooks', () => {
+  const html = renderDecisionCardViewHtml(buildDecisionCardViewModel(driftDecisionPacketFixture));
+
+  assert.match(html, /data-kerf-decision-action="approve">Acknowledge<\/button>/);
+  assert.match(html, /data-kerf-decision-action="reject">False positive<\/button>/);
+  assert.match(html, /data-kerf-decision-action="edit">Act<\/button>/);
 });
 
 test('DecisionCard renders a human-readable recipient label before raw recipient id', () => {

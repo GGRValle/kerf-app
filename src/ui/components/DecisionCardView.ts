@@ -137,9 +137,9 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
   </details>
 
   <footer class="kerf-card-actions" role="group" aria-label="Decision actions">
-    <button type="button" class="kerf-btn kerf-btn-primary" data-kerf-decision-action="approve">Approve</button>
-    <button type="button" class="kerf-btn" data-kerf-decision-action="reject">Reject</button>
-    <button type="button" class="kerf-btn" data-kerf-decision-action="edit">Edit</button>
+    <button type="button" class="kerf-btn kerf-btn-primary" data-kerf-decision-action="approve">${escapeHtml(view.actions.approveLabel)}</button>
+    <button type="button" class="kerf-btn" data-kerf-decision-action="reject">${escapeHtml(view.actions.rejectLabel)}</button>
+    <button type="button" class="kerf-btn" data-kerf-decision-action="edit">${escapeHtml(view.actions.editLabel)}</button>
   </footer>
 </article>`;
 }
