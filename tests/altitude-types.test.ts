@@ -17,6 +17,7 @@ test('altitude module exposes Validator Spec v0.3 closed vocabularies', () => {
   assert.deepEqual([...ALTITUDE_LEVELS], ['L0', 'L1', 'L2', 'L3', 'L4']);
   assert.deepEqual([...ALTITUDE_WORKFLOW_KINDS], [
     'invoice_followup',
+    'proposal_followup',
     'proposal_generation',
     'drift_detection',
     'intake',
