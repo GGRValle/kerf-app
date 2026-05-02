@@ -176,6 +176,58 @@
   outline-offset: 2px;
 }
 
+/* Reject reason capture — demo-only inline replacement for the action footer */
+.kerf-w1-standard-ui .kerf-w1-reject-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-reject-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-w1-reject-label-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kerf-w1-standard-ui .kerf-w1-reject-textarea {
+  width: 100%;
+  min-height: 4.6rem;
+  resize: vertical;
+  border: 1px solid var(--kerf-border-strong);
+  border-radius: 5px;
+  background: var(--kerf-bg-control);
+  color: var(--kerf-fg);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.42;
+  padding: 0.5rem 0.58rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-reject-textarea::placeholder {
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-w1-reject-textarea:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: 2px;
+}
+
+.kerf-w1-standard-ui .kerf-w1-reject-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 /* —— Right rail: action / audit log (wireframe cos-rail tone) —— */
 .kerf-w1-log-panel {
   position: sticky;
