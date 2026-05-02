@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { DecisionPacket } from '../src/index.js';
 import {
+  createDriftDecisionPacketFixture,
   driftDecisionPacketFixture,
   invoiceDecisionPacketFixture,
   proposalDecisionPacketFixture,
@@ -38,6 +39,7 @@ test('DecisionCard view model renders authoritative gate output separately from 
   });
   assert.equal(view.recipient.recipientLabel, 'Demo Client Rivera');
   assert.equal(view.sourceBasis.sourceRefs[0], 'qbo://invoice/1001');
+  assert.equal(view.badge, undefined);
 });
 
 test('DecisionCard view model renders proposal follow-up titles and subtitles', () => {
@@ -49,6 +51,7 @@ test('DecisionCard view model renders proposal follow-up titles and subtitles', 
   assert.equal(view.recipient.recipientLabel, 'Demo Client Stone');
   assert.equal(view.sourceBasis.sourceRefs[0], 'platform://proposal/platform_proposal_2042');
   assert.match(view.artifactPreview ?? '', /checking in on proposal PROP-2042/);
+  assert.equal(view.badge, undefined);
 });
 
 test('DecisionCard view model renders drift detection titles and subtitles', () => {
@@ -65,6 +68,15 @@ test('DecisionCard view model renders drift detection titles and subtitles', () 
   });
   assert.equal(view.sourceBasis.sourceRefs[0], 'slack://project/proj_ggr_kitchen_001/thread/callback');
   assert.match(view.artifactPreview ?? '', /client callback was promised/);
+  assert.deepEqual(view.badge, { label: 'Medium', tone: 'info' });
+});
+
+test('DecisionCard drift high-severity fixture exposes High warning badge', () => {
+  const packet = createDriftDecisionPacketFixture('high_confidence_review');
+  const view = buildDecisionCardViewModel(packet);
+
+  assert.equal(view.workflow, 'drift_detection');
+  assert.deepEqual(view.badge, { label: 'High', tone: 'warning' });
 });
 
 test('DecisionCard text calls out authoritative vs non-authoritative model state', () => {
@@ -128,6 +140,30 @@ test('renderDecisionCardViewHtml uses workflow-aware action labels without chang
   assert.match(html, /data-kerf-decision-action="approve">Acknowledge<\/button>/);
   assert.match(html, /data-kerf-decision-action="reject">False positive<\/button>/);
   assert.match(html, /data-kerf-decision-action="edit">Act<\/button>/);
+});
+
+test('renderDecisionCardViewHtml includes drift severity badge with tone class', () => {
+  const htmlMedium = renderDecisionCardViewHtml(buildDecisionCardViewModel(driftDecisionPacketFixture));
+  assert.match(htmlMedium, /class="kerf-card-badge kerf-card-badge-info"/);
+  assert.match(htmlMedium, />Medium</);
+
+  const htmlHigh = renderDecisionCardViewHtml(
+    buildDecisionCardViewModel(createDriftDecisionPacketFixture('high_confidence_review')),
+  );
+  assert.match(htmlHigh, /class="kerf-card-badge kerf-card-badge-warning"/);
+  assert.match(htmlHigh, />High</);
+});
+
+test('renderDecisionCardViewHtml maps badge tone through closed classes', () => {
+  const view = {
+    ...buildDecisionCardViewModel(driftDecisionPacketFixture),
+    badge: { label: '<Critical>', tone: 'info" onclick="alert(1)' as never },
+  };
+
+  const html = renderDecisionCardViewHtml(view);
+  assert.match(html, /class="kerf-card-badge kerf-card-badge-neutral"/);
+  assert.match(html, /&lt;Critical&gt;/);
+  assert.doesNotMatch(html, /onclick=/);
 });
 
 test('DecisionCard renders a human-readable recipient label before raw recipient id', () => {

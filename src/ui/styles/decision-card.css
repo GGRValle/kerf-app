@@ -67,6 +67,59 @@ body {
   line-height: 1.4;
 }
 
+.kerf-card-header-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.kerf-card-header-main .kerf-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.kerf-card-badge {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 0.12rem 0.42rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--kerf-border);
+  line-height: 1.2;
+}
+
+.kerf-card-badge-neutral {
+  background: var(--kerf-bg-elevated);
+  color: var(--kerf-fg-muted);
+  border-color: var(--kerf-border-strong);
+}
+
+.kerf-card-badge-info {
+  background: color-mix(in srgb, var(--kerf-accent) 16%, var(--kerf-bg-card));
+  color: var(--kerf-accent-hover);
+  border-color: color-mix(in srgb, var(--kerf-accent) 42%, var(--kerf-border));
+}
+
+/* Warning tone: warm accent (no dedicated token on card surface yet) */
+.kerf-card-badge-warning {
+  background: color-mix(in srgb, #c9a060 18%, var(--kerf-bg-card));
+  color: #e8d4b0;
+  border-color: color-mix(in srgb, #c9a060 40%, var(--kerf-border));
+}
+
+.kerf-card-badge-danger {
+  background: color-mix(in srgb, var(--kerf-danger-muted) 22%, var(--kerf-bg-card));
+  color: #e0c4c4;
+  border-color: color-mix(in srgb, var(--kerf-danger-muted) 50%, var(--kerf-border));
+}
+
 .kerf-section {
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
