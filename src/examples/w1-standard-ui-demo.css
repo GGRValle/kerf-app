@@ -130,6 +130,16 @@
     inset 4px 0 0 0 var(--kerf-danger-muted);
 }
 
+/* Blocked-state variants (PR #33 hooks) — subtle, no box-shadow so the allowed=false rail stays intact */
+.kerf-w1-standard-ui .kerf-decision-card[data-kerf-safe-next-action="block_external_send"] {
+  border-top: 2px solid var(--kerf-w1-brand);
+}
+
+.kerf-w1-standard-ui .kerf-decision-card[data-kerf-status="BLOCKED_PENDING_SOURCE"] {
+  background: var(--kerf-bg-elevated);
+  border-color: var(--kerf-border);
+}
+
 /* Authoritative gate readout — primary visual anchor */
 .kerf-w1-main-column .kerf-authoritative {
   border-left: 3px solid color-mix(in srgb, var(--kerf-w1-brand) 90%, transparent);

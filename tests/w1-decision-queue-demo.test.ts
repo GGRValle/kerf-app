@@ -31,6 +31,15 @@ test('w1 standard UI CSS scopes blocked-card emphasis under the demo root', () =
   assert.ok(css.includes('.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card[data-kerf-allowed="false"]'));
 });
 
+test('w1 standard UI CSS scopes distinct blocked-status hooks under the demo root', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.ok(
+    css.includes('.kerf-w1-standard-ui .kerf-decision-card[data-kerf-safe-next-action="block_external_send"]'),
+  );
+  assert.ok(css.includes('.kerf-w1-standard-ui .kerf-decision-card[data-kerf-status="BLOCKED_PENDING_SOURCE"]'));
+});
+
 test('w1 standard UI demo CSS keeps polish scoped and keyboard-visible', () => {
   const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
 
