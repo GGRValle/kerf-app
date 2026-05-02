@@ -58,6 +58,19 @@ test('w1 interactive demo wires reject reason capture in the example boundary', 
   assert.match(src, /originalActions\.reject\(textarea\.value\.trim\(\)\)/);
 });
 
+test('w1 interactive demo uses workflow-aware inline reason form copy', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /False positive reason/);
+  assert.match(src, /Reject reason/);
+  assert.match(src, /function renderRejectReasonFormHtml\(/);
+  assert.match(src, /labelText/);
+  assert.match(src, /placeholderText/);
+  assert.match(src, /reasonFormCopyForWorkflow/);
+  assert.match(src, /drift_detection/);
+  assert.match(src, /escapeHtml\(/);
+});
+
 test('w1 interactive demo HTML exposes action log clear and reset controls', () => {
   const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
 
