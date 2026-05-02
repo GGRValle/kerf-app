@@ -194,8 +194,6 @@ V9 emitted **one learning signal draft** for this gate run — fired by V18's al
 
 Captured on MacBook Pro, Safari rendering `src/examples/w1-decision-queue-demo.html` from the bundle built on `ggr-mac-mini`.
 
-> _Screenshots dropped into `screenshots/` directory before merge. Filenames match the references below._
-
 ### 4.1 All-filter queue · 13 cards · summary counts match expected
 
 ![Full queue with All filter](screenshots/01-all-queue.png)
