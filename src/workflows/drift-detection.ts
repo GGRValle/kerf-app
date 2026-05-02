@@ -29,6 +29,7 @@ import type {
   SourceRef,
 } from '../blackboard/types.js';
 import { DRIFT_PATTERNS, DRIFT_SEVERITIES } from '../blackboard/types.js';
+import type { AltitudePacket } from '../altitude/index.js';
 import { ValidationError } from '../shared/errors.js';
 import type { Clock } from '../shared/time.js';
 import { systemClock } from '../shared/time.js';
@@ -363,6 +364,14 @@ export interface AssembleDriftAlertOpts {
   sources?: SourceRef[];
 }
 
+/** Options for routing an assembled drift alert through the Altitude Engine. */
+export interface DriftDetectionPacketOpts {
+  tenantId: EntityId;
+  evaluatedAt: ISO8601;
+  modelSourceId?: string;
+  packetIdSuffix?: string;
+}
+
 /**
  * Assembles a DriftAlert from a validated LLM candidate. Applies severity
  * classification + recommended-action shaping, builds the typed payload,
@@ -427,6 +436,64 @@ export function assembleDriftAlert(
   };
 }
 
+export function driftAlertToAltitudePacket(
+  alert: DriftAlert,
+  opts: DriftDetectionPacketOpts,
+): AltitudePacket {
+  const packetId = alert.alertId + (opts.packetIdSuffix ?? ':pkt');
+  const alertIdSegment = idSegment(alert.alertId);
+  const projectId = projectIdFromContextRefs(alert.payload.contextRefs);
+
+  return {
+    packet_id: packetId,
+    event_id: packetId + ':event',
+    tenant_id: opts.tenantId,
+    ...(projectId ? { project_id: projectId } : {}),
+    workflow: 'drift_detection',
+    classification: {
+      intent: 'surface an operational drift alert',
+      urgency: driftUrgency(alert.payload.severity),
+      confidence: alert.payload.confidence,
+      confidence_band: confidenceBand(alert.payload.confidence),
+    },
+    extracted_facts: {
+      drift_alert_id: alert.alertId,
+      pattern: alert.payload.pattern,
+      severity: alert.payload.severity,
+      confidence: alert.payload.confidence,
+      signal_refs: [...alert.payload.signalRefs],
+      context_refs: alert.payload.contextRefs ? [...alert.payload.contextRefs] : [],
+      summary: alert.payload.summary,
+      recommended_action: alert.payload.recommendedAction,
+      detected_at: alert.payload.detectedAt,
+    },
+    proposed_action: {
+      type: 'draft_internal_summary',
+      description: 'Surface a drift alert for internal review.',
+      reason: alert.payload.recommendedAction,
+    },
+    model_suggested_altitude: 'L1',
+    model_suggested_blackboard_rail: 'changed',
+    model_inference_label: 'INFERRED',
+    source_refs: alert.event.sources.length > 0 ? alert.event.sources : defaultSourcesForAlert(alert),
+    evidence_ids: alert.payload.signalRefs.map((id) => 'signal_' + idSegment(id)),
+    claim_ids: [
+      'claim_drift_' + alertIdSegment + '_pattern',
+      'claim_drift_' + alertIdSegment + '_severity',
+      'claim_drift_' + alertIdSegment + '_recommended_action',
+    ],
+    source_model: opts.modelSourceId ?? 'claude-3.5-sonnet',
+    token_usage: {
+      estimated_input_tokens: 640,
+      estimated_output_tokens: 180,
+      input_tokens: 0,
+      output_tokens: 0,
+    },
+    status: 'READY_FOR_GATE',
+    created_at: opts.evaluatedAt,
+  };
+}
+
 function defaultAlertId(pattern: DriftPattern, detectedAt: ISO8601): EntityId {
   return `drift_${pattern}_${detectedAt}`;
 }
@@ -437,6 +504,35 @@ function defaultSourcesFor(candidate: LlmDriftCandidate): SourceRef[] {
     uri: `signal://${id}`,
   }));
 }
+function defaultSourcesForAlert(alert: DriftAlert): SourceRef[] {
+  return alert.payload.signalRefs.map<SourceRef>((id) => ({
+    kind: 'external',
+    uri: `signal://${id}`,
+  }));
+}
+
+function projectIdFromContextRefs(
+  contextRefs: readonly BlackboardEntityRef[] | undefined,
+): EntityId | undefined {
+  return contextRefs?.find((ref) => ref.kind === 'project')?.id;
+}
+
+function driftUrgency(severity: DriftSeverity): AltitudePacket['classification']['urgency'] {
+  if (severity === 'critical' || severity === 'high') return 'high';
+  if (severity === 'medium') return 'normal';
+  return 'low';
+}
+
+function confidenceBand(confidence: number): AltitudePacket['classification']['confidence_band'] {
+  if (confidence >= 0.85) return 'HIGH';
+  if (confidence >= 0.55) return 'MEDIUM';
+  return 'LOW';
+}
+
+function idSegment(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'unknown';
+}
+
 
 // ---------------------------------------------------------------------------
 // Surface rendering
