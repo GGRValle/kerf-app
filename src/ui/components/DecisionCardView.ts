@@ -138,6 +138,7 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
   return `<article class="kerf-decision-card" data-packet-id="${escapeHtml(view.packetId)}" data-kerf-allowed="${escapeHtml(
     String(auth.allowed),
   )}" data-kerf-status="${escapeHtml(view.status)}" data-kerf-safe-next-action="${escapeHtml(auth.safeNextAction)}">
+  <div class="kerf-card-identity">
   <header class="kerf-card-header">
     <div class="kerf-card-header-main">
       <h2 class="kerf-title">${escapeHtml(view.title)}</h2>
@@ -151,6 +152,7 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
     <p class="kerf-operator-summary-headline">${escapeHtml(view.operatorSummary.headline)}</p>
     <p class="kerf-operator-summary-detail">${escapeHtml(view.operatorSummary.detail)}</p>
   </section>
+  </div>
 
   <section class="kerf-section kerf-status" aria-label="Status">
     <div class="kerf-status-row">
