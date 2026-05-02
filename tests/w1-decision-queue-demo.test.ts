@@ -138,3 +138,25 @@ test('w1 standard UI demo CSS scopes queue filter bar and selected state', () =>
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-bar/);
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-btn\[aria-pressed="true"\]/);
 });
+
+test('w1 interactive demo defines workflow-aware action log verb helper', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /actionLogVerbForWorkflow/);
+});
+
+test('w1 interactive demo maps drift workflows to acknowledge, false_positive, and act log verbs', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /'false_positive'/);
+  assert.match(src, /'acknowledge'/);
+  assert.match(src, /return 'act'/);
+});
+
+test('w1 interactive demo threads actionLogVerbForWorkflow into appendLog from packet workflow', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'approve\')'));
+  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'reject\')'));
+  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'edit\')'));
+});

@@ -49,6 +49,21 @@ function reasonFormCopyForWorkflow(workflow: DecisionPacket['workflow']): {
   };
 }
 
+/** Base card callbacks map to these log tokens; drift uses workflow-aware verbs in the action log. */
+type DecisionLogVerb = 'approve' | 'reject' | 'edit';
+
+function actionLogVerbForWorkflow(
+  workflow: DecisionPacket['workflow'],
+  baseAction: DecisionLogVerb,
+): string {
+  if (workflow === 'drift_detection') {
+    if (baseAction === 'approve') return 'acknowledge';
+    if (baseAction === 'reject') return 'false_positive';
+    return 'act';
+  }
+  return baseAction;
+}
+
 /** Footers currently showing the reject-reason form (demo-only); reset clears these. */
 const activeRejectRestores = new Map<string, () => void>();
 
@@ -284,9 +299,12 @@ function buildActionsByPacketId(
 ): DecisionQueueActionsByPacketId {
   const entries = packets.map((packet) => {
     const actions = wireDecisionCardHandlers(packet, {
-      onApprove: (packetId) => appendLog(log, 'approve', packetId),
-      onReject: (packetId, reason) => appendLog(log, 'reject', packetId, reason),
-      onEdit: (packetId) => appendLog(log, 'edit', packetId),
+      onApprove: (packetId) =>
+        appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'approve'), packetId),
+      onReject: (packetId, reason) =>
+        appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'reject'), packetId, reason),
+      onEdit: (packetId) =>
+        appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'edit'), packetId),
     });
     return [packet.packet_id, wireDecisionCardWithReasonCapture(packet, actions)] as const;
   });
