@@ -6,10 +6,10 @@ listed artifacts, and use this file as the acceptance-test index.
 
 ## Verified Baseline
 
-Last evidence baseline before this ledger:
+W1 close baseline:
 
 ```bash
-a72713e feat(decisions): add operator decision event templates (#58)
+382bf5f fix(demo): keep W1 card text readable in Safari (#62)
 ```
 
 Expected local gate:
@@ -24,8 +24,9 @@ npm run test-fixtures:validate
 git diff --check
 ```
 
-The browser demo is fixture-backed and local-only. Backend audit proof comes
-from `npm run smoke` and workflow tests; browser action-log clicks are demo
+The browser demo is fixture-backed and local-only. Screenshot evidence is
+committed under `src/examples/evidence/2026-05-02-w1/screenshots/`. Backend
+audit proof comes from `npm run smoke` and workflow tests; browser action-log clicks are demo
 evidence, not production persistence.
 
 ## Evidence Commands

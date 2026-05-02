@@ -1,12 +1,14 @@
 # W1 Proof Packet
 
 **Capture date:** May 2, 2026  
-**Operator sign-off:** TODO  
-**Repo baseline:** `a72713e feat(decisions): add operator decision event templates (#58)`
+**Operator sign-off:** Christian Asdal · GGRValle
+
+**Repo baseline:** `382bf5f fix(demo): keep W1 card text readable in Safari (#62)`
 
 This proof packet is the compact Monday-demo evidence bundle. The backend proof
-is complete as of `a72713e`; browser screenshots are the remaining human-capture
-items from Safari on the MacBook Pro.
+and browser proof are complete as of `382bf5f`. The canonical packet with the
+five committed screenshots lives at
+[`evidence/2026-05-02-w1/PROOF_PACKET.md`](./evidence/2026-05-02-w1/PROOF_PACKET.md).
 
 ## Backend Gate Evidence
 
@@ -56,15 +58,13 @@ signal for the altitude divergence.
 
 ## Browser Screenshot Checklist
 
-Capture these from Safari after running `npm run demo:w1-queue`:
+Captured from Safari after running `npm run demo:w1-queue`:
 
 | # | Screenshot | Status |
 |---|---|---|
-| 1 | All filter: full 13-card queue with summary row visible | TODO |
-| 2 | Drift filter: 4 drift cards with severity badges | TODO |
-| 3 | Audit/model disclosure: validator order plus non-empty V9 Learning signals | TODO |
-| 4 | False positive form: drift reject reason form open with typed reason | TODO |
-| 5 | Action log: mixed verbs `approve`, `reject`, `edit`, `acknowledge`, `false_positive`, `act` | TODO |
+| 1 | All filter: full 13-card queue with summary row visible | Captured: [`01-all-queue.png`](./evidence/2026-05-02-w1/screenshots/01-all-queue.png) |
+| 2 | Drift filter: 4 drift cards with severity badges | Captured: [`02-drift-filter-badges.png`](./evidence/2026-05-02-w1/screenshots/02-drift-filter-badges.png) |
+| 3-5 | Drift card, false-positive form, and mixed action log | Captured in [`evidence/2026-05-02-w1/screenshots/`](./evidence/2026-05-02-w1/screenshots/) |
 
 Suggested local command:
 
