@@ -8,13 +8,13 @@ safety spine and browser-visible operator surface from a fresh checkout.
 Last verified on **May 2, 2026** from `main` at:
 
 ```bash
-fd5f235 feat(ui): add drift severity badge to DecisionCard (#47)
+e0258b2 style(ui): refine learning signals audit block scanability (#55)
 ```
 
 Expected green gate at this baseline:
 
 ```text
-npm test -> 225/225
+npm test -> 247/247
 ```
 
 The browser demo is local-only. It uses generated DecisionPacket fixtures and
@@ -41,11 +41,13 @@ git diff --check
 
 Expected outputs:
 
-- `npm test` reports `225/225` passing tests.
+- `npm test` reports `247/247` passing tests.
 - `npm run demo:w1-queue` builds
   `src/examples/w1-decision-queue-demo.bundle.js`.
 - `npm run smoke` prints `invoice_followup_gate_loop` with an
-  `altitude_packet`, `decision_packet`, and `invoice_audit` event chain.
+  `altitude_packet`, `decision_packet`, `invoice_audit` event chain, and
+  `learning_signal_audit` event chain (V9 drafts committed by the smoke
+  harness as `learning_signal.drafted` events).
 - `npm run test-fixtures:validate` prints `seed produced 4 events`.
 - `git diff --check` prints nothing and exits cleanly.
 
@@ -88,6 +90,25 @@ Workflow coverage:
 | `proposal_followup` | 5 | Owner-review, V2 blocked, V7 blocked, V8 review, near-expiry. |
 | `drift_detection` | 4 | Internal-only cards with severity badges and drift-specific actions. |
 
+## Audit / Model Details Disclosure
+
+Each DecisionCard renders a collapsed `<details>` disclosure labeled
+**Audit / model (non-authoritative)**. Expand it to see:
+
+- **Suggested altitude** — the model's L0–L4 suggestion (audit-only;
+  `system_final_altitude` is authoritative).
+- **Source model** — which model produced the AltitudePacket
+  (`qwen2.5-7b-instruct` for invoice/proposal; `claude-3.5-sonnet` for drift).
+- **Validator order** — `V1 → V2 → V6 → V7 → V8 → V9 → V12 → V17 → V18`.
+- **Learning signals** — V9 drafts listed by trigger when produced:
+  - `model_inference_correction` — V8 corrected `model_inference_label` or
+    `classification.confidence_band`.
+  - `source_basis_required` — V7 critical-failed on missing source basis.
+  - `altitude_divergence` — `model_suggested_altitude` diverged from
+    `system_final_altitude`.
+
+  An empty list is valid for packets where V9 found no triggers.
+
 ## Click Script
 
 Use this script when recording evidence or rehearsing the Monday demo.
@@ -111,6 +132,11 @@ Use this script when recording evidence or rehearsing the Monday demo.
 11. Click **Clear log**. The log should empty without changing open cards.
 12. Open a reject form, then click **Reset demo**. The form should close and
     the log should clear.
+13. On at least one drift card and one invoice/proposal card, expand the
+    **Audit / model** disclosure. Confirm Learning signals appear with
+    trigger codes (`model_inference_correction`, `source_basis_required`,
+    `altitude_divergence`) when V9 produced drafts. An empty list is valid
+    for packets that produced no triggers.
 
 ## Evidence To Capture
 
@@ -118,11 +144,16 @@ For the Monday proof packet, capture:
 
 - Full queue screenshot on All.
 - Drift filter screenshot showing severity badges.
+- Audit/model panel screenshot showing Learning signals on a drift card
+  where V9 produced drafts (e.g., `model_inference_correction` or
+  `altitude_divergence`).
 - Reject/false-positive form screenshot with reason submitted.
 - Action log screenshot showing workflow-aware verbs.
 - Smoke output excerpt showing `invoice_followup_gate_loop`.
 - Smoke output excerpt showing `invoice_audit` in this order:
   `detected`, `drafted`, `approval_requested`, `approved`.
+- Smoke output excerpt showing `learning_signal_audit` event chain
+  (V9 drafts committed as `learning_signal.drafted`).
 
 Optional evidence capture command:
 
