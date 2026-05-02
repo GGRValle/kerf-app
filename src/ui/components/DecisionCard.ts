@@ -36,6 +36,7 @@ export interface DecisionCardViewModel {
   recipient: {
     channel: string | null;
     recipientClass: string | null;
+    recipientLabel: string | null;
     recipientId: string | null;
   };
   authoritative: {
@@ -93,6 +94,7 @@ export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCard
     recipient: {
       channel: packet.external_send?.channel ?? null,
       recipientClass: packet.external_send?.recipient_class ?? null,
+      recipientLabel: stringFact(packet, 'client_name'),
       recipientId: packet.external_send?.recipient_id ?? null,
     },
     authoritative: {

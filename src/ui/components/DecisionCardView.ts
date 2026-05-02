@@ -57,10 +57,14 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
   const moneyHtml =
     moneyParts.length > 0 ? `<p class="kerf-meta">${moneyParts.join(' · ')}</p>` : '';
 
+  const recipientTarget = view.recipient.recipientLabel ?? view.recipient.recipientId;
   const recipientParts = [
-    view.recipient.channel && `channel: ${escapeHtml(view.recipient.channel)}`,
+    recipientTarget && `recipient: ${escapeHtml(recipientTarget)}`,
     view.recipient.recipientClass && `to: ${escapeHtml(view.recipient.recipientClass)}`,
-    view.recipient.recipientId && `id: ${escapeHtml(String(view.recipient.recipientId))}`,
+    view.recipient.channel && `channel: ${escapeHtml(view.recipient.channel)}`,
+    view.recipient.recipientLabel !== null
+      && view.recipient.recipientId !== null
+      && `id: ${escapeHtml(view.recipient.recipientId)}`,
   ].filter(Boolean);
 
   const recipientHtml =
