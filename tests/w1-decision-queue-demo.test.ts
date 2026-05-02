@@ -34,3 +34,21 @@ test('w1 standard UI demo CSS keeps polish scoped and keyboard-visible', () => {
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-btn:focus-visible/);
   assert.equal(/^body\s*\{/m.test(css), false);
 });
+
+
+test('w1 interactive demo wires reject reason capture in the example boundary', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /wireDecisionCardWithReasonCapture/);
+  assert.match(src, /showRejectReasonForm/);
+  assert.match(src, /originalActions\.reject\(textarea\.value\.trim\(\)\)/);
+});
+
+test('w1 standard UI demo CSS styles reject reason capture and focus', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-reject-form/);
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-reject-label-text/);
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-reject-textarea/);
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-reject-textarea:focus-visible/);
+});
