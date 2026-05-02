@@ -13,13 +13,13 @@ smoke output, and browser artifacts that prove it.
 Last verified on **May 2, 2026** from `main` at:
 
 ```bash
-695c016 docs: update W1 demo evidence for V9 learning loop (#56)
+a72713e feat(decisions): add operator decision event templates (#58)
 ```
 
 Expected green gate at this baseline:
 
 ```text
-npm test -> 247/247
+npm test -> 252/252
 ```
 
 The browser demo is local-only. It uses generated DecisionPacket fixtures and
@@ -46,7 +46,7 @@ git diff --check
 
 Expected outputs:
 
-- `npm test` reports `247/247` passing tests.
+- `npm test` reports `252/252` passing tests.
 - `npm run demo:w1-queue` builds
   `src/examples/w1-decision-queue-demo.bundle.js`.
 - `npm run smoke` prints `invoice_followup_gate_loop` with an
