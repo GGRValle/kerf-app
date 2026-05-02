@@ -9,14 +9,14 @@ listed artifacts, and use this file as the acceptance-test index.
 Last evidence baseline before this ledger:
 
 ```bash
-695c016 docs: update W1 demo evidence for V9 learning loop (#56)
+a72713e feat(decisions): add operator decision event templates (#58)
 ```
 
 Expected local gate:
 
 ```text
 npm run typecheck
-npm test -> 247/247
+npm test -> 252/252
 npm run demo:w1-queue
 npm run smoke
 npm run build
@@ -69,6 +69,7 @@ npm run smoke | tee /tmp/kerf-w1-smoke-output.txt
 | AT-019 hosting-route-check adapter leg | Pure adapter guard emits `hosting_route_check`, blocks unapproved/mismatched/retired endpoints, and has no network dependency. | `tests/hosting-route-check.test.ts`, `src/hosting/routeCheck.ts` |
 | AT-020 V18 altitude assignment | Baseline floors and divergence are tested; V9 records altitude-divergence learning drafts when V18 overrides model suggestion. | `tests/altitude-policy-gate.test.ts`, `tests/decision-packet-fixtures.test.ts`, `tests/learning-signal-events.test.ts` |
 | W1 visible operator surface | Mixed queue renders 13 cards across invoice, proposal, and drift with workflow-aware labels, filters, badges, audit details, and learning signals. | `src/examples/README.md`, `npm run demo:w1-queue`, browser screenshots |
+| Operator decision persistence contract | Browser actions are still local-only, but production persistence now has a typed `decision.resolved` event-template contract for approved operator actions. | `src/decisions/operatorActions.ts`, `tests/operator-decision-events.test.ts` |
 
 ## Workflow Proof
 
@@ -115,7 +116,9 @@ From `/tmp/kerf-w1-smoke-output.txt`, capture:
 ## Known Boundaries
 
 - Browser action log entries are local demo evidence only.
-- Production operator decision persistence is still a follow-up slice.
+- Production operator decision persistence now has a pure typed event-template
+  contract via `operatorDecisionToEventTemplate`; wiring browser actions to
+  append `decision.resolved` events remains a follow-up slice.
 - The mixed queue uses generated fixtures, not live QBO or Platform records.
 - Kerf-app owns the pure hosting-route guard; Platform owns real model network
   invocation and adapter emission.
