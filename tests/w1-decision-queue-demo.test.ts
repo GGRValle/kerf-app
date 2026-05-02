@@ -25,6 +25,11 @@ test('w1 demo imports fixtures only from test-fixtures entry', () => {
   assert.equal(/test-fixtures\/decisionPackets/.test(src), false);
 });
 
+test('w1 standard UI CSS scopes blocked-card emphasis under the demo root', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.ok(css.includes('.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card[data-kerf-allowed="false"]'));
+});
 
 test('w1 standard UI demo CSS keeps polish scoped and keyboard-visible', () => {
   const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');

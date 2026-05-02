@@ -77,7 +77,9 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
     .filter(Boolean)
     .join('');
 
-  return `<article class="kerf-decision-card" data-packet-id="${escapeHtml(view.packetId)}">
+  return `<article class="kerf-decision-card" data-packet-id="${escapeHtml(view.packetId)}" data-kerf-allowed="${escapeHtml(
+    String(auth.allowed),
+  )}" data-kerf-status="${escapeHtml(view.status)}" data-kerf-safe-next-action="${escapeHtml(auth.safeNextAction)}">
   <header class="kerf-card-header">
     <h2 class="kerf-title">${escapeHtml(view.title)}</h2>
     <p class="kerf-subtitle">${escapeHtml(view.subtitle)}</p>
