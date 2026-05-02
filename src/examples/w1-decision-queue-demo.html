@@ -61,10 +61,10 @@
       Build the browser bundle first:
         npm run demo:w1-queue
 
-      Then open this file from disk (file://) or any static server so
-      ./w1-decision-queue-demo.bundle.mjs resolves next to this HTML file.
+      Then open this file from disk (file://). The bundled script is classic
+      browser JavaScript, not a module, so direct file open works.
     -->
-    <script type="module" src="./w1-decision-queue-demo.bundle.mjs"></script>
+    <script src="./w1-decision-queue-demo.bundle.js"></script>
   </head>
   <body>
     <div class="kerf-w1-demo-shell">
