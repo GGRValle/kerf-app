@@ -27,6 +27,7 @@ const ALTITUDE_RANK: Readonly<Record<AltitudeLevel, number>> = {
 const WORKFLOW_BASELINES: Readonly<Record<AltitudeWorkflowKind, AltitudeLevel>> = {
   blackboard_update: 'L0',
   invoice_followup: 'L1',
+  proposal_followup: 'L2',
   drift_detection: 'L1',
   proposal_generation: 'L2',
   intake: 'L2',
