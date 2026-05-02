@@ -1,4 +1,8 @@
-import type { DecisionCardActions, DecisionCardViewModel } from './DecisionCard.js';
+import type {
+  DecisionCardActions,
+  DecisionCardBadgeTone,
+  DecisionCardViewModel,
+} from './DecisionCard.js';
 
 /** Escape text for HTML body contexts (demo / static card). */
 export function escapeHtml(raw: string): string {
@@ -17,6 +21,21 @@ function listOrNone(items: readonly string[], emptyLabel: string): string {
   return `<ul class="kerf-list">${items
     .map((item) => `<li>${escapeHtml(item)}</li>`)
     .join('')}</ul>`;
+}
+
+function badgeToneClass(tone: DecisionCardBadgeTone): string {
+  switch (tone) {
+    case 'neutral':
+      return 'kerf-card-badge-neutral';
+    case 'info':
+      return 'kerf-card-badge-info';
+    case 'warning':
+      return 'kerf-card-badge-warning';
+    case 'danger':
+      return 'kerf-card-badge-danger';
+    default:
+      return 'kerf-card-badge-neutral';
+  }
 }
 
 /**
@@ -83,7 +102,7 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
 
   const badgeHtml =
     view.badge !== undefined && view.badge !== null
-      ? `<span class="kerf-card-badge kerf-card-badge-${view.badge.tone}">${escapeHtml(view.badge.label)}</span>`
+      ? `<span class="kerf-card-badge ${badgeToneClass(view.badge.tone)}">${escapeHtml(view.badge.label)}</span>`
       : '';
 
   return `<article class="kerf-decision-card" data-packet-id="${escapeHtml(view.packetId)}" data-kerf-allowed="${escapeHtml(

@@ -154,6 +154,18 @@ test('renderDecisionCardViewHtml includes drift severity badge with tone class',
   assert.match(htmlHigh, />High</);
 });
 
+test('renderDecisionCardViewHtml maps badge tone through closed classes', () => {
+  const view = {
+    ...buildDecisionCardViewModel(driftDecisionPacketFixture),
+    badge: { label: '<Critical>', tone: 'info" onclick="alert(1)' as never },
+  };
+
+  const html = renderDecisionCardViewHtml(view);
+  assert.match(html, /class="kerf-card-badge kerf-card-badge-neutral"/);
+  assert.match(html, /&lt;Critical&gt;/);
+  assert.doesNotMatch(html, /onclick=/);
+});
+
 test('DecisionCard renders a human-readable recipient label before raw recipient id', () => {
   const view = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
   const html = renderDecisionCardViewHtml(view);
