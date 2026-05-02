@@ -34,6 +34,7 @@ function expectedOtherW1ValidatorResults(): ValidatorResult[] {
     makeValidatorResult('V6'),
     makeValidatorResult('V7'),
     makeValidatorResult('V8'),
+    makeValidatorResult('V9'),
     makeValidatorResult('V17'),
     makeValidatorResult('V18'),
   ];
@@ -130,7 +131,7 @@ test('V18 raises external-send decisions to owner review', () => {
   assert.equal(decision.system_final_altitude, 'L3');
   assert.equal(decision.review_requirement, 'OWNER_REVIEW');
   assert.equal(decision.policy_gate_result.safe_next_action, 'request_owner_approval');
-  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V7', 'V8', 'V12', 'V17', 'V18']);
+  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V7', 'V8', 'V9', 'V12', 'V17', 'V18']);
 });
 
 test('V18 first-cut applies the money mutation escalation floor', () => {
@@ -476,6 +477,73 @@ test('V8 downgrades high confidence model inference claims for review', () => {
   });
 });
 
+test('V9 drafts a learning signal for V8 field corrections', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      model_inference_label: undefined,
+      money_fields: {
+        amount_cents: 0,
+        source_class: 'model_inference',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:45:15.000Z' },
+  );
+
+  const v9 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V9');
+  const draft = decision.policy_gate_result.learning_signal_drafts?.find(
+    (signal) => signal.reason === 'model_inference_correction',
+  );
+
+  assert.equal(v9?.passed, true);
+  assert.equal(v9?.critical, false);
+  assert.equal(draft?.source_validator_id, 'V8');
+  assert.equal(draft?.metadata.field, 'model_inference_label');
+  assert.equal(draft?.metadata.to, 'NEEDS_REVIEW');
+});
+
+test('V9 drafts a learning signal for V7 source-basis blocks', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      source_refs: [],
+      evidence_ids: [],
+      claim_ids: [],
+    }),
+    { evaluatedAt: '2026-04-30T19:45:20.000Z' },
+  );
+
+  const draft = decision.policy_gate_result.learning_signal_drafts?.find(
+    (signal) => signal.reason === 'source_basis_required',
+  );
+
+  assert.equal(draft?.source_validator_id, 'V7');
+  assert.equal(draft?.metadata.source_refs_count, 0);
+  assert.equal(draft?.metadata.evidence_ids_count, 0);
+  assert.equal(draft?.metadata.claim_ids_count, 0);
+});
+
+test('V9 drafts a learning signal for V18 altitude divergence', () => {
+  const decision = runPolicyGate(basePacket({ model_suggested_altitude: 'L4' }), {
+    evaluatedAt: '2026-04-30T19:45:25.000Z',
+  });
+
+  const draft = decision.policy_gate_result.learning_signal_drafts?.find(
+    (signal) => signal.reason === 'altitude_divergence',
+  );
+
+  assert.equal(draft?.source_validator_id, 'V18');
+  assert.equal(draft?.metadata.model_suggested_altitude, 'L4');
+  assert.equal(draft?.metadata.system_final_altitude, 'L1');
+  assert.equal(draft?.metadata.divergence_class, 'model_overcaution');
+});
+
+test('V9 emits no learning signal drafts when no learning trigger fires', () => {
+  const decision = runPolicyGate(basePacket({ model_suggested_altitude: 'L1' }), {
+    evaluatedAt: '2026-04-30T19:45:30.000Z',
+  });
+
+  assert.deepEqual(decision.policy_gate_result.learning_signal_drafts, []);
+});
+
 test('V12 passes when the Policy Gate emits the canonical W1 validator audit trail', () => {
   const decision = runPolicyGate(basePacket(), {
     evaluatedAt: '2026-04-30T19:46:00.000Z',
@@ -487,6 +555,7 @@ test('V12 passes when the Policy Gate emits the canonical W1 validator audit tra
     'V6',
     'V7',
     'V8',
+    'V9',
     'V12',
     'V17',
     'V18',
