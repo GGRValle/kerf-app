@@ -330,6 +330,25 @@ export interface ValidatorResult {
   duration_ms: number;
 }
 
+export const LEARNING_SIGNAL_DRAFT_REASONS = [
+  'model_inference_correction',
+  'source_basis_required',
+  'altitude_divergence',
+] as const;
+export type LearningSignalDraftReason = (typeof LEARNING_SIGNAL_DRAFT_REASONS)[number];
+
+export interface LearningSignalDraft {
+  draft_id: string;
+  packet_id: string;
+  workflow: AltitudeWorkflowKind;
+  source_validator_id: ValidatorId;
+  reason: LearningSignalDraftReason;
+  summary: string;
+  source_model: string;
+  created_at: ISO8601;
+  metadata: Readonly<Record<string, unknown>>;
+}
+
 export interface PolicyGateResult {
   packet_id: string;
   gate_run_id: string;
@@ -345,6 +364,7 @@ export interface PolicyGateResult {
   evaluated_at: ISO8601;
   duration_ms: number;
   source_model: string;
+  learning_signal_drafts?: readonly LearningSignalDraft[];
 }
 
 export interface AltitudePacket {

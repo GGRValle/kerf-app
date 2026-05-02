@@ -21,6 +21,7 @@ const CANONICAL_W1_VALIDATOR_ORDER = [
   'V6',
   'V7',
   'V8',
+  'V9',
   'V12',
   'V17',
   'V18',

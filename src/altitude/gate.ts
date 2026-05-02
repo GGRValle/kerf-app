@@ -6,6 +6,8 @@ import type {
   AltitudeWorkflowKind,
   InferenceLabel,
   DecisionPacket,
+  LearningSignalDraft,
+  LearningSignalDraftReason,
   PolicyGateResult,
   ReviewRequirement,
   SafeNextAction,
@@ -79,6 +81,7 @@ const EXPECTED_OTHER_W1_VALIDATOR_ORDER = [
   'V6',
   'V7',
   'V8',
+  'V9',
   'V17',
   'V18',
 ] as const satisfies readonly ValidatorId[];
@@ -296,6 +299,143 @@ export function runV8ModelInferenceLabeling(packet: AltitudePacket): ValidatorRe
   return validatorResult('V8', true, false, { durationMs: Date.now() - started });
 }
 
+export function runV9LearningSignalCreation(input: {
+  packet: AltitudePacket;
+  v7: ValidatorResult;
+  v8: ValidatorResult;
+  assignment: AltitudeAssignmentResult;
+  evaluatedAt: string;
+}): { result: ValidatorResult; learningSignalDrafts: readonly LearningSignalDraft[] } {
+  const started = Date.now();
+  const learningSignalDrafts = buildLearningSignalDrafts(input);
+  const malformedReason = learningSignalDrafts
+    .map(validateLearningSignalDraft)
+    .find((reason): reason is string => reason !== undefined);
+
+  if (malformedReason !== undefined) {
+    return {
+      learningSignalDrafts,
+      result: validatorResult('V9', false, true, {
+        reason: malformedReason,
+        durationMs: Date.now() - started,
+      }),
+    };
+  }
+
+  return {
+    learningSignalDrafts,
+    result: validatorResult('V9', true, false, { durationMs: Date.now() - started }),
+  };
+}
+
+function buildLearningSignalDrafts(input: {
+  packet: AltitudePacket;
+  v7: ValidatorResult;
+  v8: ValidatorResult;
+  assignment: AltitudeAssignmentResult;
+  evaluatedAt: string;
+}): LearningSignalDraft[] {
+  const drafts: LearningSignalDraft[] = [];
+
+  if (input.v8.field_corrected !== undefined) {
+    const correction = input.v8.field_corrected;
+    drafts.push(learningSignalDraft({
+      packet: input.packet,
+      evaluatedAt: input.evaluatedAt,
+      sourceValidatorId: 'V8',
+      reason: 'model_inference_correction',
+      summary: 'V8 corrected ' + correction.field + ' for ' + input.packet.workflow + '.',
+      metadata: {
+        field: correction.field,
+        from: correction.from,
+        to: correction.to,
+      },
+    }));
+  }
+
+  if (!input.v7.passed && input.v7.reason === 'source_basis_required') {
+    drafts.push(learningSignalDraft({
+      packet: input.packet,
+      evaluatedAt: input.evaluatedAt,
+      sourceValidatorId: 'V7',
+      reason: 'source_basis_required',
+      summary: 'V7 blocked promotion because source basis was incomplete for ' + input.packet.workflow + '.',
+      metadata: {
+        source_refs_count: input.packet.source_refs.length,
+        evidence_ids_count: input.packet.evidence_ids.length,
+        claim_ids_count: input.packet.claim_ids.length,
+      },
+    }));
+  }
+
+  if (input.assignment.divergenceClass !== 'match') {
+    drafts.push(learningSignalDraft({
+      packet: input.packet,
+      evaluatedAt: input.evaluatedAt,
+      sourceValidatorId: 'V18',
+      reason: 'altitude_divergence',
+      summary: 'V18 detected ' + input.assignment.divergenceClass + ' for ' + input.packet.workflow + '.',
+      metadata: {
+        model_suggested_altitude: input.packet.model_suggested_altitude,
+        system_final_altitude: input.assignment.systemFinalAltitude,
+        divergence_class: input.assignment.divergenceClass,
+        workflow_baseline: input.assignment.workflowBaseline,
+        action_baseline: input.assignment.actionBaseline,
+        escalation_floor: input.assignment.escalationFloor,
+        matched_rules: input.assignment.matchedRules,
+      },
+    }));
+  }
+
+  return drafts;
+}
+
+function learningSignalDraft(input: {
+  packet: AltitudePacket;
+  evaluatedAt: string;
+  sourceValidatorId: 'V7' | 'V8' | 'V18';
+  reason: LearningSignalDraftReason;
+  summary: string;
+  metadata: Readonly<Record<string, unknown>>;
+}): LearningSignalDraft {
+  return {
+    draft_id: input.packet.packet_id + ':learning:' + input.sourceValidatorId.toLowerCase() + ':' + input.reason,
+    packet_id: input.packet.packet_id,
+    workflow: input.packet.workflow,
+    source_validator_id: input.sourceValidatorId,
+    reason: input.reason,
+    summary: input.summary,
+    source_model: input.packet.source_model,
+    created_at: input.evaluatedAt,
+    metadata: input.metadata,
+  };
+}
+
+function validateLearningSignalDraft(draft: LearningSignalDraft): string | undefined {
+  const idForReason = typeof draft.draft_id === 'string' && draft.draft_id.length > 0
+    ? draft.draft_id
+    : 'unknown';
+  if (typeof draft.draft_id !== 'string' || draft.draft_id.length === 0) {
+    return 'learning_signal_draft_malformed: ' + idForReason + '.draft_id';
+  }
+  if (typeof draft.packet_id !== 'string' || draft.packet_id.length === 0) {
+    return 'learning_signal_draft_malformed: ' + idForReason + '.packet_id';
+  }
+  if (typeof draft.summary !== 'string' || draft.summary.length === 0) {
+    return 'learning_signal_draft_malformed: ' + idForReason + '.summary';
+  }
+  if (typeof draft.created_at !== 'string' || draft.created_at.length === 0) {
+    return 'learning_signal_draft_malformed: ' + idForReason + '.created_at';
+  }
+  if (typeof draft.source_model !== 'string' || draft.source_model.length === 0) {
+    return 'learning_signal_draft_malformed: ' + idForReason + '.source_model';
+  }
+  if (typeof draft.metadata !== 'object' || draft.metadata === null || Array.isArray(draft.metadata)) {
+    return 'learning_signal_draft_malformed: ' + idForReason + '.metadata';
+  }
+  return undefined;
+}
+
 export function runV12AuditTrailCompleteness(
   otherResults: readonly ValidatorResult[],
 ): ValidatorResult {
@@ -374,9 +514,16 @@ export function runPolicyGate(
   const v8 = runV8ModelInferenceLabeling(packet);
   const v17 = runV17TokenBudgetCheck(packet, options.tokenBudget);
   const v18 = runV18AltitudeAssignment(packet);
-  const otherValidatorResults = [v1, v2, v6, v7, v8, v17, v18.result];
+  const v9 = runV9LearningSignalCreation({
+    packet,
+    v7,
+    v8,
+    assignment: v18.assignment,
+    evaluatedAt,
+  });
+  const otherValidatorResults = [v1, v2, v6, v7, v8, v9.result, v17, v18.result];
   const v12 = runV12AuditTrailCompleteness(otherValidatorResults);
-  const validatorResults = [v1, v2, v6, v7, v8, v12, v17, v18.result];
+  const validatorResults = [v1, v2, v6, v7, v8, v9.result, v12, v17, v18.result];
   const criticalFailures = validatorResults
     .filter((result) => !result.passed && result.critical)
     .map((result) => result.validator_id);
@@ -409,6 +556,7 @@ export function runPolicyGate(
     evaluated_at: evaluatedAt,
     duration_ms: Date.now() - started,
     source_model: packet.source_model,
+    learning_signal_drafts: v9.learningSignalDrafts,
   };
 
   return {
@@ -623,7 +771,7 @@ function deriveSafeNextAction(input: {
 }): SafeNextAction {
   if (input.criticalFailures.length > 0) {
     // Critical-failure precedence follows the W1 safety lane:
-    // external send > pricing > role visibility > source basis > inference labeling > token budget > audit trail > generic remediation.
+    // external send > pricing > role visibility > source basis > inference labeling > learning signal > token budget > audit trail > generic remediation.
     if (input.criticalFailures.includes('V2')) {
       return 'block_external_send';
     }
@@ -637,6 +785,9 @@ function deriveSafeNextAction(input: {
       return 'block_promotion';
     }
     if (input.criticalFailures.includes('V8')) {
+      return 'request_human_review';
+    }
+    if (input.criticalFailures.includes('V9')) {
       return 'request_human_review';
     }
     if (input.criticalFailures.includes('V17')) {
