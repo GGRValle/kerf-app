@@ -274,6 +274,34 @@ body {
   color: var(--kerf-fg-muted);
 }
 
+.kerf-learning-signals {
+  margin-top: 0.55rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--kerf-border);
+}
+
+.kerf-learning-signals .kerf-h4 {
+  margin-top: 0;
+  margin-bottom: 0.4rem;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-learning-signals .kerf-list {
+  margin-top: 0;
+  padding-left: 1rem;
+}
+
+.kerf-learning-signals .kerf-list li {
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-learning-signals .kerf-list li strong {
+  color: var(--kerf-fg);
+}
+
 .kerf-card-actions {
   display: flex;
   flex-wrap: wrap;
