@@ -86,6 +86,33 @@ test('renderDecisionCardViewHtml includes authoritative block and data-action ho
   assert.match(html, /<details[^>]*class="[^"]*kerf-audit-details/);
 });
 
+test('DecisionCard renders a human-readable recipient label before raw recipient id', () => {
+  const view = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
+  const html = renderDecisionCardViewHtml(view);
+
+  assert.equal(view.recipient.recipientLabel, 'Demo Client Rivera');
+  assert.match(html, /recipient: Demo Client Rivera/);
+  assert.match(html, /to: client/);
+  assert.match(html, /channel: email/);
+  assert.match(html, /id: client_w1_demo/);
+});
+
+test('DecisionCard recipient rendering falls back to recipient id when no label exists', () => {
+  const packet = {
+    ...invoiceDecisionPacketFixture,
+    extracted_facts: {
+      ...invoiceDecisionPacketFixture.extracted_facts,
+      client_name: undefined,
+    },
+  };
+  const view = buildDecisionCardViewModel(packet);
+  const html = renderDecisionCardViewHtml(view);
+
+  assert.equal(view.recipient.recipientLabel, null);
+  assert.match(html, /recipient: client_w1_demo/);
+  assert.doesNotMatch(html, /id: client_w1_demo/);
+});
+
 test('renderDecisionCardViewHtml exposes escaped status data hooks on the card root', () => {
   const view = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
   const html = renderDecisionCardViewHtml(view);
