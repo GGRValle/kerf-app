@@ -7,6 +7,7 @@ test('w1 interactive demo HTML links both operator stylesheets', () => {
 
   assert.match(html, /href="\.\.\/ui\/styles\/decision-card\.css"/);
   assert.match(html, /href="\.\.\/ui\/styles\/decision-queue\.css"/);
+  assert.match(html, /href="\.\/w1-standard-ui-demo\.css"/);
   assert.match(html, /w1-decision-queue-demo\.bundle\.js/);
 });
 
