@@ -17,8 +17,8 @@
     "smoke": "tsx src/examples/smoke.ts",
     "demo:decision-card": "tsx src/examples/decision-card-demo.ts",
     "demo:decision-queue": "tsx src/examples/decision-queue-demo.ts",
-    "demo:w1-queue:esbuild": "npx --yes esbuild@0.25.0 src/examples/w1-decision-queue-demo.ts --bundle --platform=browser --format=esm --outfile=src/examples/w1-decision-queue-demo.bundle.mjs",
-    "demo:w1-queue": "npm run demo:w1-queue:esbuild && node -e \"console.log('Built src/examples/w1-decision-queue-demo.bundle.mjs — open src/examples/w1-decision-queue-demo.html in a browser.')\"",
+    "demo:w1-queue:esbuild": "npx --yes esbuild@0.25.0 src/examples/w1-decision-queue-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/w1-decision-queue-demo.bundle.js",
+    "demo:w1-queue": "npm run demo:w1-queue:esbuild && node -e \"console.log('Built src/examples/w1-decision-queue-demo.bundle.js — open src/examples/w1-decision-queue-demo.html in a browser.')\"",
     "test-fixtures:validate": "tsx -e \"import('./src/test-fixtures/index.js').then(m => { const events = m.seedWorld(); console.log('seed produced', events.length, 'events'); })\""
   },
   "devDependencies": {
