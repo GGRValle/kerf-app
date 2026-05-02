@@ -16,12 +16,21 @@ export interface DecisionCardActions {
   edit(): void;
 }
 
+export type DecisionCardBadgeTone = 'neutral' | 'info' | 'warning' | 'danger';
+
+export interface DecisionCardBadge {
+  label: string;
+  tone: DecisionCardBadgeTone;
+}
+
 export interface DecisionCardViewModel {
   packetId: string;
   workflow: DecisionPacket['workflow'];
   title: string;
   subtitle: string;
   status: DecisionPacket['status'];
+  /** Drift severity chip; other workflows omit or leave undefined. */
+  badge?: DecisionCardBadge | null;
   proposedAction: {
     type: DecisionPacket['proposed_action']['type'];
     description: string;
@@ -77,6 +86,7 @@ export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCard
     title: titleParts.title,
     subtitle: titleParts.subtitle,
     status: packet.status,
+    badge: packet.workflow === 'drift_detection' ? driftSeverityBadge(stringFact(packet, 'severity')) : undefined,
     proposedAction: {
       type: packet.proposed_action.type,
       description: packet.proposed_action.description,
@@ -284,6 +294,21 @@ function driftSeverityLabel(severity: string | null): string {
       return 'low severity';
     default:
       return 'severity unknown';
+  }
+}
+
+function driftSeverityBadge(severity: string | null): DecisionCardBadge | undefined {
+  switch (severity) {
+    case 'low':
+      return { label: 'Low', tone: 'neutral' };
+    case 'medium':
+      return { label: 'Medium', tone: 'info' };
+    case 'high':
+      return { label: 'High', tone: 'warning' };
+    case 'critical':
+      return { label: 'Critical', tone: 'danger' };
+    default:
+      return undefined;
   }
 }
 
