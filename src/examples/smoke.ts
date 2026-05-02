@@ -1,7 +1,22 @@
 // Smoke wire-up. Not a test — a runnable example of how the W1 pieces compose.
 // `npm run smoke`. Deterministic output given fixed clock + seeded RNG.
 
-import { createMemoryEventLog, type Actor, type Event } from '../blackboard/index.js';
+import {
+  createMemoryEventLog,
+  type ActionClass,
+  type Actor,
+  type BlackboardEntityRef,
+  type DataClass,
+  type DecisionAltitude,
+  type DecisionAuthority,
+  type Event,
+  type EventKind,
+  type LearningSignalDraftedPayload,
+  type PrivilegeClass,
+  type RetentionPolicy,
+  type SourceRef,
+  type WorkflowKind,
+} from '../blackboard/index.js';
 import { createPermissionProvider } from '../permissions/index.js';
 import {
   projectDecisions,
@@ -13,14 +28,13 @@ import { createStubPlatformClient } from '../contracts/platform/index.js';
 import { createTranslator } from '../i18n/index.js';
 import { ACTORS, PROJECTS, seedWorld } from '../test-fixtures/index.js';
 import { fixedClock } from '../shared/index.js';
-import { runPolicyGate } from '../altitude/index.js';
+import { learningSignalDraftsToEventTemplates, runPolicyGate } from '../altitude/index.js';
 import {
   applyInvoiceFollowupApprovalAction,
   detectInvoiceFollowupCandidates,
   draftInvoiceFollowup,
   invoiceCandidateToAltitudePacket,
   requestInvoiceFollowupApproval,
-  type BlackboardEventTemplate,
   type InvoiceFollowupFacts,
 } from '../workflows/index.js';
 
@@ -85,6 +99,9 @@ async function main() {
     gateRunId: packet.packet_id + ':gate:smoke',
   });
   const correlationId = packet.packet_id + ':smoke';
+  const learningSignalTemplates = learningSignalDraftsToEventTemplates(
+    decision.policy_gate_result.learning_signal_drafts ?? [],
+  );
   await log.append(workflowEvent(candidate.event, {
     id: 'evt_smoke_invoice_followup_detected',
     at: clock.iso(),
@@ -98,6 +115,14 @@ async function main() {
     correlationId,
     causedBy: 'evt_smoke_invoice_followup_detected',
   }));
+  for (const [index, template] of learningSignalTemplates.entries()) {
+    await log.append(workflowEvent(template, {
+      id: `evt_smoke_learning_signal_${index + 1}`,
+      at: clock.iso(),
+      actor: ACTORS.cosAgent,
+      correlationId,
+    }));
+  }
   const request = requestInvoiceFollowupApproval(draft, {
     requestId: 'approval_smoke_invoice_001',
     decisionAuthority: { role: 'owner', actorId: actor.id },
@@ -124,12 +149,25 @@ async function main() {
   const invoiceAudit = (await log.byEntity(candidate.id))
     .filter((event) => event.kind.startsWith('invoice_followup.'))
     .map((event) => ({ id: event.id, kind: event.kind, causedBy: event.causedBy ?? null }));
+  const learningSignalAudit = (await log.all())
+    .filter(
+      (event): event is Event<LearningSignalDraftedPayload> =>
+        event.kind === 'learning_signal.drafted' && event.correlationId === correlationId,
+    )
+    .map((event) => ({
+      id: event.id,
+      kind: event.kind,
+      sourceValidatorId: event.payload.sourceValidatorId,
+      reason: event.payload.reason,
+      summary: event.payload.summary,
+    }));
 
   console.log(JSON.stringify({
     invoice_followup_gate_loop: {
       altitude_packet: packet,
       decision_packet: decision,
       invoice_audit: invoiceAudit,
+      learning_signal_audit: learningSignalAudit,
     },
   }, null, 2));
 
@@ -145,8 +183,22 @@ async function main() {
 }
 
 
+interface SmokeEventTemplate<TPayload> {
+  kind: EventKind;
+  entity: BlackboardEntityRef;
+  payload: TPayload;
+  data_class: DataClass;
+  retention_policy: RetentionPolicy;
+  privilege_class: PrivilegeClass | null;
+  workflow: WorkflowKind;
+  decision_authority: DecisionAuthority;
+  action_class: ActionClass;
+  decision_altitude?: DecisionAltitude;
+  sources: SourceRef[];
+}
+
 function workflowEvent<TPayload>(
-  template: BlackboardEventTemplate<TPayload>,
+  template: SmokeEventTemplate<TPayload>,
   opts: {
     id: string;
     at: string;
