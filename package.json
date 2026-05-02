@@ -16,6 +16,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "smoke": "tsx src/examples/smoke.ts",
     "demo:decision-card": "tsx src/examples/decision-card-demo.ts",
+    "demo:decision-queue": "tsx src/examples/decision-queue-demo.ts",
     "test-fixtures:validate": "tsx -e \"import('./src/test-fixtures/index.js').then(m => { const events = m.seedWorld(); console.log('seed produced', events.length, 'events'); })\""
   },
   "devDependencies": {
