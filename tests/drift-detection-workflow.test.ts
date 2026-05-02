@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { runPolicyGate, type AltitudePacket } from '../src/altitude/index.js';
 import { fixedClock } from '../src/shared/index.js';
 import { ValidationError } from '../src/shared/errors.js';
 import {
@@ -7,6 +8,7 @@ import {
   assembleDriftAlert,
   assertDriftDetectedPayloadValid,
   classifyDriftSeverity,
+  driftAlertToAltitudePacket,
   renderDriftSurface,
   shapeRecommendedAction,
   validateLlmDriftCandidate,
@@ -316,6 +318,108 @@ test('assembleDriftAlert calls the runtime guard and rejects margin language', (
       ),
     ValidationError,
   );
+});
+
+// ---------------------------------------------------------------------------
+// Altitude/Policy Gate integration
+// ---------------------------------------------------------------------------
+
+test('driftAlertToAltitudePacket maps workflow data into an AltitudePacket', () => {
+  const alert = assembleDriftAlert(baseCandidate(), {
+    alertId: 'drift_clem_callback',
+    clock: CLOCK,
+    severityContext: { daysOverdue: 6 },
+    contextRefs: [{ id: 'proj_clem_kitchen', kind: 'project' }],
+  });
+  const packet = driftAlertToAltitudePacket(alert, {
+    tenantId: 'tenant_ggr',
+    evaluatedAt: '2026-04-28T09:05:00.000Z',
+  });
+
+  assert.equal(packet.workflow, 'drift_detection');
+  assert.equal(packet.project_id, 'proj_clem_kitchen');
+  assert.equal(packet.classification.urgency, 'normal');
+  assert.equal(packet.classification.confidence_band, 'MEDIUM');
+  assert.equal(packet.proposed_action.type, 'draft_internal_summary');
+  assert.equal(packet.model_suggested_altitude, 'L1');
+  assert.equal(packet.model_suggested_blackboard_rail, 'changed');
+  assert.equal(packet.model_inference_label, 'INFERRED');
+  assert.deepEqual(packet.evidence_ids, ['signal_sig_clem_callback_2026_04_22']);
+  assert.deepEqual(packet.claim_ids, [
+    'claim_drift_drift_clem_callback_pattern',
+    'claim_drift_drift_clem_callback_severity',
+    'claim_drift_drift_clem_callback_recommended_action',
+  ]);
+  assert.equal(packet.source_refs.length > 0, true);
+  assert.equal(packet.extracted_facts.summary, alert.payload.summary);
+});
+
+function driftAltitudePacket(overrides: Partial<AltitudePacket> = {}): AltitudePacket {
+  const alert = assembleDriftAlert(baseCandidate(), {
+    alertId: 'drift_clem_callback',
+    clock: CLOCK,
+    severityContext: { daysOverdue: 6 },
+    contextRefs: [{ id: 'proj_clem_kitchen', kind: 'project' }],
+  });
+  return {
+    ...driftAlertToAltitudePacket(alert, {
+      tenantId: 'tenant_ggr',
+      evaluatedAt: '2026-04-28T09:05:00.000Z',
+    }),
+    ...overrides,
+  };
+}
+
+function gateDriftPacket(packet: AltitudePacket) {
+  return runPolicyGate(packet, {
+    evaluatedAt: '2026-04-28T09:05:00.000Z',
+    gateRunId: packet.packet_id + ':gate:test',
+  });
+}
+
+test('drift packet passes the Policy Gate as an internal summary', () => {
+  const decision = gateDriftPacket(driftAltitudePacket());
+
+  assert.equal(decision.workflow, 'drift_detection');
+  assert.equal(decision.system_baseline_altitude, 'L1');
+  assert.equal(decision.system_final_altitude, 'L1');
+  assert.equal(decision.review_requirement, 'AUTONOMOUS');
+  assert.equal(decision.policy_gate_result.safe_next_action, 'allow_internal_summary');
+  assert.equal(decision.policy_gate_result.allowed, true);
+  assert.deepEqual(decision.policy_gate_result.critical_failures, []);
+});
+
+test('high-confidence drift packet records V8 confidence-band correction', () => {
+  const decision = gateDriftPacket(driftAltitudePacket({
+    classification: {
+      intent: 'surface an operational drift alert',
+      urgency: 'high',
+      confidence: 0.91,
+      confidence_band: 'HIGH',
+    },
+  }));
+
+  assert.deepEqual(decision.policy_gate_result.corrected_fields?.['classification.confidence_band'], {
+    from: 'HIGH',
+    to: 'MEDIUM',
+  });
+  assert.equal(
+    decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V8')
+      ?.field_corrected?.field,
+    'classification.confidence_band',
+  );
+});
+
+test('drift packet missing source basis blocks promotion through V7', () => {
+  const decision = gateDriftPacket(driftAltitudePacket({
+    source_refs: [],
+    evidence_ids: [],
+    claim_ids: [],
+  }));
+
+  assert.equal(decision.status, 'BLOCKED_PENDING_SOURCE');
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_promotion');
+  assert.deepEqual(decision.policy_gate_result.critical_failures, ['V7']);
 });
 
 // ---------------------------------------------------------------------------

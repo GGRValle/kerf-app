@@ -38,6 +38,7 @@ src/
 | `blackboard/compliance-kb` | V1 schema | `compliance_kb_entry` + `compliance_event`; V1.5+ Sentry/Watch runtime, V2.0α active gating. |
 | `workflows/invoice-followup` | V1 pure + gate-wired | Candidate → draft → AltitudePacket → Policy Gate → DecisionPacket → approval action; no Slack/Gmail/DB. |
 | `workflows/proposal-followup` | W2 pure + gate-wired | Candidate → draft → AltitudePacket → Policy Gate → DecisionPacket → approval action; no Platform network writes. |
+| `workflows/drift-detection` | W3 pure + gate-wired | LLM candidate → drift alert → AltitudePacket → Policy Gate → DecisionPacket; internal-only, no external send. |
 | `altitude` | W1 skeleton + safety + audit-trail validators | AltitudePacket → DecisionPacket core types plus Policy Gate shell with V1/V2/V6 send-safety, V7 source-basis, V8 inference-labeling, V12 audit-trail, V17 token-budget, and V18 altitude-assignment first cuts. |
 | `audit/readLog` | V1 | In-memory read audit log + EventLog read wrapper; durable store lands later. |
 | `authority/profile` | V1 | Per-role × per-tenant authority bands + dollar ceilings + escalation chain. `canAuthorize()` is pure. Per-tenant overlays land V1.5+. |
