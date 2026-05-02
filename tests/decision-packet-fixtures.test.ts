@@ -135,12 +135,27 @@ test('model-inference fixture carries the V8 needs-review correction', () => {
   );
 });
 
+test('proposal model-inference fixture carries the V8 confidence-band correction', () => {
+  const packet = createProposalDecisionPacketFixture('model_inference_review');
+
+  assert.equal(packet.workflow, 'proposal_followup');
+  assert.deepEqual(packet.policy_gate_result.corrected_fields?.['classification.confidence_band'], {
+    from: 'HIGH',
+    to: 'MEDIUM',
+  });
+  assert.equal(
+    packet.policy_gate_result.validator_results.find((result) => result.validator_id === 'V8')
+      ?.field_corrected?.field,
+    'classification.confidence_band',
+  );
+});
+
 test('mixed DecisionPacket fixture list includes invoice and proposal scenarios', () => {
   assert.equal(invoiceDecisionPacketListFixture.length, 4);
-  assert.equal(proposalDecisionPacketListFixture.length, 4);
-  assert.equal(mixedDecisionPacketListFixture.length, 8);
+  assert.equal(proposalDecisionPacketListFixture.length, 5);
+  assert.equal(mixedDecisionPacketListFixture.length, 9);
   assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'invoice_followup').length, 4);
-  assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'proposal_followup').length, 4);
+  assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'proposal_followup').length, 5);
 });
 
 test('primary invoice fixture output is a stable regression snapshot', () => {
