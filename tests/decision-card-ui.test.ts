@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { invoiceDecisionPacketFixture } from '../src/test-fixtures/index.js';
+import type { DecisionCardViewModel } from '../src/ui/components/DecisionCard.js';
 import {
   buildDecisionCardViewModel,
+  escapeHtml,
   formatDecisionCardText,
+  renderDecisionCardViewHtml,
   wireDecisionCardHandlers,
 } from '../src/ui/index.js';
 
@@ -55,4 +58,49 @@ test('DecisionCard UI module does not import Policy Gate or test-fixture generat
 
   assert.equal(/runPolicyGate/.test(source), false);
   assert.equal(/test-fixtures/.test(source), false);
+});
+
+test('DecisionCardView module does not import Policy Gate or fixtures', () => {
+  const source = readFileSync(
+    new URL('../src/ui/components/DecisionCardView.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.equal(/runPolicyGate/.test(source), false);
+  assert.equal(/invoiceDecisionPacketFixture/.test(source), false);
+  assert.equal(/test-fixtures/.test(source), false);
+});
+
+test('renderDecisionCardViewHtml includes authoritative block and data-action hooks', () => {
+  const view = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
+  const html = renderDecisionCardViewHtml(view);
+
+  assert.match(html, /Authoritative \(system final\)/);
+  assert.match(html, /system_final_altitude/);
+  assert.match(html, /data-kerf-decision-action="approve"/);
+  assert.match(html, /data-kerf-decision-action="reject"/);
+  assert.match(html, /data-kerf-decision-action="edit"/);
+  assert.match(html, /<details[^>]*class="[^"]*kerf-audit-details/);
+});
+
+test('renderDecisionCardViewHtml escapes hostile HTML in title', () => {
+  const base = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
+  const hostile: DecisionCardViewModel = {
+    ...base,
+    title: '<script>alert("x")</script>',
+  };
+  const html = renderDecisionCardViewHtml(hostile);
+  assert.equal(html.includes('<script>'), false);
+  assert.ok(html.includes('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'));
+});
+
+test('renderDecisionCardViewHtml has no inline script handlers', () => {
+  const view = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
+  const html = renderDecisionCardViewHtml(view);
+  assert.doesNotMatch(html, /\bonclick\s*=/i);
+  assert.doesNotMatch(html, /javascript:/i);
+});
+
+test('escapeHtml neutralizes angle brackets', () => {
+  assert.equal(escapeHtml('<script>'), '&lt;script&gt;');
 });

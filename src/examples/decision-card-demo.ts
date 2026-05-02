@@ -1,6 +1,7 @@
 import {
   buildDecisionCardViewModel,
   formatDecisionCardText,
+  renderDecisionCardViewHtml,
   wireDecisionCardHandlers,
 } from '../ui/index.js';
 import { invoiceDecisionPacketFixture } from '../test-fixtures/index.js';
@@ -22,3 +23,6 @@ actions.reject('needs a phone call first');
 actions.edit();
 
 console.log(JSON.stringify({ callsAfterAction: calls }, null, 2));
+
+console.log('\n--- DecisionCardView HTML (mount in browser + bindDecisionCardActions) ---\n');
+console.log(renderDecisionCardViewHtml(view));
