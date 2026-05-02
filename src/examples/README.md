@@ -72,7 +72,7 @@ open the file directly in Safari.
 
 The W1 Standard UI demo should show:
 
-- Top bar: `KERF`, `W1 - Decision surface`, and `Local only`.
+- Top bar: `KERF`, `W1 · Decision surface`, and `Local only`.
 - Main queue with 13 cards from `mixedDecisionPacketListFixture`.
 - Filter buttons: All, Blocked, Owner Review, Invoice, Proposal, Drift.
 - Right rail action log with Clear log and Reset demo controls.
