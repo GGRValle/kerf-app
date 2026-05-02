@@ -3,12 +3,17 @@
 This runbook is the repeatable path for the Kerf W1 demo. It proves the current
 safety spine and browser-visible operator surface from a fresh checkout.
 
+For the acceptance-test evidence map, see
+[`W1_ACCEPTANCE_EVIDENCE.md`](./W1_ACCEPTANCE_EVIDENCE.md). The runbook is the
+demo procedure; the evidence ledger maps each W1 acceptance item to the tests,
+smoke output, and browser artifacts that prove it.
+
 ## Verified Baseline
 
 Last verified on **May 2, 2026** from `main` at:
 
 ```bash
-e0258b2 style(ui): refine learning signals audit block scanability (#55)
+695c016 docs: update W1 demo evidence for V9 learning loop (#56)
 ```
 
 Expected green gate at this baseline:
