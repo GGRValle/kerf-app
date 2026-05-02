@@ -11,5 +11,6 @@ export * from './shared/index.js';
 export * from './i18n/index.js';
 export * from './tenant/index.js';
 export * from './altitude/index.js';
+export * from './hosting/index.js';
 export * from './workflows/index.js';
 // test-fixtures intentionally NOT re-exported — consume via '@kerf/core/test-fixtures'.

@@ -13,6 +13,7 @@ src/
 ├── projections/       # Read models: decisions, systemState, liveMemory, graph
 ├── workflows/         # Pure workflow logic; no integrations or side effects
 ├── altitude/          # AltitudePacket, DecisionPacket, Policy Gate result types
+├── hosting/           # hosting_route_check guard + approved endpoint registry
 ├── audit/             # read-audit log primitives (in-memory V1)
 ├── authority/         # per-role × per-tenant authority profile + canAuthorize
 ├── contracts/
@@ -40,6 +41,7 @@ src/
 | `workflows/proposal-followup` | W2 pure + gate-wired | Candidate → draft → AltitudePacket → Policy Gate → DecisionPacket → approval action; no Platform network writes. |
 | `workflows/drift-detection` | W3 pure + gate-wired | LLM candidate → drift alert → AltitudePacket → Policy Gate → DecisionPacket; internal-only, no external send. |
 | `altitude` | W1 skeleton + safety + learning + audit-trail validators | AltitudePacket → DecisionPacket core types plus Policy Gate shell with V1/V2/V6 send-safety, V7 source-basis, V8 inference-labeling, V9 learning-signal drafts, V12 audit-trail, V17 token-budget, and V18 altitude-assignment first cuts. |
+| `hosting/routeCheck` | V1 guard | Pure `hosting_route_check` adapter audit guard. Registry starts with `groq://llama-70b` per D-023; no network/model invocation. |
 | `audit/readLog` | V1 | In-memory read audit log + EventLog read wrapper; durable store lands later. |
 | `authority/profile` | V1 | Per-role × per-tenant authority bands + dollar ceilings + escalation chain. `canAuthorize()` is pure. Per-tenant overlays land V1.5+. |
 | `contracts/platform` | V1 stub | Real types, stub client. Versioned: `2026-04-23.0`. |
@@ -56,6 +58,7 @@ src/
 - Blackboard reads that go through `withReadAudit` record actor, role, timestamp, target, and result count without copying event payloads.
 - Every event declares `data_class`, `retention_policy`, and `privilege_class` (`null` for non-privileged).
 - Privileged events (non-null `privilege_class`) MUST bypass the LLM gateway. Consumer LLM gateways are responsible for filtering — call `isPrivilegedEvent(event)` before any model send. This is the architectural "privileged-class bypass" layer of vendor protection, not policy.
+- Every hosted model invocation adapter must emit `adapter_action: 'hosting_route_check'` from `checkHostingRoute()` before calling the provider. Kerf-app owns the pure guard/registry; Platform owns the network invocation path.
 - `OWNER_MONEY_CEILING_CENTS = 200_000` ($2,000) lives in `permissions/matrix.ts`.
 - Margin is a first-class permission resource — only owner + MoO can view.
 - Platform contract versioned: `KERF_PLATFORM_CONTRACT_VERSION`. Bump only when `src/contracts/platform/*` wire shapes change. Internal Blackboard schema changes (new event/entity kinds, new required metadata fields) do NOT trigger a bump — see `kerf-cos/.claude/memory/project_kerf_contract_versioning.md`.
