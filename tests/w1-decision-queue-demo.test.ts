@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { mixedDecisionPacketListFixture } from '../src/test-fixtures/index.js';
+import { sortPacketsForW1Demo, workflowDemoRank } from '../src/examples/w1-decision-queue-demo.ts';
 
 test('w1 interactive demo HTML links both operator stylesheets', () => {
   const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
@@ -159,4 +161,53 @@ test('w1 interactive demo threads actionLogVerbForWorkflow into appendLog from p
   assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'approve\')'));
   assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'reject\')'));
   assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'edit\')'));
+});
+
+test('w1 demo source orders mixed fixtures proposal-first via sortPacketsForW1Demo', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /export function workflowDemoRank/);
+  assert.match(src, /export function sortPacketsForW1Demo/);
+  assert.match(src, /sortPacketsForW1Demo\(mixedDecisionPacketListFixture\)/);
+});
+
+test('sortPacketsForW1Demo ranks proposal → invoice → drift and preserves order within workflow', () => {
+  const sorted = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
+
+  assert.equal(sorted[0]?.workflow, 'proposal_followup');
+
+  const ranks = sorted.map((p) => workflowDemoRank(p.workflow));
+  assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b));
+
+  const originalProposals = mixedDecisionPacketListFixture.filter((p) => p.workflow === 'proposal_followup');
+  const sortedProposals = sorted.filter((p) => p.workflow === 'proposal_followup');
+  assert.deepEqual(
+    sortedProposals.map((p) => p.packet_id),
+    originalProposals.map((p) => p.packet_id),
+  );
+
+  const originalInvoices = mixedDecisionPacketListFixture.filter((p) => p.workflow === 'invoice_followup');
+  const sortedInvoices = sorted.filter((p) => p.workflow === 'invoice_followup');
+  assert.deepEqual(
+    sortedInvoices.map((p) => p.packet_id),
+    originalInvoices.map((p) => p.packet_id),
+  );
+
+  const originalDrifts = mixedDecisionPacketListFixture.filter((p) => p.workflow === 'drift_detection');
+  const sortedDrifts = sorted.filter((p) => p.workflow === 'drift_detection');
+  assert.deepEqual(
+    sortedDrifts.map((p) => p.packet_id),
+    originalDrifts.map((p) => p.packet_id),
+  );
+
+  const lastProposalIdx = sorted.map((p) => p.workflow).lastIndexOf('proposal_followup');
+  const firstInvoiceIdx = sorted.findIndex((p) => p.workflow === 'invoice_followup');
+  const lastInvoiceIdx = sorted.map((p) => p.workflow).lastIndexOf('invoice_followup');
+  const firstDriftIdx = sorted.findIndex((p) => p.workflow === 'drift_detection');
+  if (firstInvoiceIdx !== -1 && lastProposalIdx !== -1) {
+    assert.ok(firstInvoiceIdx > lastProposalIdx);
+  }
+  if (firstDriftIdx !== -1 && lastInvoiceIdx !== -1) {
+    assert.ok(firstDriftIdx > lastInvoiceIdx);
+  }
 });
