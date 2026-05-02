@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kerf — W1 Interactive DecisionQueue</title>
+    <link rel="stylesheet" href="../ui/styles/decision-card.css" />
+    <link rel="stylesheet" href="../ui/styles/decision-queue.css" />
+    <style>
+      .kerf-w1-demo-shell {
+        max-width: 58rem;
+        margin: 0 auto;
+        padding: 1rem 1rem 2rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+      @media (min-width: 960px) {
+        .kerf-w1-demo-shell {
+          grid-template-columns: 1fr 18rem;
+          align-items: start;
+        }
+      }
+      .kerf-w1-log-panel {
+        position: sticky;
+        top: 1rem;
+        border: 1px solid var(--kerf-border, #343c4a);
+        border-radius: 8px;
+        background: var(--kerf-bg-elevated, #222831);
+        padding: 0.65rem 0.75rem;
+        max-height: min(70vh, 32rem);
+        overflow: auto;
+      }
+      .kerf-w1-log-panel h2 {
+        margin: 0 0 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--kerf-fg-muted, #9aa3b2);
+      }
+      .kerf-w1-log-entries {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .kerf-w1-log-entry {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.72rem;
+        line-height: 1.35;
+        color: var(--kerf-fg, #e8ecf1);
+        word-break: break-word;
+        border-bottom: 1px solid var(--kerf-border, #343c4a);
+        padding-bottom: 0.35rem;
+      }
+      .kerf-w1-log-entry:last-child {
+        border-bottom: 0;
+      }
+    </style>
+    <!--
+      Build the browser bundle first:
+        npm run demo:w1-queue
+
+      Then open this file from disk (file://) or any static server so
+      ./w1-decision-queue-demo.bundle.mjs resolves next to this HTML file.
+    -->
+    <script type="module" src="./w1-decision-queue-demo.bundle.mjs"></script>
+  </head>
+  <body>
+    <div class="kerf-w1-demo-shell">
+      <div id="kerf-queue-root" aria-live="polite"></div>
+      <aside class="kerf-w1-log-panel" aria-label="Action log">
+        <h2>Action log</h2>
+        <div id="kerf-action-log" class="kerf-w1-log-entries"></div>
+      </aside>
+    </div>
+  </body>
+</html>
