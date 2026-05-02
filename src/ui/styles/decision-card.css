@@ -1,0 +1,296 @@
+/**
+ * DecisionCard static HTML — operator-console surface (PR #25A).
+ * Styles the kerf-* classes from the PR #25A list; section headings use
+ * `.kerf-section h3` / `.kerf-section h4` (elements, no new class names).
+ */
+
+:root {
+  --kerf-bg-app: #12151a;
+  --kerf-bg-card: #1a1f27;
+  --kerf-bg-elevated: #222831;
+  --kerf-bg-control: #2a3140;
+  --kerf-fg: #e8ecf1;
+  --kerf-fg-muted: #9aa3b2;
+  --kerf-border: #343c4a;
+  --kerf-border-strong: #4a5568;
+  --kerf-accent: #3d7dd9;
+  --kerf-accent-hover: #2f6bc4;
+  --kerf-accent-active: #285cb0;
+  --kerf-danger-muted: #a67a7a;
+  --kerf-focus-ring: #7eb8ff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--kerf-fg);
+  background: var(--kerf-bg-app);
+}
+
+.kerf-decision-card {
+  max-width: 44rem;
+  margin: 1.25rem auto;
+  padding: 1rem 1.1rem;
+  background: var(--kerf-bg-card);
+  border: 1px solid var(--kerf-border);
+  border-radius: 8px;
+  color: var(--kerf-fg);
+}
+
+.kerf-card-header {
+  border-bottom: 1px solid var(--kerf-border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.kerf-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.kerf-subtitle {
+  margin: 0;
+  color: var(--kerf-fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.kerf-section {
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-section h3 {
+  margin: 0 0 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-section h4 {
+  margin: 0.65rem 0 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.65rem 1rem;
+  margin-bottom: 0.45rem;
+}
+
+.kerf-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--kerf-border-strong);
+  background: var(--kerf-bg-elevated);
+  color: var(--kerf-fg);
+}
+
+.kerf-status-pill {
+  text-transform: uppercase;
+}
+
+.kerf-safe-next {
+  font-size: 0.85rem;
+  color: var(--kerf-fg);
+}
+
+.kerf-safe-next strong {
+  font-weight: 600;
+  color: var(--kerf-fg-muted);
+  margin-right: 0.25rem;
+}
+
+.kerf-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--kerf-fg-muted);
+  line-height: 1.45;
+}
+
+.kerf-muted {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.15rem;
+  color: var(--kerf-fg);
+}
+
+.kerf-list li {
+  margin: 0.2rem 0;
+  word-break: break-word;
+}
+
+.kerf-list code {
+  font-size: 0.78rem;
+  padding: 0.08rem 0.25rem;
+  border-radius: 4px;
+  background: var(--kerf-bg-elevated);
+  border: 1px solid var(--kerf-border);
+  color: var(--kerf-fg);
+}
+
+.kerf-blocked {
+  border-left: 3px solid var(--kerf-danger-muted);
+  padding-left: 0.5rem;
+  margin-left: 0;
+}
+
+.kerf-source-basis .kerf-list {
+  margin-top: 0.15rem;
+}
+
+.kerf-authoritative p {
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+}
+
+.kerf-authoritative strong {
+  color: var(--kerf-fg-muted);
+  font-weight: 600;
+}
+
+.kerf-proposed p {
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+}
+
+.kerf-audit-details {
+  margin-bottom: 1rem;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  background: var(--kerf-bg-elevated);
+  padding: 0.35rem 0.6rem;
+}
+
+.kerf-audit-details summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--kerf-fg-muted);
+  padding: 0.35rem 0.15rem;
+  list-style-position: outside;
+}
+
+.kerf-audit-details summary:hover {
+  color: var(--kerf-fg);
+}
+
+.kerf-audit-details > div {
+  padding: 0.35rem 0.25rem 0.6rem;
+  font-size: 0.82rem;
+  color: var(--kerf-fg-muted);
+  border-top: 1px solid var(--kerf-border);
+  margin-top: 0.25rem;
+}
+
+.kerf-audit-details > div > div {
+  margin: 0.3rem 0;
+}
+
+.kerf-audit-details > div strong {
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.kerf-btn {
+  appearance: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid var(--kerf-border-strong);
+  background: var(--kerf-bg-control);
+  color: var(--kerf-fg);
+  cursor: pointer;
+  min-height: 2.25rem;
+}
+
+.kerf-btn:hover {
+  background: #323a4d;
+  border-color: #5c677a;
+}
+
+.kerf-btn:active {
+  background: #262d3d;
+}
+
+.kerf-btn:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: 2px;
+}
+
+.kerf-btn-primary {
+  background: var(--kerf-accent);
+  border-color: var(--kerf-accent);
+  color: #fff;
+}
+
+.kerf-btn-primary:hover {
+  background: var(--kerf-accent-hover);
+  border-color: var(--kerf-accent-hover);
+}
+
+.kerf-btn-primary:active {
+  background: var(--kerf-accent-active);
+  border-color: var(--kerf-accent-active);
+}
+
+.kerf-artifact {
+  background: var(--kerf-bg-elevated);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 0.65rem 0.75rem;
+}
+
+.kerf-artifact-pre {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--kerf-bg-app);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--kerf-fg);
+}
