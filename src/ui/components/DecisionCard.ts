@@ -62,23 +62,15 @@ export interface DecisionCardViewModel {
 }
 
 export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCardViewModel {
-  const invoiceNumber = stringFact(packet, 'invoice_number');
-  const invoiceId = stringFact(packet, 'invoice_id');
   const clientName = stringFact(packet, 'client_name') ?? 'Unknown client';
-  const daysPastDue = numberFact(packet, 'days_past_due');
   const amountLabel = formatCents(packet.money_fields?.amount_cents ?? numberFact(packet, 'amount_cents'));
-  const invoiceLabel = invoiceNumber ?? invoiceId ?? packet.packet_id;
-  const ageLabel = daysPastDue === null
-    ? 'invoice follow-up'
-    : daysPastDue === 1
-      ? '1 day past due'
-      : `${daysPastDue} days past due`;
+  const titleParts = titleAndSubtitle(packet, clientName, amountLabel);
 
   return {
     packetId: packet.packet_id,
     workflow: packet.workflow,
-    title: `${clientName} · ${invoiceLabel}`,
-    subtitle: amountLabel === null ? ageLabel : `${ageLabel} · ${amountLabel}`,
+    title: titleParts.title,
+    subtitle: titleParts.subtitle,
     status: packet.status,
     proposedAction: {
       type: packet.proposed_action.type,
@@ -164,6 +156,55 @@ export function wireDecisionCardHandlers(
       handlers.onEdit?.(packet.packet_id);
     },
   };
+}
+
+function titleAndSubtitle(
+  packet: DecisionPacket,
+  clientName: string,
+  amountLabel: string | null,
+): { title: string; subtitle: string } {
+  if (packet.workflow === 'proposal_followup') {
+    const proposalNumber = stringFact(packet, 'proposal_number');
+    const proposalId = stringFact(packet, 'proposal_id');
+    const proposalLabel = proposalNumber ?? proposalId ?? packet.packet_id;
+    const trigger = stringFact(packet, 'trigger') ?? 'proposal follow-up';
+    const daysSinceViewed = numberFact(packet, 'days_since_viewed');
+    const daysSinceSent = numberFact(packet, 'days_since_sent');
+    const ageLabel = daysSinceViewed !== null
+      ? dayCountLabel(daysSinceViewed, 'since viewed')
+      : daysSinceSent !== null
+        ? dayCountLabel(daysSinceSent, 'since sent')
+        : trigger;
+    return {
+      title: `${clientName} · ${proposalLabel}`,
+      subtitle: amountLabel === null ? `${trigger} · ${ageLabel}` : `${trigger} · ${ageLabel} · ${amountLabel}`,
+    };
+  }
+
+  if (packet.workflow === 'invoice_followup') {
+    const invoiceNumber = stringFact(packet, 'invoice_number');
+    const invoiceId = stringFact(packet, 'invoice_id');
+    const invoiceLabel = invoiceNumber ?? invoiceId ?? packet.packet_id;
+    const daysPastDue = numberFact(packet, 'days_past_due');
+    const ageLabel = daysPastDue === null
+      ? 'invoice follow-up'
+      : daysPastDue === 1
+        ? '1 day past due'
+        : `${daysPastDue} days past due`;
+    return {
+      title: `${clientName} · ${invoiceLabel}`,
+      subtitle: amountLabel === null ? ageLabel : `${ageLabel} · ${amountLabel}`,
+    };
+  }
+
+  return {
+    title: `${clientName} · ${packet.packet_id}`,
+    subtitle: amountLabel === null ? packet.workflow : `${packet.workflow} · ${amountLabel}`,
+  };
+}
+
+function dayCountLabel(days: number, suffix: string): string {
+  return days === 1 ? `1 day ${suffix}` : `${days} days ${suffix}`;
 }
 
 function stringFact(packet: DecisionPacket, key: string): string | null {

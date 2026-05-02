@@ -1,19 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { invoiceDecisionPacketListFixture } from '../src/test-fixtures/index.js';
+import {
+  invoiceDecisionPacketListFixture,
+  mixedDecisionPacketListFixture,
+  proposalDecisionPacketListFixture,
+} from '../src/test-fixtures/index.js';
 import {
   buildDecisionCardViewModel,
   buildDecisionQueueViewModel,
   renderDecisionQueueHtml,
 } from '../src/ui/index.js';
 
-function fixtureViews() {
+function invoiceFixtureViews() {
   return invoiceDecisionPacketListFixture.map((packet) => buildDecisionCardViewModel(packet));
 }
 
+function mixedFixtureViews() {
+  return mixedDecisionPacketListFixture.map((packet) => buildDecisionCardViewModel(packet));
+}
+
 test('DecisionQueue view model summarizes the invoice DecisionPacket fixture list', () => {
-  const queue = buildDecisionQueueViewModel(fixtureViews());
+  const queue = buildDecisionQueueViewModel(invoiceFixtureViews());
 
   assert.equal(queue.summary.total, 4);
   assert.equal(queue.summary.allowed + queue.summary.blocked, 4);
@@ -22,8 +30,19 @@ test('DecisionQueue view model summarizes the invoice DecisionPacket fixture lis
   assert.equal(queue.cards.length, 4);
 });
 
+test('DecisionQueue view model summarizes the mixed invoice/proposal fixture list', () => {
+  const queue = buildDecisionQueueViewModel(mixedFixtureViews());
+
+  assert.equal(queue.summary.total, 8);
+  assert.equal(queue.summary.allowed + queue.summary.blocked, 8);
+  assert.equal(queue.summary.blocked, 4);
+  assert.equal(queue.summary.ownerReview, 7);
+  assert.equal(queue.summary.critical, 4);
+  assert.equal(queue.cards.filter((card) => card.workflow === 'proposal_followup').length, 4);
+});
+
 test('renderDecisionQueueHtml renders one DecisionCard per view', () => {
-  const queue = buildDecisionQueueViewModel(fixtureViews(), {
+  const queue = buildDecisionQueueViewModel(invoiceFixtureViews(), {
     title: 'W1 Invoice Decisions',
     subtitle: 'Generated from DecisionPacket fixtures.',
   });
@@ -36,8 +55,22 @@ test('renderDecisionQueueHtml renders one DecisionCard per view', () => {
   assert.equal((html.match(/data-kerf-decision-action="approve"/g) ?? []).length, 4);
 });
 
+test('renderDecisionQueueHtml renders proposal follow-up cards from mixed fixtures', () => {
+  const queue = buildDecisionQueueViewModel(mixedFixtureViews(), {
+    title: 'Kerf Decisions',
+    subtitle: 'Invoice and proposal follow-ups.',
+  });
+  const html = renderDecisionQueueHtml(queue);
+
+  assert.match(html, /data-kerf-decision-queue-count="8"/);
+  assert.equal((html.match(/class="kerf-decision-card"/g) ?? []).length, 8);
+  assert.match(html, /Demo Client Stone/);
+  assert.match(html, /PROP-2042/);
+  assert.match(html, /viewed_no_decision/);
+});
+
 test('renderDecisionQueueHtml includes summary counts and blocked cards', () => {
-  const queue = buildDecisionQueueViewModel(fixtureViews());
+  const queue = buildDecisionQueueViewModel(invoiceFixtureViews());
   const html = renderDecisionQueueHtml(queue);
 
   assert.match(html, /<dt>Total<\/dt>/);
@@ -73,5 +106,11 @@ test('DecisionQueue module does not import Policy Gate or fixtures', () => {
   assert.equal(/runPolicyGate/.test(source), false);
   assert.equal(/invoiceDecisionPacketFixture/.test(source), false);
   assert.equal(/invoiceDecisionPacketListFixture/.test(source), false);
+  assert.equal(/proposalDecisionPacketFixture/.test(source), false);
+  assert.equal(/mixedDecisionPacketListFixture/.test(source), false);
   assert.equal(/test-fixtures/.test(source), false);
+});
+
+test('proposal DecisionPacket fixtures are imported for queue coverage', () => {
+  assert.equal(proposalDecisionPacketListFixture.length, 4);
 });
