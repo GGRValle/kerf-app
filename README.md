@@ -107,10 +107,13 @@ The invoice, proposal, and drift fixtures are generated from typed `AltitudePack
 
 ## Commands
 
+See `src/examples/README.md` for the W1 browser demo runbook and click script.
+
 ```bash
-npm install         # installs typescript + tsx + @types/node
-npm run typecheck   # strict TS, noUncheckedIndexedAccess
-npm run smoke       # runs examples/smoke.ts — deterministic output
+npm install           # installs typescript + tsx + @types/node
+npm run typecheck     # strict TS, noUncheckedIndexedAccess
+npm run smoke         # runs examples/smoke.ts — deterministic output
+npm run demo:w1-queue # builds the browser demo bundle
 ```
 
 ## Lifecycle (Architecture Principle #2)
