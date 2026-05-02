@@ -12,6 +12,7 @@ import {
   bindDecisionCardActions,
   buildDecisionCardViewModel,
   buildDecisionQueueViewModel,
+  escapeHtml,
   mountDecisionQueue,
   wireDecisionCardHandlers,
 } from '../ui/index.js';
@@ -30,6 +31,23 @@ const QUEUE_OPTIONS = {
   title: 'Kerf Decision Queue',
   subtitle: 'Interactive browser-local harness (invoice + proposal + drift fixtures → view models → mount).',
 } as const;
+
+/** Inline reason form strings — drift uses false-positive copy to match card action labels. */
+function reasonFormCopyForWorkflow(workflow: DecisionPacket['workflow']): {
+  labelText: string;
+  placeholderText: string;
+} {
+  if (workflow === 'drift_detection') {
+    return {
+      labelText: 'False positive reason',
+      placeholderText: 'False positive reason (optional)',
+    };
+  }
+  return {
+    labelText: 'Reject reason',
+    placeholderText: 'Reject reason (optional)',
+  };
+}
 
 /** Footers currently showing the reject-reason form (demo-only); reset clears these. */
 const activeRejectRestores = new Map<string, () => void>();
@@ -167,7 +185,8 @@ function wireDecisionCardWithReasonCapture(
       originalActions.approve();
     },
     reject() {
-      showRejectReasonForm(packet.packet_id, originalActions, wrappedActions);
+      const { labelText, placeholderText } = reasonFormCopyForWorkflow(packet.workflow);
+      showRejectReasonForm(packet.packet_id, originalActions, wrappedActions, labelText, placeholderText);
     },
     edit() {
       originalActions.edit();
@@ -181,6 +200,8 @@ function showRejectReasonForm(
   packetId: string,
   originalActions: DecisionCardActions,
   wrappedActions: DecisionCardActions,
+  labelText: string,
+  placeholderText: string,
 ): void {
   const cardRoot = findDecisionCardRoot(packetId);
   const footer = cardRoot?.querySelector('.kerf-card-actions');
@@ -198,7 +219,7 @@ function showRejectReasonForm(
     restoredCleanup = bindDecisionCardActions(footer, wrappedActions);
   };
 
-  footer.innerHTML = renderRejectReasonFormHtml();
+  footer.innerHTML = renderRejectReasonFormHtml(labelText, placeholderText);
   const form = footer.querySelector('.kerf-w1-reject-form');
   const textarea = footer.querySelector('.kerf-w1-reject-textarea');
   const cancel = footer.querySelector('[data-kerf-reject-reason-cancel]');
@@ -244,11 +265,11 @@ function findDecisionCardRoot(packetId: string): HTMLElement | null {
   return null;
 }
 
-function renderRejectReasonFormHtml(): string {
-  return `<form class="kerf-w1-reject-form" aria-label="Reject decision reason">
+function renderRejectReasonFormHtml(labelText: string, placeholderText: string): string {
+  return `<form class="kerf-w1-reject-form" aria-label="${escapeHtml(labelText)}">
   <label class="kerf-w1-reject-label">
-    <span class="kerf-w1-reject-label-text">Reject reason</span>
-    <textarea class="kerf-w1-reject-textarea" rows="3" placeholder="Reject reason (optional)"></textarea>
+    <span class="kerf-w1-reject-label-text">${escapeHtml(labelText)}</span>
+    <textarea class="kerf-w1-reject-textarea" rows="3" placeholder="${escapeHtml(placeholderText)}"></textarea>
   </label>
   <div class="kerf-w1-reject-form-actions">
     <button type="submit" class="kerf-btn kerf-btn-primary">Submit</button>
