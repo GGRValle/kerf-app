@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import type { DecisionPacket } from '../src/index.js';
 import {
   createDriftDecisionPacketFixture,
+  createInvoiceDecisionPacketFixture,
+  createProposalDecisionPacketFixture,
   driftDecisionPacketFixture,
   invoiceDecisionPacketFixture,
   proposalDecisionPacketFixture,
@@ -40,6 +42,11 @@ test('DecisionCard view model renders authoritative gate output separately from 
   assert.equal(view.recipient.recipientLabel, 'Demo Client Rivera');
   assert.equal(view.sourceBasis.sourceRefs[0], 'qbo://invoice/1001');
   assert.equal(view.badge, undefined);
+  assert.deepEqual(view.operatorSummary, {
+    headline: 'Owner approval needed to send',
+    detail: 'Draft a payment follow-up email for owner review.',
+    tone: 'review',
+  });
   assert.deepEqual(view.learningSignals, [
     {
       sourceValidatorId: 'V18',
@@ -84,6 +91,52 @@ test('DecisionCard view model renders drift detection titles and subtitles', () 
   assert.match(view.artifactPreview ?? '', /client callback was promised/);
   assert.deepEqual(view.badge, { label: 'Medium', tone: 'info' });
   assert.deepEqual(view.learningSignals, []);
+});
+
+test('DecisionCard operator summary uses workflow-aware copy for approval and source blocks', () => {
+  const invoiceBlocked = buildDecisionCardViewModel(
+    createInvoiceDecisionPacketFixture('external_send_blocked'),
+  );
+  assert.deepEqual(invoiceBlocked.operatorSummary, {
+    headline: 'Needs approval to send',
+    detail: 'Approve to send the payment reminder.',
+    tone: 'blocked',
+  });
+
+  const proposalBlocked = buildDecisionCardViewModel(
+    createProposalDecisionPacketFixture('source_basis_blocked'),
+  );
+  assert.deepEqual(proposalBlocked.operatorSummary, {
+    headline: "Can't verify proposal status: source data missing",
+    detail: 'Add proposal source evidence before approving the follow-up.',
+    tone: 'blocked',
+  });
+
+  const driftBlocked = buildDecisionCardViewModel(
+    createDriftDecisionPacketFixture('source_basis_blocked'),
+  );
+  assert.deepEqual(driftBlocked.operatorSummary, {
+    headline: "Can't verify the signal: source data missing",
+    detail: 'Add signal evidence before choosing a drift disposition.',
+    tone: 'blocked',
+  });
+});
+
+test('DecisionCard operator summary keeps model and validator jargon out of top-level copy', () => {
+  const proposalReview = buildDecisionCardViewModel(
+    createProposalDecisionPacketFixture('model_inference_review'),
+  );
+  assert.deepEqual(proposalReview.operatorSummary, {
+    headline: 'Operator review needed',
+    detail: 'Review the draft before taking action.',
+    tone: 'review',
+  });
+  assert.doesNotMatch(proposalReview.operatorSummary.headline, /V8|V9|V18|model|altitude|confidence/i);
+  assert.doesNotMatch(proposalReview.operatorSummary.detail, /V8|V9|V18|altitude|confidence/i);
+
+  const drift = buildDecisionCardViewModel(driftDecisionPacketFixture);
+  assert.equal(drift.operatorSummary.headline, 'Internal drift surfaced for awareness');
+  assert.match(drift.operatorSummary.detail, /choose a disposition/);
 });
 
 test('DecisionCard drift high-severity fixture exposes High warning badge', () => {
@@ -193,13 +246,16 @@ test('DecisionCard handlers only call provided callbacks with the packet id', ()
   ]);
 });
 
-test('DecisionCard CSS styles V9 learning signals as a subdued audit subsection', () => {
+test('DecisionCard CSS styles audit and operator summary blocks', () => {
   const css = readFileSync(new URL('../src/ui/styles/decision-card.css', import.meta.url), 'utf8');
 
   assert.match(css, /\.kerf-learning-signals \{/);
   assert.match(css, /border-top: 1px dashed var\(--kerf-border\)/);
   assert.match(css, /\.kerf-learning-signals \.kerf-list li/);
   assert.match(css, /color: var\(--kerf-fg-muted\)/);
+  assert.match(css, /\.kerf-operator-summary \{/);
+  assert.match(css, /\.kerf-operator-summary-blocked \{/);
+  assert.match(css, /overflow-wrap: anywhere/);
 });
 
 test('DecisionCard UI module does not import Policy Gate or test-fixture generation', () => {
@@ -223,6 +279,8 @@ test('renderDecisionCardViewHtml includes authoritative block and data-action ho
   assert.match(html, /Authoritative/);
   assert.match(html, /system_final_altitude/);
   assert.match(html, /Source basis/);
+  assert.match(html, /Operator summary/);
+  assert.match(html, /Owner approval needed to send/);
   assert.match(html, /Audit \/ model/);
   assert.match(html, /<details class="kerf-section kerf-audit-details">/);
   assert.match(html, /data-kerf-decision-action="approve"/);
@@ -340,7 +398,13 @@ test('escapeHtml is applied to rendered titles', () => {
   const html = renderDecisionCardViewHtml({
     ...buildDecisionCardViewModel(invoiceDecisionPacketFixture),
     title: '<unsafe>',
+    operatorSummary: {
+      headline: '<next>',
+      detail: 'Use "Approve" & continue.',
+      tone: 'review',
+    },
   });
 
   assert.match(html, /&lt;unsafe&gt;/);
+  assert.match(html, /&lt;next&gt;/);
 });

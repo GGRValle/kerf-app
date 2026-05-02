@@ -23,6 +23,14 @@ export interface DecisionCardBadge {
   tone: DecisionCardBadgeTone;
 }
 
+export type DecisionCardOperatorSummaryTone = 'neutral' | 'action' | 'blocked' | 'review';
+
+export interface DecisionCardOperatorSummary {
+  headline: string;
+  detail: string;
+  tone: DecisionCardOperatorSummaryTone;
+}
+
 export interface DecisionCardViewModel {
   packetId: string;
   workflow: DecisionPacket['workflow'];
@@ -31,6 +39,7 @@ export interface DecisionCardViewModel {
   status: DecisionPacket['status'];
   /** Drift severity chip; other workflows omit or leave undefined. */
   badge?: DecisionCardBadge | null;
+  operatorSummary: DecisionCardOperatorSummary;
   proposedAction: {
     type: DecisionPacket['proposed_action']['type'];
     description: string;
@@ -92,6 +101,7 @@ export function buildDecisionCardViewModel(packet: DecisionPacket): DecisionCard
     subtitle: titleParts.subtitle,
     status: packet.status,
     badge: packet.workflow === 'drift_detection' ? driftSeverityBadge(stringFact(packet, 'severity')) : undefined,
+    operatorSummary: buildOperatorSummary(packet, titleParts),
     proposedAction: {
       type: packet.proposed_action.type,
       description: packet.proposed_action.description,
@@ -145,6 +155,7 @@ export function formatDecisionCardText(packet: DecisionPacket): string {
   const lines = [
     view.title,
     view.subtitle,
+    `Next step: ${view.operatorSummary.headline} - ${view.operatorSummary.detail}`,
     `Status: ${view.status}`,
     `Proposed action: ${view.proposedAction.description}`,
     `Authoritative: system final altitude ${view.authoritative.systemFinalAltitude}; safe next action ${view.authoritative.safeNextAction}; review ${view.authoritative.reviewRequirement}.`,
@@ -182,6 +193,117 @@ export function wireDecisionCardHandlers(
       handlers.onEdit?.(packet.packet_id);
     },
   };
+}
+
+function buildOperatorSummary(
+  packet: DecisionPacket,
+  titleParts: { title: string; subtitle: string },
+): DecisionCardOperatorSummary {
+  const safeNextAction = packet.policy_gate_result.safe_next_action;
+  const blockedReasons = packet.policy_gate_result.blocked_reasons;
+
+  if (
+    packet.status === 'BLOCKED_PENDING_SOURCE'
+    || safeNextAction === 'block_promotion'
+    || blockedReasons.includes('source_basis_required')
+  ) {
+    return sourceBasisSummary(packet.workflow);
+  }
+
+  if (
+    safeNextAction === 'block_external_send'
+    || blockedReasons.includes('external_send_approval_missing')
+  ) {
+    return {
+      headline: 'Needs approval to send',
+      detail: externalSendDetail(packet.workflow),
+      tone: 'blocked',
+    };
+  }
+
+  if (packet.workflow === 'drift_detection' && safeNextAction === 'allow_internal_summary') {
+    return {
+      headline: 'Internal drift surfaced for awareness',
+      detail: `${titleParts.subtitle}. Use Acknowledge, False positive, or Act to choose a disposition.`,
+      tone: 'neutral',
+    };
+  }
+
+  if (safeNextAction === 'request_owner_approval' || packet.review_requirement === 'OWNER_REVIEW') {
+    return {
+      headline: ownerApprovalHeadline(packet.workflow),
+      detail: packet.proposed_action.description,
+      tone: 'review',
+    };
+  }
+
+  if (safeNextAction === 'request_human_review' || packet.review_requirement === 'OPERATOR_REVIEW') {
+    return {
+      headline: 'Operator review needed',
+      detail: 'Review the draft before taking action.',
+      tone: 'review',
+    };
+  }
+
+  if (packet.policy_gate_result.allowed) {
+    return {
+      headline: 'Ready for operator action',
+      detail: packet.proposed_action.description,
+      tone: 'action',
+    };
+  }
+
+  return {
+    headline: 'Review before continuing',
+    detail: packet.proposed_action.description,
+    tone: 'neutral',
+  };
+}
+
+function sourceBasisSummary(workflow: DecisionPacket['workflow']): DecisionCardOperatorSummary {
+  if (workflow === 'invoice_followup') {
+    return {
+      headline: "Can't verify invoice details: source data missing",
+      detail: 'Add invoice source evidence before approving the reminder.',
+      tone: 'blocked',
+    };
+  }
+
+  if (workflow === 'proposal_followup') {
+    return {
+      headline: "Can't verify proposal status: source data missing",
+      detail: 'Add proposal source evidence before approving the follow-up.',
+      tone: 'blocked',
+    };
+  }
+
+  if (workflow === 'drift_detection') {
+    return {
+      headline: "Can't verify the signal: source data missing",
+      detail: 'Add signal evidence before choosing a drift disposition.',
+      tone: 'blocked',
+    };
+  }
+
+  return {
+    headline: "Can't verify this decision: source data missing",
+    detail: 'Add source evidence before taking action.',
+    tone: 'blocked',
+  };
+}
+
+function externalSendDetail(workflow: DecisionPacket['workflow']): string {
+  if (workflow === 'invoice_followup') {
+    return 'Approve to send the payment reminder.';
+  }
+  if (workflow === 'proposal_followup') {
+    return 'Approve to send the proposal follow-up.';
+  }
+  return 'Approve before sending externally.';
+}
+
+function ownerApprovalHeadline(workflow: DecisionPacket['workflow']): string {
+  return workflow === 'drift_detection' ? 'Owner review needed' : 'Owner approval needed to send';
 }
 
 function actionLabelsForWorkflow(
