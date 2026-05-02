@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { invoiceDecisionPacketFixture } from '../src/test-fixtures/index.js';
+import {
+  invoiceDecisionPacketFixture,
+  invoiceDecisionPacketListFixture,
+} from '../src/test-fixtures/index.js';
 import type { DecisionCardViewModel } from '../src/ui/components/DecisionCard.js';
 import {
   buildDecisionCardViewModel,
@@ -81,6 +84,27 @@ test('renderDecisionCardViewHtml includes authoritative block and data-action ho
   assert.match(html, /data-kerf-decision-action="reject"/);
   assert.match(html, /data-kerf-decision-action="edit"/);
   assert.match(html, /<details[^>]*class="[^"]*kerf-audit-details/);
+});
+
+test('renderDecisionCardViewHtml exposes escaped status data hooks on the card root', () => {
+  const view = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
+  const html = renderDecisionCardViewHtml(view);
+
+  assert.match(html, /data-kerf-allowed="true"/);
+  assert.match(html, /data-kerf-status="/);
+  assert.match(html, /data-kerf-safe-next-action="/);
+});
+
+test('renderDecisionCardViewHtml marks blocked list fixture cards with data-kerf-allowed="false"', () => {
+  const blockedView = invoiceDecisionPacketListFixture
+    .map((packet) => buildDecisionCardViewModel(packet))
+    .find((v) => v.authoritative.allowed === false);
+  assert.ok(blockedView, 'expected at least one blocked invoice fixture in list');
+
+  const html = renderDecisionCardViewHtml(blockedView!);
+  assert.match(html, /data-kerf-allowed="false"/);
+  assert.match(html, /data-kerf-status="/);
+  assert.match(html, /data-kerf-safe-next-action="/);
 });
 
 test('renderDecisionCardViewHtml escapes hostile HTML in title', () => {

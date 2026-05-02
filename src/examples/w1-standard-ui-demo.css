@@ -123,6 +123,13 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
 }
 
+/* Blocked / not-allowed cards — subtle rail accent (data hooks from DecisionCardView) */
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card[data-kerf-allowed="false"] {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.035) inset,
+    inset 4px 0 0 0 var(--kerf-danger-muted);
+}
+
 /* Authoritative gate readout — primary visual anchor */
 .kerf-w1-main-column .kerf-authoritative {
   border-left: 3px solid color-mix(in srgb, var(--kerf-w1-brand) 90%, transparent);
