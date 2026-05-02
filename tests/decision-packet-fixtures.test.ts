@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { DecisionPacket } from '../src/index.js';
 import {
+  createDriftDecisionPacketFixture,
   createInvoiceDecisionPacketFixture,
   createProposalDecisionPacketFixture,
+  driftDecisionPacketFixture,
+  driftDecisionPacketListFixture,
   invoiceDecisionPacketFixture,
   invoiceDecisionPacketListFixture,
   mixedDecisionPacketListFixture,
@@ -65,6 +68,17 @@ test('proposal DecisionPacket fixture is typed from the real DecisionPacket cont
   assert.equal(packet.system_final_altitude, 'L3');
 });
 
+test('drift DecisionPacket fixture is typed from the real DecisionPacket contract', () => {
+  const packet: DecisionPacket = driftDecisionPacketFixture;
+
+  assert.equal(packet.workflow, 'drift_detection');
+  assert.equal(packet.proposed_action.type, 'draft_internal_summary');
+  assert.equal(packet.policy_gate_result.gate_run_id, 'gate_drift_fixture_callback_internal_summary');
+  assert.equal(packet.system_baseline_altitude, 'L1');
+  assert.equal(packet.system_final_altitude, 'L1');
+  assert.equal(packet.review_requirement, 'AUTONOMOUS');
+});
+
 test('DecisionPacket fixtures keep the canonical W1 validator order', () => {
   for (const packet of mixedDecisionPacketListFixture) {
     assert.deepEqual(validatorOrder(packet), [...CANONICAL_W1_VALIDATOR_ORDER]);
@@ -83,6 +97,12 @@ test('primary proposal fixture carries non-empty source basis for UI source rend
   assert.equal(proposalDecisionPacketFixture.claim_ids.length > 0, true);
 });
 
+test('primary drift fixture carries non-empty source basis for UI source rendering', () => {
+  assert.equal(driftDecisionPacketFixture.source_refs.length > 0, true);
+  assert.equal(driftDecisionPacketFixture.evidence_ids.length > 0, true);
+  assert.equal(driftDecisionPacketFixture.claim_ids.length > 0, true);
+});
+
 test('blocked source-basis fixture is blocked pending source', () => {
   const packet = createInvoiceDecisionPacketFixture('source_basis_blocked');
 
@@ -99,6 +119,15 @@ test('blocked proposal source-basis fixture is blocked pending source', () => {
   const packet = createProposalDecisionPacketFixture('source_basis_blocked');
 
   assert.equal(packet.workflow, 'proposal_followup');
+  assert.equal(packet.status, 'BLOCKED_PENDING_SOURCE');
+  assert.equal(packet.policy_gate_result.safe_next_action, 'block_promotion');
+  assert.deepEqual(packet.policy_gate_result.critical_failures, ['V7']);
+});
+
+test('blocked drift source-basis fixture is blocked pending source', () => {
+  const packet = createDriftDecisionPacketFixture('source_basis_blocked');
+
+  assert.equal(packet.workflow, 'drift_detection');
   assert.equal(packet.status, 'BLOCKED_PENDING_SOURCE');
   assert.equal(packet.policy_gate_result.safe_next_action, 'block_promotion');
   assert.deepEqual(packet.policy_gate_result.critical_failures, ['V7']);
@@ -150,12 +179,29 @@ test('proposal model-inference fixture carries the V8 confidence-band correction
   );
 });
 
-test('mixed DecisionPacket fixture list includes invoice and proposal scenarios', () => {
+test('drift high-confidence fixture carries the V8 confidence-band correction', () => {
+  const packet = createDriftDecisionPacketFixture('high_confidence_review');
+
+  assert.equal(packet.workflow, 'drift_detection');
+  assert.deepEqual(packet.policy_gate_result.corrected_fields?.['classification.confidence_band'], {
+    from: 'HIGH',
+    to: 'MEDIUM',
+  });
+  assert.equal(
+    packet.policy_gate_result.validator_results.find((result) => result.validator_id === 'V8')
+      ?.field_corrected?.field,
+    'classification.confidence_band',
+  );
+});
+
+test('mixed DecisionPacket fixture list includes invoice, proposal, and drift scenarios', () => {
   assert.equal(invoiceDecisionPacketListFixture.length, 4);
   assert.equal(proposalDecisionPacketListFixture.length, 5);
-  assert.equal(mixedDecisionPacketListFixture.length, 9);
+  assert.equal(driftDecisionPacketListFixture.length, 4);
+  assert.equal(mixedDecisionPacketListFixture.length, 13);
   assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'invoice_followup').length, 4);
   assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'proposal_followup').length, 5);
+  assert.equal(mixedDecisionPacketListFixture.filter((packet) => packet.workflow === 'drift_detection').length, 4);
 });
 
 test('primary invoice fixture output is a stable regression snapshot', () => {
@@ -230,6 +276,39 @@ test('primary proposal fixture output is a stable regression snapshot', () => {
       'claim_proposal_2042_sent_at',
       'claim_proposal_2042_status',
       'claim_proposal_2042_trigger',
+    ],
+  });
+});
+
+test('primary drift fixture output is a stable regression snapshot', () => {
+  assert.deepEqual(primaryFixtureSnapshot(driftDecisionPacketFixture), {
+    packet_id: 'drift_fixture_callback_internal_summary_pkt',
+    workflow: 'drift_detection',
+    status: 'READY_FOR_REVIEW',
+    review_requirement: 'AUTONOMOUS',
+    safe_next_action: 'allow_internal_summary',
+    system_baseline_altitude: 'L1',
+    system_final_altitude: 'L1',
+    blocked_reasons: [],
+    critical_failures: [],
+    corrected_fields: {
+      system_baseline_altitude: { from: undefined, to: 'L1' },
+      system_final_altitude: { from: undefined, to: 'L1' },
+    },
+    validator_order: [...CANONICAL_W1_VALIDATOR_ORDER],
+    external_send: undefined,
+    source_refs: [
+      {
+        kind: 'external',
+        uri: 'slack://project/proj_ggr_kitchen_001/thread/callback',
+        excerpt: 'Callback was promised and no completion event is present.',
+      },
+    ],
+    evidence_ids: ['signal_sig_clem_callback_2026_04_30'],
+    claim_ids: [
+      'claim_drift_drift_fixture_callback_internal_summary_pattern',
+      'claim_drift_drift_fixture_callback_internal_summary_severity',
+      'claim_drift_drift_fixture_callback_internal_summary_recommended_action',
     ],
   });
 });
