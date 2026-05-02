@@ -249,6 +249,7 @@ test('DecisionCard handlers only call provided callbacks with the packet id', ()
 test('DecisionCard CSS styles audit and operator summary blocks', () => {
   const css = readFileSync(new URL('../src/ui/styles/decision-card.css', import.meta.url), 'utf8');
 
+  assert.match(css, /\.kerf-card-identity \{/);
   assert.match(css, /\.kerf-learning-signals \{/);
   assert.match(css, /border-top: 1px dashed var\(--kerf-border\)/);
   assert.match(css, /\.kerf-learning-signals \.kerf-list li/);
@@ -276,11 +277,15 @@ test('renderDecisionCardViewHtml includes authoritative block and data-action ho
   const view = buildDecisionCardViewModel(invoiceDecisionPacketFixture);
   const html = renderDecisionCardViewHtml(view);
 
+  assert.match(html, /class="kerf-card-identity"/);
+  assert.match(html, /class="kerf-section kerf-operator-summary kerf-operator-summary-review"/);
+  assert.match(html, /class="kerf-operator-summary-headline"/);
+  assert.match(html, /Owner approval needed to send/);
+  assert.doesNotMatch(html, /data-kerf-operator-summary-slot/);
   assert.match(html, /Authoritative/);
   assert.match(html, /system_final_altitude/);
   assert.match(html, /Source basis/);
   assert.match(html, /Operator summary/);
-  assert.match(html, /Owner approval needed to send/);
   assert.match(html, /Audit \/ model/);
   assert.match(html, /<details class="kerf-section kerf-audit-details">/);
   assert.match(html, /data-kerf-decision-action="approve"/);

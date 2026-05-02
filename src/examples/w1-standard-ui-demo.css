@@ -53,7 +53,9 @@
 .kerf-w1-standard-ui .kerf-queue-title,
 .kerf-w1-standard-ui .kerf-queue-subtitle,
 .kerf-w1-standard-ui .kerf-decision-card .kerf-title,
-.kerf-w1-standard-ui .kerf-decision-card .kerf-subtitle {
+.kerf-w1-standard-ui .kerf-decision-card .kerf-subtitle,
+.kerf-w1-standard-ui .kerf-decision-card .kerf-operator-summary-headline,
+.kerf-w1-standard-ui .kerf-decision-card .kerf-operator-summary-detail {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -181,6 +183,12 @@
 
 .kerf-w1-main-column .kerf-decision-card {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+/* Card top — identity band + operator summary (tone borders preserved on .kerf-operator-summary-*). */
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-card-identity {
+  background: color-mix(in srgb, var(--kerf-w1-brand) 7%, var(--kerf-bg-elevated));
+  border-color: color-mix(in srgb, var(--kerf-w1-brand) 18%, var(--kerf-border));
 }
 
 /* Blocked / not-allowed cards — subtle rail accent (data hooks from DecisionCardView) */

@@ -39,11 +39,34 @@ body {
 .kerf-decision-card {
   max-width: 44rem;
   margin: 1.25rem auto;
-  padding: 1rem 1.1rem;
+  padding: 1.05rem 1.15rem 1.15rem;
   background: var(--kerf-bg-card);
   border: 1px solid var(--kerf-border);
   border-radius: 8px;
   color: var(--kerf-fg);
+}
+
+/* Top band: title + operator summary — reads as one operator-facing block above system sections. */
+.kerf-card-identity {
+  margin: -0.15rem -0.2rem 1rem;
+  padding: 0.65rem 0.75rem 0.85rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--kerf-bg-elevated) 72%, var(--kerf-bg-card));
+  border: 1px solid color-mix(in srgb, var(--kerf-border) 85%, transparent);
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-card-identity .kerf-card-header {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.kerf-card-identity > .kerf-section.kerf-operator-summary {
+  margin-top: 0.55rem;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .kerf-card-header {
@@ -54,10 +77,10 @@ body {
 
 .kerf-title {
   margin: 0 0 0.35rem;
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  line-height: 1.3;
+  line-height: 1.28;
 }
 
 .kerf-subtitle {
