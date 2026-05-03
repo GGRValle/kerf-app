@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildDecisionCardViewModel } from '../src/ui/index.js';
-import { mixedDecisionPacketListFixture } from '../src/test-fixtures/index.js';
+import { seededMixedDecisionPacketListFixture } from '../src/test-fixtures/index.js';
 import {
   firstProposalPacketId,
   operatorDecisionActionForWorkflow,
@@ -30,6 +30,7 @@ test('w1 demo imports fixtures only from test-fixtures entry', () => {
   const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
 
   assert.match(src, /from '\.\.\/test-fixtures\/index\.js'/);
+  assert.match(src, /seededMixedDecisionPacketListFixture/);
   assert.equal(/test-fixtures\/decisionPackets/.test(src), false);
 });
 
@@ -193,32 +194,32 @@ test('w1 demo source orders mixed fixtures proposal-first via sortPacketsForW1De
 
   assert.match(src, /export function workflowDemoRank/);
   assert.match(src, /export function sortPacketsForW1Demo/);
-  assert.match(src, /sortPacketsForW1Demo\(mixedDecisionPacketListFixture\)/);
+  assert.match(src, /sortPacketsForW1Demo\(seededMixedDecisionPacketListFixture\)/);
 });
 
 test('sortPacketsForW1Demo ranks proposal → invoice → drift and preserves order within workflow', () => {
-  const sorted = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
+  const sorted = sortPacketsForW1Demo(seededMixedDecisionPacketListFixture);
 
   assert.equal(sorted[0]?.workflow, 'proposal_followup');
 
   const ranks = sorted.map((p) => workflowDemoRank(p.workflow));
   assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b));
 
-  const originalProposals = mixedDecisionPacketListFixture.filter((p) => p.workflow === 'proposal_followup');
+  const originalProposals = seededMixedDecisionPacketListFixture.filter((p) => p.workflow === 'proposal_followup');
   const sortedProposals = sorted.filter((p) => p.workflow === 'proposal_followup');
   assert.deepEqual(
     sortedProposals.map((p) => p.packet_id),
     originalProposals.map((p) => p.packet_id),
   );
 
-  const originalInvoices = mixedDecisionPacketListFixture.filter((p) => p.workflow === 'invoice_followup');
+  const originalInvoices = seededMixedDecisionPacketListFixture.filter((p) => p.workflow === 'invoice_followup');
   const sortedInvoices = sorted.filter((p) => p.workflow === 'invoice_followup');
   assert.deepEqual(
     sortedInvoices.map((p) => p.packet_id),
     originalInvoices.map((p) => p.packet_id),
   );
 
-  const originalDrifts = mixedDecisionPacketListFixture.filter((p) => p.workflow === 'drift_detection');
+  const originalDrifts = seededMixedDecisionPacketListFixture.filter((p) => p.workflow === 'drift_detection');
   const sortedDrifts = sorted.filter((p) => p.workflow === 'drift_detection');
   assert.deepEqual(
     sortedDrifts.map((p) => p.packet_id),
@@ -261,13 +262,13 @@ test('w1 demo selects first proposal packet after each queue remount', () => {
 });
 
 test('firstProposalPacketId matches first sorted packet when proposals lead the queue', () => {
-  const sorted = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
+  const sorted = sortPacketsForW1Demo(seededMixedDecisionPacketListFixture);
   assert.equal(sorted[0]?.workflow, 'proposal_followup');
   assert.equal(firstProposalPacketId(sorted), sorted[0]?.packet_id);
 });
 
 test('W1 proposal detail rendering uses buildDecisionCardViewModel for the selected proposal packet', () => {
-  const sorted = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
+  const sorted = sortPacketsForW1Demo(seededMixedDecisionPacketListFixture);
   const id = firstProposalPacketId(sorted);
   assert.ok(id);
   const packet = sorted.find((p) => p.packet_id === id);

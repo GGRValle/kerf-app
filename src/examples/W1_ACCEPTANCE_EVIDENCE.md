@@ -69,22 +69,22 @@ npm run smoke | tee /tmp/kerf-w1-smoke-output.txt
 | AT-019 V17 token-budget check | V17 participates in canonical gate order and validator tests. | `tests/altitude-policy-gate.test.ts`, `tests/decision-packet-fixtures.test.ts` |
 | AT-019 hosting-route-check adapter leg | Pure adapter guard emits `hosting_route_check`, blocks unapproved/mismatched/retired endpoints, and has no network dependency. | `tests/hosting-route-check.test.ts`, `src/hosting/routeCheck.ts` |
 | AT-020 V18 altitude assignment | Baseline floors and divergence are tested; V9 records altitude-divergence learning drafts when V18 overrides model suggestion. | `tests/altitude-policy-gate.test.ts`, `tests/decision-packet-fixtures.test.ts`, `tests/learning-signal-events.test.ts` |
-| W1 visible operator surface | Mixed queue renders 13 cards across invoice, proposal, and drift with workflow-aware labels, filters, badges, audit details, and learning signals. | `src/examples/README.md`, `npm run demo:w1-queue`, browser screenshots |
-| Operator decision persistence contract | Browser actions are still local-only, but production persistence now has a typed `decision.resolved` event-template contract for approved operator actions. | `src/decisions/operatorActions.ts`, `tests/operator-decision-events.test.ts` |
+| W1 visible operator surface | Mixed queue renders 12 cards across invoice, seeded proposal read-surface data, and drift with workflow-aware labels, filters, badges, audit details, and learning signals. | `src/examples/README.md`, `npm run demo:w1-queue`, browser screenshots |
+| Operator decision persistence contract | Browser demo actions append in-memory `decision.resolved` event-template rows; durable persistence still has a typed contract to wire next. | `src/decisions/operatorActions.ts`, `tests/operator-decision-events.test.ts`, `src/examples/w1-decision-queue-demo.ts` |
 
 ## Workflow Proof
 
 | Workflow | Gate integration | Fixture coverage | UI coverage |
 |---|---|---|---|
 | `invoice_followup` | Candidate -> draft -> AltitudePacket -> Policy Gate -> DecisionPacket -> approval/audit smoke loop. | 4 generated scenarios: owner review, V2 external-send block, V7 source-basis block, V8 review. | DecisionCard + DecisionQueue mixed demo. |
-| `proposal_followup` | Candidate -> draft -> AltitudePacket -> Policy Gate -> DecisionPacket -> approval/reject audit chains. | 5 generated scenarios: owner review, V2 external-send block, V7 source-basis block, V8 review, near-expiry. | Workflow-aware titles/subtitles and default approval labels. |
+| `proposal_followup` | Candidate -> draft -> AltitudePacket -> Policy Gate -> DecisionPacket -> approval/reject audit chains. | 5 generated regression scenarios plus seeded read-surface data covering change-requested, near-expiry, viewed-no-decision, and sent-no-view proposals. | Proposal-first queue ordering plus detail/review panel. |
 | `drift_detection` | Candidate -> alert -> AltitudePacket -> Policy Gate -> DecisionPacket; internal-only autonomous path. | 4 generated scenarios: default autonomous, high-confidence V8 review, V7 source-basis block, critical drift. | Severity badges, drift-specific labels (`Acknowledge`, `False positive`, `Act`), filter tab. |
 
 ## Browser Evidence Checklist
 
 Use `src/examples/README.md` as the click script. Capture:
 
-- Full queue screenshot on **All** with 13 cards.
+- Full queue screenshot on **All** with 12 cards.
 - **Blocked** filter screenshot with blocked-card emphasis.
 - **Drift** filter screenshot with severity badges and drift-specific actions.
 - Audit/model disclosure screenshot showing validator order

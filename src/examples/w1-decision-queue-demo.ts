@@ -14,7 +14,7 @@ import {
   type OperatorDecisionBlackboardEventTemplate,
   type OperatorDecisionResolvedPayload,
 } from '../decisions/index.js';
-import { mixedDecisionPacketListFixture } from '../test-fixtures/index.js';
+import { seededMixedDecisionPacketListFixture } from '../test-fixtures/index.js';
 import type { DecisionPacket } from '../index.js';
 import type {
   DecisionCardOperatorSummaryTone,
@@ -51,7 +51,7 @@ export function sortPacketsForW1Demo(packets: readonly DecisionPacket[]): Decisi
     .map(({ packet }) => packet);
 }
 
-const allPackets = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
+const allPackets = sortPacketsForW1Demo(seededMixedDecisionPacketListFixture);
 
 /** First proposal packet id in a list (demo default selection); exported for tests only. */
 export function firstProposalPacketId(packets: readonly DecisionPacket[]): string | null {
