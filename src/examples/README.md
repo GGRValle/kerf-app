@@ -78,7 +78,7 @@ The W1 Standard UI demo should show:
 
 - Top bar: `KERF`, `W1 · Decision surface`, and `Local only`.
 - Main queue with 12 cards from `seededMixedDecisionPacketListFixture`
-  (seeded proposal read surface + invoice/drift fixtures).
+  (local `ProposalReadSurfaceAdapter` seeded proposal read surface + invoice/drift fixtures).
 - Filter buttons: All, Blocked, Owner Review, Invoice, Proposal, Drift.
 - Right rail action log with Clear log and Reset demo controls.
 

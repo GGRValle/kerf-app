@@ -20,6 +20,9 @@ expanding breadth into invoice polish, drift polish, or new workflows.
 - Seeded proposal read surface is landed: five realistic proposal records
   produce four eligible proposal follow-up DecisionPackets through the real
   detect -> draft -> AltitudePacket -> Policy Gate path.
+- The seeded proposal read surface now reads through a local
+  `ProposalReadSurfaceAdapter` boundary, so the seed can be swapped for a
+  Platform read source without changing the gate or UI.
 - Operator summary, workflow-aware buttons / reason form / action log
   verbs are landed.
 - Captured proof packet at
@@ -63,10 +66,10 @@ doesn't matter for F&F.
   template path in the browser demo; the proposal loop still needs a
   durable event-log write so approve/edit/reject survives reload and can
   be used as F&F evidence.
-- **Live-ish proposal read adapter.** #74 landed seeded realistic data.
-  Next is a local/no-network adapter boundary shaped like the future
-  Platform proposal read source, so seeded data can be swapped out
-  cleanly when the Platform side is ready.
+- **Platform-backed proposal read adapter implementation.** The demo has a
+  local/no-network adapter boundary. Remaining work is implementing a
+  Platform-backed adapter on the other side of that boundary, then swapping
+  data sources without changing the gate or UI.
 - **Basic hosted/protected demo access.** A way for an F&F recipient to
   load the demo (read-only, single-tenant, gated by shared link or
   basic auth) without `git clone` + `npm run`.
@@ -122,11 +125,15 @@ usable than the last:
    append in-memory `decision.resolved` rows using the typed
    event-template contract. Remaining work is durable persistence across
    reload.
-3. **Proposal read surface adapter stub.** Partially landed in
+3. **Proposal read surface adapter stub.** Advanced beyond #74: seeded
+   realistic proposal data feeds the demo through the real workflow and
+   gate, and the read surface now has a local/no-network adapter boundary.
+   Remaining work is a Platform-backed adapter implementation that can
+   swap in at the boundary.
+
+   Historical context: partially landed in
    [#74](https://github.com/GGRValle/kerf-app/pull/74): seeded realistic
-   proposal data now feeds the demo through the real workflow and gate.
-   Remaining work is a local/no-network adapter boundary that can later
-   swap to the Platform proposal source.
+   proposal data first fed the demo through the real workflow and gate.
 4. **Hosted demo shell.** Static-site or single-server deployment
    target with read-only single-tenant gating. F&F recipient gets a
    URL, not a clone instruction.
