@@ -195,11 +195,14 @@ test('w1 demo source orders mixed fixtures proposal-first via sortPacketsForW1De
   assert.match(src, /export function workflowDemoRank/);
   assert.match(src, /export function sortPacketsForW1Demo/);
   assert.match(src, /sortPacketsForW1Demo\(seededMixedDecisionPacketListFixture\)/);
+  assert.match(src, /12 cards \(4 proposals, 4 invoices, 4 drift\)/);
 });
 
 test('sortPacketsForW1Demo ranks proposal → invoice → drift and preserves order within workflow', () => {
   const sorted = sortPacketsForW1Demo(seededMixedDecisionPacketListFixture);
 
+  assert.equal(sorted.length, 12);
+  assert.equal(sorted.filter((p) => p.workflow === 'proposal_followup').length, 4);
   assert.equal(sorted[0]?.workflow, 'proposal_followup');
 
   const ranks = sorted.map((p) => workflowDemoRank(p.workflow));
@@ -244,6 +247,28 @@ test('w1 demo HTML includes proposal detail review panel markup', () => {
   assert.match(html, /id="kerf-proposal-detail-root"/);
   assert.match(html, /class="kerf-w1-proposal-detail-panel"/);
   assert.match(html, /class="kerf-w1-queue-detail-wrap"/);
+});
+
+test('w1 demo HTML log rail calls out twelve-card seeded mix and proposal filter size', () => {
+  const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
+
+  assert.match(html, /12 cards/);
+  assert.match(html, /four seeded proposals/);
+});
+
+test('w1 demo alternates proposal card surface classes after each queue mount', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /function annotateProposalCardsForVisualRhythm/);
+  assert.match(src, /annotateProposalCardsForVisualRhythm\(packets\)/);
+  assert.match(src, /kerf-w1-demo-proposal-surface-a/);
+});
+
+test('w1 standard UI CSS includes seeded proposal stack rhythm overrides', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.kerf-w1-demo-proposal-surface-a \.kerf-card-identity/);
+  assert.match(css, /\.kerf-w1-demo-proposal-surface-b \.kerf-operator-summary-review/);
 });
 
 test('w1 demo boot requires proposal detail root and wires selection before filters', () => {

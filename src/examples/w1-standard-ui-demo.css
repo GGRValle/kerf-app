@@ -266,6 +266,25 @@
   border-color: color-mix(in srgb, var(--kerf-w1-brand) 18%, var(--kerf-border));
 }
 
+/* Seeded proposal stack: alternate identity wash so similar approval states read less repetitive (demo-only classes from TS). */
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-a .kerf-card-identity {
+  background: color-mix(in srgb, var(--kerf-w1-brand) 5%, var(--kerf-bg-elevated));
+}
+
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-b .kerf-card-identity {
+  background: color-mix(in srgb, var(--kerf-w1-brand) 10%, var(--kerf-bg-elevated));
+}
+
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-a .kerf-operator-summary-blocked,
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-b .kerf-operator-summary-blocked {
+  background: color-mix(in srgb, var(--kerf-danger-muted) 9%, var(--kerf-bg-card));
+}
+
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-a .kerf-operator-summary-review,
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-b .kerf-operator-summary-review {
+  background: color-mix(in srgb, var(--kerf-w1-brand) 7%, var(--kerf-bg-card));
+}
+
 /* Blocked / not-allowed cards — subtle rail accent (data hooks from DecisionCardView) */
 .kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card[data-kerf-allowed="false"] {
   box-shadow:

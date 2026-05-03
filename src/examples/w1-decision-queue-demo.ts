@@ -69,7 +69,8 @@ type DemoQueueFilter =
 
 const QUEUE_OPTIONS = {
   title: 'Kerf Decision Queue',
-  subtitle: 'Interactive browser-local harness (invoice + proposal + drift fixtures → view models → mount).',
+  subtitle:
+    'Seeded proposal read surface · 12 cards (4 proposals, 4 invoices, 4 drift). Proposals sort first; Proposal filter shows the four seeded proposal records.',
 } as const;
 
 const DEMO_OPERATOR: Actor = { id: 'demo_operator_owner', role: 'owner' };
@@ -469,6 +470,32 @@ function filterPackets(filter: DemoQueueFilter): readonly DecisionPacket[] {
   );
 }
 
+/** Demo-only: alternate subtle identity tint on proposal cards so a block of similar approvals reads less flat. */
+function annotateProposalCardsForVisualRhythm(packets: readonly DecisionPacket[]): void {
+  for (const el of document.querySelectorAll('.kerf-decision-card[data-packet-id]')) {
+    el.classList.remove('kerf-w1-demo-proposal-surface-a', 'kerf-w1-demo-proposal-surface-b');
+  }
+  let proposalOrdinal = 0;
+  for (const packet of packets) {
+    if (packet.workflow !== 'proposal_followup') {
+      continue;
+    }
+    for (const el of document.querySelectorAll('.kerf-decision-card[data-packet-id]')) {
+      if (!(el instanceof HTMLElement)) {
+        continue;
+      }
+      if (el.getAttribute('data-packet-id') !== packet.packet_id) {
+        continue;
+      }
+      el.classList.add(
+        proposalOrdinal % 2 === 0 ? 'kerf-w1-demo-proposal-surface-a' : 'kerf-w1-demo-proposal-surface-b',
+      );
+      proposalOrdinal += 1;
+      break;
+    }
+  }
+}
+
 function remountQueue(root: HTMLElement, log: HTMLElement, detailRoot: HTMLElement, filter: DemoQueueFilter): void {
   closeAllRejectForms();
   unmountDetailActions?.();
@@ -480,6 +507,7 @@ function remountQueue(root: HTMLElement, log: HTMLElement, detailRoot: HTMLEleme
   const queue = buildDecisionQueueViewModel(views, { ...QUEUE_OPTIONS });
   const actionsByPacketId = buildActionsByPacketId(packets, log);
   unmountQueue = mountDecisionQueue(root, { queue, actionsByPacketId });
+  annotateProposalCardsForVisualRhythm(packets);
 
   const defaultProposalId = firstProposalPacketId(packets);
   selectedPacketIdForDetail = defaultProposalId;
