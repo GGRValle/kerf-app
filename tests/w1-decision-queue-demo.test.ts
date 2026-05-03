@@ -344,3 +344,24 @@ test('w1 demo runbook documents the hosted-static serve command and URL', () => 
     /http:\/\/localhost:8000\/examples\/w1-decision-queue-demo\.html/,
   );
 });
+
+test('w1 interactive demo source includes empty-filter queue copy for the bundle', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /No decisions match this filter\./);
+  assert.match(src, /Try All to see the full queue\./);
+});
+
+test('w1 interactive demo source includes queue skeleton marker for the bundle', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /data-kerf-w1-queue-skeleton/);
+  assert.match(src, /kerf-w1-queue-skeleton/);
+});
+
+test('w1 interactive demo source includes queue render-error banner copy for the bundle', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /Something went wrong rendering the queue\. Reload the page to retry\./);
+  assert.match(src, /data-kerf-w1-queue-error-reset/);
+});
