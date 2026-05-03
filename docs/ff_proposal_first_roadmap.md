@@ -1,6 +1,6 @@
 # Proposal-First F&F Roadmap
 
-Status: planning · Aligned with `main` after [#69](https://github.com/GGRValle/kerf-app/pull/69) (F&F core path doc) and [#70](https://github.com/GGRValle/kerf-app/pull/70) (proposal-first queue ordering).
+Status: planning · Aligned with `main` after [#74](https://github.com/GGRValle/kerf-app/pull/74) (seeded proposal read surface). The roadmap is partially executed — three of the five originally suggested PRs have landed; live-ish proposal read adapter, hosted demo shell, and F&F evidence packet remain.
 
 This note translates the F&F prioritization captured in
 [`docs/w1_close_note.md`](./w1_close_note.md) into the next two-to-three weeks
@@ -16,9 +16,17 @@ expanding breadth into invoice polish, drift polish, or new workflows.
 - Proposal-first queue ordering is landed.
 - Operator summary, workflow-aware buttons / reason form / action log
   verbs are landed.
+- **Proposal detail / review panel landed** ([#72](https://github.com/GGRValle/kerf-app/pull/72)).
+- **Operator decision audit events landed** ([#73](https://github.com/GGRValle/kerf-app/pull/73)) —
+  operator approve / edit / reject now persists to the Blackboard event log.
+- **Seeded proposal read surface landed** ([#74](https://github.com/GGRValle/kerf-app/pull/74)) —
+  the demo uses `seededMixedDecisionPacketListFixture`, 12 cards (4 seeded
+  proposal + 4 invoice + 4 drift). Proposal-first F&F path is now seeded
+  local data, not only synthetic scenario fixtures.
 - Captured proof packet at
   [`src/examples/evidence/2026-05-02-w1/PROOF_PACKET.md`](../src/examples/evidence/2026-05-02-w1/PROOF_PACKET.md)
-  documents the W1 close.
+  documents the W1 close (13-card pre-seeded-data baseline; proof packet stays
+  frozen as historical evidence).
 
 ## F&F core path
 
@@ -36,17 +44,21 @@ doesn't matter for F&F.
 
 ## Required before F&F
 
-- **Proposal detail / review panel.** Clicking a proposal card opens a
-  fuller surface where the operator reads the proposal in context, sees
-  the drafted follow-up, and edits or approves.
-- **Proposal operator action persistence.** PR #58 added operator
-  decision event templates; the proposal flow needs to actually persist
-  approve/edit/reject decisions so the audit chain reflects real
-  operator activity, not just demo-mode logs.
-- **Live-ish proposal read surface, or seeded realistic data.** Either a
-  stubbed adapter for a Platform-side proposal source, or seeded
-  fixtures with enough variety (sent / viewed / near-expiry /
-  change-requested) to carry a 5-minute demo.
+- ✅ **Proposal detail / review panel** ([#72](https://github.com/GGRValle/kerf-app/pull/72)) —
+  proposal cards now open a fuller review surface with the drafted
+  follow-up, source basis, and operator action affordances.
+- ✅ **Proposal operator action persistence** ([#73](https://github.com/GGRValle/kerf-app/pull/73)) —
+  `applyProposalFollowupApprovalAction` results flow through PR #58's
+  operator-decision-event-template path into the Blackboard event log.
+  Operator clicks approve → `proposal_followup.approved` event lands and
+  persists.
+- 🟡 **Live-ish proposal read surface.** Seeded realistic proposal data
+  landed in [#74](https://github.com/GGRValle/kerf-app/pull/74) —
+  `seededMixedDecisionPacketListFixture` provides four seeded proposal
+  scenarios (sent / viewed / near-expiry / change-requested) alongside
+  invoice and drift fixtures. **Remaining:** stubbed adapter against a
+  Platform-side proposals endpoint (or local mock matching the contract)
+  so the data source is swappable at the boundary, not hardcoded fixtures.
 - **Basic hosted/protected demo access.** A way for an F&F recipient to
   load the demo (read-only, single-tenant, gated by shared link or
   basic auth) without `git clone` + `npm run`.
@@ -90,21 +102,17 @@ Each of these would expand surface without advancing the proposal loop:
 
 ## Suggested PR sequence
 
-Two-to-three weeks, ordered so each PR makes the proposal loop more
-usable than the last:
+Originally five PRs, ordered so each makes the proposal loop more usable
+than the last. Three landed since the roadmap was written; remaining are
+steps 3 (partial), 4, and 5.
 
-1. **Proposal detail / review panel.** New screen/route from a proposal
-   card click. Full proposal context, drafted follow-up, operator
-   action affordances. Keeps the workflow-aware copy chain.
-2. **Proposal action audit persistence.** Wire
-   `applyProposalFollowupApprovalAction` results through PR #58's
-   operator-decision-event-template path into the Blackboard event log.
-   Operator clicks approve → `proposal_followup.approved` event lands
-   and persists across reload.
-3. **Proposal read surface adapter stub.** Replace seeded fixtures with
-   a stubbed adapter that reads from a Platform-side proposals
-   endpoint (or local mock matching the contract). Gate / wall / UI
-   unchanged; data source swapped at the boundary.
+1. ✅ **Proposal detail / review panel** — [#72](https://github.com/GGRValle/kerf-app/pull/72).
+2. ✅ **Proposal action audit persistence** — [#73](https://github.com/GGRValle/kerf-app/pull/73).
+3. 🟡 **Proposal read surface adapter.** Seeded local data shipped in
+   [#74](https://github.com/GGRValle/kerf-app/pull/74). **Remaining:**
+   stubbed adapter against a Platform-side proposals endpoint (or local
+   mock matching the contract). Gate / wall / UI unchanged; data source
+   swapped at the boundary.
 4. **Hosted demo shell.** Static-site or single-server deployment
    target with read-only single-tenant gating. F&F recipient gets a
    URL, not a clone instruction.
@@ -112,6 +120,6 @@ usable than the last:
    to the proposal loop: smoke output for proposal gate flow, audit
    chain screenshots, F&F click script.
 
-After this sequence, the F&F pitch has a usable proposal loop with
-captured evidence. Nice-to-haves can land in parallel or after,
-prioritized by demo feedback.
+After step 5, the F&F pitch has a usable proposal loop with captured
+evidence. Nice-to-haves can land in parallel or after, prioritized by
+demo feedback.

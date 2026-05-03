@@ -67,10 +67,13 @@ proof the same gate / wall / UI handles different workflow shapes. Don't
 open the demo with the invoice card.
 
 **W2 prioritization implication.** Proposal-flow enhancements lead the next
-cycle: live data wiring, send tracking, client reply attribution, and the
-proposal lifecycle persistence work that PR #58's operator decision event
-templates set up. Invoice and drift get hardening and edge-case coverage,
-not new feature surface, until proposal lifecycle persistence ships.
+cycle. Operator decision audit persistence shipped in
+[#73](https://github.com/GGRValle/kerf-app/pull/73), and seeded realistic
+proposal data shipped in [#74](https://github.com/GGRValle/kerf-app/pull/74).
+Remaining proposal-flow work: live-ish proposal read adapter (stub against
+the Platform-side endpoint), send tracking, and client reply attribution.
+Invoice and drift get hardening and edge-case coverage, not new feature
+surface, until the live-ish read adapter ships.
 
 ## Demo path (what to run on Monday)
 
