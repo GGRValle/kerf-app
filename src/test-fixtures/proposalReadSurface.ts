@@ -3,6 +3,7 @@ import {
   type DecisionPacket,
   type PolicyGateOptions,
 } from '../altitude/index.js';
+import type { EntityId, ISO8601 } from '../blackboard/index.js';
 import { fixedClock } from '../shared/index.js';
 import {
   detectProposalFollowupCandidates,
@@ -20,7 +21,25 @@ import {
 export const SEEDED_PROPOSAL_READ_SURFACE_AS_OF = '2026-05-03T09:00:00.000Z';
 export const SEEDED_PROPOSAL_READ_SURFACE_EVALUATED_AT = '2026-05-03T09:15:00.000Z';
 
-const SEEDED_PROPOSAL_READ_SURFACE_NOW_MS = Date.parse(SEEDED_PROPOSAL_READ_SURFACE_EVALUATED_AT);
+export interface ProposalReadSurfaceRequest {
+  tenantId: EntityId;
+  asOf: ISO8601;
+  source: 'seeded_local';
+}
+
+export interface ProposalReadSurfaceAdapter {
+  readonly adapterId: string;
+  readProposalFollowupFacts(request: ProposalReadSurfaceRequest): ProposalFollowupFacts;
+}
+
+export interface SeededProposalReadSurfaceOptions {
+  adapter?: ProposalReadSurfaceAdapter;
+  tenantId?: EntityId;
+  asOf?: ISO8601;
+  evaluatedAt?: ISO8601;
+  modelSourceId?: string;
+  packetIdSuffix?: string;
+}
 
 export interface SeededProposalReadSurfaceItem {
   candidate: ProposalFollowupCandidate;
@@ -29,34 +48,64 @@ export interface SeededProposalReadSurfaceItem {
 }
 
 export interface SeededProposalReadSurface {
+  adapterId: string;
+  readRequest: ProposalReadSurfaceRequest;
   facts: ProposalFollowupFacts;
   items: readonly SeededProposalReadSurfaceItem[];
   decisionPackets: readonly DecisionPacket[];
 }
 
+export const seededProposalReadSurfaceAdapter: ProposalReadSurfaceAdapter = {
+  adapterId: 'seeded_local_proposal_read_surface',
+  readProposalFollowupFacts(_request) {
+    return seededProposalFollowupFacts;
+  },
+};
+
+export function createSeededProposalReadSurface(): SeededProposalReadSurface;
+export function createSeededProposalReadSurface(facts: ProposalFollowupFacts): SeededProposalReadSurface;
 export function createSeededProposalReadSurface(
-  facts: ProposalFollowupFacts = seededProposalFollowupFacts,
+  options: SeededProposalReadSurfaceOptions,
+): SeededProposalReadSurface;
+export function createSeededProposalReadSurface(
+  input: ProposalFollowupFacts | SeededProposalReadSurfaceOptions = {},
 ): SeededProposalReadSurface {
+  const options = isProposalFollowupFacts(input) ? {} : input;
+  const adapter = options.adapter ?? seededProposalReadSurfaceAdapter;
+  const tenantId = options.tenantId ?? 'tenant_ggr';
+  const asOf = options.asOf ?? SEEDED_PROPOSAL_READ_SURFACE_AS_OF;
+  const evaluatedAt = options.evaluatedAt ?? SEEDED_PROPOSAL_READ_SURFACE_EVALUATED_AT;
+  const readRequest: ProposalReadSurfaceRequest = {
+    tenantId,
+    asOf,
+    source: 'seeded_local',
+  };
+  const facts = isProposalFollowupFacts(input)
+    ? input
+    : adapter.readProposalFollowupFacts(readRequest);
   const candidates = detectProposalFollowupCandidates(facts, {
-    clock: fixedClock(SEEDED_PROPOSAL_READ_SURFACE_AS_OF),
+    clock: fixedClock(asOf),
   });
 
   const items = candidates.map((candidate, index) => {
     const draft = draftProposalFollowup(candidate);
     const packet = proposalCandidateToAltitudePacket(candidate, draft, {
-      tenantId: 'tenant_ggr',
-      evaluatedAt: SEEDED_PROPOSAL_READ_SURFACE_EVALUATED_AT,
-      modelSourceId: 'seeded:proposal-read-surface',
-      packetIdSuffix: ':seeded:pkt',
+      tenantId,
+      evaluatedAt,
+      modelSourceId: options.modelSourceId ?? 'seeded:proposal-read-surface',
+      packetIdSuffix: options.packetIdSuffix ?? ':seeded:pkt',
     });
     const decisionPacket = withFixedPolicyGateClock(() =>
-      runPolicyGate(packet, seededPolicyGateOptions(candidate, index)),
+      runPolicyGate(packet, seededPolicyGateOptions(candidate, index, evaluatedAt)),
+      evaluatedAt,
     );
 
     return { candidate, draft, decisionPacket };
   });
 
   return {
+    adapterId: adapter.adapterId,
+    readRequest,
     facts,
     items,
     decisionPackets: items.map((item) => item.decisionPacket),
@@ -66,21 +115,30 @@ export function createSeededProposalReadSurface(
 function seededPolicyGateOptions(
   candidate: ProposalFollowupCandidate,
   index: number,
+  evaluatedAt: ISO8601,
 ): PolicyGateOptions {
   return {
-    evaluatedAt: SEEDED_PROPOSAL_READ_SURFACE_EVALUATED_AT,
+    evaluatedAt,
     gateRunId: `gate_seeded_proposal_read_surface_${index}_${candidate.proposalId}`,
   };
 }
 
-function withFixedPolicyGateClock<T>(run: () => T): T {
+function withFixedPolicyGateClock<T>(run: () => T, evaluatedAt: ISO8601): T {
   const originalNow = Date.now;
-  Date.now = () => SEEDED_PROPOSAL_READ_SURFACE_NOW_MS;
+  Date.now = () => Date.parse(evaluatedAt);
   try {
     return run();
   } finally {
     Date.now = originalNow;
   }
+}
+
+function isProposalFollowupFacts(
+  input: ProposalFollowupFacts | SeededProposalReadSurfaceOptions,
+): input is ProposalFollowupFacts {
+  return Array.isArray((input as ProposalFollowupFacts).proposals)
+    && Array.isArray((input as ProposalFollowupFacts).clients)
+    && Array.isArray((input as ProposalFollowupFacts).projects);
 }
 
 export const seededProposalFollowupFacts: ProposalFollowupFacts = {

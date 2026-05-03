@@ -106,7 +106,7 @@ import {
 />
 ```
 
-The invoice, proposal, and drift fixtures are generated from typed `AltitudePacket`s through `runPolicyGate` with a fixed clock/options. `mixedDecisionPacketListFixture` combines the regression fixture scenarios, including model-inference review scenarios so V8 correction renders across workflow types. `seededMixedDecisionPacketListFixture` swaps the proposal slice to a seeded proposal read surface for the W1 browser demo. Do not copy fixture shape into UI-local types; consume `DecisionPacket` from `src/altitude/types.ts`.
+The invoice, proposal, and drift fixtures are generated from typed `AltitudePacket`s through `runPolicyGate` with a fixed clock/options. `mixedDecisionPacketListFixture` combines the regression fixture scenarios, including model-inference review scenarios so V8 correction renders across workflow types. `seededMixedDecisionPacketListFixture` swaps the proposal slice to a seeded proposal read surface for the W1 browser demo; that seeded surface reads through a local `ProposalReadSurfaceAdapter` boundary so future Platform data can replace the seed at the edge. Do not copy fixture shape into UI-local types; consume `DecisionPacket` from `src/altitude/types.ts`.
 
 ## Commands
 

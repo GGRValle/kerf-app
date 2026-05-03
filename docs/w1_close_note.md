@@ -71,11 +71,12 @@ shapes. Don't open the demo with the invoice card.
 **W2 prioritization implication.** Proposal-flow enhancements lead the next
 cycle. Since #72, #73, and #74 already landed the detail panel,
 browser-local operator decision audit rows, and seeded proposal read
-surface, the remaining core path is durable proposal action persistence,
-a live-ish proposal read adapter boundary, send tracking, and client
-reply attribution. Invoice and drift get hardening and edge-case
-coverage, not new feature surface, until proposal lifecycle persistence
-ships.
+surface, and the seeded surface now reads through a local
+`ProposalReadSurfaceAdapter` boundary, the remaining core path is durable
+proposal action persistence, a Platform-backed proposal read adapter
+implementation, send tracking, and client reply attribution. Invoice and
+drift get hardening and edge-case coverage, not new feature surface,
+until proposal lifecycle persistence ships.
 
 ## Demo path (what to run on Monday)
 
