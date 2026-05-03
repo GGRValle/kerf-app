@@ -1,6 +1,6 @@
 # W1 Close Note — Monday Demo Prep
 
-Status: practical demo prep · Aligned with `main` after [#66](https://github.com/GGRValle/kerf-app/pull/66).
+Status: practical demo prep · Aligned with `main` after [#75](https://github.com/GGRValle/kerf-app/pull/75).
 
 ## What the W1 demo proves
 
@@ -61,16 +61,21 @@ the gate generalizes:
   near-deadline permits, callback promises). Demonstrates the gate handles
   internal-only autonomous workflows; not a sales lead.
 
-**Pitch order for the demo.** Lead with a proposal card, walk through its
-operator summary and approval flow, then move to invoice and drift as
-proof the same gate / wall / UI handles different workflow shapes. Don't
-open the demo with the invoice card.
+**Pitch order for the demo.** Lead with the seeded proposal read surface:
+the All queue now opens proposal-first, with four eligible proposal
+follow-ups generated from realistic seeded proposal records. Walk through
+the first proposal card and its review panel, then move to invoice and
+drift as proof the same gate / wall / UI handles different workflow
+shapes. Don't open the demo with the invoice card.
 
 **W2 prioritization implication.** Proposal-flow enhancements lead the next
-cycle: live data wiring, send tracking, client reply attribution, and the
-proposal lifecycle persistence work that PR #58's operator decision event
-templates set up. Invoice and drift get hardening and edge-case coverage,
-not new feature surface, until proposal lifecycle persistence ships.
+cycle. Since #72, #73, and #74 already landed the detail panel,
+browser-local operator decision audit rows, and seeded proposal read
+surface, the remaining core path is durable proposal action persistence,
+a live-ish proposal read adapter boundary, send tracking, and client
+reply attribution. Invoice and drift get hardening and edge-case
+coverage, not new feature surface, until proposal lifecycle persistence
+ships.
 
 ## Demo path (what to run on Monday)
 
