@@ -172,6 +172,9 @@
   background: var(--kerf-bg-card);
   padding: 0.85rem 0.95rem 1rem;
   min-height: 8rem;
+  max-height: min(70vh, calc(100vh - 7.5rem));
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-title {
@@ -266,23 +269,13 @@
   border-color: color-mix(in srgb, var(--kerf-w1-brand) 18%, var(--kerf-border));
 }
 
-/* Seeded proposal stack: alternate identity wash so similar approval states read less repetitive (demo-only classes from TS). */
+/* Seeded proposal stack: tiny alternate identity wash only (stay near base 7%; avoid re-tinting operator summary blocks). */
 .kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-a .kerf-card-identity {
-  background: color-mix(in srgb, var(--kerf-w1-brand) 5%, var(--kerf-bg-elevated));
+  background: color-mix(in srgb, var(--kerf-w1-brand) 6%, var(--kerf-bg-elevated));
 }
 
 .kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-b .kerf-card-identity {
-  background: color-mix(in srgb, var(--kerf-w1-brand) 10%, var(--kerf-bg-elevated));
-}
-
-.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-a .kerf-operator-summary-blocked,
-.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-b .kerf-operator-summary-blocked {
-  background: color-mix(in srgb, var(--kerf-danger-muted) 9%, var(--kerf-bg-card));
-}
-
-.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-a .kerf-operator-summary-review,
-.kerf-w1-standard-ui .kerf-w1-main-column .kerf-decision-card.kerf-w1-demo-proposal-surface-b .kerf-operator-summary-review {
-  background: color-mix(in srgb, var(--kerf-w1-brand) 7%, var(--kerf-bg-card));
+  background: color-mix(in srgb, var(--kerf-w1-brand) 7.5%, var(--kerf-bg-elevated));
 }
 
 /* Blocked / not-allowed cards — subtle rail accent (data hooks from DecisionCardView) */
