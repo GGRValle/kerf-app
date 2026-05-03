@@ -70,7 +70,7 @@ type DemoQueueFilter =
 const QUEUE_OPTIONS = {
   title: 'Kerf Decision Queue',
   subtitle:
-    'Seeded proposal read surface · 12 cards (4 proposals, 4 invoices, 4 drift). Proposals sort first; Proposal filter shows the four seeded proposal records.',
+    'Seeded read surface · 12 cards (4 proposals, 4 invoices, 4 drift). Proposals first in All; Proposal filter is the four seeded proposal rows; other filters subset the same fixture.',
 } as const;
 
 const DEMO_OPERATOR: Actor = { id: 'demo_operator_owner', role: 'owner' };
