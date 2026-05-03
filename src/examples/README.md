@@ -77,7 +77,8 @@ open the file directly in Safari.
 The W1 Standard UI demo should show:
 
 - Top bar: `KERF`, `W1 · Decision surface`, and `Local only`.
-- Main queue with 13 cards from `mixedDecisionPacketListFixture`.
+- Main queue with 12 cards from `seededMixedDecisionPacketListFixture`
+  (seeded proposal read surface + invoice/drift fixtures).
 - Filter buttons: All, Blocked, Owner Review, Invoice, Proposal, Drift.
 - Right rail action log with Clear log and Reset demo controls.
 
@@ -85,11 +86,11 @@ Expected mixed queue summary:
 
 | Metric | Expected |
 |---|---:|
-| Total | 13 |
-| Allowed | 8 |
-| Blocked | 5 |
+| Total | 12 |
+| Allowed | 5 |
+| Blocked | 7 |
 | Owner review | 7 |
-| Critical | 5 |
+| Critical | 7 |
 
 Workflow coverage:
 
