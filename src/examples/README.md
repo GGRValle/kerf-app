@@ -160,7 +160,8 @@ For the Monday proof packet, capture:
 - Reject/false-positive form screenshot with reason submitted.
 - Action log screenshot showing workflow-aware verbs.
 - Action log screenshot showing `decision.resolved` audit rows for operator
-  actions.
+  actions; proposal approve/reject rows should also show
+  `proposal_followup.approved` or `proposal_followup.rejected`.
 - Smoke output excerpt showing `invoice_followup_gate_loop`.
 - Smoke output excerpt showing `invoice_audit` in this order:
   `detected`, `drafted`, `approval_requested`, `approved`.
@@ -176,9 +177,11 @@ npm run smoke | tee /tmp/kerf-w1-smoke-output.txt
 ## Known Boundaries
 
 - Browser actions append in-memory `decision.resolved` event-template records
-  for demo evidence. Durable production persistence remains a follow-up slice.
+  for demo evidence. Proposal approve/reject also append the corresponding
+  `proposal_followup.approved` / `.rejected` workflow event in the same
+  EventLog. Cross-restart durable storage remains a follow-up slice.
 - The queue uses generated fixtures, not live QBO or Platform data.
 - `npm run smoke` is the backend proof for invoice -> AltitudePacket ->
   Policy Gate -> DecisionPacket -> audit chain.
-- Durable production operator decision persistence is a follow-up
+- Cross-restart production operator decision storage is a follow-up
   design/implementation slice.

@@ -16,7 +16,8 @@ expanding breadth into invoice polish, drift polish, or new workflows.
 - Proposal-first queue ordering is landed.
 - Proposal detail / review panel is landed.
 - Browser demo actions append in-memory `decision.resolved` audit rows using
-  the typed operator-decision event-template contract.
+  the typed operator-decision event-template contract; proposal approve/reject
+  also append the matching proposal workflow event in the same EventLog path.
 - Seeded proposal read surface is landed: five realistic proposal records
   produce four eligible proposal follow-up DecisionPackets through the real
   detect -> draft -> AltitudePacket -> Policy Gate path.
@@ -62,10 +63,10 @@ doesn't matter for F&F.
 
 ## Required before F&F
 
-- **Durable proposal operator action persistence.** #73 proves the event
-  template path in the browser demo; the proposal loop still needs a
-  durable event-log write so approve/edit/reject survives reload and can
-  be used as F&F evidence.
+- **Cross-restart proposal operator action storage.** The browser demo now
+  commits proposal operator decisions and proposal workflow outcomes to the
+  in-memory EventLog. Remaining work is a storage-backed EventLog so
+  approve/edit/reject survives reload and can be used as F&F evidence.
 - **Platform-backed proposal read adapter implementation.** The demo has a
   local/no-network adapter boundary. Remaining work is implementing a
   Platform-backed adapter on the other side of that boundary, then swapping
@@ -120,11 +121,12 @@ usable than the last:
    [#72](https://github.com/GGRValle/kerf-app/pull/72). New screen/route from a proposal
    card click. Full proposal context, drafted follow-up, operator
    action affordances. Keeps the workflow-aware copy chain.
-2. **Proposal action audit persistence.** Partially landed in
+2. **Proposal action audit persistence.** Advanced beyond
    [#73](https://github.com/GGRValle/kerf-app/pull/73): browser actions
    append in-memory `decision.resolved` rows using the typed
-   event-template contract. Remaining work is durable persistence across
-   reload.
+   event-template contract, and proposal approve/reject now append the
+   matching proposal workflow outcome event. Remaining work is
+   storage-backed persistence across reload.
 3. **Proposal read surface adapter stub.** Advanced beyond #74: seeded
    realistic proposal data feeds the demo through the real workflow and
    gate, and the read surface now has a local/no-network adapter boundary.
