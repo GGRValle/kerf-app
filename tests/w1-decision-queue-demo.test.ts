@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { buildDecisionCardViewModel } from '../src/ui/index.js';
 import { mixedDecisionPacketListFixture } from '../src/test-fixtures/index.js';
-import { sortPacketsForW1Demo, workflowDemoRank } from '../src/examples/w1-decision-queue-demo.ts';
+import {
+  firstProposalPacketId,
+  sortPacketsForW1Demo,
+  workflowDemoRank,
+} from '../src/examples/w1-decision-queue-demo.ts';
 
 test('w1 interactive demo HTML links both operator stylesheets', () => {
   const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
@@ -210,4 +215,49 @@ test('sortPacketsForW1Demo ranks proposal → invoice → drift and preserves or
   if (firstDriftIdx !== -1 && lastInvoiceIdx !== -1) {
     assert.ok(firstDriftIdx > lastInvoiceIdx);
   }
+});
+
+test('w1 demo HTML includes proposal detail review panel markup', () => {
+  const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
+
+  assert.match(html, /id="kerf-proposal-detail-root"/);
+  assert.match(html, /class="kerf-w1-proposal-detail-panel"/);
+  assert.match(html, /class="kerf-w1-queue-detail-wrap"/);
+});
+
+test('w1 demo boot requires proposal detail root and wires selection before filters', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /kerf-proposal-detail-root/);
+  assert.match(src, /wireQueueCardSelection\(root, detailRoot, log\)/);
+  assert.match(src, /wireFilterBar\(root, log, detailRoot\)/);
+});
+
+test('w1 demo selects first proposal packet after each queue remount', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /firstProposalPacketId\(packets\)/);
+  assert.match(src, /syncCardSelectionVisual\(root, defaultProposalId\)/);
+});
+
+test('firstProposalPacketId matches first sorted packet when proposals lead the queue', () => {
+  const sorted = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
+  assert.equal(sorted[0]?.workflow, 'proposal_followup');
+  assert.equal(firstProposalPacketId(sorted), sorted[0]?.packet_id);
+});
+
+test('W1 proposal detail rendering uses buildDecisionCardViewModel for the selected proposal packet', () => {
+  const sorted = sortPacketsForW1Demo(mixedDecisionPacketListFixture);
+  const id = firstProposalPacketId(sorted);
+  assert.ok(id);
+  const packet = sorted.find((p) => p.packet_id === id);
+  assert.ok(packet);
+  const view = buildDecisionCardViewModel(packet!);
+  assert.equal(view.workflow, 'proposal_followup');
+  assert.doesNotMatch(view.operatorSummary.headline, /\bV\d+\b/i);
+
+  const demoSrc = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+  assert.match(demoSrc, /buildDecisionCardViewModel\(packet\)/);
+  assert.match(demoSrc, /renderProposalDetailHtml/);
+  assert.match(demoSrc, /kerf-operator-summary-headline/);
 });

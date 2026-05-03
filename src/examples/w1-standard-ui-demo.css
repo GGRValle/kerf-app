@@ -138,6 +138,76 @@
   min-width: 0;
 }
 
+/* Queue + proposal detail — stack on small viewports; side-by-side on wide. */
+.kerf-w1-standard-ui .kerf-w1-queue-detail-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.35rem;
+  }
+
+  .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap #kerf-queue-root {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel {
+    flex: 0 0 22rem;
+    width: 22rem;
+    max-width: 100%;
+  }
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel {
+  border: 1px solid var(--kerf-border);
+  border-radius: 8px;
+  background: var(--kerf-bg-card);
+  padding: 0.85rem 0.95rem 1rem;
+  min-height: 8rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-title {
+  font-size: 1.02rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-head {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-section {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-section:last-of-type {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-artifact-pre {
+  max-height: 14rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-placeholder {
+  padding: 0.35rem 0.15rem 0.5rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-card-actions {
+  margin-top: 0.65rem;
+  padding-top: 0.5rem;
+}
+
 /* Queue filters — compact operator-console strip (demo-only) */
 .kerf-w1-standard-ui .kerf-w1-filter-bar {
   display: flex;
@@ -183,6 +253,11 @@
 
 .kerf-w1-main-column .kerf-decision-card {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+.kerf-w1-standard-ui .kerf-decision-card.kerf-w1-queue-card-selected {
+  outline: 2px solid var(--kerf-w1-brand);
+  outline-offset: 2px;
 }
 
 /* Card top — identity band + operator summary (tone borders preserved on .kerf-operator-summary-*). */
