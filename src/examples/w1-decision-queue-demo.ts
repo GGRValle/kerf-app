@@ -3,6 +3,17 @@
  * Browser entry for the W1 interactive DecisionQueue demo.
  * Fixture imports stay in this example boundary only (not in UI components).
  */
+import {
+  createMemoryEventLog,
+  type Actor,
+  type Event,
+} from '../blackboard/index.js';
+import {
+  operatorDecisionToEventTemplate,
+  type OperatorDecisionAction,
+  type OperatorDecisionBlackboardEventTemplate,
+  type OperatorDecisionResolvedPayload,
+} from '../decisions/index.js';
 import { mixedDecisionPacketListFixture } from '../test-fixtures/index.js';
 import type { DecisionPacket } from '../index.js';
 import type {
@@ -61,6 +72,10 @@ const QUEUE_OPTIONS = {
   subtitle: 'Interactive browser-local harness (invoice + proposal + drift fixtures → view models → mount).',
 } as const;
 
+const DEMO_OPERATOR: Actor = { id: 'demo_operator_owner', role: 'owner' };
+let operatorDecisionEventLog = createMemoryEventLog();
+let operatorDecisionEventSeq = 0;
+
 /** Inline reason form strings — drift uses false-positive copy to match card action labels. */
 function reasonFormCopyForWorkflow(workflow: DecisionPacket['workflow']): {
   labelText: string;
@@ -81,16 +96,23 @@ function reasonFormCopyForWorkflow(workflow: DecisionPacket['workflow']): {
 /** Base card callbacks map to these log tokens; drift uses workflow-aware verbs in the action log. */
 type DecisionLogVerb = 'approve' | 'reject' | 'edit';
 
-function actionLogVerbForWorkflow(
+export function operatorDecisionActionForWorkflow(
   workflow: DecisionPacket['workflow'],
   baseAction: DecisionLogVerb,
-): string {
+): OperatorDecisionAction {
   if (workflow === 'drift_detection') {
     if (baseAction === 'approve') return 'acknowledge';
     if (baseAction === 'reject') return 'false_positive';
     return 'act';
   }
   return baseAction;
+}
+
+function actionLogVerbForWorkflow(
+  workflow: DecisionPacket['workflow'],
+  baseAction: DecisionLogVerb,
+): string {
+  return operatorDecisionActionForWorkflow(workflow, baseAction);
 }
 
 /** Footers currently showing the reject-reason form (demo-only); reset clears these. */
@@ -318,6 +340,75 @@ function appendLog(container: HTMLElement, action: string, packetId: string, rea
   container.prepend(row);
 }
 
+function appendOperatorDecisionAuditRow(
+  container: HTMLElement,
+  event: Event<OperatorDecisionResolvedPayload>,
+  template: OperatorDecisionBlackboardEventTemplate,
+): void {
+  const row = document.createElement('div');
+  row.className = 'kerf-w1-log-entry';
+  const parts = [
+    event.at,
+    event.kind,
+    `event=${event.id}`,
+    `action=${template.payload.action}`,
+    `packet=${template.payload.packetId}`,
+    `workflow=${template.payload.workflow}`,
+    `action_class=${template.action_class}`,
+    `altitude=${template.decision_altitude}`,
+  ];
+  if (template.payload.reason !== null) {
+    parts.push(`reason=${template.payload.reason}`);
+  }
+  row.textContent = parts.join('  ');
+  container.prepend(row);
+}
+
+function eventFromOperatorDecisionTemplate(
+  template: OperatorDecisionBlackboardEventTemplate,
+  at: string,
+): Event<OperatorDecisionResolvedPayload> {
+  operatorDecisionEventSeq += 1;
+  return {
+    id: `evt_demo_operator_decision_${operatorDecisionEventSeq}`,
+    at,
+    actor: DEMO_OPERATOR,
+    kind: template.kind,
+    entity: template.entity,
+    payload: template.payload,
+    data_class: template.data_class,
+    retention_policy: template.retention_policy,
+    privilege_class: template.privilege_class,
+    workflow: template.workflow,
+    decision_authority: template.decision_authority,
+    action_class: template.action_class,
+    decision_altitude: template.decision_altitude,
+    sources: template.sources,
+    correlationId: `corr_demo_operator_decision_${operatorDecisionEventSeq}`,
+  };
+}
+
+function appendOperatorDecisionAuditEvent(
+  container: HTMLElement,
+  packet: DecisionPacket,
+  baseAction: DecisionLogVerb,
+  reason?: string,
+): void {
+  const decidedAt = formatTimestamp();
+  const action = operatorDecisionActionForWorkflow(packet.workflow, baseAction);
+  const template = operatorDecisionToEventTemplate(packet, {
+    action,
+    decidedBy: DEMO_OPERATOR.id,
+    decidedAt,
+    reason,
+  });
+  const event = eventFromOperatorDecisionTemplate(template, decidedAt);
+
+  void operatorDecisionEventLog.append(event).then((stored) => {
+    appendOperatorDecisionAuditRow(container, stored as Event<OperatorDecisionResolvedPayload>, template);
+  });
+}
+
 function clearActionLog(log: HTMLElement): void {
   log.replaceChildren();
 }
@@ -333,6 +424,8 @@ function closeAllRejectForms(): void {
 function resetW1DemoHarness(log: HTMLElement): void {
   closeAllRejectForms();
   clearActionLog(log);
+  operatorDecisionEventLog = createMemoryEventLog();
+  operatorDecisionEventSeq = 0;
 }
 
 function wireActionLogControls(log: HTMLElement): void {
@@ -523,12 +616,18 @@ function showRejectReasonFormInFooter(
 
 function buildLogActionsForPacket(packet: DecisionPacket, log: HTMLElement): DecisionCardActions {
   return wireDecisionCardHandlers(packet, {
-    onApprove: (packetId) =>
-      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'approve'), packetId),
-    onReject: (packetId, reason) =>
-      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'reject'), packetId, reason),
-    onEdit: (packetId) =>
-      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'edit'), packetId),
+    onApprove: (packetId) => {
+      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'approve'), packetId);
+      appendOperatorDecisionAuditEvent(log, packet, 'approve');
+    },
+    onReject: (packetId, reason) => {
+      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'reject'), packetId, reason);
+      appendOperatorDecisionAuditEvent(log, packet, 'reject', reason);
+    },
+    onEdit: (packetId) => {
+      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'edit'), packetId);
+      appendOperatorDecisionAuditEvent(log, packet, 'edit');
+    },
   });
 }
 

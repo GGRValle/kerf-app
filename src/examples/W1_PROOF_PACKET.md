@@ -77,10 +77,8 @@ open -a Safari "$(pwd)/src/examples/w1-decision-queue-demo.html"
 
 ## Known Boundaries
 
-- Browser action log entries are local demo evidence only.
-- Production persistence now has a typed pure event-template contract via
-  `operatorDecisionToEventTemplate`, but browser actions do not append
-  `decision.resolved` events yet.
+- Browser actions append in-memory `decision.resolved` event-template records
+  for demo evidence. Durable production persistence remains a follow-up slice.
 - The mixed queue uses generated fixtures, not live QBO or Platform records.
 - `npm run smoke` is the backend proof for invoice -> AltitudePacket -> Policy
   Gate -> DecisionPacket -> audit chain plus V9 learning-signal commit.

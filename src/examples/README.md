@@ -158,6 +158,8 @@ For the Monday proof packet, capture:
   `altitude_divergence`).
 - Reject/false-positive form screenshot with reason submitted.
 - Action log screenshot showing workflow-aware verbs.
+- Action log screenshot showing `decision.resolved` audit rows for operator
+  actions.
 - Smoke output excerpt showing `invoice_followup_gate_loop`.
 - Smoke output excerpt showing `invoice_audit` in this order:
   `detected`, `drafted`, `approval_requested`, `approved`.
@@ -172,11 +174,10 @@ npm run smoke | tee /tmp/kerf-w1-smoke-output.txt
 
 ## Known Boundaries
 
-- Browser actions are demo-local DOM actions. They do not yet write production
-  Blackboard operator decision events.
+- Browser actions append in-memory `decision.resolved` event-template records
+  for demo evidence. Durable production persistence remains a follow-up slice.
 - The queue uses generated fixtures, not live QBO or Platform data.
 - `npm run smoke` is the backend proof for invoice -> AltitudePacket ->
   Policy Gate -> DecisionPacket -> audit chain.
-- Production operator decision persistence is a follow-up design/implementation
-  slice.
-
+- Durable production operator decision persistence is a follow-up
+  design/implementation slice.

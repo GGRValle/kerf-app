@@ -5,6 +5,7 @@ import { buildDecisionCardViewModel } from '../src/ui/index.js';
 import { mixedDecisionPacketListFixture } from '../src/test-fixtures/index.js';
 import {
   firstProposalPacketId,
+  operatorDecisionActionForWorkflow,
   sortPacketsForW1Demo,
   workflowDemoRank,
 } from '../src/examples/w1-decision-queue-demo.ts';
@@ -166,6 +167,25 @@ test('w1 interactive demo threads actionLogVerbForWorkflow into appendLog from p
   assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'approve\')'));
   assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'reject\')'));
   assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'edit\')'));
+});
+
+test('w1 interactive demo appends operator decision resolved events for actions', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /operatorDecisionToEventTemplate/);
+  assert.match(src, /createMemoryEventLog/);
+  assert.match(src, /appendOperatorDecisionAuditEvent/);
+  assert.match(src, /operatorDecisionEventLog\.append\(event\)/);
+  assert.match(src, /event\.kind/);
+});
+
+test('operatorDecisionActionForWorkflow maps UI base actions to event-template actions', () => {
+  assert.equal(operatorDecisionActionForWorkflow('proposal_followup', 'approve'), 'approve');
+  assert.equal(operatorDecisionActionForWorkflow('proposal_followup', 'reject'), 'reject');
+  assert.equal(operatorDecisionActionForWorkflow('proposal_followup', 'edit'), 'edit');
+  assert.equal(operatorDecisionActionForWorkflow('drift_detection', 'approve'), 'acknowledge');
+  assert.equal(operatorDecisionActionForWorkflow('drift_detection', 'reject'), 'false_positive');
+  assert.equal(operatorDecisionActionForWorkflow('drift_detection', 'edit'), 'act');
 });
 
 test('w1 demo source orders mixed fixtures proposal-first via sortPacketsForW1Demo', () => {
