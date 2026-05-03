@@ -70,7 +70,7 @@ npm run smoke | tee /tmp/kerf-w1-smoke-output.txt
 | AT-019 hosting-route-check adapter leg | Pure adapter guard emits `hosting_route_check`, blocks unapproved/mismatched/retired endpoints, and has no network dependency. | `tests/hosting-route-check.test.ts`, `src/hosting/routeCheck.ts` |
 | AT-020 V18 altitude assignment | Baseline floors and divergence are tested; V9 records altitude-divergence learning drafts when V18 overrides model suggestion. | `tests/altitude-policy-gate.test.ts`, `tests/decision-packet-fixtures.test.ts`, `tests/learning-signal-events.test.ts` |
 | W1 visible operator surface | Mixed queue renders 12 cards across invoice, seeded proposal read-surface data, and drift with workflow-aware labels, filters, badges, audit details, and learning signals. | `src/examples/README.md`, `npm run demo:w1-queue`, browser screenshots |
-| Operator decision persistence contract | Browser demo actions append in-memory `decision.resolved` event-template rows; durable persistence still has a typed contract to wire next. | `src/decisions/operatorActions.ts`, `tests/operator-decision-events.test.ts`, `src/examples/w1-decision-queue-demo.ts` |
+| Operator decision persistence contract | Browser demo actions append in-memory `decision.resolved` event-template rows; proposal actions also append `proposal_followup.approved` / `.rejected` workflow rows through the same EventLog path. | `src/decisions/operatorActions.ts`, `src/decisions/proposalOperatorPersistence.ts`, `tests/operator-decision-events.test.ts`, `tests/proposal-action-persistence.test.ts`, `src/examples/w1-decision-queue-demo.ts` |
 
 ## Workflow Proof
 
@@ -117,9 +117,10 @@ From `/tmp/kerf-w1-smoke-output.txt`, capture:
 ## Known Boundaries
 
 - Browser action log entries are local demo evidence only.
-- Production operator decision persistence now has a pure typed event-template
-  contract via `operatorDecisionToEventTemplate`; wiring browser actions to
-  append `decision.resolved` events remains a follow-up slice.
+- Operator decision persistence now has a pure typed event-template contract
+  via `operatorDecisionToEventTemplate`; proposal approve/reject additionally
+  commit the matching proposal workflow event into the in-memory EventLog.
+  Cross-restart storage remains a follow-up slice.
 - The mixed queue uses generated fixtures, not live QBO or Platform records.
 - Kerf-app owns the pure hosting-route guard; Platform owns real model network
   invocation and adapter emission.

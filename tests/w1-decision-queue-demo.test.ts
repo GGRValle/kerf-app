@@ -180,6 +180,15 @@ test('w1 interactive demo appends operator decision resolved events for actions'
   assert.match(src, /event\.kind/);
 });
 
+test('w1 interactive demo persists proposal decisions through the proposal helper', () => {
+  const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(src, /persistProposalOperatorDecision/);
+  assert.match(src, /proposalApprovalRequestsByPacketId/);
+  assert.match(src, /requestProposalFollowupApproval/);
+  assert.match(src, /appendProposalWorkflowAuditRow/);
+});
+
 test('operatorDecisionActionForWorkflow maps UI base actions to event-template actions', () => {
   assert.equal(operatorDecisionActionForWorkflow('proposal_followup', 'approve'), 'approve');
   assert.equal(operatorDecisionActionForWorkflow('proposal_followup', 'reject'), 'reject');

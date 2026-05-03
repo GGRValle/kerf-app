@@ -10,11 +10,19 @@ import {
 } from '../blackboard/index.js';
 import {
   operatorDecisionToEventTemplate,
+  persistProposalOperatorDecision,
   type OperatorDecisionAction,
   type OperatorDecisionBlackboardEventTemplate,
   type OperatorDecisionResolvedPayload,
 } from '../decisions/index.js';
-import { seededMixedDecisionPacketListFixture } from '../test-fixtures/index.js';
+import {
+  seededMixedDecisionPacketListFixture,
+  seededProposalReadSurface,
+} from '../test-fixtures/index.js';
+import {
+  requestProposalFollowupApproval,
+  type ProposalFollowupApprovalActionPayload,
+} from '../workflows/index.js';
 import type { DecisionPacket } from '../index.js';
 import type {
   DecisionCardOperatorSummaryTone,
@@ -76,6 +84,14 @@ const QUEUE_OPTIONS = {
 const DEMO_OPERATOR: Actor = { id: 'demo_operator_owner', role: 'owner' };
 let operatorDecisionEventLog = createMemoryEventLog();
 let operatorDecisionEventSeq = 0;
+const proposalApprovalRequestsByPacketId = new Map(
+  seededProposalReadSurface.items.map((item) => [
+    item.decisionPacket.packet_id,
+    requestProposalFollowupApproval(item.draft, {
+      requestId: `${item.draft.id}_approval_demo`,
+    }),
+  ] as const),
+);
 
 /** Inline reason form strings — drift uses false-positive copy to match card action labels. */
 function reasonFormCopyForWorkflow(workflow: DecisionPacket['workflow']): {
@@ -365,13 +381,40 @@ function appendOperatorDecisionAuditRow(
   container.prepend(row);
 }
 
+function appendProposalWorkflowAuditRow(
+  container: HTMLElement,
+  event: Event<ProposalFollowupApprovalActionPayload>,
+): void {
+  const row = document.createElement('div');
+  row.className = 'kerf-w1-log-entry';
+  const parts = [
+    event.at,
+    event.kind,
+    `event=${event.id}`,
+    `proposal=${event.payload.proposalId}`,
+    `state=${event.payload.state}`,
+    `action_class=${event.action_class}`,
+    `altitude=${event.decision_altitude}`,
+  ];
+  if (event.payload.rejectionReason !== null) {
+    parts.push(`reason=${event.payload.rejectionReason}`);
+  }
+  row.textContent = parts.join('  ');
+  container.prepend(row);
+}
+
+function nextOperatorDecisionEventSeq(): number {
+  operatorDecisionEventSeq += 1;
+  return operatorDecisionEventSeq;
+}
+
 function eventFromOperatorDecisionTemplate(
   template: OperatorDecisionBlackboardEventTemplate,
   at: string,
 ): Event<OperatorDecisionResolvedPayload> {
-  operatorDecisionEventSeq += 1;
+  const seq = nextOperatorDecisionEventSeq();
   return {
-    id: `evt_demo_operator_decision_${operatorDecisionEventSeq}`,
+    id: `evt_demo_operator_decision_${seq}`,
     at,
     actor: DEMO_OPERATOR,
     kind: template.kind,
@@ -385,7 +428,7 @@ function eventFromOperatorDecisionTemplate(
     action_class: template.action_class,
     decision_altitude: template.decision_altitude,
     sources: template.sources,
-    correlationId: `corr_demo_operator_decision_${operatorDecisionEventSeq}`,
+    correlationId: `corr_demo_operator_decision_${seq}`,
   };
 }
 
@@ -395,6 +438,11 @@ function appendOperatorDecisionAuditEvent(
   baseAction: DecisionLogVerb,
   reason?: string,
 ): void {
+  if (packet.workflow === 'proposal_followup') {
+    appendProposalOperatorDecisionAuditEvent(container, packet, baseAction, reason);
+    return;
+  }
+
   const decidedAt = formatTimestamp();
   const action = operatorDecisionActionForWorkflow(packet.workflow, baseAction);
   const template = operatorDecisionToEventTemplate(packet, {
@@ -407,6 +455,49 @@ function appendOperatorDecisionAuditEvent(
 
   void operatorDecisionEventLog.append(event).then((stored) => {
     appendOperatorDecisionAuditRow(container, stored as Event<OperatorDecisionResolvedPayload>, template);
+  });
+}
+
+function appendProposalOperatorDecisionAuditEvent(
+  container: HTMLElement,
+  packet: DecisionPacket,
+  baseAction: DecisionLogVerb,
+  reason?: string,
+): void {
+  const request = proposalApprovalRequestsByPacketId.get(packet.packet_id);
+  if (request === undefined) {
+    const decidedAt = formatTimestamp();
+    const template = operatorDecisionToEventTemplate(packet, {
+      action: baseAction,
+      decidedBy: DEMO_OPERATOR.id,
+      decidedAt,
+      reason,
+    });
+    const event = eventFromOperatorDecisionTemplate(template, decidedAt);
+    void operatorDecisionEventLog.append(event).then((stored) => {
+      appendOperatorDecisionAuditRow(container, stored as Event<OperatorDecisionResolvedPayload>, template);
+    });
+    return;
+  }
+
+  const seq = nextOperatorDecisionEventSeq();
+  const decidedAt = formatTimestamp();
+  void persistProposalOperatorDecision({
+    log: operatorDecisionEventLog,
+    packet,
+    request,
+    action: baseAction,
+    actor: DEMO_OPERATOR,
+    decidedAt,
+    reason,
+    correlationId: `corr_demo_operator_decision_${seq}`,
+    causedByEventId: `evt_demo_proposal_approval_requested_${request.id}`,
+    eventIdPrefix: `evt_demo_operator_decision_${seq}`,
+  }).then((result) => {
+    appendOperatorDecisionAuditRow(container, result.decisionEvent, result.decisionTemplate);
+    if (result.workflowEvent !== null) {
+      appendProposalWorkflowAuditRow(container, result.workflowEvent);
+    }
   });
 }
 
