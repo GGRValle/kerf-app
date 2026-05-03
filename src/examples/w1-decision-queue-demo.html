@@ -7,6 +7,81 @@
     <link rel="stylesheet" href="../ui/styles/decision-card.css" />
     <link rel="stylesheet" href="../ui/styles/decision-queue.css" />
     <link rel="stylesheet" href="./w1-standard-ui-demo.css" />
+    <style>
+      /* Demo-only: queue skeleton, render-error banner, empty-filter padding aligned to decision cards */
+      .kerf-w1-queue-skeleton {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 52rem;
+        margin: 1.25rem auto;
+        padding: 0 1rem 2rem;
+      }
+      .kerf-w1-queue-skeleton-card {
+        border-radius: 8px;
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-card);
+        padding: 1.05rem 1.15rem 1.15rem;
+        min-height: 5.5rem;
+      }
+      .kerf-w1-queue-skeleton-line {
+        height: 0.65rem;
+        border-radius: 4px;
+        margin-bottom: 0.55rem;
+        max-width: 14rem;
+        background: linear-gradient(
+          90deg,
+          var(--kerf-bg-elevated) 0%,
+          color-mix(in srgb, var(--kerf-fg-muted) 22%, var(--kerf-bg-elevated)) 50%,
+          var(--kerf-bg-elevated) 100%
+        );
+        background-size: 200% 100%;
+        animation: kerf-w1-queue-skeleton-shimmer 1.1s ease-in-out infinite;
+      }
+      .kerf-w1-queue-skeleton-line--wide {
+        max-width: 22rem;
+      }
+      .kerf-w1-queue-skeleton-line--medium {
+        max-width: 11rem;
+      }
+      @keyframes kerf-w1-queue-skeleton-shimmer {
+        0% {
+          background-position: 100% 0;
+        }
+        100% {
+          background-position: -100% 0;
+        }
+      }
+      .kerf-w1-standard-ui .kerf-decision-queue .kerf-empty-state {
+        padding: 1.05rem 1.15rem 1.15rem;
+      }
+      .kerf-w1-queue-error-banner {
+        margin: 0 1rem 1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--kerf-danger-muted);
+        background: color-mix(in srgb, var(--kerf-danger-muted) 18%, var(--kerf-bg-card));
+        color: var(--kerf-fg);
+        font-size: 0.9rem;
+        line-height: 1.45;
+        max-width: 52rem;
+      }
+      .kerf-w1-queue-error-banner p {
+        margin: 0 0 0.5rem;
+        color: var(--kerf-fg-muted);
+      }
+      .kerf-w1-queue-error-reset {
+        color: var(--kerf-accent);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        cursor: pointer;
+      }
+      .kerf-w1-queue-error-reset:focus-visible {
+        outline: 2px solid var(--kerf-focus-ring);
+        outline-offset: 2px;
+      }
+    </style>
     <!--
       Layout matches Standard UI wireframe surface
       (_docs/wireframes/kerf_wireframes_web_v2.html — app shell, panels, compact actions).

@@ -81,6 +81,13 @@ const QUEUE_OPTIONS = {
     'Seeded read surface · 12 cards (4 proposals, 4 invoices, 4 drift). Proposals first in All; Proposal filter is the four seeded proposal rows; other filters subset the same fixture.',
 } as const;
 
+/** Copy surfaced when a queue filter matches zero cards (bundle / tests grep these). */
+const QUEUE_EMPTY_FILTER_TITLE = 'No decisions match this filter.';
+const QUEUE_EMPTY_FILTER_SUBTITLE = 'Try All to see the full queue.';
+
+const QUEUE_RENDER_ERROR_PRIMARY =
+  'Something went wrong rendering the queue. Reload the page to retry.';
+
 const DEMO_OPERATOR: Actor = { id: 'demo_operator_owner', role: 'owner' };
 let operatorDecisionEventLog = createMemoryEventLog();
 let operatorDecisionEventSeq = 0;
@@ -140,6 +147,8 @@ let unmountDetailActions: (() => void) | undefined;
 let currentPackets: readonly DecisionPacket[] = [];
 let selectedPacketIdForDetail: string | null = null;
 let queueSelectionWired = false;
+let activeQueueFilter: DemoQueueFilter = 'all';
+let queueErrorResetCleanup: (() => void) | undefined;
 
 function operatorSummaryToneClass(tone: DecisionCardOperatorSummaryTone): string {
   switch (tone) {
@@ -562,6 +571,50 @@ function filterPackets(filter: DemoQueueFilter): readonly DecisionPacket[] {
 }
 
 /** Demo-only: alternate subtle identity tint on proposal cards so a block of similar approvals reads less flat. */
+function sleepMs(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function renderQueueSkeleton(root: HTMLElement): void {
+  const cards = [0, 1, 2]
+    .map(
+      () => `<div class="kerf-w1-queue-skeleton-card" aria-hidden="true">
+    <div class="kerf-w1-queue-skeleton-line kerf-w1-queue-skeleton-line--wide"></div>
+    <div class="kerf-w1-queue-skeleton-line"></div>
+    <div class="kerf-w1-queue-skeleton-line kerf-w1-queue-skeleton-line--medium"></div>
+  </div>`,
+    )
+    .join('');
+  root.innerHTML = `<div class="kerf-w1-queue-skeleton" data-kerf-w1-queue-skeleton="true" aria-busy="true" aria-label="Loading queue">${cards}</div>`;
+}
+
+function renderQueueErrorBannerHtml(): string {
+  return `<div class="kerf-w1-queue-error-banner" role="alert">
+  <p>${escapeHtml(QUEUE_RENDER_ERROR_PRIMARY)}</p>
+  <a href="#" class="kerf-w1-queue-error-reset" data-kerf-w1-queue-error-reset>Reset demo</a>
+</div>`;
+}
+
+function wireQueueErrorReset(root: HTMLElement, log: HTMLElement, detailRoot: HTMLElement): void {
+  queueErrorResetCleanup?.();
+  queueErrorResetCleanup = undefined;
+  const link = root.querySelector('[data-kerf-w1-queue-error-reset]');
+  if (!(link instanceof HTMLAnchorElement)) {
+    return;
+  }
+  const onClick = (ev: MouseEvent) => {
+    ev.preventDefault();
+    resetW1DemoHarness(log);
+    remountQueue(root, log, detailRoot, activeQueueFilter);
+  };
+  link.addEventListener('click', onClick);
+  queueErrorResetCleanup = () => {
+    link.removeEventListener('click', onClick);
+  };
+}
+
 function annotateProposalCardsForVisualRhythm(packets: readonly DecisionPacket[]): void {
   for (const el of document.querySelectorAll('.kerf-decision-card[data-packet-id]')) {
     el.classList.remove('kerf-w1-demo-proposal-surface-a', 'kerf-w1-demo-proposal-surface-b');
@@ -591,14 +644,36 @@ function remountQueue(root: HTMLElement, log: HTMLElement, detailRoot: HTMLEleme
   closeAllRejectForms();
   unmountDetailActions?.();
   unmountDetailActions = undefined;
+  queueErrorResetCleanup?.();
+  queueErrorResetCleanup = undefined;
   unmountQueue?.();
   const packets = filterPackets(filter);
   currentPackets = packets;
-  const views = packets.map((packet) => buildDecisionCardViewModel(packet));
-  const queue = buildDecisionQueueViewModel(views, { ...QUEUE_OPTIONS });
-  const actionsByPacketId = buildActionsByPacketId(packets, log);
-  unmountQueue = mountDecisionQueue(root, { queue, actionsByPacketId });
-  annotateProposalCardsForVisualRhythm(packets);
+
+  try {
+    const views = packets.map((packet) => buildDecisionCardViewModel(packet));
+    const queueOptions = packets.length === 0
+      ? {
+          ...QUEUE_OPTIONS,
+          emptyTitle: QUEUE_EMPTY_FILTER_TITLE,
+          emptyDescription: QUEUE_EMPTY_FILTER_SUBTITLE,
+        }
+      : { ...QUEUE_OPTIONS };
+    const queue = buildDecisionQueueViewModel(views, queueOptions);
+    const actionsByPacketId = buildActionsByPacketId(packets, log);
+    unmountQueue = mountDecisionQueue(root, { queue, actionsByPacketId });
+    annotateProposalCardsForVisualRhythm(packets);
+  } catch (err) {
+    console.error(err);
+    unmountQueue = () => {};
+    root.innerHTML = renderQueueErrorBannerHtml();
+    wireQueueErrorReset(root, log, detailRoot);
+    currentPackets = [];
+    selectedPacketIdForDetail = null;
+    syncCardSelectionVisual(root, null);
+    paintDetailPanel(detailRoot, log);
+    return;
+  }
 
   const defaultProposalId = firstProposalPacketId(packets);
   selectedPacketIdForDetail = defaultProposalId;
@@ -624,6 +699,7 @@ function wireFilterBar(root: HTMLElement, log: HTMLElement, detailRoot: HTMLElem
   const buttons = document.querySelectorAll('[data-kerf-w1-queue-filter]');
 
   const apply = (filter: DemoQueueFilter) => {
+    activeQueueFilter = filter;
     remountQueue(root, log, detailRoot, filter);
     syncFilterAria(filter);
   };
@@ -813,6 +889,14 @@ function buildActionsByPacketId(
   return Object.fromEntries(entries) as DecisionQueueActionsByPacketId;
 }
 
+async function initW1DemoQueue(root: HTMLElement, log: HTMLElement, detailRoot: HTMLElement): Promise<void> {
+  renderQueueSkeleton(root);
+  await sleepMs(50);
+  wireQueueCardSelection(root, detailRoot, log);
+  wireFilterBar(root, log, detailRoot);
+  wireActionLogControls(log);
+}
+
 function boot(): void {
   const root = document.getElementById('kerf-queue-root');
   const log = document.getElementById('kerf-action-log');
@@ -821,9 +905,7 @@ function boot(): void {
     throw new Error('w1 demo: missing #kerf-queue-root, #kerf-action-log, or #kerf-proposal-detail-root');
   }
 
-  wireQueueCardSelection(root, detailRoot, log);
-  wireFilterBar(root, log, detailRoot);
-  wireActionLogControls(log);
+  void initW1DemoQueue(root, log, detailRoot);
 }
 
 if (typeof document !== 'undefined') {
