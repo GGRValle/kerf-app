@@ -320,3 +320,27 @@ test('W1 proposal detail rendering uses buildDecisionCardViewModel for the selec
   assert.match(demoSrc, /renderProposalDetailHtml/);
   assert.match(demoSrc, /kerf-operator-summary-headline/);
 });
+
+test('package.json defines the demo:w1-queue:serve hosted-static script', () => {
+  const pkg = JSON.parse(
+    readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+  ) as { scripts: Record<string, string> };
+
+  assert.equal(typeof pkg.scripts['demo:w1-queue:serve'], 'string');
+  assert.match(pkg.scripts['demo:w1-queue:serve']!, /demo:w1-queue:esbuild/);
+  assert.match(pkg.scripts['demo:w1-queue:serve']!, /python3 -m http\.server/);
+  assert.match(pkg.scripts['demo:w1-queue:serve']!, /--directory src/);
+});
+
+test('w1 demo runbook documents the hosted-static serve command and URL', () => {
+  const runbook = readFileSync(
+    new URL('../src/examples/README.md', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(runbook, /npm run demo:w1-queue:serve/);
+  assert.match(
+    runbook,
+    /http:\/\/localhost:8000\/examples\/w1-decision-queue-demo\.html/,
+  );
+});
