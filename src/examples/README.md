@@ -72,6 +72,26 @@ A regular browser such as Safari is preferred. If a chat preview or embedded
 viewer opens a blank page, rebuild the bundle with `npm run demo:w1-queue` and
 open the file directly in Safari.
 
+### Hosted-style local server (recommended for F&F dry runs)
+
+For browsing over `http://` rather than `file://` — same demo, same bundle,
+served by a simple zero-dependency Python static server. Closer to how the
+demo will eventually deploy for friends-and-family access:
+
+```bash
+npm run demo:w1-queue:serve
+# Opens nothing; once the server starts, visit:
+#   http://localhost:8000/examples/w1-decision-queue-demo.html
+# Ctrl-C to stop.
+```
+
+Requirements: Python 3 on `PATH` (ships with macOS). Port 8000 free.
+The script builds the bundle then starts `python3 -m http.server 8000
+--directory src`. No auth, no fetch, no backend writes — same pure
+demo-local fixtures as the file:// path. The HTTP path is preferred for
+F&F dry runs because some browsers (notably Chrome and chat-preview
+viewers) restrict `file://` asset loading.
+
 ## What Should Render
 
 The W1 Standard UI demo should show:
