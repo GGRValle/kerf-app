@@ -131,6 +131,36 @@
       </header>
 
       <div class="kerf-w1-demo-shell">
+        <nav class="kerf-w1-module-rail" aria-label="Product modules">
+          <button
+            type="button"
+            class="kerf-w1-mod-icon kerf-w1-mod-icon--active"
+            aria-current="page"
+            title="Tasks (demo placeholder)"
+          >
+            T
+          </button>
+          <button type="button" class="kerf-w1-mod-icon" title="Projects (demo placeholder)">P</button>
+          <button type="button" class="kerf-w1-mod-icon" title="Logs (demo placeholder)">L</button>
+          <button type="button" class="kerf-w1-mod-icon" title="Settings (demo placeholder)">S</button>
+        </nav>
+
+        <aside class="kerf-w1-cos-rail" aria-label="Right Hand">
+          <header class="kerf-w1-cos-header">
+            <span class="kerf-w1-cos-status-dot" aria-hidden="true"></span>
+            <div class="kerf-w1-cos-title-block">
+              <h2 class="kerf-w1-cos-title">Right Hand</h2>
+              <p class="kerf-w1-cos-sub">Drafting follow-ups for 4 proposals — awaiting your review</p>
+            </div>
+          </header>
+          <div class="kerf-w1-cos-body">
+            <p>
+              Watching the proposal queue. Drafting follow-ups for the four viewed-but-undecided proposals. Awaiting
+              operator review.
+            </p>
+          </div>
+        </aside>
+
         <main
           class="kerf-w1-main-column"
           aria-label="Decision queue"
@@ -139,10 +169,14 @@
           <p id="kerf-w1-demo-proposal-path" class="kerf-w1-demo-proposal-path">
             <strong>Proposal path:</strong> use <strong>All</strong> or <strong>Proposal</strong>, click a tinted proposal row, then read the drafted follow-up in the right panel. Approve / Edit / Reject updates the action log (no send, no network).
           </p>
-          <div class="kerf-w1-filter-bar" role="toolbar" aria-label="Queue filters">
+          <div
+            class="kerf-w1-filter-bar kerf-w1-toggle"
+            role="toolbar"
+            aria-label="Queue filters"
+          >
             <button
               type="button"
-              class="kerf-btn kerf-w1-filter-btn"
+              class="kerf-w1-filter-btn"
               data-kerf-w1-queue-filter="all"
               aria-pressed="true"
               title="All 12 seeded decisions; proposals are listed first."
@@ -151,7 +185,7 @@
             </button>
             <button
               type="button"
-              class="kerf-btn kerf-w1-filter-btn"
+              class="kerf-w1-filter-btn"
               data-kerf-w1-queue-filter="blocked"
               aria-pressed="false"
               title="Subset of the same 12-card fixture: cards blocked or with block reasons."
@@ -160,7 +194,7 @@
             </button>
             <button
               type="button"
-              class="kerf-btn kerf-w1-filter-btn"
+              class="kerf-w1-filter-btn"
               data-kerf-w1-queue-filter="owner_review"
               aria-pressed="false"
               title="Subset requiring owner review from the same seeded set."
@@ -169,7 +203,7 @@
             </button>
             <button
               type="button"
-              class="kerf-btn kerf-w1-filter-btn"
+              class="kerf-w1-filter-btn"
               data-kerf-w1-queue-filter="invoice"
               aria-pressed="false"
               title="Invoice follow-up cards from the same seeded mix."
@@ -178,7 +212,7 @@
             </button>
             <button
               type="button"
-              class="kerf-btn kerf-w1-filter-btn"
+              class="kerf-w1-filter-btn"
               data-kerf-w1-queue-filter="proposal"
               aria-pressed="false"
               title="Only the four seeded proposal follow-up rows."
@@ -187,7 +221,7 @@
             </button>
             <button
               type="button"
-              class="kerf-btn kerf-w1-filter-btn"
+              class="kerf-w1-filter-btn"
               data-kerf-w1-queue-filter="drift"
               aria-pressed="false"
               title="Drift detection cards; log uses acknowledge / false_positive / act."

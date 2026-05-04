@@ -51,6 +51,7 @@ html:has(.kerf-w1-standard-ui) body {
   --kerf-danger-muted: #CF5B5B;    /* canon alert — was desaturated #a67a7a */
   --kerf-focus-ring: #E0A858;      /* canon warn/focus — was cool-blue #7eb8ff */
   --rh: #C9A876;                   /* Right Hand chrome (canon v4+) */
+  --success: #3ecf8e;              /* status dot / healthy ops (wireframe --success) */
   --future: #7E6FCF;               /* Blackboard / future-state (canon v4+) */
 
   /* Rhythm — keep in sync with decision-card.css :root (Safari file:// inherits from here). */
@@ -291,7 +292,11 @@ html:has(.kerf-w1-standard-ui) body {
   background: transparent;
 }
 
-/* —— Main + right rail (wireframe main column + rail proportions) —— */
+/* —— Canon four-zone shell: module rail · Right Hand (cos) · main · log rail
+ *  ≥1280px: 56px | 320px | 1fr | minmax(13.5rem,15rem), gap 0 (cos + module butt; main/log use internal padding).
+ *  <1280px: single column stack — module rail becomes a horizontal 56px-tall icon strip; cos + main + log follow.
+ *  Ref: docs/wireframes/kerf_wireframes_web_v2.html (.app, .module-rail, .cos-rail)
+ * —— */
 .kerf-w1-demo-shell {
   flex: 1;
   width: 100%;
@@ -300,15 +305,183 @@ html:has(.kerf-w1-standard-ui) body {
   padding: 1.125rem 1.5rem 1.75rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.125rem;
+  gap: 1rem;
   align-items: start;
 }
 
-@media (min-width: 1024px) {
+.kerf-w1-module-rail {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  background: var(--kerf-w1-bg);
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-w1-mod-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--kerf-fg-muted);
+  background: color-mix(in srgb, var(--kerf-w1-panel) 88%, transparent);
+  cursor: default;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.kerf-w1-mod-icon:hover {
+  color: var(--kerf-fg);
+  background: var(--kerf-w1-panel-raised);
+}
+
+.kerf-w1-mod-icon:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: 2px;
+}
+
+.kerf-w1-mod-icon--active {
+  color: var(--kerf-fg);
+  background: var(--kerf-w1-panel-raised);
+}
+
+/* Narrow: amber marker under the active module */
+@media (max-width: 1279px) {
+  .kerf-w1-mod-icon--active::before {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    width: 22px;
+    height: 3px;
+    margin-left: -11px;
+    border-radius: 2px;
+    background: var(--kerf-w1-brand);
+  }
+}
+
+.kerf-w1-cos-rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--kerf-w1-panel);
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-w1-cos-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--kerf-border);
+}
+
+.kerf-w1-cos-status-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--success) 55%, transparent);
+}
+
+.kerf-w1-cos-title-block {
+  min-width: 0;
+}
+
+.kerf-w1-cos-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: var(--kerf-fg);
+}
+
+.kerf-w1-cos-title::first-letter {
+  color: var(--rh);
+}
+
+.kerf-w1-cos-sub {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-cos-body {
+  flex: 1;
+  padding: 12px 16px 16px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--kerf-fg) 78%, var(--kerf-fg-muted));
+}
+
+.kerf-w1-cos-body p {
+  margin: 0;
+}
+
+@media (min-width: 1280px) {
   .kerf-w1-demo-shell {
-    /* Main column owns the scan; log rail stays auxiliary (wireframe cos-rail) */
-    grid-template-columns: minmax(0, 1fr) minmax(12.5rem, 15.5rem);
-    gap: 1.125rem;
+    grid-template-columns: 56px 320px minmax(0, 1fr) minmax(13.5rem, 15rem);
+    gap: 0;
+    padding: 1.125rem 1.5rem 1.75rem;
+  }
+
+  .kerf-w1-module-rail {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: auto;
+    min-height: min(70vh, calc(100vh - 50px - 3.5rem));
+    padding: 12px 0;
+    border-bottom: none;
+    border-right: 1px solid var(--kerf-border);
+  }
+
+  /* Wide: amber left bar on active module (canon module-rail marker) */
+  .kerf-w1-mod-icon--active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 3px;
+    height: 22px;
+    margin-top: -11px;
+    border-radius: 0 2px 2px 0;
+    background: var(--kerf-w1-brand);
+  }
+
+  .kerf-w1-cos-rail {
+    border-bottom: none;
+    border-right: 1px solid var(--kerf-border);
+    min-height: min(70vh, calc(100vh - 50px - 3.5rem));
+  }
+
+  .kerf-w1-main-column {
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+
+  .kerf-w1-log-panel {
+    box-sizing: border-box;
+    margin-left: 12px;
   }
 }
 
@@ -830,6 +1003,8 @@ html:has(.kerf-w1-standard-ui) body {
   --kerf-w1-action: #d4923a;
   --kerf-w1-action-hover: #e0a858;
   --kerf-w1-action-active: #8b5e24;
+  --rh: #c9a876;
+  --success: #3ecf8e;
   font-size: 13px;
   line-height: 1.4;
   color: var(--kerf-fg);
@@ -860,17 +1035,10 @@ html:has(.kerf-w1-standard-ui) body {
   letter-spacing: 0.12em;
 }
 
+/* Canon pass: match wireframe page gutter; grid columns are defined in the four-zone shell block above. */
 .kerf-w1-demo-shell {
   max-width: 1600px;
   padding: 20px 28px 28px;
-  gap: 16px;
-}
-
-@media (min-width: 1024px) {
-  .kerf-w1-demo-shell {
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-    gap: 16px;
-  }
 }
 
 @media (min-width: 1180px) {
@@ -892,19 +1060,54 @@ html:has(.kerf-w1-standard-ui) body {
   line-height: 1.4;
 }
 
+/* Queue filters — wireframe .toggle (kerf_wireframes_web_v2.html): compact segmented control, amber active. */
 .kerf-w1-standard-ui .kerf-w1-filter-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
   margin-bottom: 10px;
-  padding: 8px 10px;
-  gap: 8px;
-  border-radius: 6px;
-  background: var(--kerf-w1-panel);
+  padding: 0;
+  gap: 0;
+  border-radius: 4px;
+  border: 1px solid var(--kerf-border);
+  background: var(--kerf-w1-panel-raised);
+  overflow: hidden;
 }
 
 .kerf-w1-standard-ui .kerf-w1-filter-btn {
+  margin: 0;
   min-height: 28px;
   padding: 6px 10px;
   font-size: 11px;
-  border-radius: 4px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--kerf-fg-muted);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--kerf-border);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-btn:last-child {
+  border-right: none;
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-btn:hover {
+  color: var(--kerf-fg);
+  background: color-mix(in srgb, var(--kerf-w1-panel) 55%, var(--kerf-w1-panel-raised));
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-btn:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-btn[aria-pressed="true"] {
+  color: #0a0d11;
+  font-weight: 600;
+  background: var(--kerf-w1-brand);
 }
 
 .kerf-w1-main-column .kerf-decision-queue {
@@ -1111,8 +1314,7 @@ html:has(.kerf-w1-standard-ui) body {
   line-height: 1.4;
 }
 
-/* Canon screenshot surface: hide build-time demo chrome that is not in the Standard UI wireframes. */
-.kerf-w1-standard-ui .kerf-w1-demo-proposal-path,
-.kerf-w1-standard-ui .kerf-w1-filter-bar {
+/* Canon screenshot surface: hide build-time proposal-path hint; queue filters stay visible (Phase D shell). */
+.kerf-w1-standard-ui .kerf-w1-demo-proposal-path {
   display: none;
 }
