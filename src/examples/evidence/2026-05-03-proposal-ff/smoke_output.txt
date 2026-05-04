@@ -1,0 +1,20 @@
+{
+  "jsonl_path": "[ephemeral path from local run — replace by tee-ing npm run smoke:proposal-ff]",
+  "proof_version": 1,
+  "total_events_after_reopen": 10,
+  "approve_chain": [
+    "proposal_followup.detected",
+    "proposal_followup.drafted",
+    "proposal_followup.approval_requested",
+    "decision.resolved",
+    "proposal_followup.approved"
+  ],
+  "reject_chain": [
+    "proposal_followup.detected",
+    "proposal_followup.drafted",
+    "proposal_followup.approval_requested",
+    "decision.resolved",
+    "proposal_followup.rejected"
+  ],
+  "durability": "ok"
+}

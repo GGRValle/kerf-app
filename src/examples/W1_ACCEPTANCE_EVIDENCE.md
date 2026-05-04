@@ -29,6 +29,15 @@ committed under `src/examples/evidence/2026-05-02-w1/screenshots/`. Backend
 audit proof comes from `npm run smoke` and workflow tests; browser action-log clicks are demo
 evidence, not production persistence.
 
+## Proposal F&F evidence (draft)
+
+Proposal-first Friends-and-Family packet (JSONL smoke + golden contract + browser placeholders):
+
+- **Packet:** [`src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](evidence/2026-05-03-proposal-ff/PROOF_PACKET.md)
+- **Smoke stdout capture (replace with local `tee`):** [`src/examples/evidence/2026-05-03-proposal-ff/smoke_output.txt`](evidence/2026-05-03-proposal-ff/smoke_output.txt)
+- **Golden proof JSON:** [`src/examples/evidence/ff-proposal-smoke/proposal-ff-smoke-proof.json`](evidence/ff-proposal-smoke/proposal-ff-smoke-proof.json)
+- **Gate:** `npm run smoke:proposal-ff` (see packet §2)
+
 ## Evidence Commands
 
 Run from a fresh checkout:
