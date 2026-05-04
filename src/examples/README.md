@@ -8,18 +8,23 @@ For the acceptance-test evidence map, see
 demo procedure; the evidence ledger maps each W1 acceptance item to the tests,
 smoke output, and browser artifacts that prove it.
 
+For F&F, **proposal follow-up** is the work that clears the path to billing;
+invoice and drift rows sit in the same queue so the surface stays honest, not
+busy.
+
 ## Verified Baseline
 
-Last verified on **May 2, 2026** from `main` at:
+Last verified on **2026-05-03** (proposal proof packet readiness pass) from
+`main` at:
 
 ```bash
-382bf5f fix(demo): keep W1 card text readable in Safari (#62)
+4c9bece fix(demo): align W1 skeleton and error states (#90)
 ```
 
 Expected green gate at this baseline:
 
 ```text
-npm test -> 252/252
+npm test -> all passing (runner prints subtest tally; refresh if the ledger lags)
 ```
 
 The browser demo is local-only. It uses generated DecisionPacket fixtures and
@@ -29,7 +34,8 @@ log is browser-local demo evidence. Backend audit evidence comes from
 
 This close baseline includes the W1 proof packet screenshots and the Safari
 readability fix for file-open demos. The proof artifacts live under
-[`evidence/2026-05-02-w1/`](./evidence/2026-05-02-w1/).
+[`evidence/2026-05-02-w1/`](./evidence/2026-05-02-w1/). Proposal F&F draft packet:
+[`evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](./evidence/2026-05-03-proposal-ff/PROOF_PACKET.md).
 
 ## Fresh Checkout Run
 
@@ -50,7 +56,7 @@ git diff --check
 
 Expected outputs:
 
-- `npm test` reports `252/252` passing tests.
+- `npm test` exits `0` with all subtests passing (runner prints the tally).
 - `npm run demo:w1-queue` builds
   `src/examples/w1-decision-queue-demo.bundle.js`.
 - `npm run smoke` prints `invoice_followup_gate_loop` with an
@@ -77,6 +83,13 @@ Runs `src/examples/proposal-ff-smoke.ts` against a **temporary JSONL** EventLog
   [`evidence/ff-proposal-smoke/proposal-ff-smoke-proof.json`](./evidence/ff-proposal-smoke/proposal-ff-smoke-proof.json)
   (refresh that file with `npm run smoke:proposal-ff -- --write-golden` when the
   harness contract intentionally changes).
+- **Proof packet** — operator narrative, golden excerpt, and browser checklist:
+  [`evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](./evidence/2026-05-03-proposal-ff/PROOF_PACKET.md).
+  One committed stdout capture (npm banner + JSON, machine-specific
+  `jsonl_path`) lives at
+  [`evidence/2026-05-03-proposal-ff/smoke_output.txt`](./evidence/2026-05-03-proposal-ff/smoke_output.txt);
+  re-run `npm run smoke:proposal-ff 2>&1 | tee …/smoke_output.txt` when the
+  harness contract changes or you need a fresh path for audit.
 
 ## Open The Browser Demo
 
@@ -114,7 +127,12 @@ viewers) restrict `file://` asset loading.
 
 The W1 Standard UI demo should show:
 
-- Top bar: `KERF`, `W1 · Decision surface`, and `Local only`.
+- Top bar (see `w1-decision-queue-demo.html`): `KERF` mark; title
+  `W1 · Proposal-first queue demo`; brand tag `Standard UI · local only`; pill
+  `Local only`.
+- Lead copy: **Proposal path** paragraph under the filters (All / Proposal,
+  tinted proposal rows, right panel, Approve / Edit / Reject, action log — no
+  network).
 - Main queue with 12 cards from `seededMixedDecisionPacketListFixture`
   (local `ProposalReadSurfaceAdapter` seeded proposal read surface + invoice/drift fixtures).
 - Filter buttons: All, Blocked, Owner Review, Invoice, Proposal, Drift.
@@ -135,7 +153,7 @@ Workflow coverage:
 | Workflow | Cards | Notes |
 |---|---:|---|
 | `invoice_followup` | 4 | Owner-review, V2 blocked, V7 blocked, V8 review. |
-| `proposal_followup` | 5 | Owner-review, V2 blocked, V7 blocked, V8 review, near-expiry. |
+| `proposal_followup` | 4 | Seeded proposal read surface rows (sent, viewed, near-expiry, change-requested). |
 | `drift_detection` | 4 | Internal-only cards with severity badges and drift-specific actions. |
 
 ## Audit / Model Details Disclosure
@@ -161,7 +179,7 @@ Each DecisionCard renders a collapsed `<details>` disclosure labeled
 
 Use this script when recording evidence or rehearsing the Monday demo.
 
-1. Start on **All**. Confirm the 13-card mixed queue and summary counts.
+1. Start on **All**. Confirm the 12-card mixed queue and summary counts.
 2. Click **Blocked**. Confirm blocked cards remain visually distinct.
 3. Click **Owner Review**. Confirm external-send invoice/proposal cards appear.
 4. Click **Drift**. Confirm drift cards show severity badges and actions:
@@ -185,6 +203,24 @@ Use this script when recording evidence or rehearsing the Monday demo.
     trigger codes (`model_inference_correction`, `source_basis_required`,
     `altitude_divergence`) when V9 produced drafts. An empty list is valid
     for packets that produced no triggers.
+14. Click **Proposal**. Confirm only the four seeded `proposal_followup` rows
+    (same 12-card fixture; button `title` in HTML calls out “four seeded proposal
+    follow-up rows”).
+15. From **All** or **Proposal**, click a tinted proposal card. Confirm the
+    right **proposal detail** panel opens with drafted follow-up and footer
+    **Approve** / **Reject** / **Edit** (banner: same actions as the card).
+16. On a proposal card or detail footer, click **Approve**. Confirm
+    `approve <packetId>` appears in **ACTION LOG** (and proposal workflow audit
+    rows per known boundaries).
+17. On a different proposal row (or after **Reset demo**), open detail if
+    needed and click **Edit**. Confirm `edit <packetId>` appears in **ACTION LOG**
+    (demo logs immediately; no separate editor modal).
+18. On another proposal row, click **Reject**, complete **Reject reason**, then
+    **Submit**. Confirm `reject <packetId>` (and reason tail if shown) in
+    **ACTION LOG**.
+19. Without **Clear log**, scroll **ACTION LOG** so multiple proposal `approve` /
+    `reject` / `edit` lines are visible in one frame when capturing packet
+    evidence (mirrors [`evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](./evidence/2026-05-03-proposal-ff/PROOF_PACKET.md) §8.1).
 
 ## Evidence To Capture
 
@@ -205,6 +241,12 @@ For the Monday proof packet, capture:
   `detected`, `drafted`, `approval_requested`, `approved`.
 - Smoke output excerpt showing `learning_signal_audit` event chain
   (V9 drafts committed as `learning_signal.drafted`).
+- Proposal F&F packet: follow
+  [`evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](./evidence/2026-05-03-proposal-ff/PROOF_PACKET.md)
+  §8.1 for `screenshots/01-…` through `06-…`; optional fresh
+  `npm run smoke:proposal-ff` tee into
+  [`evidence/2026-05-03-proposal-ff/smoke_output.txt`](./evidence/2026-05-03-proposal-ff/smoke_output.txt)
+  when re-baselining stdout.
 
 Optional evidence capture command:
 
