@@ -119,9 +119,9 @@ test('w1 interactive demo HTML uses canon four-zone shell (module rail, Right Ha
   const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
 
   assert.match(html, /class="kerf-w1-module-rail"/);
-  assert.match(html, /class="kerf-w1-cos-rail"/);
-  assert.match(html, /class="kerf-w1-cos-header"/);
-  assert.match(html, /class="kerf-w1-cos-body"/);
+  assert.match(html, /class="kerf-w1-rh-rail"/);
+  assert.match(html, /class="kerf-w1-rh-header"/);
+  assert.match(html, /class="kerf-w1-rh-body"/);
   assert.match(html, /Right Hand/);
 });
 
@@ -162,7 +162,7 @@ test('w1 standard UI demo CSS defines four-zone shell rails and 1280px grid colu
   const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
 
   assert.match(css, /\.kerf-w1-module-rail/);
-  assert.match(css, /\.kerf-w1-cos-rail/);
+  assert.match(css, /\.kerf-w1-rh-rail/);
   assert.match(css, /56px 320px minmax\(0, 1fr\) minmax\(13\.5rem, 15rem\)/);
   assert.match(css, /@media \(min-width: 1280px\)/);
 });
