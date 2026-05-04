@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kerf — W1 Standard UI · DecisionQueue</title>
+    <title>Kerf — W1 · Proposal-first queue (F&amp;F demo)</title>
     <link rel="stylesheet" href="../ui/styles/decision-card.css" />
     <link rel="stylesheet" href="../ui/styles/decision-queue.css" />
     <link rel="stylesheet" href="./w1-standard-ui-demo.css" />
@@ -81,6 +81,20 @@
         outline: 2px solid var(--kerf-focus-ring);
         outline-offset: 2px;
       }
+      .kerf-w1-demo-ff-lead {
+        max-width: 52rem;
+        margin: 0 auto 0.75rem;
+        padding: 0.55rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-elevated);
+        color: var(--kerf-fg-muted);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+      .kerf-w1-demo-ff-lead strong {
+        color: var(--kerf-fg);
+      }
     </style>
     <!--
       Layout matches Standard UI wireframe surface
@@ -98,8 +112,8 @@
       <header class="kerf-w1-topbar" role="banner">
         <span class="kerf-w1-brand-mark" aria-hidden="true">KERF</span>
         <div class="kerf-w1-brand-lockup">
-          <span class="kerf-w1-topbar-title">W1 · Decision surface</span>
-          <span class="kerf-w1-brand-tag">Standard UI demo</span>
+          <span class="kerf-w1-topbar-title">W1 · Proposal review first</span>
+          <span class="kerf-w1-brand-tag">Invoice &amp; drift: same queue, supporting loops</span>
         </div>
         <span class="kerf-w1-topbar-spacer" aria-hidden="true"></span>
         <span class="kerf-w1-topbar-pill">Local only</span>
@@ -107,6 +121,11 @@
 
       <div class="kerf-w1-demo-shell">
         <main class="kerf-w1-main-column" aria-label="Decision queue">
+          <p class="kerf-w1-demo-ff-lead" id="kerf-w1-demo-ff-lead">
+            <strong>F&amp;F lead path:</strong> proposal follow-up — pick a proposal, open the review panel, act on the
+            drafted client follow-up. <strong>Supporting demos:</strong> invoice and drift cards reuse the same
+            DecisionQueue card pattern so you can see adjacent loops without leaving the story.
+          </p>
           <div class="kerf-w1-filter-bar" role="toolbar" aria-label="Queue filters">
             <button type="button" class="kerf-btn kerf-w1-filter-btn" data-kerf-w1-queue-filter="all" aria-pressed="true">
               All
@@ -141,9 +160,9 @@
           <div class="kerf-w1-log-rail-head">
             <h2>Action log</h2>
             <p class="kerf-w1-log-rail-sub">
-              Operator actions append here. Drift log verbs: acknowledge / false_positive / act. Same seeded 12-card
-              set — All lists proposals first; Proposal shows four seeded rows; Blocked / Owner review / Invoice / Drift
-              subset that set. No network.
+              Proposal approve / reject / edit is the narrative spine; drift uses different log verbs (acknowledge /
+              false_positive / act). Same seeded 12-card set — All lists proposals first; Proposal shows four seeded rows;
+              Blocked / Owner review / Invoice / Drift subset that set. No network.
             </p>
             <div class="kerf-w1-action-log-controls" role="toolbar" aria-label="Action log controls">
               <button type="button" class="kerf-btn kerf-w1-log-control-btn" data-kerf-w1-action-log-clear>
