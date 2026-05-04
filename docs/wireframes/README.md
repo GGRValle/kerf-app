@@ -8,6 +8,8 @@ The canon is layered: a base shell (v2) plus four thematic delta packs (v3 → v
 
 ## Naming — read this first
 
+The primary Kerf tagline is **"Make more."** Use it as the high-level promise above supporting lines like **"Decisions, not dashboards."** The tagline is intentionally short: it points at the business outcome for contractors — more revenue captured, more work moving, more decisions resolved, more margin protected.
+
 The agent is **Right Hand** (Spanish: **Mano Derecha**). It was renamed from "Chief of Staff" / "CoS" / "MoO CoS" on **Apr 26, 2026**. All operator-surface, customer-facing, and new code must use **Right Hand**.
 
 Files dated **before Apr 26** (v2 Apr 21, v3 Apr 23) still contain the old "CoS" / "MoO CoS" naming and CSS classes (`.cos-title`, `.cos-sub`, `id="moo-cos"`). Those files are preserved verbatim as historical canon — do not rewrite the HTML to backport the rename. **Do** use "Right Hand" in:
@@ -31,15 +33,28 @@ The `--rh` (`#C9A876`) and `--rh-dim` (`#6B5938`) color tokens were introduced i
 | `kerf_wireframes_v4_apr26.html` | Apr 26 | **Right Hand + Robust Blackboard.** Landing, authority lattice, Blackboard roles, Blackboard mobile. Introduces `--rh` (`#C9A876`) Right Hand color and `--future` (`#7E6FCF`) Blackboard color. First post-rename canon. | `8b929931c5e310f468312276e5b2e2f74f15e9fef5f82bed41e5ba248c137b1a` |
 | `kerf_wireframes_v5_apr26.html` | Apr 26 | **Authority lattice + altitude + multi-agent.** Extends v4's lattice with altitude tiers (L0–L4) and multi-agent coordination surfaces. | `05ff51cc31f66c88de1920936409ff905f6f791ecca3e511bf53b8f7a7036cd8` |
 | `kerf_wireframes_v5_1_apr26.html` | Apr 26 PM | **Client portal + Sentry + MCP + guardrails + cost KB + bilingual.** Latest canon. Adds `--sentry` (`#E0A858`) and `--mcp` (`#5FB3B5`) tokens. Bilingual EN/ES surface reference. | `54c6a45500fe0dcd7be2869e4a9a1fdaf8c1ea9705722f6095929601c1e5a41d` |
-| `notes.md` | — | Token cheat sheet (full superset across all six files), type/spacing scale, primary-vs-secondary affordance rules, audit-disclosure conventions, state-coverage matrix. |
+| `kerf_views_master_v1_0.html` | May 4 | **Current implementation canon.** Voice-driven decision-making contractor operating system: Right Hand, capture session lifecycle, Decision Queue, Blackboard, Company / HR, rates, PM-safe staffing, schedule, project channel, punch, drift, and documents. This replaces the v0_1 / v0_2 / Flow C HR drafts for implementation planning. | _(new artifact, no canon SHA)_ |
+| `kerf_views_es_investor_v0_1.html` | May 4 | **Spanish investor view.** Six-page investor narrative for Mano Derecha, voice capture, Decision Queue, Pizarra, schedule / comms / documents, and the integrated data moat. | _(new artifact, no canon SHA)_ |
+| `notes.md` | — | Token cheat sheet (full superset across all six canon files), type/spacing scale, primary-vs-secondary affordance rules, audit-disclosure conventions, state-coverage matrix. |
 
 When tokens disagree across revs, **the latest rev wins** (v5.1 > v5 > v4 > v3 > v2). v2's tokens are a strict subset of v5.1's.
 
 ---
 
+## Views Master vs historical canon
+
+`kerf_views_master_v1_0.html` is the current implementation canon for kerf-app work. It synthesizes the historical canon files, W1 demo learnings, and new Company / HR, schedule, project channel, punch, drift, documents, voice capture, Right Hand, and Blackboard surfaces into one build target.
+
+Rules for the Views Master:
+
+- Use `kerf_views_master_v1_0.html` as the first target for new kerf-app UI work.
+- Use the Apr 21–Apr 26 canon files as provenance and token/layout references.
+- Historical v0_1 / v0_2 / Company HR draft files are superseded by v1.0 unless explicitly archived.
+- If the Views Master conflicts with an older source file, treat the newer v1.0 package as the product target and document the discrepancy in the implementation PR.
+
 ## Provenance — read before editing
 
-These files are **verbatim copies** from the parent canon repo (`GGRValle/kerf-cos`) at `_docs/wireframes/`. Two-repo boundary applies (locked `2026-04-23.0`, see `kerf-app/CLAUDE.md` §3.8): the wireframes are canon-side; this directory is the kerf-app working copy so engineering can compare against the canon without leaving the repo.
+The five HTML files dated Apr 21 – Apr 26 are **verbatim copies** from the parent canon repo (`GGRValle/kerf-cos`) at `_docs/wireframes/`. Two-repo boundary applies (locked `2026-04-23.0`, see `kerf-app/CLAUDE.md` §3.8): the wireframes are canon-side; this directory is the kerf-app working copy so engineering can compare against the canon without leaving the repo.
 
 When the canon updates, update this copy from canon — do not edit the HTML in this directory directly. If a new state is needed:
 
