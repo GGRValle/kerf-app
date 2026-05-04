@@ -115,10 +115,20 @@ test('w1 standard UI demo CSS styles reject reason capture and focus', () => {
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-reject-textarea:focus-visible/);
 });
 
+test('w1 interactive demo HTML uses canon four-zone shell (module rail, Right Hand, main, log)', () => {
+  const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
+
+  assert.match(html, /class="kerf-w1-module-rail"/);
+  assert.match(html, /class="kerf-w1-rh-rail"/);
+  assert.match(html, /class="kerf-w1-rh-header"/);
+  assert.match(html, /class="kerf-w1-rh-body"/);
+  assert.match(html, /Right Hand/);
+});
+
 test('w1 interactive demo HTML exposes queue filter controls', () => {
   const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
 
-  assert.match(html, /class="kerf-w1-filter-bar"/);
+  assert.match(html, /class="kerf-w1-filter-bar/);
   assert.match(html, /data-kerf-w1-queue-filter="all"/);
   assert.match(html, /data-kerf-w1-queue-filter="blocked"/);
   assert.match(html, /data-kerf-w1-queue-filter="owner_review"/);
@@ -146,6 +156,15 @@ test('w1 standard UI demo CSS scopes queue filter bar and selected state', () =>
 
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-bar/);
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-btn\[aria-pressed="true"\]/);
+});
+
+test('w1 standard UI demo CSS defines four-zone shell rails and 1280px grid columns', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.kerf-w1-module-rail/);
+  assert.match(css, /\.kerf-w1-rh-rail/);
+  assert.match(css, /56px 320px minmax\(0, 1fr\) minmax\(13\.5rem, 15rem\)/);
+  assert.match(css, /@media \(min-width: 1280px\)/);
 });
 
 test('w1 interactive demo defines workflow-aware action log verb helper', () => {
