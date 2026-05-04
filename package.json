@@ -15,10 +15,11 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "smoke": "tsx src/examples/smoke.ts",
+    "smoke:proposal-ff": "tsx src/examples/proposal-ff-smoke.ts",
     "demo:decision-card": "tsx src/examples/decision-card-demo.ts",
     "demo:decision-queue": "tsx src/examples/decision-queue-demo.ts",
     "demo:w1-queue:esbuild": "npx --yes esbuild@0.25.0 src/examples/w1-decision-queue-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/w1-decision-queue-demo.bundle.js",
-    "demo:w1-queue": "npm run demo:w1-queue:esbuild && node -e \"console.log('Built src/examples/w1-decision-queue-demo.bundle.js — open src/examples/w1-decision-queue-demo.html in a browser.')\"",
+    "demo:w1-queue": "npm run demo:w1-queue:esbuild && node -e \"console.log('Built src/examples/w1-decision-queue-demo.bundle.js \u2014 open src/examples/w1-decision-queue-demo.html in a browser.')\"",
     "demo:w1-queue:serve": "npm run demo:w1-queue:esbuild && node -e \"console.log('\\nKerf W1 demo: http://localhost:8000/examples/w1-decision-queue-demo.html\\n(static server; no auth, no fetch, no backend writes; Ctrl-C to stop)\\n')\" && python3 -m http.server 8000 --directory src",
     "test-fixtures:validate": "tsx -e \"import('./src/test-fixtures/index.js').then(m => { const events = m.seedWorld(); console.log('seed produced', events.length, 'events'); })\""
   },
