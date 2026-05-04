@@ -109,6 +109,12 @@ test('seeded mixed demo list uses seeded proposals while preserving invoice and 
   );
 });
 
+test('seeded mixed W1 demo packets keep canonical validator_results order (V1→…→V18)', () => {
+  for (const packet of seededMixedDecisionPacketListFixture) {
+    assert.deepEqual(validatorOrder(packet), [...CANONICAL_W1_VALIDATOR_ORDER]);
+  }
+});
+
 test('proposal read surface adapter boundary has no network client dependency', () => {
   const src = readFileSync(new URL('../src/test-fixtures/proposalReadSurface.ts', import.meta.url), 'utf8');
 
