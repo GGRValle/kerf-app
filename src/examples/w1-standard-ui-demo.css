@@ -1182,3 +1182,10 @@ html:has(.kerf-w1-standard-ui) body {
 .kerf-w1-standard-ui .kerf-w1-filter-bar {
   display: none;
 }
+
+/* Final layout guard: later wireframe-tuning rules must not collapse the nav/main/log grid. */
+@media (min-width: 1024px) {
+  .kerf-w1-demo-shell {
+    grid-template-columns: minmax(8.75rem, 10.5rem) minmax(0, 1fr) minmax(12.5rem, 15.5rem);
+  }
+}
