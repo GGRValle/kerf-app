@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · v5.1 Wireframes · Apr 26 PM · Client Portal · Sentry · MCP · Guardrails · Cost KB</title>
+<style>
+:root {
+  --kerf-amber: #D4923A; --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419; --kerf-panel: #1A1F26; --kerf-panel-2: #232932;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1; --kerf-text-dim: #9097A1; --kerf-text-mute: #5F6670;
+  --ggr: #4A7FB0; --ggr-dim: #1B3A5C;
+  --val: #A8794A; --val-dim: #5C3A1B;
+  --hpg: #4A9F74; --hpg-dim: #1B5C3A;
+  --success: #5FB37A; --warn: #E0A858; --alert: #CF5B5B;
+  --future: #7E6FCF; --future-dim: #3A2E6B;
+  --rh: #C9A876; --rh-dim: #6B5938;
+  --sentry: #E0A858; --sentry-dim: #6E512A;
+  --mcp: #5FB3B5; --mcp-dim: #2A5556;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11; color: var(--kerf-text);
+  line-height: 1.4; font-size: 13px;
+}
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border); padding: 22px 40px;
+}
+.doc-header h1 { font-size: 22px; letter-spacing: 0.02em; font-weight: 600; margin-bottom: 4px; }
+.doc-header .sub { color: var(--kerf-text-dim); font-size: 12px; }
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.doc-header .rh { color: var(--rh); font-weight: 600; }
+.doc-header .future { color: var(--future); font-weight: 600; }
+.doc-header .sentry { color: var(--sentry); font-weight: 600; }
+.doc-header .mcp { color: var(--mcp); font-weight: 600; }
+.doc-header .alongside {
+  display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 4px;
+  background: rgba(126,111,207,0.12); border: 1px solid var(--future-dim);
+  font-size: 11px; color: var(--future);
+}
+.wireframe-container { padding: 30px 40px; max-width: 1700px; margin: 0 auto; }
+.nav-bar {
+  position: sticky; top: 0; z-index: 100; background: #0A0D11;
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 10px 40px; display: flex; gap: 4px; overflow-x: auto;
+}
+.nav-bar a {
+  color: var(--kerf-text-dim); text-decoration: none; font-size: 11px;
+  padding: 5px 10px; border-radius: 3px; white-space: nowrap;
+}
+.nav-bar a:hover { background: var(--kerf-panel-2); color: var(--kerf-text); }
+
+.legend-block {
+  background: var(--kerf-panel); border: 1px solid var(--kerf-border);
+  border-radius: 6px; padding: 18px 24px; margin-bottom: 40px;
+}
+.legend-block h2 { font-size: 14px; margin-bottom: 10px; color: var(--kerf-amber); letter-spacing: 0.04em; }
+.legend-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 11px; }
+.legend-item { padding-left: 10px; border-left: 2px solid var(--kerf-border); }
+.legend-item strong { color: var(--kerf-text); display: block; margin-bottom: 3px; }
+.legend-item span { color: var(--kerf-text-dim); }
+.legend-item.rh { border-left-color: var(--rh); } .legend-item.rh strong { color: var(--rh); }
+.legend-item.sentry { border-left-color: var(--sentry); } .legend-item.sentry strong { color: var(--sentry); }
+.legend-item.mcp { border-left-color: var(--mcp); } .legend-item.mcp strong { color: var(--mcp); }
+.legend-item.alert { border-left-color: var(--alert); } .legend-item.alert strong { color: var(--alert); }
+
+.frame {
+  margin-bottom: 50px; border: 1px solid var(--kerf-border);
+  border-radius: 6px; overflow: hidden; background: var(--kerf-panel);
+}
+.frame-label {
+  background: var(--kerf-panel-2); padding: 10px 18px;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-amber); border-bottom: 1px solid var(--kerf-border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.frame-label .frame-note { color: var(--kerf-text-dim); text-transform: none; letter-spacing: 0; font-size: 11px; }
+.frame-body { padding: 30px 24px; background: #0A0D11; }
+
+/* ===== A · CLIENT-SHARE PORTAL ===== */
+.client-portal {
+  background: linear-gradient(180deg, #FBFAF5 0%, #F2EFE6 100%);
+  color: #2A2520;
+  border-radius: 12px;
+  padding: 0; overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+.cp-topbar {
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: #fff; border-bottom: 1px solid #E5E0D5;
+}
+.cp-brand-block { display: flex; align-items: center; gap: 12px; }
+.cp-brand-mark {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--ggr-dim); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; letter-spacing: 0.08em; font-size: 13px;
+}
+.cp-brand-name { font-size: 16px; font-weight: 700; color: #1A1410; letter-spacing: 0.04em; }
+.cp-brand-sub { font-size: 10px; color: #7A7060; }
+.cp-status { font-size: 11px; color: #6A6055; padding: 4px 10px; background: #F5F1E8; border-radius: 12px; border: 1px solid #E5E0D5; }
+.cp-status .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--success); margin-right: 6px; vertical-align: middle; }
+
+.cp-hero {
+  padding: 28px 32px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FBFAF5 100%);
+  border-bottom: 1px solid #E5E0D5;
+}
+.cp-hero-h { font-size: 26px; font-weight: 700; color: #1A1410; margin-bottom: 4px; letter-spacing: -0.01em; }
+.cp-hero-sub { font-size: 13px; color: #6A6055; line-height: 1.5; max-width: 540px; }
+
+.cp-tabs {
+  padding: 0 32px;
+  display: flex; gap: 22px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E0D5;
+}
+.cp-tab {
+  padding: 12px 0;
+  font-size: 12px; font-weight: 600; color: #7A7060;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.cp-tab.active { color: var(--ggr-dim); border-bottom-color: var(--ggr-dim); }
+
+.cp-body {
+  padding: 24px 32px;
+  display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px;
+}
+.cp-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.cp-option {
+  background: #fff; border: 1px solid #E5E0D5; border-radius: 8px;
+  overflow: hidden; cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+.cp-option.selected { box-shadow: 0 0 0 2px var(--ggr-dim); }
+.cp-option-img {
+  height: 110px; background: linear-gradient(135deg, #C9B89A 0%, #8B7355 100%);
+  position: relative;
+}
+.cp-option-img.opt2 { background: linear-gradient(135deg, #B8C3A8 0%, #6E7A5E 100%); }
+.cp-option-img.opt3 { background: linear-gradient(135deg, #D4C7B0 0%, #6E5C3A 100%); }
+.cp-option-img::after {
+  content: "🏠"; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); font-size: 32px; opacity: 0.4;
+}
+.cp-option-tag {
+  position: absolute; top: 8px; left: 8px;
+  padding: 2px 6px; background: rgba(255,255,255,0.95); border-radius: 3px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #2A2520;
+}
+.cp-option-body { padding: 12px 14px; }
+.cp-option-title { font-size: 13px; font-weight: 700; color: #1A1410; margin-bottom: 4px; }
+.cp-option-meta { font-size: 11px; color: #7A7060; line-height: 1.4; }
+.cp-option-price {
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid #F0EDE2;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.cp-option-price-val { font-size: 16px; font-weight: 800; color: #1A1410; font-variant-numeric: tabular-nums; }
+.cp-option-price-lbl { font-size: 9px; color: #9A9080; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.cp-decision {
+  background: #fff; border: 1px solid #E5E0D5; border-radius: 8px;
+  padding: 18px;
+}
+.cp-decision-h { font-size: 13px; font-weight: 700; color: #1A1410; margin-bottom: 4px; }
+.cp-decision-sub { font-size: 11px; color: #7A7060; margin-bottom: 14px; }
+.cp-pick-row {
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px; background: #F8F5EC; border-radius: 6px; margin-bottom: 10px;
+  border: 1px solid #E5E0D5;
+}
+.cp-pick-row.active { background: rgba(74,127,176,0.08); border-color: var(--ggr); }
+.cp-pick-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #BDB29F; flex-shrink: 0; position: relative; }
+.cp-pick-row.active .cp-pick-radio { border-color: var(--ggr-dim); }
+.cp-pick-row.active .cp-pick-radio::after {
+  content: ""; position: absolute; inset: 3px; background: var(--ggr-dim); border-radius: 50%;
+}
+.cp-pick-name { font-size: 12px; color: #1A1410; flex: 1; font-weight: 600; }
+.cp-pick-price { font-size: 12px; color: #6A6055; font-variant-numeric: tabular-nums; font-weight: 700; }
+.cp-decision-cta {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--ggr-dim); color: #fff;
+  border-radius: 6px;
+  font-size: 12px; font-weight: 700; text-align: center;
+  cursor: pointer; letter-spacing: 0.04em;
+}
+.cp-decision-history {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid #E5E0D5;
+  font-size: 10px; color: #7A7060; line-height: 1.6;
+}
+.cp-decision-history b { color: #1A1410; }
+
+.cp-footer {
+  padding: 14px 32px;
+  background: #F5F1E8; border-top: 1px solid #E5E0D5;
+  font-size: 11px; color: #7A7060;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.cp-rh-note {
+  display: flex; align-items: center; gap: 8px;
+}
+.cp-rh-badge {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--rh); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800;
+}
+
+/* ===== B · SENTRY GATING ===== */
+.sentry-card {
+  background: var(--kerf-panel); border: 1px solid var(--sentry-dim);
+  border-radius: 12px; padding: 22px 26px;
+}
+.sentry-h {
+  font-size: 13px; font-weight: 800; color: var(--sentry);
+  letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.sentry-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 18px; line-height: 1.5; }
+
+.sentry-flow {
+  display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 14px;
+  margin-bottom: 18px; align-items: stretch;
+}
+.sentry-step {
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 8px; padding: 14px;
+}
+.sentry-step.gate { border-color: var(--sentry-dim); background: rgba(224,168,88,0.08); }
+.sentry-step.blocked { border-color: var(--alert); background: rgba(207,91,91,0.06); }
+.sentry-step-label {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 6px;
+  color: var(--kerf-text-mute);
+}
+.sentry-step.gate .sentry-step-label { color: var(--sentry); }
+.sentry-step.blocked .sentry-step-label { color: var(--alert); }
+.sentry-step-title { font-weight: 700; color: var(--kerf-text); margin-bottom: 6px; font-size: 13px; }
+.sentry-step-body { color: var(--kerf-text-dim); font-size: 11px; line-height: 1.4; }
+.sentry-step-body code { font-family: ui-monospace, monospace; background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 2px; font-size: 10px; }
+.sentry-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--sentry); font-size: 22px; font-weight: 700;
+}
+
+.sentry-detail {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+.sentry-detail-card {
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 8px; padding: 14px 16px;
+}
+.sentry-detail-card.warn { border-color: var(--sentry-dim); }
+.sentry-detail-card.alert { border-color: var(--alert); }
+.sentry-detail-h {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 800; margin-bottom: 8px; color: var(--kerf-text-mute);
+}
+.sentry-detail-card.warn .sentry-detail-h { color: var(--sentry); }
+.sentry-detail-card.alert .sentry-detail-h { color: var(--alert); }
+.sentry-detail-row {
+  font-size: 11px; padding: 4px 0; line-height: 1.5;
+  display: flex; justify-content: space-between; gap: 10px;
+  border-top: 1px solid var(--kerf-border);
+}
+.sentry-detail-row:first-of-type { border-top: none; }
+.sentry-detail-row .lbl { color: var(--kerf-text-dim); }
+.sentry-detail-row .val { color: var(--kerf-text); font-weight: 600; }
+.sentry-detail-row .val.bad { color: var(--alert); }
+.sentry-detail-row .val.ok { color: var(--success); }
+
+/* ===== C · KERF-AS-MCP-SERVER ===== */
+.mcp-card {
+  background: var(--kerf-panel); border: 1px solid var(--mcp-dim);
+  border-radius: 12px; padding: 24px 28px;
+}
+.mcp-h {
+  font-size: 13px; font-weight: 800; color: var(--mcp);
+  letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.mcp-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 22px; line-height: 1.5; max-width: 800px; }
+
+.mcp-stage {
+  position: relative;
+  background: var(--kerf-panel-2); border-radius: 10px;
+  padding: 32px 24px;
+  min-height: 380px;
+}
+
+.mcp-center {
+  position: absolute;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 220px; padding: 18px;
+  background: linear-gradient(180deg, rgba(95,179,181,0.18), rgba(95,179,181,0.04));
+  border: 2px solid var(--mcp);
+  border-radius: 12px;
+  text-align: center;
+}
+.mcp-center-h {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 800; color: var(--mcp); margin-bottom: 6px;
+}
+.mcp-center-name { font-size: 18px; font-weight: 800; color: var(--kerf-text); margin-bottom: 4px; letter-spacing: 0.04em; }
+.mcp-center-sub { font-size: 10px; color: var(--kerf-text-dim); }
+.mcp-bb-pill {
+  display: inline-block; margin-top: 10px;
+  padding: 3px 10px;
+  background: rgba(126,111,207,0.15); border: 1px solid var(--future-dim);
+  border-radius: 12px;
+  font-size: 9px; color: var(--future); letter-spacing: 0.08em; font-weight: 700;
+}
+
+.mcp-client {
+  position: absolute;
+  width: 130px; padding: 10px 12px;
+  background: var(--kerf-dark); border: 1px solid var(--kerf-border);
+  border-radius: 8px;
+  text-align: center;
+}
+.mcp-client.cc { top: 30px; left: 30px; }
+.mcp-client.cw { top: 30px; right: 30px; }
+.mcp-client.cd { bottom: 30px; left: 30px; }
+.mcp-client.gpt { bottom: 30px; right: 30px; }
+.mcp-client.ide { top: 50%; right: 12px; transform: translateY(-50%); width: 100px; padding: 8px; }
+.mcp-client.cli { top: 50%; left: 12px; transform: translateY(-50%); width: 100px; padding: 8px; }
+.mcp-client-icon { font-size: 16px; margin-bottom: 2px; }
+.mcp-client-name { font-size: 11px; font-weight: 700; color: var(--kerf-text); }
+.mcp-client-sub { font-size: 9px; color: var(--kerf-text-dim); margin-top: 1px; }
+
+.mcp-tools {
+  margin-top: 24px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.mcp-tool {
+  background: var(--kerf-panel-2); border: 1px solid var(--mcp-dim);
+  border-radius: 6px; padding: 10px 12px;
+}
+.mcp-tool code {
+  display: block;
+  font-family: ui-monospace, monospace; font-size: 11px;
+  color: var(--mcp); margin-bottom: 4px; font-weight: 700;
+}
+.mcp-tool span { font-size: 10px; color: var(--kerf-text-dim); line-height: 1.4; }
+
+.mcp-narrative {
+  margin-top: 18px;
+  padding: 12px 16px;
+  background: rgba(95,179,181,0.06); border: 1px dashed var(--mcp-dim);
+  border-radius: 8px;
+  font-size: 11px; color: var(--kerf-text-dim); line-height: 1.55;
+}
+.mcp-narrative b { color: var(--mcp); }
+
+/* ===== D · AUTOMATION GUARDRAIL ===== */
+.guard-card {
+  background: var(--kerf-panel); border: 1px solid var(--alert);
+  border-radius: 12px; padding: 22px 26px;
+}
+.guard-h {
+  font-size: 13px; font-weight: 800; color: var(--alert);
+  letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.guard-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 18px; line-height: 1.5; }
+
+.guard-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-bottom: 18px;
+}
+.guard-meter {
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 8px; padding: 14px;
+}
+.guard-meter-h {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 700; color: var(--kerf-text-mute); margin-bottom: 8px;
+}
+.guard-meter-bar {
+  height: 14px; background: rgba(255,255,255,0.05); border-radius: 7px;
+  position: relative; overflow: hidden; margin-bottom: 6px;
+}
+.guard-meter-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--success) 0%, var(--warn) 80%, var(--alert) 100%);
+  border-radius: 7px;
+}
+.guard-meter-marker {
+  position: absolute; top: -3px; bottom: -3px; width: 2px;
+  background: var(--kerf-text);
+  pointer-events: none;
+}
+.guard-meter-numbers {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--kerf-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.guard-meter-current { color: var(--kerf-text); font-weight: 700; }
+
+.guard-allowlist {
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 8px; padding: 14px;
+}
+.guard-allowlist-h {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 700; color: var(--kerf-text-mute); margin-bottom: 10px;
+}
+.guard-class-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0;
+  font-size: 11px;
+  border-top: 1px solid var(--kerf-border);
+}
+.guard-class-row:first-of-type { border-top: none; }
+.guard-class-name { color: var(--kerf-text); }
+.guard-class-state {
+  font-size: 9px; padding: 2px 7px; border-radius: 3px;
+  font-weight: 700; letter-spacing: 0.08em;
+}
+.guard-class-state.allow { background: rgba(95,179,122,0.15); color: var(--success); }
+.guard-class-state.deny { background: rgba(207,91,91,0.15); color: var(--alert); }
+
+.guard-trip-log {
+  background: rgba(207,91,91,0.06); border: 1px solid var(--alert);
+  border-radius: 8px; padding: 14px;
+}
+.guard-trip-h {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 800; color: var(--alert); margin-bottom: 10px;
+}
+.guard-trip-row {
+  font-size: 11px; padding: 5px 0;
+  border-top: 1px solid rgba(207,91,91,0.18);
+  line-height: 1.5;
+}
+.guard-trip-row:first-of-type { border-top: none; }
+.guard-trip-row .when { color: var(--kerf-text-mute); font-size: 9px; }
+.guard-trip-row .what { color: var(--kerf-text); }
+.guard-trip-row .why { color: var(--kerf-text-dim); font-size: 10px; display: block; margin-top: 1px; }
+
+/* ===== E · COST KB ===== */
+.cost-kb-frame {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;
+}
+.cost-kb-card {
+  background: var(--kerf-panel); border: 1px solid var(--kerf-border);
+  border-radius: 12px; padding: 22px 26px;
+}
+.ckb-h {
+  font-size: 13px; font-weight: 800; color: var(--kerf-amber);
+  letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.ckb-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 18px; line-height: 1.5; }
+
+.ckb-search {
+  padding: 8px 12px;
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  font-size: 11px; color: var(--kerf-text-mute);
+  margin-bottom: 14px;
+}
+
+.ckb-row {
+  padding: 10px 12px; border-radius: 6px;
+  border: 1px solid var(--kerf-border);
+  margin-bottom: 8px;
+  display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
+}
+.ckb-row.tenant-overlay { background: rgba(212,146,58,0.05); border-color: var(--kerf-amber-dim); }
+.ckb-row-name { font-size: 12px; font-weight: 600; color: var(--kerf-text); }
+.ckb-row-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; }
+.ckb-row-price { font-size: 14px; font-weight: 800; color: var(--kerf-text); font-variant-numeric: tabular-nums; }
+.ckb-row-price-lbl { font-size: 9px; color: var(--kerf-text-mute); letter-spacing: 0.06em; }
+.ckb-row-source { font-size: 10px; }
+.ckb-source-tag {
+  display: inline-block; padding: 2px 6px; border-radius: 3px;
+  font-size: 8px; font-weight: 700; letter-spacing: 0.06em;
+}
+.ckb-source-tag.kb { background: var(--ggr-dim); color: #B5D5F5; }
+.ckb-source-tag.tenant { background: var(--kerf-amber-dim); color: #F2D2A0; }
+.ckb-source-tag.override { background: var(--alert); color: #fff; }
+
+.ckb-detail-card {
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 8px; padding: 16px 18px;
+}
+.ckb-detail-h {
+  font-size: 13px; font-weight: 700; color: var(--kerf-text);
+  margin-bottom: 4px;
+}
+.ckb-detail-sub { font-size: 10px; color: var(--kerf-text-dim); margin-bottom: 14px; }
+
+.ckb-stack {
+  margin-bottom: 14px;
+}
+.ckb-stack-row {
+  padding: 6px 0; font-size: 11px;
+  border-top: 1px solid var(--kerf-border);
+  display: flex; justify-content: space-between; gap: 10px;
+}
+.ckb-stack-row:first-of-type { border-top: none; }
+.ckb-stack-lbl { color: var(--kerf-text-dim); }
+.ckb-stack-val { color: var(--kerf-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ckb-stack-row.final { border-top: 2px solid var(--kerf-amber); padding-top: 8px; }
+.ckb-stack-row.final .ckb-stack-lbl { color: var(--kerf-amber); font-weight: 700; }
+.ckb-stack-row.final .ckb-stack-val { color: var(--kerf-amber); font-weight: 800; font-size: 14px; }
+
+.ckb-sources {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--kerf-border);
+}
+.ckb-sources-h {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-mute); margin-bottom: 6px; font-weight: 700;
+}
+.ckb-source-line {
+  font-size: 10px; padding: 3px 0; color: var(--kerf-text-dim);
+  display: flex; gap: 6px; line-height: 1.4;
+}
+.ckb-source-line .src-when { color: var(--kerf-text-mute); width: 50px; flex-shrink: 0; font-size: 9px; }
+
+.ckb-override-cta {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--kerf-panel); border: 1px solid var(--kerf-amber-dim);
+  border-radius: 6px;
+  font-size: 10px; color: var(--kerf-amber);
+  text-align: center; letter-spacing: 0.04em; font-weight: 600;
+}
+
+/* Footer */
+.foot {
+  margin-top: 50px; padding: 20px 24px;
+  background: var(--kerf-panel); border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+}
+.foot h2 { font-size: 13px; color: var(--kerf-amber); margin-bottom: 10px; letter-spacing: 0.06em; }
+.foot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 11px; }
+.foot-item { padding-left: 10px; border-left: 2px solid var(--kerf-border); }
+.foot-item strong { color: var(--kerf-text); display: block; margin-bottom: 3px; }
+.foot-item span { color: var(--kerf-text-dim); line-height: 1.45; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <h1>Kerf · v5.1 Wireframes — <span class="rh">Client Portal</span> · <span class="sentry">Sentry</span> · <span class="mcp">MCP</span> · Guardrails · Cost KB</h1>
+  <div style="margin-top:6px; margin-bottom:8px; font-size:11px; color:#C9A876; letter-spacing:0.06em; font-weight:600;">
+    <span style="color:#D4923A; font-weight:800;">Make More.</span>
+    &nbsp;·&nbsp; Intuitive operations for builders.
+    &nbsp;·&nbsp; <span style="color:#9097A1;">EN&nbsp;|&nbsp;ES</span>
+    &nbsp;·&nbsp; <span style="color:#C9A876;">Right Hand · Mano Derecha</span>
+  </div>
+  <div class="sub">
+    <span class="amber">Apr 26 PM, 2026</span> · supplement to V5 ·
+    five new surfaces visualizing the evening commitments — sales-velocity portal, system-level governance, MCP server interface, automation safety envelope, curated cost knowledge.
+  </div>
+  <div class="alongside">Sits alongside V3, V4, V5. Companion to Kerf_Master_Build_Capital_Direction_v2.docx.</div>
+</div>
+
+<div class="nav-bar">
+  <a href="#legend">Legend</a>
+  <a href="#client-portal">A · Client-share portal</a>
+  <a href="#sentry">B · Sentry · compliance gating</a>
+  <a href="#mcp">C · Kerf-as-MCP-server</a>
+  <a href="#guardrails">D · Automation guardrails</a>
+  <a href="#cost-kb">E · Construction cost KB</a>
+  <a href="#bilingual">F · Bilingual · same surface</a>
+</div>
+
+<div class="wireframe-container">
+
+<!-- LEGEND -->
+<div class="legend-block" id="legend">
+  <h2>WHAT V5.1 ADDS — FIVE SURFACES, ALL FROM APR 26 EVENING</h2>
+  <div class="legend-grid">
+    <div class="legend-item rh"><strong>A · Client-share portal</strong><span>Mood boards, side-by-side options, decision capture, revision history. Sales-velocity infrastructure. V1 schema entity kinds; V1.5 stub UI; V2.0α full workflow.</span></div>
+    <div class="legend-item sentry"><strong>B · Sentry compliance agent</strong><span>System-level governance for OSHA/IIPP/CSLB/company rules. Different agent class from RH — runs autonomously, gates lifecycle transitions. V1 KB stub, V1.5 passive, V2.0α active.</span></div>
+    <div class="legend-item mcp"><strong>C · Kerf-as-MCP-server</strong><span>Kerf's Blackboard exposed via typed MCP interface. Other AI tools (Claude Code, Cowork, ChatGPT, IDEs) become clients. System-of-record positioning. V2.0α direction; no V1 schema impact.</span></div>
+    <div class="legend-item alert"><strong>D · Automation guardrails</strong><span>Three layers: per-action token cap, per-month spend cap, action class allowlist. Tenant autonomy bounded by safety envelope. V1 schema (automation entity + run/trip events).</span></div>
+    <div class="legend-item"><strong>E · Construction cost KB</strong><span>Curated cost data with SourceRef, refreshed by separate curation agent. Tenant always retains pricing override. Token-budget protection + quality consistency. V1 schema; V1.5 curation agent.</span></div>
+    <div class="legend-item"><strong>Companion docs</strong><span>Master doc v2 (5.5-day W0 schema cost), pro forma .xlsx (M24 ARR $3.19M base), investor deck v2 .pptx, Codex+Claude Code parallel-build plan in master doc §11.</span></div>
+  </div>
+</div>
+
+<!-- ============ A · CLIENT PORTAL ============ -->
+<div class="frame" id="client-portal">
+  <div class="frame-label">A · Client-share portal — sales velocity infrastructure <span class="frame-note">desktop · client view · branded by tenant · mood boards + side-by-side + decision capture</span></div>
+  <div class="frame-body">
+    <div class="client-portal">
+      <div class="cp-topbar">
+        <div class="cp-brand-block">
+          <div class="cp-brand-mark">GGR</div>
+          <div>
+            <div class="cp-brand-name">GGR · DESIGN + REMODELING</div>
+            <div class="cp-brand-sub">Lic. #947051 · Poway, CA · Hello, Patel family</div>
+          </div>
+        </div>
+        <div class="cp-status"><span class="dot"></span>Project · Active · Day 18 of 54</div>
+      </div>
+
+      <div class="cp-hero">
+        <div class="cp-hero-h">Master bath · countertop selection</div>
+        <div class="cp-hero-sub">
+          Three options selected for your master bath countertop — each within your allowance. Pick one to lock pricing and move into fab. Your choice and any notes go straight to the project record. Christian or Carlos can answer questions in the chat.
+        </div>
+      </div>
+
+      <div class="cp-tabs">
+        <div class="cp-tab">Overview</div>
+        <div class="cp-tab active">Decisions · 3 open</div>
+        <div class="cp-tab">Mood boards</div>
+        <div class="cp-tab">Documents</div>
+        <div class="cp-tab">Chat</div>
+      </div>
+
+      <div class="cp-body">
+        <div class="cp-options">
+          <div class="cp-option">
+            <div class="cp-option-img opt1">
+              <div class="cp-option-tag">A · Calacatta Nuvo</div>
+            </div>
+            <div class="cp-option-body">
+              <div class="cp-option-title">Calacatta Nuvo · Quartz</div>
+              <div class="cp-option-meta">Cool white · soft veining · matches the Visual Comfort sconces.</div>
+              <div class="cp-option-price">
+                <span class="cp-option-price-val">$3,850</span>
+                <span class="cp-option-price-lbl">In allowance</span>
+              </div>
+            </div>
+          </div>
+          <div class="cp-option selected">
+            <div class="cp-option-img opt2">
+              <div class="cp-option-tag">B · Calacatta Gold</div>
+            </div>
+            <div class="cp-option-body">
+              <div class="cp-option-title">Calacatta Gold · Quartz</div>
+              <div class="cp-option-meta">Warm white · gold veining · pairs with the brushed-brass plumbing.</div>
+              <div class="cp-option-price">
+                <span class="cp-option-price-val">$4,372</span>
+                <span class="cp-option-price-lbl">+$522 over allowance</span>
+              </div>
+            </div>
+          </div>
+          <div class="cp-option">
+            <div class="cp-option-img opt3">
+              <div class="cp-option-tag">C · Taj Mahal Quartzite</div>
+            </div>
+            <div class="cp-option-body">
+              <div class="cp-option-title">Taj Mahal · Quartzite</div>
+              <div class="cp-option-meta">Natural stone · subtle gold + grey · sealed twice annually.</div>
+              <div class="cp-option-price">
+                <span class="cp-option-price-val">$5,140</span>
+                <span class="cp-option-price-lbl">+$1,290 over allowance</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cp-decision">
+          <div class="cp-decision-h">Your pick</div>
+          <div class="cp-decision-sub">Click to lock. You can change your mind up until fab order is placed (Tue).</div>
+
+          <div class="cp-pick-row">
+            <div class="cp-pick-radio"></div>
+            <div class="cp-pick-name">A · Calacatta Nuvo</div>
+            <div class="cp-pick-price">$3,850</div>
+          </div>
+          <div class="cp-pick-row active">
+            <div class="cp-pick-radio"></div>
+            <div class="cp-pick-name">B · Calacatta Gold</div>
+            <div class="cp-pick-price">$4,372</div>
+          </div>
+          <div class="cp-pick-row">
+            <div class="cp-pick-radio"></div>
+            <div class="cp-pick-name">C · Taj Mahal Quartzite</div>
+            <div class="cp-pick-price">$5,140</div>
+          </div>
+
+          <div class="cp-decision-cta">Lock pick B · sign change order</div>
+
+          <div class="cp-decision-history">
+            <b>Audit:</b> selection by Patel · 2026-04-25 ·
+            previous decision Apr 19 was <b>option A</b> · changed after slab-yard visit Mon ·
+            CO-004 generated · awaiting client signature.
+          </div>
+        </div>
+      </div>
+
+      <div class="cp-footer">
+        <div class="cp-rh-note">
+          <div class="cp-rh-badge">RH</div>
+          <div>Right Hand drafted this options set from the GGR cabinet catalog. Christian reviewed before share.</div>
+        </div>
+        <div>Powered by Kerf · privacy-first · your data is yours</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ B · SENTRY ============ -->
+<div class="frame" id="sentry">
+  <div class="frame-label">B · Sentry · compliance gating <span class="frame-note">system-level agent · refuses to lock a scope-acceptance if compliance prerequisites unmet · V2.0α active gating</span></div>
+  <div class="frame-body">
+    <div class="sentry-card">
+      <div class="sentry-h">SENTRY · LIFECYCLE GATING</div>
+      <div class="sentry-sub">
+        Compliance agent reads every promotion attempt across the lifecycle. When a prerequisite fails (missing safety check-in, expired cert, no 2-party consent on a recorded scope), Sentry refuses the promotion and surfaces the blocker. Owner can override with explicit consent + justification logged to Blackboard.
+      </div>
+
+      <div class="sentry-flow">
+        <div class="sentry-step">
+          <div class="sentry-step-label">① ATTEMPT</div>
+          <div class="sentry-step-title">Promote scope to <code>approved</code></div>
+          <div class="sentry-step-body">Field super wants to lock a verbal scope-add for Clem master closet door (CO-005, $1,840).</div>
+        </div>
+        <div class="sentry-arrow">→</div>
+        <div class="sentry-step gate">
+          <div class="sentry-step-label">② SENTRY GATE</div>
+          <div class="sentry-step-title">Compliance check</div>
+          <div class="sentry-step-body">Sentry reads: 2-party consent log? Crew OSHA-30 current? Scope within license category? Insurance coverage active for additional value?</div>
+        </div>
+        <div class="sentry-arrow">→</div>
+        <div class="sentry-step blocked">
+          <div class="sentry-step-label">③ BLOCKED</div>
+          <div class="sentry-step-title">2 issues found · cannot lock</div>
+          <div class="sentry-step-body">Promotion refused. Surfaces in the field super's One Thing as remediation tasks. Owner gets aggregate signal in The Pulse.</div>
+        </div>
+      </div>
+
+      <div class="sentry-detail">
+        <div class="sentry-detail-card alert">
+          <div class="sentry-detail-h">⚠ ISSUE 1 · 2-PARTY CONSENT</div>
+          <div class="sentry-detail-row"><span class="lbl">Required by</span><span class="val">CA §632 (recording consent)</span></div>
+          <div class="sentry-detail-row"><span class="lbl">Captured at</span><span class="val bad">Voice memo only · no second party confirmed</span></div>
+          <div class="sentry-detail-row"><span class="lbl">Remediation</span><span class="val">Send client text confirmation w/ link · client confirms · re-attempt</span></div>
+          <div class="sentry-detail-row"><span class="lbl">Time to clear</span><span class="val">~5 min</span></div>
+        </div>
+        <div class="sentry-detail-card warn">
+          <div class="sentry-detail-h">⚠ ISSUE 2 · INSURANCE COVERAGE BAND</div>
+          <div class="sentry-detail-row"><span class="lbl">Project value</span><span class="val">$58,400 + $1,840 CO = $60,240</span></div>
+          <div class="sentry-detail-row"><span class="lbl">GL coverage band</span><span class="val">$0–60,000 standard rate</span></div>
+          <div class="sentry-detail-row"><span class="lbl">Status</span><span class="val bad">$240 over band</span></div>
+          <div class="sentry-detail-row"><span class="lbl">Remediation</span><span class="val">Either reduce CO or upgrade GL band (auto-quote ready)</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; padding: 12px 16px; background: rgba(126,111,207,0.06); border: 1px dashed var(--future-dim); border-radius: 8px; font-size: 11px; color: var(--future); line-height: 1.5;">
+        <b>Override path:</b> Owner can explicitly approve over Sentry's objection by typing or saying the override phrase. Override event logged to Blackboard with full context — Sentry reasoning, owner justification, timestamp, role. The De Wall pattern is preserved. Sentry never wins; it just surfaces.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ C · KERF-AS-MCP-SERVER ============ -->
+<div class="frame" id="mcp">
+  <div class="frame-label">C · Kerf-as-MCP-server — system-of-record positioning <span class="frame-note">V2.0α direction · no V1 schema impact · moat extender via integration surface</span></div>
+  <div class="frame-body">
+    <div class="mcp-card">
+      <div class="mcp-h">KERF · MCP SERVER · CLIENTS</div>
+      <div class="mcp-sub">
+        Kerf exposes its Blackboard and projections as a typed MCP interface. Other AI tools — Claude Code, Cowork, ChatGPT desktop, IDEs, custom agents — become clients of Kerf, not competitors.
+        The contractor's full AI stack reads canonical state from Kerf. Permission lattice + authority lattice + privilege bypass enforce role-scoped access at the MCP boundary; clients inherit the same controls automatically.
+      </div>
+
+      <div class="mcp-stage">
+        <div class="mcp-center">
+          <div class="mcp-center-h">MCP SERVER</div>
+          <div class="mcp-center-name">KERF</div>
+          <div class="mcp-center-sub">Blackboard · projections · typed tools</div>
+          <div class="mcp-bb-pill">◈ persistent memory</div>
+        </div>
+
+        <div class="mcp-client cc">
+          <div class="mcp-client-icon">⌨</div>
+          <div class="mcp-client-name">Claude Code</div>
+          <div class="mcp-client-sub">queries project state</div>
+        </div>
+        <div class="mcp-client cw">
+          <div class="mcp-client-icon">◐</div>
+          <div class="mcp-client-name">Cowork</div>
+          <div class="mcp-client-sub">drafts against context</div>
+        </div>
+        <div class="mcp-client cli">
+          <div class="mcp-client-icon">$_</div>
+          <div class="mcp-client-name">CLI tools</div>
+          <div class="mcp-client-sub">scripted ops</div>
+        </div>
+        <div class="mcp-client ide">
+          <div class="mcp-client-icon">⚙</div>
+          <div class="mcp-client-name">IDE</div>
+          <div class="mcp-client-sub">w/ MCP plugin</div>
+        </div>
+        <div class="mcp-client cd">
+          <div class="mcp-client-icon">⊞</div>
+          <div class="mcp-client-name">Custom agents</div>
+          <div class="mcp-client-sub">tenant-specific</div>
+        </div>
+        <div class="mcp-client gpt">
+          <div class="mcp-client-icon">◇</div>
+          <div class="mcp-client-name">ChatGPT desktop</div>
+          <div class="mcp-client-sub">via MCP</div>
+        </div>
+
+        <svg style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;">
+          <line x1="50%" y1="50%" x2="13%" y2="14%" stroke="#5FB3B5" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.5" />
+          <line x1="50%" y1="50%" x2="87%" y2="14%" stroke="#5FB3B5" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.5" />
+          <line x1="50%" y1="50%" x2="13%" y2="86%" stroke="#5FB3B5" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.5" />
+          <line x1="50%" y1="50%" x2="87%" y2="86%" stroke="#5FB3B5" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.5" />
+          <line x1="50%" y1="50%" x2="6%" y2="50%" stroke="#5FB3B5" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.5" />
+          <line x1="50%" y1="50%" x2="94%" y2="50%" stroke="#5FB3B5" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.5" />
+        </svg>
+      </div>
+
+      <div class="mcp-tools">
+        <div class="mcp-tool">
+          <code>kerf.project.get</code>
+          <span>Read project state by id, role-scoped to caller</span>
+        </div>
+        <div class="mcp-tool">
+          <code>kerf.decisions.list</code>
+          <span>Pending decisions in caller's authority band</span>
+        </div>
+        <div class="mcp-tool">
+          <code>kerf.cost.lookup</code>
+          <span>Curated cost KB lookup with SourceRef + tenant overlay</span>
+        </div>
+        <div class="mcp-tool">
+          <code>kerf.blackboard.search</code>
+          <span>Permission-aware search over events; never returns privileged-class content</span>
+        </div>
+        <div class="mcp-tool">
+          <code>kerf.intake.draft</code>
+          <span>Submit captured intake from external tool · agent-drafted scope returned</span>
+        </div>
+        <div class="mcp-tool">
+          <code>kerf.audit.log</code>
+          <span>Append audit-class event from external action (read-after-write enforced)</span>
+        </div>
+      </div>
+
+      <div class="mcp-narrative">
+        <b>Why this is a moat extender:</b> the more agents that talk to Kerf, the stickier Kerf gets. Switching cost rises with every integration. Kerf becomes the system of record in the contractor's AI stack — other tools handle their own thing (drafting, search, reasoning) but the canonical state lives in Kerf. <b>Houzz Pro and Buildertrend cannot honestly claim this</b> because their data models aren't typed for external consumption.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ D · GUARDRAILS ============ -->
+<div class="frame" id="guardrails">
+  <div class="frame-label">D · Automation guardrails — token + spend + class envelope <span class="frame-note">tenant settings · V1 schema · automation autonomy bounded by three layers</span></div>
+  <div class="frame-body">
+    <div class="guard-card">
+      <div class="guard-h">AUTOMATION · GUARDRAIL ENVELOPE</div>
+      <div class="guard-sub">
+        Tenants get autonomy to set up automations and let Right Hand act on their behalf. Three guardrails ensure that autonomy does not become liability. All trips logged immutably. All halts surface to the owner.
+      </div>
+
+      <div class="guard-grid">
+        <div class="guard-meter">
+          <div class="guard-meter-h">PER-MONTH SPEND CAP · APR 2026</div>
+          <div class="guard-meter-bar">
+            <div class="guard-meter-fill" style="width: 78%;"></div>
+            <div class="guard-meter-marker" style="left: 80%;"></div>
+            <div class="guard-meter-marker" style="left: 100%;"></div>
+          </div>
+          <div class="guard-meter-numbers">
+            <span>$0</span>
+            <span class="guard-meter-current">$1,402 · 78%</span>
+            <span>Cap: $1,800 · Team Pro</span>
+          </div>
+          <div style="margin-top: 10px; font-size: 10px; color: var(--kerf-text-dim); line-height: 1.4;">
+            Soft ceiling at <b style="color: var(--warn);">80%</b> ($1,440) → notify owner, recommend tier upgrade. Hard ceiling at <b style="color: var(--alert);">100%</b> ($1,800) → essential workflows continue, non-essential automations halt with metered opt-in.
+          </div>
+        </div>
+
+        <div class="guard-meter">
+          <div class="guard-meter-h">PER-INVOCATION TOKEN CAP · LAST 24H</div>
+          <div class="guard-meter-bar">
+            <div class="guard-meter-fill" style="width: 42%;"></div>
+            <div class="guard-meter-marker" style="left: 100%;"></div>
+          </div>
+          <div class="guard-meter-numbers">
+            <span>0</span>
+            <span class="guard-meter-current">avg 24K · max 47K</span>
+            <span>Cap: 50K input + 8K output</span>
+          </div>
+          <div style="margin-top: 10px; font-size: 10px; color: var(--kerf-text-dim); line-height: 1.4;">
+            Single agent invocation cap: 50K input + 8K output tokens. Single chain cap: 5 invocations before checkpoint. Both enforced at the LLM gateway. Trips logged.
+          </div>
+        </div>
+
+        <div class="guard-allowlist">
+          <div class="guard-allowlist-h">ACTION CLASS ALLOWLIST · OWNER PROFILE</div>
+          <div class="guard-class-row"><span class="guard-class-name">Read-only queries</span><span class="guard-class-state allow">ALLOW</span></div>
+          <div class="guard-class-row"><span class="guard-class-name">Draft entities (intake, scope, CO)</span><span class="guard-class-state allow">ALLOW</span></div>
+          <div class="guard-class-row"><span class="guard-class-name">Approve under owner ceiling ($2k)</span><span class="guard-class-state allow">ALLOW</span></div>
+          <div class="guard-class-row"><span class="guard-class-name">Approve any · over ceiling</span><span class="guard-class-state deny">DENY · manual</span></div>
+          <div class="guard-class-row"><span class="guard-class-name">Send external (email, SMS, signature)</span><span class="guard-class-state allow">ALLOW · w/ owner final approve</span></div>
+          <div class="guard-class-row"><span class="guard-class-name">Money writes (QBO, payments)</span><span class="guard-class-state deny">DENY · platform only</span></div>
+          <div class="guard-class-row"><span class="guard-class-name">Privileged-class reads (legal, HR, capital)</span><span class="guard-class-state deny">DENY · LLM bypass</span></div>
+        </div>
+
+        <div class="guard-trip-log">
+          <div class="guard-trip-h">⚠ RECENT GUARDRAIL TRIPS</div>
+          <div class="guard-trip-row">
+            <span class="when">Apr 24 14:22 ·</span>
+            <span class="what"><b>Token cap trip · drift detection chain</b></span>
+            <span class="why">Reasoning loop hit 6th invocation without checkpoint · halted. Owner reviewed and approved continuation at metered rate. Loop closed at 8 steps.</span>
+          </div>
+          <div class="guard-trip-row">
+            <span class="when">Apr 21 09:14 ·</span>
+            <span class="what"><b>Action class deny · proposal send</b></span>
+            <span class="why">Automation tried to send Clem proposal externally · class allowed but owner final-approve gate triggered · owner approved within 4 minutes.</span>
+          </div>
+          <div class="guard-trip-row">
+            <span class="when">Apr 18 11:08 ·</span>
+            <span class="what"><b>Privileged-class deny · attorney comms</b></span>
+            <span class="why">Right Hand attempted to summarize De Wall counsel email for owner brief · privilege_class=attorney_client · LLM bypass active · RH responded "I can't help here, talk to counsel."</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 4px; padding: 12px 16px; background: rgba(126,111,207,0.06); border: 1px dashed var(--future-dim); border-radius: 8px; font-size: 11px; color: var(--future); line-height: 1.5;">
+        <b>Sales narrative:</b> "Your AI doesn't run away with your money." Every trip is on the audit trail. Every halt surfaces to the owner. The platform never silently overrides a guardrail — only the owner can, and only with explicit consent + logged justification.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ E · COST KB ============ -->
+<div class="frame" id="cost-kb">
+  <div class="frame-label">E · Construction cost KB — curated, not recreated <span class="frame-note">tenant onboarding step + estimate-time lookup · user always retains pricing override</span></div>
+  <div class="frame-body">
+    <div class="cost-kb-frame">
+      <div class="cost-kb-card">
+        <div class="ckb-h">COST KB · ESTIMATE LOOKUP · PATEL · MASTER BATH</div>
+        <div class="ckb-sub">Right Hand pulled 12 line items from the curated KB while drafting the proposal. 9 from KB baseline, 2 from tenant overlay (your historical PO data), 1 from manual override. Every entry sourced.</div>
+
+        <div class="ckb-search">⌕ &nbsp; search · filter by trade · filter by region · show overrides only</div>
+
+        <div class="ckb-row">
+          <div>
+            <div class="ckb-row-name">Quartz countertop · Calacatta Gold</div>
+            <div class="ckb-row-meta">38 sf · master bath island · CSI 12 36 — solid surface fab</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="ckb-row-price">$115/sf</div>
+            <div class="ckb-row-price-lbl">$4,370 line</div>
+          </div>
+          <div class="ckb-row-source">
+            <span class="ckb-source-tag kb">KB · 14d</span>
+          </div>
+        </div>
+
+        <div class="ckb-row tenant-overlay">
+          <div>
+            <div class="ckb-row-name">Tile install labor · porcelain</div>
+            <div class="ckb-row-meta">82 sf · floor + wainscoting · CSI 09 30 — your crew rate</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="ckb-row-price">$14/sf</div>
+            <div class="ckb-row-price-lbl">$1,148 line</div>
+          </div>
+          <div class="ckb-row-source">
+            <span class="ckb-source-tag tenant">TENANT · YOUR Q1 AVG</span>
+          </div>
+        </div>
+
+        <div class="ckb-row">
+          <div>
+            <div class="ckb-row-name">Frameless shower glass · 3/8&quot;</div>
+            <div class="ckb-row-meta">42 sf · curbless · CSI 08 80 — installed</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="ckb-row-price">$78/sf</div>
+            <div class="ckb-row-price-lbl">$3,276 line</div>
+          </div>
+          <div class="ckb-row-source">
+            <span class="ckb-source-tag kb">KB · 7d</span>
+          </div>
+        </div>
+
+        <div class="ckb-row" style="border-color: var(--alert);">
+          <div>
+            <div class="ckb-row-name">Vanity hardware · brushed brass · Rocky Mountain Hardware</div>
+            <div class="ckb-row-meta">12 ea · client-spec · CSI 08 71 — designer-grade</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="ckb-row-price">$245/ea</div>
+            <div class="ckb-row-price-lbl">$2,940 line</div>
+          </div>
+          <div class="ckb-row-source">
+            <span class="ckb-source-tag override">YOU · OVERRIDE</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ckb-detail-card">
+          <div class="ckb-detail-h">Calacatta Gold quartz · $115/sf</div>
+          <div class="ckb-detail-sub">Region · San Diego metro · Trade · countertop fab+install · CSI 12 36</div>
+
+          <div class="ckb-stack">
+            <div class="ckb-stack-row">
+              <span class="ckb-stack-lbl">KB baseline</span>
+              <span class="ckb-stack-val">$112/sf</span>
+            </div>
+            <div class="ckb-stack-row">
+              <span class="ckb-stack-lbl">Tenant overlay (your last 4 POs)</span>
+              <span class="ckb-stack-val">$118/sf</span>
+            </div>
+            <div class="ckb-stack-row">
+              <span class="ckb-stack-lbl">Override</span>
+              <span class="ckb-stack-val">—</span>
+            </div>
+            <div class="ckb-stack-row final">
+              <span class="ckb-stack-lbl">USED IN ESTIMATE</span>
+              <span class="ckb-stack-val">$115/sf</span>
+            </div>
+          </div>
+
+          <div class="ckb-sources">
+            <div class="ckb-sources-h">SOURCEREF · 4 entries</div>
+            <div class="ckb-source-line">
+              <span class="src-when">Apr 12</span>
+              <span>Cosmos Granite SD · published price list · "Calacatta Gold" 2cm · $112/sf installed</span>
+            </div>
+            <div class="ckb-source-line">
+              <span class="src-when">Apr 03</span>
+              <span>Your PO #VAL-2026-088 · MS International · $118/sf · 41 sf · Coring kitchen</span>
+            </div>
+            <div class="ckb-source-line">
+              <span class="src-when">Mar 22</span>
+              <span>RSMeans · CCI San Diego · 12 36 19 · $109/sf median quoted Q1</span>
+            </div>
+            <div class="ckb-source-line">
+              <span class="src-when">Mar 14</span>
+              <span>Your PO #GGR-2025-411 · M.S. International · $118/sf · 38 sf · Sanchez whole house</span>
+            </div>
+          </div>
+
+          <div class="ckb-override-cta">⊕ override pricing · justification logged</div>
+
+          <div style="margin-top: 12px; font-size: 10px; color: var(--kerf-text-mute); line-height: 1.5;">
+            Curation agent re-verified this entry <b style="color: var(--success);">14 days ago</b>. No anomaly detected (price stable). Next stale-flag in 76 days. Tenant overlay updated automatically as new POs land.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ F · BILINGUAL · SAME SURFACE ============ -->
+<div class="frame" id="bilingual">
+  <div class="frame-label">F · Same surface, two languages <span class="frame-note">field super view · Jose · rendered EN and ES from the same Blackboard event · i18n at the data layer not bolted on</span></div>
+  <div class="frame-body">
+
+    <div style="background: var(--kerf-panel); border: 1px solid var(--rh-dim); border-radius: 12px; padding: 22px 26px; margin-bottom: 18px;">
+      <div style="font-size: 13px; font-weight: 800; color: var(--rh); letter-spacing: 0.08em; margin-bottom: 4px;">RIGHT HAND · MANO DERECHA · BILINGUAL AT THE DATA LAYER</div>
+      <div style="font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 10px; line-height: 1.55; max-width: 820px;">
+        Both screens render <b>the same Blackboard events</b> in different languages. EN+ES typecheck parity is enforced in <code style="background:rgba(255,255,255,0.06); padding:1px 4px; border-radius:2px; font-family:ui-monospace,monospace;">src/i18n/</code> at the @kerf/core scaffold —
+        every render-string is an I18nKey; user-entered data is never translated. Houzz Pro, Buildertrend, Procore, ServiceTitan would each need a multi-year retrofit to match.
+        <b style="color: var(--rh);">This is the moat row in the deck competitor table that no incumbent can fill.</b>
+      </div>
+    </div>
+
+    <div class="phone-row">
+
+      <!-- EN -->
+      <div class="phone-col">
+        <div class="phone-role-label">English render</div>
+        <div class="phone-sub-label">Same ev

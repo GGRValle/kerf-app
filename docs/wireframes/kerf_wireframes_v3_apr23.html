@@ -1,0 +1,2462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · v3 Wireframes · Apr 23, 2026 additions</title>
+<style>
+:root {
+  --kerf-amber: #D4923A;
+  --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419;
+  --kerf-panel: #1A1F26;
+  --kerf-panel-2: #232932;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1;
+  --kerf-text-dim: #9097A1;
+  --kerf-text-mute: #5F6670;
+  --ggr: #4A7FB0;
+  --ggr-dim: #1B3A5C;
+  --val: #A8794A;
+  --val-dim: #5C3A1B;
+  --hpg: #4A9F74;
+  --hpg-dim: #1B5C3A;
+  --success: #5FB37A;
+  --warn: #E0A858;
+  --alert: #CF5B5B;
+  --future: #7E6FCF;
+  --future-dim: #3A2E6B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11;
+  color: var(--kerf-text);
+  line-height: 1.4;
+  font-size: 13px;
+}
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 22px 40px;
+}
+.doc-header h1 {
+  font-size: 22px; letter-spacing: 0.02em; font-weight: 600; margin-bottom: 4px;
+}
+.doc-header .sub { color: var(--kerf-text-dim); font-size: 12px; }
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.doc-header .future { color: var(--future); font-weight: 600; }
+
+.wireframe-container { padding: 30px 40px; max-width: 1700px; margin: 0 auto; }
+
+.nav-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: #0A0D11;
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 10px 40px;
+  display: flex; gap: 4px; overflow-x: auto;
+}
+.nav-bar a {
+  color: var(--kerf-text-dim); text-decoration: none; font-size: 11px;
+  padding: 5px 10px; border-radius: 3px; white-space: nowrap;
+}
+.nav-bar a:hover { background: var(--kerf-panel-2); color: var(--kerf-text); }
+
+.legend-block {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 18px 24px;
+  margin-bottom: 40px;
+}
+.legend-block h2 { font-size: 14px; margin-bottom: 10px; color: var(--kerf-amber); letter-spacing: 0.04em; }
+.legend-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 11px; }
+.legend-item { padding-left: 10px; border-left: 2px solid var(--kerf-border); }
+.legend-item strong { color: var(--kerf-text); display: block; margin-bottom: 3px; }
+.legend-item span { color: var(--kerf-text-dim); }
+
+.frame {
+  margin-bottom: 50px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--kerf-panel);
+}
+.frame-label {
+  background: var(--kerf-panel-2);
+  padding: 10px 18px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kerf-amber);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.frame-label .frame-note { color: var(--kerf-text-dim); text-transform: none; letter-spacing: 0; font-size: 11px; }
+.frame-body { padding: 30px 20px; background: #0A0D11; }
+
+.phase-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  margin-left: 8px;
+}
+.phase-v1    { background: var(--kerf-amber); color: #0A0D11; }
+.phase-v15   { background: var(--ggr-dim); color: #A8C5E5; }
+.phase-v20   { background: var(--hpg-dim); color: #A8E5C5; }
+.phase-v21   { background: var(--val-dim); color: #E5C5A8; }
+.phase-dir   { background: var(--future-dim); color: #C5B8F0; }
+
+/* Phone frame */
+.phone-row { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; }
+.phone-col { display: flex; flex-direction: column; align-items: center; }
+.phone-role-label {
+  font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--kerf-amber); margin-bottom: 6px; font-weight: 600;
+}
+.phone-sub-label { color: var(--kerf-text-dim); font-size: 11px; margin-bottom: 16px; text-align: center; max-width: 300px; }
+
+.phone {
+  width: 300px; height: 620px;
+  background: #000; border-radius: 38px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px var(--kerf-border);
+  position: relative;
+}
+.phone-notch {
+  position: absolute; top: 12px; left: 50%;
+  transform: translateX(-50%);
+  width: 90px; height: 24px;
+  background: #000; border-radius: 0 0 12px 12px; z-index: 20;
+}
+.phone-screen {
+  width: 100%; height: 100%;
+  background: var(--kerf-dark);
+  border-radius: 28px; overflow: hidden;
+  position: relative; display: flex; flex-direction: column;
+}
+.status-bar {
+  height: 36px; display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 22px 0 22px; font-size: 11px; font-weight: 600;
+  color: var(--kerf-text); flex-shrink: 0;
+}
+
+.screen-title-bar {
+  padding: 6px 16px 10px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.op-brand { font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: var(--kerf-amber); }
+.op-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ggr-dim); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+}
+.screen-content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column; }
+
+.mob-one-thing {
+  margin: 12px; padding: 14px;
+  background: linear-gradient(180deg, rgba(212,146,58,0.15) 0%, rgba(212,146,58,0.04) 100%);
+  border: 1px solid var(--kerf-amber-dim);
+  border-radius: 10px;
+}
+.mob-ot-label {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-amber); font-weight: 700; margin-bottom: 8px;
+}
+.mob-ot-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; line-height: 1.3; }
+.mob-ot-why {
+  font-size: 11px; color: var(--kerf-text-dim);
+  margin-bottom: 10px; padding-left: 8px;
+  border-left: 2px solid var(--kerf-amber-dim);
+  line-height: 1.4;
+}
+.mob-ot-why b { color: var(--kerf-amber); font-weight: 600; }
+.mob-ot-actions { display: flex; gap: 6px; }
+.mob-btn {
+  flex: 1; padding: 9px 10px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px; background: var(--kerf-panel-2);
+  color: var(--kerf-text); font-size: 11px;
+  font-weight: 500; font-family: inherit; cursor: pointer; text-align: center;
+}
+.mob-btn-primary { background: var(--kerf-amber); color: #0A0D11; border-color: var(--kerf-amber); font-weight: 700; flex: 2; }
+.mob-btn-ghost { background: transparent; color: var(--kerf-text-dim); }
+.mob-btn-danger { border-color: var(--alert); color: var(--alert); background: rgba(207,91,91,0.08); }
+
+/* Blackboard stream on mobile */
+.mob-bb {
+  margin: 4px 12px 14px;
+  padding: 10px;
+  background: rgba(126,111,207,0.08);
+  border: 1px dashed var(--future-dim);
+  border-radius: 8px;
+}
+.mob-bb-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--future); font-weight: 700; margin-bottom: 6px;
+}
+.mob-bb-row {
+  display: flex; gap: 6px; padding: 5px 0;
+  font-size: 10px; color: var(--kerf-text-dim);
+  border-top: 1px solid rgba(126,111,207,0.15);
+}
+.mob-bb-row:first-of-type { border-top: none; }
+.mob-bb-time { color: var(--kerf-text-mute); width: 42px; flex-shrink: 0; font-size: 9px; }
+.mob-bb-actor { color: var(--kerf-text); font-weight: 600; }
+.mob-bb-fact { flex: 1; }
+
+/* Section label */
+.mob-section-label {
+  padding: 4px 16px 6px; font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-text-mute);
+}
+.mob-queue-item {
+  padding: 10px 16px; border-top: 1px solid var(--kerf-border);
+}
+.mob-queue-item:first-child { border-top: none; }
+.mob-qi-row1 { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
+.mob-qi-brand {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 1px 5px; border-radius: 2px;
+}
+.mob-qi-brand.ggr { background: var(--ggr-dim); color: #A8C5E5; }
+.mob-qi-brand.val { background: var(--val-dim); color: #E5C5A8; }
+.mob-qi-brand.hpg { background: var(--hpg-dim); color: #A8E5C5; }
+.mob-qi-title { font-size: 12px; flex: 1; font-weight: 500; }
+.mob-qi-time { font-size: 10px; color: var(--kerf-text-mute); }
+.mob-qi-why { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; }
+
+/* Intake CTA button */
+.mob-intake-cta {
+  margin: 10px 12px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(74,159,116,0.12) 0%, rgba(74,159,116,0.03) 100%);
+  border: 1px solid var(--hpg-dim);
+  border-radius: 10px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+}
+.mob-intake-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--hpg); color: #0A0D11;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; flex-shrink: 0;
+}
+.mob-intake-body { flex: 1; }
+.mob-intake-title { font-size: 12px; font-weight: 700; }
+.mob-intake-sub { font-size: 10px; color: var(--kerf-text-dim); margin-top: 1px; }
+
+/* Op phone bottom nav */
+.op-bottom {
+  flex-shrink: 0; padding: 8px 14px 20px;
+  display: flex; gap: 8px;
+  border-top: 1px solid var(--kerf-border);
+  background: var(--kerf-panel); align-items: center;
+}
+.op-mod-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: var(--kerf-panel-2); color: var(--kerf-text-dim);
+  cursor: pointer; font-size: 14px;
+}
+.op-voice-btn {
+  margin-left: auto;
+  width: 38px; height: 38px;
+  background: var(--kerf-amber); color: #0A0D11;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(212,146,58,0.4);
+}
+
+/* INTAKE — mode picker */
+.intake-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.intake-back { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 6px; cursor: pointer; }
+.intake-title { font-size: 16px; font-weight: 700; }
+.intake-sub { font-size: 11px; color: var(--kerf-text-dim); margin-top: 2px; }
+
+.intake-context-pill {
+  margin: 10px 16px 0; padding: 8px 10px;
+  background: rgba(74,127,176,0.08);
+  border: 1px solid var(--ggr-dim);
+  border-radius: 6px;
+  font-size: 10px; color: var(--kerf-text-dim);
+  display: flex; gap: 6px; align-items: center;
+}
+.intake-context-pill b { color: var(--ggr); }
+
+.mode-list {
+  padding: 14px 14px 8px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.mode-card {
+  padding: 12px; background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 10px;
+  display: flex; gap: 10px; align-items: flex-start;
+  cursor: pointer;
+}
+.mode-card.primary {
+  border-color: var(--kerf-amber-dim);
+  background: linear-gradient(180deg, rgba(212,146,58,0.08) 0%, rgba(212,146,58,0.02) 100%);
+}
+.mode-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--kerf-panel-2); color: var(--kerf-amber);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.mode-card.primary .mode-icon { background: var(--kerf-amber); color: #0A0D11; }
+.mode-body { flex: 1; }
+.mode-title { font-size: 12px; font-weight: 600; }
+.mode-desc { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; line-height: 1.4; }
+.mode-meta { font-size: 9px; color: var(--kerf-text-mute); margin-top: 3px; }
+
+/* Intake form mode */
+.form-field {
+  padding: 10px 16px; border-bottom: 1px solid var(--kerf-border);
+}
+.form-label { font-size: 10px; color: var(--kerf-text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+.form-input {
+  font-size: 12px; color: var(--kerf-text); background: transparent;
+  border: none; outline: none; width: 100%; padding: 2px 0;
+}
+.form-input-placeholder { color: var(--kerf-text-mute); font-style: italic; }
+.form-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.form-chip {
+  padding: 4px 8px; border: 1px solid var(--kerf-border);
+  border-radius: 12px; font-size: 10px; color: var(--kerf-text-dim); cursor: pointer;
+}
+.form-chip.active {
+  background: var(--kerf-amber); color: #0A0D11; border-color: var(--kerf-amber); font-weight: 600;
+}
+.form-capture-row {
+  display: flex; gap: 8px; padding: 10px 16px;
+}
+.form-capture-btn {
+  flex: 1; padding: 10px 6px; border: 1px solid var(--kerf-border);
+  border-radius: 8px; background: var(--kerf-panel);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--kerf-text); cursor: pointer;
+}
+.form-capture-btn .icon { font-size: 20px; }
+.form-capture-btn.active { border-color: var(--kerf-amber); background: rgba(212,146,58,0.08); color: var(--kerf-amber); }
+.form-capture-btn .badge {
+  margin-top: 2px; font-size: 9px; padding: 1px 5px;
+  background: var(--success); color: #0A0D11; border-radius: 8px; font-weight: 600;
+}
+
+/* Voice mode */
+.voice-stage {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+  padding: 20px;
+}
+.voice-orb {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,146,58,0.4) 0%, rgba(212,146,58,0.08) 60%, transparent 100%);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.voice-orb-core {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--kerf-amber);
+  display: flex; align-items: center; justify-content: center;
+  color: #0A0D11; font-size: 28px; font-weight: 700;
+  box-shadow: 0 0 0 4px rgba(212,146,58,0.15), 0 0 0 12px rgba(212,146,58,0.06);
+}
+.voice-text-big { font-size: 14px; font-weight: 600; text-align: center; }
+.voice-hint { font-size: 11px; color: var(--kerf-text-dim); text-align: center; max-width: 240px; line-height: 1.4; }
+.voice-transcript {
+  padding: 10px 14px; background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 8px;
+  font-size: 11px; color: var(--kerf-text-dim); font-style: italic;
+  width: 100%; line-height: 1.4;
+}
+.voice-transcript b { color: var(--kerf-text); font-style: normal; font-weight: 500; }
+
+/* Recorded conversation — consent */
+.consent-card {
+  margin: 16px; padding: 14px;
+  background: rgba(207,91,91,0.06);
+  border: 1px solid var(--alert);
+  border-radius: 10px;
+}
+.consent-title { font-size: 12px; font-weight: 700; color: var(--alert); margin-bottom: 8px; letter-spacing: 0.04em; }
+.consent-body { font-size: 11px; color: var(--kerf-text); line-height: 1.5; margin-bottom: 10px; }
+.consent-body b { color: var(--alert); }
+.consent-check {
+  display: flex; gap: 8px; align-items: flex-start;
+  font-size: 10px; color: var(--kerf-text-dim); padding: 6px 0;
+}
+.consent-check .box {
+  width: 14px; height: 14px; border: 1px solid var(--kerf-border);
+  border-radius: 3px; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #0A0D11;
+}
+.consent-check.checked .box { background: var(--success); border-color: var(--success); }
+.consent-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* Recording in progress */
+.recording-stage {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 18px 16px; gap: 14px;
+}
+.rec-indicator {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: rgba(207,91,91,0.1);
+  border: 1px solid var(--alert);
+  border-radius: 20px; width: fit-content;
+  font-size: 11px; font-weight: 600; color: var(--alert);
+}
+.rec-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--alert); animation: pulse 1.2s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.rec-waveform {
+  display: flex; align-items: center; gap: 2px; height: 40px;
+  padding: 0 6px;
+}
+.rec-bar {
+  flex: 1; background: var(--kerf-amber);
+  border-radius: 1px;
+  opacity: 0.7;
+}
+.rec-timer { font-size: 24px; font-weight: 300; text-align: center; font-variant-numeric: tabular-nums; }
+.rec-live-notes {
+  flex: 1; padding: 10px; background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 8px;
+  font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5; overflow-y: auto;
+}
+.rec-live-notes .captured {
+  color: var(--success); font-weight: 600; display: block; margin-bottom: 4px; font-size: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.rec-live-notes ul { list-style: none; padding-left: 0; }
+.rec-live-notes li {
+  padding: 3px 0 3px 14px; position: relative; color: var(--kerf-text);
+}
+.rec-live-notes li::before {
+  content: '✓'; position: absolute; left: 0; color: var(--success); font-weight: 700;
+}
+
+/* Photos grid */
+.photo-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  padding: 10px 12px;
+}
+.photo-tile {
+  aspect-ratio: 1; background: var(--kerf-panel-2);
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  color: var(--kerf-text-mute); font-size: 10px; position: relative;
+  background-size: cover; background-position: center;
+}
+.photo-tile.add { background: var(--kerf-panel); border: 1px dashed var(--kerf-border); color: var(--kerf-amber); font-size: 20px; cursor: pointer; }
+.photo-tile.p1 { background: linear-gradient(135deg, #3a4a5a 0%, #2a3845 60%, #1a2330 100%); }
+.photo-tile.p2 { background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%); }
+.photo-tile.p3 { background: linear-gradient(135deg, #2a3a3a 0%, #1a2a2a 100%); }
+.photo-tile.p4 { background: linear-gradient(135deg, #2a2a3a 0%, #1a1a2a 100%); }
+.photo-tile.p5 { background: linear-gradient(135deg, #3a2a3a 0%, #2a1a2a 100%); }
+.photo-tile .tag {
+  position: absolute; bottom: 3px; left: 3px; right: 3px;
+  font-size: 8px; background: rgba(0,0,0,0.6); padding: 1px 4px; border-radius: 2px;
+  color: #fff; text-align: center;
+}
+
+/* LiDAR scan */
+.lidar-stage {
+  flex: 1; background: #000; position: relative;
+  overflow: hidden;
+}
+.lidar-overlay {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(74,159,116,0.15) 0%, rgba(74,159,116,0.03) 40%, transparent 70%);
+}
+.lidar-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(74,159,116,0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,159,116,0.25) 1px, transparent 1px);
+  background-size: 20px 20px;
+  transform: perspective(400px) rotateX(55deg);
+  transform-origin: center 70%;
+  opacity: 0.6;
+}
+.lidar-reticle {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 140px; height: 140px; border: 2px solid var(--hpg);
+  border-radius: 6px;
+  box-shadow: 0 0 32px rgba(74,159,116,0.6), inset 0 0 32px rgba(74,159,116,0.2);
+}
+.lidar-reticle::before, .lidar-reticle::after {
+  content: ''; position: absolute; background: var(--hpg);
+}
+.lidar-reticle::before { top: 50%; left: -6px; right: -6px; height: 1px; }
+.lidar-reticle::after { left: 50%; top: -6px; bottom: -6px; width: 1px; }
+.lidar-hud {
+  position: absolute; top: 10px; left: 10px; right: 10px;
+  display: flex; justify-content: space-between; font-size: 10px;
+  color: var(--hpg); font-variant-numeric: tabular-nums;
+}
+.lidar-hud-block {
+  background: rgba(0,0,0,0.55); padding: 5px 8px;
+  border-radius: 4px; border: 1px solid rgba(74,159,116,0.3);
+}
+.lidar-footer {
+  position: absolute; bottom: 10px; left: 10px; right: 10px;
+  padding: 10px; background: rgba(0,0,0,0.7);
+  border-radius: 8px; border: 1px solid var(--kerf-border);
+  backdrop-filter: blur(8px);
+}
+.lidar-progress {
+  height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 6px 0 8px;
+  overflow: hidden;
+}
+.lidar-progress-fill { height: 100%; background: var(--hpg); width: 67%; }
+.lidar-hint { font-size: 10px; color: var(--kerf-text); line-height: 1.3; }
+
+/* LiDAR edit view */
+.lidar-edit-stage {
+  flex: 1; background: #000; position: relative; overflow: hidden;
+}
+.lidar-plan {
+  position: absolute; inset: 20px 20px 100px;
+  border: 1px solid rgba(74,159,116,0.25);
+}
+.lidar-plan-svg { width: 100%; height: 100%; }
+.lidar-edit-toolbar {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.lidar-edit-tool {
+  width: 32px; height: 32px; border-radius: 6px;
+  background: rgba(0,0,0,0.7); border: 1px solid var(--kerf-border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--kerf-text); font-size: 13px; cursor: pointer;
+}
+.lidar-edit-tool.active { border-color: var(--kerf-amber); color: var(--kerf-amber); background: rgba(212,146,58,0.12); }
+.lidar-edit-footer {
+  position: absolute; bottom: 10px; left: 10px; right: 10px;
+  padding: 10px; background: rgba(0,0,0,0.75);
+  border-radius: 8px; border: 1px solid var(--kerf-border);
+}
+.lidar-measure-row {
+  display: flex; justify-content: space-between; gap: 10px;
+  font-size: 10px; color: var(--kerf-text-dim); margin-bottom: 8px;
+}
+.lidar-measure-row b { color: var(--kerf-text); font-variant-numeric: tabular-nums; }
+.lidar-version-badge {
+  display: inline-block; font-size: 9px; padding: 2px 6px;
+  background: var(--warn); color: #0A0D11;
+  border-radius: 8px; font-weight: 700; letter-spacing: 0.04em;
+}
+
+/* Agent draft review */
+.draft-review {
+  padding: 14px 16px; flex: 1; overflow-y: auto;
+}
+.draft-section {
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.draft-section-label {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-amber); margin-bottom: 4px; font-weight: 700;
+}
+.draft-section-body {
+  font-size: 11px; color: var(--kerf-text); line-height: 1.5;
+}
+.draft-row {
+  display: flex; justify-content: space-between; padding: 3px 0;
+  font-size: 11px;
+}
+.draft-row span:first-child { color: var(--kerf-text-dim); }
+.draft-row span:last-child { color: var(--kerf-text); font-variant-numeric: tabular-nums; }
+.draft-flag {
+  display: inline-block; font-size: 9px; padding: 1px 5px;
+  background: rgba(224,168,88,0.15); color: var(--warn);
+  border: 1px solid var(--warn); border-radius: 8px; margin-left: 4px;
+  font-weight: 600;
+}
+.draft-sources {
+  font-size: 10px; color: var(--kerf-text-dim); padding: 4px 0;
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.draft-sources .src {
+  padding: 2px 6px; background: var(--kerf-panel-2);
+  border: 1px solid var(--kerf-border); border-radius: 8px;
+  color: var(--kerf-text-dim); font-size: 9px;
+}
+
+/* CO Intake header */
+.co-header-context {
+  padding: 10px 16px; background: rgba(74,127,176,0.08);
+  border-bottom: 1px solid var(--ggr-dim);
+}
+.co-ctx-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ggr); margin-bottom: 3px; }
+.co-ctx-project { font-size: 13px; font-weight: 600; }
+.co-ctx-meta { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; }
+
+/* MoO CoS preview */
+.future-banner {
+  margin: 0 0 14px; padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(126,111,207,0.15) 0%, rgba(126,111,207,0.04) 100%);
+  border-bottom: 1px solid var(--future-dim);
+  font-size: 10px; color: var(--future); font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.future-banner b { display: block; font-size: 11px; margin-bottom: 2px; color: var(--future); }
+
+.moo-card {
+  margin: 8px 12px; padding: 10px; background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 8px;
+}
+.moo-card.hot { border-color: var(--alert); background: rgba(207,91,91,0.05); }
+.moo-card.ok { border-color: var(--hpg-dim); }
+.moo-card-label {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-dim); margin-bottom: 4px; font-weight: 600;
+}
+.moo-card.hot .moo-card-label { color: var(--alert); }
+.moo-card.ok .moo-card-label { color: var(--hpg); }
+.moo-card-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.moo-card-sub { font-size: 10px; color: var(--kerf-text-dim); line-height: 1.4; }
+.moo-metric-row {
+  display: flex; gap: 8px; padding: 8px 12px 0;
+}
+.moo-metric {
+  flex: 1; padding: 10px; background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 8px; text-align: center;
+}
+.moo-metric-val { font-size: 18px; font-weight: 700; color: var(--kerf-amber); font-variant-numeric: tabular-nums; }
+.moo-metric-lbl { font-size: 9px; color: var(--kerf-text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+/* FinTech */
+.fin-touch {
+  margin: 10px 12px; padding: 12px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 10px;
+}
+.fin-touch-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+}
+.fin-touch-title { font-size: 12px; font-weight: 600; }
+.fin-touch-tag {
+  font-size: 9px; padding: 2px 6px;
+  background: var(--future-dim); color: #C5B8F0;
+  border-radius: 8px; font-weight: 700; letter-spacing: 0.04em;
+}
+.fin-amount {
+  font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+.fin-amount .cents { font-size: 14px; color: var(--kerf-text-dim); }
+.fin-sub { font-size: 10px; color: var(--kerf-text-dim); margin-bottom: 8px; }
+.fin-bar {
+  height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px;
+  overflow: hidden; margin: 6px 0;
+}
+.fin-bar-fill { height: 100%; background: var(--success); }
+.fin-bar-fill.over { background: var(--alert); }
+.fin-bar-fill.warn { background: var(--warn); }
+
+.fin-crew-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-top: 1px solid var(--kerf-border);
+  font-size: 11px;
+}
+.fin-crew-row:first-of-type { border-top: none; }
+.fin-crew-name { color: var(--kerf-text); }
+.fin-crew-amt { font-variant-numeric: tabular-nums; color: var(--kerf-text-dim); }
+.fin-crew-amt.alert { color: var(--alert); font-weight: 700; }
+
+/* Desktop frames */
+.desktop-frame {
+  background: var(--kerf-dark); border-radius: 8px;
+  border: 1px solid var(--kerf-border);
+  margin: 0 auto; overflow: hidden;
+  width: 100%; max-width: 1100px; height: 640px;
+  display: flex; flex-direction: column;
+}
+.desk-topbar {
+  height: 44px; background: var(--kerf-panel-2);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex; align-items: center; padding: 0 18px; gap: 14px;
+}
+.desk-brand { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: var(--kerf-amber); }
+.desk-search {
+  flex: 1; max-width: 360px; height: 28px;
+  background: var(--kerf-dark); border: 1px solid var(--kerf-border);
+  border-radius: 6px; padding: 0 10px;
+  font-size: 11px; color: var(--kerf-text-mute);
+  display: flex; align-items: center;
+}
+.desk-user {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--kerf-text-dim);
+}
+.desk-body { flex: 1; display: flex; overflow: hidden; }
+.desk-sidebar {
+  width: 200px; background: var(--kerf-panel);
+  border-right: 1px solid var(--kerf-border);
+  padding: 10px 0; flex-shrink: 0; overflow-y: auto;
+}
+.desk-nav-item {
+  padding: 7px 16px; font-size: 11px; color: var(--kerf-text-dim);
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+}
+.desk-nav-item.active {
+  color: var(--kerf-amber); background: rgba(212,146,58,0.08);
+  border-left: 2px solid var(--kerf-amber); padding-left: 14px;
+}
+.desk-nav-group {
+  padding: 10px 16px 4px; font-size: 9px; color: var(--kerf-text-mute);
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+.desk-main { flex: 1; padding: 18px 22px; overflow-y: auto; }
+
+.desk-h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.desk-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 16px; }
+
+.desk-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.desk-grid-3 {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;
+}
+.desk-card {
+  background: var(--kerf-panel); border: 1px solid var(--kerf-border);
+  border-radius: 8px; padding: 14px;
+}
+.desk-card-label {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-dim); margin-bottom: 6px; font-weight: 600;
+}
+.desk-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.desk-card-big { font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums; margin: 4px 0; }
+
+.desk-metric-row {
+  display: flex; gap: 16px; margin-bottom: 18px;
+}
+.desk-metric {
+  flex: 1; padding: 14px; background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 8px;
+}
+.desk-metric-val { font-size: 22px; font-weight: 600; color: var(--kerf-amber); }
+.desk-metric-lbl { font-size: 10px; color: var(--kerf-text-dim); margin-top: 3px; }
+.desk-metric-delta { font-size: 10px; color: var(--success); margin-top: 3px; }
+.desk-metric-delta.down { color: var(--alert); }
+
+.intake-desk-table {
+  width: 100%; font-size: 11px; border-collapse: collapse;
+}
+.intake-desk-table th, .intake-desk-table td {
+  text-align: left; padding: 8px 10px;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.intake-desk-table th {
+  font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 600;
+}
+.intake-desk-table td { color: var(--kerf-text-dim); }
+.intake-desk-table td b { color: var(--kerf-text); font-weight: 500; }
+.status-chip {
+  display: inline-block; padding: 2px 7px; border-radius: 10px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+}
+.status-chip.draft { background: var(--warn); color: #0A0D11; }
+.status-chip.rec { background: var(--ggr-dim); color: #A8C5E5; }
+.status-chip.app { background: var(--hpg-dim); color: #A8E5C5; }
+.status-chip.lock { background: var(--kerf-amber); color: #0A0D11; }
+
+.source-badge {
+  font-size: 9px; padding: 1px 5px; margin-left: 3px;
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 8px; color: var(--kerf-text-dim);
+}
+</style>
+</head>
+<body>
+<div class="doc-header">
+  <h1>Kerf · v3 Wireframes <span class="amber">· Apr 23, 2026 additions</span></h1>
+  <div style="margin-top:6px; margin-bottom:8px; font-size:11px; color:#C9A876; letter-spacing:0.06em; font-weight:600;">
+    <span style="color:#D4923A; font-weight:800;">Make More.</span>
+    &nbsp;·&nbsp; Intuitive operations for builders.
+    &nbsp;·&nbsp; <span style="color:#9097A1;">EN&nbsp;|&nbsp;ES</span>
+    &nbsp;·&nbsp; <span style="color:#C9A876;">Right Hand · Mano Derecha</span>
+  </div>
+  <div class="sub">
+    Focused revision showing new surfaces: <b>Blackboard stream</b>, <b>Project Intake</b>, <b>Change Order Intake</b>, <b>editable LiDAR</b>,
+    <b>MoO Chief of Staff preview</b> <span class="future">(V2.0+ direction)</span>, <b>FinTech touchpoints</b>, and <b>voice-first approval-gate authoring</b>.
+    Every frame is phase-labeled. v2 wireframes remain the canonical baseline for V1 build.
+  </div>
+</div>
+
+<div class="nav-bar">
+  <a href="#legend">Legend</a>
+  <a href="#operator-landing">A · Operator Landing</a>
+  <a href="#intake-mode-picker">B · Intake Modes</a>
+  <a href="#intake-form">C · Form</a>
+  <a href="#intake-voice">D · Voice</a>
+  <a href="#intake-consent">E · Recorded (Consent)</a>
+  <a href="#intake-capture">F · Photos + LiDAR</a>
+  <a href="#lidar-edit">G · LiDAR Edit</a>
+  <a href="#intake-draft">H · Agent Draft Review</a>
+  <a href="#co-intake">I · Change Order Intake</a>
+  <a href="#approval-authoring">J · Approval-Gate Authoring</a>
+  <a href="#moo-cos">K · MoO CoS (V2.0+)</a>
+  <a href="#fintech">L · FinTech Touchpoints</a>
+  <a href="#desktop">M · Desktop Views</a>
+</div>
+
+<div class="wireframe-container">
+
+<div class="legend-block" id="legend">
+  <h2>APR 23 ADDITIONS — WHAT YOU'RE LOOKING AT</h2>
+  <div class="legend-grid">
+    <div class="legend-item"><strong>Blackboard stream <span class="phase-pill phase-v1">V1</span></strong><span>Dual-layer persistent memory surfaced on the operator landing. Permission-aware reads, role-scoped views.</span></div>
+    <div class="legend-item"><strong>Project Intake <span class="phase-pill phase-v15">V1.5 MVP</span> <span class="phase-pill phase-v20">V2.0 full</span></strong><span>Four capture modes — form, voice, recorded conversation (w/ consent), text. Agent drafts on backend. Human approves.</span></div>
+    <div class="legend-item"><strong>Change Order Intake <span class="phase-pill phase-v20">V2.0</span></strong><span>Same intake engine, second entry point. Pre-populated project context. Camera + LiDAR primed for fast field capture.</span></div>
+    <div class="legend-item"><strong>Editable LiDAR <span class="phase-pill phase-v20">V2.0 pulled fwd</span></strong><span>Raw scan + edit tools. Versioned. Human verifies before Locked.</span></div>
+    <div class="legend-item"><strong>Agent draft review <span class="phase-pill phase-v15">V1.5</span></strong><span>Estimator/PM agent drafts scope. Never auto-commit. Sourced lines. Lifecycle: Draft → Recommended → Approved → Locked.</span></div>
+    <div class="legend-item"><strong>MoO Chief of Staff <span class="phase-pill phase-dir">V2.0+ direction</span></strong><span>Role-aware CoS surface for Manager of Operations. Scaling role, not V1 build. Preview only.</span></div>
+    <div class="legend-item"><strong>FinTech touchpoints <span class="phase-pill phase-v20">V2.0</span> <span class="phase-pill phase-v21">V2.1</span></strong><span>Partner-first: homeowner pay (V2.0), purchasing (V2.0), crew cards (V2.1), job cards (V2.1 partner), financing (V2.1 partner).</span></div>
+    <div class="legend-item"><strong>Approval-gate authoring <span class="phase-pill phase-v15">V1.5</span></strong><span>At every permission threshold, approver can revise prices/line items by voice (primary) or multimodal. Edits diffed · reason logged · Blackboard-persisted.</span></div>
+    <div class="legend-item"><strong>Frame phase pills</strong><span>Every frame labeled by release. <span class="phase-pill phase-v1">V1</span> = ships July 13 kill-switch. <span class="phase-pill phase-dir">V2.0+ direction</span> = not scoped for build yet.</span></div>
+    <div class="legend-item"><strong>What's unchanged</strong><span>V1 three workflows (Field Check-In · Triage · Proposal) · kill-switch criteria · bilingual · $2K ceiling · human-approve money.</span></div>
+    <div class="legend-item"><strong>Consent is jurisdiction-aware</strong><span>Recording UI resolves state/local law by contractor license state + project location. CA §632 shown for CA contractors; one-party states show lighter prompt; strictest wins for cross-state.</span></div>
+  </div>
+</div>
+
+<!-- ============ A · OPERATOR LANDING UPDATE ============ -->
+<div class="frame" id="operator-landing">
+  <div class="frame-label">A · OPERATOR LANDING — V1 WITH V1.5 INTAKE PREVIEW <span class="frame-note">mobile · owner role · Blackboard stream beneath The One Thing</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">Landing · baseline v2</div>
+        <div class="phone-sub-label">The One Thing + queue · unchanged <span class="phase-pill phase-v1">V1</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="screen-title-bar">
+              <div><div class="op-brand">KERF</div><div style="font-size:9px;color:var(--kerf-text-mute);letter-spacing:0.06em;">OWNER · CHRISTIAN</div></div>
+              <div class="op-avatar">CA</div>
+            </div>
+            <div class="screen-content">
+              <div class="mob-one-thing">
+                <div class="mob-ot-label">THE ONE THING</div>
+                <div class="mob-ot-title">Approve Patel kitchen change order — tile substitution +$840</div>
+                <div class="mob-ot-why">
+                  Crew is waiting on decision to stay on schedule. Pricing confirmed against V2 catalog. <b>Sourced · 3 refs.</b>
+                </div>
+                <div class="mob-ot-actions">
+                  <button class="mob-btn mob-btn-ghost">Defer</button>
+                  <button class="mob-btn mob-btn-primary">Approve</button>
+                </div>
+              </div>
+              <div class="mob-section-label">Queue · 4 items</div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-brand ggr">GGR</span><span class="mob-qi-title">Clem proposal · review</span><span class="mob-qi-time">11:00</span></div>
+                <div class="mob-qi-why">Pricing pinned · awaiting your lock</div>
+              </div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-brand val">VAL</span><span class="mob-qi-title">Coring cab RFQ</span><span class="mob-qi-time">1:30</span></div>
+                <div class="mob-qi-why">Shop capacity confirmed · 3wk lead</div>
+              </div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-brand hpg">HPG</span><span class="mob-qi-title">Moore mini-split scope</span><span class="mob-qi-time">2:45</span></div>
+                <div class="mob-qi-why">Rebate stack pending verification</div>
+              </div>
+            </div>
+            <div class="op-bottom">
+              <div class="op-mod-btn">☰</div>
+              <div class="op-mod-btn">💬</div>
+              <div class="op-voice-btn">◉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Landing · v3 updated</div>
+        <div class="phone-sub-label">+ Blackboard stream + V1.5 Intake button <span class="phase-pill phase-v1">V1</span> <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="screen-title-bar">
+              <div><div class="op-brand">KERF</div><div style="font-size:9px;color:var(--kerf-text-mute);letter-spacing:0.06em;">OWNER · CHRISTIAN</div></div>
+              <div class="op-avatar">CA</div>
+            </div>
+            <div class="screen-content">
+              <div class="mob-one-thing">
+                <div class="mob-ot-label">THE ONE THING</div>
+                <div class="mob-ot-title">Approve Patel tile sub +$840</div>
+                <div class="mob-ot-why">Crew waiting · pricing pinned to V2 catalog.</div>
+                <div class="mob-ot-actions">
+                  <button class="mob-btn mob-btn-ghost">Defer</button>
+                  <button class="mob-btn mob-btn-primary">Approve</button>
+                </div>
+              </div>
+
+              <div class="mob-intake-cta">
+                <div class="mob-intake-icon">+</div>
+                <div class="mob-intake-body">
+                  <div class="mob-intake-title">New Project Intake</div>
+                  <div class="mob-intake-sub">Form · voice · recorded · text</div>
+                </div>
+                <div style="font-size:20px;color:var(--hpg);">›</div>
+              </div>
+
+              <div class="mob-bb">
+                <div class="mob-bb-header"><span>◈ Blackboard · today</span><span>live</span></div>
+                <div class="mob-bb-row"><span class="mob-bb-time">9:22</span><span class="mob-bb-fact"><span class="mob-bb-actor">Estimator</span> · drafted Moore rebate stack (pending verify)</span></div>
+                <div class="mob-bb-row"><span class="mob-bb-time">9:07</span><span class="mob-bb-fact"><span class="mob-bb-actor">Carlos</span> · field check-in · Patel kitchen</span></div>
+                <div class="mob-bb-row"><span class="mob-bb-time">8:48</span><span class="mob-bb-fact"><span class="mob-bb-actor">Triage</span> · 2 items queued · 1 deferred</span></div>
+                <div class="mob-bb-row"><span class="mob-bb-time">8:14</span><span class="mob-bb-fact"><span class="mob-bb-actor">Proposal</span> · Clem pricing locked to GGR catalog</span></div>
+              </div>
+
+              <div class="mob-section-label">Queue · 3 items</div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-brand ggr">GGR</span><span class="mob-qi-title">Clem proposal · review</span><span class="mob-qi-time">11:00</span></div>
+              </div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-brand val">VAL</span><span class="mob-qi-title">Coring cab RFQ</span><span class="mob-qi-time">1:30</span></div>
+              </div>
+            </div>
+            <div class="op-bottom">
+              <div class="op-mod-btn">☰</div>
+              <div class="op-mod-btn">💬</div>
+              <div class="op-voice-btn">◉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ B · INTAKE MODE PICKER ============ -->
+<div class="frame" id="intake-mode-picker">
+  <div class="frame-label">B · PROJECT INTAKE — MODE PICKER <span class="frame-note">mobile · any team role · 4 capture modes</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+      <div class="phone-col">
+        <div class="phone-role-label">Mode picker</div>
+        <div class="phone-sub-label">"How do you want to capture this?" · agent drafts after capture · human approves <span class="phase-pill phase-v15">V1.5 MVP</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Landing</div>
+              <div class="intake-title">New Project Intake</div>
+              <div class="intake-sub">Choose a capture mode — switch anytime.</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="mode-list">
+                <div class="mode-card primary">
+                  <div class="mode-icon">🎤</div>
+                  <div class="mode-body">
+                    <div class="mode-title">Voice — I'll talk it through</div>
+                    <div class="mode-desc">Kerf asks 8 targeted questions. Answer out loud. Agent drafts the scope.</div>
+                    <div class="mode-meta">≈ 4 min · EN/ES · no recording</div>
+                  </div>
+                </div>
+                <div class="mode-card">
+                  <div class="mode-icon">👥</div>
+                  <div class="mode-body">
+                    <div class="mode-title">Recorded conversation</div>
+                    <div class="mode-desc">Record the client walkthrough. Kerf transcribes + drafts.</div>
+                    <div class="mode-meta">⚠ 2-party consent required (CA §632)</div>
+                  </div>
+                </div>
+                <div class="mode-card">
+                  <div class="mode-icon">📝</div>
+                  <div class="mode-body">
+                    <div class="mode-title">Form — I'll type the answers</div>
+                    <div class="mode-desc">Structured fields. Add photos + LiDAR inline. Best when you already know the scope.</div>
+                    <div class="mode-meta">≈ 6 min · structured</div>
+                  </div>
+                </div>
+                <div class="mode-card">
+                  <div class="mode-icon">✉</div>
+                  <div class="mode-body">
+                    <div class="mode-title">Text / paste</div>
+                    <div class="mode-desc">Paste email, text thread, or notes. Agent extracts scope.</div>
+                    <div class="mode-meta">fastest for inbound leads</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Who's filling this in?</div>
+        <div class="phone-sub-label">Same architecture works for owner, PM, sales, super. Role tags the capture. <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Landing</div>
+              <div class="intake-title">Before we start</div>
+              <div class="intake-sub">Tell Kerf who and where.</div>
+            </div>
+            <div class="screen-content">
+              <div class="form-field">
+                <div class="form-label">Your role on this intake</div>
+                <div class="form-chip-row">
+                  <div class="form-chip active">Owner</div>
+                  <div class="form-chip">PM</div>
+                  <div class="form-chip">Sales</div>
+                  <div class="form-chip">Super</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Brand</div>
+                <div class="form-chip-row">
+                  <div class="form-chip active">GGR</div>
+                  <div class="form-chip">Valle</div>
+                  <div class="form-chip">HPG</div>
+                  <div class="form-chip">Cross</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Client name</div>
+                <div class="form-input">Patel</div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Project address</div>
+                <div class="form-input form-input-placeholder">Tap to search or type…</div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Language preference</div>
+                <div class="form-chip-row">
+                  <div class="form-chip active">English</div>
+                  <div class="form-chip">Español</div>
+                </div>
+              </div>
+              <div style="padding:12px 16px;">
+                <button class="mob-btn mob-btn-primary" style="width:100%;">Start capture →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ C · INTAKE FORM ============ -->
+<div class="frame" id="intake-form">
+  <div class="frame-label">C · INTAKE — FORM MODE <span class="frame-note">structured fields · photos + LiDAR inline · Blackboard writes on each field</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+      <div class="phone-col">
+        <div class="phone-role-label">Form capture</div>
+        <div class="phone-sub-label">Structured fields · inline capture · saves to Blackboard as Draft <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Mode</div>
+              <div class="intake-title">Patel · kitchen</div>
+              <div class="intake-sub">Form mode · 4 of 8</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="form-field">
+                <div class="form-label">Scope summary</div>
+                <div class="form-input">Full kitchen remodel · cabinets + counters + appliances</div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Approx square footage</div>
+                <div class="form-input">185 sf</div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Timeline target</div>
+                <div class="form-chip-row">
+                  <div class="form-chip">ASAP</div>
+                  <div class="form-chip active">1–3 mo</div>
+                  <div class="form-chip">3–6 mo</div>
+                  <div class="form-chip">flexible</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Budget range</div>
+                <div class="form-chip-row">
+                  <div class="form-chip">&lt; $40k</div>
+                  <div class="form-chip">$40–80k</div>
+                  <div class="form-chip active">$80–150k</div>
+                  <div class="form-chip">$150k+</div>
+                </div>
+              </div>
+              <div class="form-field">
+                <div class="form-label">Capture room</div>
+              </div>
+              <div class="form-capture-row">
+                <div class="form-capture-btn active">
+                  <div class="icon">📷</div><div>Photos</div>
+                  <div class="badge">5</div>
+                </div>
+                <div class="form-capture-btn">
+                  <div class="icon">📐</div><div>LiDAR scan</div>
+                </div>
+                <div class="form-capture-btn">
+                  <div class="icon">🎤</div><div>Voice note</div>
+                </div>
+              </div>
+              <div style="padding:10px 16px 20px; display:flex; gap:8px;">
+                <button class="mob-btn mob-btn-ghost">Save draft</button>
+                <button class="mob-btn mob-btn-primary">Next →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Photos captured</div>
+        <div class="phone-sub-label">Auto-tagged by location · feeds Estimator agent <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Form</div>
+              <div class="intake-title">Photos · Patel kitchen</div>
+              <div class="intake-sub">5 captured · tap to annotate</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="photo-grid">
+                <div class="photo-tile p1"><div class="tag">north wall</div></div>
+                <div class="photo-tile p2"><div class="tag">island</div></div>
+                <div class="photo-tile p3"><div class="tag">sink wall</div></div>
+                <div class="photo-tile p4"><div class="tag">appliance</div></div>
+                <div class="photo-tile p5"><div class="tag">panel</div></div>
+                <div class="photo-tile add">+</div>
+              </div>
+              <div style="padding:10px 14px; font-size:11px; color:var(--kerf-text-dim); line-height:1.5;">
+                <span style="color:var(--kerf-amber); font-weight:600;">Kerf noticed:</span>
+                possible panel upgrade scope (HPG) — tagged for Triage after intake.
+              </div>
+              <div style="padding:10px 16px 20px; display:flex; gap:8px;">
+                <button class="mob-btn">+ LiDAR</button>
+                <button class="mob-btn mob-btn-primary">Continue →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ D · INTAKE VOICE ============ -->
+<div class="frame" id="intake-voice">
+  <div class="frame-label">D · INTAKE — VOICE MODE <span class="frame-note">Kerf asks; you answer · transcript live · agent drafts scope after last question</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">Voice · in progress</div>
+        <div class="phone-sub-label">Kerf speaks questions · bilingual · transcript builds live <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" style="background: radial-gradient(circle at 50% 30%, #1A1F26 0%, var(--kerf-dark) 70%);">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Mode</div>
+              <div class="intake-title">Voice · Patel kitchen</div>
+              <div class="intake-sub">Question 4 of 8 · EN</div>
+            </div>
+            <div class="voice-stage">
+              <div class="voice-orb"><div class="voice-orb-core">🎤</div></div>
+              <div class="voice-text-big">"What's the rough budget range?"</div>
+              <div class="voice-hint">Say a number, a range, or "skip" — Kerf will come back to it.</div>
+              <div class="voice-transcript">
+                <b>You:</b> "It's a full kitchen, probably eighty to one-fifty, they want to start in about six weeks."
+              </div>
+              <div style="display:flex; gap:8px; width:100%;">
+                <button class="mob-btn">Switch to form</button>
+                <button class="mob-btn mob-btn-primary">Next question →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Text mode</div>
+        <div class="phone-sub-label">Paste email/SMS · agent parses scope <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Mode</div>
+              <div class="intake-title">Text · paste</div>
+              <div class="intake-sub">Drop email, SMS thread, or notes.</div>
+            </div>
+            <div class="screen-content">
+              <div style="padding:14px; flex:1; display:flex; flex-direction:column; gap:10px;">
+                <div style="padding:12px; background:var(--kerf-panel); border:1px solid var(--kerf-border); border-radius:8px; font-size:11px; color:var(--kerf-text); line-height:1.5; flex:1; overflow-y:auto;">
+                  Hi Christian — we'd love a quote on our kitchen. It's about 185 sf, Shaker cabinets, stone counters. We'd like induction and probably need a panel upgrade. Looking at starting in 6 weeks, budget is $80–150k. — Anita Patel
+                </div>
+                <div style="padding:10px; background:rgba(212,146,58,0.08); border:1px solid var(--kerf-amber-dim); border-radius:8px; font-size:11px; line-height:1.5;">
+                  <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--kerf-amber); font-weight:700; margin-bottom:6px;">KERF EXTRACTED</div>
+                  Brand: <b>GGR + Valle + HPG (cross)</b><br>
+                  Scope: kitchen · 185 sf · cabinets · counters · induction · panel<br>
+                  Timeline: 6 wk · Budget: $80–150k
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="mob-btn">Edit</button>
+                  <button class="mob-btn mob-btn-primary">Accept →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ E · RECORDED CONSENT ============ -->
+<div class="frame" id="intake-consent">
+  <div class="frame-label">E · INTAKE — RECORDED CONVERSATION <span class="frame-note">jurisdiction-aware consent · CA shown as example · explicit double opt-in · recording indicator on at all times</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">Consent gate · CA example</div>
+        <div class="phone-sub-label">Jurisdiction-resolved · CA §632 two-party shown · one-party states render lighter · text-to-client optional <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Mode</div>
+              <div class="intake-title">Recording consent</div>
+              <div class="intake-sub">California is 2-party. Everyone confirms.</div>
+            </div>
+            <div class="screen-content">
+              <div style="margin:12px 16px 0; padding:8px 10px; background:var(--kerf-panel); border:1px solid var(--kerf-border); border-radius:6px; font-size:10px; color:var(--kerf-text-dim); display:flex; align-items:center; gap:6px;">
+                <span style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--kerf-amber); font-weight:700;">JURISDICTION</span>
+                <span style="color:var(--kerf-text);">California · CA Penal Code §632</span>
+                <span style="margin-left:auto; font-size:9px; color:var(--kerf-text-mute);">Two-party</span>
+              </div>
+              <div class="consent-card">
+                <div class="consent-title">⚠ ALL PARTIES MUST AGREE</div>
+                <div class="consent-body">
+                  Kerf will record this walkthrough for scope capture. The recording is stored in the project file and
+                  <b>only used to draft the estimate</b>. This state requires <b>every person on the recording to consent</b>.
+                </div>
+                <div class="consent-check checked"><div class="box">✓</div><div>I have read the disclosure to the client(s) out loud just now.</div></div>
+                <div class="consent-check checked"><div class="box">✓</div><div>The client(s) verbally agreed to be recorded.</div></div>
+                <div class="consent-check"><div class="box"></div><div>Client granted written consent (optional · text link to sign).</div></div>
+                <div class="consent-actions">
+                  <button class="mob-btn">Text consent link</button>
+                  <button class="mob-btn mob-btn-primary">Start recording</button>
+                </div>
+              </div>
+              <div style="padding:0 16px 16px; font-size:10px; color:var(--kerf-text-mute); line-height:1.5;">
+                Kerf auto-resolves recording law by contractor license state + project location. One-party states show a lighter single-consent prompt; strictest standard applies to cross-state recordings. Audit log: actor · role · jurisdiction · timestamp · consent type. Recording stored encrypted · retained per policy · deletable on request.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Recording in progress</div>
+        <div class="phone-sub-label">Persistent indicator · live captured items · speaker attribution <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Stop</div>
+              <div class="intake-title">Recording · Patel walkthrough</div>
+              <div class="intake-sub">Kitchen · island · pantry</div>
+            </div>
+            <div class="recording-stage">
+              <div class="rec-indicator"><div class="rec-dot"></div> REC · All parties consented</div>
+              <div class="rec-waveform">
+                <div class="rec-bar" style="height:30%"></div>
+                <div class="rec-bar" style="height:55%"></div>
+                <div class="rec-bar" style="height:75%"></div>
+                <div class="rec-bar" style="height:40%"></div>
+                <div class="rec-bar" style="height:85%"></div>
+                <div class="rec-bar" style="height:60%"></div>
+                <div class="rec-bar" style="height:35%"></div>
+                <div class="rec-bar" style="height:70%"></div>
+                <div class="rec-bar" style="height:50%"></div>
+                <div class="rec-bar" style="height:80%"></div>
+                <div class="rec-bar" style="height:45%"></div>
+                <div class="rec-bar" style="height:25%"></div>
+                <div class="rec-bar" style="height:65%"></div>
+                <div class="rec-bar" style="height:40%"></div>
+                <div class="rec-bar" style="height:75%"></div>
+              </div>
+              <div class="rec-timer">14:23</div>
+              <div class="rec-live-notes">
+                <span class="captured">Captured live</span>
+                <ul>
+                  <li>185 sf kitchen · north wall remove</li>
+                  <li>Shaker · white oak preference</li>
+                  <li>Quartz counters</li>
+                  <li>Induction range · panel upgrade flagged</li>
+                  <li>6-week start · flexible</li>
+                </ul>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="mob-btn mob-btn-danger">Stop</button>
+                <button class="mob-btn">Add photo</button>
+                <button class="mob-btn">+ LiDAR</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ F · PHOTOS + LIDAR ============ -->
+<div class="frame" id="intake-capture">
+  <div class="frame-label">F · PHOTOS + LIDAR SCAN <span class="frame-note">camera + structured photo prompts · LiDAR scan in progress · both feed Estimator</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">LiDAR · scan in progress</div>
+        <div class="phone-sub-label">Sweep room slowly · progress ring · point cloud building <span class="phase-pill phase-v20">V2.0 pulled fwd</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header" style="background:rgba(0,0,0,0.6);">
+              <div class="intake-back" style="color:#fff;">‹ Cancel</div>
+              <div class="intake-title" style="color:#fff;">LiDAR · kitchen</div>
+              <div class="intake-sub" style="color:var(--hpg);">Scanning · hold steady</div>
+            </div>
+            <div class="lidar-stage">
+              <div class="lidar-grid"></div>
+              <div class="lidar-overlay"></div>
+              <div class="lidar-hud">
+                <div class="lidar-hud-block">POINTS<br><b>143,802</b></div>
+                <div class="lidar-hud-block">COVERAGE<br><b>67%</b></div>
+              </div>
+              <div class="lidar-reticle"></div>
+              <div class="lidar-footer">
+                <div class="lidar-hint">Sweep the north wall next — missing ~3 ft near corner.</div>
+                <div class="lidar-progress"><div class="lidar-progress-fill"></div></div>
+                <div style="display:flex; gap:8px;">
+                  <button class="mob-btn mob-btn-ghost" style="color:#fff; border-color:rgba(255,255,255,0.2);">Pause</button>
+                  <button class="mob-btn mob-btn-primary">Done scanning</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Photo prompt list</div>
+        <div class="phone-sub-label">Estimator-aware · "these shots will unblock pricing" <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Form</div>
+              <div class="intake-title">Photos Kerf wants</div>
+              <div class="intake-sub">Pricing-critical angles first.</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div style="padding:10px 16px;">
+                <div class="mob-queue-item" style="border:none; border-bottom:1px solid var(--kerf-border); padding:10px 0;">
+                  <div class="mob-qi-row1"><span class="mob-qi-brand ggr">REQ</span><span class="mob-qi-title">Full north wall · wide</span><span class="mob-qi-time">✓</span></div>
+                  <div class="mob-qi-why">For demo + framing scope</div>
+                </div>
+                <div class="mob-queue-item" style="border:none; border-bottom:1px solid var(--kerf-border); padding:10px 0;">
+                  <div class="mob-qi-row1"><span class="mob-qi-brand ggr">REQ</span><span class="mob-qi-title">Ceiling height reference</span><span class="mob-qi-time">✓</span></div>
+                  <div class="mob-qi-why">For cab + soffit</div>
+                </div>
+                <div class="mob-queue-item" style="border:none; border-bottom:1px solid var(--kerf-border); padding:10px 0;">
+                  <div class="mob-qi-row1"><span class="mob-qi-brand hpg">HPG</span><span class="mob-qi-title">Electrical panel label</span><span class="mob-qi-time" style="color:var(--alert);">•</span></div>
+                  <div class="mob-qi-why">For panel upgrade triage</div>
+                </div>
+                <div class="mob-queue-item" style="border:none; border-bottom:1px solid var(--kerf-border); padding:10px 0;">
+                  <div class="mob-qi-row1"><span class="mob-qi-brand val">VAL</span><span class="mob-qi-title">Existing cabinet corner detail</span><span class="mob-qi-time" style="color:var(--alert);">•</span></div>
+                  <div class="mob-qi-why">For dimension verification</div>
+                </div>
+                <div class="mob-queue-item" style="border:none; padding:10px 0;">
+                  <div class="mob-qi-row1"><span class="mob-qi-brand ggr">OPT</span><span class="mob-qi-title">Natural light reference</span><span class="mob-qi-time">—</span></div>
+                </div>
+              </div>
+              <div style="padding:10px 16px 20px; display:flex; gap:8px;">
+                <button class="mob-btn">Skip remaining</button>
+                <button class="mob-btn mob-btn-primary">Open camera</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ G · LIDAR EDIT ============ -->
+<div class="frame" id="lidar-edit">
+  <div class="frame-label">G · LIDAR EDIT — VERIFY & CORRECT <span class="frame-note">raw scan + manual corrections · versioned · approve-before-Locked</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">Edit · plan view</div>
+        <div class="phone-sub-label">Raw scan in gray · your corrections in amber · version chain <span class="phase-pill phase-v20">V2.0</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header" style="background:rgba(0,0,0,0.5);">
+              <div class="intake-back" style="color:#fff;">‹ Scan</div>
+              <div class="intake-title" style="color:#fff;">Verify · Patel kitchen</div>
+              <div class="intake-sub"><span class="lidar-version-badge">v2 · edits pending</span></div>
+            </div>
+            <div class="lidar-edit-stage">
+              <div class="lidar-plan">
+                <svg class="lidar-plan-svg" viewBox="0 0 260 360" xmlns="http://www.w3.org/2000/svg">
+                  <!-- raw scan outline (gray) -->
+                  <path d="M 30 40 L 230 40 L 230 200 L 180 200 L 180 320 L 30 320 Z"
+                        fill="rgba(74,159,116,0.05)" stroke="rgba(144,151,161,0.6)" stroke-width="1.5" stroke-dasharray="3,3"/>
+                  <!-- user-corrected outline (amber) -->
+                  <path d="M 30 40 L 230 40 L 230 210 L 175 210 L 175 320 L 30 320 Z"
+                        fill="rgba(212,146,58,0.06)" stroke="var(--kerf-amber)" stroke-width="2"/>
+                  <!-- dimensions -->
+                  <line x1="30" y1="24" x2="230" y2="24" stroke="var(--kerf-text-dim)" stroke-width="1"/>
+                  <text x="130" y="18" text-anchor="middle" fill="var(--kerf-text-dim)" font-size="10">15' 2"</text>
+                  <line x1="244" y1="40" x2="244" y2="210" stroke="var(--kerf-text-dim)" stroke-width="1"/>
+                  <text x="250" y="130" text-anchor="start" fill="var(--kerf-text-dim)" font-size="10">12' 8"</text>
+                  <!-- island -->
+                  <rect x="80" y="170" width="80" height="40" fill="rgba(212,146,58,0.15)" stroke="var(--kerf-amber)" stroke-width="1.5" rx="2"/>
+                  <text x="120" y="194" text-anchor="middle" fill="var(--kerf-amber)" font-size="10">island</text>
+                  <!-- door -->
+                  <path d="M 60 320 Q 90 290 90 320" fill="none" stroke="var(--kerf-text-dim)" stroke-width="1"/>
+                  <!-- anchor dots (vertices) -->
+                  <circle cx="30" cy="40" r="4" fill="var(--kerf-amber)"/>
+                  <circle cx="230" cy="40" r="4" fill="var(--kerf-amber)"/>
+                  <circle cx="230" cy="210" r="4" fill="var(--kerf-amber)"/>
+                  <circle cx="175" cy="210" r="4" fill="var(--kerf-amber)" stroke="#fff" stroke-width="1"/>
+                  <circle cx="175" cy="320" r="4" fill="var(--kerf-amber)"/>
+                  <circle cx="30" cy="320" r="4" fill="var(--kerf-amber)"/>
+                  <!-- correction callout -->
+                  <text x="175" y="228" text-anchor="middle" fill="var(--kerf-amber)" font-size="9">+1' pushed in</text>
+                </svg>
+              </div>
+              <div class="lidar-edit-toolbar">
+                <div class="lidar-edit-tool active">✎</div>
+                <div class="lidar-edit-tool">✚</div>
+                <div class="lidar-edit-tool">↶</div>
+                <div class="lidar-edit-tool">📏</div>
+                <div class="lidar-edit-tool">⊞</div>
+              </div>
+              <div class="lidar-edit-footer">
+                <div class="lidar-measure-row"><span>Room area</span><b>192 sf <span class="draft-flag">+7 sf vs raw</span></b></div>
+                <div class="lidar-measure-row"><span>Ceiling</span><b>8' 9"</b></div>
+                <div class="lidar-measure-row"><span>Corrections</span><b>3 · 1 pending</b></div>
+                <div style="display:flex; gap:8px; margin-top:6px;">
+                  <button class="mob-btn mob-btn-ghost" style="color:#fff; border-color:rgba(255,255,255,0.2);">Save as v2</button>
+                  <button class="mob-btn mob-btn-primary">Approve scan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Version chain</div>
+        <div class="phone-sub-label">Every edit auditable · legal-defensibility trail <span class="phase-pill phase-v20">V2.0</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Edit</div>
+              <div class="intake-title">LiDAR history</div>
+              <div class="intake-sub">Patel kitchen · 3 versions</div>
+            </div>
+            <div class="screen-content">
+              <div style="padding:12px 16px;">
+                <div style="padding:10px; background:var(--kerf-panel); border:1px solid var(--kerf-amber-dim); border-radius:8px; margin-bottom:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:11px; font-weight:700;">v2 · approved</span>
+                    <span class="status-chip app">APPROVED</span>
+                  </div>
+                  <div style="font-size:10px; color:var(--kerf-text-dim); line-height:1.4;">Christian · 9:41 AM · 3 manual corrections · island dim +1'</div>
+                </div>
+                <div style="padding:10px; background:var(--kerf-panel); border:1px solid var(--kerf-border); border-radius:8px; margin-bottom:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:11px;">v1.1 · draft</span>
+                    <span class="status-chip draft">DRAFT</span>
+                  </div>
+                  <div style="font-size:10px; color:var(--kerf-text-dim); line-height:1.4;">Christian · 9:38 AM · wall re-anchor · partial</div>
+                </div>
+                <div style="padding:10px; background:var(--kerf-panel); border:1px solid var(--kerf-border); border-radius:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:11px;">v1.0 · raw scan</span>
+                    <span class="source-badge">SOURCE</span>
+                  </div>
+                  <div style="font-size:10px; color:var(--kerf-text-dim); line-height:1.4;">LiDAR device · 9:32 AM · 187,420 pts · immutable</div>
+                </div>
+              </div>
+              <div style="padding:0 16px 20px; font-size:10px; color:var(--kerf-text-mute); line-height:1.5;">
+                Every version is Blackboard-persisted. Raw scan never overwritten. Approve locks v2 into the project record.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ H · AGENT DRAFT REVIEW ============ -->
+<div class="frame" id="intake-draft">
+  <div class="frame-label">H · AGENT DRAFT REVIEW <span class="frame-note">Estimator drafts scope from capture · sourced lines · human approves before Locked</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">Agent-drafted scope</div>
+        <div class="phone-sub-label">Draft · Recommended · Approved · Locked lifecycle · every line sourced <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Capture</div>
+              <div class="intake-title">Patel kitchen · draft</div>
+              <div class="intake-sub"><span class="status-chip draft">DRAFT</span> Estimator · 9:43 AM</div>
+            </div>
+            <div class="draft-review">
+              <div class="draft-section">
+                <div class="draft-section-label">Scope summary</div>
+                <div class="draft-section-body">
+                  Full kitchen remodel · 192 sf (LiDAR v2). Demo + remove north wall bar. New Shaker white-oak cabinets, quartz counters, induction range, 200A panel upgrade.
+                </div>
+                <div class="draft-sources">
+                  <span class="src">voice Q1–Q8</span><span class="src">5 photos</span><span class="src">LiDAR v2</span>
+                </div>
+              </div>
+              <div class="draft-section">
+                <div class="draft-section-label">Cross-brand routing</div>
+                <div class="draft-row"><span>GGR · GC + finish</span><span>lead</span></div>
+                <div class="draft-row"><span>Valle · cabinets + counters</span><span>product</span></div>
+                <div class="draft-row"><span>HPG · panel + induction</span><span>scope add</span></div>
+              </div>
+              <div class="draft-section">
+                <div class="draft-section-label">Ballpark range · internal</div>
+                <div class="draft-row"><span>Low</span><span>$94k</span></div>
+                <div class="draft-row"><span>Mid</span><span>$118k</span></div>
+                <div class="draft-row"><span>High</span><span>$142k</span></div>
+                <div class="draft-sources" style="margin-top:6px;">
+                  <span class="src">GGR catalog v2.1</span><span class="src">Valle shop rate</span><span class="src">HPG SKU 81560</span>
+                </div>
+              </div>
+              <div class="draft-section">
+                <div class="draft-section-label">Flags</div>
+                <div class="draft-section-body" style="color:var(--warn);">
+                  • Panel photo label not clearly visible — HPG re-check needed before lock. <span class="draft-flag">verify</span><br>
+                  • Rebate stack (25C, TECH) pending verification. <span class="draft-flag">verify</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; padding: 10px 0 20px;">
+                <button class="mob-btn">Reopen</button>
+                <button class="mob-btn">Edit</button>
+                <button class="mob-btn mob-btn-primary">Recommend →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Lifecycle · state ladder</div>
+        <div class="phone-sub-label">How the draft becomes locked · human gates <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Draft</div>
+              <div class="intake-title">Scope lifecycle</div>
+              <div class="intake-sub">Patel kitchen intake</div>
+            </div>
+            <div class="screen-content">
+              <div style="padding:14px 16px;">
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <div style="padding:12px; border-left: 3px solid var(--warn); background:rgba(224,168,88,0.06); border-radius:0 8px 8px 0;">
+                    <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--warn); font-weight:700;">① DRAFT</div>
+                    <div style="font-size:11px; margin-top:2px;">Estimator wrote scope from capture. Not yet reviewed by human.</div>
+                  </div>
+                  <div style="padding:12px; border-left: 3px solid var(--ggr); background:rgba(74,127,176,0.06); border-radius:0 8px 8px 0;">
+                    <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ggr); font-weight:700;">② RECOMMENDED</div>
+                    <div style="font-size:11px; margin-top:2px;">Agent confidence ≥ threshold. Flags resolved. Sent to owner for approval.</div>
+                  </div>
+                  <div style="padding:12px; border-left: 3px solid var(--hpg); background:rgba(74,159,116,0.06); border-radius:0 8px 8px 0;">
+                    <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--hpg); font-weight:700;">③ APPROVED</div>
+                    <div style="font-size:11px; margin-top:2px;">Owner tapped Approve. Becomes the working scope for proposal build.</div>
+                  </div>
+                  <div style="padding:12px; border-left: 3px solid var(--kerf-amber); background:rgba(212,146,58,0.06); border-radius:0 8px 8px 0;">
+                    <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--kerf-amber); font-weight:700;">④ LOCKED</div>
+                    <div style="font-size:11px; margin-top:2px;">Proposal built + sent. Scope frozen. Changes now flow through Change Order Intake.</div>
+                  </div>
+                </div>
+                <div style="margin-top:16px; padding:10px; background:var(--kerf-panel); border:1px solid var(--kerf-border); border-radius:8px; font-size:10px; color:var(--kerf-text-dim); line-height:1.5;">
+                  <b style="color:var(--kerf-text);">Money-write gate:</b> nothing moves past Locked without Christian's explicit tap. No auto-send. No auto-invoice.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ I · CHANGE ORDER INTAKE ============ -->
+<div class="frame" id="co-intake">
+  <div class="frame-label">I · CHANGE ORDER INTAKE <span class="frame-note">same architecture · launched from project page · context pre-populated · camera + LiDAR primed</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">Project → CO button</div>
+        <div class="phone-sub-label">Launched from active project · role-agnostic <span class="phase-pill phase-v20">V2.0</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Projects</div>
+              <div class="intake-title">Patel kitchen · active</div>
+              <div class="intake-sub">GGR-2026-042 · day 18 of 54</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="moo-metric-row">
+                <div class="moo-metric"><div class="moo-metric-val">64%</div><div class="moo-metric-lbl">Complete</div></div>
+                <div class="moo-metric"><div class="moo-metric-val" style="color:var(--success);">On</div><div class="moo-metric-lbl">Schedule</div></div>
+                <div class="moo-metric"><div class="moo-metric-val">3</div><div class="moo-metric-lbl">COs</div></div>
+              </div>
+
+              <div class="mob-intake-cta" style="border-color:var(--val-dim); background: linear-gradient(180deg, rgba(168,121,74,0.12), rgba(168,121,74,0.03));">
+                <div class="mob-intake-icon" style="background:var(--val); color:#0A0D11;">±</div>
+                <div class="mob-intake-body">
+                  <div class="mob-intake-title">New Change Order</div>
+                  <div class="mob-intake-sub">Same intake · context carries over</div>
+                </div>
+                <div style="font-size:20px;color:var(--val);">›</div>
+              </div>
+
+              <div class="mob-section-label">Recent activity</div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-brand ggr">GGR</span><span class="mob-qi-title">Tile sub · +$840</span><span class="mob-qi-time">approved</span></div>
+                <div class="mob-qi-why">CO-003 · you approved 2h ago</div>
+              </div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-brand hpg">HPG</span><span class="mob-qi-title">Panel upgrade pulled fwd</span><span class="mob-qi-time">yesterday</span></div>
+                <div class="mob-qi-why">CO-002 · homeowner initialed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">CO intake · context primed</div>
+        <div class="phone-sub-label">Project + client + catalog prefilled · shorter form · camera/LiDAR 1-tap <span class="phase-pill phase-v20">V2.0</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="co-header-context">
+              <div class="co-ctx-label">CHANGE ORDER FOR</div>
+              <div class="co-ctx-project">Patel kitchen · GGR-2026-042</div>
+              <div class="co-ctx-meta">day 18 of 54 · Jerry super · Valle cab installed</div>
+            </div>
+            <div class="intake-header" style="border-bottom:none; padding-top:8px;">
+              <div class="intake-title">What changed?</div>
+              <div class="intake-sub">Voice, photos, or type it. LiDAR ready if geometry shifted.</div>
+            </div>
+            <div class="screen-content">
+              <div class="form-capture-row">
+                <div class="form-capture-btn active"><div class="icon">🎤</div><div>Voice</div></div>
+                <div class="form-capture-btn"><div class="icon">📷</div><div>Photo</div></div>
+                <div class="form-capture-btn"><div class="icon">📐</div><div>LiDAR</div></div>
+                <div class="form-capture-btn"><div class="icon">📝</div><div>Type</div></div>
+              </div>
+
+              <div style="margin: 6px 14px; padding:12px; background:rgba(212,146,58,0.06); border:1px solid var(--kerf-amber-dim); border-radius:10px;">
+                <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--kerf-amber); font-weight:700; margin-bottom:6px;">KERF ALREADY KNOWS</div>
+                <div style="font-size:10px; color:var(--kerf-text-dim); line-height:1.6;">
+                  · GGR-2026-042 scope + catalog pricing<br>
+                  · Current schedule + crew on-site<br>
+                  · 2 prior COs approved ($1,240 total)<br>
+                  · Homeowner contact + signing preference
+                </div>
+              </div>
+
+              <div class="form-field">
+                <div class="form-label">Change type</div>
+                <div class="form-chip-row">
+                  <div class="form-chip active">Material sub</div>
+                  <div class="form-chip">Scope add</div>
+                  <div class="form-chip">Scope remove</div>
+                  <div class="form-chip">Timeline</div>
+                </div>
+              </div>
+              <div style="padding:10px 16px 20px; display:flex; gap:8px;">
+                <button class="mob-btn">Save draft</button>
+                <button class="mob-btn mob-btn-primary">Capture →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">CO draft · price delta</div>
+        <div class="phone-sub-label">Estimator computes delta · homeowner signs · Locked triggers invoice queue <span class="phase-pill phase-v20">V2.0</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Capture</div>
+              <div class="intake-title">CO-004 · draft</div>
+              <div class="intake-sub"><span class="status-chip draft">DRAFT</span> Estimator · 9:44 AM</div>
+            </div>
+            <div class="draft-review">
+              <div class="draft-section">
+                <div class="draft-section-label">Change</div>
+                <div class="draft-section-body">Substitute quartz "Calacatta Nuvo" → "Calacatta Gold" on island only. 38 sf. Client preference after slab view.</div>
+                <div class="draft-sources"><span class="src">voice · 1:12</span><span class="src">2 photos</span></div>
+              </div>
+              <div class="draft-section">
+                <div class="draft-section-label">Price delta</div>
+                <div class="draft-row"><span>Material · +$9/sf</span><span>+$342</span></div>
+                <div class="draft-row"><span>Fabricator re-quote fee</span><span>+$180</span></div>
+                <div class="draft-row" style="font-weight:700; border-top:1px solid var(--kerf-border); padding-top:6px; margin-top:4px;"><span>Total CO-004</span><span>+$522</span></div>
+              </div>
+              <div class="draft-section">
+                <div class="draft-section-label">Schedule impact</div>
+                <div class="draft-section-body">+ 4 business days on template slot. No critical-path impact. <span class="draft-flag">pending fab confirm</span></div>
+              </div>
+              <div class="draft-section">
+                <div class="draft-section-label">Signing</div>
+                <div class="draft-section-body" style="font-size:11px;">Under $2k ceiling · single-party signing OK per contract §7.2. Homeowner text link ready.</div>
+              </div>
+              <div style="display:flex; gap:8px; padding: 10px 0 20px;">
+                <button class="mob-btn">Edit</button>
+                <button class="mob-btn mob-btn-primary">Send for signature</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ J · APPROVAL-GATE AUTHORING ============ -->
+<div class="frame" id="approval-authoring">
+  <div class="frame-label">J · APPROVAL-GATE AUTHORING · VOICE-FIRST <span class="frame-note">at every permission threshold · approver can revise prices + lines · voice primary · multimodal fallback · diffed + logged</span></div>
+  <div class="frame-body">
+
+    <div style="padding: 0 20px 16px; max-width: 820px; margin: 0 auto; font-size: 12px; color: var(--kerf-text-dim); line-height: 1.6;">
+      <b style="color:var(--kerf-amber);">Principle:</b> approval ≠ passive button. Whenever a CO, cost, or scope change hits a permission gate
+      (owner ceiling, MoO threshold, insurance-restoration line, rebate-verified item), the approver gets a first-class authoring surface:
+      <b>talk the edit</b>, Kerf redlines it, approver confirms. Every author action is diffed, reason-logged, Blackboard-persisted.
+      Multimodal fallback: typed edit, camera for a doc/receipt, or resurface voice mode mid-edit.
+    </div>
+
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">① Approval gate · review</div>
+        <div class="phone-sub-label">Above threshold · "author edits" is the primary non-approve action <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header" style="border-bottom:1px solid var(--alert);">
+              <div class="intake-back">‹ Queue</div>
+              <div class="intake-title">Approval required</div>
+              <div class="intake-sub" style="color:var(--alert);">⚠ $2,840 · above $2k ceiling · owner only</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div style="margin:10px 14px; padding:10px; background:rgba(207,91,91,0.08); border:1px solid var(--alert); border-radius:8px; font-size:11px; line-height:1.5;">
+                <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--alert); font-weight:700; margin-bottom:4px;">PERMISSION GATE</div>
+                This CO crosses the <b>$2k auto-approve ceiling</b>. Homeowner can't single-sign. You can approve as-is, revise the numbers, or reject.
+              </div>
+
+              <div class="draft-review" style="padding:0 14px 0;">
+                <div class="draft-section">
+                  <div class="draft-section-label">Moore · CO-002 · panel pull-fwd</div>
+                  <div class="draft-section-body">Pull 200A panel upgrade forward to week 2 instead of week 5. HPG sub has Thu/Fri window. Rebate paperwork ready.</div>
+                </div>
+                <div class="draft-section">
+                  <div class="draft-section-label">Price delta · draft</div>
+                  <div class="draft-row"><span>Expedite fee · HPG sub</span><span>+$640</span></div>
+                  <div class="draft-row"><span>Panel + permit · full scope</span><span>+$2,200</span></div>
+                  <div class="draft-row" style="font-weight:700; border-top:1px solid var(--kerf-border); padding-top:6px; margin-top:4px;"><span>Total CO-002</span><span>+$2,840</span></div>
+                </div>
+              </div>
+
+              <div style="padding: 8px 14px 20px; display:flex; flex-direction:column; gap:8px;">
+                <button class="mob-btn mob-btn-primary" style="padding:12px; font-size:12px;">🎤 &nbsp; Author edits · voice</button>
+                <div style="display:flex; gap:6px;">
+                  <button class="mob-btn">Edit inline</button>
+                  <button class="mob-btn">📷 Doc</button>
+                  <button class="mob-btn">Approve as-is</button>
+                </div>
+                <button class="mob-btn mob-btn-ghost" style="color:var(--alert); border-color:var(--alert);">Reject CO</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">② Voice authoring · live diff</div>
+        <div class="phone-sub-label">"Drop the expedite fee to 400, add 200 to the permit line" → Kerf redlines · confirm per line <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" style="background: radial-gradient(circle at 50% 20%, #1A1F26 0%, var(--kerf-dark) 70%);">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Review</div>
+              <div class="intake-title">Authoring · CO-002</div>
+              <div class="intake-sub"><span class="rec-indicator" style="font-size:10px; padding:3px 8px;"><div class="rec-dot"></div> LISTENING</span></div>
+            </div>
+
+            <div style="flex:1; display:flex; flex-direction:column; padding:12px 14px; gap:10px; overflow-y:auto;">
+
+              <div class="voice-transcript">
+                <b>You just said:</b><br>"Drop the expedite fee to four hundred, and add two hundred to the permit line for the plan-check retainer."
+              </div>
+
+              <div style="padding:10px; background:var(--kerf-panel); border:1px solid var(--kerf-amber-dim); border-radius:8px;">
+                <div style="font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--kerf-amber); font-weight:700; margin-bottom:6px;">KERF PROPOSED EDITS · 2</div>
+
+                <div style="padding:6px 0; border-bottom:1px solid var(--kerf-border); font-size:11px;">
+                  <div style="color:var(--kerf-text-dim); margin-bottom:2px;">Expedite fee · HPG sub</div>
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <span style="text-decoration: line-through; color:var(--alert);">+$640</span>
+                    <span style="color:var(--kerf-text-mute);">→</span>
+                    <span style="color:var(--success); font-weight:700;">+$400</span>
+                    <div style="margin-left:auto; display:flex; gap:4px;">
+                      <button class="mob-btn" style="padding:3px 8px; font-size:10px;">✕</button>
+                      <button class="mob-btn mob-btn-primary" style="padding:3px 8px; font-size:10px;">✓</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="padding:6px 0; font-size:11px;">
+                  <div style="color:var(--kerf-text-dim); margin-bottom:2px;">Panel + permit <span class="draft-flag">renamed</span></div>
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <span style="text-decoration: line-through; color:var(--alert);">+$2,200</span>
+                    <span style="color:var(--kerf-text-mute);">→</span>
+                    <span style="color:var(--success); font-weight:700;">+$2,400</span>
+                    <div style="margin-left:auto; display:flex; gap:4px;">
+                      <button class="mob-btn" style="padding:3px 8px; font-size:10px;">✕</button>
+                      <button class="mob-btn mob-btn-primary" style="padding:3px 8px; font-size:10px;">✓</button>
+                    </div>
+                  </div>
+                  <div style="font-size:10px; color:var(--kerf-text-dim); margin-top:3px; font-style: italic;">+ "plan-check retainer" noted on line</div>
+                </div>
+              </div>
+
+              <div style="padding:8px; background:rgba(74,159,116,0.06); border:1px dashed var(--hpg-dim); border-radius:6px; font-size:10px; color:var(--kerf-text-dim); line-height:1.5;">
+                <b style="color:var(--hpg);">Reason prompt (optional):</b> say why you changed these — Kerf logs it to the Blackboard trail for later audit.
+              </div>
+
+              <div class="voice-orb" style="width:64px; height:64px; align-self:center;">
+                <div class="voice-orb-core" style="width:44px; height:44px; font-size:16px;">🎤</div>
+              </div>
+            </div>
+
+            <div class="op-bottom">
+              <button class="mob-btn mob-btn-ghost">Cancel edits</button>
+              <button class="mob-btn mob-btn-primary">Apply all · continue →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">③ Post-edit review · approve</div>
+        <div class="phone-sub-label">Redline preserved · reason logged · Blackboard-auditable <span class="phase-pill phase-v15">V1.5</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Author</div>
+              <div class="intake-title">Revised · CO-002</div>
+              <div class="intake-sub"><span class="status-chip rec">RECOMMENDED</span> your edits · 9:46 AM</div>
+            </div>
+            <div class="draft-review">
+              <div class="draft-section">
+                <div class="draft-section-label">Revised price delta</div>
+                <div class="draft-row"><span>Expedite fee · HPG sub</span><span><span style="text-decoration:line-through; color:var(--kerf-text-mute); font-size:10px;">$640</span> &nbsp;<b>$400</b></span></div>
+                <div class="draft-row"><span>Panel + permit + plan-check</span><span><span style="text-decoration:line-through; color:var(--kerf-text-mute); font-size:10px;">$2,200</span> &nbsp;<b>$2,400</b></span></div>
+                <div class="draft-row" style="font-weight:700; border-top:1px solid var(--kerf-border); padding-top:6px; margin-top:4px;"><span>Total CO-002</span><span><span style="text-decoration:line-through; color:var(--kerf-text-mute); font-size:10px;">$2,840</span> &nbsp;<b style="color:var(--success);">$2,800</b></span></div>
+              </div>
+
+              <div class="draft-section">
+                <div class="draft-section-label">Reason log</div>
+                <div class="draft-section-body" style="font-size:11px; font-style: italic; color:var(--kerf-text-dim);">
+                  "Dropped expedite because HPG owes us one from last month. Added $200 to permit line to cover the plan-check retainer that came through this week." <br>
+                  <span style="font-size:10px; color:var(--kerf-text-mute); font-style:normal;">— voice · you · 9:46 AM · 18 sec · transcript saved</span>
+                </div>
+              </div>
+
+              <div class="draft-section">
+                <div class="draft-section-label">Audit chain</div>
+                <div class="draft-sources">
+                  <span class="src">Estimator draft · 9:32</span>
+                  <span class="src">Voice edit · 9:46</span>
+                  <span class="src">Owner approve · pending</span>
+                </div>
+              </div>
+
+              <div class="draft-section">
+                <div class="draft-section-label">Permission state</div>
+                <div class="draft-section-body" style="font-size:11px; color:var(--kerf-text);">
+                  $2,800 still above single-sign ceiling. Homeowner will sign + initial each edit. Kerf drafted email with redline + reason. <span class="draft-flag">owner approve unlocks send</span>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:8px; padding: 10px 0 20px;">
+                <button class="mob-btn">Reopen edits</button>
+                <button class="mob-btn mob-btn-primary">Approve · send to homeowner</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="max-width: 820px; margin: 8px auto 0; padding: 12px; background: var(--kerf-panel); border: 1px dashed var(--future-dim); border-radius: 8px; font-size: 11px; color: var(--kerf-text-dim); line-height: 1.6;">
+      <b style="color:var(--future);">Where this surface appears:</b>
+      (a) CO approval gates · any threshold; (b) proposal pricing lock · owner final review; (c) insurance-restoration line authoring (Patel fire pattern — additive 10+10 O&P); (d) MoO threshold escalations (V2.0+); (e) rebate-stack edits before proposal lock.
+      <b style="color:var(--kerf-text);">Same engine, every time.</b> Voice first. Multimodal fallback always one tap away. Redline + reason log + Blackboard persistence are non-negotiable.
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ K · MoO CoS ============ -->
+<div class="frame" id="moo-cos">
+  <div class="frame-label">K · MANAGER OF OPERATIONS · CHIEF OF STAFF PREVIEW <span class="frame-note">role-aware CoS · scaling role · NOT V1 · shown here so we don't box it out of the architecture</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">MoO · morning brief</div>
+        <div class="phone-sub-label">Throughput · crew · schedule focus · not owner-shaped <span class="phase-pill phase-dir">V2.0+ direction</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="future-banner">
+              <b>PREVIEW · NOT V1 BUILD</b>
+              Shown so V1 architecture doesn't accidentally paint MoO into a corner.
+            </div>
+            <div class="screen-title-bar">
+              <div>
+                <div class="op-brand" style="color:var(--future);">KERF · MoO</div>
+                <div style="font-size:9px;color:var(--kerf-text-mute);letter-spacing:0.06em;">MANAGER OF OPERATIONS · MARIA</div>
+              </div>
+              <div class="op-avatar" style="background:var(--future-dim);">MR</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="moo-card hot">
+                <div class="moo-card-label">HOT · TODAY</div>
+                <div class="moo-card-title">Panel upgrade on Moore slipped 2d</div>
+                <div class="moo-card-sub">HPG sub double-booked · needs re-slot or alt vendor. Kerf found 2 options.</div>
+              </div>
+              <div class="moo-metric-row">
+                <div class="moo-metric"><div class="moo-metric-val">8</div><div class="moo-metric-lbl">Active jobs</div></div>
+                <div class="moo-metric"><div class="moo-metric-val">3</div><div class="moo-metric-lbl">Crews out</div></div>
+                <div class="moo-metric"><div class="moo-metric-val">92%</div><div class="moo-metric-lbl">On time</div></div>
+              </div>
+              <div class="moo-card ok">
+                <div class="moo-card-label">ON TRACK</div>
+                <div class="moo-card-title">Patel kitchen · day 18/54</div>
+                <div class="moo-card-sub">64% done · cab install complete · counter template tomorrow.</div>
+              </div>
+              <div class="moo-card">
+                <div class="moo-card-label">DECISION QUEUED · OWNER</div>
+                <div class="moo-card-title">Clem contract · pricing lock</div>
+                <div class="moo-card-sub">Estimator recommended · awaiting Christian tap. Not yours to approve.</div>
+              </div>
+              <div class="moo-card">
+                <div class="moo-card-label">CREW · THIS WEEK</div>
+                <div class="moo-card-title">Jose · 3 sites · 1 conflict</div>
+                <div class="moo-card-sub">Thursday AM overlap · Kerf recommends swap to Miguel.</div>
+              </div>
+            </div>
+            <div class="op-bottom">
+              <div class="op-mod-btn">☰</div>
+              <div class="op-mod-btn">👥</div>
+              <div class="op-mod-btn">📅</div>
+              <div class="op-voice-btn" style="background:var(--future);">◉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">PM · field super CoS</div>
+        <div class="phone-sub-label">Site-scoped · crew + RFI + deliveries <span class="phase-pill phase-dir">V2.1β direction</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="future-banner">
+              <b>PREVIEW · V2.1 BETA SHAPE</b>
+              Field super on-site view. NOT V1.
+            </div>
+            <div class="screen-title-bar">
+              <div>
+                <div class="op-brand" style="color:var(--future);">KERF · Super</div>
+                <div style="font-size:9px;color:var(--kerf-text-mute);letter-spacing:0.06em;">JERRY · PATEL KITCHEN</div>
+              </div>
+              <div class="op-avatar" style="background:var(--future-dim);">JR</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="moo-card hot">
+                <div class="moo-card-label">BLOCKER · NOW</div>
+                <div class="moo-card-title">Counter template crew ETA 11:00</div>
+                <div class="moo-card-sub">Island dim needs LiDAR v2 confirmed before they arrive.</div>
+              </div>
+              <div class="moo-card">
+                <div class="moo-card-label">TODAY</div>
+                <div class="moo-card-title">3 deliveries · 2 inspections</div>
+                <div class="moo-card-sub">Cab trim · 10:30 · quartz slab · 2:15 · inspector · 3:30.</div>
+              </div>
+              <div class="moo-card">
+                <div class="moo-card-label">START A CHANGE ORDER</div>
+                <div class="moo-card-title">CO button · camera primed</div>
+                <div class="moo-card-sub">Snap, talk, done. Homeowner signs on your phone.</div>
+              </div>
+              <div class="moo-card">
+                <div class="moo-card-label">RFI</div>
+                <div class="moo-card-title">"Is reveal 1/8" or 3/16"?"</div>
+                <div class="moo-card-sub">Jose · 8:52. Kerf drafted answer from Valle shop standard.</div>
+              </div>
+            </div>
+            <div class="op-bottom">
+              <div class="op-mod-btn">📋</div>
+              <div class="op-mod-btn">💬</div>
+              <div class="op-mod-btn">±</div>
+              <div class="op-voice-btn" style="background:var(--future);">◉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ L · FINTECH ============ -->
+<div class="frame" id="fintech">
+  <div class="frame-label">L · FINTECH TOUCHPOINTS · PARTNER-FIRST <span class="frame-note">homeowner pay (V2.0) · purchasing (V2.0) · crew cards (V2.1) · job cards (V2.1 partner) · financing (V2.1)</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <div class="phone-col">
+        <div class="phone-role-label">Homeowner pay embed</div>
+        <div class="phone-sub-label">Kerf surfaces status · partner handles rails · human approves release <span class="phase-pill phase-v20">V2.0 partner</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Patel</div>
+              <div class="intake-title">Payments</div>
+              <div class="intake-sub">Contract $118,400 · 3 draws</div>
+            </div>
+            <div class="screen-content">
+              <div class="fin-touch">
+                <div class="fin-touch-head">
+                  <div class="fin-touch-title">Draw 2 · due $38,800</div>
+                  <div class="fin-touch-tag">PARTNER</div>
+                </div>
+                <div class="fin-amount">$38,800<span class="cents">.00</span></div>
+                <div class="fin-sub">ACH · check · card · homeowner chose · Kerf never holds funds</div>
+                <div class="fin-bar"><div class="fin-bar-fill" style="width:40%;"></div></div>
+                <div style="font-size:10px; color:var(--kerf-text-dim); margin-bottom:8px;">Collected to date: $47,360 of $118,400 (40%)</div>
+                <div style="display:flex; gap:6px;">
+                  <button class="mob-btn">View ledger</button>
+                  <button class="mob-btn mob-btn-primary">Send link</button>
+                </div>
+              </div>
+              <div class="fin-touch">
+                <div class="fin-touch-head">
+                  <div class="fin-touch-title">Financing offer</div>
+                  <div class="fin-touch-tag">PARTNER-FOREVER</div>
+                </div>
+                <div style="font-size:11px; color:var(--kerf-text-dim); line-height:1.5;">Homeowner may qualify for 0% promo via partner. Never Kerf-underwritten.</div>
+                <div style="margin-top:8px;">
+                  <button class="mob-btn" style="width:100%;">Offer to homeowner</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Crew card · spend alert</div>
+        <div class="phone-sub-label">Kerf sees partner transactions · flags · auto-codes <span class="phase-pill phase-v21">V2.1 partner</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Cards</div>
+              <div class="intake-title">Crew spend · today</div>
+              <div class="intake-sub">5 cards · $3,842 today</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="fin-touch" style="border-color:var(--alert); background:rgba(207,91,91,0.05);">
+                <div class="fin-touch-head">
+                  <div class="fin-touch-title" style="color:var(--alert);">⚠ Flag · unusual vendor</div>
+                  <div class="fin-touch-tag">ALERT</div>
+                </div>
+                <div style="font-size:11px; color:var(--kerf-text); line-height:1.5; margin-bottom:6px;">
+                  <b>Jerry · card 4821 · $412 at "LOWE'S #2148"</b><br>
+                  First time at this store. Valid purchase likely, but confirm.
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button class="mob-btn">Decline</button>
+                  <button class="mob-btn mob-btn-primary">Looks right</button>
+                </div>
+              </div>
+              <div class="mob-section-label">Today · 5 cards</div>
+              <div style="padding: 0 12px 12px;">
+                <div class="fin-crew-row"><span class="fin-crew-name">Jerry · 4821</span><span class="fin-crew-amt alert">$1,206</span></div>
+                <div class="fin-crew-row"><span class="fin-crew-name">Jose · 4822</span><span class="fin-crew-amt">$892</span></div>
+                <div class="fin-crew-row"><span class="fin-crew-name">Miguel · 4823</span><span class="fin-crew-amt">$684</span></div>
+                <div class="fin-crew-row"><span class="fin-crew-name">Carlos · 4824</span><span class="fin-crew-amt">$580</span></div>
+                <div class="fin-crew-row"><span class="fin-crew-name">Luis · 4825</span><span class="fin-crew-amt">$480</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone-role-label">Job card · budget view</div>
+        <div class="phone-sub-label">Per-project spend envelope · job-scoped purchasing <span class="phase-pill phase-v21">V2.1 partner · V3.0+ in-house?</span></div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="intake-header">
+              <div class="intake-back">‹ Patel</div>
+              <div class="intake-title">Job card · Patel</div>
+              <div class="intake-sub">GGR-2026-042 · budget $12,400</div>
+            </div>
+            <div class="screen-content" style="overflow-y:auto;">
+              <div class="fin-touch">
+                <div class="fin-touch-head">
+                  <div class="fin-touch-title">Materials envelope</div>
+                  <div class="fin-touch-tag">PARTNER</div>
+                </div>
+                <div class="fin-amount">$8,240<span class="cents"> / $12,400</span></div>
+                <div class="fin-sub">66% used · on track · 18 days left in phase</div>
+                <div class="fin-bar"><div class="fin-bar-fill warn" style="width:66%;"></div></div>
+              </div>
+              <div class="mob-section-label">Recent charges · auto-coded</div>
+              <div style="padding: 0 12px 12px;">
+                <div class="fin-crew-row"><span class="fin-crew-name">Ferguson · plumbing</span><span class="fin-crew-amt">$842</span></div>
+                <div class="fin-crew-row"><span class="fin-crew-name">Home Depot</span><span class="fin-crew-amt">$418</span></div>
+                <div class="fin-crew-row"><span class="fin-crew-name">Dunn-Edwards</span><span class="fin-crew-amt">$302</span></div>
+                <div class="fin-crew-row"><span class="fin-crew-name">Valle shop xfer</span><span class="fin-crew-amt">$1,640</span></div>
+              </div>
+              <div style="margin: 0 12px; padding:10px; background:var(--kerf-panel); border:1px solid var(--future-dim); border-radius:8px; font-size:10px; color:var(--future); line-height:1.5;">
+                <b>V3.0+ decision gate:</b> evaluate bringing job-cards in-house only after V2.2 GA + positive unit economics on partner volume. No financing in-house, ever.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ M · DESKTOP ============ -->
+<div class="frame" id="desktop">
+  <div class="frame-label">M · DESKTOP VIEWS <span class="frame-note">office tandem · intake queue · MoO dashboard preview · not V1</span></div>
+  <div class="frame-body">
+
+    <div style="margin-bottom: 28px;">
+      <div style="font-size:11px; color:var(--kerf-amber); letter-spacing:0.08em; text-transform:uppercase; font-weight:700; margin-bottom:8px;">L.1 · Intake queue · office desktop <span class="phase-pill phase-v15">V1.5</span></div>
+      <div class="desktop-frame">
+        <div class="desk-topbar">
+          <div class="desk-brand">KERF</div>
+          <div class="desk-search">⌕ &nbsp; search projects, clients, intake drafts…</div>
+          <div class="desk-user"><span>Christian · Owner</span><div class="op-avatar">CA</div></div>
+        </div>
+        <div class="desk-body">
+          <div class="desk-sidebar">
+            <div class="desk-nav-group">Today</div>
+            <div class="desk-nav-item">◉ The One Thing</div>
+            <div class="desk-nav-item">▣ Blackboard</div>
+            <div class="desk-nav-item active">+ Intake queue</div>
+            <div class="desk-nav-item">⟐ Triage</div>
+            <div class="desk-nav-group">Projects</div>
+            <div class="desk-nav-item">⎈ Active · 8</div>
+            <div class="desk-nav-item">⎈ Proposals · 3</div>
+            <div class="desk-nav-item">⎈ Locked · 41</div>
+            <div class="desk-nav-group">Money</div>
+            <div class="desk-nav-item">$ Homeowner pay</div>
+            <div class="desk-nav-item">$ Crew cards</div>
+            <div class="desk-nav-item">$ Job cards</div>
+          </div>
+          <div class="desk-main">
+            <div class="desk-h1">Intake queue</div>
+            <div class="desk-sub">7 captures · 3 drafts · 2 recommended · awaiting owner approval</div>
+            <div class="desk-metric-row">
+              <div class="desk-metric">
+                <div class="desk-metric-val">7</div>
+                <div class="desk-metric-lbl">Active captures</div>
+                <div class="desk-metric-delta">+3 this week</div>
+              </div>
+              <div class="desk-metric">
+                <div class="desk-metric-val">$412k</div>
+                <div class="desk-metric-lbl">Pipeline est. ballpark</div>
+                <div class="desk-metric-delta">+$118k vs 30d</div>
+              </div>
+              <div class="desk-metric">
+                <div class="desk-metric-val">11m</div>
+                <div class="desk-metric-lbl">Avg time · capture → recommended</div>
+                <div class="desk-metric-delta">-4m vs baseline</div>
+              </div>
+              <div class="desk-metric">
+                <div class="desk-metric-val">97%</div>
+                <div class="desk-metric-lbl">Sourced lines</div>
+              </div>
+            </div>
+            <table class="intake-desk-table">
+              <thead>
+                <tr><th>Client</th><th>Brand</th><th>Mode</th><th>Captured</th><th>Ballpark</th><th>State</th><th>Flags</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Patel · kitchen</b></td><td>GGR + VAL + HPG</td><td>voice · LiDAR v2</td><td>9:41 AM · Christian</td><td>$94–142k</td><td><span class="status-chip draft">DRAFT</span></td><td><span class="draft-flag">rebate</span> <span class="draft-flag">panel</span></td></tr>
+                <tr><td><b>Moore · panel + mini-split</b></td><td>HPG</td><td>recorded · 14m</td><td>yest · Jerry</td><td>$18–22k</td><td><span class="status-chip rec">RECOMMEND</span></td><td><span class="draft-flag">consent log ✓</span></td></tr>
+                <tr><td><b>Clem · primary bath</b></td><td>GGR + VAL</td><td>form</td><td>Mon · Christian</td><td>$58–74k</td><td><span class="status-chip rec">RECOMMEND</span></td><td></td></tr>
+                <tr><td><b>Coring · kitchen cabs</b></td><td>VAL</td><td>text · email</td><td>Mon · Maria</td><td>$34k</td><td><span class="status-chip app">APPROVED</span></td><td></td></tr>
+                <tr><td><b>Sanchez · whole-house HVAC</b></td><td>HPG</td><td>voice</td><td>Fri · Christian</td><td>$26–31k</td><td><span class="status-chip draft">DRAFT</span></td><td><span class="draft-flag">SGIP check</span></td></tr>
+                <tr><td><b>Nguyen · ADU feasibility</b></td><td>GGR</td><td>form · photos</td><td>Fri · sales</td><td>$180–240k</td><td><span class="status-chip draft">DRAFT</span></td><td><span class="draft-flag">plan check</span></td></tr>
+                <tr><td><b>Rivera · pantry add</b></td><td>GGR + VAL</td><td>voice</td><td>Thu · PM</td><td>$12–16k</td><td><span class="status-chip app">APPROVED</span></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 28px;">
+      <div style="font-size:11px; color:var(--kerf-amber); letter-spacing:0.08em; text-transform:uppercase; font-weight:700; margin-bottom:8px;">L.2 · MoO dashboard preview · V2.0+ direction <span class="phase-pill phase-dir">V2.0+ direction</span></div>
+      <div class="desktop-frame">
+        <div class="desk-topbar" style="background:linear-gradient(90deg, rgba(126,111,207,0.18), var(--kerf-panel-2));">
+          <div class="desk-brand" style="color:var(--future);">KERF · MoO</div>
+          <div class="desk-search">⌕ &nbsp; throughput · crews · schedule · bottlenecks…</div>
+          <div class="desk-user"><span>Maria · Manager of Operations</span><div class="op-avatar" style="background:var(--future-dim);">MR</div></div>
+        </div>
+        <div class="desk-body">
+          <div class="desk-sidebar">
+            <div class="desk-nav-group">Today</div>
+            <div class="desk-nav-item active">▣ Operations board</div>
+            <div class="desk-nav-item">◉ Hot items · 3</div>
+            <div class="desk-nav-item">👥 Crews</div>
+            <div class="desk-nav-item">📅 Schedule</div>
+            <div class="desk-nav-group">Projects</div>
+            <div class="desk-nav-item">⎈ Active · 8</div>
+            <div class="desk-nav-item">⎈ Proposals · 3</div>
+            <div class="desk-nav-group">Owner gates</div>
+            <div class="desk-nav-item">$ Owner decisions · 4</div>
+            <div class="desk-nav-item" style="color:var(--kerf-text-mute);">— not yours to approve —</div>
+          </div>
+          <div class="desk-main">
+            <div style="padding: 8px 10px; margin-bottom: 14px; background:rgba(126,111,207,0.1); border:1px solid var(--future-dim); border-radius:6px; font-size:11px; color:var(--future);">
+              <b>Preview only — V2.0+ direction.</b> Shown to ensure V1 architecture supports multi-role Chiefs of Staff. Not on V1 build list.
+            </div>
+            <div class="desk-h1">Operations · this week</div>
+            <div class="desk-sub">8 active · 92% on-time · 3 hot items · 4 owner decisions queued</div>
+            <div class="desk-metric-row">
+              <div class="desk-metric"><div class="desk-metric-val">8</div><div class="desk-metric-lbl">Active jobs</div></div>
+              <div class="desk-metric"><div class="desk-metric-val">92%</div><div class="desk-metric-lbl">On-time %</div><div class="desk-metric-delta">+4pts vs last wk</div></div>
+              <div class="desk-metric"><div class="desk-metric-val">3.2d</div><div class="desk-metric-lbl">Avg slip · hot jobs</div><div class="desk-metric-delta down">+0.8d</div></div>
+              <div class="desk-metric"><div class="desk-metric-val">$184k</div><div class="desk-metric-lbl">WIP value this wk</div></div>
+            </div>
+            <div class="desk-grid">
+              <div class="desk-card">
+                <div class="desk-card-label">HOT · TODAY</div>
+                <div class="desk-card-title">Moore · panel slipped 2d</div>
+                <div style="font-size:11px; color:var(--kerf-text-dim); line-height:1.5; margin-top:6px;">HPG sub conflict. Kerf found 2 alternate vendors with availability Thu + Fri. <b>Owner approval required</b> before sub swap.</div>
+                <div style="display:flex; gap:6px; margin-top:10px;">
+                  <button class="mob-btn">View options</button>
+                  <button class="mob-btn mob-btn-primary">Request owner decision</button>
+                </div>
+              </div>
+              <div class="desk-card">
+                <div class="desk-card-label">CREW CONFLICT · THU</div>
+                <div class="desk-card-title">Jose · 3 sites · 1 overlap</div>
+                <div style="font-size:11px; color:var(--kerf-text-dim); line-height:1.5; margin-top:6px;">Patel AM + Clem PM · driving time 38min. Kerf recommends Miguel for Clem AM.</div>
+                <div style="display:flex; gap:6px; margin-top:10px;">
+                  <button class="mob-btn">See schedule</button>
+                  <button class="mob-btn mob-btn-primary">Apply swap</button>
+                </div>
+              </div>
+              <div class="desk-card">
+                <div class="desk-card-label">DELIVERIES · THIS WEEK</div>
+                <div class="desk-card-big">14</div>
+                <div style="font-size:11px; color:var(--kerf-text-dim);">6 today · 4 tomorrow · 4 later</div>
+              </div>
+              <div class="desk-card">
+                <div class="desk-card-label">INSPECTIONS</div>
+                <div class="desk-card-big">3</div>
+                <div style="font-size:11px; color:var(--kerf-text-dim);">Patel framing · Tue · passed · Clem rough · Thu · scheduled</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px; color:var(--kerf-amber); letter-spacing:0.08em; text-transform:uppercase; font-weight:700; margin-bottom:8px;">L.3 · Change order intake · desktop review <span class="phase-pill phase-v20">V2.0</span></div>
+      <div class="desktop-frame" style="height: 560px;">
+        <div class="desk-topbar">
+          <div class="desk-brand">KERF</div>
+          <div class="desk-search">⌕ &nbsp; Patel · CO-004 · quartz sub</div>
+          <div class="desk-user"><span>Christian · Owner</span><div class="op-avatar">CA</div></div>
+        </div>
+        <div class="desk-body">
+          <div class="desk-sidebar">
+            <div class="desk-nav-group">Project · Patel</div>
+            <div class="desk-nav-item">⎈ Overview</div>
+            <div class="desk-nav-item">📄 Proposal</div>
+            <div class="desk-nav-item active">± CO-004 · draft</div>
+            <div class="desk-nav-item">± CO-003 · approved</div>
+            <div class="desk-nav-item">± CO-002 · signed</div>
+            <div class="desk-nav-item">± CO-001 · signed</div>
+            <div class="desk-nav-group">Captures</div>
+            <div class="desk-nav-item">🎤 voice · 1:12</div>
+            <div class="desk-nav-item">📷 2 photos</div>
+            <div class="desk-nav-item">📐 LiDAR v2</div>
+          </div>
+          <div class="desk-main">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px;">
+              <div>
+                <div class="desk-h1">CO-004 · quartz substitution</div>
+                <div class="desk-sub">Patel · GGR-2026-042 · day 18/54 · draft by Estimator 9:44 AM</div>
+              </div>
+              <div><span class="status-chip draft">DRAFT</span></div>
+            </div>
+            <div class="desk-grid">
+              <div class="desk-card">
+                <div class="desk-card-label">CHANGE REQUESTED</div>
+                <div style="font-size:12px; color:var(--kerf-text); line-height:1.6; margin-top:4px;">
+                  Substitute quartz "Calacatta Nuvo" → "Calacatta Gold" on island only. 38 sf. Client preference after slab-yard visit Monday.
+                </div>
+                <div class="draft-sources" style="margin-top:8px;">
+                  <span class="src">voice · 1:12</span><span class="src">2 photos</span><span class="src">slab-yard receipt</span>
+                </div>
+              </div>
+              <div class="desk-card">
+                <div class="desk-card-label">PRICE DELTA · INTERNAL</div>
+                <table style="width:100%; font-size:11px; margin-top:6px;">
+                  <tr><td style="color:var(--kerf-text-dim); padding:3px 0;">Material · +$9/sf × 38 sf</td><td style="text-align:right; font-variant-numeric:tabular-nums;">+$342</td></tr>
+                  <tr><td style="color:var(--kerf-text-dim); padding:3px 0;">Fabricator re-quote fee</td><td style="text-align:right; font-variant-numeric:tabular-nums;">+$180</td></tr>
+                  <tr style="border-top:1px solid var(--kerf-border);"><td style="padding:6px 0; font-weight:700;">Total CO-004</td><td style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">+$522</td></tr>
+                </table>
+              </div>
+              <div class="desk-card">
+                <div class="desk-card-label">SCHEDULE IMPACT</div>
+                <div class="desk-card-title">+4 business days</div>
+                <div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">No critical-path impact. <span class="draft-flag">pending fab confirm</span></div>
+              </div>
+              <div class="desk-card">
+                <div class="desk-card-label">SIGNING</div>
+                <div style="font-size:12px; color:var(--kerf-text); line-height:1.5;">Under $2k ceiling · single-party per contract §7.2. Homeowner text-link ready. Kerf drafted email with scope + delta + photos.</div>
+                <div style="display:flex; gap:6px; margin-top:10px;">
+                  <button class="mob-btn">Edit</button>
+                  <button class="mob-btn">Preview email</button>
+                  <button class="mob-btn mob-btn-primary">Send for signature</button>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:16px; padding:10px; background:var(--kerf-panel); border:1px dashed var(--future-dim); border-radius:8px; font-size:11px; color:var(--kerf-text-dim); line-height:1.6;">
+              <b style="color:var(--future);">Legal-defensibility chain · De Wall case pattern:</b>
+              timestamped capture + consent log + scope delta + sourced pricing + lifecycle state + human approval + homeowner signature. All Blackboard-persisted. This chain is the IP brief angle.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<div class="legend-block" style="margin-top: 40px; margin-bottom: 20px;">
+  <h2>WHAT'S NEXT · AFTER YOUR REVIEW</h2>
+  <div class="legend-grid">
+    <div class="legend-item"><strong>V1 build unchanged</strong><span>Field Check-In · Triage · Proposal · kill-switch Jul 13 · these wireframes do not expand V1 scope.</span></div>
+    <div class="legend-item"><strong>Blackboard abstraction</strong><span>~1 day added to V1 build · makes Layer A the substrate so V1.5+ UIs can read without refactor.</span></div>
+    <div class="legend-item"><strong>Intake MVP · V1.5</strong><span>Form + text modes first. Voice + recorded conversation slated for V2.0 full.</span></div>
+    <div class="legend-item"><strong>LiDAR pulled fwd</strong><span>V2.0 Alpha (was V2.2 GA). Editability + version chain non-negotiable — legal defensibility argument.</span></div>
+    <div class="legend-item"><strong>FinTech partner selection</strong><span>V2.0 Q3 2026 · homeowner pay + purchasing partners evaluated. Never Kerf-underwritten.</span></div>
+    <div class="legend-item"><strong>Role-aware CoS</strong><span>V2.0+ direction only. V1 ships owner CoS. Don't build multi-instance plumbing yet.</span></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

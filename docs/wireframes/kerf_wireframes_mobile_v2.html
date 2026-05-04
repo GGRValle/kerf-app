@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · Mobile Wireframes v2 · April 21, 2026</title>
+<style>
+:root {
+  --kerf-amber: #D4923A;
+  --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419;
+  --kerf-panel: #1A1F26;
+  --kerf-panel-2: #232932;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1;
+  --kerf-text-dim: #9097A1;
+  --kerf-text-mute: #5F6670;
+  --ggr: #4A7FB0;
+  --ggr-dim: #1B3A5C;
+  --val: #A8794A;
+  --val-dim: #5C3A1B;
+  --hpg: #4A9F74;
+  --hpg-dim: #1B5C3A;
+  --success: #5FB37A;
+  --warn: #E0A858;
+  --alert: #CF5B5B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11;
+  color: var(--kerf-text);
+  line-height: 1.4;
+  font-size: 13px;
+}
+
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 22px 40px;
+}
+.doc-header h1 {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.doc-header .sub {
+  color: var(--kerf-text-dim);
+  font-size: 12px;
+}
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.wireframe-container { padding: 30px 40px; max-width: 1600px; margin: 0 auto; }
+
+.nav-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: #0A0D11;
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 10px 40px;
+  display: flex; gap: 4px; overflow-x: auto;
+}
+.nav-bar a {
+  color: var(--kerf-text-dim); text-decoration: none; font-size: 11px;
+  padding: 5px 10px; border-radius: 3px; white-space: nowrap;
+}
+.nav-bar a:hover { background: var(--kerf-panel-2); color: var(--kerf-text); }
+
+.legend-block {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 18px 24px;
+  margin-bottom: 40px;
+}
+.legend-block h2 { font-size: 14px; margin-bottom: 10px; color: var(--kerf-amber); letter-spacing: 0.04em; }
+.legend-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 11px;
+}
+.legend-item { padding-left: 10px; border-left: 2px solid var(--kerf-border); }
+.legend-item strong { color: var(--kerf-text); display: block; margin-bottom: 3px; }
+.legend-item span { color: var(--kerf-text-dim); }
+
+.frame {
+  margin-bottom: 50px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--kerf-panel);
+}
+.frame-label {
+  background: var(--kerf-panel-2);
+  padding: 10px 18px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kerf-amber);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.frame-label .frame-note { color: var(--kerf-text-dim); text-transform: none; letter-spacing: 0; font-size: 11px; }
+.frame-body { padding: 30px 20px; background: #0A0D11; }
+
+/* Phone frame */
+.phone-row { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; }
+.phone-col { display: flex; flex-direction: column; align-items: center; }
+.phone-role-label {
+  font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--kerf-amber); margin-bottom: 12px; font-weight: 600;
+}
+.phone-sub-label { color: var(--kerf-text-dim); font-size: 11px; margin-bottom: 16px; }
+
+.phone {
+  width: 300px;
+  height: 620px;
+  background: #000;
+  border-radius: 38px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px var(--kerf-border);
+  position: relative;
+}
+.phone-notch {
+  position: absolute; top: 12px; left: 50%;
+  transform: translateX(-50%);
+  width: 90px; height: 24px;
+  background: #000; border-radius: 0 0 12px 12px;
+  z-index: 20;
+}
+.phone-screen {
+  width: 100%; height: 100%;
+  background: var(--kerf-dark);
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.status-bar {
+  height: 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 22px 0 22px;
+  padding-top: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--kerf-text);
+  flex-shrink: 0;
+}
+
+/* Operator phone screens */
+.screen-title-bar {
+  padding: 6px 16px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.op-brand { font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: var(--kerf-amber); }
+.op-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ggr-dim); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+}
+.screen-content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column; }
+
+/* The One Thing card (mobile) */
+.mob-one-thing {
+  margin: 12px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(212,146,58,0.15) 0%, rgba(212,146,58,0.04) 100%);
+  border: 1px solid var(--kerf-amber-dim);
+  border-radius: 10px;
+}
+.mob-ot-label {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-amber); font-weight: 700; margin-bottom: 8px;
+}
+.mob-ot-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; line-height: 1.3; }
+.mob-ot-why {
+  font-size: 11px; color: var(--kerf-text-dim);
+  margin-bottom: 10px; padding-left: 8px;
+  border-left: 2px solid var(--kerf-amber-dim);
+  line-height: 1.4;
+}
+.mob-ot-why b { color: var(--kerf-amber); font-weight: 600; }
+.mob-conf {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--kerf-text-dim); margin-bottom: 10px;
+}
+.mob-conf-bar { flex: 1; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; }
+.mob-conf-fill { height: 100%; background: var(--success); }
+.mob-ot-actions { display: flex; gap: 6px; }
+.mob-btn {
+  flex: 1; padding: 9px 10px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px; background: var(--kerf-panel-2);
+  color: var(--kerf-text); font-size: 11px;
+  font-weight: 500; font-family: inherit; cursor: pointer;
+}
+.mob-btn-primary { background: var(--kerf-amber); color: #0A0D11; border-color: var(--kerf-amber); font-weight: 700; flex: 2; }
+.mob-btn-ghost { background: transparent; color: var(--kerf-text-dim); }
+
+/* Queue on mobile */
+.mob-section-label {
+  padding: 4px 16px 6px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--kerf-text-mute);
+}
+.mob-queue-item {
+  padding: 10px 16px;
+  border-top: 1px solid var(--kerf-border);
+}
+.mob-queue-item:first-child { border-top: none; }
+.mob-qi-row1 { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
+.mob-qi-brand {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 1px 5px; border-radius: 2px;
+}
+.mob-qi-brand.ggr { background: var(--ggr-dim); color: #A8C5E5; }
+.mob-qi-brand.val { background: var(--val-dim); color: #E5C5A8; }
+.mob-qi-brand.hpg { background: var(--hpg-dim); color: #A8E5C5; }
+.mob-qi-title { font-size: 12px; flex: 1; font-weight: 500; }
+.mob-qi-time { font-size: 10px; color: var(--kerf-text-mute); }
+.mob-qi-why { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; }
+.mob-qi-conf {
+  display: inline-block; font-size: 9px; color: var(--kerf-text-mute); margin-top: 3px;
+}
+
+/* Op phone bottom nav */
+.op-bottom {
+  flex-shrink: 0;
+  padding: 8px 14px 20px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--kerf-border);
+  background: var(--kerf-panel);
+  align-items: center;
+}
+.op-toggle {
+  display: inline-flex;
+  background: var(--kerf-panel-2);
+  border: 1px solid var(--kerf-border);
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 10px;
+}
+.op-toggle-btn { padding: 5px 10px; color: var(--kerf-text-dim); cursor: pointer; }
+.op-toggle-btn.active { background: var(--kerf-amber); color: #0A0D11; font-weight: 600; }
+.op-mod-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: var(--kerf-panel-2); color: var(--kerf-text-dim);
+  cursor: pointer; font-size: 14px;
+}
+.op-voice-btn {
+  margin-left: auto;
+  width: 38px; height: 38px;
+  background: var(--kerf-amber); color: #0A0D11;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(212,146,58,0.4);
+}
+
+/* Field phone — 4 tabs */
+.field-header {
+  padding: 6px 16px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.field-brand { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: var(--kerf-amber); }
+.field-role {
+  font-size: 9px; color: var(--kerf-text-mute);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-top: 1px;
+}
+.field-lang {
+  font-size: 9px; padding: 2px 6px; border: 1px solid var(--kerf-border);
+  border-radius: 10px; color: var(--kerf-text-dim);
+}
+
+/* Field tabs (4) */
+.field-tabs {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--kerf-border);
+  background: var(--kerf-panel);
+  flex-shrink: 0;
+  padding-bottom: 18px;
+  position: relative;
+}
+.field-tab {
+  padding: 10px 4px 6px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--kerf-text-mute);
+  position: relative;
+}
+.field-tab.active { color: var(--kerf-amber); }
+.field-tab.active::before {
+  content: ''; position: absolute; top: 0; left: 20%; right: 20%;
+  height: 2px; background: var(--kerf-amber);
+}
+.field-tab-icon { font-size: 16px; margin-bottom: 2px; }
+.field-tab-label { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; }
+.field-voice-btn {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--kerf-amber); color: #0A0D11;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(212,146,58,0.5), 0 0 0 4px var(--kerf-dark);
+  cursor: pointer;
+}
+/* Field screen content */
+.field-current {
+  margin: 14px;
+  padding: 14px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 10px;
+}
+.field-proj-label {
+  font-size: 9px; color: var(--kerf-text-mute);
+  text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px;
+}
+.field-proj-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.field-proj-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 12px; }
+.field-clock {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px; background: rgba(95,179,122,0.1);
+  border-radius: 8px; margin-bottom: 10px;
+  border-left: 3px solid var(--success);
+}
+.field-clock-time { font-size: 14px; font-weight: 700; color: var(--success); font-variant-numeric: tabular-nums; }
+.field-clock-label { font-size: 10px; color: var(--kerf-text-dim); }
+.field-clock-btn { padding: 5px 10px; border-radius: 4px; background: var(--kerf-panel-2); border: 1px solid var(--kerf-border); color: var(--kerf-text-dim); font-size: 10px; }
+
+.field-task-row {
+  display: flex; align-items: start; gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--kerf-border);
+}
+.field-task-check {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 1.5px solid var(--kerf-border);
+  margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+}
+.field-task-check.done { background: var(--success); border-color: var(--success); color: #000; }
+.field-task-check.pending { background: transparent; }
+.field-task-body { flex: 1; }
+.field-task-title { font-size: 12px; margin-bottom: 2px; }
+.field-task-title.done { color: var(--kerf-text-mute); text-decoration: line-through; }
+.field-task-meta { font-size: 10px; color: var(--kerf-text-mute); }
+
+/* Field materials section (NEW in v2) */
+.mat-section {
+  margin: 14px;
+  padding: 14px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 10px;
+}
+.mat-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.mat-title { font-size: 12px; font-weight: 600; }
+.mat-meta { font-size: 10px; color: var(--kerf-text-dim); }
+
+.mat-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--kerf-border);
+  align-items: center;
+}
+.mat-item:first-child { border-top: none; padding-top: 0; }
+.mat-name { font-size: 12px; margin-bottom: 2px; font-weight: 500; }
+.mat-info { font-size: 10px; color: var(--kerf-text-dim); }
+.mat-status {
+  font-size: 9px; padding: 2px 7px; border-radius: 10px; font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.mat-status.delivered { background: rgba(95,179,122,0.2); color: var(--success); }
+.mat-status.pending { background: rgba(224,168,88,0.2); color: var(--warn); }
+.mat-status.missing { background: rgba(207,91,91,0.2); color: var(--alert); }
+
+.mat-actions-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px; margin-top: 12px;
+}
+.mat-action-btn {
+  padding: 8px 4px;
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 6px; color: var(--kerf-text);
+  font-size: 10px; text-align: center; cursor: pointer;
+  font-weight: 500;
+}
+.mat-action-btn.primary { background: var(--kerf-amber); color: #0A0D11; border-color: var(--kerf-amber); font-weight: 700; }
+.mat-action-btn.danger { color: var(--alert); border-color: rgba(207,91,91,0.3); }
+
+/* Log tab */
+.log-day-header {
+  padding: 10px 16px; font-size: 11px; color: var(--kerf-text-dim);
+  background: var(--kerf-panel); border-bottom: 1px solid var(--kerf-border);
+}
+.log-entry {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--kerf-border);
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+}
+.log-time { font-size: 10px; color: var(--kerf-text-mute); font-variant-numeric: tabular-nums; padding-top: 3px; }
+.log-content { font-size: 12px; line-height: 1.4; }
+.log-tag {
+  display: inline-block; padding: 1px 6px;
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 3px; font-size: 9px; color: var(--kerf-amber);
+  letter-spacing: 0.04em; font-weight: 600;
+  margin-bottom: 4px;
+}
+.log-photo-strip {
+  display: flex; gap: 4px; margin-top: 6px;
+}
+.log-photo {
+  width: 42px; height: 42px; border-radius: 4px;
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--kerf-text-mute);
+}
+
+/* Me tab */
+.me-card {
+  margin: 14px; padding: 14px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 10px;
+}
+.me-header {
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--kerf-border);
+  margin-bottom: 12px;
+}
+.me-avatar-lg {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--ggr-dim); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 18px;
+}
+.me-name { font-weight: 700; font-size: 14px; }
+.me-role { font-size: 11px; color: var(--kerf-text-dim); }
+.me-level {
+  margin-top: 4px;
+  display: inline-block; padding: 2px 8px;
+  background: rgba(95,179,122,0.2); color: var(--success);
+  border-radius: 10px; font-size: 10px; font-weight: 700;
+}
+.me-stat-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.me-stat {
+  padding: 10px;
+  background: var(--kerf-panel-2); border-radius: 6px;
+}
+.me-stat-label { font-size: 9px; color: var(--kerf-text-mute); text-transform: uppercase; letter-spacing: 0.1em; }
+.me-stat-val { font-size: 16px; font-weight: 700; margin-top: 4px; }
+
+.me-ladder-card {
+  margin: 14px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(212,146,58,0.08) 0%, rgba(212,146,58,0.02) 100%);
+  border: 1px solid var(--kerf-amber-dim);
+  border-radius: 10px;
+}
+.me-ladder-title { font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.me-ladder-track { display: flex; gap: 4px; margin-bottom: 10px; }
+.me-ladder-step {
+  flex: 1; height: 6px; border-radius: 3px;
+  background: var(--kerf-panel-2);
+}
+.me-ladder-step.achieved { background: var(--success); }
+.me-ladder-step.current { background: var(--kerf-amber); }
+.me-ladder-sub {
+  display: flex; justify-content: space-between;
+  font-size: 9px; color: var(--kerf-text-mute);
+}
+.me-ladder-next { font-size: 11px; color: var(--kerf-text-dim); margin-top: 10px; line-height: 1.4; }
+.me-ladder-next b { color: var(--kerf-amber); }
+
+/* Voice overlay */
+.voice-overlay {
+  position: absolute; bottom: 80px; left: 20px; right: 20px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-amber);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 24px rgba(212,146,58,0.2);
+  z-index: 10;
+}
+.voice-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--kerf-amber); font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px;
+}
+.voice-pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--kerf-amber);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.6); }
+}
+.voice-transcript {
+  font-size: 12px; line-height: 1.4;
+  padding: 10px; background: var(--kerf-dark);
+  border-radius: 6px;
+  color: var(--kerf-text);
+  margin-bottom: 8px;
+}
+.voice-transcript .fade { color: var(--kerf-text-mute); }
+.voice-meta {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--kerf-text-mute);
+}
+.voice-stop {
+  display: block;
+  width: 100%; padding: 10px;
+  background: var(--alert); color: #fff;
+  border: none; border-radius: 6px; font-weight: 700; font-size: 12px;
+  margin-top: 8px;
+}
+
+/* Callout */
+.callout {
+  background: var(--kerf-panel-2);
+  border-left: 3px solid var(--kerf-amber);
+  padding: 12px 16px;
+  margin: 20px auto;
+  font-size: 12px;
+  color: var(--kerf-text-dim);
+  border-radius: 0 4px 4px 0;
+  max-width: 900px;
+}
+.callout strong { color: var(--kerf-amber); }
+
+/* 6-step demo */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+.demo-step {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 10px;
+  padding: 18px 16px;
+  position: relative;
+}
+.demo-num {
+  position: absolute; top: -12px; left: 16px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--kerf-amber); color: #0A0D11;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px;
+  box-shadow: 0 2px 8px rgba(212,146,58,0.3);
+}
+.demo-time {
+  font-size: 9px; color: var(--kerf-text-mute);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 6px; margin-top: 6px;
+}
+.demo-role {
+  font-size: 10px; color: var(--kerf-amber);
+  letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px;
+}
+.demo-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.demo-body { font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5; margin-bottom: 10px; }
+.demo-flow {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  font-size: 9px; padding: 8px; background: var(--kerf-dark);
+  border-radius: 4px; border: 1px solid var(--kerf-border);
+}
+.demo-flow-node {
+  padding: 2px 6px; border: 1px solid var(--kerf-border);
+  border-radius: 3px; color: var(--kerf-text-dim);
+}
+.demo-flow-node.src { border-color: #446; color: #8AB0D0; }
+.demo-flow-node.tag { border-color: var(--kerf-amber-dim); color: var(--kerf-amber); }
+.demo-flow-node.route { border-color: var(--success); color: var(--success); }
+.demo-flow-arrow { color: var(--kerf-text-mute); font-size: 10px; }
+
+.spanish-flag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(207,91,91,0.1);
+  border: 1px dashed var(--alert);
+  border-radius: 4px;
+  color: var(--alert);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-left: 8px;
+}
+
+/* ============================================================
+   Dynamic interactivity layer (v2)
+   ============================================================ */
+@keyframes mobPulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,146,58,0.55); }
+  50% { box-shadow: 0 0 0 14px rgba(212,146,58,0); }
+}
+@keyframes mobFadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes mobWave {
+  0%, 100% { transform: scaleY(0.35); opacity: 0.55; }
+  50%      { transform: scaleY(1);    opacity: 1; }
+}
+@keyframes mobCaret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.op-voice-btn, .field-voice-btn {
+  position: relative;
+  animation: mobPulseGlow 2.2s ease-out infinite;
+}
+.field-tab { cursor: pointer; transition: color 0.15s; }
+.field-tab:active { transform: scale(0.94); }
+
+/* Tab switcher dynamic state — applies only to the live switcher inside a frame */
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: mobFadeUp 0.3s ease-out; }
+
+/* Animated waveform on voice frame */
+.wave-row { display: flex; gap: 3px; align-items: center; height: 28px; margin: 6px 0 10px; }
+.wave-bar {
+  width: 3px; height: 100%; background: var(--kerf-amber); border-radius: 2px;
+  transform-origin: center; opacity: 0.55;
+  animation: mobWave 0.9s ease-in-out infinite;
+}
+.wave-bar:nth-child(2)  { animation-delay: 0.08s; }
+.wave-bar:nth-child(3)  { animation-delay: 0.16s; }
+.wave-bar:nth-child(4)  { animation-delay: 0.24s; }
+.wave-bar:nth-child(5)  { animation-delay: 0.32s; }
+.wave-bar:nth-child(6)  { animation-delay: 0.40s; }
+.wave-bar:nth-child(7)  { animation-delay: 0.12s; }
+.wave-bar:nth-child(8)  { animation-delay: 0.20s; }
+.wave-bar:nth-child(9)  { animation-delay: 0.28s; }
+.wave-bar:nth-child(10) { animation-delay: 0.36s; }
+
+/* Caret for transcript typing */
+.caret {
+  display: inline-block; width: 6px; height: 12px;
+  background: var(--kerf-amber); margin-left: 2px; vertical-align: -1px;
+  animation: mobCaret 1s steps(2) infinite;
+}
+
+/* Demo-step "playing" highlight */
+.demo-step.playing {
+  border-color: var(--kerf-amber);
+  box-shadow: 0 0 0 2px rgba(212,146,58,0.25), 0 8px 22px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+  transition: all 0.35s ease;
+}
+.demo-play-btn {
+  display: inline-block; cursor: pointer;
+  padding: 8px 14px; margin-top: 10px;
+  background: var(--kerf-amber); color: #0F1419;
+  border: none; border-radius: 6px; font-weight: 700; font-size: 11px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  font-family: inherit;
+}
+.demo-play-btn:active { transform: translateY(1px); }
+.demo-play-btn.running { background: var(--kerf-panel-2); color: var(--kerf-amber); }
+
+/* Live clock — replaces the hardcoded timestamp when script runs */
+.live-clock { font-variant-numeric: tabular-nums; }
+
+/* Mobile toast */
+.mtoast {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  background: var(--kerf-panel); color: var(--kerf-amber);
+  border: 1px solid var(--kerf-amber-dim); border-radius: 22px;
+  padding: 10px 18px; font-size: 12px; font-weight: 600;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.55);
+  z-index: 3000; animation: mobFadeUp 0.3s ease-out;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+/* Smoothed progress bars inside mobile frames */
+.progress-fill, .conf-fill, .bar-fill {
+  transition: width 1.1s cubic-bezier(0.22, 0.85, 0.3, 1);
+}
+
+/* Capture-ping — used when a new captured item slides in */
+.capture-ping { animation: mobFadeUp 0.45s ease-out backwards; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <h1><span class="amber">KERF</span> · Mobile Wireframes v2 <span style="font-weight: 400; color: var(--kerf-text-dim);">/ Make More.</span></h1>
+  <div class="sub">April 21, 2026 · Apr 23 addendum — Blackboard framing + role-aware CoS (V2.0+ direction, not wireframed) · Supersedes v1 · Operator phone + Field crew phone · Integrates 4-tab field nav, materials flow, v2.1 Spanish flag</div>
+</div>
+
+<div class="nav-bar">
+  <a href="#legend">What changed</a>
+  <a href="#apr23-addendum">Apr 23 addendum</a>
+  <a href="#operator">1 · Operator phone</a>
+  <a href="#field-home">2 · Field · Home tab</a>
+  <a href="#field-job">3 · Field · Job tab</a>
+  <a href="#field-log">4 · Field · Log tab</a>
+  <a href="#field-me">5 · Field · Me tab</a>
+  <a href="#voice">6 · Voice capture overlay</a>
+  <a href="#demo">7 · 6-step field-to-approval demo</a>
+</div>
+
+<div class="wireframe-container">
+
+<div class="legend-block" id="legend">
+  <h2>WHAT CHANGED FROM v1</h2>
+  <div class="legend-grid">
+    <div class="legend-item"><strong>Field nav is 4 tabs, not 3 buttons</strong><span>Home (current + schedule) · Job (scope/docs/crew/materials) · Log (voice-built daily log + photo timeline) · Me (clock, hours, L0–L3, messages). Voice button persistent across all tabs.</span></div>
+    <div class="legend-item"><strong>Operator landing = Chief of Staff</strong><span>Phone opens to The One Thing. Module icons available in bottom drawer. Standard/Graphical toggle on the top bar.</span></div>
+    <div class="legend-item"><strong>Materials flow (new)</strong><span>Every material line supports Mark delivered · Flag missing · Order more — routed back to office/Christian automatically. Visible in Job tab.</span></div>
+    <div class="legend-item"><strong>Source → Tag → Route visible</strong><span>Same rule as web: every capture shows its provenance chain. On mobile the chain lives on the capture card and in the Log tab entries.</span></div>
+    <div class="legend-item"><strong>Spanish UI v2.1 scope flag</strong><span>Not implemented in v1 build. Flagged visibly on Field phone header so the team remembers it's a v2.1 scope item, not forgotten.</span></div>
+    <div class="legend-item"><strong>6-step scripted demo</strong><span>Voice note from Mike at 8:32 AM → Christian approves change order at 9:14 AM. Shows the ~10-second capture and the full routing chain.</span></div>
+  </div>
+</div>
+
+<div class="legend-block" id="apr23-addendum" style="border-left: 3px solid var(--kerf-amber);">
+  <h2>APR 23 ADDENDUM — ARCHITECTURE LOCKS (not yet wireframed in detail)</h2>
+  <div class="legend-grid">
+    <div class="legend-item"><strong>Blackboard = persistent memory + visible graphical surface</strong><span>Architecture Principle #6. Every capture, decision, approval flows through the shared Blackboard. Permission-aware reads. V1 = thin wrapper over existing mobile/Slack surfaces. Full team-wide graphical Blackboard views land V2.0+.</span></div>
+    <div class="legend-item"><strong>Team platform — 4 audiences, 1 Blackboard</strong><span>Owner (mobile-dominant, this wireframe) · Office (desktop tandem, V1.5 Standard UI) · Field crew (capture-first, partial V1) · Subs (scoped portal, V2.0+). Manager of Operations named as scaling role — MoO surface V1.5-V2.0.</span></div>
+    <div class="legend-item"><strong>Role-aware CoS = V2.0+ direction</strong><span>V1 has one CoS (owner). V2.0 alpha adds MoO CoS. V2.1 paid beta adds PM + field super CoS. V2.2 GA settles sub portal. NOT wireframed in this doc — mentioned here so team doesn't scope-creep V1.</span></div>
+    <div class="legend-item"><strong>Adaptive CoS = product principle, not marketing claim</strong><span>CoS learns the owner over time — floats up the right info at the right moment. Never framed as "owner trains the AI." Demonstrate-before-claim.</span></div>
+    <div class="legend-item"><strong>Intake workflow — Project + Change Order (V1.5-V2.0)</strong><span>One architecture, two entry points. Multi-modal: form / voice / recorded-conversation-with-consent / text. Photos + editable LiDAR (V2.0 Alpha, pulled forward from V2.2 GA). CO Intake reuses engine with project-context pre-populated and camera+LiDAR primed at top of form for field quick-capture. Home-screen intake button (Project) + in-project CO button (both owner + field roles).</span></div>
+    <div class="legend-item"><strong>FinTech partner-first (V2.0-V2.1)</strong><span>5 primitives: homeowner pay (V2.0 Stripe/Square), purchasing (V2.0 Home Depot Pro API), crew cards (V2.1 Ramp white-label), job cards (V2.1 partner / V3.0+ in-house decision), homeowner financing (V2.1 GoodLeap referral, partner-forever). No fintech UI in V1.</span></div>
+    <div class="legend-item"><strong>V1 scope unchanged</strong><span>This legend documents architectural locks only. V1 wireframes below are the same as Apr 21 — no new screens, no new surfaces. Kill-switch criteria unchanged.</span></div>
+    <div class="legend-item"><strong>"Decisions, not dashboards."</strong><span>Candidate tertiary tagline. Every surface must answer "what does the owner do next from this view?" not just display status. Pairs with "Make More." primary and the two anti-positioning lines.</span></div>
+  </div>
+</div>
+
+
+<!-- OPERATOR PHONE -->
+<div class="frame" id="operator">
+  <div class="frame-label">
+    <span>FRAME 1 · OPERATOR PHONE · CHRISTIAN</span>
+    <span class="frame-note">Chief of Staff is the landing surface · module drawer at bottom · Standard/Graphical toggle persistent</span>
+  </div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <!-- Screen 1: Landing / One Thing -->
+      <div class="phone-col">
+        <div class="phone-role-label">SCREEN 1.1 · LANDING</div>
+        <div class="phone-sub-label">Chief of Staff + One Thing</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:14</span><span>●●●● ⁕ 87%</span></div>
+            <div class="screen-title-bar">
+              <div>
+                <div class="op-brand">KERF</div>
+                <div style="font-size: 9px; color: var(--kerf-text-mute); letter-spacing: 0.1em; margin-top: 1px;">MAKE MORE.</div>
+              </div>
+              <div class="op-avatar">CA</div>
+            </div>
+            <div class="screen-content">
+
+              <div class="mob-one-thing">
+                <div class="mob-ot-label">◉ The One Thing</div>
+                <div class="mob-ot-title">Approve CO · Henderson bath · $4,280</div>
+                <div class="mob-ot-why">
+                  <b>Why:</b> field hit galvanized plumbing. Adds 1.5 days. Mrs. Henderson texted "whatever you need to do" at 8:47 AM — just needs your sign-off.
+                </div>
+                <div class="mob-conf">
+                  <span>Confidence</span>
+                  <div class="mob-conf-bar"><div class="mob-conf-fill" style="width: 94%;"></div></div>
+                  <span>94%</span>
+                </div>
+                <div class="mob-ot-actions">
+                  <button class="mob-btn mob-btn-primary">Approve & send</button>
+                  <button class="mob-btn">Open</button>
+                </div>
+              </div>
+
+              <div class="mob-section-label">Queue · 3 more</div>
+
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1">
+                  <span class="mob-qi-brand ggr">GGR</span>
+                  <span class="mob-qi-title">Coring · proposal follow-up</span>
+                  <span class="mob-qi-time">2h</span>
+                </div>
+                <div class="mob-qi-why">No reply 9 days · warm draft ready</div>
+                <span class="mob-qi-conf">88% · Follow-up Agent</span>
+              </div>
+
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1">
+                  <span class="mob-qi-brand val">VAL</span>
+                  <span class="mob-qi-title">3 past-due invoices</span>
+                  <span class="mob-qi-time">9h</span>
+                </div>
+                <div class="mob-qi-why">Torrey × 2 + Mission retail</div>
+                <span class="mob-qi-conf">91% · Invoice Agent</span>
+              </div>
+
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1">
+                  <span class="mob-qi-brand hpg">HPG</span>
+                  <span class="mob-qi-title">Rebate docs · Clem</span>
+                  <span class="mob-qi-time">1d</span>
+                </div>
+                <div class="mob-qi-why">TECH Clean CA · escalated to T4</div>
+                <span class="mob-qi-conf">72% · needs review</span>
+              </div>
+
+            </div>
+            <div class="op-bottom">
+              <div class="op-toggle">
+                <div class="op-toggle-btn active">Std</div>
+                <div class="op-toggle-btn">Graph</div>
+              </div>
+              <div class="op-mod-btn">⌘</div>
+              <div class="op-voice-btn">▸</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen 2: Module drawer -->
+      <div class="phone-col">
+        <div class="phone-role-label">SCREEN 1.2 · MODULE DRAWER</div>
+        <div class="phone-sub-label">Tap ⌘ opens modules</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:14</span><span>●●●● ⁕ 87%</span></div>
+            <div class="screen-title-bar">
+              <div>
+                <div class="op-brand">KERF</div>
+                <div style="font-size: 9px; color: var(--kerf-text-mute); letter-spacing: 0.1em; margin-top: 1px;">Jump to…</div>
+              </div>
+              <div class="op-avatar">CA</div>
+            </div>
+            <div class="screen-content" style="padding: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-amber); border-radius: 10px; text-align: center; color: var(--kerf-amber);">
+                  <div style="font-size: 22px; margin-bottom: 4px;">◉</div>
+                  <div style="font-size: 11px; font-weight: 600;">Dashboard</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--kerf-text-dim);">S</div>
+                  <div style="font-size: 11px;">Kerf Sales</div>
+                  <div style="font-size: 9px; color: var(--kerf-text-mute);">3 active</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--kerf-text-dim);">E</div>
+                  <div style="font-size: 11px;">Estimate</div>
+                  <div style="font-size: 9px; color: var(--kerf-text-mute);">2 drafts</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--kerf-text-dim);">P</div>
+                  <div style="font-size: 11px;">Project</div>
+                  <div style="font-size: 9px; color: var(--kerf-text-mute);">4 open</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--warn);">C</div>
+                  <div style="font-size: 11px;">Scope</div>
+                  <div style="font-size: 9px; color: var(--warn);">1 CO pending</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--kerf-text-dim);">$</div>
+                  <div style="font-size: 11px;">Money</div>
+                  <div style="font-size: 9px; color: var(--kerf-text-mute);">$47K AR</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--kerf-text-dim);">F</div>
+                  <div style="font-size: 11px;">Field</div>
+                  <div style="font-size: 9px; color: var(--kerf-text-mute);">2 crews out</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--kerf-text-dim);">O</div>
+                  <div style="font-size: 11px;">Ops</div>
+                  <div style="font-size: 9px; color: var(--kerf-text-mute);">healthy</div>
+                </div>
+                <div style="padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; text-align: center;">
+                  <div style="font-size: 18px; margin-bottom: 4px; color: var(--kerf-text-dim);">T</div>
+                  <div style="font-size: 11px;">Teams</div>
+                  <div style="font-size: 9px; color: var(--kerf-text-mute);">L2 floor</div>
+                </div>
+              </div>
+              <div style="margin-top: 16px; font-size: 10px; color: var(--kerf-text-mute); text-align: center;">
+                Modules are destinations · not primary nav
+              </div>
+            </div>
+            <div class="op-bottom">
+              <div class="op-toggle">
+                <div class="op-toggle-btn active">Std</div>
+                <div class="op-toggle-btn">Graph</div>
+              </div>
+              <div class="op-mod-btn" style="background: var(--kerf-amber); color: #0A0D11;">⌘</div>
+              <div class="op-voice-btn">▸</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen 3: Graphical toggle on mobile -->
+      <div class="phone-col">
+        <div class="phone-role-label">SCREEN 1.3 · GRAPHICAL MODE</div>
+        <div class="phone-sub-label">Pinch-zoom canvas · same graph</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:14</span><span>●●●● ⁕ 87%</span></div>
+            <div class="screen-title-bar">
+              <div>
+                <div class="op-brand">KERF</div>
+                <div style="font-size: 9px; color: var(--kerf-text-mute); letter-spacing: 0.1em; margin-top: 1px;">GRAPH</div>
+              </div>
+              <div class="op-avatar">CA</div>
+            </div>
+            <div class="screen-content" style="background: var(--kerf-dark); position: relative;">
+              <div style="position: absolute; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0); background-size: 18px 18px;"></div>
+              <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" viewBox="0 0 280 480">
+                <path d="M 40 80 Q 90 100 140 120" stroke="#2F3641" fill="none"/>
+                <path d="M 140 120 Q 180 100 220 60" stroke="var(--kerf-amber)" stroke-width="2" fill="none"/>
+                <path d="M 40 200 Q 90 220 140 240" stroke="#2F3641" fill="none"/>
+                <path d="M 40 320 Q 90 340 140 360" stroke="#2F3641" fill="none"/>
+              </svg>
+              <div style="position: absolute; top: 70px; left: 10px; padding: 6px 10px; background: rgba(27,58,92,0.4); border: 1px solid var(--ggr); border-radius: 6px; font-size: 10px;">
+                <div style="font-size: 8px; color: var(--kerf-text-mute); text-transform: uppercase;">Project</div>
+                <div style="font-weight: 600;">Henderson</div>
+              </div>
+              <div style="position: absolute; top: 190px; left: 10px; padding: 6px 10px; background: rgba(92,58,27,0.4); border: 1px solid var(--val); border-radius: 6px; font-size: 10px;">
+                <div style="font-size: 8px; color: var(--kerf-text-mute); text-transform: uppercase;">Project</div>
+                <div style="font-weight: 600;">Coring</div>
+              </div>
+              <div style="position: absolute; top: 310px; left: 10px; padding: 6px 10px; background: rgba(27,92,58,0.4); border: 1px solid var(--hpg); border-radius: 6px; font-size: 10px;">
+                <div style="font-size: 8px; color: var(--kerf-text-mute); text-transform: uppercase;">Project</div>
+                <div style="font-weight: 600;">Clem</div>
+              </div>
+              <div style="position: absolute; top: 110px; left: 110px; padding: 6px 10px; background: rgba(224,168,88,0.15); border: 1px solid var(--warn); border-radius: 6px; font-size: 10px; box-shadow: 0 0 12px rgba(224,168,88,0.3);">
+                <div style="font-size: 8px; color: var(--warn); text-transform: uppercase;">◉ Pending</div>
+                <div style="font-weight: 600;">CO #3</div>
+                <div style="font-size: 9px; color: var(--kerf-text-dim);">94% · $4.3K</div>
+              </div>
+              <div style="position: absolute; top: 40px; left: 180px; padding: 6px 10px; background: rgba(212,146,58,0.12); border: 1px solid var(--kerf-amber); border-radius: 6px; font-size: 10px;">
+                <div style="font-size: 8px; color: var(--kerf-amber); text-transform: uppercase;">Agent · Active</div>
+                <div style="font-weight: 600;">CO Agent</div>
+              </div>
+              <div style="position: absolute; top: 230px; left: 160px; padding: 6px 10px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 6px; font-size: 10px;">
+                <div style="font-size: 8px; color: var(--kerf-text-mute); text-transform: uppercase;">Scope</div>
+                <div style="font-weight: 500;">Cabinet</div>
+              </div>
+              <div style="position: absolute; bottom: 12px; left: 12px; right: 12px; padding: 8px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 6px; font-size: 10px; color: var(--kerf-text-dim);">
+                Tap the glowing node for CO approval ↑
+              </div>
+            </div>
+            <div class="op-bottom">
+              <div class="op-toggle">
+                <div class="op-toggle-btn">Std</div>
+                <div class="op-toggle-btn active">Graph</div>
+              </div>
+              <div class="op-mod-btn">⌘</div>
+              <div class="op-voice-btn">▸</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout">
+      <strong>Chief of Staff is the front door.</strong> Phone opens to The One Thing — not a feed, not a module picker. Everything else (modules, graphical mode, voice capture) is one tap away via the bottom bar. Modules are destinations you visit, not the paradigm.
+    </div>
+  </div>
+</div>
+
+
+<!-- FIELD PHONE HOME TAB -->
+<div class="frame" id="field-home">
+  <div class="frame-label">
+    <span>FRAME 2 · FIELD CREW PHONE · MIKE REYES · TAB 1 OF 4 · HOME</span>
+    <span class="frame-note">Current task + schedule + today's captures · voice button persistent across all tabs</span>
+  </div>
+  <div class="frame-body">
+    <div class="phone-row">
+      <div class="phone-col">
+        <div class="phone-role-label">FIELD · HOME TAB</div>
+        <div class="phone-sub-label">Current task + today's schedule</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>8:28</span><span>●●●● ⁕ 92%</span></div>
+            <div class="field-header">
+              <div>
+                <div class="field-brand">KERF · FIELD</div>
+                <div class="field-role">Mike Reyes · Lead PM · GGR</div>
+              </div>
+              <div class="field-lang">EN <span style="color: var(--kerf-text-mute);">· ES v2.1</span></div>
+            </div>
+            <div class="screen-content">
+
+              <div class="field-current">
+                <div class="field-proj-label">Current job</div>
+                <div class="field-proj-name">Henderson Bath Remodel</div>
+                <div class="field-proj-sub">3421 Viewridge Dr · Day 14 of 28</div>
+
+                <div class="field-clock">
+                  <div>
+                    <div class="field-clock-time">6:47:12</div>
+                    <div class="field-clock-label">Clocked in · since 7:42 AM</div>
+                  </div>
+                  <button class="field-clock-btn">Clock out</button>
+                </div>
+
+                <div style="font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 4px;">Today's task</div>
+                <div style="font-size: 13px; font-weight: 600;">Pull tub surround · prep for new waterproofing</div>
+                <div style="font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px;">Tile demo · plumbing rough prep · est 4 hrs</div>
+              </div>
+
+              <div style="padding: 0 14px 4px; font-size: 10px; color: var(--kerf-text-mute); text-transform: uppercase; letter-spacing: 0.12em;">This week</div>
+
+              <div style="margin: 0 14px 8px; padding: 10px 12px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 600;">Wed Apr 22 · Henderson</div>
+                    <div style="font-size: 10px; color: var(--kerf-text-dim);">Shower pan · Schluter install</div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--kerf-text-mute);">8a–4p</div>
+                </div>
+              </div>
+
+              <div style="margin: 0 14px 8px; padding: 10px 12px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 600;">Thu Apr 23 · Moore</div>
+                    <div style="font-size: 10px; color: var(--kerf-text-dim);">Kitchen · demo + protection</div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--kerf-text-mute);">7a–3p</div>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px; font-size: 10px; color: var(--kerf-text-mute); text-transform: uppercase; letter-spacing: 0.12em; border-top: 1px solid var(--kerf-border); margin-top: 8px;">Captures today · 4</div>
+
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-title">▸ Voice · galvanized discovered</span><span class="mob-qi-time">8:32a</span></div>
+                <div class="mob-qi-why">Sent to Christian · CO drafting</div>
+              </div>
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1"><span class="mob-qi-title">📷 Photos · tub rough × 3</span><span class="mob-qi-time">8:28a</span></div>
+                <div class="mob-qi-why">Auto-tagged: demo · plumbing</div>
+              </div>
+
+            </div>
+            <div class="field-tabs">
+              <div class="field-voice-btn">▸</div>
+              <div class="field-tab active">
+                <div class="field-tab-icon">⌂</div>
+                <div class="field-tab-label">HOME</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◪</div>
+                <div class="field-tab-label">JOB</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">≡</div>
+                <div class="field-tab-label">LOG</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◯</div>
+                <div class="field-tab-label">ME</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- FIELD JOB TAB — MATERIALS FLOW -->
+<div class="frame" id="field-job">
+  <div class="frame-label">
+    <span>FRAME 3 · FIELD · TAB 2 · JOB (SCOPE · DOCS · CREW · MATERIALS)</span>
+    <span class="frame-note">NEW IN v2: Materials flow with Mark delivered / Flag missing / Order more — routes back to office</span>
+  </div>
+  <div class="frame-body">
+    <div class="phone-row">
+      <div class="phone-col">
+        <div class="phone-role-label">FIELD · JOB TAB · MATERIALS</div>
+        <div class="phone-sub-label">Three-way status + one-tap actions</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>8:52</span><span>●●●● ⁕ 91%</span></div>
+            <div class="field-header">
+              <div>
+                <div class="field-brand">HENDERSON BATH</div>
+                <div class="field-role">Job · GGR-2026-018</div>
+              </div>
+              <div class="field-lang">EN</div>
+            </div>
+            <div class="screen-content">
+
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px 14px 0;">
+                <div style="padding: 6px 4px; background: var(--kerf-panel-2); border-radius: 4px; text-align: center; font-size: 10px; color: var(--kerf-text-dim);">Scope</div>
+                <div style="padding: 6px 4px; background: var(--kerf-panel-2); border-radius: 4px; text-align: center; font-size: 10px; color: var(--kerf-text-dim);">Docs</div>
+                <div style="padding: 6px 4px; background: var(--kerf-panel-2); border-radius: 4px; text-align: center; font-size: 10px; color: var(--kerf-text-dim);">Crew</div>
+                <div style="padding: 6px 4px; background: var(--kerf-amber); border-radius: 4px; text-align: center; font-size: 10px; color: #0A0D11; font-weight: 700;">Materials</div>
+              </div>
+
+              <div class="mat-section">
+                <div class="mat-header">
+                  <div>
+                    <div class="mat-title">Materials · 9 items</div>
+                    <div class="mat-meta">3 delivered · 4 pending · 1 on order · 1 missing</div>
+                  </div>
+                  <button class="mob-btn mob-btn-ghost" style="padding: 4px 8px; font-size: 10px; flex: 0;">Filter</button>
+                </div>
+
+                <div class="mat-item">
+                  <div>
+                    <div class="mat-name">Schluter Kerdi-Board · 4×8</div>
+                    <div class="mat-info">Qty 6 · Home Depot · PO-14412</div>
+                  </div>
+                  <span class="mat-status delivered">✓ DELIVERED</span>
+                </div>
+
+                <div class="mat-item">
+                  <div>
+                    <div class="mat-name">Kohler K-4007 tub</div>
+                    <div class="mat-info">Qty 1 · Ferguson · invoice #88214</div>
+                  </div>
+                  <span class="mat-status delivered">✓ DELIVERED</span>
+                </div>
+
+                <div class="mat-item">
+                  <div>
+                    <div class="mat-name">Delta R22000 valve</div>
+                    <div class="mat-info">Qty 1 · Ferguson · needs today</div>
+                  </div>
+                  <span class="mat-status missing">⚠ MISSING</span>
+                </div>
+
+                <div class="mat-item">
+                  <div>
+                    <div class="mat-name">Copper 3/4" × 8 ft</div>
+                    <div class="mat-info">Added via CO#3 · not ordered</div>
+                  </div>
+                  <span class="mat-status pending">◷ PENDING</span>
+                </div>
+
+                <div class="mat-item">
+                  <div>
+                    <div class="mat-name">Hardie board 1/2" × 3×5</div>
+                    <div class="mat-info">Qty 4 · Lowes · ETA Wed</div>
+                  </div>
+                  <span class="mat-status pending">◷ PENDING</span>
+                </div>
+
+                <div class="mat-actions-row">
+                  <button class="mat-action-btn primary">✓ Mark delivered</button>
+                  <button class="mat-action-btn danger">⚠ Flag missing</button>
+                  <button class="mat-action-btn">+ Order more</button>
+                </div>
+
+                <div style="margin-top: 10px; padding: 8px; background: var(--kerf-dark); border: 1px solid var(--kerf-border); border-radius: 6px; font-size: 10px; color: var(--kerf-text-dim);">
+                  <div style="color: var(--kerf-amber); font-size: 9px; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 2px;">▸ ROUTING · ALL ACTIONS</div>
+                  Mark delivered → Kerf Money updates QB bill receipt<br>
+                  Flag missing → Christian gets approval card for expedite<br>
+                  Order more → Procurement drafts PO for Christian approval
+                </div>
+              </div>
+
+            </div>
+            <div class="field-tabs">
+              <div class="field-voice-btn">▸</div>
+              <div class="field-tab">
+                <div class="field-tab-icon">⌂</div>
+                <div class="field-tab-label">HOME</div>
+              </div>
+              <div class="field-tab active">
+                <div class="field-tab-icon">◪</div>
+                <div class="field-tab-label">JOB</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">≡</div>
+                <div class="field-tab-label">LOG</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◯</div>
+                <div class="field-tab-label">ME</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Materials flow closes a known gap.</strong> v1 wireframes showed materials as static. Field now acts on material state in three ways: Mark delivered (updates QB bill receipt), Flag missing (routes to Christian's approval queue as "expedite?"), Order more (drafts PO). Every action logged with source → tag → route. The field is no longer a read-only surface.
+    </div>
+  </div>
+</div>
+
+
+<!-- FIELD LOG TAB -->
+<div class="frame" id="field-log">
+  <div class="frame-label">
+    <span>FRAME 4 · FIELD · TAB 3 · LOG (VOICE-BUILT DAILY LOG + PHOTO TIMELINE)</span>
+    <span class="frame-note">Every entry shows its source tag · auto-compiled into daily log at end of shift</span>
+  </div>
+  <div class="frame-body">
+    <div class="phone-row">
+      <div class="phone-col">
+        <div class="phone-role-label">FIELD · LOG TAB</div>
+        <div class="phone-sub-label">Timeline of the day · photos + voice + events</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:05</span><span>●●●● ⁕ 91%</span></div>
+            <div class="field-header">
+              <div>
+                <div class="field-brand">DAILY LOG</div>
+                <div class="field-role">Henderson · Tue Apr 21</div>
+              </div>
+              <div class="field-lang">EN</div>
+            </div>
+            <div class="screen-content">
+              <div class="log-day-header">Tuesday April 21, 2026 · 7:42 AM – 9:05 AM (active)</div>
+
+              <div class="log-entry">
+                <div class="log-time">7:42a</div>
+                <div class="log-content">
+                  <span class="log-tag">CLOCK-IN</span>
+                  <div>Clocked in · Mike Reyes · Tomás Gutierrez</div>
+                </div>
+              </div>
+
+              <div class="log-entry">
+                <div class="log-time">7:45a</div>
+                <div class="log-content">
+                  <span class="log-tag">SMS · HOMEOWNER</span>
+                  <div>Mrs. Henderson confirmed out until 2pm</div>
+                </div>
+              </div>
+
+              <div class="log-entry">
+                <div class="log-time">8:12a</div>
+                <div class="log-content">
+                  <span class="log-tag">TASK</span>
+                  <div>Started tub surround demo</div>
+                </div>
+              </div>
+
+              <div class="log-entry">
+                <div class="log-time">8:28a</div>
+                <div class="log-content">
+                  <span class="log-tag">PHOTO</span>
+                  <div>3 photos · tub rough · auto-tagged <em>demo, plumbing, before</em></div>
+                  <div class="log-photo-strip">
+                    <div class="log-photo">◰</div>
+                    <div class="log-photo">◰</div>
+                    <div class="log-photo">◰</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="log-entry" style="background: rgba(212,146,58,0.06);">
+                <div class="log-time">8:32a</div>
+                <div class="log-content">
+                  <span class="log-tag" style="color: var(--kerf-amber);">▸ VOICE · CHANGE_ORDER</span>
+                  <div>"Mike here at Henderson — we pulled the tub surround and there's galvanized all the way back to the main. Gotta replace about 8 feet. Bumping you on the Slack."</div>
+                  <div style="font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px;">→ CO Agent drafting · Christian notified</div>
+                </div>
+              </div>
+
+              <div class="log-entry">
+                <div class="log-time">8:47a</div>
+                <div class="log-content">
+                  <span class="log-tag">SMS · HOMEOWNER</span>
+                  <div>Mrs. Henderson: "Whatever you need to do, just keep us in the loop on cost"</div>
+                  <div style="font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px;">→ Auto-logged as consent</div>
+                </div>
+              </div>
+
+              <div class="log-entry">
+                <div class="log-time">8:52a</div>
+                <div class="log-content">
+                  <span class="log-tag">MATERIAL</span>
+                  <div>Delta R22000 valve flagged MISSING</div>
+                  <div style="font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px;">→ Christian expedite approval drafted</div>
+                </div>
+              </div>
+
+              <div style="padding: 14px; text-align: center;">
+                <button class="mob-btn mob-btn-primary" style="flex: 0; padding: 10px 20px;">Generate end-of-day log →</button>
+              </div>
+
+            </div>
+            <div class="field-tabs">
+              <div class="field-voice-btn">▸</div>
+              <div class="field-tab">
+                <div class="field-tab-icon">⌂</div>
+                <div class="field-tab-label">HOME</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◪</div>
+                <div class="field-tab-label">JOB</div>
+              </div>
+              <div class="field-tab active">
+                <div class="field-tab-icon">≡</div>
+                <div class="field-tab-label">LOG</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◯</div>
+                <div class="field-tab-label">ME</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- FIELD ME TAB -->
+<div class="frame" id="field-me">
+  <div class="frame-label">
+    <span>FRAME 5 · FIELD · TAB 4 · ME (CLOCK · HOURS · L0–L3 · MESSAGES)</span>
+    <span class="frame-note">Personal surface · career path visible · messages from Christian or Chief of Staff</span>
+  </div>
+  <div class="frame-body">
+    <div class="phone-row">
+      <div class="phone-col">
+        <div class="phone-role-label">FIELD · ME TAB</div>
+        <div class="phone-sub-label">Personal · payroll · adoption ladder</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:12</span><span>●●●● ⁕ 90%</span></div>
+            <div class="field-header">
+              <div>
+                <div class="field-brand">ME</div>
+                <div class="field-role">Mike Reyes</div>
+              </div>
+              <div class="field-lang">EN</div>
+            </div>
+            <div class="screen-content">
+
+              <div class="me-card">
+                <div class="me-header">
+                  <div class="me-avatar-lg">MR</div>
+                  <div>
+                    <div class="me-name">Mike Reyes</div>
+                    <div class="me-role">Lead PM · GGR</div>
+                    <div class="me-level">L2 · On track</div>
+                  </div>
+                </div>
+
+                <div class="me-stat-row">
+                  <div class="me-stat">
+                    <div class="me-stat-label">Hrs this week</div>
+                    <div class="me-stat-val">32.5</div>
+                  </div>
+                  <div class="me-stat">
+                    <div class="me-stat-label">Hrs this pay period</div>
+                    <div class="me-stat-val">74.2</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="me-ladder-card">
+                <div class="me-ladder-title">◉ Your path · L0 → L3</div>
+                <div class="me-ladder-track">
+                  <div class="me-ladder-step achieved"></div>
+                  <div class="me-ladder-step achieved"></div>
+                  <div class="me-ladder-step current"></div>
+                  <div class="me-ladder-step"></div>
+                </div>
+                <div class="me-ladder-sub">
+                  <span>L0</span><span>L1</span><span>L2 · you</span><span>L3</span>
+                </div>
+                <div class="me-ladder-next">
+                  <b>Next:</b> Author your first Kerf Play to reach L3. Your CO initiation flow is already the pattern — Coach can help you turn it into a Play.
+                </div>
+              </div>
+
+              <div style="padding: 0 14px 4px; font-size: 10px; color: var(--kerf-text-mute); text-transform: uppercase; letter-spacing: 0.12em;">Messages · 2</div>
+
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1">
+                  <span class="mob-qi-brand ggr">GGR</span>
+                  <span class="mob-qi-title">Christian</span>
+                  <span class="mob-qi-time">8:55a</span>
+                </div>
+                <div class="mob-qi-why">"Good catch on the galvanized. CO going out."</div>
+              </div>
+
+              <div class="mob-queue-item">
+                <div class="mob-qi-row1">
+                  <span class="mob-qi-title" style="color: var(--kerf-amber);">▸ Chief of Staff</span>
+                  <span class="mob-qi-time">9:00a</span>
+                </div>
+                <div class="mob-qi-why">Delta valve flagged missing · you'll get a text when Christian approves expedite.</div>
+              </div>
+
+            </div>
+            <div class="field-tabs">
+              <div class="field-voice-btn">▸</div>
+              <div class="field-tab">
+                <div class="field-tab-icon">⌂</div>
+                <div class="field-tab-label">HOME</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◪</div>
+                <div class="field-tab-label">JOB</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">≡</div>
+                <div class="field-tab-label">LOG</div>
+              </div>
+              <div class="field-tab active">
+                <div class="field-tab-icon">◯</div>
+                <div class="field-tab-label">ME</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Me tab closes the loop for crew.</strong> Not just a clock-in screen — it shows the career path. Field crew see where they sit on L0→L3, what the next rung requires, and get Chief of Staff nudges when action on their behalf is happening (like a materials expedite). Public ladder visibility creates social proof without being punitive (v3.2 §14.4).
+    </div>
+    <div class="callout" style="border-left-color: var(--alert);">
+      <strong>Spanish UI flag.</strong> Field header shows <span class="spanish-flag">EN · ES v2.1</span> — reminder that Spanish is v2.1 scope per capital plan. Not built for Week 1 / Phase 1, but the flag keeps it visible so the team doesn't forget. Tomás and future HPG field hires need this before GA.
+    </div>
+  </div>
+</div>
+
+
+<!-- VOICE OVERLAY -->
+<div class="frame" id="voice">
+  <div class="frame-label">
+    <span>FRAME 6 · VOICE CAPTURE OVERLAY · FIELD + OPERATOR</span>
+    <span class="frame-note">Persistent voice button on every screen · tap once to start, tap stop when done</span>
+  </div>
+  <div class="frame-body">
+    <div class="phone-row">
+      <div class="phone-col">
+        <div class="phone-role-label">VOICE CAPTURE · IN PROGRESS</div>
+        <div class="phone-sub-label">Field crew voice → routed in real-time</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>8:32</span><span>●●●● ⁕ 92%</span></div>
+            <div class="field-header">
+              <div>
+                <div class="field-brand">HENDERSON BATH</div>
+                <div class="field-role">Job · GGR-2026-018</div>
+              </div>
+              <div class="field-lang">EN</div>
+            </div>
+            <div class="screen-content" style="position: relative; background: rgba(0,0,0,0.5);">
+              <div style="padding: 16px; opacity: 0.4;">
+                <div style="height: 90px; background: var(--kerf-panel); border-radius: 8px; margin-bottom: 10px;"></div>
+                <div style="height: 60px; background: var(--kerf-panel); border-radius: 8px; margin-bottom: 10px;"></div>
+                <div style="height: 60px; background: var(--kerf-panel); border-radius: 8px;"></div>
+              </div>
+
+              <div class="voice-overlay">
+                <div class="voice-label">
+                  <span class="voice-pulse"></span>
+                  ▸ LISTENING · 0:14
+                </div>
+                <div class="voice-transcript">
+                  Mike here at Henderson — we pulled the tub surround and there's galvanized all the way back to the main. Gotta replace about 8 feet. Bumping you <span class="fade">on the…</span>
+                </div>
+                <div class="voice-meta">
+                  <span>Source: field_voice · Mike</span>
+                  <span>Project: auto-attached</span>
+                </div>
+                <button class="voice-stop">Stop & send</button>
+              </div>
+
+            </div>
+            <div class="field-tabs">
+              <div class="field-voice-btn" style="background: var(--alert); box-shadow: 0 4px 12px rgba(207,91,91,0.5), 0 0 0 4px var(--kerf-dark);">■</div>
+              <div class="field-tab active">
+                <div class="field-tab-icon">⌂</div>
+                <div class="field-tab-label">HOME</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◪</div>
+                <div class="field-tab-label">JOB</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">≡</div>
+                <div class="field-tab-label">LOG</div>
+              </div>
+              <div class="field-tab">
+                <div class="field-tab-icon">◯</div>
+                <div class="field-tab-label">ME</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 6-STEP DEMO -->
+<div class="frame" id="demo">
+  <div class="frame-label">
+    <span>FRAME 7 · 6-STEP SCRIPTED DEMO · FIELD VOICE → CHRISTIAN'S APPROVAL QUEUE</span>
+    <span class="frame-note">April 21, 2026 · 8:32 AM voice note → 9:14 AM approval · 42 min total · ~10 sec active capture time</span>
+  </div>
+  <div class="frame-body">
+    <div class="demo-grid">
+
+      <div class="demo-step">
+        <div class="demo-num">1</div>
+        <div class="demo-time">08:32:04 AM</div>
+        <div class="demo-role">MIKE · FIELD PM</div>
+        <div class="demo-title">Taps voice button, speaks 14 seconds</div>
+        <div class="demo-body">Standing in the Henderson master bath. Tub surround just came off the wall. Galvanized plumbing all the way back to the main — unexpected. Speaks into Field phone with one tap.</div>
+        <div class="demo-flow">
+          <span class="demo-flow-node src">▸ field_voice</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node">Whisper T1</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node tag">intent: change_order</span>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="demo-num">2</div>
+        <div class="demo-time">08:32:18 AM</div>
+        <div class="demo-role">▸ CHANGE ORDER AGENT</div>
+        <div class="demo-title">Receives intent · drafts CO body</div>
+        <div class="demo-body">Agent pulls project context (Henderson Bath GGR-2026-018), matches scope to pricing memory (copper replacement at GGR's rates), drafts body with cost breakdown. Confidence 94%.</div>
+        <div class="demo-flow">
+          <span class="demo-flow-node tag">change_order</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node">T2 local 70B draft</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node">T5 polish</span>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="demo-num">3</div>
+        <div class="demo-time">08:36:22 AM</div>
+        <div class="demo-role">▸ HOMEOWNER MESSENGER</div>
+        <div class="demo-title">Sends heads-up SMS to Mrs. Henderson</div>
+        <div class="demo-body">Policy: low-risk confirmations auto-send. Message reads "Heads up — found galvanized plumbing, we'll send a change order within the hour." No approval needed.</div>
+        <div class="demo-flow">
+          <span class="demo-flow-node">policy: auto</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node src">Twilio</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node route">homeowner</span>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="demo-num">4</div>
+        <div class="demo-time">08:47:31 AM</div>
+        <div class="demo-role">MRS. HENDERSON · SMS</div>
+        <div class="demo-title">"Whatever you need to do"</div>
+        <div class="demo-body">Inbound SMS auto-tagged as consent. Homeowner Messenger logs it against the pending change order. Christian sees the approval received on his queue.</div>
+        <div class="demo-flow">
+          <span class="demo-flow-node src">inbound SMS</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node tag">consent_received</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node route">CO dossier</span>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="demo-num">5</div>
+        <div class="demo-time">09:09:04 AM</div>
+        <div class="demo-role">▸ CHIEF OF STAFF</div>
+        <div class="demo-title">Surfaces as The One Thing</div>
+        <div class="demo-body">CO is ready + homeowner has consented. Chief of Staff promotes it to Christian's One Thing slot on web + mobile. Why-line written: "needs your sign-off before the scope can be sent."</div>
+        <div class="demo-flow">
+          <span class="demo-flow-node">CO dossier</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node">Chief of Staff T4</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node route">The One Thing</span>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="demo-num">6</div>
+        <div class="demo-time">09:14:00 AM</div>
+        <div class="demo-role">CHRISTIAN · OPERATOR</div>
+        <div class="demo-title">Opens phone, one tap, approved</div>
+        <div class="demo-body">Phone opens to the Henderson CO. Christian reviews confidence (94%) + why line + cost. Taps Approve. 60s cooling starts. At 9:15 AM, DocuSign link fires to Mrs. Henderson.</div>
+        <div class="demo-flow">
+          <span class="demo-flow-node">approve tap</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node tag">locked</span>
+          <span class="demo-flow-arrow">→</span>
+          <span class="demo-flow-node route">cooling 60s → send</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout">
+      <strong>From "galvanized discovered" to "homeowner has the CO" in 42 minutes, ~10 seconds of which is Mike talking.</strong> Every step shows source → tag → route. Every draft carries a confidence score. The approval has a why line. The action has a 60s undo. Mike keeps working, Christian's day isn't blown up, Mrs. Henderson has no surprises.
+    </div>
+    <div class="callout" style="border-left-color: var(--success);">
+      <strong>This is the Week 1 loop, slightly ahead of build.</strong> Week 1 (Apr 28 · per v3.2 §25.2) builds the Invoice Agent on Slack first — same pattern, different domain. The Change Order flow shown here is the architectural template that the Week 1 Invoice Agent inherits from.
+    </div>
+    <div style="text-align:center; margin-top:18px;">
+      <button class="demo-play-btn" id="demoPlayBtn">▸ Play 42-minute loop</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ============================================================
+   Kerf mobile wireframes v2 — dynamic layer
+   ============================================================ */
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function mtoast(msg) {
+    var t = document.createElement('div');
+    t.className = 'mtoast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.style.opacity='0'; t.style.transform='translate(-50%, 8px)'; }, 2400);
+    setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 2900);
+  }
+
+  /* --- 1. Field-tab click: toggle active class, micro-toast --- */
+  document.querySelectorAll('.field-tabs').forEach(function(group){
+    group.querySelectorAll('.field-tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        group.querySelectorAll('.field-tab').forEach(function(t){ t.classList.remove('active'); });
+        tab.classList.add('active');
+        var label = (tab.querySelector('.field-tab-label') || {}).textContent || '';
+        mtoast('→ ' + label.trim());
+      });
+    });
+  });
+
+  /* --- 2. Voice-button tap feedback --- */
+  document.querySelectorAll('.op-voice-btn, .field-voice-btn').forEach(function(btn){
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', function(){ mtoast('Voice capture armed'); });
+  });
+
+  /* --- 3. Live clock (any .live-clock spans update in real time) -- */
+  function pad(n){ return n < 10 ? '0'+n : ''+n; }
+  function tick(){
+    var d = new Date();
+    var hh = d.getHours(); var ampm = hh >= 12 ? 'PM' : 'AM';
+    var h12 = ((hh + 11) % 12) + 1;
+    var txt = h12 + ':' + pad(d.getMinutes()) + ' ' + ampm;
+    document.querySelectorAll('.live-clock').forEach(function(el){ el.textContent = txt; });
+  }
+  tick(); setInterval(tick, 15000);
+
+  /* --- 4. Confidence / progress bar reveal on scroll --- */
+  if ('IntersectionObserver' in window && !reduce) {
+    var bars = document.querySelectorAll('.progress-fill, .conf-fill, .bar-fill');
+    bars.forEach(function(b){
+      var target = b.style.width || getComputedStyle(b).width;
+      b.dataset.target = target;
+      b.style.width = '0';
+    });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting) {
+          var el = en.target;
+          setTimeout(function(){ el.style.width = el.dataset.target; }, 120);
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.3 });
+    bars.forEach(function(b){ io.observe(b); });
+  }
+
+  /* --- 5. Voice transcript typing effect (frame 6 / voice) --- */
+  (function(){
+    var tx = document.querySelector('#voice .voice-transcript');
+    if (!tx) return;
+    var full = tx.textContent.trim();
+    if (!full || reduce) return;
+    tx.textContent = '';
+    var caret = document.createElement('span');
+    caret.className = 'caret';
+    tx.appendChild(caret);
+    var i = 0;
+    var iv = setInterval(function(){
+      if (i >= full.length) { clearInterval(iv); return; }
+      caret.insertAdjacentText('beforebegin', full[i]);
+      i++;
+    }, 28);
+  })();
+
+  /* --- 6. Inject animated waveform into voice frame --- */
+  (function(){
+    var voice = document.querySelector('#voice .frame-body, #voice');
+    if (!voice || reduce) return;
+    var existing = voice.querySelector('.wave-row');
+    if (existing) return;
+    var row = document.createElement('div');
+    row.className = 'wave-row';
+    for (var i = 0; i < 10; i++) {
+      var b = document.createElement('span');
+      b.className = 'wave-bar';
+      row.appendChild(b);
+    }
+    // Place waveform near the first .voice-transcript if present, else top of body
+    var host = voice.querySelector('.voice-transcript');
+    if (host && host.parentNode) host.parentNode.insertBefore(row, host);
+    else voice.appendChild(row);
+  })();
+
+  /* --- 7. 6-step demo play-through --- */
+  (function(){
+    var steps = document.querySelectorAll('#demo .demo-step');
+    var btn = document.getElementById('demoPlayBtn');
+    if (!steps.length || !btn) return;
+    var running = false;
+    btn.addEventListener('click', function(){
+      if (running) return;
+      running = true;
+      btn.classList.add('running');
+      btn.textContent = '▸ Playing…';
+      steps.forEach(function(s){ s.classList.remove('playing'); });
+      var idx = 0;
+      var iv = setInterval(function(){
+        steps.forEach(function(s){ s.classList.remove('playing'); });
+        if (idx >= steps.length) {
+          clearInterval(iv);
+          running = false;
+          btn.classList.remove('running');
+          btn.textContent = '▸ Replay 42-minute loop';
+          mtoast('Loop complete · CO locked · 60s undo armed');
+          return;
+        }
+        steps[idx].classList.add('playing');
+        steps[idx].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+        idx++;
+      }, 1200);
+    });
+  })();
+
+  /* --- 8. Demo-step hover ping --- */
+  document.querySelectorAll('.demo-step').forEach(function(s){
+    s.addEventListener('click', function(){
+      document.querySelectorAll('.demo-step').forEach(function(x){ x.classList.remove('playing'); });
+      s.classList.add('playing');
+    });
+  });
+
+  /* --- 9. Capture-ping on new log/material rows (visual only) --- */
+  if ('IntersectionObserver' in window && !reduce) {
+    var rows = document.querySelectorAll('.log-entry, .material-row, .capture-row, .sched-item');
+    rows.forEach(function(r, i){ r.style.animationDelay = (i * 0.04) + 's'; r.classList.add('capture-ping'); });
+  }
+
+})();
+</script>
+
+</body>
+</html>

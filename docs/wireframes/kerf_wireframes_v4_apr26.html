@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · v4 Wireframes · Apr 26, 2026 · Right Hand + Robust Blackboard</title>
+<style>
+:root {
+  --kerf-amber: #D4923A;
+  --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419;
+  --kerf-panel: #1A1F26;
+  --kerf-panel-2: #232932;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1;
+  --kerf-text-dim: #9097A1;
+  --kerf-text-mute: #5F6670;
+  --ggr: #4A7FB0;
+  --ggr-dim: #1B3A5C;
+  --val: #A8794A;
+  --val-dim: #5C3A1B;
+  --hpg: #4A9F74;
+  --hpg-dim: #1B5C3A;
+  --success: #5FB37A;
+  --warn: #E0A858;
+  --alert: #CF5B5B;
+  --future: #7E6FCF;
+  --future-dim: #3A2E6B;
+  --rh: #C9A876;
+  --rh-dim: #6B5938;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11;
+  color: var(--kerf-text);
+  line-height: 1.4;
+  font-size: 13px;
+}
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 22px 40px;
+}
+.doc-header h1 { font-size: 22px; letter-spacing: 0.02em; font-weight: 600; margin-bottom: 4px; }
+.doc-header .sub { color: var(--kerf-text-dim); font-size: 12px; }
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.doc-header .future { color: var(--future); font-weight: 600; }
+.doc-header .rh { color: var(--rh); font-weight: 600; }
+.doc-header .alongside {
+  display: inline-block; margin-top: 10px;
+  padding: 4px 10px; border-radius: 4px;
+  background: rgba(126,111,207,0.12); border: 1px solid var(--future-dim);
+  font-size: 11px; color: var(--future);
+}
+
+.wireframe-container { padding: 30px 40px; max-width: 1700px; margin: 0 auto; }
+
+.nav-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: #0A0D11;
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 10px 40px;
+  display: flex; gap: 4px; overflow-x: auto;
+}
+.nav-bar a {
+  color: var(--kerf-text-dim); text-decoration: none; font-size: 11px;
+  padding: 5px 10px; border-radius: 3px; white-space: nowrap;
+}
+.nav-bar a:hover { background: var(--kerf-panel-2); color: var(--kerf-text); }
+
+.legend-block {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 18px 24px;
+  margin-bottom: 40px;
+}
+.legend-block h2 { font-size: 14px; margin-bottom: 10px; color: var(--kerf-amber); letter-spacing: 0.04em; }
+.legend-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 11px; }
+.legend-item { padding-left: 10px; border-left: 2px solid var(--kerf-border); }
+.legend-item strong { color: var(--kerf-text); display: block; margin-bottom: 3px; }
+.legend-item span { color: var(--kerf-text-dim); }
+.legend-item.rh { border-left-color: var(--rh); }
+.legend-item.rh strong { color: var(--rh); }
+
+.frame {
+  margin-bottom: 50px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--kerf-panel);
+}
+.frame-label {
+  background: var(--kerf-panel-2);
+  padding: 10px 18px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kerf-amber);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.frame-label .frame-note { color: var(--kerf-text-dim); text-transform: none; letter-spacing: 0; font-size: 11px; }
+.frame-body { padding: 30px 20px; background: #0A0D11; }
+
+/* Phone */
+.phone-row { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; }
+.phone-col { display: flex; flex-direction: column; align-items: center; }
+.phone-role-label {
+  font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--kerf-amber); margin-bottom: 6px; font-weight: 600;
+}
+.phone-sub-label { color: var(--kerf-text-dim); font-size: 11px; margin-bottom: 16px; text-align: center; max-width: 300px; }
+
+.phone {
+  width: 300px; height: 640px;
+  background: #000; border-radius: 38px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px var(--kerf-border);
+  position: relative;
+}
+.phone-notch {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 90px; height: 24px;
+  background: #000; border-radius: 0 0 12px 12px; z-index: 20;
+}
+.phone-screen {
+  width: 100%; height: 100%;
+  background: var(--kerf-dark);
+  border-radius: 28px; overflow: hidden;
+  position: relative; display: flex; flex-direction: column;
+}
+.status-bar {
+  height: 36px; display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 22px 0 22px; font-size: 11px; font-weight: 600;
+  color: var(--kerf-text); flex-shrink: 0;
+}
+.screen-title-bar {
+  padding: 6px 16px 10px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.op-brand { font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: var(--kerf-amber); }
+.op-role { font-size: 9px; color: var(--kerf-text-mute); letter-spacing: 0.06em; margin-top: 1px; }
+.op-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ggr-dim); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+}
+.screen-content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column; }
+
+/* RIGHT HAND voice introducer */
+.rh-intro {
+  margin: 10px 12px 6px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(201,168,118,0.10), rgba(201,168,118,0.02));
+  border: 1px solid var(--rh-dim);
+  border-radius: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.rh-badge {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--rh); color: #0A0D11;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; letter-spacing: 0;
+  flex-shrink: 0;
+}
+.rh-intro-body { flex: 1; }
+.rh-intro-name { font-size: 10px; font-weight: 700; color: var(--rh); letter-spacing: 0.04em; }
+.rh-intro-msg { font-size: 11px; color: var(--kerf-text); margin-top: 1px; line-height: 1.35; }
+
+/* Three-tier sections */
+.tier-label {
+  padding: 12px 16px 4px;
+  font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.tier-label .tier-meta { color: var(--kerf-text-mute); font-size: 9px; letter-spacing: 0.06em; text-transform: none; }
+
+/* THE ONE THING */
+.mob-one-thing {
+  margin: 4px 12px 0; padding: 14px;
+  background: linear-gradient(180deg, rgba(212,146,58,0.18) 0%, rgba(212,146,58,0.04) 100%);
+  border: 1px solid var(--kerf-amber-dim);
+  border-radius: 10px;
+}
+.mob-ot-tag {
+  font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--kerf-amber); font-weight: 800; margin-bottom: 6px;
+}
+.mob-ot-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; line-height: 1.3; }
+.mob-ot-why {
+  font-size: 11px; color: var(--kerf-text-dim);
+  margin-bottom: 12px; padding-left: 8px;
+  border-left: 2px solid var(--kerf-amber-dim);
+  line-height: 1.4;
+}
+.mob-ot-why b { color: var(--kerf-amber); font-weight: 600; }
+.mob-ot-actions { display: flex; gap: 6px; }
+.mob-btn {
+  flex: 1; padding: 9px 10px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px; background: var(--kerf-panel-2);
+  color: var(--kerf-text); font-size: 11px;
+  font-weight: 500; font-family: inherit; cursor: pointer; text-align: center;
+}
+.mob-btn-primary { background: var(--kerf-amber); color: #0A0D11; border-color: var(--kerf-amber); font-weight: 700; flex: 2; }
+.mob-btn-ghost { background: transparent; color: var(--kerf-text-dim); }
+
+/* ON DECK */
+.mob-ondeck { margin: 4px 12px 0; }
+.mob-ondeck-card {
+  padding: 10px 12px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.mob-ondeck-card.lead { border-color: var(--ggr-dim); }
+.mob-ondeck-rank {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--kerf-panel-2); color: var(--kerf-text-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; flex-shrink: 0;
+}
+.mob-ondeck-card.lead .mob-ondeck-rank { background: var(--ggr); color: #0A0D11; }
+.mob-ondeck-body { flex: 1; min-width: 0; }
+.mob-ondeck-row1 { display: flex; align-items: center; gap: 5px; }
+.mob-ondeck-brand {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 1px 5px; border-radius: 2px;
+}
+.mob-ondeck-brand.ggr { background: var(--ggr-dim); color: #A8C5E5; }
+.mob-ondeck-brand.val { background: var(--val-dim); color: #E5C5A8; }
+.mob-ondeck-brand.hpg { background: var(--hpg-dim); color: #A8E5C5; }
+.mob-ondeck-title { font-size: 12px; font-weight: 600; color: var(--kerf-text); }
+.mob-ondeck-why { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; line-height: 1.3; }
+.mob-ondeck-when { font-size: 10px; color: var(--kerf-text-mute); flex-shrink: 0; }
+
+/* THE PULSE */
+.mob-pulse {
+  margin: 4px 12px 14px;
+  padding: 10px;
+  background: rgba(74,159,116,0.06);
+  border: 1px solid var(--hpg-dim);
+  border-radius: 10px;
+}
+.mob-pulse-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--hpg); font-weight: 700; margin-bottom: 8px;
+}
+.mob-pulse-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.mob-pulse-cell {
+  background: rgba(0,0,0,0.25);
+  padding: 6px 8px; border-radius: 6px;
+  border: 1px solid rgba(74,159,116,0.18);
+}
+.mob-pulse-cell-label { font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-text-mute); margin-bottom: 2px; }
+.mob-pulse-cell-val { font-size: 13px; font-weight: 700; color: var(--kerf-text); font-variant-numeric: tabular-nums; }
+.mob-pulse-cell-sub { font-size: 9px; color: var(--kerf-text-dim); margin-top: 1px; }
+.mob-pulse-cell-val.warn { color: var(--warn); }
+.mob-pulse-cell-val.ok { color: var(--success); }
+.mob-pulse-bb-link {
+  margin-top: 8px; padding: 6px 8px;
+  background: rgba(0,0,0,0.3); border-radius: 6px;
+  font-size: 10px; color: var(--future);
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+}
+
+/* Op bottom nav */
+.op-bottom {
+  flex-shrink: 0; padding: 8px 14px 20px;
+  display: flex; gap: 8px;
+  border-top: 1px solid var(--kerf-border);
+  background: var(--kerf-panel); align-items: center;
+}
+.op-mod-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: var(--kerf-panel-2); color: var(--kerf-text-dim);
+  cursor: pointer; font-size: 14px;
+}
+.op-voice-btn {
+  margin-left: auto;
+  width: 38px; height: 38px;
+  background: var(--kerf-amber); color: #0A0D11;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(212,146,58,0.4);
+}
+
+/* ===================== BLACKBOARD EXPANDED — MOBILE ===================== */
+.bb-screen-title {
+  padding: 12px 16px 10px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.bb-title-back { font-size: 11px; color: var(--kerf-text-dim); }
+.bb-title-name { font-size: 14px; font-weight: 700; color: var(--future); letter-spacing: 0.06em; }
+.bb-title-live { font-size: 9px; color: var(--success); display: flex; align-items: center; gap: 4px; }
+.bb-title-live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+
+.bb-rail {
+  margin: 10px 12px 0;
+  padding: 8px 10px 10px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 8px;
+}
+.bb-rail-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--rh); font-weight: 800; margin-bottom: 8px;
+}
+.bb-rail-header .meta { color: var(--kerf-text-mute); font-size: 9px; letter-spacing: 0.04em; }
+
+/* Movement swimlane */
+.bb-movement {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  font-size: 9px;
+}
+.bb-movement-col {
+  background: rgba(0,0,0,0.25);
+  border-radius: 4px; padding: 5px 4px;
+  border-top: 2px solid var(--kerf-border);
+}
+.bb-movement-col.intake { border-top-color: var(--ggr); }
+.bb-movement-col.triage { border-top-color: var(--warn); }
+.bb-movement-col.draft  { border-top-color: var(--future); }
+.bb-movement-col.live   { border-top-color: var(--success); }
+.bb-movement-col-label { font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-text-mute); margin-bottom: 4px; }
+.bb-movement-col-count { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bb-movement-col-items { font-size: 8px; color: var(--kerf-text-dim); margin-top: 3px; line-height: 1.3; }
+
+/* Who's where */
+.bb-who-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 0;
+  font-size: 10px;
+  border-top: 1px solid var(--kerf-border);
+}
+.bb-who-row:first-of-type { border-top: none; padding-top: 0; }
+.bb-who-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+.bb-who-dot.ok { background: var(--success); }
+.bb-who-dot.idle { background: var(--warn); }
+.bb-who-dot.off { background: var(--kerf-text-mute); }
+.bb-who-name { color: var(--kerf-text); font-weight: 600; min-width: 56px; }
+.bb-who-site { color: var(--kerf-text-dim); flex: 1; }
+.bb-who-time { color: var(--kerf-text-mute); font-size: 9px; font-variant-numeric: tabular-nums; }
+
+/* Pinned */
+.bb-pinned-item {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding: 4px 0; font-size: 10px;
+  border-top: 1px solid var(--kerf-border);
+}
+.bb-pinned-item:first-of-type { border-top: none; padding-top: 0; }
+.bb-pinned-tag {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 1px 4px; border-radius: 2px; flex-shrink: 0;
+}
+.bb-pinned-tag.ggr { background: var(--ggr-dim); color: #A8C5E5; }
+.bb-pinned-tag.val { background: var(--val-dim); color: #E5C5A8; }
+.bb-pinned-tag.hpg { background: var(--hpg-dim); color: #A8E5C5; }
+.bb-pinned-tag.legal { background: var(--alert); color: #fff; }
+.bb-pinned-fact { color: var(--kerf-text-dim); flex: 1; line-height: 1.3; }
+.bb-pinned-fact b { color: var(--kerf-text); font-weight: 600; }
+
+/* Changed */
+.bb-change-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 0; font-size: 10px;
+  border-top: 1px solid var(--kerf-border);
+}
+.bb-change-row:first-of-type { border-top: none; padding-top: 0; }
+.bb-change-arrow {
+  font-size: 11px; flex-shrink: 0;
+  color: var(--success); font-weight: 700;
+}
+.bb-change-arrow.down { color: var(--alert); }
+.bb-change-arrow.flat { color: var(--kerf-text-mute); }
+.bb-change-fact { color: var(--kerf-text-dim); flex: 1; line-height: 1.3; }
+.bb-change-fact b { color: var(--kerf-text); font-weight: 600; }
+.bb-change-time { color: var(--kerf-text-mute); font-size: 9px; flex-shrink: 0; }
+
+/* Holding */
+.bb-holding-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 0; font-size: 10px;
+  border-top: 1px solid var(--kerf-border);
+}
+.bb-holding-row:first-of-type { border-top: none; padding-top: 0; }
+.bb-holding-icon {
+  width: 18px; height: 18px; border-radius: 4px;
+  background: rgba(212,146,58,0.18); color: var(--kerf-amber);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.bb-holding-fact { color: var(--kerf-text); flex: 1; font-weight: 500; line-height: 1.3; }
+.bb-holding-age { color: var(--alert); font-size: 9px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+/* ===================== DESKTOP — PERMISSION LATTICE ===================== */
+.desktop-frame {
+  background: var(--kerf-dark);
+  border: 1px solid var(--kerf-border); border-radius: 6px;
+  height: 540px; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.desk-topbar {
+  height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 14px;
+  background: var(--kerf-panel-2);
+  border-bottom: 1px solid var(--kerf-border);
+}
+.desk-brand { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; color: var(--kerf-amber); }
+.desk-search {
+  flex: 1; max-width: 360px;
+  padding: 4px 10px; background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border); border-radius: 4px;
+  font-size: 10px; color: var(--kerf-text-mute);
+}
+.desk-user { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--kerf-text-dim); margin-left: auto; }
+
+.desk-body { flex: 1; display: flex; min-height: 0; }
+.desk-sidebar {
+  width: 180px; background: var(--kerf-panel-2);
+  border-right: 1px solid var(--kerf-border);
+  padding: 14px 6px; overflow-y: auto; flex-shrink: 0;
+}
+.desk-nav-group {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-text-mute); padding: 8px 8px 4px;
+}
+.desk-nav-item {
+  padding: 5px 8px; font-size: 11px; color: var(--kerf-text-dim);
+  border-radius: 3px; cursor: pointer;
+}
+.desk-nav-item.active { background: var(--kerf-amber-dim); color: var(--kerf-text); }
+.desk-nav-item:hover:not(.active) { background: var(--kerf-panel); color: var(--kerf-text); }
+
+.desk-main {
+  flex: 1; padding: 16px 20px; overflow-y: auto;
+  background: var(--kerf-dark);
+}
+
+.desk-h1 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+.desk-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 14px; }
+
+/* Side-by-side role views */
+.role-split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.role-pane {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px; overflow: hidden;
+}
+.role-pane-header {
+  padding: 10px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.role-pane-header.owner { background: rgba(212,146,58,0.15); }
+.role-pane-header.field { background: rgba(74,159,116,0.12); }
+.role-pane-name { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.role-pane-name.owner { color: var(--kerf-amber); }
+.role-pane-name.field { color: var(--hpg); }
+.role-pane-meta { font-size: 9px; color: var(--kerf-text-mute); letter-spacing: 0.04em; }
+.role-pane-body { padding: 8px 10px; max-height: 400px; overflow-y: auto; }
+
+.bb-entry {
+  padding: 6px 0; font-size: 10px;
+  border-top: 1px solid var(--kerf-border);
+  display: flex; gap: 6px; align-items: flex-start;
+}
+.bb-entry:first-child { border-top: none; padding-top: 0; }
+.bb-entry-time { font-size: 9px; color: var(--kerf-text-mute); width: 38px; flex-shrink: 0; padding-top: 1px; font-variant-numeric: tabular-nums; }
+.bb-entry-body { flex: 1; line-height: 1.35; }
+.bb-entry-actor { color: var(--kerf-text); font-weight: 600; }
+.bb-entry-fact { color: var(--kerf-text-dim); }
+.bb-entry-fact .redacted {
+  display: inline-block; padding: 0 5px;
+  background: rgba(95,102,112,0.25); border-radius: 2px;
+  color: var(--kerf-text-mute); font-style: italic;
+}
+.bb-entry-fact .private-tag {
+  display: inline-block; margin-left: 4px; padding: 0 4px;
+  font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--alert); color: #fff; border-radius: 2px; font-weight: 700;
+}
+.bb-entry.hidden-from-field {
+  opacity: 0.35; filter: grayscale(0.6);
+}
+.bb-entry-hidden-marker {
+  font-size: 9px; color: var(--kerf-text-mute); font-style: italic;
+  padding: 4px 0; border-top: 1px dashed var(--kerf-border);
+}
+
+/* Permission lattice spec card */
+.lattice-card {
+  background: var(--kerf-panel);
+  border: 1px solid var(--rh-dim);
+  border-radius: 8px; padding: 18px 22px;
+}
+.lattice-h { font-size: 13px; font-weight: 700; color: var(--rh); margin-bottom: 4px; letter-spacing: 0.04em; }
+.lattice-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 14px; }
+
+.lattice-table {
+  width: 100%; font-size: 11px; border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.lattice-table th, .lattice-table td {
+  padding: 7px 10px; text-align: left;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.lattice-table th {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  background: var(--kerf-panel-2);
+}
+.lattice-table td.role { font-weight: 600; color: var(--kerf-text); }
+.lattice-yes { color: var(--success); font-weight: 700; }
+.lattice-partial { color: var(--warn); font-weight: 700; }
+.lattice-no { color: var(--alert); font-weight: 700; }
+.lattice-redacted { color: var(--kerf-text-mute); }
+
+.lattice-rules {
+  margin-top: 16px;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+}
+.lattice-rule {
+  padding: 10px 12px;
+  background: var(--kerf-panel-2);
+  border-left: 3px solid var(--rh);
+  border-radius: 4px;
+  font-size: 11px;
+}
+.lattice-rule b { color: var(--rh); display: block; margin-bottom: 3px; font-size: 11px; }
+.lattice-rule span { color: var(--kerf-text-dim); line-height: 1.45; }
+
+/* Compare callout */
+.compare-callout {
+  margin: 14px 0;
+  padding: 8px 14px;
+  background: rgba(126,111,207,0.08);
+  border: 1px dashed var(--future-dim);
+  border-radius: 6px;
+  font-size: 11px; color: var(--future); line-height: 1.5;
+}
+.compare-callout b { color: var(--future); }
+
+/* Footer */
+.foot {
+  margin-top: 50px; padding: 20px 24px;
+  background: var(--kerf-panel); border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+}
+.foot h2 { font-size: 13px; color: var(--kerf-amber); margin-bottom: 10px; letter-spacing: 0.06em; }
+.foot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 11px; }
+.foot-item { padding-left: 10px; border-left: 2px solid var(--kerf-border); }
+.foot-item strong { color: var(--kerf-text); display: block; margin-bottom: 3px; }
+.foot-item span { color: var(--kerf-text-dim); line-height: 1.45; }
+
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <h1>Kerf · v4 Wireframes — <span class="rh">Right Hand</span> + Robust <span class="future">Blackboard</span></h1>
+  <div style="margin-top:6px; margin-bottom:8px; font-size:11px; color:#C9A876; letter-spacing:0.06em; font-weight:600;">
+    <span style="color:#D4923A; font-weight:800;">Make More.</span>
+    &nbsp;·&nbsp; Intuitive operations for builders.
+    &nbsp;·&nbsp; <span style="color:#9097A1;">EN&nbsp;|&nbsp;ES</span>
+    &nbsp;·&nbsp; <span style="color:#C9A876;">Right Hand · Mano Derecha</span>
+  </div>
+  <div class="sub">
+    <span class="amber">Apr 26, 2026</span> · iteration on V3 · canon name <b style="color:var(--rh);">Right Hand</b> replaces "Chief of Staff" ·
+    landing: <b>The One Thing → On Deck → The Pulse</b> · Blackboard restructured as five-rail surface with
+    <b>role-scoped permission lattice</b> baked in.
+  </div>
+  <div class="alongside">Sits alongside V3 Apr 23 — V3 remains canonical for V1 build until rename rolls forward.</div>
+</div>
+
+<div class="nav-bar">
+  <a href="#legend">Legend</a>
+  <a href="#landing">A · Operator landing (3-tier)</a>
+  <a href="#bb-mobile">B · Blackboard · 5 rails</a>
+  <a href="#bb-roles">C · Role-scoped Blackboard</a>
+  <a href="#lattice">D · Permission lattice</a>
+  <a href="#footer">Notes</a>
+</div>
+
+<div class="wireframe-container">
+
+<!-- ============ LEGEND ============ -->
+<div class="legend-block" id="legend">
+  <h2>WHAT V4 CHANGES — FIVE LOCKS</h2>
+  <div class="legend-grid">
+    <div class="legend-item rh"><strong>Right Hand · canon name</strong><span>Replaces "Chief of Staff." EN: <b>Right Hand</b> · ES: <b>Mano Derecha</b>. Short handle "Right" in conversational UI; "RH" badge on Blackboard authorship. Tenant persona-name override is V2.0+ only.</span></div>
+    <div class="legend-item"><strong>Three-tier landing</strong><span><b>The One Thing</b> (decide now) → <b>On Deck</b> (decide soon) → <b>The Pulse</b> (be aware). Blackboard sits below the Pulse as the deeper drill-in surface, not as the landing's main feed.</span></div>
+    <div class="legend-item"><strong>Blackboard · five rails</strong><span><b>Movement</b> (lifecycle swimlane) · <b>Who's Where</b> (crews + sites live) · <b>Pinned</b> (locked context) · <b>Changed</b> (4-hr deltas) · <b>Holding</b> (waiting on owner). Replaces single chronological feed.</span></div>
+    <div class="legend-item"><strong>Permission lattice</strong><span>Role-scoped reads at the persistence layer, not the UI. Operator-private entries never written to non-owner views (not redacted — never persisted there). Read audit + offboarding token revoke + cache scope-purge by lane.</span></div>
+    <div class="legend-item"><strong>Phase pills off live UI</strong><span>V1/V1.5/V2.0+ tags belong in build specs, not the operator surface. Live screens render product reality, not roadmap status.</span></div>
+    <div class="legend-item"><strong>Persona override · V2.0+</strong><span>Two-layer: canon name fixed (Right Hand), optional tenant persona display name in message bubbles only. Apple Siri / BofA Erica precedent. Not in V1.</span></div>
+  </div>
+</div>
+
+<!-- ============ A · OPERATOR LANDING ============ -->
+<div class="frame" id="landing">
+  <div class="frame-label">A · Operator landing — three-tier <span class="frame-note">mobile · owner role · One Thing → On Deck → The Pulse · Right Hand voice introducer</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <!-- Tier 1+2 -->
+      <div class="phone-col">
+        <div class="phone-role-label">Landing · upper</div>
+        <div class="phone-sub-label">Right Hand opens with one line of context. The One Thing demands a decision. On Deck shows what's coming.</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="screen-title-bar">
+              <div>
+                <div class="op-brand">KERF</div>
+                <div class="op-role">OWNER · CHRISTIAN · TUE</div>
+              </div>
+              <div class="op-avatar">CA</div>
+            </div>
+            <div class="screen-content">
+
+              <div class="rh-intro">
+                <div class="rh-badge">RH</div>
+                <div class="rh-intro-body">
+                  <div class="rh-intro-name">RIGHT HAND</div>
+                  <div class="rh-intro-msg">Morning. One decision waiting · two on deck · Patel framing passed inspection 8:14.</div>
+                </div>
+              </div>
+
+              <div class="tier-label"><span>① The One Thing</span><span class="tier-meta">decide now</span></div>
+              <div class="mob-one-thing">
+                <div class="mob-ot-tag">approval · gated</div>
+                <div class="mob-ot-title">Approve Patel tile sub · +$840</div>
+                <div class="mob-ot-why">Crew waiting on tile · pricing pinned to <b>V2 catalog</b> · 38% margin held · single-party signature ready under §7.2 ceiling.</div>
+                <div class="mob-ot-actions">
+                  <button class="mob-btn mob-btn-ghost">Defer</button>
+                  <button class="mob-btn">Open CO</button>
+                  <button class="mob-btn mob-btn-primary">Approve</button>
+                </div>
+              </div>
+
+              <div class="tier-label"><span>② On Deck</span><span class="tier-meta">decide soon · 2 items</span></div>
+              <div class="mob-ondeck">
+                <div class="mob-ondeck-card lead">
+                  <div class="mob-ondeck-rank">1</div>
+                  <div class="mob-ondeck-body">
+                    <div class="mob-ondeck-row1">
+                      <span class="mob-ondeck-brand ggr">GGR</span>
+                      <span class="mob-ondeck-title">Clem proposal · review draft</span>
+                    </div>
+                    <div class="mob-ondeck-why">All lines sourced · margins green · client meeting 11:00.</div>
+                  </div>
+                  <div class="mob-ondeck-when">11:00</div>
+                </div>
+                <div class="mob-ondeck-card">
+                  <div class="mob-ondeck-rank">2</div>
+                  <div class="mob-ondeck-body">
+                    <div class="mob-ondeck-row1">
+                      <span class="mob-ondeck-brand val">VAL</span>
+                      <span class="mob-ondeck-title">Coring cab RFQ · sub bid back</span>
+                    </div>
+                    <div class="mob-ondeck-why">Lewis came in $1.4k under target · waiting on your ok to release.</div>
+                  </div>
+                  <div class="mob-ondeck-when">1:30</div>
+                </div>
+              </div>
+
+              <div class="tier-label"><span>③ The Pulse</span><span class="tier-meta">live ops</span></div>
+              <div class="mob-pulse" style="opacity:0.5;">
+                <div class="mob-pulse-header"><span>continued →</span></div>
+              </div>
+
+            </div>
+            <div class="op-bottom">
+              <div class="op-mod-btn">☰</div>
+              <div class="op-mod-btn">💬</div>
+              <div class="op-voice-btn">◉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 3 -->
+      <div class="phone-col">
+        <div class="phone-role-label">Landing · lower</div>
+        <div class="phone-sub-label">The Pulse — first-glance situational awareness. Tap to drill into the Blackboard.</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>•••</span></div>
+            <div class="screen-title-bar">
+              <div>
+                <div class="op-brand">KERF</div>
+                <div class="op-role">OWNER · CHRISTIAN · TUE</div>
+              </div>
+              <div class="op-avatar">CA</div>
+            </div>
+            <div class="screen-content">
+              <div class="tier-label" style="padding-top:14px;"><span>③ The Pulse</span><span class="tier-meta">live · 4hr window</span></div>
+              <div class="mob-pulse">
+                <div class="mob-pulse-header"><span>◈ today's vital signs</span><span>live</span></div>
+                <div class="mob-pulse-grid">
+                  <div class="mob-pulse-cell">
+                    <div class="mob-pulse-cell-label">Active jobs</div>
+                    <div class="mob-pulse-cell-val ok">8</div>
+                    <div class="mob-pulse-cell-sub">3 hot · 5 steady</div>
+                  </div>
+                  <div class="mob-pulse-cell">
+                    <div class="mob-pulse-cell-label">On time %</div>
+                    <div class="mob-pulse-cell-val ok">92%</div>
+                    <div class="mob-pulse-cell-sub">+4 vs last wk</div>
+                  </div>
+                  <div class="mob-pulse-cell">
+                    <div class="mob-pulse-cell-label">Crews on site</div>
+                    <div class="mob-pulse-cell-val">4 / 5</div>
+                    <div class="mob-pulse-cell-sub">Carlos late · Patel</div>
+                  </div>
+                  <div class="mob-pulse-cell">
+                    <div class="mob-pulse-cell-label">Cash this wk</div>
+                    <div class="mob-pulse-cell-val">$184k</div>
+                    <div class="mob-pulse-cell-sub">WIP value</div>
+                  </div>
+                  <div class="mob-pulse-cell">
+                    <div class="mob-pulse-cell-label">Inspections</div>
+                    <div class="mob-pulse-cell-val">3</div>
+                    <div class="mob-pulse-cell-sub">Tue passed · Thu sched</div>
+                  </div>
+                  <div class="mob-pulse-cell">
+                    <div class="mob-pulse-cell-label">Margin · drift</div>
+                    <div class="mob-pulse-cell-val warn">-1.3pt</div>
+                    <div class="mob-pulse-cell-sub">Moore HPG sub mix</div>
+                  </div>
+                </div>
+                <div class="mob-pulse-bb-link">
+                  <span>◈ Open the Blackboard · 5 rails</span>
+                  <span>›</span>
+                </div>
+              </div>
+
+              <div class="rh-intro" style="margin-top:14px;">
+                <div class="rh-badge">RH</div>
+                <div class="rh-intro-body">
+                  <div class="rh-intro-name">RIGHT HAND · NOTE</div>
+                  <div class="rh-intro-msg">Margin drift on Moore is sub mix · I have two alternates with availability Thu/Fri. Want me to draft the swap for your review?</div>
+                </div>
+              </div>
+
+            </div>
+            <div class="op-bottom">
+              <div class="op-mod-btn">☰</div>
+              <div class="op-mod-btn">💬</div>
+              <div class="op-voice-btn">◉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ B · BLACKBOARD · FIVE RAILS ============ -->
+<div class="frame" id="bb-mobile">
+  <div class="frame-label">B · Blackboard · expanded · five rails <span class="frame-note">mobile · owner view · Movement · Who's Where · Pinned · Changed · Holding</span></div>
+  <div class="frame-body">
+    <div class="phone-row">
+
+      <!-- Rails 1-3 -->
+      <div class="phone-col">
+        <div class="phone-role-label">Blackboard · upper</div>
+        <div class="phone-sub-label">Movement — lifecycle swimlane · Who's Where — crews live · Pinned — locked context</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:42</span><span>•••</span></div>
+            <div class="bb-screen-title">
+              <div class="bb-title-back">‹ Landing</div>
+              <div class="bb-title-name">◈ BLACKBOARD</div>
+              <div class="bb-title-live">live</div>
+            </div>
+            <div class="screen-content">
+
+              <div class="bb-rail">
+                <div class="bb-rail-header"><span>① MOVEMENT</span><span class="meta">14 active · 4 stages</span></div>
+                <div class="bb-movement">
+                  <div class="bb-movement-col intake">
+                    <div class="bb-movement-col-label">Intake</div>
+                    <div class="bb-movement-col-count">3</div>
+                    <div class="bb-movement-col-items">Patel · Moore · Sanchez</div>
+                  </div>
+                  <div class="bb-movement-col triage">
+                    <div class="bb-movement-col-label">Triage</div>
+                    <div class="bb-movement-col-count">2</div>
+                    <div class="bb-movement-col-items">Nguyen ADU · Rivera</div>
+                  </div>
+                  <div class="bb-movement-col draft">
+                    <div class="bb-movement-col-label">Drafting</div>
+                    <div class="bb-movement-col-count">3</div>
+                    <div class="bb-movement-col-items">Clem · CO-004 · Coring</div>
+                  </div>
+                  <div class="bb-movement-col live">
+                    <div class="bb-movement-col-label">Live</div>
+                    <div class="bb-movement-col-count">6</div>
+                    <div class="bb-movement-col-items">Patel · Moore · +4</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bb-rail">
+                <div class="bb-rail-header"><span>② WHO'S WHERE</span><span class="meta">5 crews · 2 subs</span></div>
+                <div class="bb-who-row">
+                  <div class="bb-who-dot ok"></div>
+                  <div class="bb-who-name">Carlos</div>
+                  <div class="bb-who-site">Patel · framing pass</div>
+                  <div class="bb-who-time">8:14</div>
+                </div>
+                <div class="bb-who-row">
+                  <div class="bb-who-dot ok"></div>
+                  <div class="bb-who-name">Jose</div>
+                  <div class="bb-who-site">Clem · demo day 2</div>
+                  <div class="bb-who-time">7:55</div>
+                </div>
+                <div class="bb-who-row">
+                  <div class="bb-who-dot idle"></div>
+                  <div class="bb-who-name">Miguel</div>
+                  <div class="bb-who-site">Shop · cab assembly</div>
+                  <div class="bb-who-time">9:02</div>
+                </div>
+                <div class="bb-who-row">
+                  <div class="bb-who-dot ok"></div>
+                  <div class="bb-who-name">Lewis sub</div>
+                  <div class="bb-who-site">Moore · panel pull</div>
+                  <div class="bb-who-time">8:48</div>
+                </div>
+                <div class="bb-who-row">
+                  <div class="bb-who-dot off"></div>
+                  <div class="bb-who-name">Maria</div>
+                  <div class="bb-who-site">Office · intake queue</div>
+                  <div class="bb-who-time">9:22</div>
+                </div>
+              </div>
+
+              <div class="bb-rail">
+                <div class="bb-rail-header"><span>③ PINNED</span><span class="meta">locked context</span></div>
+                <div class="bb-pinned-item">
+                  <span class="bb-pinned-tag ggr">GGR</span>
+                  <span class="bb-pinned-fact"><b>Catalog v2.4</b> · pricing pinned to all live proposals · refresh due May 1.</span>
+                </div>
+                <div class="bb-pinned-item">
+                  <span class="bb-pinned-tag hpg">HPG</span>
+                  <span class="bb-pinned-fact"><b>25C federal</b> expired 12/31/25 · model rebates SGIP + TECH + SDG&amp;E only.</span>
+                </div>
+                <div class="bb-pinned-item">
+                  <span class="bb-pinned-tag val">VAL</span>
+                  <span class="bb-pinned-fact"><b>Rubio · Tannin Primer</b> stocked · custom-dim no-return clause active.</span>
+                </div>
+                <div class="bb-pinned-item">
+                  <span class="bb-pinned-tag legal">LEGAL</span>
+                  <span class="bb-pinned-fact"><b>De Wall pattern</b> · all CO captures need consent log + signed delta.</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rails 4-5 -->
+      <div class="phone-col">
+        <div class="phone-role-label">Blackboard · lower</div>
+        <div class="phone-sub-label">Changed — 4-hour deltas only · Holding — items waiting on the owner specifically</div>
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:42</span><span>•••</span></div>
+            <div class="bb-screen-title">
+              <div class="bb-title-back">‹ Landing</div>
+              <div class="bb-title-name">◈ BLACKBOARD</div>
+              <div class="bb-title-live">live</div>
+            </div>
+            <div class="screen-content">
+
+              <div class="bb-rail">
+                <div class="bb-rail-header"><span>④ CHANGED</span><span class="meta">last 4 hrs · deltas only</span></div>
+                <div class="bb-change-row">
+                  <span class="bb-change-arrow">▲</span>
+                  <span class="bb-change-fact"><b>Patel</b> · framing inspection passed · day 18/54.</span>
+                  <span class="bb-change-time">8:14</span>
+                </div>
+                <div class="bb-change-row">
+                  <span class="bb-change-arrow down">▼</span>
+                  <span class="bb-change-fact"><b>Moore</b> · panel slipped 2d · sub conflict · 2 alternates ID'd.</span>
+                  <span class="bb-change-time">8:48</span>
+                </div>
+                <div class="bb-change-row">
+                  <span class="bb-change-arrow">▲</span>
+                  <span class="bb-change-fact"><b>Coring</b> · sub bid back $1.4k under target.</span>
+                  <span class="bb-change-time">9:07</span>
+                </div>
+                <div class="bb-change-row">
+                  <span class="bb-change-arrow flat">●</span>
+                  <span class="bb-change-fact"><b>Clem</b> · proposal locked to GGR catalog v2.4.</span>
+                  <span class="bb-change-time">9:14</span>
+                </div>
+                <div class="bb-change-row">
+                  <span class="bb-change-arrow">▲</span>
+                  <span class="bb-change-fact">Right Hand drafted Moore rebate stack · pending verify.</span>
+                  <span class="bb-change-time">9:22</span>
+                </div>
+              </div>
+
+              <div class="bb-rail" style="border-color: var(--kerf-amber-dim); background: rgba(212,146,58,0.04);">
+                <div class="bb-rail-header" style="color: var(--kerf-amber);"><span>⑤ HOLDING · ON YOU</span><span class="meta">3 items</span></div>
+                <div class="bb-holding-row">
+                  <div class="bb-holding-icon">!</div>
+                  <div class="bb-holding-fact">Patel CO-004 · tile sub · +$840 — <span style="color:var(--kerf-text-dim);font-weight:400;">crew waiting</span></div>
+                  <div class="bb-holding-age">2h 14m</div>
+                </div>
+                <div class="bb-holding-row">
+                  <div class="bb-holding-icon">!</div>
+                  <div class="bb-holding-fact">Moore sub swap · approve Lewis or Vega — <span style="color:var(--kerf-text-dim);font-weight:400;">scheduling Thu</span></div>
+                  <div class="bb-holding-age">38m</div>
+                </div>
+                <div class="bb-holding-row">
+                  <div class="bb-holding-icon">!</div>
+                  <div class="bb-holding-fact">Coring RFQ · release Lewis bid — <span style="color:var(--kerf-text-dim);font-weight:400;">vendor expecting</span></div>
+                  <div class="bb-holding-age">12m</div>
+                </div>
+              </div>
+
+              <div class="rh-intro" style="margin: 8px 12px 14px;">
+                <div class="rh-badge">RH</div>
+                <div class="rh-intro-body">
+                  <div class="rh-intro-name">RIGHT HAND</div>
+                  <div class="rh-intro-msg">All three are decision-shaped · I can voice you through them in 3 minutes.</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ C · ROLE-SCOPED BLACKBOARD ============ -->
+<div class="frame" id="bb-roles">
+  <div class="frame-label">C · Blackboard · same moment · two roles <span class="frame-note">desktop · owner view (left) vs field-PM view (right) · same persistence layer · different reads</span></div>
+  <div class="frame-body">
+
+    <div class="compare-callout">
+      <b>Privacy by construction.</b> Operator-private entries (legal, HR, margin, attorney comms, capital) are <b>not redacted in the field view — they were never written to it.</b> The persistence layer enforces role-scoped reads. A disgruntled or offboarded actor cannot pull operator content from a cached field app because the operator content was never on that device.
+    </div>
+
+    <div class="role-split">
+      <div class="role-pane">
+        <div class="role-pane-header owner">
+          <div>
+            <div class="role-pane-name owner">OWNER VIEW · CHRISTIAN</div>
+            <div class="role-pane-meta">full read · margin · legal · HR · capital</div>
+          </div>
+          <div class="op-avatar">CA</div>
+        </div>
+        <div class="role-pane-body">
+          <div class="bb-entry">
+            <div class="bb-entry-time">9:22</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Right Hand</span>
+              <span class="bb-entry-fact"> · drafted Moore rebate stack · SGIP $3,400 · TECH $1,200 · pending verify · <b>est margin hold +1.8pt</b></span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">9:14</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Estimator</span>
+              <span class="bb-entry-fact"> · Clem proposal locked to GGR v2.4 · <b>$58.4k · 38.2% margin held</b></span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">9:07</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Vendor</span>
+              <span class="bb-entry-fact"> · Coring sub bid back $1.4k under target · <b>blended margin now 36.7%</b></span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">9:02</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Counsel</span>
+              <span class="bb-entry-fact"> · De Wall · Reden | Riddell · meet/confer scheduled May 4 · prep brief due Apr 30
+                <span class="private-tag">operator-private</span>
+              </span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">8:48</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Lewis sub</span>
+              <span class="bb-entry-fact"> · Moore panel pull on site · check-in</span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">8:14</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Carlos</span>
+              <span class="bb-entry-fact"> · Patel framing inspection PASSED · day 18/54</span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">7:55</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">HR</span>
+              <span class="bb-entry-fact"> · Jake onboarding doc draft ready · I-9 + W-4 + safety
+                <span class="private-tag">operator-private</span>
+              </span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">7:40</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Capital</span>
+              <span class="bb-entry-fact"> · F&amp;F SAFE prep · target Feb 2027 · cap $5–10M
+                <span class="private-tag">operator-private</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="role-pane">
+        <div class="role-pane-header field">
+          <div>
+            <div class="role-pane-name field">FIELD-PM VIEW · MARIA</div>
+            <div class="role-pane-meta">project-scoped · no margin · no legal · no HR · no capital</div>
+          </div>
+          <div class="op-avatar" style="background:var(--hpg-dim);">MR</div>
+        </div>
+        <div class="role-pane-body">
+          <div class="bb-entry">
+            <div class="bb-entry-time">9:22</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Right Hand</span>
+              <span class="bb-entry-fact"> · drafted Moore rebate stack · pending verify</span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">9:14</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Estimator</span>
+              <span class="bb-entry-fact"> · Clem proposal locked to GGR v2.4 · ready for owner review</span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">9:07</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Vendor</span>
+              <span class="bb-entry-fact"> · Coring sub bid back · within target</span>
+            </div>
+          </div>
+          <div class="bb-entry-hidden-marker">— 1 entry not visible at this role (operator-private) —</div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">8:48</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Lewis sub</span>
+              <span class="bb-entry-fact"> · Moore panel pull on site · check-in</span>
+            </div>
+          </div>
+          <div class="bb-entry">
+            <div class="bb-entry-time">8:14</div>
+            <div class="bb-entry-body">
+              <span class="bb-entry-actor">Carlos</span>
+              <span class="bb-entry-fact"> · Patel framing inspection PASSED · day 18/54</span>
+            </div>
+          </div>
+          <div class="bb-entry-hidden-marker">— 2 entries not visible at this role (operator-private) —</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ D · PERMISSION LATTICE ============ -->
+<div class="frame" id="lattice">
+  <div class="frame-label">D · Permission lattice <span class="frame-note">role × data class · enforced at persistence layer · this is V1 scope, not V2 polish</span></div>
+  <div class="frame-body">
+    <div class="lattice-card">
+      <div class="lattice-h">RIGHT HAND · BLACKBOARD ACCESS LATTICE</div>
+      <div class="lattice-sub">Reads scoped at the persistence layer, not the UI. Each cell answers: when this role queries the Blackboard, what do they get back?</div>
+
+      <table class="lattice-table">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Project status</th>
+            <th>Crew · field</th>
+            <th>Pricing · margin</th>
+            <th>Legal · attorney</th>
+            <th>HR · personnel</th>
+            <th>Capital · finance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="role">Owner</td>
+            <td class="lattice-yes">Full</td>
+            <td class="lattice-yes">Full</td>
+            <td class="lattice-yes">Full</td>
+            <td class="lattice-yes">Full</td>
+            <td class="lattice-yes">Full</td>
+            <td class="lattice-yes">Full</td>
+          </tr>
+          <tr>
+            <td class="role">MoO</td>
+            <td class="lattice-yes">Full</td>
+            <td class="lattice-yes">Full</td>
+            <td class="lattice-partial">Cost only · no margin</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-partial">Scheduling only</td>
+            <td class="lattice-no">None</td>
+          </tr>
+          <tr>
+            <td class="role">PM</td>
+            <td class="lattice-partial">Assigned projects</td>
+            <td class="lattice-partial">Assigned crews</td>
+            <td class="lattice-partial">Cost only · scoped</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+          </tr>
+          <tr>
+            <td class="role">Field</td>
+            <td class="lattice-partial">Today's site only</td>
+            <td class="lattice-partial">Self + co-located</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+          </tr>
+          <tr>
+            <td class="role">Sub</td>
+            <td class="lattice-partial">Their lane only</td>
+            <td class="lattice-partial">Self only</td>
+            <td class="lattice-partial">Their bid only</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+          </tr>
+          <tr>
+            <td class="role">Client</td>
+            <td class="lattice-partial">Milestones · scoped</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+            <td class="lattice-no">None</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="lattice-rules">
+        <div class="lattice-rule">
+          <b>1 · Never written, not just hidden</b>
+          <span>Operator-private entries are never persisted to non-owner role indices in the first place. There is nothing to leak from a cached client because the client view never received it.</span>
+        </div>
+        <div class="lattice-rule">
+          <b>2 · Read audit on every query</b>
+          <span>Actor + role + timestamp logged on every Blackboard read. Same legal-defensibility chain as the De Wall capture pattern. Discoverable, exportable.</span>
+        </div>
+        <div class="lattice-rule">
+          <b>3 · Token revoke + cache purge on offboarding</b>
+          <span>Departure event triggers role-token revoke and on-device cache scope-purge. Field app on a former employee's phone goes blank within sync window — no historical data carries.</span>
+        </div>
+        <div class="lattice-rule">
+          <b>4 · Cache scope = role scope</b>
+          <span>Field/sub devices cache only their lane. Owner device caches everything. Enforced at the persistence layer's local mirror, not at the UI render layer.</span>
+        </div>
+        <div class="lattice-rule">
+          <b>5 · Right Hand inherits the caller's role</b>
+          <span>When the PM asks Right Hand a question, Right Hand answers from the PM's read scope — not the owner's. The agent cannot launder operator-private content into a role that wouldn't see it directly.</span>
+        </div>
+        <div class="lattice-rule">
+          <b>6 · Owner can grant temporary read</b>
+          <span>Owner can elevate a role for a specific entry or project window with logged justification. Elevation expires automatically. There is no permanent role escalation path.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<div class="foot" id="footer">
+  <h2>NEXT MOVES · AFTER YOUR REVIEW</h2>
+  <div class="foot-grid">
+    <div class="foot-item"><strong>Naming roll-forward</strong><span>If Right Hand sticks, propagate to Watchtower, build spec, capital narrative, and roadmap. V3 file stays as the V1 build canon until then.</span></div>
+    <div class="foot-item"><strong>Five-rail Blackboard build cost</strong><span>~2 days added vs the V3 chronological feed. Movement + Holding rails reuse existing lifecycle and gate data — no new schema. Pulse cells are aggregations.</span></div>
+    <div class="foot-item"><strong>Permission lattice schema lock</strong><span>Must land in V1 schema · cannot retrofit without migration. Adds ~1 day to W1 vs current V3 plan. Worth it.</span></div>
+    <div class="foot-item"><strong>Persona override deferred</strong><span>V2.0+ scope. V1 ships with canonical "Right Hand" only. Tenant naming is a polish that requires no model retraining.</span></div>
+    <div class="foot-item"><strong>Phase pills off the live UI</strong><span>Roadmap status belongs in build docs, not the operator surface. Live screens render product reality.</span></div>
+    <div class="foot-item"><strong>Open question</strong><span>When Right Hand answers from a non-owner role, should it surface a "you're not seeing the full picture · ask owner" affordance, or stay silent? Default: stay silent. Reopen if PMs report blind-spot frustration.</span></div>
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
