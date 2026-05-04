@@ -18,6 +18,24 @@
   --kerf-accent-active: #285cb0;
   --kerf-danger-muted: #a67a7a;
   --kerf-focus-ring: #7eb8ff;
+
+  /* Rhythm — typography + spacing (operator console; queue + W1 mirror these). */
+  --kerf-radius-xs: 4px;
+  --kerf-radius-sm: 6px;
+  --kerf-radius-md: 8px;
+  --kerf-leading-tight: 1.28;
+  --kerf-leading-snug: 1.35;
+  --kerf-leading-normal: 1.45;
+  --kerf-leading-meta: 1.4;
+  --kerf-space-2xs: 0.125rem;
+  --kerf-space-xs: 0.25rem;
+  --kerf-space-sm: 0.5rem;
+  --kerf-space-md: 0.75rem;
+  --kerf-space-lg: 1rem;
+  --kerf-space-xl: 1.25rem;
+  --kerf-card-pad-y-start: 1.05rem;
+  --kerf-card-pad-x: 1.15rem;
+  --kerf-card-pad-y-end: 1.15rem;
 }
 
 *,
@@ -31,26 +49,26 @@ body {
   min-height: 100vh;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: var(--kerf-leading-normal);
   color: var(--kerf-fg);
   background: var(--kerf-bg-app);
 }
 
 .kerf-decision-card {
   max-width: 44rem;
-  margin: 1.25rem auto;
-  padding: 1.05rem 1.15rem 1.15rem;
+  margin: var(--kerf-space-xl) auto;
+  padding: var(--kerf-card-pad-y-start) var(--kerf-card-pad-x) var(--kerf-card-pad-y-end);
   background: var(--kerf-bg-card);
   border: 1px solid var(--kerf-border);
-  border-radius: 8px;
+  border-radius: var(--kerf-radius-md);
   color: var(--kerf-fg);
 }
 
 /* Top band: title + operator summary — reads as one operator-facing block above system sections. */
 .kerf-card-identity {
-  margin: -0.15rem -0.2rem 1rem;
-  padding: 0.65rem 0.75rem 0.85rem;
-  border-radius: 6px;
+  margin: -0.15rem -0.2rem var(--kerf-space-lg);
+  padding: 0.65rem var(--kerf-space-md) 0.85rem;
+  border-radius: var(--kerf-radius-sm);
   background: color-mix(in srgb, var(--kerf-bg-elevated) 72%, var(--kerf-bg-card));
   border: 1px solid color-mix(in srgb, var(--kerf-border) 85%, transparent);
   border-bottom: 1px solid var(--kerf-border);
@@ -77,17 +95,17 @@ body {
 
 .kerf-title {
   margin: 0 0 0.35rem;
-  font-size: 1.12rem;
+  font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: 0.01em;
-  line-height: 1.28;
+  line-height: var(--kerf-leading-tight);
 }
 
 .kerf-subtitle {
   margin: 0;
   color: var(--kerf-fg-muted);
   font-size: 0.9rem;
-  line-height: 1.4;
+  line-height: var(--kerf-leading-meta);
 }
 
 .kerf-card-header-main {
@@ -109,7 +127,7 @@ body {
   flex-shrink: 0;
   display: inline-block;
   padding: 0.12rem 0.42rem;
-  border-radius: 4px;
+  border-radius: var(--kerf-radius-xs);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -144,10 +162,10 @@ body {
 }
 
 .kerf-operator-summary {
-  padding: 0.7rem 0.75rem;
+  padding: 0.7rem var(--kerf-space-md);
   border: 1px solid var(--kerf-border);
   border-left: 4px solid var(--kerf-accent);
-  border-radius: 6px;
+  border-radius: var(--kerf-radius-sm);
   background: var(--kerf-bg-elevated);
 }
 
@@ -159,7 +177,7 @@ body {
   margin: 0;
   font-size: 0.98rem;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: var(--kerf-leading-snug);
   color: var(--kerf-fg);
   overflow-wrap: anywhere;
 }
@@ -167,7 +185,7 @@ body {
 .kerf-operator-summary-detail {
   margin: 0.3rem 0 0;
   font-size: 0.86rem;
-  line-height: 1.45;
+  line-height: var(--kerf-leading-normal);
   color: var(--kerf-fg-muted);
   overflow-wrap: anywhere;
 }
@@ -191,7 +209,7 @@ body {
 }
 
 .kerf-section {
-  margin-bottom: 1rem;
+  margin-bottom: var(--kerf-space-lg);
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--kerf-border);
 }
@@ -201,7 +219,7 @@ body {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.065em;
   color: var(--kerf-fg-muted);
 }
 
@@ -210,7 +228,7 @@ body {
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.065em;
   color: var(--kerf-fg-muted);
 }
 
@@ -224,8 +242,8 @@ body {
 
 .kerf-pill {
   display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.15rem var(--kerf-space-sm);
+  border-radius: var(--kerf-radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -253,7 +271,7 @@ body {
   margin: 0.35rem 0 0;
   font-size: 0.8rem;
   color: var(--kerf-fg-muted);
-  line-height: 1.45;
+  line-height: var(--kerf-leading-normal);
 }
 
 .kerf-muted {
@@ -275,8 +293,8 @@ body {
 
 .kerf-list code {
   font-size: 0.78rem;
-  padding: 0.08rem 0.25rem;
-  border-radius: 4px;
+  padding: 0.08rem var(--kerf-space-xs);
+  border-radius: var(--kerf-radius-xs);
   background: var(--kerf-bg-elevated);
   border: 1px solid var(--kerf-border);
   color: var(--kerf-fg);
@@ -308,9 +326,9 @@ body {
 }
 
 .kerf-audit-details {
-  margin-bottom: 1rem;
+  margin-bottom: var(--kerf-space-lg);
   border: 1px solid var(--kerf-border);
-  border-radius: 6px;
+  border-radius: var(--kerf-radius-sm);
   background: var(--kerf-bg-elevated);
   padding: 0.35rem 0.6rem;
 }
@@ -362,9 +380,9 @@ body {
 }
 
 .kerf-learning-signals .kerf-list li {
-  margin: 0.25rem 0;
+  margin: var(--kerf-space-xs) 0;
   font-size: 0.8rem;
-  line-height: 1.35;
+  line-height: var(--kerf-leading-snug);
   color: var(--kerf-fg-muted);
   overflow-wrap: anywhere;
 }
@@ -376,7 +394,7 @@ body {
 .kerf-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--kerf-space-sm);
   padding-top: 0.35rem;
   margin-top: 0.25rem;
 }
@@ -387,7 +405,7 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   padding: 0.45rem 0.85rem;
-  border-radius: 6px;
+  border-radius: var(--kerf-radius-sm);
   border: 1px solid var(--kerf-border-strong);
   background: var(--kerf-bg-control);
   color: var(--kerf-fg);
@@ -396,12 +414,12 @@ body {
 }
 
 .kerf-btn:hover {
-  background: #323a4d;
-  border-color: #5c677a;
+  background: color-mix(in srgb, var(--kerf-bg-control) 88%, var(--kerf-fg-muted));
+  border-color: color-mix(in srgb, var(--kerf-border-strong) 75%, var(--kerf-fg));
 }
 
 .kerf-btn:active {
-  background: #262d3d;
+  background: color-mix(in srgb, var(--kerf-bg-control) 78%, var(--kerf-bg-app));
 }
 
 .kerf-btn:focus-visible {
@@ -428,19 +446,19 @@ body {
 .kerf-artifact {
   background: var(--kerf-bg-elevated);
   border: 1px solid var(--kerf-border);
-  border-radius: 6px;
-  padding: 0.65rem 0.75rem;
+  border-radius: var(--kerf-radius-sm);
+  padding: 0.65rem var(--kerf-space-md);
 }
 
 .kerf-artifact-pre {
-  margin: 0.5rem 0 0;
+  margin: var(--kerf-space-sm) 0 0;
   padding: 0.6rem 0.65rem;
   font-size: 0.78rem;
-  line-height: 1.4;
+  line-height: var(--kerf-leading-meta);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   background: var(--kerf-bg-app);
   border: 1px solid var(--kerf-border);
-  border-radius: 6px;
+  border-radius: var(--kerf-radius-sm);
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;
