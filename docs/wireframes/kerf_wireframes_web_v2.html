@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · Web Wireframes v2 · April 21, 2026</title>
+<style>
+:root {
+  --kerf-amber: #D4923A;
+  --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419;
+  --kerf-panel: #1A1F26;
+  --kerf-panel-2: #232932;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1;
+  --kerf-text-dim: #9097A1;
+  --kerf-text-mute: #5F6670;
+  --ggr: #4A7FB0;
+  --ggr-dim: #1B3A5C;
+  --val: #A8794A;
+  --val-dim: #5C3A1B;
+  --hpg: #4A9F74;
+  --hpg-dim: #1B5C3A;
+  --success: #5FB37A;
+  --warn: #E0A858;
+  --alert: #CF5B5B;
+  --confidence-hi: #5FB37A;
+  --confidence-med: #E0A858;
+  --confidence-lo: #CF5B5B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11;
+  color: var(--kerf-text);
+  line-height: 1.4;
+  font-size: 13px;
+}
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 22px 40px;
+}
+.doc-header h1 {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.doc-header .sub {
+  color: var(--kerf-text-dim);
+  font-size: 12px;
+}
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.wireframe-container { padding: 30px 40px; max-width: 1600px; margin: 0 auto; }
+
+/* Frame wrapper */
+.frame {
+  margin-bottom: 50px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--kerf-panel);
+}
+.frame-label {
+  background: var(--kerf-panel-2);
+  padding: 10px 18px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kerf-amber);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.frame-label .frame-note { color: var(--kerf-text-dim); text-transform: none; letter-spacing: 0; font-size: 11px; }
+
+/* --- App shell --- */
+.app {
+  display: grid;
+  grid-template-columns: 56px 320px 1fr;
+  min-height: 760px;
+  background: var(--kerf-dark);
+}
+
+/* Top bar */
+.topbar {
+  grid-column: 1 / -1;
+  height: 50px;
+  background: var(--kerf-panel);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 18px;
+}
+.app { grid-template-rows: 50px 1fr; }
+.brand-mark {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.15em;
+  color: var(--kerf-amber);
+}
+.brand-tag {
+  font-size: 10px;
+  color: var(--kerf-text-mute);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-left: -10px;
+}
+.topbar-spacer { flex: 1; }
+.toggle {
+  display: inline-flex;
+  background: var(--kerf-panel-2);
+  border: 1px solid var(--kerf-border);
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 11px;
+  cursor: pointer;
+}
+.toggle-btn {
+  padding: 6px 12px;
+  color: var(--kerf-text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-btn.active { background: var(--kerf-amber); color: #0A0D11; font-weight: 600; }
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  background: var(--kerf-panel-2);
+  border: 1px solid var(--kerf-border);
+  border-radius: 20px;
+  font-size: 11px;
+}
+.user-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ggr-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff;
+}
+
+/* Module rail (far left) */
+.module-rail {
+  background: #0A0D11;
+  border-right: 1px solid var(--kerf-border);
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.mod-icon {
+  width: 40px; height: 40px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--kerf-text-mute);
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
+  transition: all 0.12s;
+}
+.mod-icon:hover { background: var(--kerf-panel-2); color: var(--kerf-text); }
+.mod-icon.active { background: var(--kerf-panel-2); color: var(--kerf-amber); }
+.mod-icon.active::before {
+  content: ''; position: absolute; left: -2px; top: 8px; bottom: 8px;
+  width: 3px; background: var(--kerf-amber); border-radius: 2px;
+}
+.mod-icon .tip {
+  position: absolute; left: 52px; top: 50%; transform: translateY(-50%);
+  background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  padding: 4px 10px; border-radius: 4px; font-size: 11px;
+  white-space: nowrap; color: var(--kerf-text);
+  opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  z-index: 10;
+}
+.mod-icon:hover .tip { opacity: 1; }
+.mod-divider { width: 24px; height: 1px; background: var(--kerf-border); margin: 4px 0; }
+
+/* Chief of Staff rail (second column) */
+.cos-rail {
+  background: var(--kerf-panel);
+  border-right: 1px solid var(--kerf-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cos-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cos-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--success); box-shadow: 0 0 8px var(--success);
+}
+.cos-title { font-weight: 600; font-size: 13px; }
+.cos-sub { font-size: 10px; color: var(--kerf-text-dim); margin-top: 1px; }
+
+/* The One Thing */
+.one-thing {
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(212,146,58,0.12) 0%, rgba(212,146,58,0.02) 100%);
+  border-bottom: 1px solid var(--kerf-border);
+}
+.one-thing-label {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--kerf-amber);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.one-thing-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--kerf-amber-dim); opacity: 0.4;
+}
+.one-thing-title {
+  font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;
+}
+.one-thing-why {
+  font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 10px;
+  padding-left: 10px; border-left: 2px solid var(--kerf-amber-dim);
+}
+.one-thing-why-label { color: var(--kerf-amber); font-weight: 600; }
+.confidence-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 10px;
+}
+.conf-bar {
+  flex: 1; height: 4px; background: var(--kerf-panel-2); border-radius: 2px; overflow: hidden;
+}
+.conf-fill { height: 100%; background: var(--confidence-hi); }
+.conf-fill.med { background: var(--confidence-med); }
+.conf-fill.lo { background: var(--confidence-lo); }
+.conf-num { color: var(--kerf-text-dim); min-width: 28px; text-align: right; }
+.one-thing-actions { display: flex; gap: 8px; }
+.btn {
+  padding: 7px 12px; border-radius: 4px; border: 1px solid var(--kerf-border);
+  background: var(--kerf-panel-2); color: var(--kerf-text); font-size: 11px;
+  cursor: pointer; font-weight: 500;
+}
+.btn-primary {
+  background: var(--kerf-amber); color: #0A0D11; border-color: var(--kerf-amber); font-weight: 600;
+}
+.btn-primary:hover { background: #E0A051; }
+.btn-ghost { background: transparent; color: var(--kerf-text-dim); }
+.btn-sm { padding: 4px 8px; font-size: 10px; }
+.agent-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px; background: rgba(212,146,58,0.15); color: var(--kerf-amber);
+  border-radius: 3px; font-size: 9px; letter-spacing: 0.04em; font-weight: 600;
+}
+
+/* CoS queue */
+.queue-section { padding: 12px 0; flex: 1; overflow-y: auto; }
+.section-label {
+  padding: 4px 18px 8px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--kerf-text-mute);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.queue-item {
+  padding: 10px 18px;
+  border-top: 1px solid var(--kerf-border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.queue-item:hover { background: var(--kerf-panel-2); }
+.queue-item:first-of-type { border-top: none; }
+.qi-row1 { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.qi-brand {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 1px 5px; border-radius: 2px;
+}
+.qi-brand.ggr { background: var(--ggr-dim); color: #A8C5E5; }
+.qi-brand.val { background: var(--val-dim); color: #E5C5A8; }
+.qi-brand.hpg { background: var(--hpg-dim); color: #A8E5C5; }
+.qi-title { font-size: 12px; flex: 1; }
+.qi-time { font-size: 10px; color: var(--kerf-text-mute); }
+.qi-why { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; }
+.qi-conf {
+  display: inline-block; font-size: 9px; color: var(--kerf-text-mute); margin-top: 4px;
+}
+
+/* Plays (Coach) at bottom */
+.plays-section {
+  border-top: 1px solid var(--kerf-border);
+  padding: 10px 18px;
+  background: var(--kerf-panel-2);
+}
+.plays-header {
+  font-size: 10px; color: var(--kerf-text-dim);
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+}
+.play-chip {
+  display: inline-block; padding: 4px 8px; background: var(--kerf-dark);
+  border: 1px solid var(--kerf-border); border-radius: 12px;
+  font-size: 10px; color: var(--kerf-text); margin-right: 4px; margin-bottom: 4px;
+  cursor: pointer;
+}
+.play-chip:hover { border-color: var(--kerf-amber); color: var(--kerf-amber); }
+
+/* Main content */
+.main {
+  padding: 20px 28px;
+  overflow-y: auto;
+  background: var(--kerf-dark);
+}
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18px;
+}
+.main-title { font-size: 18px; font-weight: 600; }
+.main-sub { font-size: 11px; color: var(--kerf-text-dim); }
+
+/* Project strip */
+.project-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.proj-card {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  position: relative;
+}
+.proj-card:hover { border-color: var(--kerf-amber-dim); }
+.proj-card.active { border-color: var(--kerf-amber); }
+.proj-bar {
+  position: absolute; top: 0; left: 0; height: 3px; width: 100%; border-radius: 6px 6px 0 0;
+}
+.proj-bar.ggr { background: var(--ggr); }
+.proj-bar.val { background: var(--val); }
+.proj-bar.hpg { background: var(--hpg); }
+.proj-name { font-weight: 600; font-size: 12px; margin-bottom: 3px; margin-top: 4px; }
+.proj-client { font-size: 10px; color: var(--kerf-text-dim); margin-bottom: 8px; }
+.proj-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--kerf-text-mute); }
+.proj-progress { height: 3px; background: var(--kerf-panel-2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.proj-progress-fill { height: 100%; background: var(--success); }
+
+/* Capture stream */
+.capture-stream { margin-top: 18px; }
+.capture-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--kerf-text-mute); margin-bottom: 10px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.capture-item {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 5px;
+  padding: 11px 14px;
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.capture-flow {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  margin-bottom: 5px;
+}
+.flow-node {
+  padding: 2px 7px; background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 3px; font-size: 10px; color: var(--kerf-text-dim);
+}
+.flow-node.src { border-color: #446; color: #8AB0D0; }
+.flow-node.tag { border-color: var(--kerf-amber-dim); color: var(--kerf-amber); }
+.flow-node.route { border-color: var(--success); color: var(--success); }
+.flow-arrow { color: var(--kerf-text-mute); font-size: 10px; }
+.capture-content { font-size: 12px; color: var(--kerf-text); }
+.capture-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 3px; }
+
+/* Generative widget (inline approval) */
+.gen-widget {
+  background: linear-gradient(180deg, rgba(212,146,58,0.08) 0%, rgba(212,146,58,0.02) 100%);
+  border: 1px dashed var(--kerf-amber-dim);
+  border-radius: 6px;
+  padding: 16px;
+  margin: 14px 0;
+  position: relative;
+}
+.gen-widget::before {
+  content: 'GENERATIVE WIDGET · SURFACED IN-CONTEXT';
+  position: absolute; top: -8px; left: 14px;
+  background: var(--kerf-dark); padding: 0 8px;
+  font-size: 9px; color: var(--kerf-amber); letter-spacing: 0.1em;
+}
+.gw-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.gw-why {
+  font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 10px;
+  padding-left: 10px; border-left: 2px solid var(--kerf-amber-dim);
+}
+.gw-detail-row {
+  display: flex; gap: 16px; font-size: 11px;
+  padding: 8px 0; border-top: 1px solid var(--kerf-border);
+}
+.gw-detail-row:last-of-type { border-bottom: 1px solid var(--kerf-border); margin-bottom: 12px; }
+.gw-label { color: var(--kerf-text-dim); min-width: 80px; }
+.gw-val { color: var(--kerf-text); }
+.gw-actions { display: flex; gap: 8px; align-items: center; }
+
+/* Undo strip */
+.undo-strip {
+  background: var(--success);
+  color: #0A0D11;
+  padding: 10px 16px;
+  border-radius: 5px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.undo-timer {
+  font-variant-numeric: tabular-nums;
+  background: rgba(10,13,17,0.2);
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+/* Graphical mode */
+.graph-canvas {
+  background: var(--kerf-dark);
+  height: 640px;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+.graph-node {
+  position: absolute;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid var(--kerf-border);
+  background: var(--kerf-panel);
+  min-width: 120px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.graph-node.client { border-color: #5888B8; background: rgba(27,58,92,0.3); }
+.graph-node.project { border-color: var(--ggr); background: rgba(27,58,92,0.4); }
+.graph-node.valle { border-color: var(--val); background: rgba(92,58,27,0.4); }
+.graph-node.hpg { border-color: var(--hpg); background: rgba(27,92,58,0.4); }
+.graph-node.agent { border-color: var(--kerf-amber); background: rgba(212,146,58,0.12); }
+.graph-node.decision {
+  border-color: var(--warn); background: rgba(224,168,88,0.12);
+  box-shadow: 0 0 12px rgba(224,168,88,0.3);
+}
+.node-label { font-size: 9px; color: var(--kerf-text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+.node-name { font-weight: 600; font-size: 12px; }
+.node-meta { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; }
+.graph-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.edge { stroke: var(--kerf-border); stroke-width: 1.5; fill: none; }
+.edge.active { stroke: var(--kerf-amber); stroke-width: 2; }
+.edge-label { fill: var(--kerf-text-mute); font-size: 9px; }
+
+.graph-legend {
+  position: absolute; top: 12px; right: 12px;
+  background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 5px;
+  padding: 10px 14px; font-size: 10px;
+}
+.legend-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; color: var(--kerf-text-dim); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Kerf Teams — L0-L3 + cost per outcome */
+.teams-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+}
+.teams-card {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 16px;
+}
+.teams-card h3 { font-size: 13px; margin-bottom: 12px; }
+.ladder-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 60px 80px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--kerf-border);
+  font-size: 12px;
+}
+.ladder-row:first-of-type { border-top: none; }
+.level-badge {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--kerf-panel-2); color: var(--kerf-text-dim);
+  font-weight: 700; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.level-badge.l2 { background: rgba(95,179,122,0.2); color: var(--success); }
+.level-badge.l3 { background: var(--kerf-amber); color: #0A0D11; }
+.level-badge.l1 { background: rgba(224,168,88,0.15); color: var(--warn); }
+.level-badge.l0 { background: rgba(207,91,91,0.15); color: var(--alert); }
+.person-name { font-size: 12px; font-weight: 500; }
+.person-role { font-size: 10px; color: var(--kerf-text-dim); }
+.target-note { font-size: 10px; color: var(--kerf-text-mute); }
+.ladder-bar {
+  height: 4px; background: var(--kerf-panel-2); border-radius: 2px; overflow: hidden;
+  margin-top: 3px;
+}
+.ladder-bar-fill { height: 100%; background: var(--kerf-amber); }
+
+.cost-out-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 80px 80px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--kerf-border);
+  font-size: 12px;
+}
+.cost-out-row:first-of-type { border-top: none; }
+.cost-out-header {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-mute); padding-bottom: 4px;
+}
+.cost-out-val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+.cost-out-val.good { color: var(--success); }
+.cost-out-val.warn { color: var(--warn); }
+.agent-name { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.agent-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--kerf-amber); }
+
+/* Homeowner SMS thread */
+.sms-thread {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 0;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  min-height: 560px;
+  overflow: hidden;
+}
+.sms-sidebar { border-right: 1px solid var(--kerf-border); padding: 14px 0; }
+.sms-contact {
+  padding: 10px 16px;
+  border-top: 1px solid var(--kerf-border);
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.sms-contact:first-of-type { border-top: none; }
+.sms-contact.active { background: var(--kerf-panel-2); border-left: 3px solid var(--kerf-amber); padding-left: 13px; }
+.sms-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--val-dim); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+}
+.sms-contact-info { flex: 1; min-width: 0; }
+.sms-contact-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.sms-contact-preview {
+  font-size: 11px; color: var(--kerf-text-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sms-contact-unread { background: var(--kerf-amber); color: #0A0D11; font-size: 10px; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
+
+.sms-main { display: flex; flex-direction: column; }
+.sms-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sms-header-info h4 { font-size: 14px; font-weight: 600; }
+.sms-header-info .meta { font-size: 11px; color: var(--kerf-text-dim); margin-top: 2px; }
+.sms-header-actions { display: flex; gap: 6px; }
+.sms-messages {
+  flex: 1; overflow-y: auto; padding: 18px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sms-bubble {
+  max-width: 72%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  position: relative;
+}
+.sms-bubble .sms-meta {
+  font-size: 9px; color: var(--kerf-text-mute); margin-top: 4px;
+}
+.sms-bubble.incoming { background: var(--kerf-panel-2); align-self: flex-start; border-bottom-left-radius: 3px; }
+.sms-bubble.outgoing { background: var(--val-dim); color: #fff; align-self: flex-end; border-bottom-right-radius: 3px; }
+.sms-bubble.agent-drafted {
+  background: rgba(212,146,58,0.1); border: 1px dashed var(--kerf-amber-dim);
+  align-self: flex-end; color: var(--kerf-text);
+}
+.sms-bubble.agent-drafted .sms-meta { color: var(--kerf-amber); }
+.sms-agent-tag {
+  font-size: 9px; color: var(--kerf-amber); font-weight: 600;
+  letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.sms-compose {
+  border-top: 1px solid var(--kerf-border);
+  padding: 12px 18px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sms-input {
+  flex: 1; background: var(--kerf-panel-2); border: 1px solid var(--kerf-border);
+  border-radius: 18px; padding: 8px 14px; color: var(--kerf-text); font-size: 12px; font-family: inherit;
+}
+.sms-policy-note {
+  background: rgba(95,179,122,0.08);
+  border-left: 3px solid var(--success);
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--kerf-text-dim);
+  margin: 10px 18px;
+  border-radius: 3px;
+}
+
+/* Plays authoring */
+.play-author {
+  display: grid;
+  grid-template-columns: 300px 1fr 280px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  min-height: 580px;
+  overflow: hidden;
+}
+.play-nav { border-right: 1px solid var(--kerf-border); padding: 14px; }
+.play-nav h4 {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--kerf-text-mute); margin-bottom: 10px;
+}
+.play-step {
+  padding: 8px 10px; border-radius: 4px; margin-bottom: 4px;
+  font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+}
+.play-step:hover { background: var(--kerf-panel-2); }
+.play-step.active { background: var(--kerf-panel-2); color: var(--kerf-amber); }
+.step-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--kerf-panel-2); color: var(--kerf-text-dim); font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.play-step.done .step-dot { background: var(--success); color: #0A0D11; }
+.play-step.active .step-dot { background: var(--kerf-amber); color: #0A0D11; }
+
+.play-editor { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.play-editor h3 { font-size: 16px; margin-bottom: 4px; }
+.play-editor .editor-sub { color: var(--kerf-text-dim); font-size: 11px; margin-bottom: 14px; }
+.modes-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.mode-tab {
+  padding: 6px 12px; border: 1px solid var(--kerf-border); border-radius: 4px;
+  font-size: 11px; cursor: pointer; color: var(--kerf-text-dim);
+}
+.mode-tab.active { background: var(--kerf-amber); color: #0A0D11; border-color: var(--kerf-amber); font-weight: 600; }
+.play-md {
+  background: var(--kerf-dark); border: 1px solid var(--kerf-border);
+  border-radius: 4px; padding: 14px; font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px; color: var(--kerf-text); line-height: 1.5;
+  white-space: pre-wrap;
+}
+.play-md .k { color: var(--kerf-amber); }
+.play-md .v { color: #8AB0D0; }
+.play-md .c { color: var(--kerf-text-mute); }
+
+.play-sidebar { border-left: 1px solid var(--kerf-border); padding: 14px; background: var(--kerf-panel-2); }
+.play-sidebar h4 {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--kerf-text-mute); margin-bottom: 10px;
+}
+.play-helper {
+  background: var(--kerf-dark); border: 1px solid var(--kerf-border);
+  padding: 10px; border-radius: 4px; margin-bottom: 10px; font-size: 11px;
+}
+.play-helper .label { color: var(--kerf-amber); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; margin-bottom: 5px; }
+
+/* Mini annotation callouts */
+.callout {
+  background: var(--kerf-panel-2);
+  border-left: 3px solid var(--kerf-amber);
+  padding: 10px 14px;
+  margin: 14px 0;
+  font-size: 12px;
+  color: var(--kerf-text-dim);
+  border-radius: 0 4px 4px 0;
+}
+.callout strong { color: var(--kerf-amber); }
+
+.nav-bar {
+  position: sticky; top: 0; z-index: 100;
+  background: #0A0D11;
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 10px 40px;
+  display: flex; gap: 4px; overflow-x: auto;
+}
+.nav-bar a {
+  color: var(--kerf-text-dim); text-decoration: none; font-size: 11px;
+  padding: 5px 10px; border-radius: 3px; white-space: nowrap;
+}
+.nav-bar a:hover { background: var(--kerf-panel-2); color: var(--kerf-text); }
+
+.legend-block {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 18px 24px;
+  margin-bottom: 40px;
+}
+.legend-block h2 { font-size: 14px; margin-bottom: 10px; color: var(--kerf-amber); letter-spacing: 0.04em; }
+.legend-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 11px;
+}
+.legend-item { padding-left: 10px; border-left: 2px solid var(--kerf-border); }
+.legend-item strong { color: var(--kerf-text); display: block; margin-bottom: 3px; }
+.legend-item span { color: var(--kerf-text-dim); }
+
+/* ================================================================
+   v3 dynamic layer · animations, transitions, interactivity hooks
+   Added April 22, 2026 — non-destructive overlay on v2 base.
+   ================================================================ */
+@keyframes kerfPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,146,58,0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(212,146,58,0); }
+}
+@keyframes kerfDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@keyframes kerfFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes kerfDashFlow {
+  to { stroke-dashoffset: -24; }
+}
+@keyframes kerfGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(224,168,88,0.3); }
+  50% { box-shadow: 0 0 22px rgba(224,168,88,0.65); }
+}
+@keyframes kerfAgentPulse {
+  0%, 100% { background: rgba(212,146,58,0.15); }
+  50% { background: rgba(212,146,58,0.32); }
+}
+@keyframes kerfTypeCaret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.is-live-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--success); margin-right: 4px;
+  animation: kerfDot 1.1s ease-in-out infinite;
+}
+.capture-enter { animation: kerfFadeUp 0.5s ease-out backwards; }
+.edge.flowing { stroke-dasharray: 5 7; animation: kerfDashFlow 1.6s linear infinite; }
+.graph-node.decision.pulsing { animation: kerfGlow 2.4s ease-in-out infinite; }
+.agent-tag.live { animation: kerfAgentPulse 2.2s ease-in-out infinite; }
+
+.conf-fill, .ladder-bar-fill, .proj-progress-fill {
+  transition: width 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.anim-number { font-variant-numeric: tabular-nums; }
+
+/* Queue item expansion */
+.queue-item { transition: background 0.12s; }
+.queue-item.expanded { background: var(--kerf-panel-2); }
+.queue-item .qi-expanded {
+  display: none; font-size: 11px; color: var(--kerf-text-dim);
+  margin-top: 8px; padding: 8px 10px; border-left: 2px solid var(--kerf-amber-dim);
+  background: rgba(0,0,0,0.25); border-radius: 0 3px 3px 0;
+  line-height: 1.5;
+}
+.queue-item.expanded .qi-expanded { display: block; animation: kerfFadeUp 0.3s ease-out; }
+.queue-item .qi-expanded .mini-act {
+  display: inline-block; margin-top: 6px; padding: 3px 8px;
+  background: var(--kerf-amber); color: #0A0D11; border-radius: 3px;
+  font-size: 10px; font-weight: 600; cursor: pointer;
+}
+
+/* Voice note ticker (dashboard + demo) */
+.voice-ticker {
+  position: relative; overflow: hidden; height: 18px;
+  font-size: 11px; color: var(--kerf-text-dim);
+}
+.voice-ticker-inner {
+  position: absolute; white-space: nowrap;
+  animation: none; /* controlled via JS */
+}
+
+/* Toast (used for approve-and-send ack) */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--success); color: #0A0D11;
+  padding: 10px 20px; border-radius: 24px; font-size: 12px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  z-index: 1000; animation: kerfFadeUp 0.3s ease-out;
+}
+.toast.warn { background: var(--warn); color: #0A0D11; }
+.toast.info { background: var(--kerf-panel-2); color: var(--kerf-text); border: 1px solid var(--kerf-amber); }
+
+/* Mode-tab content panes (Plays authoring) */
+.mode-pane { display: none; }
+.mode-pane.active { display: block; animation: kerfFadeUp 0.25s ease-out; }
+
+/* Button feedback */
+.btn.pressed, .btn-primary.pressed {
+  transform: translateY(1px); filter: brightness(0.95);
+}
+
+/* SMS typing indicator */
+.sms-typing {
+  display: none; align-self: flex-start; padding: 8px 14px;
+  background: var(--kerf-panel-2); border-radius: 12px; border-bottom-left-radius: 3px;
+}
+.sms-typing.show { display: flex; gap: 3px; align-items: center; animation: kerfFadeUp 0.25s ease-out; }
+.sms-typing span {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-text-dim);
+  animation: kerfDot 1.1s ease-in-out infinite;
+}
+.sms-typing span:nth-child(2) { animation-delay: 0.15s; }
+.sms-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+/* Graph node hover tooltip */
+.graph-node { transition: transform 0.15s, box-shadow 0.15s; }
+.graph-node:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
+
+/* Module icon cross-link active state */
+.mod-icon.linked { cursor: pointer; }
+.mod-icon.linked:hover { background: rgba(212,146,58,0.12); color: var(--kerf-amber); }
+
+/* ================================================================
+   Frame 8 · Homeowner magic-link e-sig view (external surface)
+   Light residential treatment inside a browser chrome mock.
+   ================================================================ */
+.client-frame-body { padding: 30px 20px 40px; background: #0A0D11; }
+.client-frame-cap {
+  max-width: 520px; margin: 0 auto 14px; font-size: 11px; color: var(--kerf-text-mute);
+  text-align: center; letter-spacing: 0.06em;
+}
+.browser-chrome {
+  max-width: 520px; margin: 0 auto;
+  background: var(--kerf-panel); border-radius: 12px 12px 10px 10px;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.7); overflow: hidden;
+  border: 1px solid var(--kerf-border);
+}
+.browser-bar {
+  background: #14181F; padding: 10px 14px;
+  display: flex; align-items: center; gap: 6px;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.browser-dot { width: 10px; height: 10px; border-radius: 50%; background: #2F3641; }
+.browser-dot.r { background: #CF5B5B; }
+.browser-dot.y { background: #E0A858; }
+.browser-dot.g { background: #5FB37A; }
+.browser-url {
+  flex: 1; background: var(--kerf-dark); border: 1px solid var(--kerf-border);
+  border-radius: 20px; padding: 5px 12px; font-size: 10px; color: var(--kerf-text-dim);
+  margin-left: 10px; font-family: "SF Mono", Menlo, monospace;
+}
+.browser-url .lock { color: var(--success); margin-right: 6px; }
+.client-body {
+  background: #F7F3EC; color: #2A2520;
+  padding: 28px 28px 30px;
+}
+.client-brand {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 18px; border-bottom: 1px solid #E3DCD1; margin-bottom: 22px;
+}
+.client-brand-block { display: flex; flex-direction: column; gap: 2px; }
+.client-brand-mark {
+  font-weight: 700; letter-spacing: 0.14em; color: #1B3A5C; font-size: 18px;
+}
+.client-brand-sub { font-size: 9px; color: #6A5F52; letter-spacing: 0.1em; text-transform: uppercase; }
+.client-verify-chip {
+  font-size: 10px; padding: 5px 10px; background: rgba(95,179,122,0.18);
+  border-radius: 14px; color: #2E6E44; font-weight: 600; letter-spacing: 0.04em;
+}
+.client-h1 {
+  font-size: 22px; font-weight: 600; color: #1B3A5C; margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.client-intro { font-size: 13px; color: #4A3F34; line-height: 1.55; margin-bottom: 22px; }
+.client-intro strong { color: #2A2520; }
+.client-card {
+  background: #FFFFFF; border: 1px solid #E3DCD1; border-radius: 8px;
+  padding: 20px; margin-bottom: 14px;
+}
+.client-card .card-label {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: #8B7B66; margin-bottom: 8px; font-weight: 600;
+}
+.client-title { font-size: 17px; font-weight: 600; color: #2A2520; margin-bottom: 6px; }
+.client-meta { font-size: 12px; color: #6A5F52; line-height: 1.55; margin-bottom: 14px; }
+.client-line {
+  display: flex; justify-content: space-between; padding: 10px 0;
+  border-top: 1px solid #F0EBE2; font-size: 13px;
+}
+.client-line:first-of-type { border-top: none; padding-top: 0; }
+.client-line .label { color: #6A5F52; }
+.client-line .val { color: #2A2520; font-weight: 500; }
+.client-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0 4px; border-top: 2px solid #1B3A5C; margin-top: 8px;
+}
+.client-total .label { font-size: 10px; color: #8B7B66; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; }
+.client-total .val { font-size: 22px; font-weight: 700; color: #1B3A5C; }
+.client-photo-strip { display: flex; gap: 6px; margin-top: 12px; }
+.client-photo {
+  flex: 1; aspect-ratio: 1; background: linear-gradient(135deg, #E3DCD1, #D4C9B7);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  color: #8B7B66; font-size: 16px;
+}
+.client-sig-box {
+  background: #FFFFFF; border: 2px dashed #B8A98F; border-radius: 8px;
+  padding: 24px 20px; text-align: center; margin-bottom: 14px;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s;
+}
+.client-sig-box:hover { border-color: #1B3A5C; background: #FBF8F3; }
+.client-sig-box.signed { background: #F0F8F4; border-style: solid; border-color: #2E6E44; }
+.client-sig-label { font-size: 10px; color: #8B7B66; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; }
+.client-sig-value {
+  font-family: "Snell Roundhand", "Brush Script MT", "Lucida Handwriting", cursive;
+  font-size: 28px; color: #1B3A5C; margin-top: 10px; min-height: 34px;
+  font-weight: 400;
+}
+.client-approve-btn {
+  display: block; width: 100%; padding: 14px;
+  background: #1B3A5C; color: #fff; border: none;
+  border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit; letter-spacing: 0.02em;
+  transition: background 0.15s, transform 0.08s;
+}
+.client-approve-btn:hover { background: #264D77; }
+.client-approve-btn:active { transform: translateY(1px); }
+.client-approve-btn.done { background: #2E6E44; cursor: default; }
+.client-approve-btn:disabled { background: #B8A98F; cursor: not-allowed; }
+.client-footer {
+  margin-top: 20px; padding-top: 18px; border-top: 1px solid #E3DCD1;
+  font-size: 10px; color: #8B7B66; line-height: 1.6; text-align: center;
+}
+.client-footer .sep { margin: 0 6px; color: #B8A98F; }
+.client-footer a { color: #1B3A5C; text-decoration: none; font-weight: 500; }
+
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <h1><span class="amber">KERF</span> · Web Wireframes v2 <span style="font-weight: 400; color: var(--kerf-text-dim);">/ Make More.</span></h1>
+  <div class="sub">April 21, 2026 · Apr 23 addendum — Blackboard framing + role-aware CoS (V2.0+ direction, not wireframed) · Supersedes v1 · Integrates §4 open items + three session decisions · Kerf Inc. · Confidential</div>
+</div>
+
+<div class="nav-bar">
+  <a href="#frame-legend">Legend</a>
+  <a href="#apr23-addendum">Apr 23 addendum</a>
+  <a href="#frame-dashboard-std">1 · Dashboard / Standard</a>
+  <a href="#frame-project">2 · Project + Generative Widget</a>
+  <a href="#frame-dashboard-graph">3 · Dashboard / Graphical</a>
+  <a href="#frame-teams">4 · Kerf Teams (L0–L3 + Cost/Outcome)</a>
+  <a href="#frame-homeowner">5 · Homeowner SMS Thread</a>
+  <a href="#frame-plays">6 · Kerf Plays Authoring</a>
+  <a href="#frame-undo">7 · 60-Second Undo State</a>
+  <a href="#frame-homeowner-esig">8 · Homeowner E-Sig View</a>
+</div>
+
+<div class="wireframe-container">
+
+<!-- LEGEND -->
+<div class="legend-block" id="frame-legend">
+  <h2>WHAT CHANGED FROM v1</h2>
+  <div class="legend-grid">
+    <div class="legend-item"><strong>The One Thing (new)</strong><span>Chief of Staff rail now leads with a single recommended action, not a prioritized list. The queue lives below it. Ramp's zero-click pattern adapted.</span></div>
+    <div class="legend-item"><strong>Confidence on every draft</strong><span>Every agent-generated artifact displays a confidence pill with %. Hover to see what data/policy produced it.</span></div>
+    <div class="legend-item"><strong>Why-line on every approval</strong><span>No naked approve buttons. Each approval states, in one line, why the system is asking.</span></div>
+    <div class="legend-item"><strong>60-second undo</strong><span>After any Locked action, a green strip offers undo for 60s. Sends, writes, and commits all honor this.</span></div>
+    <div class="legend-item"><strong>Cost-per-outcome in Teams</strong><span>Kerf Teams now shows dollar cost and hours saved per agent per person — the ROI surface.</span></div>
+    <div class="legend-item"><strong>Homeowner SMS view (new)</strong><span>Christian sees the SMS thread with drafts labeled + policy notes on what's auto-sent vs. queued. v3.2 §9.2 enforced.</span></div>
+    <div class="legend-item"><strong>Plays authoring UI (new)</strong><span>Voice-walkthrough ↔ guided form ↔ markdown. Three entry points, one Play file. v3.2 §15 spec implemented.</span></div>
+    <div class="legend-item"><strong>Source → Tag → Route visible</strong><span>Every input item in the capture stream shows provenance chain inline. No black-box tagging.</span></div>
+    <div class="legend-item"><strong>Generative widget example</strong><span>Change order approval surfaces inline on project page. v3.2 §9.5 pattern.</span></div>
+  </div>
+</div>
+
+<div class="legend-block" id="apr23-addendum" style="border-left: 3px solid var(--kerf-amber);">
+  <h2>APR 23 ADDENDUM — ARCHITECTURE LOCKS (not yet wireframed in detail)</h2>
+  <div class="legend-grid">
+    <div class="legend-item"><strong>Blackboard = persistent memory + visible graphical surface</strong><span>Architecture Principle #6. The Dashboard Graphical view (Frame 3) is the V1 instantiation of Layer B over the Blackboard. Every capture, decision, approval flows through the shared Blackboard (Layer A). Permission-aware reads throughout. Full team-wide graphical Blackboard views land V2.0+.</span></div>
+    <div class="legend-item"><strong>Team platform — 4 audiences, 1 Blackboard</strong><span>Owner (mobile-dominant) · Office (desktop tandem — this doc's primary surface for V1.5 Standard UI) · Field crew (capture-first, partial V1) · Subs (scoped portal, V2.0+). Manager of Operations named as scaling role — MoO surface V1.5-V2.0.</span></div>
+    <div class="legend-item"><strong>Role-aware CoS = V2.0+ direction</strong><span>V1 has one CoS (owner). V2.0 alpha adds MoO CoS. V2.1 paid beta adds PM + field super CoS. V2.2 GA settles sub portal. NOT wireframed here — mentioned so team doesn't scope-creep V1.</span></div>
+    <div class="legend-item"><strong>Adaptive CoS = product principle, not marketing claim</strong><span>CoS learns the owner over time — floats up the right info at the right moment. Never framed as "owner trains the AI." Demonstrate-before-claim.</span></div>
+    <div class="legend-item"><strong>Intake workflow — Project + Change Order (V1.5-V2.0)</strong><span>One architecture, two entry points. Multi-modal: form / voice / recorded-conversation-with-consent / text. Photos + editable LiDAR (V2.0 Alpha). CO Intake reuses engine with project-context pre-populated and camera+LiDAR primed at top of form. Prominent intake CTA on Dashboard; CO button inside Project page (Frame 2 hosts CO Intake in V2.0).</span></div>
+    <div class="legend-item"><strong>FinTech partner-first (V2.0-V2.1)</strong><span>5 primitives, partner-first: homeowner pay + purchasing (V2.0), crew + job cards + financing referral (V2.1). Job-cards in-house is a V3.0+ decision only. Financing partner-forever (regulated lending). No fintech UI in V1 wireframes.</span></div>
+    <div class="legend-item"><strong>V1 scope unchanged</strong><span>This addendum is architectural language only. The 8 frames below are the same as Apr 21 — no new screens, no new surfaces. Kill-switch criteria unchanged.</span></div>
+    <div class="legend-item"><strong>"Decisions, not dashboards."</strong><span>Candidate tertiary tagline. Every surface must answer "what does the owner do next from this view?" not just display status. Ironic on a wireframe doc titled "Dashboard" — the Dashboard Graphical view is a Blackboard visualization, not a status-only dashboard.</span></div>
+  </div>
+</div>
+
+<!-- FRAME 1: DASHBOARD STANDARD -->
+<div class="frame" id="frame-dashboard-std">
+  <div class="frame-label">
+    <span>FRAME 1 · OPERATOR DASHBOARD · STANDARD VIEW</span>
+    <span class="frame-note">CoS rail persistent · "The One Thing" at top · queue secondary</span>
+  </div>
+  <div class="app">
+
+    <div class="topbar">
+      <span class="brand-mark">KERF</span>
+      <span class="brand-tag">MAKE MORE.</span>
+      <span style="margin-left: 8px; font-size: 11px; color: var(--kerf-text-dim);">Dashboard</span>
+      <div class="topbar-spacer"></div>
+      <div class="toggle">
+        <div class="toggle-btn active">Standard</div>
+        <div class="toggle-btn">Graphical</div>
+      </div>
+      <div class="user-chip"><div class="user-avatar">CA</div> Christian · L3</div>
+    </div>
+
+    <!-- Module rail -->
+    <div class="module-rail">
+      <div class="mod-icon active">◉<span class="tip">Dashboard (Chief of Staff)</span></div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">S<span class="tip">Kerf Sales</span></div>
+      <div class="mod-icon">E<span class="tip">Kerf Estimate</span></div>
+      <div class="mod-icon">P<span class="tip">Kerf Project</span></div>
+      <div class="mod-icon">C<span class="tip">Kerf Scope</span></div>
+      <div class="mod-icon">$<span class="tip">Kerf Money</span></div>
+      <div class="mod-icon">F<span class="tip">Kerf Field</span></div>
+      <div class="mod-icon">O<span class="tip">Kerf Ops</span></div>
+      <div class="mod-icon">M<span class="tip">Kerf Marketing</span></div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">T<span class="tip">Kerf Teams</span></div>
+    </div>
+
+    <!-- Chief of Staff rail -->
+    <div class="cos-rail">
+      <div class="cos-header">
+        <div class="cos-dot"></div>
+        <div>
+          <div class="cos-title">Chief of Staff</div>
+          <div class="cos-sub">9:14 AM · 4 awaiting · 12 drafts pending</div>
+        </div>
+      </div>
+
+      <!-- The One Thing -->
+      <div class="one-thing">
+        <div class="one-thing-label">The One Thing</div>
+        <div class="one-thing-title">Approve change order for Henderson bath — $4,280</div>
+        <div class="one-thing-why">
+          <span class="one-thing-why-label">Why:</span> field team hit unexpected galvanized plumbing behind the tub wall. Replacing adds 1.5 days + $4,280 material/labor. Homeowner (Mrs. Henderson) texted "whatever you need to do" at 8:47 AM — needs your sign-off before the scope can be sent.
+        </div>
+        <div class="confidence-row">
+          <span style="color: var(--kerf-text-dim);">Confidence</span>
+          <div class="conf-bar"><div class="conf-fill" style="width: 94%;"></div></div>
+          <span class="conf-num">94%</span>
+        </div>
+        <div class="one-thing-actions">
+          <button class="btn btn-primary">Approve & send</button>
+          <button class="btn">Open CO</button>
+          <button class="btn btn-ghost btn-sm">Skip</button>
+        </div>
+        <div style="margin-top: 8px;"><span class="agent-tag">▸ Change Order Agent · T2+T5</span></div>
+      </div>
+
+      <!-- Queue (secondary) -->
+      <div class="queue-section">
+        <div class="section-label">
+          <span>Queue · 3 more</span>
+          <span style="color: var(--kerf-amber); cursor: pointer;">View all</span>
+        </div>
+
+        <div class="queue-item">
+          <div class="qi-row1">
+            <span class="qi-brand ggr">GGR</span>
+            <span class="qi-title">Proposal follow-up · Coring kitchen</span>
+            <span class="qi-time">2h</span>
+          </div>
+          <div class="qi-why">No reply in 9 days. Drafted warm follow-up, ready to send.</div>
+          <div class="qi-conf">Confidence 88% · Proposal Follow-up Agent</div>
+        </div>
+
+        <div class="queue-item">
+          <div class="qi-row1">
+            <span class="qi-brand val">VAL</span>
+            <span class="qi-title">3 past-due invoices drafted</span>
+            <span class="qi-time">9h</span>
+          </div>
+          <div class="qi-why">Torrey vanity × 2 (net-30 overdue) + Mission retail.</div>
+          <div class="qi-conf">Confidence 91% · Invoice Agent</div>
+        </div>
+
+        <div class="queue-item">
+          <div class="qi-row1">
+            <span class="qi-brand hpg">HPG</span>
+            <span class="qi-title">Rebate verification — Clem project</span>
+            <span class="qi-time">1d</span>
+          </div>
+          <div class="qi-why">TECH Clean CA eligibility needs doc upload. Docs drafted; human review.</div>
+          <div class="qi-conf">Confidence 72% · escalated to T4</div>
+        </div>
+      </div>
+
+      <!-- Plays (Coach) -->
+      <div class="plays-section">
+        <div class="plays-header">
+          <span style="color: var(--kerf-amber);">▸ Coach</span>
+          <span>· Plays for right now</span>
+        </div>
+        <div class="play-chip">Friday Cash Cycle Review</div>
+        <div class="play-chip">Month-End Margin</div>
+        <div class="play-chip">Permit Sweep</div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main">
+      <div class="main-header">
+        <div>
+          <div class="main-title">Good morning, Christian</div>
+          <div class="main-sub">Tuesday · April 21 · 4 active projects · 2 proposals out · $47.2K in flight</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-sm">▸ Voice note</button>
+          <button class="btn btn-sm">+ Capture</button>
+        </div>
+      </div>
+
+      <!-- Project strip -->
+      <div class="project-strip">
+        <div class="proj-card active">
+          <div class="proj-bar ggr"></div>
+          <div class="proj-name">Henderson Bath Remodel</div>
+          <div class="proj-client">GGR · San Diego, CA</div>
+          <div class="proj-meta"><span>Day 14 of 28</span><span>$38K / $92K</span></div>
+          <div class="proj-progress"><div class="proj-progress-fill" style="width: 42%;"></div></div>
+        </div>
+        <div class="proj-card">
+          <div class="proj-bar val"></div>
+          <div class="proj-name">La Jolla Vanity · Coring</div>
+          <div class="proj-client">Valle · Direct</div>
+          <div class="proj-meta"><span>Shop day 6 of 9</span><span>$4.1K / $6.8K</span></div>
+          <div class="proj-progress"><div class="proj-progress-fill" style="width: 67%;"></div></div>
+        </div>
+        <div class="proj-card">
+          <div class="proj-bar hpg"></div>
+          <div class="proj-name">Clem Heat Pump + Panel</div>
+          <div class="proj-client">HPG · Poway</div>
+          <div class="proj-meta"><span>Scheduled Apr 29</span><span>$18.4K</span></div>
+          <div class="proj-progress"><div class="proj-progress-fill" style="width: 12%; background: var(--warn);"></div></div>
+        </div>
+        <div class="proj-card">
+          <div class="proj-bar ggr"></div>
+          <div class="proj-name">Moore Kitchen · Phase 2</div>
+          <div class="proj-client">GGR · Encinitas</div>
+          <div class="proj-meta"><span>Day 3 of 35</span><span>$6K / $184K</span></div>
+          <div class="proj-progress"><div class="proj-progress-fill" style="width: 8%;"></div></div>
+        </div>
+      </div>
+
+      <!-- Capture stream -->
+      <div class="capture-stream">
+        <div class="capture-label">
+          <span>Recent captures · source → tag → route visible on every item</span>
+          <span style="color: var(--kerf-amber); cursor: pointer;">Live ●</span>
+        </div>
+
+        <div class="capture-item">
+          <div>
+            <div class="capture-flow">
+              <span class="flow-node src">▸ Field voice</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node tag">change_order</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node route">Christian approval</span>
+            </div>
+            <div class="capture-content">"Mike here at Henderson — we pulled the tub surround and there's galvanized all the way back to the main. Gotta replace about 8 feet. Bumping you on the Slack."</div>
+            <div class="capture-meta">Mike Reyes · Henderson Bath · 8:32 AM · confidence 96% · T1 intent + T2 draft</div>
+          </div>
+          <span class="agent-tag">→ The One Thing</span>
+        </div>
+
+        <div class="capture-item">
+          <div>
+            <div class="capture-flow">
+              <span class="flow-node src">▸ Homeowner SMS</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node tag">approval_received</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node route">Change Order Agent</span>
+            </div>
+            <div class="capture-content">Mrs. Henderson: "Whatever you need to do — just keep us in the loop on cost."</div>
+            <div class="capture-meta">SMS inbound · Henderson Bath · 8:47 AM · confidence 99% · T0 rule match</div>
+          </div>
+          <span class="agent-tag">auto-logged</span>
+        </div>
+
+        <div class="capture-item">
+          <div>
+            <div class="capture-flow">
+              <span class="flow-node src">▸ Scan (Office)</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node tag">invoice_inbound</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node route">Kerf Money · QB draft</span>
+            </div>
+            <div class="capture-content">Ferguson invoice #88214 · Henderson Bath · $2,184.50 · NET-30 · shower valve + trim</div>
+            <div class="capture-meta">Office scanner · 9:03 AM · confidence 97% · auto-coded 15000 Plumbing</div>
+          </div>
+          <span class="agent-tag">draft queued</span>
+        </div>
+
+        <div class="capture-item">
+          <div>
+            <div class="capture-flow">
+              <span class="flow-node src">▸ Inbound email</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node tag">new_lead</span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node route">Kerf Sales · staged</span>
+            </div>
+            <div class="capture-content">Web form · "Whole-house heat pump conversion · 2,400 sqft · Ranch Bernardo" — verified phone, flagged hot (matches 3 rebate-eligible criteria)</div>
+            <div class="capture-meta">kerf form · 9:11 AM · confidence 89% · T1 classify · HPG route</div>
+          </div>
+          <span class="agent-tag">→ proposal draft</span>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Every input shows its routing path.</strong> Source → Tag → Route is visible on every capture card. No black-box classification. Click any node to see the policy that produced that decision.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- FRAME 2: PROJECT PAGE WITH GENERATIVE WIDGET -->
+<div class="frame" id="frame-project">
+  <div class="frame-label">
+    <span>FRAME 2 · KERF PROJECT · HENDERSON BATH · WITH INLINE GENERATIVE WIDGET</span>
+    <span class="frame-note">Change order widget surfaces in-context because operator landed here while a CO is pending</span>
+  </div>
+  <div class="app">
+
+    <div class="topbar">
+      <span class="brand-mark">KERF</span>
+      <span class="brand-tag">MAKE MORE.</span>
+      <span style="margin-left: 8px; font-size: 11px; color: var(--kerf-text-dim);">Kerf Project · Henderson Bath</span>
+      <div class="topbar-spacer"></div>
+      <div class="toggle">
+        <div class="toggle-btn active">Standard</div>
+        <div class="toggle-btn">Graphical</div>
+      </div>
+      <div class="user-chip"><div class="user-avatar">CA</div> Christian · L3</div>
+    </div>
+
+    <div class="module-rail">
+      <div class="mod-icon">◉<span class="tip">Dashboard</span></div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">S<span class="tip">Kerf Sales</span></div>
+      <div class="mod-icon">E<span class="tip">Kerf Estimate</span></div>
+      <div class="mod-icon active">P<span class="tip">Kerf Project</span></div>
+      <div class="mod-icon">C<span class="tip">Kerf Scope</span></div>
+      <div class="mod-icon">$<span class="tip">Kerf Money</span></div>
+      <div class="mod-icon">F<span class="tip">Kerf Field</span></div>
+      <div class="mod-icon">O<span class="tip">Kerf Ops</span></div>
+      <div class="mod-icon">M<span class="tip">Kerf Marketing</span></div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">T<span class="tip">Kerf Teams</span></div>
+    </div>
+
+    <div class="cos-rail">
+      <div class="cos-header">
+        <div class="cos-dot"></div>
+        <div>
+          <div class="cos-title">Chief of Staff</div>
+          <div class="cos-sub">Viewing: Henderson Bath</div>
+        </div>
+      </div>
+      <div class="one-thing">
+        <div class="one-thing-label">The One Thing</div>
+        <div class="one-thing-title">See generative widget →</div>
+        <div class="one-thing-why">
+          <span class="one-thing-why-label">Why:</span> you opened this project page while a change order is pending. The approval widget is rendered inline inside the project — no navigation needed.
+        </div>
+      </div>
+      <div class="queue-section">
+        <div class="section-label"><span>Project captures</span></div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-brand ggr">GGR</span><span class="qi-title">Field photo · tub rough</span><span class="qi-time">8:28 AM</span></div>
+          <div class="qi-why">Auto-tagged: plumbing / demo / before.</div>
+        </div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-brand ggr">GGR</span><span class="qi-title">Mike voice note</span><span class="qi-time">8:32 AM</span></div>
+          <div class="qi-why">Galvanized discovered.</div>
+        </div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-brand ggr">GGR</span><span class="qi-title">Homeowner reply</span><span class="qi-time">8:47 AM</span></div>
+          <div class="qi-why">Consent received.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="main-header">
+        <div>
+          <div class="main-title">Henderson Bath Remodel <span style="font-size: 11px; color: var(--kerf-text-mute); font-weight: 400;">GGR-2026-018</span></div>
+          <div class="main-sub">3421 Viewridge Dr, San Diego · Mrs. Katelyn Henderson · Day 14 of 28 · Lead PM: Mike Reyes</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--kerf-text-dim);">Scope: master bath gut/remodel · 96 sqft · tile · vanity · tub-to-shower</span>
+        </div>
+      </div>
+
+      <!-- Generative widget -->
+      <div class="gen-widget">
+        <div class="gw-title">Change Order #3 · Replace galvanized plumbing to main</div>
+        <div class="gw-why">
+          <span class="one-thing-why-label" style="color: var(--kerf-amber); font-weight: 600;">Why surfaced now:</span> you opened the project page and CO #3 is awaiting approval. Homeowner has already consented via SMS at 8:47 AM (see capture). Remaining step: your sign-off.
+        </div>
+        <div class="gw-detail-row">
+          <span class="gw-label">Trigger</span>
+          <span class="gw-val">Field discovery by Mike Reyes · 8:32 AM voice note · photo attached</span>
+        </div>
+        <div class="gw-detail-row">
+          <span class="gw-label">Additional cost</span>
+          <span class="gw-val">$4,280 <span style="color: var(--kerf-text-dim);">(L: $1,620 · M: $2,160 · S: $500)</span></span>
+        </div>
+        <div class="gw-detail-row">
+          <span class="gw-label">Schedule impact</span>
+          <span class="gw-val">+1.5 days · new end April 30 (was Apr 29)</span>
+        </div>
+        <div class="gw-detail-row">
+          <span class="gw-label">Homeowner</span>
+          <span class="gw-val">Consent received 8:47 AM — "whatever you need to do, just keep us in the loop on cost"</span>
+        </div>
+        <div class="gw-detail-row">
+          <span class="gw-label">Margin impact</span>
+          <span class="gw-val" style="color: var(--success);">Holds at 35% (L/M ratio preserved, sub absorbs trip charge)</span>
+        </div>
+        <div class="confidence-row" style="margin-bottom: 12px;">
+          <span style="color: var(--kerf-text-dim); font-size: 11px;">Draft confidence</span>
+          <div class="conf-bar"><div class="conf-fill" style="width: 94%;"></div></div>
+          <span class="conf-num">94%</span>
+          <span class="agent-tag">Change Order Agent · T2+T5 polish</span>
+        </div>
+        <div class="gw-actions">
+          <button class="btn btn-primary">Approve · send to homeowner for e-sig</button>
+          <button class="btn">Edit CO</button>
+          <button class="btn btn-ghost btn-sm">Hold for questions</button>
+          <span style="margin-left: auto; font-size: 10px; color: var(--kerf-text-mute);">Policy: single approval · cooling 60s</span>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Generative widget pattern (v3.2 §9.5):</strong> the approval is embedded inline on the project page because that is where the operator is. Not a modal. Not a separate queue. The system detected the context match and rendered the widget. Post-alpha — not critical path for Phase 1, but architecturally visible now.
+      </div>
+
+      <!-- Lower content: labor & schedule quick view -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px;">
+        <div class="teams-card">
+          <h3 style="color: var(--kerf-text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;">Labor to date</h3>
+          <div style="font-size: 22px; font-weight: 700; margin-bottom: 6px;">142 hrs <span style="font-size: 12px; color: var(--success); font-weight: 500;">on budget</span></div>
+          <div style="font-size: 11px; color: var(--kerf-text-dim);">Reyes 58 · Gutierrez 44 · Ortiz 40 · Kerf Field auto-computing.</div>
+        </div>
+        <div class="teams-card">
+          <h3 style="color: var(--kerf-text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;">Permits</h3>
+          <div style="font-size: 12px; margin-bottom: 6px;">✓ Building (issued) · ✓ Plumbing (issued) · ◷ Final inspection (scheduled Apr 30)</div>
+          <div style="font-size: 11px; color: var(--kerf-text-dim);">Drift Watcher has no alerts on this project.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- FRAME 3: DASHBOARD GRAPHICAL -->
+<div class="frame" id="frame-dashboard-graph">
+  <div class="frame-label">
+    <span>FRAME 3 · OPERATOR DASHBOARD · GRAPHICAL VIEW</span>
+    <span class="frame-note">Same graph, different renderer · relationship-first · agents visible as live nodes</span>
+  </div>
+  <div class="app">
+
+    <div class="topbar">
+      <span class="brand-mark">KERF</span>
+      <span class="brand-tag">MAKE MORE.</span>
+      <span style="margin-left: 8px; font-size: 11px; color: var(--kerf-text-dim);">Dashboard / Graphical</span>
+      <div class="topbar-spacer"></div>
+      <div class="toggle">
+        <div class="toggle-btn">Standard</div>
+        <div class="toggle-btn active">Graphical</div>
+      </div>
+      <div class="user-chip"><div class="user-avatar">CA</div> Christian · L3</div>
+    </div>
+
+    <div class="module-rail">
+      <div class="mod-icon active">◉<span class="tip">Dashboard</span></div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">S</div>
+      <div class="mod-icon">E</div>
+      <div class="mod-icon">P</div>
+      <div class="mod-icon">C</div>
+      <div class="mod-icon">$</div>
+      <div class="mod-icon">F</div>
+      <div class="mod-icon">O</div>
+      <div class="mod-icon">M</div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">T</div>
+    </div>
+
+    <div class="cos-rail">
+      <div class="cos-header">
+        <div class="cos-dot"></div>
+        <div>
+          <div class="cos-title">Chief of Staff</div>
+          <div class="cos-sub">Rail persists across view modes</div>
+        </div>
+      </div>
+      <div class="one-thing">
+        <div class="one-thing-label">The One Thing</div>
+        <div class="one-thing-title">Highlighted on the canvas →</div>
+        <div class="one-thing-why">
+          <span class="one-thing-why-label">Why:</span> same item as Standard view. In Graphical mode, The One Thing is rendered as a glowing amber decision node on the canvas so you can see it in relational context.
+        </div>
+        <div class="one-thing-actions">
+          <button class="btn btn-primary btn-sm">Approve & send</button>
+          <button class="btn btn-sm">Zoom to node</button>
+        </div>
+      </div>
+      <div class="queue-section">
+        <div class="section-label"><span>Agents in-flight</span></div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-title" style="color: var(--kerf-amber);">▸ Change Order Agent</span><span class="qi-time">active</span></div>
+          <div class="qi-why">Drafting CO body. T2 local → T5 polish.</div>
+        </div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-title" style="color: var(--kerf-amber);">▸ Proposal Follow-up</span><span class="qi-time">idle</span></div>
+          <div class="qi-why">Last run 9:02 AM · 1 draft queued.</div>
+        </div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-title" style="color: var(--kerf-amber);">▸ Drift Watcher</span><span class="qi-time">watching</span></div>
+          <div class="qi-why">14 projects · 3 permits · 2 callbacks.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="main-header">
+        <div>
+          <div class="main-title">Live operating graph</div>
+          <div class="main-sub">Clients · projects · scopes · agents · pending decisions — same data, relational view</div>
+        </div>
+        <div>
+          <button class="btn btn-sm">Filter</button>
+          <button class="btn btn-sm">Layout ▸ force</button>
+        </div>
+      </div>
+
+      <div class="graph-canvas">
+        <svg class="graph-svg" viewBox="0 0 1100 640" preserveAspectRatio="none">
+          <!-- edges -->
+          <path class="edge" d="M 160 180 Q 250 160 340 170"/>
+          <path class="edge" d="M 340 170 Q 430 220 520 240"/>
+          <path class="edge active" d="M 340 170 Q 480 120 620 100"/>
+          <path class="edge" d="M 160 340 Q 260 340 360 340"/>
+          <path class="edge" d="M 360 340 Q 500 320 640 330"/>
+          <path class="edge" d="M 160 460 Q 260 470 360 470"/>
+          <path class="edge" d="M 360 470 Q 500 440 640 420"/>
+          <path class="edge active" d="M 620 100 Q 750 150 860 200"/>
+          <path class="edge" d="M 640 330 Q 760 320 860 310"/>
+          <path class="edge" d="M 640 420 Q 760 430 860 440"/>
+          <!-- labels -->
+          <text class="edge-label" x="480" y="120">has CO</text>
+          <text class="edge-label" x="490" y="230">scoped by</text>
+          <text class="edge-label" x="750" y="130">awaits</text>
+        </svg>
+
+        <div class="graph-node client" style="top: 160px; left: 80px;">
+          <div class="node-label">Client</div>
+          <div class="node-name">K. Henderson</div>
+          <div class="node-meta">San Diego · 1 project</div>
+        </div>
+        <div class="graph-node client" style="top: 320px; left: 80px;">
+          <div class="node-label">Client</div>
+          <div class="node-name">T. Coring</div>
+          <div class="node-meta">Encinitas · 1 project</div>
+        </div>
+        <div class="graph-node client" style="top: 445px; left: 80px;">
+          <div class="node-label">Client</div>
+          <div class="node-name">R. Clem</div>
+          <div class="node-meta">Poway · 1 project</div>
+        </div>
+
+        <div class="graph-node project" style="top: 150px; left: 280px;">
+          <div class="node-label">GGR Project</div>
+          <div class="node-name">Henderson Bath</div>
+          <div class="node-meta">Day 14 / 28 · $38K/$92K</div>
+        </div>
+        <div class="graph-node valle" style="top: 320px; left: 280px;">
+          <div class="node-label">Valle Project</div>
+          <div class="node-name">La Jolla Vanity</div>
+          <div class="node-meta">Shop day 6 / 9</div>
+        </div>
+        <div class="graph-node hpg" style="top: 445px; left: 280px;">
+          <div class="node-label">HPG Project</div>
+          <div class="node-name">Clem HP + Panel</div>
+          <div class="node-meta">Scheduled Apr 29</div>
+        </div>
+
+        <div class="graph-node decision" style="top: 70px; left: 550px;">
+          <div class="node-label" style="color: var(--warn);">◉ Pending decision</div>
+          <div class="node-name">CO #3 · $4,280</div>
+          <div class="node-meta">Conf 94% · The One Thing</div>
+        </div>
+        <div class="graph-node" style="top: 300px; left: 550px;">
+          <div class="node-label">Scope</div>
+          <div class="node-name">Cabinet install</div>
+          <div class="node-meta">Ready for crew</div>
+        </div>
+        <div class="graph-node" style="top: 400px; left: 550px;">
+          <div class="node-label">Scope</div>
+          <div class="node-name">Panel upgrade</div>
+          <div class="node-meta">Rebate pending</div>
+        </div>
+
+        <div class="graph-node agent" style="top: 180px; left: 830px;">
+          <div class="node-label">Agent · ACTIVE</div>
+          <div class="node-name">▸ Change Order Agent</div>
+          <div class="node-meta">Drafting · T2 → T5</div>
+        </div>
+        <div class="graph-node agent" style="top: 290px; left: 830px;">
+          <div class="node-label">Agent · IDLE</div>
+          <div class="node-name">▸ Estimator</div>
+          <div class="node-meta">Last ran 8:12 AM</div>
+        </div>
+        <div class="graph-node agent" style="top: 420px; left: 830px;">
+          <div class="node-label">Agent · WATCHING</div>
+          <div class="node-name">▸ Drift Watcher</div>
+          <div class="node-meta">14 things</div>
+        </div>
+
+        <div class="graph-legend">
+          <div class="legend-row"><span class="legend-dot" style="background: #5888B8;"></span> Client</div>
+          <div class="legend-row"><span class="legend-dot" style="background: var(--ggr);"></span> GGR project</div>
+          <div class="legend-row"><span class="legend-dot" style="background: var(--val);"></span> Valle project</div>
+          <div class="legend-row"><span class="legend-dot" style="background: var(--hpg);"></span> HPG project</div>
+          <div class="legend-row"><span class="legend-dot" style="background: var(--kerf-amber);"></span> Agent</div>
+          <div class="legend-row"><span class="legend-dot" style="background: var(--warn); box-shadow: 0 0 6px var(--warn);"></span> Decision pending</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Same graph, different renderer.</strong> Standard and Graphical are equivalent reads of the operating graph (v3.2 §9). Module icon rail + Chief of Staff rail persist. Users toggle at will; role defaults apply on first login (PMs: Graphical · office: Standard).
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- FRAME 4: KERF TEAMS -->
+<div class="frame" id="frame-teams">
+  <div class="frame-label">
+    <span>FRAME 4 · KERF TEAMS · L0–L3 ADOPTION + COST PER OUTCOME</span>
+    <span class="frame-note">New in v2: dollar cost per agent per person + hours saved · the ROI surface</span>
+  </div>
+  <div class="app">
+    <div class="topbar">
+      <span class="brand-mark">KERF</span>
+      <span class="brand-tag">MAKE MORE.</span>
+      <span style="margin-left: 8px; font-size: 11px; color: var(--kerf-text-dim);">Kerf Teams</span>
+      <div class="topbar-spacer"></div>
+      <div class="toggle">
+        <div class="toggle-btn active">Standard</div>
+        <div class="toggle-btn">Graphical</div>
+      </div>
+      <div class="user-chip"><div class="user-avatar">CA</div> Christian · L3</div>
+    </div>
+    <div class="module-rail">
+      <div class="mod-icon">◉</div><div class="mod-divider"></div>
+      <div class="mod-icon">S</div><div class="mod-icon">E</div><div class="mod-icon">P</div>
+      <div class="mod-icon">C</div><div class="mod-icon">$</div><div class="mod-icon">F</div>
+      <div class="mod-icon">O</div><div class="mod-icon">M</div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon active">T<span class="tip">Kerf Teams</span></div>
+    </div>
+
+    <div class="cos-rail">
+      <div class="cos-header">
+        <div class="cos-dot"></div>
+        <div>
+          <div class="cos-title">Chief of Staff</div>
+          <div class="cos-sub">In Kerf Teams</div>
+        </div>
+      </div>
+      <div class="one-thing">
+        <div class="one-thing-label">The One Thing</div>
+        <div class="one-thing-title">Maria is stuck at L1 — propose Play onboarding</div>
+        <div class="one-thing-why">
+          <span class="one-thing-why-label">Why:</span> Maria (office mgr) has plateaued at L1 for 2 weeks. Kill-switch target is L2 by July 13. The "Friday Cash Cycle" Play pushed 2 other operators from L1→L2 in their history.
+        </div>
+        <div class="confidence-row">
+          <span style="color: var(--kerf-text-dim);">Confidence</span>
+          <div class="conf-bar"><div class="conf-fill med" style="width: 76%;"></div></div>
+          <span class="conf-num">76%</span>
+        </div>
+        <div class="one-thing-actions">
+          <button class="btn btn-primary btn-sm">Enroll Maria</button>
+          <button class="btn btn-sm">Skip</button>
+        </div>
+      </div>
+      <div class="queue-section">
+        <div class="section-label"><span>Recent</span></div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-title">Jake joined Kerf (HPG)</span><span class="qi-time">2d</span></div>
+          <div class="qi-why">Initial assessment: L0. Path: L1 by May 15.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="main-header">
+        <div>
+          <div class="main-title">Kerf Teams</div>
+          <div class="main-sub">9 people · 6 agents · kill-switch target: all staff ≥L2 by July 13, 2026</div>
+        </div>
+      </div>
+
+      <div class="teams-grid">
+        <div class="teams-card">
+          <h3>L0–L3 adoption ladder</h3>
+          <div class="ladder-row">
+            <div class="level-badge l3">L3</div>
+            <div>
+              <div class="person-name">Christian Asdal</div>
+              <div class="person-role">Operator · GGR/Valle/HPG</div>
+              <div class="ladder-bar"><div class="ladder-bar-fill" style="width: 100%;"></div></div>
+            </div>
+            <div class="target-note">Role model</div>
+            <div class="cost-out-val">14 Plays authored</div>
+          </div>
+          <div class="ladder-row">
+            <div class="level-badge l2">L2</div>
+            <div>
+              <div class="person-name">Rosa Ortiz</div>
+              <div class="person-role">Lead estimator · GGR</div>
+              <div class="ladder-bar"><div class="ladder-bar-fill" style="width: 68%;"></div></div>
+            </div>
+            <div class="target-note">On track</div>
+            <div class="cost-out-val">Daily use · 4 wks</div>
+          </div>
+          <div class="ladder-row">
+            <div class="level-badge l1">L1</div>
+            <div>
+              <div class="person-name">Maria Chen</div>
+              <div class="person-role">Office manager · GGR/Valle</div>
+              <div class="ladder-bar"><div class="ladder-bar-fill" style="width: 38%; background: var(--warn);"></div></div>
+            </div>
+            <div class="target-note" style="color: var(--warn);">⚠ Plateau</div>
+            <div class="cost-out-val">Needs Play</div>
+          </div>
+          <div class="ladder-row">
+            <div class="level-badge l2">L2</div>
+            <div>
+              <div class="person-name">Mike Reyes</div>
+              <div class="person-role">Field PM · GGR</div>
+              <div class="ladder-bar"><div class="ladder-bar-fill" style="width: 54%;"></div></div>
+            </div>
+            <div class="target-note">On track</div>
+            <div class="cost-out-val">CO flow owner</div>
+          </div>
+          <div class="ladder-row">
+            <div class="level-badge l1">L1</div>
+            <div>
+              <div class="person-name">Tomás Gutierrez</div>
+              <div class="person-role">Finish carpenter · GGR</div>
+              <div class="ladder-bar"><div class="ladder-bar-fill" style="width: 28%;"></div></div>
+            </div>
+            <div class="target-note">Field crew floor</div>
+            <div class="cost-out-val">Voice + photo</div>
+          </div>
+          <div class="ladder-row">
+            <div class="level-badge l0">L0</div>
+            <div>
+              <div class="person-name">Jake Asdal</div>
+              <div class="person-role">HPG (new · joined Apr 19)</div>
+              <div class="ladder-bar"><div class="ladder-bar-fill" style="width: 12%; background: var(--alert);"></div></div>
+            </div>
+            <div class="target-note">Onboarding</div>
+            <div class="cost-out-val">Week 1</div>
+          </div>
+        </div>
+
+        <div class="teams-card">
+          <h3>Cost per outcome <span style="font-size: 10px; font-weight: 400; color: var(--kerf-text-dim);">· last 30 days</span></h3>
+          <div class="cost-out-row cost-out-header">
+            <span>Agent</span>
+            <span style="text-align: right;">Actions</span>
+            <span style="text-align: right;">Cost</span>
+            <span style="text-align: right;">Hrs saved</span>
+          </div>
+          <div class="cost-out-row">
+            <span class="agent-name"><span class="agent-dot"></span>Invoice Agent</span>
+            <span class="cost-out-val">47</span>
+            <span class="cost-out-val">$3.20</span>
+            <span class="cost-out-val good">+18</span>
+          </div>
+          <div class="cost-out-row">
+            <span class="agent-name"><span class="agent-dot"></span>Proposal Follow-up</span>
+            <span class="cost-out-val">22</span>
+            <span class="cost-out-val">$1.80</span>
+            <span class="cost-out-val good">+9</span>
+          </div>
+          <div class="cost-out-row">
+            <span class="agent-name"><span class="agent-dot"></span>Drift Watcher</span>
+            <span class="cost-out-val">311</span>
+            <span class="cost-out-val">$0.40</span>
+            <span class="cost-out-val good">+14</span>
+          </div>
+          <div class="cost-out-row">
+            <span class="agent-name"><span class="agent-dot"></span>Change Order Agent</span>
+            <span class="cost-out-val">12</span>
+            <span class="cost-out-val">$4.60</span>
+            <span class="cost-out-val good">+7</span>
+          </div>
+          <div class="cost-out-row">
+            <span class="agent-name"><span class="agent-dot"></span>Estimator</span>
+            <span class="cost-out-val">8</span>
+            <span class="cost-out-val">$8.40</span>
+            <span class="cost-out-val good">+22</span>
+          </div>
+          <div class="cost-out-row" style="border-top: 2px solid var(--kerf-amber); margin-top: 6px; padding-top: 10px;">
+            <span style="font-weight: 600;">Total (30d)</span>
+            <span class="cost-out-val">400</span>
+            <span class="cost-out-val" style="font-weight: 700;">$18.40</span>
+            <span class="cost-out-val good" style="font-weight: 700;">+70 hrs</span>
+          </div>
+          <div style="font-size: 11px; color: var(--kerf-text-dim); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--kerf-border);">
+            Blended payback: <span style="color: var(--kerf-amber); font-weight: 600;">~$3,780 recovered</span> <span style="color: var(--kerf-text-mute);">($54/hr × 70)</span> vs. $18.40 agent cost. 205× ROI this period.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Cost-per-outcome is the ROI surface.</strong> Actions × unit cost × hours saved. Makes the business case for Kerf visible to Christian every week — and post-GA, to every customer. The kill-switch (§25.3) reads directly off this view.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- FRAME 5: HOMEOWNER SMS THREAD -->
+<div class="frame" id="frame-homeowner">
+  <div class="frame-label">
+    <span>FRAME 5 · HOMEOWNER SMS THREAD · CHRISTIAN'S VIEW</span>
+    <span class="frame-note">Homeowners never touch the app (v3.2 §9.2) — Christian sees the SMS conversation and the Messenger Agent drafts</span>
+  </div>
+  <div class="app">
+    <div class="topbar">
+      <span class="brand-mark">KERF</span>
+      <span class="brand-tag">MAKE MORE.</span>
+      <span style="margin-left: 8px; font-size: 11px; color: var(--kerf-text-dim);">Kerf Scope · Homeowner comms</span>
+      <div class="topbar-spacer"></div>
+      <div class="toggle">
+        <div class="toggle-btn active">Standard</div>
+        <div class="toggle-btn">Graphical</div>
+      </div>
+      <div class="user-chip"><div class="user-avatar">CA</div> Christian · L3</div>
+    </div>
+    <div class="module-rail">
+      <div class="mod-icon">◉</div><div class="mod-divider"></div>
+      <div class="mod-icon">S</div><div class="mod-icon">E</div><div class="mod-icon">P</div>
+      <div class="mod-icon active">C<span class="tip">Kerf Scope</span></div>
+      <div class="mod-icon">$</div><div class="mod-icon">F</div>
+      <div class="mod-icon">O</div><div class="mod-icon">M</div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">T</div>
+    </div>
+    <div class="cos-rail">
+      <div class="cos-header">
+        <div class="cos-dot"></div>
+        <div>
+          <div class="cos-title">Chief of Staff</div>
+          <div class="cos-sub">Homeowner Messenger in-flight</div>
+        </div>
+      </div>
+      <div class="one-thing">
+        <div class="one-thing-label">The One Thing</div>
+        <div class="one-thing-title">Approve Henderson reply draft</div>
+        <div class="one-thing-why">
+          <span class="one-thing-why-label">Why:</span> homeowner asked about cost 8 min ago. Policy says single approval required for any outbound message over $1,000. Draft is ready.
+        </div>
+        <div class="confidence-row">
+          <span style="color: var(--kerf-text-dim);">Confidence</span>
+          <div class="conf-bar"><div class="conf-fill" style="width: 91%;"></div></div>
+          <span class="conf-num">91%</span>
+        </div>
+        <div class="one-thing-actions">
+          <button class="btn btn-primary btn-sm">Approve & send</button>
+          <button class="btn btn-sm">Edit</button>
+        </div>
+      </div>
+      <div class="queue-section">
+        <div class="section-label"><span>Other threads</span></div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-brand val">VAL</span><span class="qi-title">Coring · vanity color</span><span class="qi-time">1h</span></div>
+          <div class="qi-why">Question drafted, low-risk, auto-send policy.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main" style="padding: 0;">
+      <div class="sms-thread">
+        <!-- Sidebar: thread list -->
+        <div class="sms-sidebar">
+          <div style="padding: 0 16px 8px; font-size: 11px; color: var(--kerf-text-mute); text-transform: uppercase; letter-spacing: 0.1em;">Active threads</div>
+          <div class="sms-contact active">
+            <div class="sms-avatar">KH</div>
+            <div class="sms-contact-info">
+              <div class="sms-contact-name">Katelyn Henderson</div>
+              <div class="sms-contact-preview">"How much are we looking at for…"</div>
+            </div>
+            <span class="sms-contact-unread">1</span>
+          </div>
+          <div class="sms-contact">
+            <div class="sms-avatar" style="background: var(--ggr-dim);">TC</div>
+            <div class="sms-contact-info">
+              <div class="sms-contact-name">Tim Coring</div>
+              <div class="sms-contact-preview">"Sounds great, let's book the install"</div>
+            </div>
+          </div>
+          <div class="sms-contact">
+            <div class="sms-avatar" style="background: var(--hpg-dim);">RC</div>
+            <div class="sms-contact-info">
+              <div class="sms-contact-name">Rachel Clem</div>
+              <div class="sms-contact-preview">"Can we push to next week?"</div>
+            </div>
+          </div>
+          <div class="sms-contact">
+            <div class="sms-avatar" style="background: var(--val-dim);">JM</div>
+            <div class="sms-contact-info">
+              <div class="sms-contact-name">Jen Moore</div>
+              <div class="sms-contact-preview">"Proposal received, reviewing tonight"</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main thread -->
+        <div class="sms-main">
+          <div class="sms-header">
+            <div class="sms-header-info">
+              <h4>Katelyn Henderson · (619) 555-0148</h4>
+              <div class="meta">Henderson Bath Remodel · GGR-2026-018 · Thread started Mar 14, 2026</div>
+            </div>
+            <div class="sms-header-actions">
+              <button class="btn btn-sm">Call</button>
+              <button class="btn btn-sm">Open project</button>
+            </div>
+          </div>
+
+          <div class="sms-policy-note">
+            <strong style="color: var(--success);">Policy:</strong> outbound to this homeowner requires single approval when mentioning cost over $1,000 or schedule changes over 1 day. Routine confirmations auto-send after 30s cooling. All messages logged.
+          </div>
+
+          <div class="sms-messages">
+            <div class="sms-bubble outgoing">
+              Hi Katelyn — Mike here from GGR. We're going to pull the tub surround this morning. Should be out of your hair by noon.
+              <div class="sms-meta">Mike Reyes · 7:42 AM · sent manually</div>
+            </div>
+            <div class="sms-bubble incoming">
+              Perfect, thank you! We're out till 2pm.
+              <div class="sms-meta">7:45 AM</div>
+            </div>
+            <div class="sms-bubble outgoing">
+              Heads up — pulled the surround and found galvanized plumbing all the way back to the main. Needs replacement. Calling you in 2 min.
+              <div class="sms-meta">Mike Reyes · 8:36 AM · sent manually (field)</div>
+            </div>
+            <div class="sms-bubble incoming">
+              Whatever you need to do — just keep us in the loop on cost.
+              <div class="sms-meta">8:47 AM · auto-tagged: approval_received</div>
+            </div>
+            <div class="sms-bubble outgoing" style="background: var(--ggr-dim);">
+              Thanks Katelyn — we'll have a change order over to you within the hour.
+              <div class="sms-meta">Homeowner Messenger · 8:48 AM · AUTO-SENT · policy: low-risk confirmation</div>
+            </div>
+            <div class="sms-bubble incoming">
+              How much are we looking at for the plumbing?
+              <div class="sms-meta">9:06 AM · auto-tagged: cost_inquiry · escalated to Christian</div>
+            </div>
+
+            <div class="sms-bubble agent-drafted">
+              <div class="sms-agent-tag">▸ HOMEOWNER MESSENGER · DRAFT · AWAITING APPROVAL</div>
+              Change order is coming over now — total is $4,280 covering labor, the new copper run, and sub time. Schedule shifts by 1.5 days, new completion April 30. You'll get a DocuSign link from Christian in a few minutes.
+              <div class="sms-meta">Draft at 9:09 AM · confidence 91% · tone: direct / reassuring · why: cost inquiry + policy requires approval over $1K</div>
+              <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <button class="btn btn-primary btn-sm">Approve & send</button>
+                <button class="btn btn-sm">Edit</button>
+                <button class="btn btn-ghost btn-sm">Hold</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sms-compose">
+            <input class="sms-input" type="text" placeholder="Type a message or click Approve above…"/>
+            <button class="btn btn-sm">▸ Voice</button>
+            <button class="btn btn-sm">Send as me</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 20px 28px;">
+        <div class="callout">
+          <strong>Homeowners never touch the app.</strong> v3.2 §9.2 is enforced — this is Christian's view of the SMS conversation, with the Messenger Agent drafts visibly labeled. Outbound policy decides auto-send vs. queued. Every inbound is auto-tagged and routed. Every outbound is logged with who or which agent authored it.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- FRAME 6: PLAYS AUTHORING -->
+<div class="frame" id="frame-plays">
+  <div class="frame-label">
+    <span>FRAME 6 · KERF PLAYS · AUTHORING UI</span>
+    <span class="frame-note">Three entry modes to one Play file: Voice walkthrough · Guided form · Markdown</span>
+  </div>
+  <div class="app">
+    <div class="topbar">
+      <span class="brand-mark">KERF</span>
+      <span class="brand-tag">MAKE MORE.</span>
+      <span style="margin-left: 8px; font-size: 11px; color: var(--kerf-text-dim);">Kerf Teams · Plays · New</span>
+      <div class="topbar-spacer"></div>
+      <div class="toggle">
+        <div class="toggle-btn active">Standard</div>
+        <div class="toggle-btn">Graphical</div>
+      </div>
+      <div class="user-chip"><div class="user-avatar">CA</div> Christian · L3</div>
+    </div>
+    <div class="module-rail">
+      <div class="mod-icon">◉</div><div class="mod-divider"></div>
+      <div class="mod-icon">S</div><div class="mod-icon">E</div><div class="mod-icon">P</div>
+      <div class="mod-icon">C</div><div class="mod-icon">$</div><div class="mod-icon">F</div>
+      <div class="mod-icon">O</div><div class="mod-icon">M</div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon active">T<span class="tip">Kerf Teams</span></div>
+    </div>
+    <div class="cos-rail">
+      <div class="cos-header">
+        <div class="cos-dot"></div>
+        <div>
+          <div class="cos-title">Chief of Staff · Coach mode</div>
+          <div class="cos-sub">Authoring: Friday Cash Cycle Review</div>
+        </div>
+      </div>
+      <div class="one-thing" style="background: linear-gradient(180deg, rgba(95,179,122,0.08) 0%, rgba(95,179,122,0.02) 100%);">
+        <div class="one-thing-label" style="color: var(--success);">Coach is guiding</div>
+        <div class="one-thing-title">Answer 7 questions — I'll write the Play</div>
+        <div class="one-thing-why">
+          <span class="one-thing-why-label" style="color: var(--success);">Why:</span> voice walkthrough is the fastest path for L2+ operators. Coach asks one question at a time, builds the markdown in parallel. You can edit at any point.
+        </div>
+        <div class="one-thing-actions">
+          <button class="btn btn-primary btn-sm">▸ Start voice</button>
+          <button class="btn btn-sm">Use form instead</button>
+        </div>
+      </div>
+      <div class="queue-section">
+        <div class="section-label"><span>Templates</span></div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-title">Cash Cycle Review (Ramp-style)</span></div>
+          <div class="qi-why">Weekly AR sweep pattern.</div>
+        </div>
+        <div class="queue-item">
+          <div class="qi-row1"><span class="qi-title">Change Order from Field</span></div>
+          <div class="qi-why">Field-initiated scope flow.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main" style="padding: 0;">
+      <div class="play-author">
+        <!-- Step nav -->
+        <div class="play-nav">
+          <h4>Authoring steps</h4>
+          <div class="play-step done"><div class="step-dot">✓</div><span>1 · Name + description</span></div>
+          <div class="play-step done"><div class="step-dot">✓</div><span>2 · Trigger</span></div>
+          <div class="play-step active"><div class="step-dot">3</div><span>3 · Preconditions</span></div>
+          <div class="play-step"><div class="step-dot">4</div><span>4 · Steps</span></div>
+          <div class="play-step"><div class="step-dot">5</div><span>5 · Success criteria</span></div>
+          <div class="play-step"><div class="step-dot">6</div><span>6 · Variables</span></div>
+          <div class="play-step"><div class="step-dot">7</div><span>7 · Review + save</span></div>
+
+          <h4 style="margin-top: 20px;">Discoverability</h4>
+          <div style="font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5;">
+            Once saved, Coach surfaces this Play to operators whose role, time-of-week, and context match.
+          </div>
+          <div style="font-size: 11px; margin-top: 10px;">
+            <span style="color: var(--kerf-text-dim);">Shown to:</span><br/>
+            <span style="color: var(--kerf-amber);">▸ Operators</span> · Office managers<br/>
+            <span style="color: var(--kerf-text-dim);">When:</span> Fridays 3-5pm<br/>
+            <span style="color: var(--kerf-text-dim);">If:</span> ≥3 past-due invoices exist
+          </div>
+        </div>
+
+        <!-- Editor center -->
+        <div class="play-editor">
+          <h3>Authoring: Friday Cash Cycle Review</h3>
+          <div class="editor-sub">Weekly sweep of past-due invoices · draft follow-ups · batch approve · log outcome</div>
+
+          <div class="modes-row">
+            <div class="mode-tab">▸ Voice walkthrough</div>
+            <div class="mode-tab">Guided form</div>
+            <div class="mode-tab active">Markdown</div>
+          </div>
+
+          <div style="font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 6px;">All three modes edit the same file · switch any time without losing progress</div>
+
+          <div class="play-md"><span class="c">---
+name: Friday Cash Cycle Review
+brand: all
+owner: office_manager
+discovery:
+  - friday afternoon
+  - three_or_more_overdue_invoices
+confidence_required: 0.85
+---</span>
+
+<span class="k">## Trigger</span>
+Friday at 3:00 PM tenant-local, if <span class="v">invoices_past_due &gt;= 3</span>.
+OR on-demand from Chief of Staff via "run cash cycle review".
+
+<span class="k">## Preconditions</span>
+- QuickBooks sync healthy within last 4 hours
+- Homeowner Messenger policy: draft-and-queue for balances &gt; $1,000
+- Operator present (will receive approval batch)
+
+<span class="k">## Steps</span>
+1. <span class="v">Sweep</span> — list all invoices past-due by brand
+2. <span class="v">Classify</span> — bucket by age (30 / 60 / 90+)
+3. <span class="v">Draft</span> — Invoice Agent composes follow-up per bucket tone
+4. <span class="v">Batch review</span> — present as single approval batch in Slack + UI
+5. <span class="v">Send</span> — on approval, send all with 60s cooling window
+6. <span class="v">Log</span> — write weekly summary to Kerf Money · DSO delta
+
+<span class="k">## Success criteria</span>
+- All eligible invoices have a follow-up sent or explicit skip
+- Weekly DSO delta recorded
+- Time-to-cash median &lt;= baseline - 5 days within 90 days
+
+<span class="k">## Variables (per tenant)</span>
+- <span class="v">time_local</span>: "Friday 15:00"
+- <span class="v">min_past_due</span>: 3
+- <span class="v">approval_threshold</span>: $1000</div>
+
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm">Save draft</button>
+            <button class="btn btn-sm">Dry-run on history</button>
+            <button class="btn btn-ghost btn-sm">Discard</button>
+          </div>
+        </div>
+
+        <!-- Right: Coach helper -->
+        <div class="play-sidebar">
+          <h4>Coach suggestions</h4>
+          <div class="play-helper">
+            <div class="label">▸ Consider adding</div>
+            <div>A <em>pre-check</em> step: verify QB sync before drafting. Two operators who used a similar Play hit drift when QB was stale.</div>
+          </div>
+          <div class="play-helper">
+            <div class="label">▸ Similar Plays</div>
+            <div style="color: var(--kerf-amber); font-size: 11px; line-height: 1.6;">
+              <div>Monthly AR Aging Review</div>
+              <div>30-Day Follow-up Sweep</div>
+              <div>Vendor Payables Check</div>
+            </div>
+          </div>
+          <div class="play-helper">
+            <div class="label">▸ Authoring mode tip</div>
+            <div>You can switch to <strong style="color: var(--kerf-amber);">Voice walkthrough</strong> to dictate the steps and Coach will convert to markdown. Takes ~4 min.</div>
+          </div>
+          <div class="play-helper" style="border-left: 3px solid var(--success);">
+            <div class="label" style="color: var(--success);">▸ Publishing</div>
+            <div>Saved Plays are private to your tenant by default. Post-GA, you can publish to the shared library.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 20px 28px;">
+        <div class="callout">
+          <strong>Three ways in, one Play file.</strong> Voice walkthrough for fast authoring (L2+ operators). Guided form for structured authoring (L1 operators learning the pattern). Markdown for precision editing (L3 operators refining). All three produce the same markdown file under the hood (v3.2 §15.2).
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- FRAME 7: UNDO STATE -->
+<div class="frame" id="frame-undo">
+  <div class="frame-label">
+    <span>FRAME 7 · 60-SECOND UNDO STATE · POST-APPROVAL</span>
+    <span class="frame-note">New in v2: every Locked action honors 60s cooling window · visible undo strip</span>
+  </div>
+  <div class="app">
+    <div class="topbar">
+      <span class="brand-mark">KERF</span>
+      <span class="brand-tag">MAKE MORE.</span>
+      <span style="margin-left: 8px; font-size: 11px; color: var(--kerf-text-dim);">Kerf Scope · just approved CO#3</span>
+      <div class="topbar-spacer"></div>
+      <div class="toggle">
+        <div class="toggle-btn active">Standard</div>
+        <div class="toggle-btn">Graphical</div>
+      </div>
+      <div class="user-chip"><div class="user-avatar">CA</div> Christian · L3</div>
+    </div>
+    <div class="module-rail">
+      <div class="mod-icon">◉</div><div class="mod-divider"></div>
+      <div class="mod-icon">S</div><div class="mod-icon">E</div><div class="mod-icon active">P</div>
+      <div class="mod-icon">C</div><div class="mod-icon">$</div><div class="mod-icon">F</div>
+      <div class="mod-icon">O</div><div class="mod-icon">M</div>
+      <div class="mod-divider"></div>
+      <div class="mod-icon">T</div>
+    </div>
+    <div class="cos-rail">
+      <div class="cos-header">
+        <div class="cos-dot"></div>
+        <div>
+          <div class="cos-title">Chief of Staff</div>
+          <div class="cos-sub">Cooling window active · next item ready</div>
+        </div>
+      </div>
+      <div class="one-thing">
+        <div class="one-thing-label">The One Thing · next up</div>
+        <div class="one-thing-title">Coring proposal follow-up · day 9 silence</div>
+        <div class="one-thing-why">
+          <span class="one-thing-why-label">Why:</span> previous One Thing (Henderson CO) is in cooling. Rail continues to the next item so you don't stall.
+        </div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="undo-strip">
+        <div>
+          ✓ <strong>Change Order #3 · $4,280</strong> · approved and queued for homeowner · e-sig link will send in 60s
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="undo-timer">00:47</span>
+          <button class="btn btn-sm" style="background: #0A0D11; color: #fff; border-color: #0A0D11;">Undo</button>
+        </div>
+      </div>
+
+      <div class="main-header">
+        <div>
+          <div class="main-title">Action locked — cooling before send</div>
+          <div class="main-sub">60-second cooling window is applied to every external send, every QB write, every policy change. Undo is free during this window.</div>
+        </div>
+      </div>
+
+      <div class="capture-item">
+        <div>
+          <div class="capture-flow">
+            <span class="flow-node src">▸ Your approval</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-node tag">change_order_locked</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-node route">cooling 60s</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-node route" style="border-color: var(--success); color: var(--success);">send to homeowner</span>
+          </div>
+          <div class="capture-content">CO #3 / Henderson · $4,280 · 1.5-day extension · pending e-sig dispatch</div>
+          <div class="capture-meta">Logged to audit · reversible until 9:14:47 AM</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Why 60 seconds.</strong> The fear Christian named in the context brief: "a rogue agent sending a bad message to a major client is worse than no AI at all." The 60s window costs nothing operationally, removes the panic of a bad click, and demonstrates control. Under the hood: Policy Engine (v3.2 §12) holds the send for 60s, any undo during that window rolls the Locked state back to Approved-pending with a one-line note in the audit trail.
+      </div>
+
+      <div class="callout" style="border-left-color: var(--success);">
+        <strong>Applied to:</strong> external SMS/email sends · change order dispatch · QuickBooks writes (invoices, payments) · policy changes in Kerf Teams. <strong>Not applied to:</strong> internal reads, internal drafts, agent-internal work. 60s is configurable per tenant in Kerf Teams.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FRAME 8 — HOMEOWNER MAGIC-LINK E-SIG VIEW (NEW) -->
+<div class="frame" id="frame-homeowner-esig">
+  <div class="frame-header">
+    <div>
+      <div class="frame-title">Frame 8 · Homeowner E-Sig View <span class="frame-badge">v3.2 §9.2 — homeowners never touch the app</span></div>
+      <div class="frame-sub">Phone-gated magic link. Lives outside the app shell. Same operating graph behind it — this is just the <em>render</em> the client sees when an approval is required. No login, no download, no portal to learn.</div>
+    </div>
+    <div class="frame-meta">Magic-link URL · phone-verified · expires in 72h · one-tap e-sig</div>
+  </div>
+
+  <div class="client-frame-cap">kerf.ggrremodel.com/c/h3nder · one-time link · signed device fingerprint</div>
+  <div class="browser-chrome">
+    <div class="browser-bar">
+      <span class="browser-dot r"></span><span class="browser-dot y"></span><span class="browser-dot g"></span>
+      <div class="browser-url"><span class="lock">🔒</span>kerf.ggrremodel.com/c/h3nder-co-3-a9f2</div>
+    </div>
+    <div class="client-body">
+      <div class="client-brand">
+        <div class="client-brand-block">
+          <div class="client-brand-mark">GGR</div>
+          <div class="client-brand-sub">design + remodeling · Lic. #947051</div>
+        </div>
+        <div class="client-verify-chip">✓ Phone verified · (760) •••-4412</div>
+      </div>
+
+      <div class="client-h1">Change Order #3 is ready for your approval</div>
+      <div class="client-intro">Hi <strong>Sarah</strong> — during rough electrical this morning we found <strong>cloth-wrapped wiring in the shared wall</strong> that doesn't meet current code. Code requires we replace it before drywall goes back up. Details and signature below. Questions? Reply to the text thread — Christian is on it.</div>
+
+      <div class="client-card">
+        <div class="card-label">Project · Henderson primary bath · GGR-2026-014</div>
+        <div class="client-title">CO #3 · Electrical remediation — shared wall</div>
+        <div class="client-meta">Added scope: replace 18 LF cloth-wrapped wiring · re-pull two 15A circuits · inspection sign-off before close-up. No schedule change.</div>
+        <div class="client-line"><span class="label">Materials (Romex · boxes · connectors)</span><span class="val">$ 312</span></div>
+        <div class="client-line"><span class="label">Licensed electrician · 1.5 days</span><span class="val">$ 1,180</span></div>
+        <div class="client-line"><span class="label">Inspection coordination · permit amendment</span><span class="val">$ 150</span></div>
+        <div class="client-line"><span class="label">Patch &amp; paint blend (drywall)</span><span class="val">$ 240</span></div>
+        <div class="client-total"><span class="label">Change Order Total</span><span class="val">$ 1,882</span></div>
+      </div>
+
+      <div class="client-card">
+        <div class="card-label">Photos from this morning · GPS + timestamped</div>
+        <div class="client-photo-strip">
+          <div class="client-photo">📷</div>
+          <div class="client-photo">📷</div>
+          <div class="client-photo">📷</div>
+          <div class="client-photo">📷</div>
+        </div>
+      </div>
+
+      <div class="client-sig-box" id="clientSigBox">
+        <div class="client-sig-label">Tap to sign</div>
+        <div class="client-sig-value" id="clientSigValue"></div>
+      </div>
+
+      <button class="client-approve-btn" id="clientApproveBtn" disabled>Approve Change Order · $1,882</button>
+
+      <div class="client-footer">
+        GGR Design + Remodeling · 12635 Danielson Ct. Ste 202 · Poway CA 92064
+        <span class="sep">·</span> <a href="#">text christian</a>
+        <span class="sep">·</span> <a href="#">call office</a>
+        <span class="sep">·</span> <a href="#">view contract</a>
+        <br><span style="display:inline-block;margin-top:8px;opacity:0.8;">This link expires in 72 hours and can only be opened on the device it was sent to.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-title">WHY THIS SURFACE EXISTS</div>
+    <div class="insight-grid">
+      <div>
+        <strong>Architecture v3.2 §9.2 is explicit.</strong> Homeowners don't use the app. They don't log in, don't learn Standard or Graphical, don't see the queue. What they get is a phone-gated magic-link page the moment an approval is required, wrapped in GGR branding. Signature persists back to the same audit trail the operator side sees.
+      </div>
+      <div>
+        <strong>Two cards, one signature, one button.</strong> No navigation. The "why" is the first sentence. Photos are GPS + timestamp verified at capture (Source → Tag → Route chain). Cursive signature is auto-rendered from the registered signer's typed name — e-sig hash binds to device fingerprint + timestamp.
+      </div>
+      <div>
+        <strong>60-second undo lives on the operator side, not here.</strong> When Sarah approves, the Messenger agent doesn't immediately post to QuickBooks. Christian gets a 60s window to pull it back if something looks off. The homeowner's experience is still "done."
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="border-left-color: var(--accent);">
+    <strong>Not built yet — tier-three option.</strong> If a homeowner asks for a persistent portal (milestones, photo library, document history), that's a separate surface. Default is always SMS thread + magic-link. Portal is opt-in, never forced.
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ============================================================
+   Kerf wireframes v2 — dynamic interactivity layer
+   Non-destructive demo behavior. All effects are scoped, idle-safe,
+   and respect prefers-reduced-motion.
+   ============================================================ */
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* --- 1. Toggle Standard ↔ Graphical per frame --------------- */
+  document.querySelectorAll('.toggle').forEach(function(toggle) {
+    toggle.querySelectorAll('.toggle-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        toggle.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+  });
+
+  /* --- 2. Undo timer tick (Frame 7) --------------------------- */
+  (function(){
+    var timer = document.querySelector('.undo-timer');
+    if (!timer) return;
+    var remaining = 47;
+    setInterval(function(){
+      remaining = Math.max(0, remaining - 1);
+      if (remaining === 0) remaining = 60; // loop for demo
+      var m = Math.floor(remaining / 60).toString().padStart(2, '0');
+      var s = (remaining % 60).toString().padStart(2, '0');
+      timer.textContent = m + ':' + s;
+    }, 1000);
+  })();
+
+  /* --- 3. Toast helper ---------------------------------------- */
+  function toast(msg, tone) {
+    var t = document.createElement('div');
+    t.className = 'toast' + (tone ? ' ' + tone : '');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.style.opacity = '0'; t.style.transform = 'translateY(8px)'; }, 2400);
+    setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 2900);
+  }
+
+  /* --- 4. Queue item click-to-expand (Frames 1 & 3) ----------- */
+  document.querySelectorAll('.queue-item').forEach(function(qi) {
+    qi.style.cursor = 'pointer';
+    qi.addEventListener('click', function(e) {
+      if (e.target.closest('a,button')) return;
+      qi.classList.toggle('expanded');
+    });
+  });
+
+  /* --- 5. Confidence / ladder / progress bar scroll reveal ---- */
+  if ('IntersectionObserver' in window && !reduce) {
+    var bars = document.querySelectorAll('.conf-fill, .ladder-bar-fill, .proj-progress-fill');
+    bars.forEach(function(b){
+      var target = b.style.width || getComputedStyle(b).width;
+      b.dataset.target = target;
+      b.style.width = '0';
+    });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting) {
+          var el = en.target;
+          setTimeout(function(){ el.style.width = el.dataset.target; }, 120);
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.35 });
+    bars.forEach(function(b){ io.observe(b); });
+  }
+
+  /* --- 6. Graph edge flow + decision node pulse (Frame 3) ----- */
+  (function(){
+    var graph = document.querySelector('#frame-dashboard-graph');
+    if (!graph || reduce) return;
+    graph.querySelectorAll('.edge').forEach(function(e){ e.classList.add('flowing'); });
+    graph.querySelectorAll('.graph-node.decision').forEach(function(n){ n.classList.add('pulsing'); });
+  })();
+
+  /* --- 7. Agent tag live dot (Frames 1, 2, 5) ---------------- */
+  document.querySelectorAll('.agent-tag, .agent-chip').forEach(function(tag){
+    if (!tag.querySelector('.live-dot')) {
+      var d = document.createElement('span');
+      d.className = 'is-live-dot';
+      d.style.cssText = 'display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:5px;vertical-align:middle;';
+      if (!reduce) d.style.animation = 'kerfDot 1.6s ease-in-out infinite';
+      tag.insertBefore(d, tag.firstChild);
+    }
+  });
+
+  /* --- 8. SMS thread auto-play-through (Frame 5) ------------- */
+  (function(){
+    var thread = document.querySelector('.sms-thread');
+    if (!thread) return;
+    var bubbles = thread.querySelectorAll('.sms-bubble, .bubble');
+    if (!bubbles.length) return;
+    // Stage reveal: hide all, then reveal one at a time
+    bubbles.forEach(function(b, i){
+      b.style.opacity = '0';
+      b.style.transform = 'translateY(6px)';
+      b.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+    });
+    function play(){
+      bubbles.forEach(function(b, i){
+        setTimeout(function(){
+          b.style.opacity = '1';
+          b.style.transform = 'translateY(0)';
+        }, 350 * i + 200);
+      });
+    }
+    if ('IntersectionObserver' in window && !reduce) {
+      var threadIO = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if (en.isIntersecting) { play(); threadIO.unobserve(en.target); }
+        });
+      }, { threshold: 0.3 });
+      threadIO.observe(thread);
+    } else {
+      bubbles.forEach(function(b){ b.style.opacity='1'; b.style.transform='translateY(0)'; });
+    }
+  })();
+
+  /* --- 9. Plays authoring mode-tab switching (Frame 6) ------- */
+  document.querySelectorAll('.mode-tabs').forEach(function(tabs){
+    var panes = tabs.parentElement.querySelectorAll('.mode-pane');
+    tabs.querySelectorAll('.mode-tab, .tab').forEach(function(tab, idx){
+      tab.addEventListener('click', function(e){
+        e.preventDefault();
+        tabs.querySelectorAll('.mode-tab, .tab').forEach(function(t){ t.classList.remove('active'); });
+        tab.classList.add('active');
+        panes.forEach(function(p, pIdx){
+          p.classList.toggle('active', pIdx === idx);
+        });
+      });
+    });
+  });
+
+  /* --- 10. Play chip + mod-icon click echo ------------------- */
+  document.querySelectorAll('.play-chip').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      toast('Play selected · ' + (el.textContent || '').trim().slice(0, 48));
+    });
+  });
+  document.querySelectorAll('.mod-icon.linked').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      toast('Module · ' + (el.getAttribute('data-label') || el.textContent || '').trim());
+    });
+  });
+
+  /* --- 11. Cross-frame "Approve & send" jumps to undo state -- */
+  document.querySelectorAll('[data-action="approve-send"], .approve-send-btn, .btn.btn-primary').forEach(function(btn){
+    var label = (btn.textContent || '').toLowerCase();
+    if (!/approve|send|dispatch|post/.test(label)) return;
+    btn.addEventListener('click', function(e){
+      // Only intercept inside wireframe frames, not nav-bar or legend
+      if (btn.closest('.nav-bar, .legend-block')) return;
+      e.preventDefault();
+      toast('Sent · 60s undo window open', 'ok');
+      var undo = document.getElementById('frame-undo');
+      if (undo) setTimeout(function(){ undo.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); }, 550);
+    });
+  });
+
+  /* --- 12. Homeowner e-sig (Frame 8) ------------------------- */
+  (function(){
+    var box = document.getElementById('clientSigBox');
+    var val = document.getElementById('clientSigValue');
+    var btn = document.getElementById('clientApproveBtn');
+    if (!box || !val || !btn) return;
+    box.addEventListener('click', function(){
+      if (box.classList.contains('signed')) return;
+      box.classList.add('signed');
+      var name = 'Sarah Henderson';
+      var i = 0;
+      (function type(){
+        if (i > name.length) { btn.disabled = false; return; }
+        val.textContent = name.slice(0, i++);
+        setTimeout(type, reduce ? 0 : 55);
+      })();
+    });
+    btn.addEventListener('click', function(){
+      if (btn.disabled || btn.classList.contains('done')) return;
+      btn.classList.add('done');
+      btn.textContent = '✓ Approved · sent to Christian for 60s undo';
+      toast('Homeowner signature received · undo window armed', 'ok');
+    });
+  })();
+
+  /* --- 13. Generative widget reveal on scroll (Frame 2) ------ */
+  if ('IntersectionObserver' in window && !reduce) {
+    var widgets = document.querySelectorAll('.gen-widget, .widget-panel');
+    widgets.forEach(function(w){ w.classList.add('capture-enter'); });
+  }
+
+  /* --- 14. Dismiss the One Thing with a fade (Frames 1 & 3) -- */
+  document.querySelectorAll('.one-thing .btn-ghost, .one-thing [data-dismiss]').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var parent = btn.closest('.one-thing');
+      if (!parent) return;
+      parent.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      parent.style.opacity = '0.35';
+      parent.style.transform = 'translateY(-4px)';
+      toast('Snoozed · will resurface in 2h if unresolved');
+      setTimeout(function(){
+        parent.style.opacity = '1';
+        parent.style.transform = 'translateY(0)';
+      }, 1800);
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>
