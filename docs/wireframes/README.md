@@ -52,6 +52,21 @@ Rules for the Views Master:
 - Historical v0_1 / v0_2 / Company HR draft files are superseded by v1.0 unless explicitly archived.
 - If the Views Master conflicts with an older source file, treat the newer v1.0 package as the product target and document the discrepancy in the implementation PR.
 
+## Knowledge graph spine
+
+The knowledge graph schema is part of the Views Master source basis. The working canon reference is `Kerf_Knowledge_Graph_Schema_v0_2_Planning_Notes.docx` in the decision-system package, which explicitly pivots from the older v0.1 graph into the broader decision-first graph.
+
+Canonical spine:
+
+`Evidence → Claim → Decision → Action → Artifact → Memory`
+
+Interpretation:
+
+- The graph is **not a price book**.
+- Cost information is one important part of the Kerf Knowledge Base, but the graph also carries source-backed claims, decisions, approved actions, generated artifacts, learning signals, and promoted memory.
+- Right Hand uses this graph plus the Blackboard and Kerf Knowledge Base to convert scattered contractor evidence into reviewable, priced, source-backed decisions.
+- Source layers must stay distinct: `PUBLIC_REFERENCE`, `KERF_SEED`, `NETWORK_AGGREGATE`, `TENANT_MEMORY`, `ESTIMATE_OVERRIDE`, `PROJECT_ACTUAL`.
+
 ## Provenance — read before editing
 
 The five HTML files dated Apr 21 – Apr 26 are **verbatim copies** from the parent canon repo (`GGRValle/kerf-cos`) at `_docs/wireframes/`. Two-repo boundary applies (locked `2026-04-23.0`, see `kerf-app/CLAUDE.md` §3.8): the wireframes are canon-side; this directory is the kerf-app working copy so engineering can compare against the canon without leaving the repo.
