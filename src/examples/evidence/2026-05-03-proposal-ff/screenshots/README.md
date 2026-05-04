@@ -12,6 +12,12 @@ them.
 
 ## Capture conventions
 
+- **Zoom:** capture at **100%** browser zoom. Reset with `Cmd+0` before the
+  first shot so evidence does not inherit accidental zoom or text scaling.
+- **Viewport:** use a browser window width of **at least 1280px**. Confirm the
+  queue, proposal detail panel, and action log rail are visible together before
+  capture; narrower windows collapse the Standard UI layout and are not
+  evidence-ready.
 - **Format:** PNG (lossless; matches the W1 packet under
   [`../../2026-05-02-w1/screenshots/`](../../2026-05-02-w1/screenshots/)).
 - **Browser:** the same desktop browser the demo runbook recommends (Safari, or
