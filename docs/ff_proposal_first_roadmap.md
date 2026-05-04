@@ -139,9 +139,13 @@ usable than the last:
 4. **Hosted demo shell.** Static-site or single-server deployment
    target with read-only single-tenant gating. F&F recipient gets a
    URL, not a clone instruction.
-5. **F&F evidence packet.** Same shape as the W1 proof packet, scoped
-   to the proposal loop: smoke output for proposal gate flow, audit
-   chain screenshots, F&F click script.
+5. **F&F evidence packet (drafted).** Same shape as the W1 proof packet, scoped
+   to the proposal loop: `npm run smoke:proposal-ff` stdout capture, golden
+   proof JSON, approve/reject + JSONL reopen durability, browser click-script
+   placeholders, and screenshot placeholders — see
+   [`src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](../src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md).
+   Operator still replaces `smoke_output.txt` via `tee` and fills screenshots
+   before treating the packet as distribution-locked.
 
 After this sequence, the F&F pitch has a usable proposal loop with
 captured evidence. Nice-to-haves can land in parallel or after,

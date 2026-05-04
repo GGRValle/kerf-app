@@ -1,0 +1,24 @@
+
+> @kerf/core@0.0.1 smoke:proposal-ff
+> tsx src/examples/proposal-ff-smoke.ts
+
+{
+  "jsonl_path": "/var/folders/8p/pgt82c4j40b9ctwd4ksrv6g40000gn/T/kerf-proposal-ff-smoke-wIIyDC/events.jsonl",
+  "proof_version": 1,
+  "total_events_after_reopen": 10,
+  "approve_chain": [
+    "proposal_followup.detected",
+    "proposal_followup.drafted",
+    "proposal_followup.approval_requested",
+    "decision.resolved",
+    "proposal_followup.approved"
+  ],
+  "reject_chain": [
+    "proposal_followup.detected",
+    "proposal_followup.drafted",
+    "proposal_followup.approval_requested",
+    "decision.resolved",
+    "proposal_followup.rejected"
+  ],
+  "durability": "ok"
+}
