@@ -4,10 +4,17 @@
 //
 // Run with `npm run smoke:proposal-ff`. No fetch, no Platform calls, no real
 // auth, no backend writes — only a tmp JSONL file scoped to the run.
+//
+// Stdout shape: { jsonl_path, ...ProposalFfSmokeProof } (see runProposalFfSmoke).
+//
+// Optional: `npm run smoke:proposal-ff -- --write-golden` refreshes the
+// committed proof JSON under src/examples/evidence/ff-proposal-smoke/.
 
+import { writeFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { createJsonlEventLog } from '../blackboard/node.js';
 import type { Actor, Event, EventLog } from '../blackboard/index.js';
@@ -18,13 +25,37 @@ import {
   type ProposalFollowupBlackboardEventTemplate,
 } from '../workflows/index.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const GOLDEN_PROOF_PATH = resolve(__dirname, 'evidence/ff-proposal-smoke/proposal-ff-smoke-proof.json');
+
+export const PROPOSAL_FF_SMOKE_PROOF_VERSION = 1 as const;
+
+export interface ProposalFfSmokeProof {
+  proof_version: typeof PROPOSAL_FF_SMOKE_PROOF_VERSION;
+  total_events_after_reopen: number;
+  approve_chain: string[];
+  reject_chain: string[];
+  durability: 'ok';
+}
+
 const DECIDED_AT = '2026-05-03T18:15:00.000Z';
 const REJECT_REASON = 'Client asked to revisit pricing next week';
 
 type SeededProposalItem = (typeof seededProposalReadSurface.items)[number];
 type ProposalApprovalRequest = ReturnType<typeof requestProposalFollowupApproval>;
 
-async function main() {
+/** Stable proof payload (no tmp paths). Used by tests and `--write-golden`. */
+export async function runProposalFfSmoke(): Promise<ProposalFfSmokeProof> {
+  const tmp = await mkdtemp(join(tmpdir(), 'kerf-proposal-ff-smoke-'));
+  const jsonlPath = join(tmp, 'events.jsonl');
+  try {
+    return await runProposalFfSmokeAt(jsonlPath);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+}
+
+async function runProposalFfSmokeAt(jsonlPath: string): Promise<ProposalFfSmokeProof> {
   const items = seededProposalReadSurface.items;
   if (items.length < 2) {
     throw new Error(
@@ -34,29 +65,43 @@ async function main() {
   const approveItem = items[0]!;
   const rejectItem = items[1]!;
 
+  const writeSession = await createJsonlEventLog(jsonlPath);
+  await runApproveFlow(writeSession, approveItem);
+  await runRejectFlow(writeSession, rejectItem);
+
+  const reopened = await createJsonlEventLog(jsonlPath);
+  const events = await reopened.all();
+
+  const approveChain = chainKindsFor(events, 'proposal_smoke_approve');
+  const rejectChain = chainKindsFor(events, 'proposal_smoke_reject');
+
+  assertEndsWith(approveChain, ['decision.resolved', 'proposal_followup.approved'], 'approve chain');
+  assertEndsWith(rejectChain, ['decision.resolved', 'proposal_followup.rejected'], 'reject chain');
+
+  return {
+    proof_version: PROPOSAL_FF_SMOKE_PROOF_VERSION,
+    total_events_after_reopen: events.length,
+    approve_chain: approveChain,
+    reject_chain: rejectChain,
+    durability: 'ok',
+  };
+}
+
+async function main() {
+  if (process.argv.includes('--write-golden')) {
+    const proof = await runProposalFfSmoke();
+    writeFileSync(GOLDEN_PROOF_PATH, `${JSON.stringify(proof, null, 2)}\n`, 'utf8');
+    console.error(`Wrote ${GOLDEN_PROOF_PATH}`);
+    return;
+  }
+
   const tmp = await mkdtemp(join(tmpdir(), 'kerf-proposal-ff-smoke-'));
   const jsonlPath = join(tmp, 'events.jsonl');
-
   try {
-    const writeSession = await createJsonlEventLog(jsonlPath);
-    await runApproveFlow(writeSession, approveItem);
-    await runRejectFlow(writeSession, rejectItem);
-
-    const reopened = await createJsonlEventLog(jsonlPath);
-    const events = await reopened.all();
-
-    const approveChain = chainKindsFor(events, 'proposal_smoke_approve');
-    const rejectChain = chainKindsFor(events, 'proposal_smoke_reject');
-
-    assertEndsWith(approveChain, ['decision.resolved', 'proposal_followup.approved'], 'approve chain');
-    assertEndsWith(rejectChain, ['decision.resolved', 'proposal_followup.rejected'], 'reject chain');
-
+    const proof = await runProposalFfSmokeAt(jsonlPath);
     console.log(JSON.stringify({
       jsonl_path: jsonlPath,
-      total_events_after_reopen: events.length,
-      approve_chain: approveChain,
-      reject_chain: rejectChain,
-      durability: 'ok',
+      ...proof,
     }, null, 2));
   } finally {
     await rm(tmp, { recursive: true, force: true });
