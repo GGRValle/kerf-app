@@ -153,11 +153,28 @@ Runbook entry point remains [`src/examples/README.md`](../../README.md). For F&F
 5. **Reject** — `[PLACEHOLDER]` Use **Reject** with a short reason; confirm reason form and log entry.
 6. **Action log** — `[PLACEHOLDER]` Scroll action log rail; capture entries showing workflow-aware verbs for proposal (`approve` / `reject` / `edit` as applicable).
 
+**Per-shot browser steps:** see §8.1 (maps each `screenshots/*.png` to clicks in order).
+
 ---
 
 ## 8. Screenshot placeholders (markdown only — operator captures later)
 
 Save assets under `src/examples/evidence/2026-05-03-proposal-ff/screenshots/` (create directory on capture). Until then, these links are intentionally broken placeholders.
+
+### 8.1 Operator screenshot checklist
+
+Prereq for every row: from repo root run `npm run demo:w1-queue`, then open `src/examples/w1-decision-queue-demo.html` in a desktop browser (runbook: `open -a Safari "$(pwd)/src/examples/w1-decision-queue-demo.html"` or `npm run demo:w1-queue:serve` and visit `http://localhost:8000/examples/w1-decision-queue-demo.html`).
+
+| ID | Save as | Exact capture actions |
+|---|---|---|
+| S1 | `screenshots/01-proposal-filter.png` | Click **All** → click **Proposal** → capture with **Proposal** filter visually active and the queue showing only proposal cards. |
+| S2 | `screenshots/02-proposal-detail-panel.png` | With **Proposal** filter active, click the title/summary area of any proposal card (not a filter chip) → capture with the proposal **detail / review** panel open (drafted follow-up visible). |
+| S3 | `screenshots/03-proposal-approve.png` | On an allowed proposal path, click **`Approve`** in the card footer or detail footer → capture immediately after: proposal UI + right-rail **ACTION LOG** showing a new `approve …` line for that `packet_id`. |
+| S4 | `screenshots/04-proposal-edit.png` | On a **different** proposal card than S3 (or after **Reset demo**), open its detail if needed → click **`Edit`** → capture after the click: same surface + **ACTION LOG** line `edit …` for that `packet_id`. |
+| S5 | `screenshots/05-proposal-reject.png` | On another proposal card, click **`Reject`** → in the inline **Reject reason** form, type a short reason → click **`Submit`** → capture after submit: card/panel state + **ACTION LOG** `reject …` (and reason tail if shown) for that `packet_id`. |
+| S6 | `screenshots/06-proposal-action-log.png` | Without **Clear log** (use one continuous session from S3–S5 if possible), scroll the **ACTION LOG** rail until at least two of `approve` / `reject` / `edit` lines for proposal work are visible together → capture the rail. |
+
+Per-shot detail for §7: use the same ordering as S1→S6 when rehearsing.
 
 | ID | Intent |
 |---|---|
@@ -174,7 +191,7 @@ Save assets under `src/examples/evidence/2026-05-03-proposal-ff/screenshots/` (c
 
 | Workflow | Harness / contract | UI evidence |
 |---|---|---|
-| `proposal_followup` | `npm run smoke:proposal-ff` + golden `proposal-ff-smoke-proof.json` | §7–§8 placeholders + [`README.md`](../../README.md) |
+| `proposal_followup` | `npm run smoke:proposal-ff` + golden `proposal-ff-smoke-proof.json` | §7–§8.1 placeholders + [`README.md`](../../README.md) |
 
 ---
 
