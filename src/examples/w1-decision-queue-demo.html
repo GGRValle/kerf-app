@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kerf — W1 · Proposal-first queue (F&amp;F demo)</title>
+    <title>Kerf — W1 · Proposal follow-up (F&amp;F demo)</title>
     <link rel="stylesheet" href="../ui/styles/decision-card.css" />
     <link rel="stylesheet" href="../ui/styles/decision-queue.css" />
     <link rel="stylesheet" href="./w1-standard-ui-demo.css" />
@@ -147,8 +147,8 @@
       <header class="kerf-w1-topbar" role="banner">
         <span class="kerf-w1-brand-mark" aria-hidden="true">KERF</span>
         <div class="kerf-w1-brand-lockup">
-          <span class="kerf-w1-topbar-title">W1 · Proposal-first queue demo</span>
-          <span class="kerf-w1-brand-tag">Standard UI · local only</span>
+          <span class="kerf-w1-topbar-title">W1 · Review proposals faster</span>
+          <span class="kerf-w1-brand-tag">Clear path to billing and revenue · invoice &amp; drift in the same queue</span>
         </div>
         <span class="kerf-w1-topbar-spacer" aria-hidden="true"></span>
         <span class="kerf-w1-topbar-pill">Local only</span>
@@ -161,7 +161,7 @@
           aria-describedby="kerf-w1-demo-proposal-path"
         >
           <p id="kerf-w1-demo-proposal-path" class="kerf-w1-demo-proposal-path">
-            <strong>Proposal path:</strong> use <strong>All</strong> or <strong>Proposal</strong>, click a tinted proposal row, then read the drafted follow-up in the right panel. Approve / Edit / Reject updates the action log (no send, no network).
+            <strong>Proposal path:</strong> use <strong>All</strong> or <strong>Proposal</strong>, open a tinted row, read the drafted follow-up in the panel, then approve or edit. This is the shortest path to billing and revenue—invoice and drift filters are supporting loops in the same queue (no send, no network).
           </p>
           <div class="kerf-w1-filter-bar" role="toolbar" aria-label="Queue filters">
             <button
@@ -233,6 +233,7 @@
           <div class="kerf-w1-log-rail-head">
             <h2>Action log</h2>
             <p class="kerf-w1-log-rail-sub">
+              <strong>Proposals first:</strong> faster review here shortens the path to billing and revenue.
               <strong>Readable trail:</strong> human-friendly lines first; lower rows mirror typed audit events. Proposal
               approve / reject also emits workflow-shaped events in this demo. Drift log verbs: acknowledge /
               false_positive / act. Same seeded 12-card set — All lists proposals first; Proposal shows four seeded rows;

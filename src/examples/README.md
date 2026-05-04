@@ -8,9 +8,9 @@ For the acceptance-test evidence map, see
 demo procedure; the evidence ledger maps each W1 acceptance item to the tests,
 smoke output, and browser artifacts that prove it.
 
-For F&F, **proposal follow-up** is the work that clears the path to billing;
-invoice and drift rows sit in the same queue so the surface stays honest, not
-busy.
+For F&F, **proposal follow-up** is the work that clears the path to **billing
+and revenue**—review those rows first; invoice and drift sit in the same queue
+as **supporting loops**, not competing headlines.
 
 ## Verified Baseline
 
@@ -128,11 +128,11 @@ viewers) restrict `file://` asset loading.
 The W1 Standard UI demo should show:
 
 - Top bar (see `w1-decision-queue-demo.html`): `KERF` mark; title
-  `W1 · Proposal-first queue demo`; brand tag `Standard UI · local only`; pill
-  `Local only`.
-- Lead copy: **Proposal path** paragraph under the filters (All / Proposal,
-  tinted proposal rows, right panel, Approve / Edit / Reject, action log — no
-  network).
+  `W1 · Review proposals faster`; brand tag `Clear path to billing and revenue ·
+  invoice & drift in the same queue`; pill `Local only`.
+- Lead copy: **Proposal path** paragraph (All / Proposal, tinted rows, panel,
+  approve or edit; shortest path to billing and revenue; invoice/drift as
+  supporting loops in the same queue — no network).
 - Main queue with 12 cards from `seededMixedDecisionPacketListFixture`
   (local `ProposalReadSurfaceAdapter` seeded proposal read surface + invoice/drift fixtures).
 - Filter buttons: All, Blocked, Owner Review, Invoice, Proposal, Drift.
@@ -178,6 +178,9 @@ Each DecisionCard renders a collapsed `<details>` disclosure labeled
 ## Click Script
 
 Use this script when recording evidence or rehearsing the Monday demo.
+For F&F, read the top bar and **Proposal path** line first—the story is faster
+proposal review and a clear path to billing and revenue; invoice and drift are
+supporting loops in the same queue.
 
 1. Start on **All**. Confirm the 12-card mixed queue and summary counts.
 2. Click **Blocked**. Confirm blocked cards remain visually distinct.
