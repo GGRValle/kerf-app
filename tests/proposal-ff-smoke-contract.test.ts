@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import {
   PROPOSAL_FF_SMOKE_PROOF_VERSION,
   runProposalFfSmoke,
@@ -69,7 +70,7 @@ test('proposal FF screenshot README and proof packet stay cross-linked', () => {
     '../src/examples/evidence/2026-05-03-proposal-ff/screenshots/README.md',
     import.meta.url,
   );
-  assert.equal(existsSync(shotReadmeUrl), true);
+  assert.equal(existsSync(fileURLToPath(shotReadmeUrl)), true);
   const shotReadme = readFileSync(shotReadmeUrl, 'utf8');
   assert.match(shotReadme, /PROOF_PACKET\.md/);
   for (const name of PROPOSAL_FF_SCREENSHOT_PNGS) {
