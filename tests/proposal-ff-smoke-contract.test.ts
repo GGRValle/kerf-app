@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import {
   PROPOSAL_FF_SMOKE_PROOF_VERSION,
   runProposalFfSmoke,
@@ -49,4 +49,30 @@ test('proposal FF proof packet links golden JSON under ff-proposal-smoke', () =>
   );
 
   assert.match(md, /ff-proposal-smoke\/proposal-ff-smoke-proof\.json/);
+});
+
+const PROPOSAL_FF_SCREENSHOT_PNGS = [
+  '01-proposal-filter.png',
+  '02-proposal-detail-panel.png',
+  '03-proposal-approve.png',
+  '04-proposal-edit.png',
+  '05-proposal-reject.png',
+  '06-proposal-action-log.png',
+] as const;
+
+test('proposal FF screenshot README and proof packet stay cross-linked', () => {
+  const proofUrl = new URL('../src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md', import.meta.url);
+  const proofPacket = readFileSync(proofUrl, 'utf8');
+  assert.match(proofPacket, /screenshots\/01-proposal-filter\.png/);
+
+  const shotReadmeUrl = new URL(
+    '../src/examples/evidence/2026-05-03-proposal-ff/screenshots/README.md',
+    import.meta.url,
+  );
+  assert.equal(existsSync(shotReadmeUrl), true);
+  const shotReadme = readFileSync(shotReadmeUrl, 'utf8');
+  assert.match(shotReadme, /PROOF_PACKET\.md/);
+  for (const name of PROPOSAL_FF_SCREENSHOT_PNGS) {
+    assert.ok(shotReadme.includes(name), `expected screenshots README to name ${name}`);
+  }
 });
