@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · Vistas · v0.1 · Versión inversionistas · español · 2026-05-04</title>
+<style>
+:root {
+  --kerf-amber: #D4923A; --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419; --kerf-panel: #1A1F26; --kerf-panel-2: #232932; --kerf-panel-3: #2A313B;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1; --kerf-text-dim: #9097A1; --kerf-text-mute: #5F6670;
+  --ggr: #4A7FB0; --ggr-dim: #1B3A5C;
+  --val: #A8794A; --val-dim: #5C3A1B;
+  --hpg: #4A9F74; --hpg-dim: #1B5C3A;
+  --success: #5FB37A; --warn: #E0A858; --alert: #CF5B5B;
+  --rh: #C9A876; --rh-dim: #6B5938;
+  --future: #7E6FCF; --future-dim: #3A2E6B;
+  --sentry: #E0A858; --sentry-dim: #6E512A;
+  --layer-actual: #5FB37A; --layer-tenant: #4A9F74; --layer-override: #C9A876;
+  --layer-public: #9097A1;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11; color: var(--kerf-text); line-height: 1.4;
+  font-size: 13px; padding-bottom: 80px;
+}
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; background: var(--kerf-panel-2); padding: 1px 4px; border-radius: 2px; color: var(--kerf-text); }
+
+.banner-top {
+  background: linear-gradient(90deg, var(--future-dim) 0%, var(--rh-dim) 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 12px 40px; font-size: 11px;
+  letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600;
+  text-align: center;
+}
+.banner-top .label { color: var(--rh); }
+
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 32px 40px 28px;
+}
+.doc-header h1 { font-size: 26px; font-weight: 600; margin-bottom: 8px; }
+.doc-header .sub { color: var(--kerf-text-dim); font-size: 13px; max-width: 920px; line-height: 1.6; }
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.doc-header .rh { color: var(--rh); font-weight: 600; }
+
+.master { padding: 32px 40px; max-width: 1280px; margin: 0 auto; }
+.section { margin-bottom: 64px; }
+.section-h { border-bottom: 1px solid var(--kerf-border); padding-bottom: 14px; margin-bottom: 24px; }
+.section-h h2 { font-size: 21px; font-weight: 600; margin-bottom: 6px; }
+.section-h .narr { font-size: 13px; color: var(--kerf-text-dim); line-height: 1.6; max-width: 880px; }
+
+.frame-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--kerf-amber); font-weight: 600;
+  padding: 8px 0; border-bottom: 1px solid var(--kerf-border);
+  margin-bottom: 14px;
+}
+.frame-label .frame-note {
+  color: var(--kerf-text-dim); text-transform: none; letter-spacing: 0;
+  font-size: 11px; font-weight: 400; margin-left: 12px;
+}
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 8px; overflow: hidden; background: #0A0D11; }
+.frame-narrative { color: var(--kerf-text-dim); font-size: 12px; line-height: 1.55; max-width: 820px; margin: 8px 0 14px; }
+
+.investor-callout {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: rgba(212,146,58,0.08);
+  border: 1px solid var(--kerf-amber-dim);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--kerf-text);
+}
+.investor-callout .h {
+  font-size: 10px; color: var(--kerf-amber);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 6px;
+}
+
+/* Mobile chrome (canon mobile v2) */
+.mobile-frame { width: 380px; margin: 24px auto; border: 1px solid var(--kerf-border); border-radius: 32px; background: #000; padding: 8px; box-shadow: 0 16px 56px rgba(0,0,0,0.5); }
+.mobile-screen { background: #0A0D11; border-radius: 26px; overflow: hidden; min-height: 760px; max-height: 760px; display: flex; flex-direction: column; }
+.mobile-statusbar { padding: 10px 24px 6px; display: flex; justify-content: space-between; font-size: 13px; color: white; font-weight: 600; }
+.mobile-topbar { padding: 10px 16px 12px; display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); border-bottom: 1px solid var(--kerf-border); }
+.mobile-topbar .brand { font-weight: 700; letter-spacing: 0.10em; color: var(--kerf-amber); font-size: 14px; }
+.mobile-topbar .ctx { font-size: 9.5px; color: var(--kerf-text-dim); letter-spacing: 0.08em; text-transform: uppercase; flex: 1; line-height: 1.3; }
+.mobile-topbar .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--ggr); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.mobile-body { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+
+/* Operator bottom bar — three primitives:
+   [☰ tools menu] [💬 chat] ............. [◉ voice — dominant]
+   Voice is primary (tap = capture session, hold = RH).
+   Chat is the typed-input alternative (can't-talk / offline).
+   Tools menu opens camera / intake / CO / daily-log / LiDAR shortcuts. */
+.op-bottom-bar {
+  background: #0F1419; border-top: 1px solid var(--kerf-border);
+  padding: 12px 18px 22px;
+  display: flex; align-items: center; gap: 10px;
+}
+.op-tool-btn {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: var(--kerf-panel-2);
+  color: var(--kerf-text-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  border: 1px solid var(--kerf-border);
+  cursor: pointer;
+}
+.op-tool-btn:hover { color: var(--kerf-text); border-color: var(--kerf-text-mute); }
+.op-tool-btn .icon-bars { display: flex; flex-direction: column; gap: 3px; }
+.op-tool-btn .icon-bars span { display: block; width: 16px; height: 2px; background: currentColor; border-radius: 1px; }
+.op-voice-btn {
+  margin-left: auto;
+  width: 60px; height: 60px;
+  background: var(--kerf-amber); color: #0A0D11;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 18px rgba(212,146,58,0.55), 0 0 0 0 rgba(212,146,58,0.6);
+  animation: pulseGlow 2.4s ease-out infinite;
+  position: relative;
+  cursor: pointer;
+}
+.op-voice-btn::after {
+  content: '';
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--kerf-dark);
+  display: block;
+}
+@keyframes pulseGlow {
+  0% { box-shadow: 0 2px 10px rgba(212,146,58,0.45), 0 0 0 0 rgba(212,146,58,0.5); }
+  60% { box-shadow: 0 2px 10px rgba(212,146,58,0.45), 0 0 0 14px rgba(212,146,58,0); }
+  100% { box-shadow: 0 2px 10px rgba(212,146,58,0.45), 0 0 0 0 rgba(212,146,58,0); }
+}
+.op-voice-btn.recording { background: var(--alert); }
+.op-voice-btn.rh-mode { background: var(--rh); }
+
+.section-marker { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--rh); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+.section-marker::before { content: "●"; font-size: 8px; }
+.section-marker .right { margin-left: auto; color: var(--kerf-text-mute); font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+.dp-card { background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 12px; padding: 14px; position: relative; }
+.dp-card.gated { border-left: 3px solid var(--rh); }
+.dp-card.alert-band { border-top: 3px solid var(--alert); }
+.dp-card.warn-band { border-top: 3px solid var(--warn); }
+.dp-card.success-band { border-top: 3px solid var(--success); }
+.dp-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dp-rh-mark { width: 22px; height: 22px; border-radius: 5px; background: var(--rh); color: var(--kerf-dark); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+.dp-meta-line { font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.4; flex: 1; }
+.dp-meta-line strong { color: var(--kerf-text); font-weight: 600; }
+.dp-meta-line .small { font-size: 9.5px; color: var(--kerf-text-mute); }
+.dp-status-pill { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.dp-status-pill.gated { background: rgba(201,168,118,0.18); color: var(--rh); }
+.dp-status-pill.routine { background: rgba(95,179,122,0.18); color: var(--success); }
+.dp-title-row { font-size: 14.5px; font-weight: 700; line-height: 1.3; margin-bottom: 5px; color: var(--kerf-text); }
+.dp-title-row .amount { color: var(--kerf-amber); margin-left: 4px; }
+.dp-body { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; margin: 6px 0 12px; }
+.dp-action-row { display: flex; gap: 6px; margin-top: 10px; }
+.btn { font-family: inherit; flex: 1; border: 1px solid var(--kerf-border); background: var(--kerf-panel-2); color: var(--kerf-text); padding: 9px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
+.btn-rh { background: var(--rh); border-color: var(--rh); color: var(--kerf-dark); }
+
+.source-ref-block { margin-top: 8px; padding: 8px 10px; background: var(--kerf-panel-2); border-radius: 6px; font-size: 10.5px; line-height: 1.55; }
+.source-ref-block .h { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.source-ref-block .row { color: var(--kerf-text-dim); margin-bottom: 2px; }
+
+.layer-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 3px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border: 1px solid; font-family: ui-monospace, monospace; }
+.layer-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+.layer-actual { color: var(--layer-actual); border-color: var(--layer-actual); background: rgba(95,179,122,0.10); }
+.layer-actual::before { background: var(--layer-actual); }
+.layer-tenant { color: var(--layer-tenant); border-color: var(--layer-tenant); background: rgba(74,159,116,0.10); }
+.layer-tenant::before { background: var(--layer-tenant); }
+.layer-override { color: var(--layer-override); border-color: var(--layer-override); background: rgba(201,168,118,0.10); }
+.layer-override::before { background: var(--layer-override); }
+.layer-public { color: var(--layer-public); border-color: var(--layer-public); background: rgba(144,151,161,0.10); }
+.layer-public::before { background: var(--layer-public); }
+
+.dot-status { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.dot-status.success { background: var(--success); }
+.dot-status.warn { background: var(--warn); }
+.dot-status.alert { background: var(--alert); }
+
+/* Capture session for ES (page 3) */
+.session-stage-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 24px; }
+.session-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.session-stage-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--kerf-amber); text-align: center; }
+.session-stage-label.recording { color: var(--alert); }
+.session-stage-label.rh { color: var(--rh); }
+.session-stage-desc { font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.5; text-align: center; max-width: 220px; }
+
+.session-mini-frame { width: 240px; border: 1px solid var(--kerf-border); border-radius: 22px; background: #000; padding: 6px; }
+.session-mini-screen { background: #0A0D11; border-radius: 17px; overflow: hidden; display: flex; flex-direction: column; min-height: 460px; }
+.session-mini-statusbar { padding: 6px 14px 4px; display: flex; justify-content: space-between; font-size: 10px; color: white; font-weight: 600; }
+.session-mini-topbar { padding: 6px 12px 8px; display: flex; align-items: center; gap: 6px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); border-bottom: 1px solid var(--kerf-border); }
+.session-mini-topbar .brand { font-weight: 700; letter-spacing: 0.08em; color: var(--kerf-amber); font-size: 10px; }
+.session-mini-topbar .ctx { font-size: 8px; color: var(--kerf-text-dim); letter-spacing: 0.06em; text-transform: uppercase; flex: 1; }
+.session-mini-body { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+.intent-prompt { background: rgba(212,146,58,0.10); border: 1px solid var(--kerf-amber); border-radius: 8px; padding: 10px 12px; font-size: 10.5px; line-height: 1.4; color: var(--kerf-text); }
+.intent-prompt .h { font-size: 8.5px; color: var(--kerf-amber); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+
+.session-tools-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.session-tool { flex: 1; min-width: 60px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 7px; padding: 8px 4px; text-align: center; font-size: 9.5px; color: var(--kerf-text); }
+.session-tool .icon { font-size: 16px; display: block; margin-bottom: 2px; }
+.session-tool.active { border-color: var(--kerf-amber); background: rgba(212,146,58,0.08); }
+
+.transcript-mini { background: var(--kerf-panel-2); border-radius: 6px; padding: 8px 10px; font-size: 10px; line-height: 1.5; color: var(--kerf-text-dim); font-style: italic; }
+.transcript-mini .h { font-size: 8px; color: var(--kerf-text-mute); font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+
+.capture-meta { display: flex; gap: 8px; font-size: 9px; color: var(--kerf-text-mute); flex-wrap: wrap; }
+.capture-meta .tag { background: var(--kerf-panel-2); color: var(--kerf-text-dim); padding: 1px 5px; border-radius: 3px; }
+
+.session-mini-bottom { background: #0F1419; border-top: 1px solid var(--kerf-border); padding: 8px 10px 14px; display: flex; align-items: center; gap: 6px; }
+.session-mini-toggle { display: flex; gap: 0; background: var(--kerf-panel-2); border-radius: 4px; padding: 1px; }
+.session-mini-toggle div { padding: 3px 6px; font-size: 8px; font-weight: 600; color: var(--kerf-text-dim); border-radius: 3px; }
+.session-mini-toggle div.active { background: var(--kerf-panel); color: var(--kerf-text); }
+.session-mini-mod { width: 24px; height: 24px; background: var(--kerf-panel-2); color: var(--kerf-text-dim); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.session-mini-voice { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; background: var(--kerf-amber); color: #0A0D11; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; box-shadow: 0 2px 8px rgba(212,146,58,0.45); }
+.session-mini-voice.recording { background: var(--alert); }
+.session-mini-voice.rh { background: var(--rh); }
+
+/* RH conversation */
+.rh-thread { display: flex; flex-direction: column; gap: 8px; }
+.bubble { max-width: 85%; padding: 8px 12px; border-radius: 14px; font-size: 12px; line-height: 1.45; }
+.bubble.user { background: var(--ggr-dim); color: var(--kerf-text); align-self: flex-end; border-bottom-right-radius: 4px; }
+.bubble.rh { background: var(--rh-dim); color: var(--kerf-text); align-self: flex-start; border-bottom-left-radius: 4px; border-left: 2px solid var(--rh); }
+.bubble.user::before { content: "tú · voz"; display: block; font-size: 9px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; font-weight: 700; }
+.bubble.rh::before { content: "Mano Derecha"; display: block; font-size: 9px; color: var(--rh); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; font-weight: 700; }
+
+/* Blackboard */
+.bb-rail { background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 10px; padding: 11px 12px; }
+.bb-rail-h { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.bb-rail-h .name { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+.bb-rail-h .summary { font-size: 10px; color: var(--kerf-text-mute); margin-left: auto; }
+.bb-rail.movement .name { color: var(--success); }
+.bb-rail.who-where .name { color: var(--ggr); }
+.bb-rail.pinned .name { color: var(--rh); }
+.bb-rail.changed .name { color: var(--warn); }
+.bb-rail.holding .name { color: var(--alert); }
+.bb-rail.holding { background: rgba(207,91,91,0.04); border-color: var(--alert); }
+.bb-stats { display: flex; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+.bb-stat { font-size: 10px; color: var(--kerf-text-dim); }
+.bb-stat .v { color: var(--kerf-text); font-weight: 700; }
+.bb-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--kerf-text-dim); padding: 3px 0; line-height: 1.45; }
+.bb-row .name { color: var(--kerf-text); font-weight: 600; font-size: 11px; }
+.bb-row .when { margin-left: auto; color: var(--kerf-text-mute); font-size: 9.5px; font-family: ui-monospace, monospace; }
+.rh-note { background: var(--rh-dim); border: 1px solid var(--rh); border-radius: 10px; padding: 12px; margin-top: 8px; font-size: 11.5px; color: var(--kerf-text); line-height: 1.55; }
+.rh-note .header { font-size: 10px; color: var(--rh); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; margin-bottom: 6px; }
+.rh-note .header::before { content: "● "; }
+
+.footer { margin-top: 80px; padding: 24px 40px; border-top: 1px solid var(--kerf-border); color: var(--kerf-text-mute); font-size: 11px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="banner-top">
+  <span class="label">Kerf · Versión Inversionistas · ES · v0.1</span> &middot;
+  5 páginas que muestran cómo funciona el sistema &middot;
+  primer ciclo de un día del operador
+</div>
+
+<div class="doc-header">
+  <h1>Kerf · <span class="rh">Mano Derecha</span> · vista del sistema</h1>
+  <p class="sub">
+    Sistema operativo para contratistas, dirigido por voz. <strong>El operador habla, el sistema actúa.</strong> El botón de voz captura voz + foto + LiDAR + GPS en una sola sesión. Mano Derecha (Right Hand) consulta la memoria del negocio, redacta la decisión con fuentes, la presenta para tu aprobación. Decisiones, no tableros.
+  </p>
+  <p class="sub" style="margin-top: 12px;">
+    Estas 5 páginas muestran el ciclo central — desde la notificación matinal hasta la pizarra de operaciones. Idéntico al sistema en inglés; el español no es una traducción, es la lengua nativa del operador en el campo.
+  </p>
+</div>
+
+<div class="master">
+
+<!-- ============================================================ -->
+<!-- Página 1 · Cola de Decisiones                                -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-h">
+    <h2>Página 1 · Cola de Decisiones</h2>
+    <p class="narr">
+      <strong>Lo primero que ve el operador cada mañana.</strong> Las decisiones están ordenadas por altitud (estratégica primero), luego por impacto financiero, luego por edad. Una sola pantalla muestra lo que requiere su atención hoy. Aprobar / Editar / Rechazar — un toque.
+    </p>
+  </div>
+
+  <div class="frame-label">PÁGINA 1 · COLA DE DECISIONES <span class="frame-note">vista móvil del propietario · 8:14 a.m. lunes</span></div>
+  <p class="frame-narrative">
+    Cristian abre Kerf. Tres decisiones lo esperan, ordenadas por importancia. La primera — un cambio de orden de $4,200 en Clem — es la más urgente. La segunda es un trámite de seguridad. La tercera es una propuesta de aprendizaje del sistema. Cada tarjeta muestra el origen de la información, no inventa nada.
+  </p>
+  <div class="frame-render" style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 0;">
+    <div class="mobile-frame">
+      <div class="mobile-screen">
+        <div class="mobile-statusbar"><span>8:14</span><span>5G ●●●●● 92%</span></div>
+        <div class="mobile-topbar">
+          <span class="brand">KERF</span>
+          <span class="ctx">PROPIETARIO · CRISTIAN · LUN</span>
+          <span class="avatar">CA</span>
+        </div>
+        <div class="mobile-body">
+
+          <div class="section-marker">LO ÚNICO <span class="right">decidir pronto</span></div>
+          <div class="dp-card gated alert-band">
+            <div class="dp-header-row">
+              <div class="dp-rh-mark">MD</div>
+              <div class="dp-meta-line"><strong>L3 · GGR · Clem</strong> · <span class="small">hace 2h 33m</span></div>
+              <span class="dp-status-pill gated">Atención</span>
+            </div>
+            <div class="dp-title-row">Aprobar nivelación del terreno · $4,200<span class="amount"> +$4,200</span></div>
+            <div class="dp-body">Ladera norte peor que el plano · 16 horas de máquina + 2 días de obrero · 2 antecedentes <code>PROJECT_ACTUAL</code> · confianza media · revisión del propietario requerida.</div>
+            <div class="dp-action-row">
+              <button class="btn">Aplazar</button>
+              <button class="btn">Abrir</button>
+              <button class="btn btn-rh">Aprobar</button>
+            </div>
+          </div>
+
+          <div class="section-marker">EN ESPERA <span class="right">2 elementos</span></div>
+          <div class="dp-card gated warn-band">
+            <div class="dp-header-row">
+              <div class="dp-rh-mark">MD</div>
+              <div class="dp-meta-line"><strong>L1 · seguridad</strong> · <span class="small">8:14 a.m.</span></div>
+              <span class="dp-status-pill gated">Atención</span>
+            </div>
+            <div class="dp-title-row">Renovar OSHA-30 de Juan — vence en 12 días</div>
+            <div class="dp-body">Clase SDSU 12 mayo · último cupo · Carlos cubre Coring · cuota $185.</div>
+          </div>
+          <div class="dp-card gated success-band">
+            <div class="dp-header-row">
+              <div class="dp-rh-mark">MD</div>
+              <div class="dp-meta-line"><strong>L2 · Valle · Moore</strong> · <span class="small">hace 1d 9h</span></div>
+              <span class="dp-status-pill routine">Rutina</span>
+            </div>
+            <div class="dp-title-row">¿Promover ajuste de mano de obra zellige $5/sf a TENANT_MEMORY?</div>
+            <div class="dp-body">Patrón n=3 en CO-204 · CO-198 · CO-189. Cortafuegos de inferencia en dos pasos.</div>
+          </div>
+
+          <div class="section-marker" style="color: var(--success);">EL PULSO <span class="right">últimas 4h</span></div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <div style="flex: 1; padding: 8px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 6px; min-width: 100px;">
+              <div style="font-size: 9px; color: var(--kerf-text-dim); letter-spacing: 0.06em; text-transform: uppercase;">Trabajos activos</div>
+              <div style="font-size: 18px; font-weight: 700; margin-top: 2px;">8</div>
+            </div>
+            <div style="flex: 1; padding: 8px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 6px; min-width: 100px;">
+              <div style="font-size: 9px; color: var(--kerf-text-dim); letter-spacing: 0.06em; text-transform: uppercase;">A tiempo</div>
+              <div style="font-size: 18px; font-weight: 700; color: var(--success); margin-top: 2px;">92%</div>
+            </div>
+            <div style="flex: 1; padding: 8px; background: var(--kerf-panel); border: 1px solid var(--sentry); border-radius: 6px; min-width: 100px;">
+              <div style="font-size: 9px; color: var(--sentry); letter-spacing: 0.06em; text-transform: uppercase;">Cert. vence</div>
+              <div style="font-size: 18px; font-weight: 700; color: var(--warn); margin-top: 2px;">2</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="op-bottom-bar">
+              <div class="op-tool-btn" title="Tools · camera · intake · CO · daily log"><div class="icon-bars"><span></span><span></span><span></span></div></div>
+              <div class="op-tool-btn" title="Chat · type instead of speak"><span style="font-size:18px;">💬</span></div>
+              <div class="op-voice-btn" title="Tap = capture session · Hold = Right Hand"></div>
+            </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="investor-callout">
+    <div class="h">Punto clave para inversionistas</div>
+    El propietario abre la aplicación y ve <strong>la decisión correcta arriba</strong>. No hay tableros que descifrar, no hay informes que leer. El sistema ya hizo el trabajo de priorización mientras el propietario dormía. Cada decisión cita su fuente. Tres acciones — Aprobar / Editar / Rechazar — con un solo toque.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Página 2 · Detalle de Decisión                              -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-h">
+    <h2>Página 2 · Detalle de Decisión — la propuesta sourceada</h2>
+    <p class="narr">
+      <strong>Cada decisión es defendible.</strong> El operador toca la tarjeta y ve la pregunta, la recomendación de Mano Derecha, el razonamiento, las opciones, las fuentes (con sello de autoridad), el impacto financiero y el riesgo. Nada inventado.
+    </p>
+  </div>
+
+  <div class="frame-label">PÁGINA 2 · DETALLE DE DECISIÓN <span class="frame-note">cada campo del Decision Packet · fuentes con sello · cortafuegos contra alucinación</span></div>
+  <p class="frame-narrative">
+    Cristian abre la decisión de la nivelación. La pantalla muestra todo lo que Mano Derecha sabe: 3 fuentes (memoria de voz de Mike, antecedente CO-101 Patel 2024 cerrado, antecedente CO-217 Sevadjian 2025 cerrado), las dos opciones realistas, y el riesgo de cronograma. Cada fuente lleva su nivel de autoridad — verde = actual cerrado, lo más confiable.
+  </p>
+  <div class="frame-render" style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 0;">
+    <div class="mobile-frame">
+      <div class="mobile-screen">
+        <div class="mobile-statusbar"><span>8:15</span><span>5G ●●●●● 92%</span></div>
+        <div class="mobile-topbar">
+          <span class="brand">KERF</span>
+          <span class="ctx">CO-302 · CLEM · L3</span>
+          <span class="avatar">CA</span>
+        </div>
+        <div class="mobile-body">
+
+          <div class="dp-card gated alert-band">
+            <div class="dp-header-row">
+              <div class="dp-rh-mark">MD</div>
+              <div class="dp-meta-line"><strong>L3 estrategia · GGR · Clem</strong> · <span class="small">CO-302</span></div>
+              <span class="dp-status-pill gated">Confianza media</span>
+            </div>
+            <div class="dp-title-row">¿Aprobar nivelación del terreno · $4,200?</div>
+
+            <div style="background: rgba(201,168,118,0.08); border-left: 2px solid var(--rh); border-radius: 6px; padding: 10px 12px; font-size: 11.5px; line-height: 1.5; margin: 8px 0;">
+              <div style="font-size: 9.5px; color: var(--rh); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Mano Derecha recomienda</div>
+              Agregar CO-302 para el trabajo de nivelación en la ladera norte. 16 hr máquina + 2 días obrero ($4,200 total). Sin esto, vaciado de cimentación se atrasa 3+ días esperando otro sub.
+            </div>
+
+            <div class="dp-body">
+              <strong style="color: var(--kerf-text);">¿Por qué confianza media?</strong> Tengo 2 antecedentes CO de nivelación (CO-101 Patel 2024, CO-217 Sevadjian 2025). Ambos aprobados. Patrón consistente pero base estrecha (n=2) — recomiendo revisión del propietario antes de aprobar.
+            </div>
+
+            <div class="source-ref-block">
+              <div class="h">Evidencia · 3 fuentes</div>
+              <div class="row">1. Memoria de voz de Mike · 5/5 · "ladera norte mucho peor de lo que decía la encuesta" <span class="layer-chip layer-tenant" style="margin-left: 4px;">TENANT_MEMORY</span></div>
+              <div class="row">2. CO-101 Patel · cerrado 2024 · nivelación aprobada $3,800 <span class="layer-chip layer-actual" style="margin-left: 4px;">PROJECT_ACTUAL</span></div>
+              <div class="row">3. CO-217 Sevadjian · cerrado 2025 · nivelación aprobada $5,100 <span class="layer-chip layer-actual" style="margin-left: 4px;">PROJECT_ACTUAL</span></div>
+            </div>
+
+            <div class="source-ref-block">
+              <div class="h">Opciones · 2</div>
+              <div class="row"><strong style="color: var(--success);">A.</strong> Aprobar como redactado ($4,200) — recomendada · sin atraso</div>
+              <div class="row"><strong>B.</strong> Pedir cotización de otro sub primero — atraso 3+ días · podría ahorrar 5–10%</div>
+            </div>
+
+            <div style="margin-top: 8px; padding: 8px 10px; background: var(--kerf-panel-2); border-radius: 6px; font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.5;">
+              <strong style="color: var(--kerf-text);">Autoridad de fuentes:</strong> 1× <span class="layer-chip layer-tenant" style="font-size: 9px;">TENANT_MEMORY</span> + 2× <span class="layer-chip layer-actual" style="font-size: 9px;">PROJECT_ACTUAL</span>. Sin <span class="layer-chip layer-public" style="font-size: 9px;">MODEL_INFERENCE</span>. Alta autoridad.
+            </div>
+
+            <div class="dp-action-row">
+              <button class="btn">Aplazar</button>
+              <button class="btn">Editar</button>
+              <button class="btn btn-rh">Aprobar</button>
+            </div>
+          </div>
+
+        </div>
+        <div class="op-bottom-bar">
+              <div class="op-tool-btn" title="Tools · camera · intake · CO · daily log"><div class="icon-bars"><span></span><span></span><span></span></div></div>
+              <div class="op-tool-btn" title="Chat · type instead of speak"><span style="font-size:18px;">💬</span></div>
+              <div class="op-voice-btn" title="Tap = capture session · Hold = Right Hand"></div>
+            </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="investor-callout">
+    <div class="h">Punto clave · defensibilidad de fuentes</div>
+    Cada cifra que Kerf cita está respaldada por una fuente con sello de autoridad. Los datos cerrados de proyectos del propio contratista (verde) pesan más que datos de referencia pública (gris). El modelo de inferencia (rojo) <strong>nunca</strong> puede confirmar precios solo. Esto es lo que hace que las decisiones sean legalmente defendibles y construye confianza con el operador a lo largo del tiempo. La ventaja se compone con cada trabajo cerrado.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Página 3 · Captura por Voz Multimodal                       -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-h">
+    <h2>Página 3 · Captura por Voz Multimodal — sin salir del trabajo</h2>
+    <p class="narr">
+      <strong>Esto es lo único que el operador hace.</strong> Toca el botón de voz, dice qué está haciendo ("voy a hacer un cambio de orden"), el sistema muestra las herramientas correctas (cámara · LiDAR · narrativa), todo se agrupa en un solo evento. Mano Derecha hace el resto.
+    </p>
+  </div>
+
+  <div class="frame-label">PÁGINA 3 · BOTÓN DE VOZ · CICLO DE VIDA <span class="frame-note">3 estados del mismo botón · intención dirige las herramientas</span></div>
+  <p class="frame-narrative">
+    Tres pantallas del mismo botón. <strong>Inactivo</strong> — pulsa suavemente, espera. <strong>Sesión activa</strong> — el operador declaró su intención ("visita al sitio en Clem"); el sistema mostró cámara + LiDAR; la voz se transcribe en vivo; todo se etiqueta con GPS, hora, actor, proyecto. <strong>Mano Derecha</strong> — mantén presionado y conversa. Voz pregunta, voz aprueba, voz dirige.
+  </p>
+  <div class="frame-render">
+    <div class="session-stage-strip">
+
+      <div class="session-stage">
+        <div class="session-stage-label">1 · inactivo</div>
+        <div class="session-mini-frame">
+          <div class="session-mini-screen">
+            <div class="session-mini-statusbar"><span>9:15</span><span>92%</span></div>
+            <div class="session-mini-topbar">
+              <span class="brand">KERF</span>
+              <span class="ctx">CRISTIAN · LUN</span>
+            </div>
+            <div class="session-mini-body">
+              <div style="font-size: 9.5px; color: var(--kerf-text-dim); padding: 6px 0;">Cola de decisiones · vista estándar</div>
+              <div style="background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 6px; padding: 8px; font-size: 10px;">
+                <div style="font-weight: 700; color: var(--kerf-text); font-size: 11px;">Aprobar nivelación · $4,200</div>
+                <div style="color: var(--kerf-text-dim); margin-top: 3px;">L3 · GGR · Clem</div>
+              </div>
+            </div>
+            <div class="session-mini-bottom">
+              <div class="session-mini-toggle"><div class="active">Std</div><div>Gráf</div></div>
+              <div class="session-mini-mod">⌘</div>
+              <div class="session-mini-voice">▸</div>
+            </div>
+          </div>
+        </div>
+        <div class="session-stage-desc">Botón color cobre, persistente. Pulsa suave. Tocar = sesión de captura. Mantener presionado = Mano Derecha.</div>
+      </div>
+
+      <div class="session-stage">
+        <div class="session-stage-label recording">2 · intención · herramientas activas</div>
+        <div class="session-mini-frame">
+          <div class="session-mini-screen">
+            <div class="session-mini-statusbar"><span>9:15</span><span>92%</span></div>
+            <div class="session-mini-topbar" style="background: linear-gradient(180deg, rgba(207,91,91,0.12), #0A0D11); border-bottom-color: var(--alert);">
+              <span style="color: var(--alert); font-size: 10px;">●</span>
+              <span class="brand" style="color: var(--alert); font-size: 9.5px;">CAPTURA</span>
+              <span class="ctx" style="color: var(--alert);">VISITA · CLEM</span>
+            </div>
+            <div class="session-mini-body">
+              <div class="intent-prompt">
+                <div class="h">Intención detectada</div>
+                <div style="color: var(--kerf-text); font-weight: 600;">"Visita al sitio en Clem"</div>
+                <div style="color: var(--kerf-text-dim); margin-top: 4px; font-size: 9.5px;">Activando herramientas · todas se unen en una Evidencia</div>
+              </div>
+
+              <div class="session-tools-row">
+                <div class="session-tool active"><span class="icon">🎙</span>voz<br><span style="color: var(--kerf-text-mute); font-size: 8.5px;">grabando</span></div>
+                <div class="session-tool"><span class="icon">📷</span>foto<br><span style="color: var(--kerf-text-mute); font-size: 8.5px;">tocar</span></div>
+                <div class="session-tool"><span class="icon">📐</span>LiDAR<br><span style="color: var(--kerf-text-mute); font-size: 8.5px;">escanear</span></div>
+              </div>
+
+              <div class="transcript-mini">
+                <div class="h">Transcripción en vivo</div>
+                "OK estoy aquí en Clem en el lado norte. Mike tenía razón — esta ladera está mucho peor de lo que decía la encuesta. Vamos a tener que cortar al menos tres pies hacia atrás…"
+              </div>
+
+              <div class="capture-meta">
+                <span class="tag">📍 Clem · GPS</span>
+                <span class="tag">⏱ 0:18</span>
+                <span class="tag">ES auto</span>
+              </div>
+            </div>
+            <div class="session-mini-bottom">
+              <div style="font-size: 8.5px; color: var(--alert); flex: 1; font-weight: 700;">REC · 0:18</div>
+              <div class="session-mini-mod" style="background: var(--success); color: #fff;">✓</div>
+              <div class="session-mini-voice recording">■</div>
+            </div>
+          </div>
+        </div>
+        <div class="session-stage-desc">Las primeras palabras declaran intención: "Visita al sitio." Cámara + LiDAR aparecen. La voz sigue grabando mientras el operador toma una foto o escanea. Todo lleva la misma marca de tiempo, GPS, proyecto.</div>
+      </div>
+
+      <div class="session-stage">
+        <div class="session-stage-label rh">3 · presionar · Mano Derecha</div>
+        <div class="session-mini-frame">
+          <div class="session-mini-screen">
+            <div class="session-mini-statusbar"><span>14:32</span><span>87%</span></div>
+            <div class="session-mini-topbar" style="background: linear-gradient(180deg, var(--rh-dim), #0A0D11); border-bottom-color: var(--rh);">
+              <span style="color: var(--rh); font-size: 12px;">●</span>
+              <span class="brand" style="color: var(--rh); font-size: 9.5px;">MANO DERECHA</span>
+              <span class="ctx" style="color: var(--rh);">ESCUCHANDO</span>
+            </div>
+            <div class="session-mini-body">
+              <div class="rh-thread">
+                <div class="bubble user" style="font-size: 10.5px;">"¿Qué está pendiente en Patel?"</div>
+                <div class="bubble rh" style="font-size: 10.5px;">2 cosas. CO-301 pintura $640 esperando tu aprobación — redactado de tu memoria del martes. Y la entrega de Lewis está confirmada para 5/14, pero la fecha de instalación no está fijada porque Mike espera tu decisión final del estilo de tirador.</div>
+                <div class="bubble user" style="font-size: 10.5px;">"Aprueba CO-301. Y dile a Mike estilo B — negro mate."</div>
+                <div class="bubble rh" style="font-size: 10.5px;">Hecho. Aprobando CO-301 — enviando PDF + e-firma a Patel. Mensaje a Mike: "estilo B · negro mate · final." Ambos al registro de auditoría.</div>
+              </div>
+            </div>
+            <div class="session-mini-bottom">
+              <div style="font-size: 8.5px; color: var(--rh); flex: 1; font-weight: 700;">MD · 0:42</div>
+              <div class="session-mini-mod">⌘</div>
+              <div class="session-mini-voice rh">▸</div>
+            </div>
+          </div>
+        </div>
+        <div class="session-stage-desc">Mantener presionado (3s+) entra en conversación con Mano Derecha. El operador pregunta, aprueba, dirige — todo por voz. Mano Derecha consulta la pizarra, redacta, envía, registra.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="investor-callout">
+    <div class="h">Punto clave · el modelo único de Kerf</div>
+    El operador <strong>nunca sale del trabajo</strong>. Mientras camina por el sitio, captura voz + foto + medidas en una sola sesión. Mano Derecha — el agente — hace el trabajo de bibliotecario en segundo plano: consulta el catálogo, recupera precedentes, redacta el cambio de orden, lo verifica con el muro de validadores. Cuando el operador llega a su escritorio, la decisión ya está lista. <strong>Es como tener un asistente que va corriendo a la biblioteca, escribe lo que necesitas, lo trae de vuelta y lo verifica — sin que tú salgas de la habitación.</strong>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Página 4 · Mano Derecha · conversación                      -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-h">
+    <h2>Página 4 · Mano Derecha — toma de decisiones por voz</h2>
+    <p class="narr">
+      <strong>Hablar con el sistema es la interfaz primaria.</strong> Mano Derecha escucha en español o inglés, consulta la pizarra, ejecuta acciones — todo respaldado por fuentes y registrado en auditoría.
+    </p>
+  </div>
+
+  <div class="frame-label">PÁGINA 4 · MANO DERECHA · CONVERSACIÓN <span class="frame-note">voz-primero · auto-detecta EN/ES · cita fuentes · ventana de deshacer 60s</span></div>
+  <p class="frame-narrative">
+    Cristian mantiene presionado el botón. La interfaz cambia al modo Mano Derecha. Pregunta sobre Patel, aprueba un cambio de orden, dirige a Mike, y consulta el margen del proyecto Coring — todo por voz. Cada respuesta cita su fuente. Cada acción es revertible 60 segundos.
+  </p>
+  <div class="frame-render" style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 0;">
+    <div class="mobile-frame">
+      <div class="mobile-screen">
+        <div class="mobile-statusbar"><span>14:32</span><span>5G ●●●●● 87%</span></div>
+        <div class="mobile-topbar" style="background: linear-gradient(180deg, var(--rh-dim), #0A0D11); border-bottom-color: var(--rh);">
+          <span style="color: var(--rh); font-size: 14px;">●</span>
+          <span class="brand" style="color: var(--rh);">MANO DERECHA</span>
+          <span class="ctx" style="color: var(--rh);">ESCUCHANDO · ES</span>
+          <span class="avatar">CA</span>
+        </div>
+        <div class="mobile-body">
+          <div class="rh-thread">
+            <div class="bubble user">"Mano Derecha, ¿qué está pendiente en Patel?"</div>
+            <div class="bubble rh">
+              Dos cosas en Patel ahora.<br>
+              <strong>1.</strong> CO-301 pintura $640 — redactado de tu memoria del martes, esperando aprobación. <span class="layer-chip layer-tenant" style="font-size: 8.5px;">TENANT_MEMORY</span><br>
+              <strong>2.</strong> Entrega Lewis confirmada 5/14, instalación sin fecha porque Mike espera tu estilo de tirador. <span class="layer-chip layer-tenant" style="font-size: 8.5px;">TENANT_MEMORY</span>
+            </div>
+            <div class="bubble user">"Aprueba CO-301. Dile a Mike estilo B — negro mate."</div>
+            <div class="bubble rh">
+              Hecho.<br>
+              <strong>✓</strong> Aprobando CO-301 · $640 · enviando PDF + e-firma a Patel · 142ms platform write.<br>
+              <strong>✓</strong> SMS a Mike: "Estilo B · negro mate · final."<br>
+              Ambos en auditoría con esta voz como fuente. Ventana de deshacer 60s — di "deshacer" para revertir.
+            </div>
+            <div class="bubble user">"¿Cuál es mi margen en Coring?"</div>
+            <div class="bubble rh">
+              Cocina Coring fase 2 contrato $96,400. Gastado $39,600 (41%). <strong style="color: var(--success);">Margen protegido.</strong> CO-204 zellige agrega $1,840 a $5/sf labor (tu edición de la semana pasada). El margen sigue protegido con este CO. <span class="layer-chip layer-actual" style="font-size: 8.5px;">PROJECT_ACTUAL</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px; padding: 10px; background: rgba(201,168,118,0.08); border: 1px solid var(--rh-dim); border-radius: 8px; font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5;">
+            <strong style="color: var(--rh); display: block; margin-bottom: 4px;">Reglas de la conversación</strong>
+            · Mano Derecha consulta el catálogo · pizarra · estado del proyecto — nunca inventa precios<br>
+            · Aprobaciones por voz pasan por el muro de validadores antes del compromiso<br>
+            · Auto-detecta EN/ES — pregunta en cualquier idioma<br>
+            · Cada acción registrada como evento Blackboard con fuente = esta transcripción
+          </div>
+        </div>
+        <div class="op-bottom-bar">
+              <div class="op-tool-btn" title="Tools · camera · intake · CO · daily log"><div class="icon-bars"><span></span><span></span><span></span></div></div>
+              <div class="op-tool-btn" title="Chat · type instead of speak"><span style="font-size:18px;">💬</span></div>
+              <div class="op-voice-btn rh-mode" title="Tap = capture session · Hold = Right Hand"></div>
+            </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="investor-callout">
+    <div class="h">Punto clave · sistema bilingüe nativo</div>
+    Mano Derecha es la versión española de Right Hand — <strong>no es una traducción agregada después</strong>. El idioma es un atributo de plataforma desde V1. Cuadrillas hispanohablantes nunca escriben en la aplicación; hablan, el sistema entiende. Esto es la cuña de mercado: $20B+ TAM en construcción residencial donde la mayor parte del trabajo de campo se hace en español.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Página 5 · Pizarra · 5 rieles                                -->
+<!-- ============================================================ -->
+<section class="section">
+  <div class="section-h">
+    <h2>Página 5 · Pizarra · 5 Rieles — la memoria operativa</h2>
+    <p class="narr">
+      <strong>El estado del negocio en una pantalla.</strong> Movimiento (qué avanzó) · Quién Dónde (cuadrillas y subs) · Fijado (contexto bloqueado) · Cambiado (deltas últimas 4h) · En Espera (lo que requiere atención del propietario).
+    </p>
+  </div>
+
+  <div class="frame-label">PÁGINA 5 · PIZARRA · 5 RIELES <span class="frame-note">memoria compartida · lecturas con permisos · puente a Lo Único</span></div>
+  <p class="frame-narrative">
+    Cristian abre la pizarra. Cinco rieles muestran el estado completo del negocio. El riel <strong>En Espera</strong> es el más importante — son las decisiones que solo el propietario puede tomar. Mano Derecha ofrece guiarlo por voz: "Las tres son decisiones — puedo guiarte por voz en 3 minutos."
+  </p>
+  <div class="frame-render" style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 0;">
+    <div class="mobile-frame">
+      <div class="mobile-screen">
+        <div class="mobile-statusbar"><span>9:43</span><span>5G ●●●●● 92%</span></div>
+        <div class="mobile-topbar" style="background: linear-gradient(180deg, var(--rh-dim), #0A0D11); border-bottom-color: var(--rh);">
+          <span class="brand" style="color: var(--rh);">PIZARRA</span>
+          <span class="ctx" style="color: var(--rh);">5 RIELES · EN VIVO</span>
+          <span class="avatar">CA</span>
+        </div>
+        <div class="mobile-body" style="gap: 8px;">
+
+          <div class="bb-rail movement">
+            <div class="bb-rail-h"><span class="name">Movimiento</span><span class="summary">14 activos · 4 etapas</span></div>
+            <div class="bb-stats">
+              <div class="bb-stat"><span class="v">3</span> intake</div>
+              <div class="bb-stat"><span class="v">2</span> triage</div>
+              <div class="bb-stat"><span class="v">3</span> redacción</div>
+              <div class="bb-stat"><span class="v">6</span> en obra</div>
+            </div>
+            <div class="bb-row"><span class="name">Patel</span> · inspección de marco aprobada<span class="when">8:10</span></div>
+            <div class="bb-row"><span class="name">Moore</span> · panel atrasado 2d<span class="when">7:55</span></div>
+          </div>
+
+          <div class="bb-rail who-where">
+            <div class="bb-rail-h"><span class="name">Quién Dónde</span><span class="summary">5 cuadrillas · 2 subs</span></div>
+            <div class="bb-row"><span class="name">Carlos</span> · Patel marco<span class="when">8:14</span></div>
+            <div class="bb-row"><span class="name">José</span> · Clem demo día 2<span class="when">8:02</span></div>
+            <div class="bb-row"><span class="name">Miguel</span> · Taller · ensamble<span class="when">7:48</span></div>
+            <div class="bb-row"><span class="name">Lewis sub</span> · Moore · panel<span class="when">7:32</span></div>
+            <div class="bb-row"><span class="name">María</span> · Oficina · cola intake<span class="when">8:25</span></div>
+          </div>
+
+          <div class="bb-rail pinned">
+            <div class="bb-rail-h"><span class="name">Fijado · contexto</span><span class="summary">3 activos</span></div>
+            <div class="bb-row" style="border-left: 2px solid var(--ggr); padding-left: 6px;"><span class="name">Catálogo v2.4</span> · precios en propuestas</div>
+            <div class="bb-row" style="border-left: 2px solid var(--hpg); padding-left: 6px;"><span class="name">Reembolso federal 2SC</span> · solo modelo $7,500</div>
+            <div class="bb-row" style="border-left: 2px solid var(--alert); padding-left: 6px;"><span class="name">Patrón De Wall</span> · todos los CO con consentimiento + delta firmado</div>
+          </div>
+
+          <div class="bb-rail changed">
+            <div class="bb-rail-h"><span class="name">Cambiado · últ 4h</span><span class="summary">solo deltas</span></div>
+            <div class="bb-row"><span class="name">Patel</span> · marco aprobado · día 18/54<span class="when">8:10</span></div>
+            <div class="bb-row"><span class="name">Moore</span> · panel atrasado 2d · conflicto sub<span class="when">7:55</span></div>
+            <div class="bb-row"><span class="name">CO-204</span> · propuesta fijada a v2.4<span class="when">7:40</span></div>
+          </div>
+
+          <div class="bb-rail holding">
+            <div class="bb-rail-h"><span class="name">En Espera · requiere ti</span><span class="summary">3 elementos</span></div>
+            <div class="bb-row"><span class="name">Patel CO-004</span> · sub azulejo +$840 · 2h esperando</div>
+            <div class="bb-row"><span class="name">Cambio sub Moore</span> · Lewis o Vega</div>
+            <div class="bb-row"><span class="name">RFQ Coring</span> · vendedor esperando</div>
+          </div>
+
+          <div class="rh-note">
+            <div class="header">Mano Derecha</div>
+            Las tres son decisiones — puedo guiarte por voz en 3 minutos. Mantén presionado para empezar.
+          </div>
+
+        </div>
+        <div class="op-bottom-bar">
+              <div class="op-tool-btn" title="Tools · camera · intake · CO · daily log"><div class="icon-bars"><span></span><span></span><span></span></div></div>
+              <div class="op-tool-btn" title="Chat · type instead of speak"><span style="font-size:18px;">💬</span></div>
+              <div class="op-voice-btn" title="Tap = capture session · Hold = Right Hand"></div>
+            </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="investor-callout">
+    <div class="h">Punto clave · la memoria que se compone</div>
+    Cada decisión aprobada, cada captura del campo, cada precio editado se queda en la pizarra. El sistema se hace más inteligente con cada trabajo. <strong>El costo de salirse de Kerf crece cada mes</strong> — no por contrato, sino porque la memoria del negocio vive aquí. Esa es la ventaja competitiva: conocimiento institucional acumulativo. Y para una agencia de gobierno o un comprador estratégico, esto significa que Kerf se convierte en el sistema de registro — la fuente de la verdad — para cualquier herramienta de IA que el contratista use después.
+  </div>
+</section>
+
+</div>
+
+<div class="footer">
+  Kerf · Vistas · Versión Inversionistas · ES · v0.1 · 2026-05-04<br>
+  Sistema operativo para contratistas dirigido por voz · 5 páginas · ciclo central del operador<br>
+  Versión completa en inglés: <a href="kerf_views_master_v1_0.html" style="color: var(--kerf-amber);">kerf_views_master_v1_0.html</a>
+</div>
+
+</body>
+</html>
