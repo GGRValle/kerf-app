@@ -8,9 +8,20 @@
  * All rules scoped under .kerf-w1-standard-ui so production-style sheets stay generic.
  */
 
+/* Lock rem baseline for this demo page so queue/card/log scale match wireframe captures */
+html:has(.kerf-w1-standard-ui) {
+  font-size: 14px;
+}
+
 .kerf-w1-standard-ui {
   /* Mirror decision-card.css :root so --kerf-* always resolve under this shell
      (file:// / Safari: if inherited vars fail, `color: var(--kerf-fg)` drops and text goes black). */
+  --kerf-w1-ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Dense card stack (wireframe rhythm); overrides decision-card :root for descendants */
+  --kerf-card-pad-y-start: 0.78rem;
+  --kerf-card-pad-x: 0.9rem;
+  --kerf-card-pad-y-end: 0.85rem;
+
   --kerf-bg-app: #12151a;
   --kerf-bg-card: #1a1f27;
   --kerf-bg-elevated: #222831;
@@ -52,8 +63,28 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  font-family: var(--kerf-w1-ui-font);
+  font-size: 1rem;
+  line-height: var(--kerf-leading-normal);
   color: var(--kerf-fg, #e8ecf1);
   background: var(--kerf-w1-bg);
+}
+
+/* Sans on every operator surface; monospace reserved for log lines + pre/code content */
+.kerf-w1-standard-ui,
+.kerf-w1-standard-ui button,
+.kerf-w1-standard-ui input,
+.kerf-w1-standard-ui textarea,
+.kerf-w1-standard-ui select {
+  font-family: var(--kerf-w1-ui-font);
+}
+
+.kerf-w1-standard-ui .kerf-w1-log-panel {
+  font-family: var(--kerf-w1-ui-font);
+}
+
+.kerf-w1-standard-ui .kerf-w1-log-entry {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* Reinforce readable body copy on the queue surface (inherits to sections without their own color). */
@@ -74,21 +105,75 @@
   word-break: break-word;
 }
 
-/* —— Top bar (wireframe .topbar / .app row 1) —— */
+/* Horizontal clip guard — flex/grid children need min-width:0 for long tokens */
+.kerf-w1-standard-ui .kerf-w1-main-column,
+.kerf-w1-standard-ui .kerf-w1-queue-detail-wrap,
+.kerf-w1-standard-ui .kerf-decision-queue,
+.kerf-w1-standard-ui .kerf-decision-queue-list,
+.kerf-w1-standard-ui .kerf-decision-queue-item,
+.kerf-w1-standard-ui .kerf-decision-card {
+  min-width: 0;
+}
+
+.kerf-w1-standard-ui .kerf-decision-card {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Wireframe-scale titles (16–18px at 14px root) + compact section labels */
+.kerf-w1-standard-ui .kerf-queue-title {
+  font-size: clamp(1rem, 0.96rem + 0.35vw, 1.286rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.kerf-w1-standard-ui .kerf-queue-subtitle {
+  font-size: 0.8125rem;
+  line-height: var(--kerf-leading-snug);
+}
+
+.kerf-w1-standard-ui .kerf-decision-card .kerf-title {
+  font-size: clamp(1rem, 0.96rem + 0.35vw, 1.286rem);
+}
+
+.kerf-w1-standard-ui .kerf-decision-card .kerf-subtitle {
+  font-size: 0.8125rem;
+}
+
+.kerf-w1-standard-ui .kerf-section h3 {
+  font-size: 0.6875rem;
+  letter-spacing: 0.07em;
+  margin: 0 0 0.4rem;
+}
+
+.kerf-w1-standard-ui .kerf-section h4 {
+  font-size: 0.625rem;
+  margin: 0.5rem 0 0.28rem;
+}
+
+.kerf-w1-standard-ui .kerf-queue-summary-item dd {
+  font-size: 0.9375rem;
+}
+
+.kerf-w1-standard-ui .kerf-altitude-final {
+  font-size: 0.9375rem;
+}
+
+/* —— Top bar (wireframe .topbar: 50px) —— */
 .kerf-w1-topbar {
   flex-shrink: 0;
-  height: 3.125rem;
+  height: 50px;
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0 1.375rem;
+  gap: 1.125rem;
+  padding: 0 1.25rem;
   background: var(--kerf-bg-card);
   border-bottom: 1px solid var(--kerf-border);
 }
 
 .kerf-w1-brand-mark {
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   letter-spacing: 0.12em;
   color: var(--kerf-w1-brand);
 }
@@ -134,17 +219,17 @@
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 1.375rem 1.75rem 2.5rem;
+  padding: 1.125rem 1.5rem 1.75rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.375rem;
+  gap: 1.125rem;
   align-items: start;
 }
 
 @media (min-width: 1024px) {
   .kerf-w1-demo-shell {
     grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
-    gap: 1.5rem;
+    gap: 1.25rem;
   }
 }
 
@@ -156,7 +241,7 @@
 .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--kerf-space-xl);
+  gap: var(--kerf-space-lg);
   align-items: stretch;
   min-width: 0;
 }
@@ -165,7 +250,7 @@
   .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap {
     flex-direction: row;
     align-items: flex-start;
-    gap: calc(var(--kerf-space-xl) + 0.1rem);
+    gap: var(--kerf-space-lg);
   }
 
   .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap #kerf-queue-root {
@@ -184,27 +269,146 @@
   border: 1px solid var(--kerf-border);
   border-radius: var(--kerf-radius-md);
   background: var(--kerf-bg-card);
-  padding: 0.85rem 0.95rem 1rem;
+  padding: 0.65rem 0.75rem 0.75rem;
   min-height: 8rem;
-  max-height: min(70vh, calc(100vh - 7.5rem));
+  max-height: min(70vh, calc(100vh - 7.25rem));
   overflow-y: auto;
   overflow-x: hidden;
+  scroll-padding-bottom: 0.5rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-proposal-demo-eyebrow {
+  margin: 0 0 0.28rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--kerf-fg) 22%, var(--kerf-fg-muted));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-proposal-demo-banner {
+  margin: 0 0 0.65rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--kerf-radius-sm);
+  border: 1px solid var(--kerf-border-strong);
+  background: var(--kerf-bg-elevated);
+  font-size: 0.8rem;
+  line-height: var(--kerf-leading-snug);
+  color: color-mix(in srgb, var(--kerf-fg) 28%, var(--kerf-fg-muted));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-proposal-demo-banner strong {
+  color: var(--kerf-fg);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-proposal-artifact-note {
+  margin: 0 0 0.35rem;
+  line-height: var(--kerf-leading-snug);
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-title {
-  font-size: 1.02rem;
+  font-size: clamp(1rem, 0.96rem + 0.35vw, 1.286rem);
   line-height: var(--kerf-leading-tight);
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-head {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.65rem;
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--kerf-border);
 }
 
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-head .kerf-meta {
+  margin-top: 0.28rem;
+}
+
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-section {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.65rem;
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.5rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-section h3 {
+  margin: 0 0 0.4rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-section h4 {
+  margin: 0.45rem 0 0.28rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-operator-summary {
+  padding: 0.5rem 0.55rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-operator-summary h3 {
+  margin-bottom: 0.32rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-operator-summary-headline {
+  font-size: 0.94rem;
+  line-height: 1.32;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-operator-summary-detail {
+  margin-top: 0.22rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.42;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-muted {
+  margin: 0.2rem 0;
+  font-size: 0.82rem;
+  line-height: 1.42;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-list {
+  margin-top: 0.12rem;
+  padding-left: 1.05rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-list li {
+  margin: 0.1rem 0;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-artifact {
+  padding: 0.5rem 0.55rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-artifact-pre {
+  max-height: 11.5rem;
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.76rem;
+  line-height: 1.38;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-source-basis .kerf-list {
+  margin-top: 0.08rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-audit-details {
+  margin-bottom: 0.55rem;
+  padding: 0.28rem 0.45rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-audit-details summary {
+  font-size: 0.76rem;
+  padding: 0.26rem 0.08rem;
+  line-height: 1.35;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-audit-details > div {
+  padding: 0.3rem 0.2rem 0.45rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-audit-details > div > div {
+  margin: 0.22rem 0;
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-section:last-of-type {
@@ -213,17 +417,14 @@
   border-bottom: none;
 }
 
-.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-artifact-pre {
-  max-height: 14rem;
-}
-
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-placeholder {
-  padding: 0.35rem 0.15rem 0.5rem;
+  padding: 0.25rem 0.05rem 0.4rem;
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-card-actions {
-  margin-top: 0.65rem;
-  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--kerf-border);
 }
 
 /* Queue filters — compact operator-console strip (demo-only) */
@@ -231,18 +432,18 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem;
-  margin-bottom: 0.85rem;
-  padding: 0.35rem 0.45rem;
+  gap: 0.28rem;
+  margin-bottom: 0.65rem;
+  padding: 0.28rem 0.38rem;
   border-radius: var(--kerf-radius-sm);
   border: 1px solid var(--kerf-border);
   background: var(--kerf-bg-card);
 }
 
 .kerf-w1-standard-ui .kerf-w1-filter-btn {
-  font-size: 0.72rem;
-  padding: 0.24rem var(--kerf-space-sm);
-  min-height: 1.65rem;
+  font-size: 0.6875rem;
+  padding: 0.2rem 0.42rem;
+  min-height: 1.5rem;
   border-radius: var(--kerf-radius-xs);
 }
 
@@ -261,12 +462,13 @@
 }
 
 .kerf-w1-main-column .kerf-queue-header {
-  margin-bottom: calc(var(--kerf-space-lg) + 0.1rem);
+  margin-bottom: var(--kerf-space-md);
+  padding-bottom: var(--kerf-space-md);
 }
 
-/* Card stack — slightly tighter rhythm, scannable stack */
+/* Card stack — wireframe-dense rhythm */
 .kerf-w1-main-column .kerf-decision-queue-list {
-  gap: calc(var(--kerf-space-lg) + 0.125rem);
+  gap: var(--kerf-space-md);
 }
 
 .kerf-w1-main-column .kerf-decision-card {
@@ -416,10 +618,10 @@
 /* —— Right rail: action / audit log (wireframe cos-rail tone) —— */
 .kerf-w1-log-panel {
   position: sticky;
-  top: var(--kerf-space-md);
+  top: var(--kerf-space-sm);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 3.875rem);
+  max-height: calc(100vh - 50px - 2.25rem);
   border: 1px solid var(--kerf-border);
   border-radius: var(--kerf-radius-sm);
   background: var(--kerf-w1-panel);
