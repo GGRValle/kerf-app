@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "harness": "proposal-ff-smoke",
+    "version": "1",
+    "tenant_id": "tenant_ggr",
+    "as_of": "2026-05-03T09:00:00.000Z",
+    "evaluated_at": "2026-05-03T09:15:00.000Z",
+    "correlation_id": "ff_proposal_smoke_gate_loop",
+    "event_at": "2026-05-03T14:00:00.000Z",
+    "lead_packet_id": "pf_platform_proposal_ff_change_001:seeded:pkt",
+    "lead_proposal_id": "platform_proposal_ff_change_001",
+    "lead_trigger": "change_requested"
+  },
+  "candidate_scan": [
+    { "proposal_id": "platform_proposal_ff_change_001", "trigger": "change_requested" },
+    { "proposal_id": "platform_proposal_ff_expiry_002", "trigger": "near_expiry" },
+    { "proposal_id": "platform_proposal_ff_viewed_003", "trigger": "viewed_no_decision" },
+    { "proposal_id": "platform_proposal_ff_unviewed_004", "trigger": "sent_no_view" }
+  ],
+  "gate_strip": {
+    "workflow": "proposal_followup",
+    "packet_id": "pf_platform_proposal_ff_change_001:seeded:pkt",
+    "gate_run_id": "gate_seeded_proposal_read_surface_0_platform_proposal_ff_change_001",
+    "allowed": false,
+    "critical_failures": ["V2"],
+    "safe_next_action": "block_external_send",
+    "review_requirement": "OWNER_REVIEW",
+    "status": "READY_FOR_REVIEW",
+    "system_baseline_altitude": "L2",
+    "system_final_altitude": "L3",
+    "model_suggested_altitude": "L2",
+    "validator_order": ["V1", "V2", "V6", "V7", "V8", "V9", "V12", "V17", "V18"]
+  },
+  "learning_drafts_strip": [
+    {
+      "sourceValidatorId": "V18",
+      "reason": "altitude_divergence",
+      "summary": "V18 detected model_undercaution for proposal_followup."
+    }
+  ],
+  "audit_chain": {
+    "proposal_workflow_kinds": [
+      "proposal_followup.detected",
+      "proposal_followup.drafted",
+      "proposal_followup.approval_requested",
+      "proposal_followup.approved"
+    ]
+  }
+}

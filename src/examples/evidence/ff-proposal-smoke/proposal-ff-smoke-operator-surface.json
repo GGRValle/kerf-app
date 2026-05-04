@@ -1,0 +1,13 @@
+{
+  "title": "Demo Client Ada · PROP-FF-1001",
+  "subtitle": "change requested · 2 days since viewed · $28,500.00",
+  "operator_headline": "Needs approval to send",
+  "operator_detail": "Approve to send the proposal follow-up.",
+  "learning_signals": [
+    {
+      "sourceValidatorId": "V18",
+      "reason": "altitude_divergence",
+      "summary": "V18 detected model_undercaution for proposal_followup."
+    }
+  ]
+}

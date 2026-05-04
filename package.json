@@ -15,6 +15,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "smoke": "tsx src/examples/smoke.ts",
+    "smoke:proposal-ff": "tsx src/examples/smoke-proposal-ff.ts",
+    "smoke:proposal-ff:write-manifest": "tsx src/examples/smoke-proposal-ff.ts --write-manifest",
     "demo:decision-card": "tsx src/examples/decision-card-demo.ts",
     "demo:decision-queue": "tsx src/examples/decision-queue-demo.ts",
     "demo:w1-queue:esbuild": "npx --yes esbuild@0.25.0 src/examples/w1-decision-queue-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/w1-decision-queue-demo.bundle.js",
