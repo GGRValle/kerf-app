@@ -5,8 +5,8 @@
 
 .kerf-decision-queue {
   max-width: 52rem;
-  margin: var(--kerf-space-xl) auto;
-  padding: 0 var(--kerf-space-lg) 2rem;
+  margin: var(--kerf-space-lg) auto var(--kerf-space-xl);
+  padding: 0 var(--kerf-space-lg) 1.5rem;
   color: var(--kerf-fg);
 }
 
@@ -15,9 +15,9 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--kerf-space-lg) 1.5rem;
-  margin-bottom: var(--kerf-space-xl);
-  padding-bottom: var(--kerf-space-lg);
+  gap: var(--kerf-space-md) 1.25rem;
+  margin-bottom: var(--kerf-space-lg);
+  padding-bottom: var(--kerf-space-md);
   border-bottom: 1px solid var(--kerf-border);
 }
 
@@ -28,7 +28,7 @@
 
 .kerf-queue-title {
   margin: 0 0 0.35rem;
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.015em;
   line-height: var(--kerf-leading-tight);
@@ -37,7 +37,7 @@
 
 .kerf-queue-subtitle {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   line-height: var(--kerf-leading-normal);
   color: var(--kerf-fg-muted);
 }
@@ -45,10 +45,10 @@
 .kerf-queue-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--kerf-space-sm) var(--kerf-space-lg);
+  gap: var(--kerf-space-sm) var(--kerf-space-md);
   margin: 0;
-  padding: var(--kerf-space-sm) 0.65rem;
-  background: var(--kerf-bg-elevated);
+  padding: var(--kerf-space-sm) var(--kerf-space-md);
+  background: var(--kerf-bg-card);
   border: 1px solid var(--kerf-border);
   border-radius: var(--kerf-radius-md);
   flex: 0 1 auto;
@@ -73,7 +73,7 @@
 
 .kerf-queue-summary-item dd {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--kerf-fg);
@@ -86,7 +86,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--kerf-space-lg);
+  gap: var(--kerf-space-md);
 }
 
 .kerf-decision-queue-item {

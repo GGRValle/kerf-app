@@ -535,7 +535,8 @@ html:has(.kerf-w1-standard-ui) body {
   border: 1px solid var(--kerf-border);
   border-radius: var(--kerf-radius-md);
   background: var(--kerf-bg-card);
-  padding: 0.65rem 0.75rem 0.75rem;
+  /* notes.md card body — 14px horizontal rhythm */
+  padding: 0.65rem 0.875rem 0.875rem;
   min-height: 8rem;
   max-height: min(70vh, calc(100vh - 7.25rem));
   overflow-y: auto;
@@ -708,33 +709,6 @@ html:has(.kerf-w1-standard-ui) body {
   margin-top: 0.5rem;
   padding-top: 0.45rem;
   border-top: 1px solid var(--kerf-border);
-}
-
-/* Queue filters — compact operator-console strip (demo-only) */
-.kerf-w1-standard-ui .kerf-w1-filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.28rem;
-  margin-bottom: 0.65rem;
-  padding: 0.28rem 0.38rem;
-  border-radius: var(--kerf-radius-sm);
-  border: 1px solid var(--kerf-border);
-  background: var(--kerf-bg-card);
-}
-
-.kerf-w1-standard-ui .kerf-w1-filter-btn {
-  font-size: 0.6875rem;
-  padding: 0.2rem 0.42rem;
-  min-height: 1.5rem;
-  border-radius: var(--kerf-radius-xs);
-}
-
-.kerf-w1-standard-ui .kerf-w1-filter-btn[aria-pressed="true"] {
-  background: var(--kerf-w1-action);
-  border-color: var(--kerf-w1-brand);
-  color: var(--kerf-w1-bg);
-  font-weight: 600;
 }
 
 /* Queue is the primary workspace — full width, no outer max-width shrink */
@@ -1173,7 +1147,7 @@ html:has(.kerf-w1-standard-ui) body {
 .kerf-w1-standard-ui .kerf-queue-summary {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1px;
+  gap: 0;
   width: 100%;
   max-width: 560px;
   margin: 0;
@@ -1181,7 +1155,7 @@ html:has(.kerf-w1-standard-ui) body {
   overflow: hidden;
   border: 1px solid var(--kerf-border);
   border-radius: 6px;
-  background: var(--kerf-border);
+  background: var(--kerf-w1-panel-raised);
 }
 
 .kerf-w1-standard-ui .kerf-queue-summary-item {
@@ -1189,6 +1163,11 @@ html:has(.kerf-w1-standard-ui) body {
   padding: 8px 10px;
   gap: 2px;
   background: var(--kerf-w1-panel-raised);
+  border-right: 1px solid color-mix(in srgb, var(--kerf-border) 55%, transparent);
+}
+
+.kerf-w1-standard-ui .kerf-queue-summary-item:last-child {
+  border-right: none;
 }
 
 .kerf-w1-standard-ui .kerf-queue-summary-item dt {
@@ -1305,7 +1284,7 @@ html:has(.kerf-w1-standard-ui) body {
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel {
-  padding: 10px 14px 14px;
+  padding: 12px 14px 14px;
   border-radius: 6px;
   background: var(--kerf-w1-panel);
   border-color: var(--kerf-border);
