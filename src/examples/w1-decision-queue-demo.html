@@ -3,19 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kerf — W1 Standard UI · DecisionQueue</title>
+    <title>Kerf — W1 · Proposal-first queue (F&amp;F demo)</title>
     <link rel="stylesheet" href="../ui/styles/decision-card.css" />
     <link rel="stylesheet" href="../ui/styles/decision-queue.css" />
     <link rel="stylesheet" href="./w1-standard-ui-demo.css" />
     <style>
       /* Demo-only: queue skeleton, render-error banner, empty-filter padding aligned to decision cards */
-      .kerf-w1-queue-skeleton {
+      .kerf-w1-main-column .kerf-w1-queue-skeleton {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        max-width: 52rem;
-        margin: 1.25rem auto;
-        padding: 0 1rem 2rem;
+        gap: calc(var(--kerf-space-lg) + 0.125rem);
+        box-sizing: border-box;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
       }
       .kerf-w1-queue-skeleton-card {
         border-radius: 8px;
@@ -52,23 +54,31 @@
           background-position: -100% 0;
         }
       }
+      @media (prefers-reduced-motion: reduce) {
+        .kerf-w1-queue-skeleton-line {
+          animation: none;
+        }
+      }
       .kerf-w1-standard-ui .kerf-decision-queue .kerf-empty-state {
         padding: 1.05rem 1.15rem 1.15rem;
       }
-      .kerf-w1-queue-error-banner {
-        margin: 0 1rem 1rem;
-        padding: 0.85rem 1rem;
-        border-radius: 8px;
+      .kerf-w1-main-column .kerf-w1-queue-error-banner {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: none;
+        margin: 0 0 var(--kerf-space-md);
+        padding: 0.85rem var(--kerf-space-md);
+        border-radius: var(--kerf-radius-md);
         border: 1px solid var(--kerf-danger-muted);
         background: color-mix(in srgb, var(--kerf-danger-muted) 18%, var(--kerf-bg-card));
         color: var(--kerf-fg);
         font-size: 0.9rem;
-        line-height: 1.45;
-        max-width: 52rem;
+        line-height: var(--kerf-leading-normal);
+        overflow-wrap: anywhere;
       }
       .kerf-w1-queue-error-banner p {
         margin: 0 0 0.5rem;
-        color: var(--kerf-fg-muted);
+        color: var(--kerf-fg);
       }
       .kerf-w1-queue-error-reset {
         color: var(--kerf-accent);
