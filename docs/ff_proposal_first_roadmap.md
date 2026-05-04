@@ -29,6 +29,10 @@ expanding breadth into invoice polish, drift polish, or new workflows.
 - Captured proof packet at
   [`src/examples/evidence/2026-05-02-w1/PROOF_PACKET.md`](../src/examples/evidence/2026-05-02-w1/PROOF_PACKET.md)
   documents the W1 close.
+- Draft proposal F&F proof packet at
+  [`src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](../src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md)
+  ties `npm run smoke:proposal-ff`, the golden JSON, the runbook click script,
+  and screenshot filenames; smoke stdout is committed, browser PNGs pending.
 
 ## F&F core path
 
@@ -139,13 +143,14 @@ usable than the last:
 4. **Hosted demo shell.** Static-site or single-server deployment
    target with read-only single-tenant gating. F&F recipient gets a
    URL, not a clone instruction.
-5. **F&F evidence packet (drafted).** Same shape as the W1 proof packet, scoped
-   to the proposal loop: `npm run smoke:proposal-ff` stdout capture, golden
-   proof JSON, approve/reject + JSONL reopen durability, browser click-script
-   placeholders, and screenshot placeholders — see
+5. **F&F evidence packet (drafted; smoke ready).** Same shape as the W1 proof
+   packet, scoped to the proposal loop: `npm run smoke:proposal-ff` stdout
+   (committed `smoke_output.txt` + golden JSON), approve/reject + JSONL reopen
+   durability, runbook click-script steps 14–19, and screenshot filenames in
    [`src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](../src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md).
-   Operator still replaces `smoke_output.txt` via `tee` and fills screenshots
-   before treating the packet as distribution-locked.
+   **Remaining operator work:** add `screenshots/*.png` under that directory;
+   re-`tee` `smoke_output.txt` only when the harness contract changes.
+   **Distribution lock** still waits on hosted demo + cross-restart persistence.
 
 After this sequence, the F&F pitch has a usable proposal loop with
 captured evidence. Nice-to-haves can land in parallel or after,
