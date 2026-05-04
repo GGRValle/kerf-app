@@ -155,7 +155,7 @@ export function formatDecisionCardText(packet: DecisionPacket): string {
   const lines = [
     view.title,
     view.subtitle,
-    `Next step: ${view.operatorSummary.headline} - ${view.operatorSummary.detail}`,
+    `The One Thing: ${view.operatorSummary.headline} - ${view.operatorSummary.detail}`,
     `Status: ${view.status}`,
     `Proposed action: ${view.proposedAction.description}`,
     `Authoritative: system final altitude ${view.authoritative.systemFinalAltitude}; safe next action ${view.authoritative.safeNextAction}; review ${view.authoritative.reviewRequirement}.`,

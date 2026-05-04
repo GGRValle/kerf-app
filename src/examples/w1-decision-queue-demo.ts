@@ -215,7 +215,7 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
   </p>
 
   <section class="kerf-section kerf-operator-summary ${toneClass}" aria-label="Operator summary">
-    <h3>Next step</h3>
+    <h3>The One Thing</h3>
     <p class="kerf-operator-summary-headline">${escapeHtml(os.headline)}</p>
     <p class="kerf-operator-summary-detail">${escapeHtml(os.detail)}</p>
   </section>
