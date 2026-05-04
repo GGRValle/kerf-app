@@ -29,24 +29,29 @@ html:has(.kerf-w1-standard-ui) body {
   /* Mirror decision-card.css :root so --kerf-* always resolve under this shell
      (file:// / Safari: if inherited vars fail, `color: var(--kerf-fg)` drops and text goes black). */
   --kerf-w1-ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Dense card stack (wireframe rhythm); overrides decision-card :root for descendants */
-  --kerf-card-pad-y-start: 0.78rem;
-  --kerf-card-pad-x: 0.9rem;
-  --kerf-card-pad-y-end: 0.85rem;
+  /* Card padding: canon-flat 14px (notes.md §"Spacing rhythm" — card body padding 14px). */
+  --kerf-card-pad-y-start: 0.875rem;
+  --kerf-card-pad-x: 0.875rem;
+  --kerf-card-pad-y-end: 0.875rem;
 
-  --kerf-bg-app: #12151a;
-  --kerf-bg-card: #1a1f27;
-  --kerf-bg-elevated: #222831;
+  /* Canon-aligned surface tokens (docs/wireframes/notes.md superset, scoped to W1 only). */
+  --kerf-bg-app: #0A0D11;          /* canvas — was #12151a */
+  --kerf-bg-card: #1A1F26;         /* primary panel — was #1a1f27 */
+  --kerf-bg-elevated: #232932;     /* secondary panel — was #222831 */
   --kerf-bg-control: #2a3140;
-  --kerf-fg: #e8ecf1;
-  --kerf-fg-muted: #9aa3b2;
-  --kerf-border: #343c4a;
+  --kerf-fg: #E8E6E1;              /* warm off-white — was #e8ecf1 */
+  --kerf-fg-muted: #9097A1;        /* warm grey — was #9aa3b2 */
+  --kerf-text-mute: #5F6670;       /* canon tertiary text level — was missing */
+  --kerf-border: #2F3641;          /* hairline — was #343c4a (5 hex steps lighter) */
   --kerf-border-strong: #4a5568;
-  --kerf-accent: #3d7dd9;
-  --kerf-accent-hover: #2f6bc4;
-  --kerf-accent-active: #285cb0;
-  --kerf-danger-muted: #a67a7a;
-  --kerf-focus-ring: #7eb8ff;
+  /* Accent: canon amber (was blue #3d7dd9 — wrong palette). Color-mix tints across cards now amber. */
+  --kerf-accent: #D4923A;
+  --kerf-accent-hover: #E0A051;
+  --kerf-accent-active: #A87628;
+  --kerf-danger-muted: #CF5B5B;    /* canon alert — was desaturated #a67a7a */
+  --kerf-focus-ring: #E0A858;      /* canon warn/focus — was cool-blue #7eb8ff */
+  --rh: #C9A876;                   /* Right Hand chrome (canon v4+) */
+  --future: #7E6FCF;               /* Blackboard / future-state (canon v4+) */
 
   /* Rhythm — keep in sync with decision-card.css :root (Safari file:// inherits from here). */
   --kerf-radius-xs: 4px;
@@ -156,32 +161,36 @@ html:has(.kerf-w1-standard-ui) body {
 }
 
 /*
- * Stable @100% zoom: ~16.8px titles, ~12px dense body (14px html root; no vw).
+ * Canon type scale (notes.md §"Typography scale"): panel titles 16px / card titles 14px.
  * h1/h2 carry operator classes — override UA heading scale explicitly.
  */
 .kerf-w1-standard-ui h1.kerf-queue-title,
 .kerf-w1-standard-ui h2.kerf-title {
-  font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: var(--kerf-leading-tight);
+  margin: 0 0 0.35rem;
 }
 
+/* Queue title — panel-level title (canon 16px). */
 .kerf-w1-standard-ui h1.kerf-queue-title {
-  margin: 0 0 0.35rem;
+  font-size: 1rem;
 }
 
+/* Card title — within a decision card (canon 14px / lh 1.3). */
 .kerf-w1-standard-ui h2.kerf-title {
-  margin: 0 0 0.35rem;
+  font-size: 0.875rem;
+  line-height: 1.3;
 }
 
+/* Subtitle / sub copy — canon 12px metadata tier. */
 .kerf-w1-standard-ui .kerf-queue-subtitle {
-  font-size: 0.857143rem;
+  font-size: 0.75rem;
   line-height: var(--kerf-leading-snug);
 }
 
 .kerf-w1-standard-ui .kerf-decision-card .kerf-subtitle {
-  font-size: 0.857143rem;
+  font-size: 0.75rem;
   line-height: var(--kerf-leading-snug);
 }
 
@@ -200,23 +209,26 @@ html:has(.kerf-w1-standard-ui) body {
   font-size: 0.9375rem;
 }
 
+/* Numerical altitude readout — canon 14px tabular reading. */
 .kerf-w1-standard-ui .kerf-altitude-final {
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
+/* "The One Thing" / next-step headline — canon 13px Right Hand title weight. */
 .kerf-w1-standard-ui .kerf-operator-summary-headline {
-  font-size: 1rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: var(--kerf-leading-snug);
 }
 
+/* Operator detail / meta — canon 12px. */
 .kerf-w1-standard-ui .kerf-operator-summary-detail {
-  font-size: 0.857143rem;
+  font-size: 0.75rem;
   line-height: 1.45;
 }
 
 .kerf-w1-standard-ui .kerf-decision-card .kerf-meta {
-  font-size: 0.857143rem;
+  font-size: 0.75rem;
   line-height: 1.45;
 }
 
@@ -262,16 +274,21 @@ html:has(.kerf-w1-standard-ui) body {
   flex: 1;
 }
 
+/*
+ * Topbar status pill — canon dictates chips/buttons use 4px radius (notes.md §"Spacing rhythm");
+ * the previous 999px radius + filled bg made this dominate the topbar. Keep the hairline border
+ * and muted text only — no fill, no pill rounding — so the pill reads as a quiet status badge.
+ */
 .kerf-w1-topbar-pill {
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--kerf-fg-muted);
-  padding: 0.25rem 0.625rem;
-  border-radius: 999px;
+  color: var(--kerf-text-mute);
+  padding: 0.16rem 0.5rem;
+  border-radius: 4px;
   border: 1px solid var(--kerf-border);
-  background: var(--kerf-bg-elevated);
+  background: transparent;
 }
 
 /* —— Main + right rail (wireframe main column + rail proportions) —— */
@@ -435,12 +452,23 @@ html:has(.kerf-w1-standard-ui) body {
   padding: 0.5rem 0.55rem;
 }
 
+/*
+ * Drafted client follow-up body — read as proposal letter copy, not a code block.
+ * Override decision-card's monospace + canvas-bg defaults: sans, panel-2 bg, soft border,
+ * preserve whitespace so paragraphs format but don't render as terminal output.
+ */
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-artifact-pre {
   max-height: 11.5rem;
   margin-top: 0.35rem;
-  padding: 0.45rem 0.5rem;
-  font-size: 0.76rem;
-  line-height: 1.38;
+  padding: 0.55rem 0.65rem;
+  font-family: var(--kerf-w1-ui-font);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--kerf-fg);
+  background: var(--kerf-bg-elevated);
+  border: 1px solid var(--kerf-border);
+  border-radius: var(--kerf-radius-sm);
+  white-space: pre-wrap;
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-source-basis .kerf-list {
