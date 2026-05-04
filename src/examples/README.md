@@ -8,6 +8,10 @@ For the acceptance-test evidence map, see
 demo procedure; the evidence ledger maps each W1 acceptance item to the tests,
 smoke output, and browser artifacts that prove it.
 
+For F&F, **proposal follow-up** is the work that clears the path to billing;
+invoice and drift rows sit in the same queue so the surface stays honest, not
+busy.
+
 ## Verified Baseline
 
 Last verified on **May 2, 2026** from `main` at:
@@ -114,7 +118,9 @@ viewers) restrict `file://` asset loading.
 
 The W1 Standard UI demo should show:
 
-- Top bar: `KERF`, `W1 · Decision surface`, and `Local only`.
+- Top bar: `KERF`, `W1 · Proposal follow-up first`, tag line “Review proposals
+  faster · invoice & drift in the same queue”, plus `Local only` (pill repeats
+  local-only for scanability).
 - Main queue with 12 cards from `seededMixedDecisionPacketListFixture`
   (local `ProposalReadSurfaceAdapter` seeded proposal read surface + invoice/drift fixtures).
 - Filter buttons: All, Blocked, Owner Review, Invoice, Proposal, Drift.
@@ -135,7 +141,7 @@ Workflow coverage:
 | Workflow | Cards | Notes |
 |---|---:|---|
 | `invoice_followup` | 4 | Owner-review, V2 blocked, V7 blocked, V8 review. |
-| `proposal_followup` | 5 | Owner-review, V2 blocked, V7 blocked, V8 review, near-expiry. |
+| `proposal_followup` | 4 | Seeded proposal read surface rows (sent, viewed, near-expiry, change-requested). |
 | `drift_detection` | 4 | Internal-only cards with severity badges and drift-specific actions. |
 
 ## Audit / Model Details Disclosure
@@ -161,7 +167,7 @@ Each DecisionCard renders a collapsed `<details>` disclosure labeled
 
 Use this script when recording evidence or rehearsing the Monday demo.
 
-1. Start on **All**. Confirm the 13-card mixed queue and summary counts.
+1. Start on **All**. Confirm the 12-card mixed queue and summary counts.
 2. Click **Blocked**. Confirm blocked cards remain visually distinct.
 3. Click **Owner Review**. Confirm external-send invoice/proposal cards appear.
 4. Click **Drift**. Confirm drift cards show severity badges and actions:
