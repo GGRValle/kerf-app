@@ -289,9 +289,103 @@ html:has(.kerf-w1-standard-ui) body {
 
 @media (min-width: 1024px) {
   .kerf-w1-demo-shell {
-    /* Main column owns the scan; log rail stays auxiliary (wireframe cos-rail) */
-    grid-template-columns: minmax(0, 1fr) minmax(12.5rem, 15.5rem);
+    /* Left rail mirrors Standard UI navigation; main column owns the scan; log rail stays auxiliary. */
+    grid-template-columns: minmax(8.75rem, 10.5rem) minmax(0, 1fr) minmax(12.5rem, 15.5rem);
     gap: 1.125rem;
+  }
+}
+
+.kerf-w1-side-nav {
+  min-width: 0;
+  border: 1px solid var(--kerf-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--kerf-w1-panel) 88%, #000);
+  padding: 0.75rem 0.55rem;
+}
+
+.kerf-w1-side-nav-group + .kerf-w1-side-nav-group {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--kerf-border) 74%, transparent);
+}
+
+.kerf-w1-side-nav-label {
+  display: block;
+  margin: 0 0 0.35rem 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-side-nav-item {
+  width: 100%;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.16rem 0;
+  padding: 0.36rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--kerf-fg) 78%, var(--kerf-fg-muted));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kerf-w1-side-nav-item:hover {
+  border-color: var(--kerf-border);
+  background: var(--kerf-w1-panel-raised);
+  color: var(--kerf-fg);
+}
+
+.kerf-w1-side-nav-item:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: 2px;
+}
+
+.kerf-w1-side-nav-item[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--kerf-w1-brand) 42%, var(--kerf-border));
+  background: color-mix(in srgb, var(--kerf-w1-brand) 12%, var(--kerf-w1-panel-raised));
+  color: var(--kerf-fg);
+}
+
+.kerf-w1-side-nav-icon {
+  flex: 0 0 1rem;
+  color: var(--kerf-w1-brand-muted);
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 1023px) {
+  .kerf-w1-side-nav {
+    padding: 0.55rem;
+  }
+
+  .kerf-w1-side-nav-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .kerf-w1-side-nav-group + .kerf-w1-side-nav-group {
+    margin-top: 0.45rem;
+    padding-top: 0.45rem;
+  }
+
+  .kerf-w1-side-nav-label {
+    width: 100%;
+    margin-left: 0.1rem;
+  }
+
+  .kerf-w1-side-nav-item {
+    width: auto;
   }
 }
 

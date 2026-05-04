@@ -118,6 +118,10 @@ test('w1 standard UI demo CSS styles reject reason capture and focus', () => {
 test('w1 interactive demo HTML exposes queue filter controls', () => {
   const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
 
+  assert.match(html, /class="kerf-w1-side-nav"/);
+  assert.match(html, /class="kerf-w1-side-nav-item"/);
+  assert.match(html, /The One Thing/);
+  assert.match(html, /Proposals/);
   assert.match(html, /class="kerf-w1-filter-bar"/);
   assert.match(html, /data-kerf-w1-queue-filter="all"/);
   assert.match(html, /data-kerf-w1-queue-filter="blocked"/);
@@ -144,6 +148,8 @@ test('w1 interactive demo implements queue filters with typed view-model matchin
 test('w1 standard UI demo CSS scopes queue filter bar and selected state', () => {
   const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
 
+  assert.match(css, /\.kerf-w1-side-nav/);
+  assert.match(css, /\.kerf-w1-side-nav-item\[aria-pressed="true"\]/);
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-bar/);
   assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-filter-btn\[aria-pressed="true"\]/);
 });

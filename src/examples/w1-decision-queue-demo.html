@@ -131,6 +131,69 @@
       </header>
 
       <div class="kerf-w1-demo-shell">
+        <nav class="kerf-w1-side-nav" aria-label="Kerf surfaces">
+          <div class="kerf-w1-side-nav-group">
+            <span class="kerf-w1-side-nav-label">Today</span>
+            <button
+              type="button"
+              class="kerf-w1-side-nav-item"
+              data-kerf-w1-queue-filter="all"
+              aria-pressed="true"
+            >
+              <span class="kerf-w1-side-nav-icon" aria-hidden="true">◉</span>
+              <span>The One Thing</span>
+            </button>
+            <button
+              type="button"
+              class="kerf-w1-side-nav-item"
+              data-kerf-w1-queue-filter="owner_review"
+              aria-pressed="false"
+            >
+              <span class="kerf-w1-side-nav-icon" aria-hidden="true">◇</span>
+              <span>Owner review</span>
+            </button>
+          </div>
+          <div class="kerf-w1-side-nav-group">
+            <span class="kerf-w1-side-nav-label">Workflows</span>
+            <button
+              type="button"
+              class="kerf-w1-side-nav-item"
+              data-kerf-w1-queue-filter="proposal"
+              aria-pressed="false"
+            >
+              <span class="kerf-w1-side-nav-icon" aria-hidden="true">⎈</span>
+              <span>Proposals</span>
+            </button>
+            <button
+              type="button"
+              class="kerf-w1-side-nav-item"
+              data-kerf-w1-queue-filter="invoice"
+              aria-pressed="false"
+            >
+              <span class="kerf-w1-side-nav-icon" aria-hidden="true">$</span>
+              <span>Invoices</span>
+            </button>
+            <button
+              type="button"
+              class="kerf-w1-side-nav-item"
+              data-kerf-w1-queue-filter="drift"
+              aria-pressed="false"
+            >
+              <span class="kerf-w1-side-nav-icon" aria-hidden="true">≋</span>
+              <span>Drift</span>
+            </button>
+            <button
+              type="button"
+              class="kerf-w1-side-nav-item"
+              data-kerf-w1-queue-filter="blocked"
+              aria-pressed="false"
+            >
+              <span class="kerf-w1-side-nav-icon" aria-hidden="true">!</span>
+              <span>Blocked</span>
+            </button>
+          </div>
+        </nav>
+
         <main
           class="kerf-w1-main-column"
           aria-label="Decision queue"
