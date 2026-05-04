@@ -60,6 +60,24 @@ Expected outputs:
 - `npm run test-fixtures:validate` prints `seed produced 4 events`.
 - `git diff --check` prints nothing and exits cleanly.
 
+## Proposal follow-up smoke (F&F proof)
+
+```bash
+npm run smoke:proposal-ff
+```
+
+Runs `src/examples/proposal-ff-smoke.ts` against a **temporary JSONL** EventLog
+(no Platform, no fetch, no backend writes). It proves, end to end:
+
+- **Approve chain** — operator approve after `proposal_followup.approval_requested`.
+- **Reject chain** — operator reject with reason after the same request state.
+- **JSONL reopen durability** — events survive closing the write session and
+  reopening the same file.
+- **Golden contract** — tests compare the stable proof object to
+  [`evidence/ff-proposal-smoke/proposal-ff-smoke-proof.json`](./evidence/ff-proposal-smoke/proposal-ff-smoke-proof.json)
+  (refresh that file with `npm run smoke:proposal-ff -- --write-golden` when the
+  harness contract intentionally changes).
+
 ## Open The Browser Demo
 
 After `npm run demo:w1-queue`:
