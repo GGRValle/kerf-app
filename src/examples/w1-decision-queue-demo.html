@@ -55,6 +55,12 @@
           background-position: -100% 0;
         }
       }
+      @media (prefers-reduced-motion: reduce) {
+        .kerf-w1-queue-skeleton-line {
+          animation: none;
+          background-position: 0 0;
+        }
+      }
       .kerf-w1-standard-ui .kerf-decision-queue .kerf-empty-state {
         padding: 1.05rem 1.15rem 1.15rem;
       }
