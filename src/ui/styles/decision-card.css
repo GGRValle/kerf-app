@@ -342,6 +342,13 @@ body {
   list-style-position: outside;
 }
 
+.kerf-audit-details summary:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--kerf-radius-xs);
+  color: var(--kerf-fg);
+}
+
 .kerf-audit-details summary:hover {
   color: var(--kerf-fg);
 }
