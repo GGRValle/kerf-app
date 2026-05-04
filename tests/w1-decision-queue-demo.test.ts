@@ -181,12 +181,11 @@ test('w1 interactive demo maps drift workflows to acknowledge, false_positive, a
   assert.match(src, /return 'act'/);
 });
 
-test('w1 interactive demo threads actionLogVerbForWorkflow into appendLog from packet workflow', () => {
+test('w1 interactive demo threads actionLogVerbForWorkflow into human-readable operator log lines', () => {
   const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
 
-  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'approve\')'));
-  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'reject\')'));
-  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'edit\')'));
+  assert.match(src, /formatHumanOperatorLogLine/);
+  assert.match(src, /actionLogVerbForWorkflow\(packet\.workflow, baseAction\)/);
 });
 
 test('w1 interactive demo appends operator decision resolved events for actions', () => {

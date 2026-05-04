@@ -167,7 +167,11 @@
           aria-describedby="kerf-w1-demo-proposal-path"
         >
           <p id="kerf-w1-demo-proposal-path" class="kerf-w1-demo-proposal-path">
-            <strong>Proposal path:</strong> use <strong>All</strong> or <strong>Proposal</strong>, click a tinted proposal row, then read the drafted follow-up in the right panel. Approve / Edit / Reject updates the action log (no send, no network).
+            <strong>The One Thing (this demo):</strong> ship a reviewed proposal follow-up — not dashboards. <strong>Path:</strong> pick an
+            <strong>amber-tinted proposal</strong> row → read the detail panel → <strong>Approve</strong> / <strong>Edit</strong> /
+            <strong>Reject</strong> → follow the <strong>action log</strong> on the right for the plain-English trail (typed audit lines sit
+            underneath each summary). Same 12-card seeded mix everywhere; Blocked / Owner review / Invoice / Drift only hide
+            rows. Demo only: no send, no network.
           </p>
           <div
             class="kerf-w1-filter-bar kerf-w1-toggle"
@@ -215,7 +219,7 @@
               class="kerf-w1-filter-btn"
               data-kerf-w1-queue-filter="proposal"
               aria-pressed="false"
-              title="Only the four seeded proposal follow-up rows."
+              title="Only the four seeded rows (proposal follow-ups from the same 12-card fixture)."
             >
               Proposal
             </button>
@@ -243,10 +247,9 @@
           <div class="kerf-w1-log-rail-head">
             <h2>Action log</h2>
             <p class="kerf-w1-log-rail-sub">
-              <strong>Readable trail:</strong> human-friendly lines first; lower rows mirror typed audit events. Proposal
-              approve / reject also emits workflow-shaped events in this demo. Drift log verbs: acknowledge /
-              false_positive / act. Same seeded 12-card set — All lists proposals first; Proposal shows four seeded rows;
-              Blocked / Owner review / Invoice / Drift subset that set. No network.
+              Each action adds a short sentence you can read to a friend, then a compact line your compliance-minded
+              teammate can parse. Proposal decisions also add a second pair when the demo records workflow state.
+              Filters only hide cards — they never fetch new data. No network.
             </p>
             <div class="kerf-w1-action-log-controls" role="toolbar" aria-label="Action log controls">
               <button type="button" class="kerf-btn kerf-w1-log-control-btn" data-kerf-w1-action-log-clear>
