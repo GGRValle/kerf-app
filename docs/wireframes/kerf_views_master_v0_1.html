@@ -1,0 +1,2727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · Views Master · v0.1 · 2026-05-03 · Synthesis Navigator</title>
+<style>
+:root {
+  /* Core surface — v2 baseline */
+  --kerf-amber: #D4923A;
+  --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419;
+  --kerf-panel: #1A1F26;
+  --kerf-panel-2: #232932;
+  --kerf-panel-3: #2A313B;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1;
+  --kerf-text-dim: #9097A1;
+  --kerf-text-mute: #5F6670;
+  /* Brand tenant */
+  --ggr: #4A7FB0; --ggr-dim: #1B3A5C;
+  --val: #A8794A; --val-dim: #5C3A1B;
+  --hpg: #4A9F74; --hpg-dim: #1B5C3A;
+  /* Severity / confidence */
+  --success: #5FB37A;
+  --warn: #E0A858;
+  --alert: #CF5B5B;
+  /* Right Hand (v4+) */
+  --rh: #C9A876;
+  --rh-dim: #6B5938;
+  /* Blackboard / future (v4+) */
+  --future: #7E6FCF;
+  --future-dim: #3A2E6B;
+  /* Sentry / MCP (v5.1) */
+  --sentry: #E0A858;
+  --sentry-dim: #6E512A;
+  --mcp: #5FB3B5;
+  --mcp-dim: #2A5556;
+  /* Status vocabulary */
+  --status-canon: #5FB37A;
+  --status-w1: #C9A876;
+  --status-aspirational: #7E6FCF;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11;
+  color: var(--kerf-text);
+  line-height: 1.4;
+  font-size: 13px;
+  padding-bottom: 100px;
+}
+
+a { color: var(--kerf-amber); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ============================================================ */
+/* Synthesis banner — make it impossible to mistake for canon   */
+/* ============================================================ */
+
+.synthesis-banner {
+  background: linear-gradient(90deg, var(--future-dim) 0%, var(--rh-dim) 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 10px 40px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--kerf-text);
+  text-align: center;
+}
+.synthesis-banner .label { color: var(--rh); }
+.synthesis-banner code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  background: rgba(0,0,0,0.3);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ============================================================ */
+/* Doc header                                                   */
+/* ============================================================ */
+
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 28px 40px 24px;
+}
+.doc-header h1 {
+  font-size: 24px;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.doc-header .sub {
+  color: var(--kerf-text-dim);
+  font-size: 12px;
+  margin-bottom: 14px;
+  max-width: 900px;
+}
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.doc-header .rh { color: var(--rh); font-weight: 600; }
+.doc-header .future { color: var(--future); font-weight: 600; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 10px 14px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--kerf-text-dim);
+}
+.legend strong { color: var(--kerf-text); margin-right: 6px; }
+.legend-row { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ============================================================ */
+/* Sticky nav                                                   */
+/* ============================================================ */
+
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 13, 17, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 12px 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11px;
+}
+.section-nav a {
+  color: var(--kerf-text-dim);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+.section-nav a:hover {
+  color: var(--kerf-text);
+  border-color: var(--kerf-border);
+  text-decoration: none;
+}
+.section-nav .nav-num {
+  color: var(--kerf-amber);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* ============================================================ */
+/* Sections                                                     */
+/* ============================================================ */
+
+.master-container { padding: 30px 40px; max-width: 1400px; margin: 0 auto; }
+
+.section {
+  margin-bottom: 60px;
+  scroll-margin-top: 60px;
+}
+.section-header {
+  border-bottom: 1px solid var(--kerf-border);
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+}
+.section-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-bottom: 4px;
+}
+.section-header .section-meta {
+  font-size: 11px;
+  color: var(--kerf-text-dim);
+}
+
+/* ============================================================ */
+/* Frame                                                        */
+/* ============================================================ */
+
+.view-frame {
+  margin-bottom: 32px;
+  scroll-margin-top: 60px;
+}
+.view-frame .frame-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+.view-frame .frame-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 8px;
+  letter-spacing: 0.01em;
+}
+.view-frame .frame-title .num {
+  color: var(--kerf-text-mute);
+  font-weight: 400;
+  margin-right: 6px;
+}
+.view-frame .frame-desc {
+  margin: 6px 0 10px;
+  color: var(--kerf-text-dim);
+  font-size: 11.5px;
+  line-height: 1.5;
+  max-width: 900px;
+}
+.view-frame .frame-source {
+  margin: 0 0 12px;
+  font-size: 10.5px;
+  color: var(--kerf-text-mute);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.view-frame .frame-source a { color: var(--kerf-text-dim); }
+
+/* Tags */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+.tag-status-canon  { background: rgba(95,179,122,0.15); color: var(--success); border-color: var(--success); }
+.tag-status-w1     { background: rgba(201,168,118,0.15); color: var(--rh); border-color: var(--rh); }
+.tag-status-aspir  { background: rgba(126,111,207,0.15); color: var(--future); border-color: var(--future); }
+.tag-persona       { background: var(--kerf-panel-2); color: var(--kerf-text-dim); }
+.tag-role          { background: var(--kerf-panel-2); color: var(--kerf-text); }
+.tag-altitude      { background: var(--kerf-panel-3); color: var(--kerf-amber); }
+.tag-tenant-ggr    { background: rgba(74,127,176,0.18); color: var(--ggr); border-color: var(--ggr-dim); }
+.tag-tenant-val    { background: rgba(168,121,74,0.18); color: var(--val); border-color: var(--val-dim); }
+.tag-tenant-hpg    { background: rgba(74,159,116,0.18); color: var(--hpg); border-color: var(--hpg-dim); }
+.tag-tenant-all    { background: var(--kerf-panel-2); color: var(--kerf-text-dim); }
+.tag-i18n          { background: rgba(126,111,207,0.10); color: var(--future); border-color: var(--future-dim); }
+
+/* Frame render canvas */
+.frame-render {
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #0A0D11;
+}
+
+/* ============================================================ */
+/* Inner UI primitives — mirror canon CSS                       */
+/* ============================================================ */
+
+.ui-topbar {
+  height: 50px;
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 14px;
+  font-size: 12px;
+}
+.ui-topbar .brand {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--kerf-amber);
+  font-size: 13px;
+}
+.ui-topbar .topbar-context {
+  color: var(--kerf-text-dim);
+  flex: 1;
+}
+.ui-topbar .topbar-context .ctx-tenant { color: var(--kerf-text); margin-left: 4px; }
+.ui-topbar .topbar-rh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--rh);
+}
+.ui-topbar .topbar-rh .rh-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--rh);
+  box-shadow: 0 0 6px var(--rh-dim);
+}
+.ui-topbar .topbar-user {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--kerf-text-dim);
+}
+.ui-topbar .topbar-user .avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--kerf-panel-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--kerf-text);
+}
+
+.ui-shell {
+  display: flex;
+  min-height: 460px;
+}
+
+.ui-rail {
+  width: 56px;
+  background: #0F1419;
+  border-right: 1px solid var(--kerf-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 0;
+  gap: 10px;
+}
+.ui-rail .rail-icon {
+  width: 32px; height: 32px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--kerf-text-dim); font-weight: 600;
+}
+.ui-rail .rail-icon.active { border-color: var(--kerf-amber); color: var(--kerf-amber); }
+.ui-rail .rail-icon.rh { border-color: var(--rh-dim); color: var(--rh); }
+.ui-rail .rail-divider { width: 24px; height: 1px; background: var(--kerf-border); margin: 4px 0; }
+
+.ui-main {
+  flex: 1;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.ui-aux {
+  width: 280px;
+  background: #0F1419;
+  border-left: 1px solid var(--kerf-border);
+  padding: 16px;
+  font-size: 11px;
+}
+.ui-aux .aux-h { font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--kerf-text-dim); margin-bottom: 10px; }
+.ui-aux .aux-entry {
+  padding: 8px 10px;
+  background: var(--kerf-panel);
+  border-radius: 4px;
+  margin-bottom: 6px;
+  border-left: 2px solid var(--kerf-amber-dim);
+}
+.ui-aux .aux-entry .who { color: var(--kerf-text); font-weight: 600; font-size: 10.5px; }
+.ui-aux .aux-entry .what { color: var(--kerf-text-dim); font-size: 10.5px; line-height: 1.45; margin-top: 2px; }
+.ui-aux .aux-entry .when { color: var(--kerf-text-mute); font-size: 9.5px; margin-top: 3px; }
+
+/* Panel */
+.ui-panel {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 14px;
+}
+.ui-panel.panel-2 { background: var(--kerf-panel-2); }
+.ui-panel-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.ui-panel-h h3 { font-size: 13px; font-weight: 600; }
+.ui-panel-h .panel-meta { font-size: 10.5px; color: var(--kerf-text-dim); }
+
+/* Decision card */
+.dc {
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.dc.confidence-hi    { border-top: 3px solid var(--success); }
+.dc.confidence-med   { border-top: 3px solid var(--warn); }
+.dc.confidence-lo    { border-top: 3px solid var(--alert); }
+.dc.rh-driven        { border-left: 3px solid var(--rh); }
+.dc.blackboard       { border-left: 3px solid var(--future); }
+.dc.blocked          { border-left: 3px solid var(--alert); background: rgba(207,91,91,0.04); }
+.dc.owner-review     { border-left: 3px solid var(--warn); }
+
+.dc-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+.dc-title { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.dc-meta { font-size: 10px; color: var(--kerf-text-dim); white-space: nowrap; }
+.dc-summary { font-size: 11.5px; color: var(--kerf-text-dim); margin-bottom: 10px; line-height: 1.45; }
+.dc-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; font-size: 10.5px; }
+
+.dc-source-count {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--kerf-text-dim);
+  padding: 2px 6px; background: var(--kerf-panel-2); border-radius: 3px;
+}
+
+.dc-altitude {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  padding: 1px 5px; border-radius: 2px; letter-spacing: 0.06em;
+  background: var(--kerf-panel-3); color: var(--kerf-amber);
+}
+
+.dc-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+.btn {
+  font-family: inherit;
+  border: 1px solid var(--kerf-border);
+  background: var(--kerf-panel-2);
+  color: var(--kerf-text);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--kerf-text-mute); }
+.btn-primary {
+  background: rgba(212, 146, 58, 0.12);
+  border-color: var(--kerf-amber);
+  color: var(--kerf-amber);
+}
+.btn-primary.rh {
+  background: rgba(201, 168, 118, 0.12);
+  border-color: var(--rh);
+  color: var(--rh);
+}
+.btn-danger {
+  background: rgba(207, 91, 91, 0.12);
+  border-color: var(--alert);
+  color: var(--alert);
+}
+.btn-sm { padding: 4px 8px; font-size: 10px; }
+.btn-ghost { background: transparent; }
+
+/* Status / dot / chip */
+.status-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  vertical-align: middle; margin-right: 4px;
+}
+.status-dot.success { background: var(--success); }
+.status-dot.warn    { background: var(--warn); }
+.status-dot.alert   { background: var(--alert); }
+.status-dot.rh      { background: var(--rh); }
+.status-dot.future  { background: var(--future); }
+
+.chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--kerf-panel-2);
+  color: var(--kerf-text-dim);
+  border: 1px solid var(--kerf-border);
+}
+.chip.success { color: var(--success); border-color: var(--success); background: rgba(95,179,122,0.10); }
+.chip.warn    { color: var(--warn); border-color: var(--warn); background: rgba(224,168,88,0.10); }
+.chip.alert   { color: var(--alert); border-color: var(--alert); background: rgba(207,91,91,0.10); }
+.chip.rh      { color: var(--rh); border-color: var(--rh); background: rgba(201,168,118,0.10); }
+.chip.future  { color: var(--future); border-color: var(--future); background: rgba(126,111,207,0.10); }
+.chip.mcp     { color: var(--mcp); border-color: var(--mcp); background: rgba(95,179,181,0.10); }
+.chip.sentry  { color: var(--sentry); border-color: var(--sentry); background: rgba(224,168,88,0.10); }
+
+/* Filter row */
+.filter-row {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  padding: 10px 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 6px;
+}
+.filter-row .filter-label { font-size: 10.5px; color: var(--kerf-text-dim); margin-right: 4px; }
+
+/* Audit detail */
+.audit-detail {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--kerf-panel-2);
+  border-radius: 4px;
+  font-size: 10.5px;
+  color: var(--kerf-text-dim);
+  line-height: 1.55;
+  border-left: 2px solid var(--kerf-border);
+}
+.audit-detail .audit-h {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 6px;
+}
+.audit-detail code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  background: var(--kerf-panel-3);
+  padding: 1px 4px; border-radius: 2px;
+  color: var(--kerf-text);
+}
+
+/* Tile */
+.tile-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.tile {
+  background: var(--kerf-panel-2);
+  border: 1px solid var(--kerf-border);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+.tile .tile-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--kerf-text-dim); margin-bottom: 4px; }
+.tile .tile-value { font-size: 18px; font-weight: 600; }
+.tile .tile-trend { font-size: 10px; color: var(--kerf-text-dim); margin-top: 2px; }
+.tile.tile-success .tile-value { color: var(--success); }
+.tile.tile-warn .tile-value { color: var(--warn); }
+.tile.tile-alert .tile-value { color: var(--alert); }
+
+/* Lattice grid */
+.lattice {
+  display: grid;
+  grid-template-columns: 80px repeat(5, 1fr);
+  gap: 1px;
+  background: var(--kerf-border);
+  border: 1px solid var(--kerf-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.lattice .l-cell {
+  background: var(--kerf-panel);
+  padding: 8px 10px;
+  font-size: 10.5px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+.lattice .l-cell.l-row-h { font-weight: 600; background: var(--kerf-panel-2); color: var(--kerf-text-dim); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+.lattice .l-cell.l-col-h { background: var(--kerf-panel-2); color: var(--kerf-amber); font-weight: 600; font-size: 10px; }
+
+/* Mobile mock */
+.mobile-frame {
+  width: 320px;
+  margin: 14px auto;
+  border: 1px solid var(--kerf-border);
+  border-radius: 16px;
+  background: #0A0D11;
+  overflow: hidden;
+}
+.mobile-frame .mobile-topbar {
+  height: 38px;
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex; align-items: center; padding: 0 12px; gap: 8px;
+  font-size: 11px;
+}
+.mobile-frame .mobile-body { padding: 12px; min-height: 360px; display: flex; flex-direction: column; gap: 10px; }
+
+/* SMS thread */
+.sms { padding: 12px; min-height: 320px; background: #0A0D11; }
+.sms .msg {
+  max-width: 78%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.sms .msg.them { background: var(--kerf-panel); color: var(--kerf-text); align-self: flex-start; border-bottom-left-radius: 4px; }
+.sms .msg.us { background: var(--rh-dim); color: var(--kerf-text); margin-left: auto; border-bottom-right-radius: 4px; }
+.sms .msg-row { display: flex; flex-direction: column; }
+.sms .msg-meta { font-size: 9px; color: var(--kerf-text-mute); margin-top: 2px; }
+.sms .msg-meta.us { text-align: right; }
+
+/* Form / input */
+.input-mock {
+  background: var(--kerf-panel-2);
+  border: 1px solid var(--kerf-border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--kerf-text-dim);
+}
+.input-mock.filled { color: var(--kerf-text); }
+.input-mock.focus { border-color: var(--kerf-amber); }
+
+/* Banners */
+.banner {
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  display: flex; align-items: center; gap: 8px;
+}
+.banner.warn  { background: rgba(224,168,88,0.10); border: 1px solid var(--warn); color: var(--warn); }
+.banner.alert { background: rgba(207,91,91,0.10); border: 1px solid var(--alert); color: var(--alert); }
+.banner.rh    { background: rgba(201,168,118,0.10); border: 1px solid var(--rh); color: var(--rh); }
+.banner.future{ background: rgba(126,111,207,0.10); border: 1px solid var(--future); color: var(--future); }
+
+/* Footer */
+.footer {
+  margin-top: 60px;
+  padding: 24px 40px;
+  border-top: 1px solid var(--kerf-border);
+  color: var(--kerf-text-mute);
+  font-size: 11px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- Synthesis banner — make it impossible to mistake for canon -->
+<div class="synthesis-banner">
+  <span class="label">Synthesis Navigator</span> &middot;
+  this is NOT a new canon rev &middot;
+  source of truth remains <code>kerf-cos/_docs/wireframes/</code> &middot;
+  use as a wayfinding map only
+</div>
+
+<!-- Doc header -->
+<div class="doc-header">
+  <h1>Kerf · App Views Master · <span class="rh">v0.1</span></h1>
+  <div class="sub">
+    A single-document navigator over every potential view in the Kerf app, organized by surface.
+    Includes <span class="amber">Canon</span> (shipped wireframes v2 → v5.1),
+    <span class="rh">W1 demo</span> (proposal-first decision queue and card states currently in <code>src/examples/</code>),
+    and <span class="future">Aspirational V1.5+ / V2.x</span> surfaces from the roadmap.
+    Every frame carries persona, role, altitude, and tenant tags. Each links back to its canonical source.
+    Synthesized 2026-05-03 by Claude Code; reviewed against <code>kerf-app/CLAUDE.md</code> §3 invariants.
+  </div>
+
+  <div class="legend">
+    <strong>Status</strong>
+    <span class="legend-row"><span class="legend-dot" style="background:var(--status-canon)"></span>Canon (kerf-cos)</span>
+    <span class="legend-row"><span class="legend-dot" style="background:var(--status-w1)"></span>W1 demo (src/examples)</span>
+    <span class="legend-row"><span class="legend-dot" style="background:var(--status-aspirational)"></span>Aspirational V1.5+ / V2.x</span>
+
+    <strong style="margin-left:14px">Altitude</strong>
+    <span>L0 reflex · L1 routine · L2 plan · L3 strategy · L4 charter</span>
+
+    <strong style="margin-left:14px">Roles</strong>
+    <span>Owner · MoO · PM · Field · Sub · Client</span>
+  </div>
+</div>
+
+<!-- Sticky section nav -->
+<nav class="section-nav">
+  <a href="#sec-1"><span class="nav-num">1</span>Operator Standard UI</a>
+  <a href="#sec-2"><span class="nav-num">2</span>Right Hand</a>
+  <a href="#sec-3"><span class="nav-num">3</span>Blackboard</a>
+  <a href="#sec-4"><span class="nav-num">4</span>Intake Flow</a>
+  <a href="#sec-5"><span class="nav-num">5</span>Consumer / Client</a>
+  <a href="#sec-6"><span class="nav-num">6</span>Ops &amp; Integrations</a>
+  <a href="#sec-7"><span class="nav-num">7</span>Aspirational V1.5+</a>
+</nav>
+
+<div class="master-container">
+
+<!-- ============================================================ -->
+<!-- SECTION 1 — Operator Standard UI (frames 1-16)              -->
+<!-- ============================================================ -->
+<section class="section" id="sec-1">
+  <div class="section-header">
+    <h2>1 · Operator Standard UI</h2>
+    <div class="section-meta">The dense, dark Standard UI an operator (Owner / MoO / PM) lives in. Decision queue is the W1 demo's load-bearing surface; the rest is canon.</div>
+  </div>
+
+  <!-- Frame 1: Operator landing -->
+  <div class="view-frame" id="frame-1-operator-landing">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">1.</span>Operator landing</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L1–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">The first surface after sign-in. Shows system tile (green/amber/red), the top decision needing attention, and the Right Hand availability dot. No marketing copy, no "welcome" hero — operator opens the app to act.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#operator-landing">kerf_wireframes_v3_apr23.html#operator-landing</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Project context: <span class="ctx-tenant" style="color:var(--ggr)">GGR</span> · Clem · Phase 2</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · ready</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div class="ui-shell">
+        <div class="ui-rail">
+          <div class="rail-icon active">D</div>
+          <div class="rail-icon">P</div>
+          <div class="rail-icon">T</div>
+          <div class="rail-divider"></div>
+          <div class="rail-icon rh">RH</div>
+          <div class="rail-divider"></div>
+          <div class="rail-icon">A</div>
+        </div>
+        <div class="ui-main">
+          <div class="tile-row">
+            <div class="tile tile-success"><div class="tile-label">System</div><div class="tile-value">Green</div><div class="tile-trend">Nothing on fire</div></div>
+            <div class="tile tile-warn"><div class="tile-label">On deck</div><div class="tile-value">3</div><div class="tile-trend">awaiting your call</div></div>
+            <div class="tile"><div class="tile-label">In flight</div><div class="tile-value">7</div><div class="tile-trend">Right Hand drafting</div></div>
+            <div class="tile"><div class="tile-label">Locked / wk</div><div class="tile-value">21</div><div class="tile-trend">+4 vs last</div></div>
+          </div>
+          <div class="ui-panel">
+            <div class="ui-panel-h"><h3>The One Thing</h3><span class="panel-meta">2 min read · L2</span></div>
+            <div class="dc rh-driven confidence-hi">
+              <div class="dc-h">
+                <div class="dc-title">Approve $1,840 backsplash tile change-order — Coring kitchen</div>
+                <div class="dc-meta">14 min ago · <span class="dc-altitude">L2</span></div>
+              </div>
+              <div class="dc-summary">Right Hand drafted CO-204 from your 7 May site visit voice memo + GC's quote. 3 source refs attached. Within owner ceiling.</div>
+              <div class="dc-actions">
+                <button class="btn btn-primary rh">Approve &amp; send</button>
+                <button class="btn">Open detail</button>
+                <button class="btn btn-ghost btn-sm">Defer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ui-aux">
+          <div class="aux-h">Action log · today</div>
+          <div class="aux-entry"><div class="who">Right Hand</div><div class="what">Drafted CO-204 (Coring backsplash)</div><div class="when">2026-05-03 · 09:42</div></div>
+          <div class="aux-entry"><div class="who">You</div><div class="what">Approved Moore deposit invoice</div><div class="when">09:18</div></div>
+          <div class="aux-entry"><div class="who">Sentry</div><div class="what">Drift detected · Clem labor variance +12%</div><div class="when">08:55</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 2: Decision queue (W1) -->
+  <div class="view-frame" id="frame-2-decision-queue">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">2.</span>Decision queue (proposal-first)</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO / PM</span>
+      <span class="tag tag-altitude">L1–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">The W1 load-bearing surface. Filter row open by default. Each card shows confidence band, Right Hand drafting indicator, source count, primary action. Ranked by impact × urgency × max(0.1, staleness). No marketing — first card primary action visible above the fold.</p>
+    <p class="frame-source">Source: <a href="../examples/w1-decision-queue-demo.html">src/examples/w1-decision-queue-demo.html</a> · <a href="../examples/w1-standard-ui-demo.css">src/examples/w1-standard-ui-demo.css</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Decisions · <span class="ctx-tenant" style="color:var(--kerf-text)">All projects</span></span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · drafting 4</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 16px 22px; display:flex; flex-direction:column; gap: 10px;">
+        <div class="filter-row">
+          <span class="filter-label">Tenant:</span>
+          <span class="chip">All</span><span class="chip" style="border-color:var(--ggr); color:var(--ggr)">GGR</span><span class="chip" style="border-color:var(--val); color:var(--val)">Valle</span><span class="chip" style="border-color:var(--hpg); color:var(--hpg)">HPG</span>
+          <span class="filter-label" style="margin-left:14px">Altitude:</span>
+          <span class="chip">L0</span><span class="chip" style="background:rgba(212,146,58,0.15); color:var(--kerf-amber); border-color:var(--kerf-amber)">L1</span><span class="chip" style="background:rgba(212,146,58,0.15); color:var(--kerf-amber); border-color:var(--kerf-amber)">L2</span><span class="chip">L3</span><span class="chip">L4</span>
+          <span class="filter-label" style="margin-left:14px">Sort:</span>
+          <span class="chip" style="background:var(--kerf-panel-3); color:var(--kerf-text)">Rank ↓</span>
+          <span style="margin-left:auto; font-size:10px; color:var(--kerf-text-mute)">11 decisions · 4 in flight</span>
+        </div>
+        <div class="dc rh-driven confidence-hi">
+          <div class="dc-h">
+            <div class="dc-title">Approve $1,840 backsplash tile change-order — Coring kitchen</div>
+            <div class="dc-meta">14 min · <span class="dc-altitude">L2</span></div>
+          </div>
+          <div class="dc-summary">RH drafted CO-204 from voice memo + GC quote. Within owner ceiling ($2,000).</div>
+          <div class="dc-row">
+            <span class="status-dot success"></span><span style="color:var(--success)">High confidence</span>
+            <span class="dc-source-count">3 sources</span>
+            <span class="chip">GGR · Coring</span>
+            <span class="chip rh">Right Hand draft</span>
+          </div>
+          <div class="dc-actions"><button class="btn btn-primary rh">Approve &amp; send</button><button class="btn">Open</button><button class="btn btn-sm btn-ghost">Defer</button></div>
+        </div>
+        <div class="dc rh-driven confidence-med">
+          <div class="dc-h">
+            <div class="dc-title">Send second-notice on Moore final invoice ($14,200, 17d aged)</div>
+            <div class="dc-meta">42 min · <span class="dc-altitude">L1</span></div>
+          </div>
+          <div class="dc-summary">Invoice Follow-up workflow surfaced this. Last contact 9 days ago. Suggested template attached.</div>
+          <div class="dc-row">
+            <span class="status-dot warn"></span><span style="color:var(--warn)">Medium confidence</span>
+            <span class="dc-source-count">2 sources</span>
+            <span class="chip">Valle · Moore</span>
+            <span class="chip rh">Right Hand draft</span>
+          </div>
+          <div class="dc-actions"><button class="btn btn-primary rh">Send draft</button><button class="btn">Edit copy</button><button class="btn btn-sm btn-ghost">Skip</button></div>
+        </div>
+        <div class="dc blocked confidence-lo">
+          <div class="dc-h">
+            <div class="dc-title">Schedule Clem electrical rough-in inspection — date missing</div>
+            <div class="dc-meta">1h 3m · <span class="dc-altitude">L1</span></div>
+          </div>
+          <div class="dc-summary">Cannot draft. Permit pull date not in Blackboard. Needs operator to enter inspection-ready date.</div>
+          <div class="dc-row">
+            <span class="status-dot alert"></span><span style="color:var(--alert)">Blocked · source missing</span>
+            <span class="chip alert">Source-or-silent</span>
+          </div>
+          <div class="dc-actions"><button class="btn btn-primary">Add inspection date</button><button class="btn btn-sm btn-ghost">Snooze</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 3: Decision card detail -->
+  <div class="view-frame" id="frame-3-card-detail">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">3.</span>Decision card detail / proposal review</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L1–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Expand-on-select. First-viewport: title, primary action, confidence, summary. Below the fold: full source refs, validator output (V1/V2/V6/V7/V8/V9/V12/V17/V18 first-cuts), DecisionPacket payload, prior decision lineage. Audit detail is inspectable, copyable, screenshottable — never a tooltip.</p>
+    <p class="frame-source">Source: <a href="../examples/w1-decision-queue-demo.html">src/examples/w1-decision-queue-demo.html</a> (expand interaction)</p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Decisions · CO-204 · <span class="ctx-tenant" style="color:var(--ggr)">GGR · Coring</span></span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 16px 22px;">
+        <div class="dc rh-driven confidence-hi">
+          <div class="dc-h">
+            <div class="dc-title">Approve $1,840 backsplash tile change-order — Coring kitchen</div>
+            <div class="dc-meta">CO-204 · <span class="dc-altitude">L2</span></div>
+          </div>
+          <div class="dc-summary">Coring requested upgrade from builder-grade subway to handmade zellige (10×10 sf). RH drafted CO at $1,840 incl. labor adjustment, within owner ceiling. Margin preserved. Source basis verified.</div>
+          <div class="dc-row">
+            <span class="status-dot success"></span><span style="color:var(--success)">High confidence</span>
+            <span class="dc-source-count">3 sources</span>
+            <span class="chip rh">Right Hand draft</span>
+            <span class="chip">Owner ceiling: $2,000</span>
+            <span class="chip success">In ceiling</span>
+          </div>
+          <div class="dc-actions" style="margin-bottom: 14px;">
+            <button class="btn btn-primary rh">Approve &amp; send to client</button>
+            <button class="btn">Edit before send</button>
+            <button class="btn btn-danger">Reject</button>
+            <button class="btn btn-sm btn-ghost">Defer</button>
+          </div>
+          <div class="audit-detail">
+            <div class="audit-h">Sources (Source-or-silent · CLAUDE §3.5)</div>
+            <div>1. <code>voice_memo_2026-05-07T10:14</code> — site visit transcript, "Coring wants the white zellige we showed in the mood board"</div>
+            <div>2. <code>gc_quote_acme-tile_2026-05-08.pdf</code> — line item: 80 sf @ $18/sf material + $4/sf labor</div>
+            <div>3. <code>kerf://decision/CO-201</code> — prior approved CO sets labor rate precedent</div>
+          </div>
+          <div class="audit-detail">
+            <div class="audit-h">Validator wall (V1/V2/V6/V7/V8/V9/V12/V17/V18 first-cuts)</div>
+            <div><span class="status-dot success"></span>V1 send-safety · <span class="status-dot success"></span>V2 owner-ceiling · <span class="status-dot success"></span>V6 hosting-route · <span class="status-dot success"></span>V7 source-basis · <span class="status-dot success"></span>V8 inference-labeling · <span class="status-dot warn"></span>V9 learning-signal (low N) · <span class="status-dot success"></span>V12 audit-trail · <span class="status-dot success"></span>V17 token-budget · <span class="status-dot success"></span>V18 altitude</div>
+          </div>
+          <div class="audit-detail">
+            <div class="audit-h">DecisionPacket (passes Policy Gate to Platform on approve)</div>
+            <code>{ kind: "change_order_approval", project: "coring-kitchen", amount_cents: 184000, ... source_refs: [3], altitude: "L2", confidence: 0.91, ... }</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 4: Action log right rail -->
+  <div class="view-frame" id="frame-4-action-log">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">4.</span>Action log / right rail</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">All operator roles</span>
+      <span class="tag tag-altitude">All</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Append-only event log on the right side of every operator surface. Filter by actor, role, time. Never editable. Corrections are new events with <code>correlationId</code>. Sources: Right Hand drafts, your approvals, Sentry alerts, Blackboard projections, Platform webhooks.</p>
+    <p class="frame-source">Source: <a href="../examples/w1-standard-ui-demo.css">src/examples/w1-standard-ui-demo.css</a> (action log rail)</p>
+    <div class="frame-render" style="display:flex;">
+      <div style="flex:1; padding: 22px; color: var(--kerf-text-mute); font-size: 11px;">[primary content area · see other frames]</div>
+      <div class="ui-aux" style="width: 320px;">
+        <div class="aux-h">Action log · all</div>
+        <div class="filter-row" style="margin-bottom:12px; padding: 6px 8px;">
+          <span class="chip">All actors</span><span class="chip">Today</span>
+        </div>
+        <div class="aux-entry"><div class="who"><span class="status-dot rh"></span>Right Hand</div><div class="what">Drafted CO-204 (Coring backsplash, $1,840)</div><div class="when">2026-05-03 · 09:42</div></div>
+        <div class="aux-entry"><div class="who"><span class="status-dot success"></span>You</div><div class="what">Approved Moore deposit invoice ($8,400)</div><div class="when">09:18</div></div>
+        <div class="aux-entry"><div class="who"><span class="status-dot warn"></span>Sentry</div><div class="what">Drift · Clem labor variance +12%</div><div class="when">08:55</div></div>
+        <div class="aux-entry"><div class="who"><span class="status-dot rh"></span>Right Hand</div><div class="what">Drafted second-notice for Moore final ($14,200)</div><div class="when">08:31</div></div>
+        <div class="aux-entry"><div class="who"><span class="status-dot future"></span>Blackboard</div><div class="what">Projection updated · live_memory · Coring</div><div class="when">08:14</div></div>
+        <div class="aux-entry" style="border-left-color: var(--alert);"><div class="who"><span class="status-dot alert"></span>Platform</div><div class="what">Webhook · QBO sync error · invoice-2204</div><div class="when">07:58</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 5: Card state — approved -->
+  <div class="view-frame" id="frame-5-card-approved">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">5.</span>Decision card · approved state</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L1–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">After operator clicks "Approve". Card transitions to approved-locked visual state. Lifecycle: <code>draft → recommended → approved</code> (operator) → <code>locked</code> (Platform writes). Once approved, card is read-only on Kerf side; "locked" state confirmed when Platform webhook returns.</p>
+    <p class="frame-source">Source: <a href="../ui/styles/decision-card.css">src/ui/styles/decision-card.css</a> (status hooks)</p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="dc rh-driven confidence-hi" style="border-top-color: var(--success); opacity: 0.85;">
+        <div class="dc-h">
+          <div class="dc-title">Approve $1,840 backsplash tile change-order — Coring kitchen</div>
+          <div class="dc-meta">CO-204 · <span class="dc-altitude">L2</span></div>
+        </div>
+        <div class="dc-summary">Approved by you · 14:22 · Sent to client. Awaiting Platform <code>locked</code> confirmation.</div>
+        <div class="dc-row">
+          <span class="chip success"><span class="status-dot success"></span>Approved</span>
+          <span class="chip" style="color:var(--kerf-text-dim)">Lifecycle: recommended → approved → <em>locked (pending)</em></span>
+          <span class="dc-source-count">3 sources</span>
+        </div>
+        <div class="dc-actions">
+          <button class="btn btn-ghost" disabled style="opacity:0.5">Approve &amp; send</button>
+          <button class="btn">View receipt</button>
+          <button class="btn btn-sm btn-ghost">View audit chain</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 6: Card state — owner-review -->
+  <div class="view-frame" id="frame-6-card-owner-review">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">6.</span>Decision card · owner-review state</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">MoO escalates → Owner</span>
+      <span class="tag tag-altitude">L2–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Right Hand drafted, MoO reviewed and escalated to Owner because amount exceeds MoO authority ceiling, or altitude is L3+, or validator V18 (altitude-assignment) flagged ambiguity. Authority chain visible in card metadata.</p>
+    <p class="frame-source">Source: <a href="../ui/styles/decision-card.css">src/ui/styles/decision-card.css</a> · <a href="../authority/profile">src/authority/profile</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="dc rh-driven owner-review confidence-med">
+        <div class="dc-h">
+          <div class="dc-title">Approve $4,200 site re-grading scope addition — Clem</div>
+          <div class="dc-meta">CO-302 · <span class="dc-altitude">L3</span></div>
+        </div>
+        <div class="dc-summary">Exceeds MoO ceiling ($3,000). MoO Sara reviewed and escalated. Right Hand confidence medium — comparable CO precedent thin (n=2).</div>
+        <div class="dc-row">
+          <span class="chip warn"><span class="status-dot warn"></span>Owner review · escalated</span>
+          <span class="chip">Authority chain: RH → MoO Sara → Owner</span>
+          <span class="dc-source-count">4 sources</span>
+        </div>
+        <div class="audit-detail">
+          <div class="audit-h">Why escalated</div>
+          <div>· Amount $4,200 &gt; MoO ceiling $3,000 (V2 validator)</div>
+          <div>· Altitude L3 — owner authority required (V18 first-cut)</div>
+          <div>· MoO note: "agree on scope, want owner sign-off given precedent thinness"</div>
+        </div>
+        <div class="dc-actions" style="margin-top:12px;">
+          <button class="btn btn-primary rh">Approve as Owner</button>
+          <button class="btn">Send back to MoO</button>
+          <button class="btn btn-danger">Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 7: Card state — blocked / source-missing -->
+  <div class="view-frame" id="frame-7-card-blocked">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">7.</span>Decision card · blocked / source-missing</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">All operator roles</span>
+      <span class="tag tag-altitude">L0–L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Right Hand cannot draft because required source-of-truth is missing. Source-or-silent rule (CLAUDE.md §3.5) — no source, no claim. Operator gets a clear "what's missing" message and a way to add it. Card stays in queue but is non-actionable until unblocked.</p>
+    <p class="frame-source">Source: <a href="../ui/styles/decision-card.css">src/ui/styles/decision-card.css</a> (status hooks · blocked variant)</p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="dc blocked confidence-lo">
+        <div class="dc-h">
+          <div class="dc-title">Schedule Clem electrical rough-in inspection — date missing</div>
+          <div class="dc-meta">Blocked · <span class="dc-altitude">L1</span></div>
+        </div>
+        <div class="dc-summary">Right Hand attempted to draft scheduling email to inspector but cannot — permit pull date not in Blackboard. Source-or-silent applies.</div>
+        <div class="dc-row">
+          <span class="chip alert"><span class="status-dot alert"></span>Blocked · source missing</span>
+          <span class="chip">Need: <code>permit_pull_date</code></span>
+        </div>
+        <div class="banner alert" style="margin-top:10px;">
+          <span class="status-dot alert"></span>
+          Cannot draft until permit_pull_date is captured. Add it via intake form, voice memo, or manual entry to unblock.
+        </div>
+        <div class="dc-actions">
+          <button class="btn btn-primary">Add inspection date</button>
+          <button class="btn">Open intake</button>
+          <button class="btn btn-sm btn-ghost">Snooze 24h</button>
+          <button class="btn btn-sm btn-ghost">Mark not-applicable</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 8: Card state — drift severity -->
+  <div class="view-frame" id="frame-8-card-drift">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">8.</span>Decision card · drift severity badge</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO / PM</span>
+      <span class="tag tag-altitude">L2–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Drift detection workflow (W3 pure + Policy Gate wired) surfaces a card when actuals diverge from plan beyond threshold. Severity badge color-codes magnitude: med (yellow) ≥ 8%, hi (red) ≥ 15%. LLM-candidate, internal-only, no external send. Operator decides next step.</p>
+    <p class="frame-source">Source: <a href="../examples/w1-decision-queue-demo.html">src/examples/w1-decision-queue-demo.html</a> · drift-detection workflow</p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="dc confidence-med" style="border-left: 3px solid var(--warn);">
+        <div class="dc-h">
+          <div class="dc-title">Drift · Clem labor cost +12% vs plan over 7 days</div>
+          <div class="dc-meta">Drift-08 · <span class="dc-altitude">L2</span></div>
+        </div>
+        <div class="dc-summary">Plan: 240 labor hr × $48 avg = $11,520. Actual: $12,902 over rolling 7 days. Variance +12%. Threshold for medium severity: 8%.</div>
+        <div class="dc-row">
+          <span class="chip warn"><span class="status-dot warn"></span>Drift · medium</span>
+          <span class="chip">+12% labor</span>
+          <span class="chip">7-day window</span>
+          <span class="dc-source-count">5 sources</span>
+        </div>
+        <div class="audit-detail">
+          <div class="audit-h">Why drift fired (V8 inference-labeling)</div>
+          <div>Inference: variance trending — not single-day spike. 5 of 7 days above plan rate. LLM candidate flagged for operator review; not auto-actioned.</div>
+        </div>
+        <div class="dc-actions" style="margin-top:10px;">
+          <button class="btn btn-primary">Open variance breakdown</button>
+          <button class="btn">Annotate cause</button>
+          <button class="btn btn-sm btn-ghost">Mark expected</button>
+          <button class="btn btn-sm btn-ghost btn-danger">False positive</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 9: Reject reason form -->
+  <div class="view-frame" id="frame-9-reject-form">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">9.</span>Reject / false-positive reason form</h3>
+      <span class="tag tag-status-w1">W1 demo</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">All operator roles</span>
+      <span class="tag tag-altitude">L0–L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">When operator rejects a draft or flags a drift card as false-positive. Reason captured as a learning signal (V9 first-cut). Required field: category. Optional: free-text. Goes into Blackboard as <code>learning_signal</code> event for V1.5 reflection passes.</p>
+    <p class="frame-source">Source: <a href="../examples/w1-decision-queue-demo.html">src/examples/w1-decision-queue-demo.html</a> · reject form modal</p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel" style="max-width: 540px;">
+        <div class="ui-panel-h"><h3>Reject draft · CO-204</h3><span class="panel-meta">Learning signal V9</span></div>
+        <div style="display:flex; flex-direction:column; gap: 10px; font-size: 11px;">
+          <div>
+            <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Category <span style="color:var(--alert)">*</span></div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <span class="chip alert">Wrong amount</span>
+              <span class="chip">Wrong scope</span>
+              <span class="chip">Source misread</span>
+              <span class="chip">Out of policy</span>
+              <span class="chip">Stale data</span>
+              <span class="chip">Other</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">What went wrong (optional)</div>
+            <div class="input-mock filled" style="min-height: 60px; padding: 10px;">RH read the line-item as 100 sf, but Coring's order is 80 sf. Re-check material count from quote PDF.</div>
+          </div>
+          <div>
+            <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">What should the next draft do differently</div>
+            <div class="input-mock" style="min-height: 40px;">(optional)</div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <button class="btn btn-danger">Submit &amp; reject</button>
+            <button class="btn">Cancel</button>
+          </div>
+          <div style="font-size:10px; color:var(--kerf-text-mute); margin-top:4px;">Captured as <code>learning_signal</code> Blackboard event. Visible in audit log. Used for V1.5 reflection passes — never auto-applied.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 10: Empty state -->
+  <div class="view-frame" id="frame-10-empty">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">10.</span>Decision queue · empty state</h3>
+      <span class="tag tag-status-aspir">Aspirational</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">All operator roles</span>
+      <span class="tag tag-altitude">All</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Genuinely no decisions waiting. Not built yet. Should NOT be marketing copy or "Get started" hero. Convey: system is healthy, Right Hand idle, here's what was locked recently. Maintain operator-density aesthetic.</p>
+    <p class="frame-source">Source: not yet built. Proposed for W2.</p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel" style="text-align: left;">
+        <div class="ui-panel-h"><h3>Decisions · empty</h3><span class="panel-meta">all clear</span></div>
+        <div style="display:flex; gap: 14px; align-items:flex-start;">
+          <div style="flex:1; font-size: 12px; line-height: 1.6; color: var(--kerf-text-dim);">
+            <div style="color:var(--success); font-weight:600; font-size: 13px; margin-bottom:6px;"><span class="status-dot success"></span>Nothing waiting on you.</div>
+            Right Hand drafted 4 things in the last 24h. You approved 4. Nothing currently blocked.<br>
+            Sentry hasn't flagged drift. Platform sync healthy. QBO last sync 3 min ago.
+          </div>
+          <div style="width: 220px;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--kerf-text-mute); margin-bottom:6px;">Recently locked</div>
+            <div class="aux-entry"><div class="who">CO-204 · Coring</div><div class="what">$1,840 · approved 14:22</div></div>
+            <div class="aux-entry"><div class="who">Moore deposit · INV-318</div><div class="what">$8,400 · approved 09:18</div></div>
+            <div class="aux-entry"><div class="who">Clem permit-pull · scheduled</div><div class="what">approved 08:02</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 11: Dashboard standard -->
+  <div class="view-frame" id="frame-11-dashboard-std">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">11.</span>Dashboard · Standard</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L2–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">The dense, dark Standard UI dashboard. KPI tiles top, project cards below, action log on the right. From v2 baseline. The shell every other operator surface inherits from.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-dashboard-std">kerf_wireframes_web_v2.html#frame-dashboard-std</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Dashboard · all projects</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div class="ui-shell">
+        <div class="ui-rail">
+          <div class="rail-icon active">D</div><div class="rail-icon">P</div><div class="rail-icon">T</div><div class="rail-divider"></div><div class="rail-icon rh">RH</div><div class="rail-divider"></div><div class="rail-icon">A</div>
+        </div>
+        <div class="ui-main">
+          <div class="tile-row">
+            <div class="tile tile-success"><div class="tile-label">Active projects</div><div class="tile-value">11</div><div class="tile-trend">3 GGR · 5 Valle · 3 HPG</div></div>
+            <div class="tile"><div class="tile-label">Cash in</div><div class="tile-value">$94k</div><div class="tile-trend">May MTD</div></div>
+            <div class="tile tile-warn"><div class="tile-label">A/R aged</div><div class="tile-value">$22k</div><div class="tile-trend">Moore + 2</div></div>
+            <div class="tile"><div class="tile-label">Decisions / wk</div><div class="tile-value">21</div><div class="tile-trend">+4 vs last</div></div>
+          </div>
+          <div class="ui-panel">
+            <div class="ui-panel-h"><h3>Projects</h3><span class="panel-meta">Filter · GGR · Valle · HPG</span></div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap: 10px;">
+              <div class="ui-panel panel-2" style="border-top: 3px solid var(--ggr); padding: 10px 12px;">
+                <div style="font-weight:600; font-size:12px;">Coring · GGR</div>
+                <div style="font-size:10.5px; color:var(--kerf-text-dim); margin: 4px 0;">Phase 2 · 41% · L2 deck</div>
+                <div style="height: 4px; background: var(--kerf-panel-3); border-radius:2px; overflow:hidden;"><div style="height:100%; width:41%; background:var(--ggr);"></div></div>
+              </div>
+              <div class="ui-panel panel-2" style="border-top: 3px solid var(--val); padding: 10px 12px;">
+                <div style="font-weight:600; font-size:12px;">Moore · Valle</div>
+                <div style="font-size:10.5px; color:var(--kerf-text-dim); margin: 4px 0;">Final · 92% · A/R aged</div>
+                <div style="height: 4px; background: var(--kerf-panel-3); border-radius:2px; overflow:hidden;"><div style="height:100%; width:92%; background:var(--val);"></div></div>
+              </div>
+              <div class="ui-panel panel-2" style="border-top: 3px solid var(--hpg); padding: 10px 12px;">
+                <div style="font-weight:600; font-size:12px;">Clem · HPG</div>
+                <div style="font-size:10.5px; color:var(--kerf-text-dim); margin: 4px 0;">Rough · 28% · permit pending</div>
+                <div style="height: 4px; background: var(--kerf-panel-3); border-radius:2px; overflow:hidden;"><div style="height:100%; width:28%; background:var(--hpg);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ui-aux">
+          <div class="aux-h">Action log</div>
+          <div class="aux-entry"><div class="who">RH</div><div class="what">Drafted 4 decisions today</div><div class="when">since 06:00</div></div>
+          <div class="aux-entry"><div class="who">You</div><div class="what">Approved 4 / rejected 0</div><div class="when">today</div></div>
+          <div class="aux-entry"><div class="who">Sentry</div><div class="what">1 drift flagged · Clem labor</div><div class="when">08:55</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 12: Dashboard graphical -->
+  <div class="view-frame" id="frame-12-dashboard-graph">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">12.</span>Dashboard · Graphical</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L2–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Alternative dashboard layout — projects as visual chips on a project-time canvas. Causal graph shows dependencies and Blackboard projection edges. Persona-toggle in V2.0+; today this is a separate route.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-dashboard-graph">kerf_wireframes_web_v2.html#frame-dashboard-graph</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Dashboard · graphical view</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px; min-height: 380px;">
+        <div class="ui-panel" style="min-height: 340px; position: relative;">
+          <div class="ui-panel-h"><h3>Project causal graph</h3><span class="panel-meta">Blackboard projection · live</span></div>
+          <div style="position:relative; min-height:280px;">
+            <div style="position:absolute; left:30px; top:30px; padding:8px 12px; background: var(--ggr-dim); border:1px solid var(--ggr); border-radius:6px; font-size:11px;">Coring · L2 deck<br><span style="color:var(--kerf-text-dim); font-size:10px;">3 deps</span></div>
+            <div style="position:absolute; left:240px; top:60px; padding:8px 12px; background: var(--val-dim); border:1px solid var(--val); border-radius:6px; font-size:11px;">Moore · final<br><span style="color:var(--kerf-text-dim); font-size:10px;">A/R aged</span></div>
+            <div style="position:absolute; left:450px; top:30px; padding:8px 12px; background: var(--hpg-dim); border:1px solid var(--hpg); border-radius:6px; font-size:11px;">Clem · rough<br><span style="color:var(--kerf-text-dim); font-size:10px;">permit pending</span></div>
+            <div style="position:absolute; left:120px; top:160px; padding:8px 12px; background: var(--future-dim); border:1px solid var(--future); border-radius:6px; font-size:11px;">CO-204<br><span style="color:var(--kerf-text-dim); font-size:10px;">parent: Coring</span></div>
+            <div style="position:absolute; left:380px; top:170px; padding:8px 12px; background: var(--future-dim); border:1px solid var(--future); border-radius:6px; font-size:11px;">Inspection<br><span style="color:var(--kerf-text-dim); font-size:10px;">parent: Clem</span></div>
+            <svg style="position:absolute; left:0; top:0; width:100%; height:280px; pointer-events:none;" viewBox="0 0 700 280">
+              <line x1="80" y1="64" x2="180" y2="170" stroke="var(--kerf-border)" stroke-width="1"/>
+              <line x1="500" y1="64" x2="430" y2="170" stroke="var(--kerf-border)" stroke-width="1"/>
+              <line x1="280" y1="80" x2="290" y2="78" stroke="var(--kerf-border)" stroke-dasharray="3,3" stroke-width="1"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 13: Project + generative widget -->
+  <div class="view-frame" id="frame-13-project-genwidget">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">13.</span>Project view + generative widget</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO / PM</span>
+      <span class="tag tag-altitude">L2</span>
+      <span class="tag tag-tenant-ggr">GGR</span>
+    </div>
+    <p class="frame-desc">Single-project deep view. Left: scope, schedule, money in/out. Right: the generative widget — Right Hand surfaces "what's next" with one-line drafts and "pull thread" affordances. Operator can promote, edit, or dismiss any draft.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-project">kerf_wireframes_web_v2.html#frame-project</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Project · <span class="ctx-tenant" style="color:var(--ggr)">GGR</span> · Coring</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · drafting 2</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 320px; gap: 14px; padding: 18px 22px;">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="ui-panel" style="border-top: 3px solid var(--ggr);">
+            <div class="ui-panel-h"><h3>Coring kitchen · phase 2</h3><span class="panel-meta">L2 deck · 41% complete</span></div>
+            <div class="tile-row" style="grid-template-columns: repeat(3, 1fr);">
+              <div class="tile"><div class="tile-label">Contract</div><div class="tile-value" style="font-size:14px;">$96,400</div></div>
+              <div class="tile"><div class="tile-label">Spent</div><div class="tile-value" style="font-size:14px;">$39,600</div></div>
+              <div class="tile tile-success"><div class="tile-label">Margin</div><div class="tile-value" style="font-size:14px;">protected</div></div>
+            </div>
+          </div>
+          <div class="ui-panel">
+            <div class="ui-panel-h"><h3>Schedule</h3><span class="panel-meta">8 milestones · 2 amber</span></div>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+              <div style="display:flex; justify-content:space-between; padding: 6px 8px; background: var(--kerf-panel-2); border-radius:3px;"><span><span class="status-dot success"></span>Demo · 04-12</span><span style="color:var(--kerf-text-mute)">done</span></div>
+              <div style="display:flex; justify-content:space-between; padding: 6px 8px; background: var(--kerf-panel-2); border-radius:3px;"><span><span class="status-dot success"></span>Rough framing · 04-26</span><span style="color:var(--kerf-text-mute)">done</span></div>
+              <div style="display:flex; justify-content:space-between; padding: 6px 8px; background: var(--kerf-panel-2); border-radius:3px;"><span><span class="status-dot warn"></span>Tile install · 05-09</span><span style="color:var(--warn)">pending CO-204</span></div>
+              <div style="display:flex; justify-content:space-between; padding: 6px 8px; background: var(--kerf-panel-2); border-radius:3px;"><span><span class="status-dot warn"></span>Cabinet install · 05-14</span><span style="color:var(--warn)">Valle deps</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="ui-panel" style="border-left: 3px solid var(--rh);">
+          <div class="ui-panel-h"><h3 style="color:var(--rh);">Right Hand</h3><span class="panel-meta">2 drafts · 1 idea</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px; font-size:11px;">
+            <div class="dc rh-driven" style="padding:10px;">
+              <div style="font-weight:600;">CO-204 ready · $1,840 backsplash</div>
+              <div style="color:var(--kerf-text-dim); font-size:10.5px; margin: 4px 0;">3 sources · in ceiling</div>
+              <button class="btn btn-primary rh btn-sm">Open in queue</button>
+            </div>
+            <div class="dc rh-driven" style="padding:10px;">
+              <div style="font-weight:600;">Tile install email to Coring</div>
+              <div style="color:var(--kerf-text-dim); font-size:10.5px; margin: 4px 0;">"once CO-204 signed, install ETA 05-12"</div>
+              <button class="btn rh btn-sm" style="border-color:var(--rh-dim); color:var(--rh-dim);">Pull thread</button>
+            </div>
+            <div style="padding:10px; background:var(--kerf-panel-2); border-radius:4px; border-left: 2px solid var(--future); font-size: 10.5px;">
+              <div style="color:var(--future); font-weight:600;">Idea</div>
+              <div style="color:var(--kerf-text-dim); margin-top:4px;">Cabinet shop says 4-day lead time. Want me to push install to 05-18?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 14: Plays authoring -->
+  <div class="view-frame" id="frame-14-plays-authoring">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">14.</span>Plays authoring</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3–L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Author a Play — composable workflow recipe (architecture principle 5). Drag-and-drop steps. Each step is a workflow primitive. Plays are run by Right Hand, gated by the validator wall. V1: pre-canned plays only. V2.0: operator-authored plays.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-plays">kerf_wireframes_web_v2.html#frame-plays</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Plays · authoring · Invoice Follow-up</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 220px 1fr 240px; gap: 14px; padding: 18px 22px; min-height: 380px;">
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3 style="font-size:12px;">Step library</h3></div>
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+            <div class="ui-panel panel-2" style="padding: 6px 10px;">Detect · A/R aged</div>
+            <div class="ui-panel panel-2" style="padding: 6px 10px;">Compose · email draft</div>
+            <div class="ui-panel panel-2" style="padding: 6px 10px;">Compose · SMS draft</div>
+            <div class="ui-panel panel-2" style="padding: 6px 10px;">Validate · ceiling</div>
+            <div class="ui-panel panel-2" style="padding: 6px 10px;">Gate · Policy</div>
+            <div class="ui-panel panel-2" style="padding: 6px 10px;">Action · request approval</div>
+            <div class="ui-panel panel-2" style="padding: 6px 10px;">Send · platform</div>
+          </div>
+        </div>
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Invoice Follow-up · canvas</h3><span class="panel-meta">5 steps · validators wired</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--kerf-amber);">1 · Detect aged invoice (≥ 14d)</div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--rh);">2 · Right Hand composes second-notice email draft</div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--success);">3 · Validate · V1 send-safety, V2 ceiling, V7 source-basis</div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--success);">4 · Policy Gate → DecisionPacket</div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--kerf-amber);">5 · Surface in operator queue (no auto-send)</div>
+          </div>
+        </div>
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3 style="font-size:12px;">Step inspector</h3></div>
+          <div style="font-size:11px; color:var(--kerf-text-dim);">
+            <div style="font-weight:600; color:var(--kerf-text); margin-bottom:6px;">Step 2 · RH composes draft</div>
+            Inputs: invoice, prior contact, tone preset.<br>
+            Output: <code>email_draft</code> Blackboard event.<br>
+            Side effects: none.<br>
+            Privilege: standard.<br>
+            Altitude: L1.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 15: 60-second undo -->
+  <div class="view-frame" id="frame-15-undo">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">15.</span>60-second undo state</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">All operator roles</span>
+      <span class="tag tag-altitude">L1–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">After approval, a 60-second undo banner appears. Click to roll back the approval before Platform writes <code>locked</code>. After 60s, lifecycle commits. Corrections after that are new events with <code>correlationId</code> — no Event mutation (CLAUDE.md §3.4).</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-undo">kerf_wireframes_web_v2.html#frame-undo</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Decisions</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px;">
+        <div class="banner rh" style="margin-bottom: 14px; display:flex; justify-content:space-between; align-items:center;">
+          <div><span class="status-dot rh"></span>Approved · CO-204 sent to Coring · committing in <strong style="color:var(--rh)">42s</strong></div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-sm">Undo</button>
+            <button class="btn btn-sm btn-ghost">View receipt</button>
+          </div>
+        </div>
+        <div style="background: var(--kerf-panel); border:1px solid var(--kerf-border); border-radius:6px; padding: 14px; font-size:11px; color:var(--kerf-text-dim);">
+          <div style="font-weight:600; color:var(--kerf-text); font-size:12px; margin-bottom: 6px;">What undo does</div>
+          · Reverses approval lifecycle transition (<code>approved</code> → <code>recommended</code>)<br>
+          · Cancels pending Platform <code>locked</code> write before it commits<br>
+          · Recalls outbound send if Platform connector supports it (email queue, SMS queue)<br>
+          · Appends <code>undo</code> event with <code>correlationId</code> to original<br>
+          <span style="color:var(--alert);">After 60s</span>: lifecycle commits. Corrections require a new event chain (no mutation per §3.4).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 16: Teams (L0-L3 + cost/outcome) -->
+  <div class="view-frame" id="frame-16-teams">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">16.</span>Kerf Teams · L0–L3 + cost / outcome</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3–L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Team view with altitude tier columns and cost / outcome breakdown. Each row is a person; columns show altitude bands they hold authority in, $-spent in last period, decision throughput. Owner-only — feeds capacity planning.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-teams">kerf_wireframes_web_v2.html#frame-teams</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Teams · authority &amp; outcomes</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px;">
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Team · authority bands · 30-day outcome</h3><span class="panel-meta">7 actors · L0–L3</span></div>
+          <div style="display:grid; grid-template-columns: 140px repeat(4, 1fr) 80px 100px; gap: 1px; background: var(--kerf-border); font-size: 10.5px;">
+            <div style="background: var(--kerf-panel-2); padding: 8px 10px; font-weight: 600; color: var(--kerf-text-dim);">Actor</div>
+            <div style="background: var(--kerf-panel-2); padding: 8px 10px; font-weight: 600; color: var(--kerf-amber); text-align:center;">L0</div>
+            <div style="background: var(--kerf-panel-2); padding: 8px 10px; font-weight: 600; color: var(--kerf-amber); text-align:center;">L1</div>
+            <div style="background: var(--kerf-panel-2); padding: 8px 10px; font-weight: 600; color: var(--kerf-amber); text-align:center;">L2</div>
+            <div style="background: var(--kerf-panel-2); padding: 8px 10px; font-weight: 600; color: var(--kerf-amber); text-align:center;">L3</div>
+            <div style="background: var(--kerf-panel-2); padding: 8px 10px; font-weight: 600; color: var(--kerf-text-dim); text-align:right;">$ 30d</div>
+            <div style="background: var(--kerf-panel-2); padding: 8px 10px; font-weight: 600; color: var(--kerf-text-dim); text-align:right;">decisions</div>
+
+            <div style="background: var(--kerf-panel); padding: 8px 10px;">Christian · Owner</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right;">$184k</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right;">87</div>
+
+            <div style="background: var(--kerf-panel); padding: 8px 10px;">Sara · MoO</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center; color:var(--kerf-text-mute);">—</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right;">$54k</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right;">62</div>
+
+            <div style="background: var(--kerf-panel); padding: 8px 10px;">Mike · PM (GGR)</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot success"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center; color:var(--kerf-text-mute);">—</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center; color:var(--kerf-text-mute);">—</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right;">$12k</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right;">38</div>
+
+            <div style="background: var(--kerf-panel); padding: 8px 10px;">Right Hand</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot rh"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center;"><span class="status-dot rh"></span></div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center; color:var(--kerf-text-mute);">draft only</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:center; color:var(--kerf-text-mute);">draft only</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right; color:var(--rh);">drafted $241k</div>
+            <div style="background: var(--kerf-panel); padding: 8px 10px; text-align:right; color:var(--rh);">142</div>
+          </div>
+          <div style="font-size:10px; color:var(--kerf-text-mute); margin-top: 8px;">Right Hand never authorizes — only drafts. <code>canAuthorize()</code> is pure (CLAUDE §3 authority).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 2 — Right Hand surface (frames 17-20)               -->
+<!-- ============================================================ -->
+<section class="section" id="sec-2">
+  <div class="section-header">
+    <h2>2 · Right Hand surface</h2>
+    <div class="section-meta">The agent surface, renamed from "Chief of Staff" Apr 26, 2026. Brass chrome (<code>--rh #C9A876</code>), never amber. Right Hand drafts; humans authorize.</div>
+  </div>
+
+  <!-- Frame 17: Right Hand landing -->
+  <div class="view-frame" id="frame-17-rh-landing">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">17.</span>Right Hand landing</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L1–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Right Hand's own surface. Shows agent state (drafting / idle / blocked / off), what it's working on, what it's stuck on, and a feed of recent drafts. Operator can pull a thread, edit a draft inline, or send Right Hand a focus instruction.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v4_apr26.html#landing">kerf_wireframes_v4_apr26.html#landing</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Right Hand · agent surface</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>drafting 4 · 2 stuck</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 240px 1fr 280px; gap: 14px; padding: 18px 22px;">
+        <div class="ui-panel" style="border-left: 3px solid var(--rh);">
+          <div class="ui-panel-h"><h3 style="color:var(--rh); font-size:12px;">State</h3></div>
+          <div style="font-size: 11px; line-height: 1.7;">
+            <div><span class="status-dot rh"></span><strong style="color:var(--rh)">Active · drafting</strong></div>
+            <div style="color:var(--kerf-text-dim); margin-top: 8px;">Working on:</div>
+            <div>· CO-204 (done · in queue)</div>
+            <div>· Moore second-notice</div>
+            <div>· Clem permit follow-up</div>
+            <div>· Coring tile install email</div>
+            <div style="color:var(--alert); margin-top: 10px;">Stuck on:</div>
+            <div style="color:var(--kerf-text-dim);">· Clem inspection schedule (need date)</div>
+            <div style="color:var(--kerf-text-dim);">· HPG Smith deposit (need amount)</div>
+          </div>
+        </div>
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Drafts &amp; ideas</h3><span class="panel-meta">8 today · 3 awaiting you</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="dc rh-driven" style="padding:10px;"><div style="font-weight:600; font-size:12px;">CO-204 ready · $1,840</div><div style="color:var(--kerf-text-dim); font-size:10.5px; margin: 4px 0;">High confidence · 3 sources</div><button class="btn btn-primary rh btn-sm">Open in queue</button></div>
+            <div class="dc rh-driven" style="padding:10px;"><div style="font-weight:600; font-size:12px;">Moore second-notice draft</div><div style="color:var(--kerf-text-dim); font-size:10.5px; margin: 4px 0;">Medium · 2 sources · template attached</div><button class="btn btn-primary rh btn-sm">Open in queue</button></div>
+            <div style="padding:10px; background:var(--kerf-panel-2); border-radius:4px; border-left: 2px solid var(--future); font-size: 10.5px;"><div style="color:var(--future); font-weight:600;">Idea · Clem cabinet handoff</div><div style="color:var(--kerf-text-dim); margin-top:4px;">Cabinet shop says 4-day lead. Want me to push install to 05-18?</div><div style="margin-top:6px;"><button class="btn btn-sm btn-ghost">Pull thread</button> <button class="btn btn-sm btn-ghost">Dismiss</button></div></div>
+          </div>
+        </div>
+        <div class="ui-panel" style="background: var(--kerf-panel-2);">
+          <div class="ui-panel-h"><h3 style="font-size:12px;">Talk to Right Hand</h3></div>
+          <div class="input-mock" style="min-height: 90px; font-size:11px;">Tell me what to focus on…</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="btn btn-sm rh" style="border-color:var(--rh); color:var(--rh);">Send</button>
+            <button class="btn btn-sm btn-ghost">EN / ES</button>
+          </div>
+          <div style="font-size:10px; color:var(--kerf-text-mute); margin-top: 10px;">Bilingual. Right Hand reads either; replies in the language you use. Mano Derecha.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 18: Authority lattice (v4) -->
+  <div class="view-frame" id="frame-18-lattice">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">18.</span>Authority lattice</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3–L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">The core navigation primitive introduced in v4. Roles × decision domains. Each cell is the authority profile: who can <em>view</em>, who can <em>recommend</em>, who can <em>approve</em>. Per-tenant overlays land V1.5+. <code>canAuthorize()</code> is a pure function.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v4_apr26.html#lattice">kerf_wireframes_v4_apr26.html#lattice</a> · <a href="../authority/profile">src/authority/profile</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Authority · lattice</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px;">
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Role × domain authority</h3><span class="panel-meta">V1 default matrix · per-tenant overlays V1.5+</span></div>
+          <div class="lattice">
+            <div class="l-cell l-row-h">Role / Domain</div>
+            <div class="l-cell l-col-h">Money write</div>
+            <div class="l-cell l-col-h">Schedule</div>
+            <div class="l-cell l-col-h">Scope</div>
+            <div class="l-cell l-col-h">Communications</div>
+            <div class="l-cell l-col-h">Margin view</div>
+
+            <div class="l-cell l-row-h">Owner</div>
+            <div class="l-cell"><span class="chip success">Approve · ≤$200k</span></div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Send</span></div>
+            <div class="l-cell"><span class="chip success">View</span></div>
+
+            <div class="l-cell l-row-h">MoO</div>
+            <div class="l-cell"><span class="chip warn">Approve · ≤$3k</span></div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip warn">Recommend</span></div>
+            <div class="l-cell"><span class="chip success">Send</span></div>
+            <div class="l-cell"><span class="chip success">View</span></div>
+
+            <div class="l-cell l-row-h">PM</div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+            <div class="l-cell"><span class="chip warn">Recommend</span></div>
+            <div class="l-cell"><span class="chip warn">Recommend</span></div>
+            <div class="l-cell"><span class="chip warn">Draft</span></div>
+            <div class="l-cell"><span class="chip alert">Withheld</span></div>
+
+            <div class="l-cell l-row-h">Field</div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">View</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">View</span></div>
+            <div class="l-cell"><span class="chip warn">Voice memo</span></div>
+            <div class="l-cell"><span class="chip alert">Withheld</span></div>
+
+            <div class="l-cell l-row-h">Sub</div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">View own</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">View own</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+            <div class="l-cell"><span class="chip alert">Withheld</span></div>
+
+            <div class="l-cell l-row-h">Client</div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">View own</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">Sign</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">Reply</span></div>
+            <div class="l-cell"><span class="chip alert">Never visible</span></div>
+
+            <div class="l-cell l-row-h" style="color:var(--rh) !important;">Right Hand</div>
+            <div class="l-cell"><span class="chip rh">Draft only</span></div>
+            <div class="l-cell"><span class="chip rh">Draft only</span></div>
+            <div class="l-cell"><span class="chip rh">Draft only</span></div>
+            <div class="l-cell"><span class="chip rh">Draft only</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-dim)">Reads (operator-side)</span></div>
+          </div>
+          <div style="font-size:10.5px; color:var(--kerf-text-mute); margin-top:10px;">Margin is permission-gated (CLAUDE §3.2). Owner-money ceiling $200k cents = $2,000 (matrix.ts).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 19: Lattice + altitude + multi-agent (v5) -->
+  <div class="view-frame" id="frame-19-lattice-altitude">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">19.</span>Lattice + altitude + multi-agent</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3–L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">v5 extends the lattice with altitude tiers (L0 reflex / L1 routine / L2 plan / L3 strategy / L4 charter) and multiple agents. V1 has one Right Hand. V2.0+ may add specialist agents (Estimator, Scheduler, Compliance) — each gets its own column in the lattice with its own draft-only authority.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_apr26.html">kerf_wireframes_v5_apr26.html</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Authority · altitude · multi-agent</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · 1 of 1</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px;">
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Altitude × authority</h3><span class="panel-meta">V1 single-agent · V2.0+ multi-agent stub</span></div>
+          <div style="display:grid; grid-template-columns: 100px repeat(5, 1fr); gap:1px; background: var(--kerf-border); margin-bottom:14px;">
+            <div class="l-cell l-row-h">Altitude</div>
+            <div class="l-cell l-col-h">L0 reflex</div>
+            <div class="l-cell l-col-h">L1 routine</div>
+            <div class="l-cell l-col-h">L2 plan</div>
+            <div class="l-cell l-col-h">L3 strategy</div>
+            <div class="l-cell l-col-h">L4 charter</div>
+
+            <div class="l-cell l-row-h" style="color:var(--rh) !important;">Right Hand</div>
+            <div class="l-cell"><span class="chip rh">Draft</span></div>
+            <div class="l-cell"><span class="chip rh">Draft</span></div>
+            <div class="l-cell"><span class="chip rh">Draft</span></div>
+            <div class="l-cell"><span class="chip rh">Draft (escalate)</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">Out of scope</span></div>
+
+            <div class="l-cell l-row-h">PM</div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip warn">Recommend</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">Escalate</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+
+            <div class="l-cell l-row-h">MoO</div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Approve · ≤$3k</span></div>
+            <div class="l-cell"><span class="chip warn">Recommend</span></div>
+            <div class="l-cell"><span class="chip" style="color:var(--kerf-text-mute)">No</span></div>
+
+            <div class="l-cell l-row-h">Owner</div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Approve</span></div>
+            <div class="l-cell"><span class="chip success">Author</span></div>
+          </div>
+          <div style="display:flex; gap: 10px;">
+            <div class="ui-panel panel-2" style="flex:1; padding: 10px;">
+              <div style="font-weight:600; font-size:11px; color:var(--rh);">Right Hand · V1</div>
+              <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">Single agent, single tenant, English + Spanish.</div>
+            </div>
+            <div class="ui-panel panel-2" style="flex:1; padding: 10px; opacity: 0.5;">
+              <div style="font-weight:600; font-size:11px; color:var(--future);">Estimator · V2.0+</div>
+              <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">Specialist agent. Draft-only. Coordinates with Right Hand via Blackboard.</div>
+            </div>
+            <div class="ui-panel panel-2" style="flex:1; padding: 10px; opacity: 0.5;">
+              <div style="font-weight:600; font-size:11px; color:var(--future);">Scheduler · V2.0+</div>
+              <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">Specialist agent. Draft-only. Subordinate to Right Hand for cross-cutting decisions.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 20: Right Hand chrome states -->
+  <div class="view-frame" id="frame-20-rh-chrome">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">20.</span>Right Hand chrome / availability states</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">All operator roles</span>
+      <span class="tag tag-altitude">All</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Topbar Right Hand indicator across states: ready · drafting · stuck · offline · privileged-bypass. Visible from every operator surface. Brass dot (<code>--rh</code>) is the agent's signature — never amber.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v4_apr26.html#landing">kerf_wireframes_v4_apr26.html#landing</a> · derived from topbar pattern</p>
+    <div class="frame-render" style="padding: 22px; display:flex; flex-direction:column; gap: 8px;">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">State · ready</span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · ready</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">State · drafting</span><span class="topbar-rh"><span class="rh-dot" style="animation: none; box-shadow: 0 0 8px var(--rh);"></span>Right Hand · drafting 4</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">State · stuck</span><span class="topbar-rh" style="color: var(--alert);"><span class="rh-dot" style="background: var(--alert); box-shadow: 0 0 6px var(--alert);"></span>Right Hand · stuck (2 sources missing)</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">State · offline</span><span class="topbar-rh" style="color: var(--kerf-text-mute);"><span class="rh-dot" style="background: var(--kerf-text-mute); box-shadow: none;"></span>Right Hand · offline</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">State · privileged bypass</span><span class="topbar-rh" style="color: var(--future);"><span class="rh-dot" style="background: var(--future); box-shadow: 0 0 6px var(--future);"></span>Privileged event · LLM bypassed</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 10px 14px; background: var(--kerf-panel); border:1px solid var(--kerf-border); border-radius:4px; font-size: 10.5px; color: var(--kerf-text-dim);">
+        Privileged events (non-null <code>privilege_class</code>) MUST bypass the LLM gateway. Topbar surfaces this so the operator knows <em>why</em> a class of event isn't being drafted. (CLAUDE §3 invariants · privileged-class bypass.)
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 3 — Blackboard (frames 21-24)                       -->
+<!-- ============================================================ -->
+<section class="section" id="sec-3">
+  <div class="section-header">
+    <h2>3 · Blackboard</h2>
+    <div class="section-meta">The persistent memory + visible graphical surface. Architecture principle 6, locked Apr 23. Append-only event log; corrections are new events with <code>correlationId</code>.</div>
+  </div>
+
+  <!-- Frame 21: Blackboard roles -->
+  <div class="view-frame" id="frame-21-bb-roles">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">21.</span>Blackboard · roles surface</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Who-knows-what view across all actors. For each role × project, the Blackboard projection shows what they've seen, what they wrote, and what's been hidden from them by permissions matrix. Source-of-truth for "did Sara see CO-204 before approving?"</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v4_apr26.html#bb-roles">kerf_wireframes_v4_apr26.html#bb-roles</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Blackboard · who knows what · <span class="ctx-tenant" style="color:var(--ggr)">GGR · Coring</span></span>
+        <span class="topbar-rh" style="color:var(--future);"><span class="rh-dot" style="background:var(--future);"></span>Blackboard · live</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px;">
+        <div class="ui-panel" style="border-left: 3px solid var(--future);">
+          <div class="ui-panel-h"><h3 style="color:var(--future);">Roles × projection</h3><span class="panel-meta">5 actors · last 7d</span></div>
+          <div style="display:grid; grid-template-columns: 130px 1fr 1fr 1fr; gap: 1px; background: var(--kerf-border); font-size: 11px;">
+            <div class="l-cell l-row-h">Actor</div>
+            <div class="l-cell l-col-h">Saw</div>
+            <div class="l-cell l-col-h">Wrote</div>
+            <div class="l-cell l-col-h">Withheld</div>
+
+            <div class="l-cell">Christian · Owner</div>
+            <div class="l-cell" style="color:var(--kerf-text);">42 events · CO-204 detail</div>
+            <div class="l-cell" style="color:var(--kerf-text);">12 approvals · 0 drafts</div>
+            <div class="l-cell" style="color:var(--kerf-text-mute);">none</div>
+
+            <div class="l-cell">Sara · MoO</div>
+            <div class="l-cell" style="color:var(--kerf-text);">38 · CO-204 summary</div>
+            <div class="l-cell" style="color:var(--kerf-text);">5 approvals · 1 escalation</div>
+            <div class="l-cell" style="color:var(--kerf-text-mute);">none</div>
+
+            <div class="l-cell">Mike · PM</div>
+            <div class="l-cell" style="color:var(--kerf-text-dim);">22 · CO-204 sent-only</div>
+            <div class="l-cell" style="color:var(--kerf-text);">3 schedule recs</div>
+            <div class="l-cell" style="color:var(--alert);">margin (4 events)</div>
+
+            <div class="l-cell">Right Hand</div>
+            <div class="l-cell" style="color:var(--kerf-text);">all (operator-side)</div>
+            <div class="l-cell" style="color:var(--rh);">14 drafts · 0 sends</div>
+            <div class="l-cell" style="color:var(--alert);">privileged (2 events)</div>
+
+            <div class="l-cell">Coring · Client</div>
+            <div class="l-cell" style="color:var(--kerf-text-dim);">6 · own thread</div>
+            <div class="l-cell" style="color:var(--kerf-text-dim);">2 SMS replies</div>
+            <div class="l-cell" style="color:var(--alert);">all margin · all internal</div>
+          </div>
+          <div style="font-size:10.5px; color:var(--kerf-text-mute); margin-top: 10px;">Read audit log records every <code>withReadAudit</code> call. Withheld counts come from permission matrix evaluator (CLAUDE §3.7).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 22: Blackboard mobile -->
+  <div class="view-frame" id="frame-22-bb-mobile">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">22.</span>Blackboard · mobile</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Field / Operator</span>
+      <span class="tag tag-role">Field / PM</span>
+      <span class="tag tag-altitude">L0–L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Field-side Blackboard view. Voice memo capture, photo capture, recent events feed. Designed for one-handed use on a job site. Spanish-default for crews.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v4_apr26.html#bb-mobile">kerf_wireframes_v4_apr26.html#bb-mobile</a></p>
+    <div class="frame-render">
+      <div class="mobile-frame">
+        <div class="mobile-topbar"><span class="brand" style="font-size:11px;">KERF</span><span style="color:var(--kerf-text-dim); flex:1;">Coring · L1</span><span class="status-dot rh"></span></div>
+        <div class="mobile-body">
+          <button class="btn btn-primary rh" style="padding: 14px; font-size: 13px;">🎙 Grabar memo de voz</button>
+          <button class="btn" style="padding: 12px;">📷 Tomar foto</button>
+          <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--kerf-text-mute); margin-top:6px;">Hoy</div>
+          <div class="aux-entry"><div class="who">Mike</div><div class="what">Foto · estado del marco norte</div><div class="when">10:14</div></div>
+          <div class="aux-entry"><div class="who">RH</div><div class="what">Borrador · agendar inspección</div><div class="when">09:42</div></div>
+          <div class="aux-entry" style="border-left-color: var(--alert);"><div class="who">Sentry</div><div class="what">Drift · costos labor +12%</div><div class="when">08:55</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 23: Event log explorer -->
+  <div class="view-frame" id="frame-23-event-log">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">23.</span>Event log explorer</h3>
+      <span class="tag tag-status-aspir">Aspirational V1.5+</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Filterable, copyable view of the full Blackboard event log. Filter by actor / role / time / privilege class / data class / retention policy. Append-only — no delete. Corrections shown as <code>correlationId</code> chains. Critical for audit and forensic work.</p>
+    <p class="frame-source">Source: not yet built. Spec lives in event log primitives at <a href="../blackboard/eventLog">src/blackboard/eventLog</a>.</p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">Blackboard · event log · all tenants</span>
+        <span class="topbar-rh" style="color:var(--future);"><span class="rh-dot" style="background:var(--future);"></span>72,418 events · live</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px;">
+        <div class="filter-row" style="margin-bottom:12px;">
+          <span class="filter-label">Actor:</span><span class="chip">all</span><span class="chip">RH</span><span class="chip">Sentry</span><span class="chip">Platform</span>
+          <span class="filter-label" style="margin-left:14px">Privilege:</span><span class="chip">all</span><span class="chip">standard</span><span class="chip alert">privileged</span>
+          <span class="filter-label" style="margin-left:14px">Data class:</span><span class="chip">all</span><span class="chip">user-privacy</span><span class="chip">money</span><span class="chip">internal</span>
+          <span style="margin-left:auto; font-size:10px; color:var(--kerf-text-mute);">14 of 72,418 · last 1h</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; font-family: ui-monospace, monospace; font-size: 10.5px;">
+          <div class="ui-panel panel-2" style="padding: 8px 12px; border-left: 2px solid var(--rh);">
+            <span style="color:var(--kerf-text-mute);">10:14:02</span> <span style="color:var(--rh);">RH</span> <code>change_order_drafted</code> CO-204 · GGR/Coring · L2 · src=[voice_memo, gc_quote, decision/CO-201] · privilege=standard
+          </div>
+          <div class="ui-panel panel-2" style="padding: 8px 12px;">
+            <span style="color:var(--kerf-text-mute);">10:13:58</span> <span>Christian</span> <code>read_audit</code> projection=decisions · count=11 · role=owner
+          </div>
+          <div class="ui-panel panel-2" style="padding: 8px 12px; border-left: 2px solid var(--future);">
+            <span style="color:var(--kerf-text-mute);">10:12:31</span> <span style="color:var(--future);">Blackboard</span> <code>projection_updated</code> live_memory · Coring · 14 events
+          </div>
+          <div class="ui-panel panel-2" style="padding: 8px 12px; border-left: 2px solid var(--alert);">
+            <span style="color:var(--kerf-text-mute);">10:11:09</span> <span>Sentry</span> <code>guardrail_trip</code> drift · Clem labor +12% · severity=med
+          </div>
+          <div class="ui-panel panel-2" style="padding: 8px 12px; border-left: 2px solid var(--alert);">
+            <span style="color:var(--kerf-text-mute);">10:09:44</span> <span style="color:var(--alert);">PRIVILEGED</span> <code>tenant_key_unwrap</code> data_class=tenant-private · LLM bypassed
+          </div>
+          <div class="ui-panel panel-2" style="padding: 8px 12px;">
+            <span style="color:var(--kerf-text-mute);">10:08:12</span> <span>Christian</span> <code>decision_approved</code> CO-204 · correlationId=CO-204-draft
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 24: DecisionPacket inspector -->
+  <div class="view-frame" id="frame-24-decisionpacket">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">24.</span>DecisionPacket inspector</h3>
+      <span class="tag tag-status-aspir">Aspirational V1.5+</span>
+      <span class="tag tag-persona">Operator / Engineer</span>
+      <span class="tag tag-role">Owner / engineer</span>
+      <span class="tag tag-altitude">L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Inspect a single DecisionPacket end-to-end: AltitudePacket → Policy Gate → DecisionPacket → approval action → Platform write. All validator results inline. Used for forensic review and validator authoring.</p>
+    <p class="frame-source">Source: not yet built. Types in <a href="../altitude">src/altitude</a>.</p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">DecisionPacket · CO-204 · forensic view</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div style="padding: 22px; display: flex; flex-direction: column; gap: 12px;">
+        <div class="ui-panel panel-2"><div class="ui-panel-h"><h3 style="font-size:12px;">1 · AltitudePacket (input)</h3><span class="panel-meta">L2 · standard</span></div><pre style="font-family: ui-monospace, monospace; font-size: 10.5px; color: var(--kerf-text-dim); margin: 0; line-height: 1.5;">{ kind: "change_order_draft", project: "coring-kitchen",
+  amount_cents: 184000, altitude: "L2",
+  source_refs: [3], confidence: 0.91 }</pre></div>
+        <div class="ui-panel panel-2" style="border-left: 3px solid var(--success);"><div class="ui-panel-h"><h3 style="font-size:12px;">2 · Policy Gate · validator wall</h3><span class="panel-meta">9 of 9 · pass</span></div>
+          <div style="font-size: 10.5px; line-height: 1.7;"><span class="status-dot success"></span>V1 · <span class="status-dot success"></span>V2 · <span class="status-dot success"></span>V6 · <span class="status-dot success"></span>V7 · <span class="status-dot success"></span>V8 · <span class="status-dot warn"></span>V9 (low N) · <span class="status-dot success"></span>V12 · <span class="status-dot success"></span>V17 · <span class="status-dot success"></span>V18</div>
+        </div>
+        <div class="ui-panel panel-2"><div class="ui-panel-h"><h3 style="font-size:12px;">3 · DecisionPacket (output)</h3><span class="panel-meta">approved</span></div><pre style="font-family: ui-monospace, monospace; font-size: 10.5px; color: var(--kerf-text-dim); margin: 0; line-height: 1.5;">{ kind: "change_order_approval",
+  project: "coring-kitchen", amount_cents: 184000,
+  approved_by: "owner:christian", approved_at: "2026-05-03T14:22Z",
+  source_refs: [3], altitude: "L2", confidence: 0.91,
+  correlationId: "CO-204-draft" }</pre></div>
+        <div class="ui-panel panel-2" style="border-left: 3px solid var(--mcp);"><div class="ui-panel-h"><h3 style="font-size:12px;">4 · Platform write (REST · contracts/platform · 2026-04-23.0)</h3><span class="panel-meta">acked · 142ms</span></div>
+          <div style="font-size: 10.5px; color: var(--kerf-text-dim);"><code>POST /v1/change-orders</code> → 201 · <code>locked_at: 2026-05-03T14:22:14Z</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 4 — Intake flow (frames 25-33)                      -->
+<!-- ============================================================ -->
+<section class="section" id="sec-4">
+  <div class="section-header">
+    <h2>4 · Intake flow</h2>
+    <div class="section-meta">From v3 (Apr 23). Capturing source-of-truth into the Blackboard. Voice, form, draft, capture, consent. LiDAR canvas. Co-intake (operator + customer in same session).</div>
+  </div>
+
+  <!-- Frame 25: Intake mode picker -->
+  <div class="view-frame" id="frame-25-intake-picker">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">25.</span>Intake · mode picker</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator / Field</span>
+      <span class="tag tag-role">PM / Field / MoO</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Pick how to capture: voice, form, photo+annotate, LiDAR scan. Mode determines downstream draft template.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#intake-mode-picker">kerf_wireframes_v3_apr23.html#intake-mode-picker</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel"><div class="ui-panel-h"><h3>Intake · how do you want to capture?</h3><span class="panel-meta">Coring · phase 2</span></div>
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+          <div class="ui-panel panel-2" style="padding:14px; text-align:center; border-top: 3px solid var(--kerf-amber);"><div style="font-size:24px;">🎙</div><div style="font-weight:600; margin-top:4px;">Voice</div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">Field default · 30s avg</div></div>
+          <div class="ui-panel panel-2" style="padding:14px; text-align:center;"><div style="font-size:24px;">📋</div><div style="font-weight:600; margin-top:4px;">Form</div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">Office · structured</div></div>
+          <div class="ui-panel panel-2" style="padding:14px; text-align:center;"><div style="font-size:24px;">📷</div><div style="font-weight:600; margin-top:4px;">Photo + note</div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">Field · evidence-first</div></div>
+          <div class="ui-panel panel-2" style="padding:14px; text-align:center; border-top: 3px solid var(--future);"><div style="font-size:24px;">📐</div><div style="font-weight:600; margin-top:4px;">LiDAR scan</div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">iOS · room geometry</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 26: Intake voice -->
+  <div class="view-frame" id="frame-26-intake-voice">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">26.</span>Intake · voice</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Field</span>
+      <span class="tag tag-role">Field / PM</span>
+      <span class="tag tag-altitude">L0–L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">One-tap voice memo. Auto-transcribed. Spanish or English (auto-detected). Output is a Blackboard event with audio + transcript + speaker tag. Field default — works on iPhone and Android.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#intake-voice">kerf_wireframes_v3_apr23.html#intake-voice</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="mobile-frame">
+        <div class="mobile-topbar"><span style="color:var(--rh);">●</span><span style="color:var(--kerf-text-dim); flex:1;">Grabando · 0:14</span><span style="font-size:10px; color:var(--kerf-text-mute);">ES · auto</span></div>
+        <div class="mobile-body" style="text-align:center;">
+          <div style="margin-top:30px; font-size: 60px; color: var(--alert);">●</div>
+          <div style="font-size: 28px; font-weight: 600; margin-top: 14px;">0:14</div>
+          <div style="color:var(--kerf-text-dim); font-size:11px; margin-top: 6px;">Toca para detener</div>
+          <div style="margin-top: 30px; padding: 12px; background: var(--kerf-panel); border-radius: 6px; text-align: left; font-size: 11.5px; line-height: 1.5; color: var(--kerf-text-dim);">
+            <div style="font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Transcripción · live</div>
+            "Coring quiere cambiar el azulejo de subway a zellige blanco, dimensiones diez por diez…"
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 27: Intake form -->
+  <div class="view-frame" id="frame-27-intake-form">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">27.</span>Intake · form</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">PM / MoO</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Office-side structured intake. Project, scope, source URLs, attachments. Output is a complete Blackboard candidate — Right Hand can immediately draft from it.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#intake-form">kerf_wireframes_v3_apr23.html#intake-form</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel" style="max-width:720px;">
+        <div class="ui-panel-h"><h3>Intake · structured</h3><span class="panel-meta">Coring · phase 2</span></div>
+        <div style="display:flex; flex-direction:column; gap: 10px;">
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Project</div><div class="input-mock filled">GGR / Coring kitchen / phase 2</div></div>
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Type</div><div style="display:flex; gap:6px;"><span class="chip" style="background:var(--kerf-panel-3); color:var(--kerf-text);">Change order</span><span class="chip">Schedule</span><span class="chip">Issue</span><span class="chip">Note</span></div></div>
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Description</div><div class="input-mock filled" style="min-height: 60px;">Client requested zellige tile upgrade. 80 sf @ $18 material + $4 labor. Quote attached.</div></div>
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Sources</div><div style="font-size:10.5px;"><span class="chip">📎 acme-tile-quote.pdf</span> <span class="chip">🔗 voice memo · 05-07</span></div></div>
+          <div style="display:flex; gap:6px; margin-top: 8px;"><button class="btn btn-primary">Save &amp; let RH draft</button><button class="btn">Save only</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 28: Intake draft -->
+  <div class="view-frame" id="frame-28-intake-draft">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">28.</span>Intake · draft (RH preview)</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">PM / MoO</span>
+      <span class="tag tag-altitude">L1–L2</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">After form save, Right Hand drafts in-place. Preview shown before promoting to operator queue. Operator can edit, dismiss, or promote.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#intake-draft">kerf_wireframes_v3_apr23.html#intake-draft</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel" style="border-left: 3px solid var(--rh); max-width:720px;">
+        <div class="ui-panel-h"><h3 style="color:var(--rh);">Right Hand · draft preview</h3><span class="panel-meta">CO-204 · L2 · ready</span></div>
+        <div class="dc rh-driven confidence-hi" style="margin-top:8px;">
+          <div class="dc-h"><div class="dc-title">CO-204 · zellige backsplash · $1,840</div><div class="dc-meta">High · 3 sources</div></div>
+          <div class="dc-summary">"Coring requested upgrade from builder-grade subway to handmade zellige (10×10 sf). $1,840 covers material + adjusted labor. In owner ceiling. Margin preserved."</div>
+          <div style="display:flex; gap:6px; margin-top:8px;"><button class="btn btn-primary rh">Promote to queue</button><button class="btn">Edit draft</button><button class="btn btn-ghost btn-sm">Dismiss</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 29: Intake capture (photo + annotate) -->
+  <div class="view-frame" id="frame-29-intake-capture">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">29.</span>Intake · capture (photo + annotate)</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Field</span>
+      <span class="tag tag-role">Field / PM</span>
+      <span class="tag tag-altitude">L0–L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Field-side capture. Take a photo, draw / annotate / add a 5-second voice tag. Goes straight into Blackboard with geo + timestamp + actor.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#intake-capture">kerf_wireframes_v3_apr23.html#intake-capture</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="mobile-frame">
+        <div class="mobile-topbar"><span style="color:var(--kerf-text-dim); flex:1;">📷 Capture · Coring</span><span style="font-size:10px; color:var(--kerf-text-mute);">10:14 · GPS</span></div>
+        <div class="mobile-body">
+          <div style="height: 200px; background: linear-gradient(135deg, #1A2632 0%, #2A3642 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--kerf-text-mute); font-size: 11px; position: relative;">
+            [photo · north framing]
+            <div style="position:absolute; top:30px; left:60px; width:24px; height:24px; border:2px solid var(--alert); border-radius:50%;"></div>
+            <div style="position:absolute; bottom:18px; right:14px; padding:3px 7px; background: var(--alert); color: white; font-size:10px; border-radius:3px; font-weight:600;">A</div>
+          </div>
+          <div class="input-mock filled" style="padding: 10px;">A · stud spacing 18" instead of spec 16". Need to check with Mike before sheathing.</div>
+          <div style="display:flex; gap:6px;"><button class="btn btn-primary" style="flex:1;">Save</button><button class="btn">🎙 5s tag</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 30: Intake consent -->
+  <div class="view-frame" id="frame-30-intake-consent">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">30.</span>Intake · consent</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Client / Operator</span>
+      <span class="tag tag-role">Client + PM</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">When intake includes voice or photo of the client (e.g. site walk recording), consent step gates capture. Required for user-privacy data class. Consent event recorded in Blackboard.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#intake-consent">kerf_wireframes_v3_apr23.html#intake-consent</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel" style="max-width:540px; border-left: 3px solid var(--warn);">
+        <div class="ui-panel-h"><h3 style="color:var(--warn);">Consent · user-privacy data</h3><span class="panel-meta">retention: 18 mo</span></div>
+        <div style="font-size: 11.5px; line-height: 1.6;">
+          We're about to record audio and photos of the site walk. This includes you. We use this to draft change-orders, schedules, and notes. We do not share it with anyone outside Get Green Remodeling.
+        </div>
+        <div style="margin-top: 12px; padding: 10px; background: var(--kerf-panel-2); border-radius: 4px; font-size: 11px;">
+          <div style="margin-bottom: 4px;"><strong>Data class:</strong> user-privacy</div>
+          <div style="margin-bottom: 4px;"><strong>Retention:</strong> 18 months from last project event</div>
+          <div><strong>Bypass LLM gateway:</strong> yes (privileged)</div>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:12px;"><button class="btn btn-primary">Consent &amp; record</button><button class="btn">Decline</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 31: LiDAR edit -->
+  <div class="view-frame" id="frame-31-lidar">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">31.</span>LiDAR edit canvas</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">PM / MoO</span>
+      <span class="tag tag-altitude">L1–L2</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">After iOS RoomPlan scan, operator reviews + corrects geometry. Annotates fixtures, doors, openings. Output: room schema event into Blackboard. Note: RoomPlan EULA brief in <code>_docs/legal/</code>.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#lidar-edit">kerf_wireframes_v3_apr23.html#lidar-edit</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel">
+        <div class="ui-panel-h"><h3>LiDAR · edit · Coring kitchen</h3><span class="panel-meta">scan: 2026-04-12 · ±4cm</span></div>
+        <div style="display:grid; grid-template-columns: 1fr 220px; gap: 12px;">
+          <div style="height: 280px; background: #0F1419; border:1px solid var(--kerf-border); border-radius:6px; position: relative; overflow:hidden;">
+            <svg viewBox="0 0 400 280" style="width:100%; height:100%;">
+              <rect x="40" y="40" width="320" height="200" stroke="var(--kerf-border)" stroke-width="1" fill="none"/>
+              <rect x="40" y="120" width="80" height="6" fill="var(--ggr)"/>
+              <text x="46" y="115" font-size="9" fill="var(--ggr)">door</text>
+              <rect x="200" y="40" width="60" height="6" fill="var(--warn)"/>
+              <text x="206" y="35" font-size="9" fill="var(--warn)">window</text>
+              <circle cx="200" cy="140" r="6" fill="var(--rh)" />
+              <text x="212" y="143" font-size="9" fill="var(--rh)">fixture A</text>
+              <text x="60" y="260" font-size="10" fill="var(--kerf-text-mute)">12'-3" × 14'-7"</text>
+            </svg>
+          </div>
+          <div style="font-size: 11px;">
+            <div class="ui-panel panel-2" style="padding: 8px 10px; margin-bottom:6px;"><div style="font-weight:600;">Door · west wall</div><div style="font-size:10px; color:var(--kerf-text-dim);">36" · standard</div></div>
+            <div class="ui-panel panel-2" style="padding: 8px 10px; margin-bottom:6px;"><div style="font-weight:600;">Window · north wall</div><div style="font-size:10px; color:var(--kerf-text-dim);">60" × 36"</div></div>
+            <div class="ui-panel panel-2" style="padding: 8px 10px;"><div style="font-weight:600;">Fixture A · pendant</div><div style="font-size:10px; color:var(--kerf-text-dim);">center · 9' AFF</div></div>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px; width:100%;">Save room schema</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 32: Approval authoring -->
+  <div class="view-frame" id="frame-32-approval-authoring">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">32.</span>Approval authoring</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Author a recurring approval policy: who can approve what, under what threshold, with what escalation. Owner-only. Outputs go into the authority profile / permissions matrix.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#approval-authoring">kerf_wireframes_v3_apr23.html#approval-authoring</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel">
+        <div class="ui-panel-h"><h3>Approval policy · author</h3><span class="panel-meta">L3 · owner-only</span></div>
+        <div style="display:flex; flex-direction:column; gap: 10px; max-width: 600px;">
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Domain</div><div class="input-mock filled">Change orders · GGR tenant</div></div>
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">MoO ceiling</div><div class="input-mock filled">$3,000</div></div>
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">PM ceiling</div><div class="input-mock filled">$0 (recommend only)</div></div>
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Escalation chain</div><div class="input-mock filled">PM → MoO → Owner</div></div>
+          <div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-bottom:4px;">Auto-approve threshold (V1.5+)</div><div class="input-mock" style="opacity:0.5;">never · operator must approve all</div></div>
+          <div style="display:flex; gap:6px;"><button class="btn btn-primary">Save policy</button><button class="btn">Test against pending CO</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 33: Co-intake -->
+  <div class="view-frame" id="frame-33-co-intake">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">33.</span>Co-intake (operator + customer)</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Operator + Client</span>
+      <span class="tag tag-role">PM + Client</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">PM and client in same session — typically a kitchen-table walkthrough or a video call. Both can capture; consent applies. Output: a co-authored intake event.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v3_apr23.html#co-intake">kerf_wireframes_v3_apr23.html#co-intake</a></p>
+    <div class="frame-render" style="padding: 22px;">
+      <div class="ui-panel">
+        <div class="ui-panel-h"><h3>Co-intake · session live</h3><span class="panel-meta">PM Mike + Coring</span></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="ui-panel panel-2"><div style="font-weight:600; margin-bottom: 8px;">Mike · PM</div><div style="font-size:11px; color:var(--kerf-text-dim);">Capturing voice memos. 3 in last 20 min. RH transcribing live.</div><div style="margin-top:10px; padding:8px; background:var(--kerf-panel); border-radius:4px; font-size:11px;">"…Coring asked about the marble alternative for the island…"</div></div>
+          <div class="ui-panel panel-2"><div style="font-weight:600; margin-bottom: 8px;">Coring · client</div><div style="font-size:11px; color:var(--kerf-text-dim);">Joined 12 min ago. Consented to recording.</div><div style="margin-top:10px; padding:8px; background:var(--kerf-panel); border-radius:4px; font-size:11px;">Asking questions · tagged 4 photos · approved tile direction</div></div>
+        </div>
+        <div style="margin-top:12px; padding:10px; background: var(--rh-dim); border-radius:4px; font-size:11px; color:var(--kerf-text);">
+          <span style="color:var(--rh); font-weight:600;">Right Hand:</span> "I have enough to draft a CO for the marble vs zellige decision when you wrap. Want me to draft both options and let Coring pick?"
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 5 — Consumer / Client (frames 34-37)                -->
+<!-- ============================================================ -->
+<section class="section" id="sec-5">
+  <div class="section-header">
+    <h2>5 · Consumer / Client</h2>
+    <div class="section-meta">Customer-facing surfaces. Margin <strong>never</strong> visible (CLAUDE §3.2). Light operator-only chrome stripped; design is friendlier than operator surfaces but still recognizably Kerf.</div>
+  </div>
+
+  <!-- Frame 34: Homeowner SMS thread -->
+  <div class="view-frame" id="frame-34-homeowner-sms">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">34.</span>Homeowner SMS thread</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Client</span>
+      <span class="tag tag-role">Client</span>
+      <span class="tag tag-altitude">L0–L1</span>
+      <span class="tag tag-tenant-ggr">GGR (example)</span>
+      <span class="tag tag-i18n">EN/ES</span>
+    </div>
+    <p class="frame-desc">Two-way SMS with the client. Right Hand drafts; operator approves; carrier sends. Operator-side view annotates each message with which RH draft generated it (or "free-text from Mike"). Bilingual auto-detect.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-homeowner">kerf_wireframes_web_v2.html#frame-homeowner</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar">
+        <span class="brand">KERF</span>
+        <span class="topbar-context">SMS · Coring · operator view</span>
+        <span class="topbar-rh"><span class="rh-dot"></span>Right Hand · drafted 2</span>
+        <span class="topbar-user"><span class="avatar">CA</span>Christian</span>
+      </div>
+      <div class="sms" style="display:flex; flex-direction:column;">
+        <div class="msg-row"><div class="msg us">Tile install ready to go once you sign CO-204. Want me to send the e-sign link?</div><div class="msg-meta us">Mike · sent 14:22 · drafted by RH ✓</div></div>
+        <div class="msg-row"><div class="msg them">Yes please. Also — can we change the cabinet pull style?</div><div class="msg-meta">Coring · 14:31</div></div>
+        <div class="msg-row"><div class="msg us">Sure — I'll send a few options tomorrow morning. Cabinet pulls are an allowance line so no upcharge until install.</div><div class="msg-meta us">Mike · sent 14:34 · drafted by RH ✓</div></div>
+        <div class="msg-row"><div class="msg them">Perfect, thanks!</div><div class="msg-meta">Coring · 14:35</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 35: Homeowner e-sig view -->
+  <div class="view-frame" id="frame-35-homeowner-esig">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">35.</span>Homeowner e-signature view</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Client</span>
+      <span class="tag tag-role">Client</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Client-side e-sign for a CO. Friendly summary, scope detail, signature pad. NO margin visible. NO internal cost breakdown. Document version-locked at the moment of send.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_web_v2.html#frame-homeowner-esig">kerf_wireframes_web_v2.html#frame-homeowner-esig</a></p>
+    <div class="frame-render">
+      <div style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 14px 22px; border-bottom: 1px solid var(--kerf-border); display:flex; align-items:center;">
+        <span style="color:var(--kerf-amber); font-weight:700; letter-spacing:0.06em;">GGR</span>
+        <span style="color:var(--kerf-text-dim); margin-left:14px; font-size:12px;">Get Green Remodeling · Coring kitchen project</span>
+      </div>
+      <div style="padding: 22px; max-width: 720px; margin: 0 auto;">
+        <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">Change Order CO-204</h2>
+        <div style="color: var(--kerf-text-dim); font-size: 12px; margin-bottom: 18px;">For your review and signature</div>
+        <div class="ui-panel"><div class="ui-panel-h"><h3>What's changing</h3><span class="panel-meta">$1,840</span></div>
+          <div style="font-size: 12px; line-height: 1.6;">Upgrade backsplash tile from builder-grade subway to handmade zellige (10×10 sf). This includes the additional installation labor for the irregular tile.</div>
+          <div style="margin-top: 14px; padding: 12px; background: var(--kerf-panel-2); border-radius: 4px;">
+            <div style="display:flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;"><span>Tile · 80 sf</span><span>$1,440</span></div>
+            <div style="display:flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;"><span>Installation labor</span><span>$400</span></div>
+            <div style="display:flex; justify-content: space-between; font-size: 13px; font-weight: 600; padding-top:8px; border-top:1px solid var(--kerf-border); margin-top:6px;"><span>Total</span><span>$1,840</span></div>
+          </div>
+        </div>
+        <div class="ui-panel" style="margin-top:14px;">
+          <div style="font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 8px;">Sign here</div>
+          <div style="height: 80px; background: var(--kerf-panel-2); border:1px dashed var(--kerf-border); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--kerf-text-mute); font-size: 11px;">[signature pad]</div>
+          <div style="display:flex; gap:6px; margin-top:10px;"><button class="btn btn-primary">Sign &amp; return</button><button class="btn">Print PDF</button><button class="btn btn-sm btn-ghost">Question?</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 36: Client portal -->
+  <div class="view-frame" id="frame-36-client-portal">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">36.</span>Client portal</h3>
+      <span class="tag tag-status-canon">Canon</span>
+      <span class="tag tag-persona">Client</span>
+      <span class="tag tag-role">Client</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+      <span class="tag tag-i18n">EN/ES</span>
+    </div>
+    <p class="frame-desc">Persistent client surface. Project status, open decisions awaiting their input, document library, payment history (their side only), message thread. Margin never visible. Internal labor rates never visible.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_1_apr26.html#client-portal">kerf_wireframes_v5_1_apr26.html#client-portal</a></p>
+    <div class="frame-render">
+      <div style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 14px 22px; border-bottom: 1px solid var(--kerf-border); display:flex; align-items:center;">
+        <span style="color:var(--kerf-amber); font-weight:700; letter-spacing:0.06em;">GGR</span>
+        <span style="color:var(--kerf-text-dim); margin-left:14px; font-size:12px; flex:1;">Coring kitchen · welcome back</span>
+        <span style="font-size:11px; color: var(--kerf-text-dim);">EN · ES</span>
+      </div>
+      <div style="padding: 22px; display: grid; grid-template-columns: 1fr 280px; gap: 14px;">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="ui-panel"><div class="ui-panel-h"><h3>Where things stand</h3><span class="panel-meta">phase 2 · 41% complete</span></div>
+            <div style="font-size:12px; line-height:1.6; color:var(--kerf-text-dim);">Rough framing wrapped 04-26. Tile install starts 05-12 once you sign CO-204. Cabinet shop confirmed 05-14 delivery. We're on schedule.</div>
+          </div>
+          <div class="ui-panel"><div class="ui-panel-h"><h3>Awaiting you · 1</h3></div>
+            <div style="padding: 10px; background: var(--kerf-panel-2); border-radius:4px; border-left: 3px solid var(--warn);">
+              <div style="font-weight:600; font-size:12px;">CO-204 · zellige backsplash · $1,840</div>
+              <div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Sent 14:22 today. Sign to start tile install.</div>
+              <button class="btn btn-primary btn-sm" style="margin-top:8px;">Open &amp; sign</button>
+            </div>
+          </div>
+        </div>
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3 style="font-size:12px;">Documents</h3></div>
+          <div style="font-size:11px; line-height:1.7;">📄 Original contract · signed 03-15<br>📄 CO-201 · marble island · signed<br>📄 CO-202 · cabinet upgrade · signed<br>📄 CO-204 · zellige · <span style="color:var(--warn)">awaiting</span></div>
+          <div class="ui-panel-h" style="margin-top:14px;"><h3 style="font-size:12px;">Your payments</h3></div>
+          <div style="font-size:11px; line-height:1.7;">$28,920 · deposit · 03-15<br>$28,920 · phase 1 · 04-08</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 37: Client decision view -->
+  <div class="view-frame" id="frame-37-client-decision">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">37.</span>Client decision view</h3>
+      <span class="tag tag-status-aspir">Aspirational V1.5+</span>
+      <span class="tag tag-persona">Client</span>
+      <span class="tag tag-role">Client</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">When operator + Right Hand draft a multiple-choice decision for the client (e.g. "marble vs zellige", "cabinet pull style A/B/C"). Client picks; their selection becomes a Blackboard <code>client_decision</code> event. Operator queue confirms.</p>
+    <p class="frame-source">Source: not yet built. Entity kinds defined for <code>client_decision</code> in W0 schema additions (#7).</p>
+    <div class="frame-render">
+      <div style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 14px 22px; border-bottom: 1px solid var(--kerf-border); display:flex; align-items:center;">
+        <span style="color:var(--kerf-amber); font-weight:700; letter-spacing:0.06em;">GGR</span>
+        <span style="color:var(--kerf-text-dim); margin-left:14px; font-size:12px;">Pick a direction</span>
+      </div>
+      <div style="padding: 22px; max-width: 760px; margin: 0 auto;">
+        <h2 style="font-size: 17px; font-weight: 600; margin-bottom: 6px;">Cabinet pull style</h2>
+        <div style="color: var(--kerf-text-dim); font-size: 12px; margin-bottom: 18px;">Mike says: "no rush — pick by Friday so we can order with the cabinet shop."</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <div class="ui-panel" style="cursor:pointer;"><div style="height:120px; background: linear-gradient(135deg, #2A3642, #1A2632); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--kerf-text-mute); font-size:11px;">[A · brushed brass]</div><div style="font-size:13px; font-weight:600; margin-top:8px;">A · brushed brass</div><div style="font-size:11px; color:var(--kerf-text-dim);">$0 · in allowance</div></div>
+          <div class="ui-panel" style="cursor:pointer; border-color: var(--kerf-amber);"><div style="height:120px; background: linear-gradient(135deg, #3A2632, #2A1622); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--kerf-text-mute); font-size:11px;">[B · matte black]</div><div style="font-size:13px; font-weight:600; margin-top:8px;">B · matte black <span style="color:var(--kerf-amber); font-size:10px;">·  picked</span></div><div style="font-size:11px; color:var(--kerf-text-dim);">$0 · in allowance</div></div>
+          <div class="ui-panel" style="cursor:pointer;"><div style="height:120px; background: linear-gradient(135deg, #2A2A2A, #1A1A1A); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--kerf-text-mute); font-size:11px;">[C · oil-rubbed]</div><div style="font-size:13px; font-weight:600; margin-top:8px;">C · oil-rubbed bronze</div><div style="font-size:11px; color:var(--kerf-text-dim);">+$120 · upcharge</div></div>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:18px;"><button class="btn btn-primary">Confirm B · matte black</button><button class="btn btn-sm btn-ghost">Ask Mike a question</button></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 6 — Ops & Integrations (frames 38-42)               -->
+<!-- ============================================================ -->
+<section class="section" id="sec-6">
+  <div class="section-header">
+    <h2>6 · Ops &amp; Integrations</h2>
+    <div class="section-meta">From v5.1 (Apr 26 PM). Sentry runtime, MCP integrations, guardrails, cost KB, bilingual reference. V1 schemas; V1.5+ runtime gating.</div>
+  </div>
+
+  <!-- Frame 38: Sentry surface -->
+  <div class="view-frame" id="frame-38-sentry">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">38.</span>Sentry surface</h3>
+      <span class="tag tag-status-canon">Canon (V1 schema)</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L2–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Sentry watches Blackboard projections for drift, compliance violations, missed schedule, payment risk. V1 ships the schema (<code>compliance_kb_entry</code>, <code>compliance_event</code>); V1.5+ adds runtime gating; V2.0α adds active blocking.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_1_apr26.html#sentry">kerf_wireframes_v5_1_apr26.html#sentry</a> · <a href="../blackboard/compliance-kb">src/blackboard/compliance-kb</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Sentry · runtime watch</span><span class="topbar-rh" style="color:var(--sentry);"><span class="rh-dot" style="background:var(--sentry);"></span>3 active · 1 med</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="ui-panel" style="border-left: 3px solid var(--sentry);">
+          <div class="ui-panel-h"><h3 style="color:var(--sentry);">Active alerts · 3</h3><span class="panel-meta">last 7d</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--warn);">
+              <div style="display:flex; justify-content:space-between;"><div><strong>Drift · Clem labor +12%</strong></div><div style="font-size:10px; color:var(--kerf-text-dim);">med · 08:55</div></div>
+              <div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Variance trending. 5 of 7 days above plan rate.</div>
+              <div style="margin-top:6px;"><span class="chip sentry">drift</span> <span class="chip">HPG · Clem</span> <span class="chip">L2</span></div>
+            </div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--alert);">
+              <div style="display:flex; justify-content:space-between;"><div><strong>Compliance · Moore A/R 22d aged</strong></div><div style="font-size:10px; color:var(--kerf-text-dim);">policy · 06:14</div></div>
+              <div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Internal A/R policy: escalate at 21d. Right Hand drafted second-notice.</div>
+              <div style="margin-top:6px;"><span class="chip alert">policy</span> <span class="chip">Valle · Moore</span> <span class="chip">L1</span></div>
+            </div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--warn);">
+              <div style="display:flex; justify-content:space-between;"><div><strong>Schedule · Coring tile install at risk</strong></div><div style="font-size:10px; color:var(--kerf-text-dim);">med · yesterday</div></div>
+              <div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">CO-204 unsigned 4 days. Install on 05-12 needs sign-off by 05-08.</div>
+              <div style="margin-top:6px;"><span class="chip sentry">schedule</span> <span class="chip">GGR · Coring</span> <span class="chip">L1</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 39: MCP integrations -->
+  <div class="view-frame" id="frame-39-mcp">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">39.</span>MCP integrations</h3>
+      <span class="tag tag-status-canon">Canon (V1 schema)</span>
+      <span class="tag tag-persona">Operator / Engineer</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">MCP connectors view. Per integration: status, last sync, hosting route check, scope of access. <code>hosting_route_check</code> guard runs before every adapter invocation (CLAUDE invariant). Approved registry starts with <code>groq://llama-70b</code> per D-023.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_1_apr26.html#mcp">kerf_wireframes_v5_1_apr26.html#mcp</a> · <a href="../hosting/routeCheck">src/hosting/routeCheck</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Integrations · MCP</span><span class="topbar-rh" style="color:var(--mcp);"><span class="rh-dot" style="background:var(--mcp);"></span>6 connected · 1 erroring</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="ui-panel" style="border-left: 3px solid var(--mcp);">
+          <div class="ui-panel-h"><h3 style="color:var(--mcp);">Connectors</h3><span class="panel-meta">7 registered · 6 healthy · 1 error</span></div>
+          <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div class="ui-panel panel-2" style="padding: 10px;"><div style="display:flex; justify-content:space-between;"><div><strong>Groq · Llama 70B</strong></div><span class="chip mcp">cheap-fast tier</span></div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">last call: 2 min ago · route check: ok · 142 calls today</div></div>
+            <div class="ui-panel panel-2" style="padding: 10px;"><div style="display:flex; justify-content:space-between;"><div><strong>Claude · frontier</strong></div><span class="chip mcp">via abstraction</span></div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">last call: 14 min ago · route check: ok · 38 calls today</div></div>
+            <div class="ui-panel panel-2" style="padding: 10px;"><div style="display:flex; justify-content:space-between;"><div><strong>QBO Desktop · IIF</strong></div><span class="chip success">healthy</span></div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">platform-side · last sync 3 min · 2,418 entries</div></div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left:2px solid var(--alert);"><div style="display:flex; justify-content:space-between;"><div><strong>QBO Desktop · webhook</strong></div><span class="chip alert">error</span></div><div style="font-size:10.5px; color:var(--alert); margin-top:4px;">07:58 · invoice-2204 sync failed · platform retrying</div></div>
+            <div class="ui-panel panel-2" style="padding: 10px;"><div style="display:flex; justify-content:space-between;"><div><strong>Twilio · SMS</strong></div><span class="chip success">healthy</span></div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">last send: 14:34 · delivery rate 99.2%</div></div>
+            <div class="ui-panel panel-2" style="padding: 10px;"><div style="display:flex; justify-content:space-between;"><div><strong>Gmail · operator outbox</strong></div><span class="chip success">healthy</span></div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">last send: 09:18 · OAuth token: 14d left</div></div>
+            <div class="ui-panel panel-2" style="padding: 10px; opacity: 0.5;"><div style="display:flex; justify-content:space-between;"><div><strong>RoomPlan · iOS</strong></div><span class="chip" style="color:var(--kerf-text-mute)">device-paired</span></div><div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">3 scans pending upload · EULA acknowledged</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 40: Guardrails -->
+  <div class="view-frame" id="frame-40-guardrails">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">40.</span>Guardrails surface</h3>
+      <span class="tag tag-status-canon">Canon (V1 schema)</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Automation guardrails (W0 schema addition #10). For each automation, recent runs and any <code>guardrail_trip</code> events. Trip stops further runs until owner reviews. V1 schema; V1.5+ adds active enforcement UX.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_1_apr26.html#guardrails">kerf_wireframes_v5_1_apr26.html#guardrails</a></p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Guardrails · automation watch</span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Automations</h3><span class="panel-meta">3 active · 0 tripped</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--success);">
+              <div style="display:flex; justify-content:space-between;"><strong>Invoice Follow-up</strong><span class="chip success">healthy</span></div>
+              <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">42 runs · 38 promoted · 4 dismissed · 0 tripped · last: 08:31</div>
+            </div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--success);">
+              <div style="display:flex; justify-content:space-between;"><strong>Drift Detection</strong><span class="chip success">healthy</span></div>
+              <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">14 alerts · 11 acknowledged · 3 false-positive · 0 tripped</div>
+            </div>
+            <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--success);">
+              <div style="display:flex; justify-content:space-between;"><strong>Proposal Follow-up</strong><span class="chip success">healthy</span></div>
+              <div style="font-size:10.5px; color:var(--kerf-text-dim); margin-top:4px;">8 runs · 7 promoted · 1 dismissed · 0 tripped</div>
+            </div>
+          </div>
+          <div style="margin-top:14px; padding: 10px; background: var(--kerf-panel-2); border-radius:4px; font-size: 10.5px; color: var(--kerf-text-dim);">
+            <strong>Trip rule:</strong> if false-positive rate &gt; 30% over rolling 50 events, automation is paused and owner is notified. No autonomous send ever — only the queue surfacing is paused.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 41: Cost KB -->
+  <div class="view-frame" id="frame-41-cost-kb">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">41.</span>Cost KB</h3>
+      <span class="tag tag-status-canon">Canon (V1 schema)</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L2</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Cost knowledge base (W0 schema addition #12). Persistent unit-cost overrides, regional adjustments, vendor history. Right Hand reads from this when drafting. Owner can author overrides via <code>cost_override</code> events.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_1_apr26.html#cost-kb">kerf_wireframes_v5_1_apr26.html#cost-kb</a> · estimating skill in canon (<code>ggr-valle-estimating</code>)</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Cost KB · San Diego · May 2026</span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Unit-cost entries</h3><span class="panel-meta">214 entries · last update 2 days ago</span></div>
+          <div class="filter-row" style="margin-bottom: 10px;">
+            <span class="filter-label">Category:</span><span class="chip">all</span><span class="chip" style="background:var(--kerf-panel-3); color:var(--kerf-text);">tile</span><span class="chip">cabinet</span><span class="chip">labor</span><span class="chip">permit</span>
+            <span class="filter-label" style="margin-left:14px">Region:</span><span class="chip" style="background:var(--kerf-panel-3); color:var(--kerf-text);">San Diego</span>
+          </div>
+          <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap:1px; background: var(--kerf-border); font-size: 10.5px;">
+            <div class="l-cell l-row-h">Item</div>
+            <div class="l-cell l-col-h">Unit</div>
+            <div class="l-cell l-col-h">$ default</div>
+            <div class="l-cell l-col-h">$ override</div>
+            <div class="l-cell l-col-h">Source</div>
+
+            <div class="l-cell">Subway tile · builder</div><div class="l-cell">sf</div><div class="l-cell">$8</div><div class="l-cell" style="color:var(--kerf-text-dim);">—</div><div class="l-cell" style="color:var(--kerf-text-dim);">RSMeans</div>
+            <div class="l-cell">Zellige tile · handmade</div><div class="l-cell">sf</div><div class="l-cell">$22</div><div class="l-cell" style="color:var(--kerf-amber);">$18</div><div class="l-cell" style="color:var(--kerf-amber);">Acme · 04-22</div>
+            <div class="l-cell">Tile install · standard</div><div class="l-cell">hr</div><div class="l-cell">$48</div><div class="l-cell" style="color:var(--kerf-text-dim);">—</div><div class="l-cell" style="color:var(--kerf-text-dim);">historical</div>
+            <div class="l-cell">Tile install · zellige</div><div class="l-cell">hr</div><div class="l-cell">$58</div><div class="l-cell" style="color:var(--kerf-amber);">$60</div><div class="l-cell" style="color:var(--kerf-amber);">CO-201 · 04-08</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 42: Bilingual reference -->
+  <div class="view-frame" id="frame-42-bilingual">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">42.</span>Bilingual EN / ES reference</h3>
+      <span class="tag tag-status-canon">Canon (V1 i18n)</span>
+      <span class="tag tag-persona">All</span>
+      <span class="tag tag-role">All</span>
+      <span class="tag tag-altitude">All</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+      <span class="tag tag-i18n">EN/ES enforced</span>
+    </div>
+    <p class="frame-desc">Side-by-side EN / ES rendering of the same surfaces. CLAUDE §3.6: every render-to-user string is an <code>I18nKey</code>; TypeScript refuses to compile if EN/ES drift. User-entered data is NOT i18n. Spanish UI ships in production with V2.1.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_1_apr26.html#bilingual">kerf_wireframes_v5_1_apr26.html#bilingual</a> · <a href="../i18n/keys">src/i18n/keys</a></p>
+    <div class="frame-render">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 22px;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--kerf-text-dim); margin-bottom:8px;">English</div>
+          <div class="dc rh-driven confidence-hi"><div class="dc-h"><div class="dc-title">Approve $1,840 backsplash change-order</div><div class="dc-meta">14 min · L2</div></div><div class="dc-summary">Right Hand drafted CO-204. 3 sources. In ceiling.</div><div class="dc-actions"><button class="btn btn-primary rh">Approve &amp; send</button><button class="btn btn-sm btn-ghost">Defer</button></div></div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--kerf-text-dim); margin-bottom:8px;">Español</div>
+          <div class="dc rh-driven confidence-hi"><div class="dc-h"><div class="dc-title">Aprobar orden de cambio de azulejo · $1,840</div><div class="dc-meta">14 min · L2</div></div><div class="dc-summary">Mano Derecha redactó OC-204. 3 fuentes. Dentro del límite.</div><div class="dc-actions"><button class="btn btn-primary rh">Aprobar y enviar</button><button class="btn btn-sm btn-ghost">Aplazar</button></div></div>
+        </div>
+      </div>
+      <div style="padding: 0 22px 22px; font-size: 10.5px; color: var(--kerf-text-mute);">
+        Same <code>I18nKey</code>s drive both renders. Field crews default to ES; office defaults to EN; topbar toggle persists per-actor.
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 7 — Aspirational V1.5+ / V2.x (frames 43-50)        -->
+<!-- ============================================================ -->
+<section class="section" id="sec-7">
+  <div class="section-header">
+    <h2>7 · Aspirational V1.5+ / V2.x</h2>
+    <div class="section-meta">Surfaces from the roadmap that are <strong>not yet built</strong>. Documented here so engineering and design can target them. Each frame names the unlock criteria.</div>
+  </div>
+
+  <!-- Frame 43: Permissions matrix UI -->
+  <div class="view-frame" id="frame-43-permissions-matrix">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">43.</span>Permissions matrix UI · Policy store</h3>
+      <span class="tag tag-status-aspir">V1.5+</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">V1: matrix is in code (<code>matrix.ts</code>). V1.5+: matrix moves into a Policy store editable by owner. UI: edit cells, propose changes, see audit trail of policy edits. CLAUDE §3.7 — until then the file is the law.</p>
+    <p class="frame-source">Source: not yet built. Spec follows the v4 lattice format.</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Policy store · permissions · DRAFT</span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="banner future" style="margin-bottom:14px;"><span class="status-dot future"></span>V1.5+ · Policy store edit mode. Changes propose-only, require owner sign-off, fully audited.</div>
+        <div class="ui-panel">
+          <div class="ui-panel-h"><h3>Edit · MoO ceiling</h3><span class="panel-meta">draft policy v0.4</span></div>
+          <div style="font-size: 11px; line-height: 1.7;">
+            Current: <code>OWNER_MONEY_CEILING_CENTS = 200_000</code> ($2,000)<br>
+            MoO: <code>$3,000</code> · proposed: <code>$5,000</code><br><br>
+            <strong>Justification (required):</strong>
+            <div class="input-mock filled" style="min-height: 50px; margin-top:4px;">Sara has handled 62 approvals in last 30d, 0 rejected by owner. Bumping ceiling reduces escalation count.</div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:10px;"><button class="btn btn-primary">Propose · sign required</button><button class="btn">Cancel</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 44: Audit log explorer -->
+  <div class="view-frame" id="frame-44-audit-explorer">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">44.</span>Audit log explorer (durable)</h3>
+      <span class="tag tag-status-aspir">V1.5+</span>
+      <span class="tag tag-persona">Operator / Auditor</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L3–L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">V1: read audit log is in-memory. V1.5+: durable store. UI: query the read-audit log to answer "who saw what when." Forensic for SOC 2 / customer audit / dispute resolution.</p>
+    <p class="frame-source">Source: not yet built. Primitives in <a href="../audit/readLog">src/audit/readLog</a>.</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Audit · read log · durable</span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="banner future"><span class="status-dot future"></span>V1.5+ · durable audit log. 18-month retention. Privileged events shown but content redacted unless owner unlocks.</div>
+        <div class="ui-panel" style="margin-top:14px;">
+          <div class="ui-panel-h"><h3>Query · "who saw CO-204 before approval"</h3><span class="panel-meta">3 results</span></div>
+          <div style="font-family: ui-monospace, monospace; font-size: 10.5px; line-height: 1.8;">
+            <div><span style="color:var(--kerf-text-mute);">10:08:14</span> Sara · MoO · read · projection=decisions · target=CO-204 · summary-only</div>
+            <div><span style="color:var(--kerf-text-mute);">14:18:02</span> Christian · Owner · read · projection=decisions · target=CO-204 · full</div>
+            <div><span style="color:var(--kerf-text-mute);">14:21:47</span> Christian · Owner · read · projection=decisions · target=CO-204 · audit-detail</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 45: KMS tenant key wrapper -->
+  <div class="view-frame" id="frame-45-kms">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">45.</span>KMS tenant key wrapper · admin</h3>
+      <span class="tag tag-status-aspir">V2.0α</span>
+      <span class="tag tag-persona">Engineer</span>
+      <span class="tag tag-role">Owner / engineer</span>
+      <span class="tag tag-altitude">L4</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">V1: tenant key wrap is a stub (<code>src/tenant/keys</code>). V2.0α: real KMS-backed wrapper for operator-private writes. UI: rotate keys, view wrap/unwrap call audit, monitor latency.</p>
+    <p class="frame-source">Source: not yet built. Stub at <a href="../tenant/keys">src/tenant/keys</a>.</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Tenant keys · KMS · V2.0α</span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="banner future" style="margin-bottom:14px;"><span class="status-dot future"></span>V2.0α · single-file swap from stub. Wraps operator-private writes. Privileged events bypass LLM gateway entirely.</div>
+        <div class="ui-panel"><div class="ui-panel-h"><h3>Tenant keys · 3 active</h3><span class="panel-meta">last rotation 90d ago</span></div>
+          <div style="font-size: 11px; line-height: 1.7;">
+            <div><span class="status-dot success"></span><strong>GGR</strong> · key v3 · rotated 2026-02-04 · 14,218 wrap calls</div>
+            <div><span class="status-dot success"></span><strong>Valle</strong> · key v3 · rotated 2026-02-04 · 8,402 wrap calls</div>
+            <div><span class="status-dot success"></span><strong>HPG</strong> · key v3 · rotated 2026-02-04 · 4,118 wrap calls</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 46: Mood board -->
+  <div class="view-frame" id="frame-46-mood-board">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">46.</span>Mood board / client share</h3>
+      <span class="tag tag-status-aspir">V1.5+ (W3)</span>
+      <span class="tag tag-persona">Client + Operator</span>
+      <span class="tag tag-role">Client / PM</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Client-share entity (W0 schema addition #7: <code>mood_board</code>, <code>client_share</code>, <code>design_revision</code>). Pinterest-style canvas of design refs the operator pushes to the client. Client can like/dislike/comment.</p>
+    <p class="frame-source">Source: not yet built. Schema in <code>client_share</code> entity kinds.</p>
+    <div class="frame-render">
+      <div style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 14px 22px; border-bottom: 1px solid var(--kerf-border); display:flex; align-items:center;"><span style="color:var(--kerf-amber); font-weight:700;">GGR</span><span style="color:var(--kerf-text-dim); margin-left:14px; font-size:12px;">Mood board · Coring kitchen · v3</span></div>
+      <div style="padding: 22px;">
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          <div class="ui-panel" style="padding: 6px;"><div style="height:120px; background: linear-gradient(135deg, #C9A876, #6B5938); border-radius:4px;"></div><div style="font-size:11px; padding: 4px 2px;">zellige · option B</div></div>
+          <div class="ui-panel" style="padding: 6px;"><div style="height:120px; background: linear-gradient(135deg, #2A3642, #1A2632); border-radius:4px;"></div><div style="font-size:11px; padding: 4px 2px;">cabinet pulls · matte</div></div>
+          <div class="ui-panel" style="padding: 6px;"><div style="height:120px; background: linear-gradient(135deg, #4A7FB0, #1B3A5C); border-radius:4px;"></div><div style="font-size:11px; padding: 4px 2px;">island marble</div></div>
+          <div class="ui-panel" style="padding: 6px;"><div style="height:120px; background: linear-gradient(135deg, #5FB37A, #1B5C3A); border-radius:4px;"></div><div style="font-size:11px; padding: 4px 2px;">backsplash · alt</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 47: Drift detection center -->
+  <div class="view-frame" id="frame-47-drift-center">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">47.</span>Drift detection alert center</h3>
+      <span class="tag tag-status-aspir">V1.5+ (W3)</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L2–L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">All drift across all projects in one view. Filter by tenant / severity / domain. Click in for variance breakdown. Drift workflow lands W3 pure + Policy Gate wired; this is the operator UI for it.</p>
+    <p class="frame-source">Source: not yet built. Workflow at <a href="../workflows/drift-detection">src/workflows/drift-detection</a>.</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Drift · across all projects</span><span class="topbar-rh" style="color:var(--alert);"><span class="rh-dot" style="background:var(--alert);"></span>3 high · 5 med · 2 low</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div class="filter-row" style="margin-bottom:10px;"><span class="filter-label">Severity:</span><span class="chip alert">high</span><span class="chip warn">med</span><span class="chip">low</span><span class="filter-label" style="margin-left:14px">Domain:</span><span class="chip">labor</span><span class="chip">material</span><span class="chip">schedule</span><span class="chip">A/R</span></div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--alert);"><div style="display:flex; justify-content:space-between;"><strong>Clem · labor +18% (rolling 7d)</strong><span class="chip alert">high</span></div></div>
+          <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--alert);"><div style="display:flex; justify-content:space-between;"><strong>Moore · A/R 22d aged ($14,200)</strong><span class="chip alert">high</span></div></div>
+          <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--alert);"><div style="display:flex; justify-content:space-between;"><strong>Coring · tile install at risk (4d unsigned)</strong><span class="chip alert">high</span></div></div>
+          <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--warn);"><div style="display:flex; justify-content:space-between;"><strong>Smith · material variance +9% on cabinets</strong><span class="chip warn">med</span></div></div>
+          <div class="ui-panel panel-2" style="padding: 10px; border-left: 3px solid var(--warn);"><div style="display:flex; justify-content:space-between;"><strong>Patel · schedule slip 3d on rough plumbing</strong><span class="chip warn">med</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 48: Spanish UI production -->
+  <div class="view-frame" id="frame-48-spanish-ui">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">48.</span>Spanish UI · production</h3>
+      <span class="tag tag-status-aspir">V2.1</span>
+      <span class="tag tag-persona">Field</span>
+      <span class="tag tag-role">Field / Sub</span>
+      <span class="tag tag-altitude">L0–L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+      <span class="tag tag-i18n">ES default</span>
+    </div>
+    <p class="frame-desc">Spanish-default UI for crews. V1: i18n parity enforced at compile time, Spanish UI accessible via toggle. V2.1 Paid Beta: Spanish ships as a first-class production locale. Mano Derecha is the canonical name; Right Hand is the EN translation.</p>
+    <p class="frame-source">Source: <a href="kerf_wireframes_v5_1_apr26.html#bilingual">kerf_wireframes_v5_1_apr26.html#bilingual</a> · production rollout V2.1</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Decisiones · todos los proyectos</span><span class="topbar-rh"><span class="rh-dot"></span>Mano Derecha · activa</span><span class="topbar-user"><span class="avatar">JL</span>José</span></div>
+      <div style="padding: 18px 22px;">
+        <div class="dc rh-driven confidence-hi">
+          <div class="dc-h"><div class="dc-title">Aprobar orden de cambio de azulejo · $1,840 · cocina Coring</div><div class="dc-meta">hace 14 min · <span class="dc-altitude">L2</span></div></div>
+          <div class="dc-summary">Mano Derecha redactó OC-204 desde la nota de voz + cotización. Dentro del límite del propietario.</div>
+          <div class="dc-row"><span class="status-dot success"></span><span style="color:var(--success)">Confianza alta</span><span class="dc-source-count">3 fuentes</span></div>
+          <div class="dc-actions"><button class="btn btn-primary rh">Aprobar y enviar</button><button class="btn">Abrir</button><button class="btn btn-sm btn-ghost">Aplazar</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 49: Plays library / templates -->
+  <div class="view-frame" id="frame-49-plays-library">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">49.</span>Plays library · templates</h3>
+      <span class="tag tag-status-aspir">V2.0+</span>
+      <span class="tag tag-persona">Operator</span>
+      <span class="tag tag-role">Owner / MoO</span>
+      <span class="tag tag-altitude">L3</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-desc">Marketplace of pre-canned Plays for common contractor workflows. Owner installs, customizes, runs. Each play is composable from V1 primitives. Architecture principle 5 (Plays).</p>
+    <p class="frame-source">Source: not yet built. Authoring UI exists in v2 (frame 14).</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Plays · library</span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · idle</span><span class="topbar-user"><span class="avatar">CA</span>Christian</span></div>
+      <div style="padding: 22px;">
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div class="ui-panel"><div style="font-weight:600; font-size:13px;">Invoice Follow-up</div><div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Detect aged A/R, draft second-notice, surface for approval.</div><div style="margin-top:8px;"><span class="chip success">installed</span> <span class="chip">5 steps</span></div></div>
+          <div class="ui-panel"><div style="font-weight:600; font-size:13px;">Drift Detection</div><div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Watch projections for variance &gt; threshold. Alert &amp; suggest action.</div><div style="margin-top:8px;"><span class="chip success">installed</span> <span class="chip">7 steps</span></div></div>
+          <div class="ui-panel"><div style="font-weight:600; font-size:13px;">Permit Pull</div><div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Track permit application → pull → inspection. Surface blockers.</div><div style="margin-top:8px;"><span class="chip">install</span></div></div>
+          <div class="ui-panel"><div style="font-weight:600; font-size:13px;">Sub Onboarding</div><div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">W-9 · COI · safety briefing. Auto-track docs.</div><div style="margin-top:8px;"><span class="chip">install</span></div></div>
+          <div class="ui-panel"><div style="font-weight:600; font-size:13px;">Punch List Close</div><div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Final-walk capture, item triage, close-out comms.</div><div style="margin-top:8px;"><span class="chip">install</span></div></div>
+          <div class="ui-panel"><div style="font-weight:600; font-size:13px;">Warranty Intake</div><div style="font-size:11px; color:var(--kerf-text-dim); margin-top:4px;">Post-close. Triage homeowner warranty calls into work orders.</div><div style="margin-top:8px;"><span class="chip">install</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 50: Demo Spine — Decision Card MVP -->
+  <div class="view-frame" id="frame-50-demo-spine">
+    <div class="frame-meta">
+      <h3 class="frame-title"><span class="num">50.</span>Demo Spine · single-tenant MVP</h3>
+      <span class="tag tag-status-aspir">Track B · per D-024</span>
+      <span class="tag tag-persona">Demo / Investor</span>
+      <span class="tag tag-role">Owner</span>
+      <span class="tag tag-altitude">L1–L2</span>
+      <span class="tag tag-tenant-ggr">GGR (single tenant)</span>
+    </div>
+    <p class="frame-desc">Demo Spine pulled forward May 1 (D-024). Single-tenant Standard UI MVP through July 13, 2026 kill-switch. Decision Queue + Decision Card + field signal capture (voice + photo) + Estimator agent core. Six non-bypassable safety guardrails apply: validator wall, audit on approval, no autonomous send, no elevated demo user, real types, no money write from UI.</p>
+    <p class="frame-source">Source: <code>_docs/decisions/D-024-demo-spine-pull-forward.md</code> (kerf-cos)</p>
+    <div class="frame-render">
+      <div class="ui-topbar"><span class="brand">KERF</span><span class="topbar-context">Demo · single-tenant · <span class="ctx-tenant" style="color:var(--ggr)">GGR</span></span><span class="topbar-rh"><span class="rh-dot"></span>Right Hand · drafting 2</span><span class="topbar-user"><span class="avatar">D</span>Demo</span></div>
+      <div style="padding: 18px 22px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="banner rh"><span class="status-dot rh"></span>Demo Spine · Track B · clean components, real types, proper test coverage. Not throwaway.</div>
+        <div class="dc rh-driven confidence-hi">
+          <div class="dc-h"><div class="dc-title">Approve $1,840 backsplash CO · Coring</div><div class="dc-meta">L2</div></div>
+          <div class="dc-summary">Right Hand drafted from voice memo + GC quote. Within owner ceiling.</div>
+          <div class="dc-actions"><button class="btn btn-primary rh">Approve</button><button class="btn">Open detail</button></div>
+        </div>
+        <div style="font-size: 10.5px; color: var(--kerf-text-dim); padding: 8px 14px; background: var(--kerf-panel-2); border-radius: 4px;">
+          <strong>Six demo guardrails:</strong>
+          1. Validator wall intact ·
+          2. Audit on approval ·
+          3. No autonomous send ·
+          4. No elevated demo user ·
+          5. Real types (not mocks) ·
+          6. No money write from UI (Platform-side only)
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</div>
+
+<div class="footer">
+  Kerf · App Views Master · v0.1 · 2026-05-03 · Synthesis navigator over canon (kerf-cos) and W1 demo (src/examples) ·
+  <a href="README.md">README</a> · <a href="notes.md">notes</a>
+</div>
+
+</body>
+</html>
