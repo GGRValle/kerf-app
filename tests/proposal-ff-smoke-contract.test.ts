@@ -28,3 +28,25 @@ test('proposal-ff-smoke source has no fetch() and no Platform client', () => {
   assert.equal(/\bfetch\s*\(/.test(src), false);
   assert.equal(/createStubPlatformClient|contracts\/platform/.test(src), false);
 });
+
+test('acceptance ledger keeps proposal FF proof packet and golden JSON path references', () => {
+  const md = readFileSync(new URL('../src/examples/W1_ACCEPTANCE_EVIDENCE.md', import.meta.url), 'utf8');
+
+  assert.match(md, /2026-05-03-proposal-ff\/PROOF_PACKET\.md/);
+  assert.match(md, /ff-proposal-smoke\/proposal-ff-smoke-proof\.json/);
+});
+
+test('ff proposal-first roadmap keeps proposal FF proof packet path reference', () => {
+  const md = readFileSync(new URL('../docs/ff_proposal_first_roadmap.md', import.meta.url), 'utf8');
+
+  assert.match(md, /2026-05-03-proposal-ff\/PROOF_PACKET\.md/);
+});
+
+test('proposal FF proof packet links golden JSON under ff-proposal-smoke', () => {
+  const md = readFileSync(
+    new URL('../src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(md, /ff-proposal-smoke\/proposal-ff-smoke-proof\.json/);
+});
