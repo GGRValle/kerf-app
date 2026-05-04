@@ -8,6 +8,19 @@ of work. Goal: make the proposal review/follow-up loop usable for
 Friends-and-Family demos and first paying-tenant conversations before
 expanding breadth into invoice polish, drift polish, or new workflows.
 
+## Operating cadence (F&F calendar)
+
+Lightweight daily rhythm so the proposal loop stays shippable without mixing
+**dispatch**, **demo readiness**, and **merge / evidence lock** in one block:
+
+| Slice | Intent |
+|---|---|
+| **Morning — dispatch** | Pick what ships today: scope, branch name, reviewer ask, and any async unblockers (no deep demo polish here). |
+| **Afternoon — demo readiness** | Runbook + browser: `npm run demo:w1-queue`, queue walk, proposal path, screenshot checklist in [`src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md`](../src/examples/evidence/2026-05-03-proposal-ff/PROOF_PACKET.md) §8.1, `npm run smoke:proposal-ff` when the harness slice is in play. |
+| **Night — merge / evidence lock** | Small PRs merge on green gates; re-`tee` or refresh proof artifacts when the contract changes; treat evidence as **locked for the day** after merge so the morning slice starts from a clean `main`. |
+
+W1 Monday-demo prep detail stays in [`docs/w1_close_note.md`](./w1_close_note.md); this table is the **F&F** operating clock only.
+
 ## Current state
 
 - One Policy Gate. One audit chain. One UI surface.
