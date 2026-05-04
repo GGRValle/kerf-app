@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Capture date | 2026-05-03 (draft ledger) |
-| Main SHA (branch tip at draft) | [`3870ec2`](https://github.com/GGRValle/kerf-app/commit/3870ec2) — `test(examples): golden proof contract for proposal-ff JSONL smoke (#86)` |
+| Main SHA (readiness review) | [`4c9bece`](https://github.com/GGRValle/kerf-app/commit/4c9bece) — `fix(demo): align W1 skeleton and error states (#90)` |
 | Scope | **Proposal loop only** — JSONL durability smoke + browser click script placeholders + screenshot placeholders |
 | Prepared by | Kerf evidence/docs track |
 | Source-of-truth docs | [`src/examples/README.md`](../../README.md) (runbook) · [`src/examples/W1_ACCEPTANCE_EVIDENCE.md`](../../W1_ACCEPTANCE_EVIDENCE.md) (ledger) · [`docs/ff_proposal_first_roadmap.md`](../../../docs/ff_proposal_first_roadmap.md) |
@@ -18,7 +18,8 @@ This packet is the **Friends-and-Family proposal-first** companion to the frozen
 2. **Golden contract** — committed JSON under `src/examples/evidence/ff-proposal-smoke/` is the regression anchor for that proof shape.
 3. **Approve / reject audit chains** — event kinds through `proposal_followup.approval_requested` into `decision.resolved` and the matching workflow terminal (`proposal_followup.approved` or `proposal_followup.rejected`).
 4. **Durability** — the same proof reports `durability: "ok"` after closing and reopening the JSONL `EventLog` session (see `src/examples/proposal-ff-smoke.ts`).
-5. **Browser evidence (placeholders)** — operator captures screenshots and follows the click script below; paths are markdown-only until assets exist.
+5. **Browser evidence (screenshots pending)** — operator follows §7–§8.1 and
+   the runbook; `screenshots/*.png` paths are markdown-only until files exist.
 
 ---
 
@@ -37,7 +38,12 @@ git diff --check
 git rev-parse --short HEAD
 ```
 
-**Captured note:** `smoke_output.txt` was generated with `npm run smoke:proposal-ff` on the verification machine. The `jsonl_path` is ephemeral; the proof fields (`approve_chain`, `reject_chain`, `total_events_after_reopen`, `durability`) match the committed golden file in §3.2.
+**Smoke capture:** [`smoke_output.txt`](./smoke_output.txt) records one successful
+`npm run smoke:proposal-ff` run. Lines 1–3 are the npm script banner; the JSON
+body includes a machine-specific `jsonl_path` under `/var/folders/…/T/`. Proof
+fields (`approve_chain`, `reject_chain`, `total_events_after_reopen`,
+`durability`) match the golden file in §3.2. Re-`tee` when the harness contract
+changes or you need a fresh temp path for external audit.
 
 ---
 
@@ -49,11 +55,12 @@ The harness prints a single pretty-printed JSON object to stdout. Captured draft
 
 [`smoke_output.txt`](./smoke_output.txt)
 
-**Excerpt (proof fields; `jsonl_path` is per-run):**
+**Excerpt (proof fields; see committed file for full stdout including
+`jsonl_path`):**
 
 ```json
 {
-  "jsonl_path": "<ephemeral temp path from smoke_output.txt>",
+  "jsonl_path": "…/T/kerf-proposal-ff-smoke-…/events.jsonl",
   "proof_version": 1,
   "total_events_after_reopen": 10,
   "approve_chain": [
@@ -146,12 +153,12 @@ After both flows write to a temp JSONL file, the harness closes the log, reopens
 
 Runbook entry point remains [`src/examples/README.md`](../../README.md). For F&F proposal evidence, capture **in order**:
 
-1. **Proposal filter** — `[PLACEHOLDER]` Open W1 queue demo HTML from built bundle; select **Proposal** filter; note four eligible proposal cards and proposal-first ordering vs **All**.
-2. **Proposal detail panel** — `[PLACEHOLDER]` Click a seeded proposal card; confirm detail / review panel opens with drafted follow-up in context.
-3. **Approve** — `[PLACEHOLDER]` Use **Approve** on one proposal card (or panel); confirm action log verb and any in-demo persistence behavior per runbook.
-4. **Edit** — `[PLACEHOLDER]` Use **Edit** (if shown); confirm inline edit path and log entry shape.
-5. **Reject** — `[PLACEHOLDER]` Use **Reject** with a short reason; confirm reason form and log entry.
-6. **Action log** — `[PLACEHOLDER]` Scroll action log rail; capture entries showing workflow-aware verbs for proposal (`approve` / `reject` / `edit` as applicable).
+1. **Proposal filter** — `[PLACEHOLDER]` Open W1 queue demo HTML from built bundle; click **All**, then **Proposal**; confirm four seeded `proposal_followup` rows (same 12-card fixture; proposals list first on **All** per runbook).
+2. **Proposal detail panel** — `[PLACEHOLDER]` Click a tinted proposal card; confirm the right **proposal detail** panel opens with drafted follow-up and the same Approve / Edit / Reject footer as the card.
+3. **Approve** — `[PLACEHOLDER]` Use **Approve** on one proposal card or detail footer; confirm `approve …` in **ACTION LOG** per runbook.
+4. **Edit** — `[PLACEHOLDER]` Use **Edit** on another proposal row (or after **Reset demo**); confirm `edit …` in **ACTION LOG** (demo logs immediately; no separate editor modal).
+5. **Reject** — `[PLACEHOLDER]` Use **Reject**, complete **Reject reason**, **Submit**; confirm `reject …` in **ACTION LOG**.
+6. **Action log** — `[PLACEHOLDER]` Scroll **ACTION LOG** without **Clear log** so multiple proposal verbs are visible together when needed.
 
 **Per-shot browser steps:** see §8.1 (maps each `screenshots/*.png` to clicks in order).
 
@@ -181,7 +188,7 @@ Per-shot detail for §7: use the same ordering as S1→S6 when rehearsing.
 | S1 | ![Proposal filter — Proposal tab selected](screenshots/01-proposal-filter.png) |
 | S2 | ![Proposal detail / review panel open](screenshots/02-proposal-detail-panel.png) |
 | S3 | ![Approve path — card or panel + action log tail](screenshots/03-proposal-approve.png) |
-| S4 | ![Edit path — draft edit surface + action log](screenshots/04-proposal-edit.png) |
+| S4 | ![Edit path — detail or card + `edit` line in action log](screenshots/04-proposal-edit.png) |
 | S5 | ![Reject path — reason form submitted + action log](screenshots/05-proposal-reject.png) |
 | S6 | ![Action log — proposal verbs highlighted](screenshots/06-proposal-action-log.png) |
 
@@ -207,8 +214,8 @@ Per-shot detail for §7: use the same ordering as S1→S6 when rehearsing.
 
 | | |
 |---|---|
-| **Status** | Draft — smoke output captured; screenshots pending under §8 |
-| **Next** | Operator runs full gate in §2 and attaches real `jsonl_path` + browser captures |
+| **Status** | **Ready for screenshot capture** — JSONL smoke stdout is committed (`smoke_output.txt`); golden contract in §3.2; browser steps in §7–§8.1 match the current W1 demo runbook (`README.md` §Click script steps 14–19). |
+| **Next** | Operator adds `screenshots/*.png` under §8 and (optionally) re-runs §2 to refresh `smoke_output.txt` when the harness changes. Distribution lock still waits on hosted demo + cross-restart persistence per roadmap. |
 
 ---
 
