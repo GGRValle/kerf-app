@@ -395,6 +395,24 @@ test('renderDecisionCardViewHtml has no inline script handlers', () => {
   assert.doesNotMatch(html, /javascript:/i);
 });
 
+test('renderDecisionCardViewHtml keeps learning signals inside the collapsed audit details panel', () => {
+  const html = renderDecisionCardViewHtml(buildDecisionCardViewModel(invoiceDecisionPacketFixture));
+  const opIdx = html.indexOf('class="kerf-section kerf-operator-summary');
+  const detailsOpenIdx = html.indexOf('<details class="kerf-section kerf-audit-details"');
+  const learnIdx = html.indexOf('kerf-learning-signals');
+
+  assert.ok(opIdx !== -1 && detailsOpenIdx !== -1);
+  assert.ok(opIdx < detailsOpenIdx, 'operator summary must render before audit disclosure');
+
+  assert.ok(learnIdx !== -1, 'invoice fixture is expected to surface learning signals for this guard');
+  assert.ok(
+    detailsOpenIdx < learnIdx,
+    'learning signals must not render ahead of the audit <details> element',
+  );
+  const detailsCloseIdx = html.indexOf('</details>', detailsOpenIdx);
+  assert.ok(detailsCloseIdx !== -1 && learnIdx < detailsCloseIdx, 'learning signals must stay inside audit details');
+});
+
 test('escapeHtml neutralizes HTML-sensitive characters directly', () => {
   assert.equal(escapeHtml(`<tag attr="x">O'Hara & Sons</tag>`), '&lt;tag attr=&quot;x&quot;&gt;O&#39;Hara &amp; Sons&lt;/tag&gt;');
 });

@@ -78,7 +78,7 @@ type DemoQueueFilter =
 const QUEUE_OPTIONS = {
   title: 'Kerf Decision Queue',
   subtitle:
-    'Seeded read surface · 12 cards (4 proposals, 4 invoices, 4 drift). Proposals first in All; Proposal filter is the four seeded proposal rows; other filters subset the same fixture.',
+    'Proposal-first: tinted cards are the four seeded proposals — click one to open the review panel. Seeded read surface · 12 cards (4 proposals, 4 invoices, 4 drift). Proposal filter is the four seeded proposal rows; other filters subset the same fixture.',
 } as const;
 
 /** Copy surfaced when a queue filter matches zero cards (bundle / tests grep these). */
@@ -183,12 +183,13 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
     : '';
 
   const artifactSection = view.artifactPreview !== null && view.artifactPreview.length > 0
-    ? `<section class="kerf-section kerf-artifact" aria-label="Drafted follow-up">
-    <h3>Drafted follow-up</h3>
+    ? `<section class="kerf-section kerf-artifact" aria-label="Drafted client follow-up">
+    <h3>Drafted client follow-up</h3>
+    <p class="kerf-meta kerf-w1-proposal-artifact-note">What would go to the client after you approve — demo copy only; nothing is sent.</p>
     <pre class="kerf-artifact-pre">${escapeHtml(view.artifactPreview)}</pre>
   </section>`
-    : `<section class="kerf-section" aria-label="Drafted follow-up">
-    <h3>Drafted follow-up</h3>
+    : `<section class="kerf-section" aria-label="Drafted client follow-up">
+    <h3>Drafted client follow-up</h3>
     <p class="kerf-muted">No draft body on this packet.</p>
   </section>`;
 
@@ -203,10 +204,15 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
 
   return `<div class="kerf-w1-proposal-detail-inner">
   <header class="kerf-w1-proposal-detail-head">
+    <p class="kerf-w1-proposal-demo-eyebrow" role="note">Proposal follow-up · review before send</p>
     <h2 class="kerf-title">${escapeHtml(view.title)}</h2>
     <p class="kerf-subtitle">${escapeHtml(view.subtitle)}</p>
     ${amountLine}
   </header>
+
+  <p class="kerf-w1-proposal-demo-banner" role="note">
+    <strong>Same actions as the card.</strong> Approve, Edit, or Reject here updates the action log the same way as the queue card footer.
+  </p>
 
   <section class="kerf-section kerf-operator-summary ${toneClass}" aria-label="Operator summary">
     <h3>Next step</h3>
@@ -251,8 +257,8 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
 
 function renderNonWorkflowDetailPlaceholder(): string {
   return `<div class="kerf-w1-proposal-detail-placeholder">
-  <p class="kerf-muted">Detail review for this workflow is not wired in this demo yet.</p>
-  <p class="kerf-meta">Select a proposal card for the full review panel.</p>
+  <p class="kerf-muted">This side panel is for proposal follow-up only in this demo.</p>
+  <p class="kerf-meta">Pick a tinted proposal card in the queue, or switch to <strong>All</strong> / <strong>Proposal</strong> and select a proposal row.</p>
 </div>`;
 }
 
@@ -264,8 +270,8 @@ function renderEmptyDetailPlaceholder(): string {
 
 function renderNoProposalInViewPlaceholder(): string {
   return `<div class="kerf-w1-proposal-detail-placeholder">
-  <p class="kerf-muted">No proposal cards in this view.</p>
-  <p class="kerf-meta">Switch to All or Proposal to open the review panel.</p>
+  <p class="kerf-muted">No proposal cards match this filter.</p>
+  <p class="kerf-meta">Choose <strong>All</strong> (proposals listed first) or <strong>Proposal</strong> (four seeded rows) to load the proposal review panel.</p>
 </div>`;
 }
 
