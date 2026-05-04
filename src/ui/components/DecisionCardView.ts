@@ -148,7 +148,7 @@ export function renderDecisionCardViewHtml(view: DecisionCardViewModel): string 
   </header>
 
   <section class="kerf-section kerf-operator-summary ${operatorSummaryToneClass(view.operatorSummary.tone)}" aria-label="Operator summary">
-    <h3>Next step</h3>
+    <h3>The One Thing</h3>
     <p class="kerf-operator-summary-headline">${escapeHtml(view.operatorSummary.headline)}</p>
     <p class="kerf-operator-summary-detail">${escapeHtml(view.operatorSummary.detail)}</p>
   </section>
