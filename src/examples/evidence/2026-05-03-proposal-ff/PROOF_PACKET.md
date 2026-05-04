@@ -37,7 +37,7 @@ git diff --check
 git rev-parse --short HEAD
 ```
 
-**Draft note:** Replace `smoke_output.txt` with the real `tee` capture so `jsonl_path` reflects an actual temp file from your machine. The proof fields (`approve_chain`, `reject_chain`, `total_events_after_reopen`, `durability`) must match the committed golden file in §3.2 after any gate-affecting change.
+**Captured note:** `smoke_output.txt` was generated with `npm run smoke:proposal-ff` on the verification machine. The `jsonl_path` is ephemeral; the proof fields (`approve_chain`, `reject_chain`, `total_events_after_reopen`, `durability`) match the committed golden file in §3.2.
 
 ---
 
@@ -53,7 +53,7 @@ The harness prints a single pretty-printed JSON object to stdout. Captured draft
 
 ```json
 {
-  "jsonl_path": "[ephemeral path from local run — replace by tee-ing npm run smoke:proposal-ff]",
+  "jsonl_path": "<ephemeral temp path from smoke_output.txt>",
   "proof_version": 1,
   "total_events_after_reopen": 10,
   "approve_chain": [
@@ -190,7 +190,7 @@ Save assets under `src/examples/evidence/2026-05-03-proposal-ff/screenshots/` (c
 
 | | |
 |---|---|
-| **Status** | Draft — replace `smoke_output.txt` tee capture; add screenshots under §8 |
+| **Status** | Draft — smoke output captured; screenshots pending under §8 |
 | **Next** | Operator runs full gate in §2 and attaches real `jsonl_path` + browser captures |
 
 ---

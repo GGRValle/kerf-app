@@ -1,5 +1,9 @@
+
+> @kerf/core@0.0.1 smoke:proposal-ff
+> tsx src/examples/proposal-ff-smoke.ts
+
 {
-  "jsonl_path": "[ephemeral path from local run — replace by tee-ing npm run smoke:proposal-ff]",
+  "jsonl_path": "/var/folders/8p/pgt82c4j40b9ctwd4ksrv6g40000gn/T/kerf-proposal-ff-smoke-wIIyDC/events.jsonl",
   "proof_version": 1,
   "total_events_after_reopen": 10,
   "approve_chain": [
