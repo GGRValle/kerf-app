@@ -77,11 +77,13 @@
 /* —— Top bar (wireframe .topbar / .app row 1) —— */
 .kerf-w1-topbar {
   flex-shrink: 0;
-  height: 3.125rem;
+  min-height: 3.125rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0 1.375rem;
+  row-gap: 0.35rem;
+  column-gap: 0.875rem;
+  padding: 0.35rem max(0.875rem, env(safe-area-inset-left)) 0.35rem max(0.875rem, env(safe-area-inset-right));
   background: var(--kerf-bg-card);
   border-bottom: 1px solid var(--kerf-border);
 }
@@ -97,6 +99,8 @@
   display: flex;
   flex-direction: column;
   line-height: 1.15;
+  min-width: 0;
+  flex: 1 1 8rem;
 }
 
 .kerf-w1-brand-tag {
@@ -110,6 +114,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--kerf-fg);
+  overflow-wrap: anywhere;
 }
 
 .kerf-w1-topbar-spacer {
@@ -134,11 +139,12 @@
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 1.375rem 1.75rem 2.5rem;
+  padding: 1.375rem max(1.125rem, env(safe-area-inset-left)) 2.5rem max(1.125rem, env(safe-area-inset-right));
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.375rem;
   align-items: start;
+  box-sizing: border-box;
 }
 
 @media (min-width: 1024px) {
@@ -186,6 +192,7 @@
   background: var(--kerf-bg-card);
   padding: 0.85rem 0.95rem 1rem;
   min-height: 8rem;
+  min-width: 0;
   max-height: min(70vh, calc(100vh - 7.5rem));
   overflow-y: auto;
   overflow-x: hidden;
@@ -328,6 +335,7 @@
 /* Audit: secondary via smaller summary only — avoid parent opacity + fg-muted (low contrast). */
 .kerf-w1-main-column .kerf-audit-details summary {
   font-size: 0.76rem;
+  overflow-wrap: anywhere;
 }
 
 /* Actions: wireframe-sized, not oversized */
@@ -486,4 +494,18 @@
 .kerf-w1-log-entry:last-child {
   border-bottom: 0;
   padding-bottom: 0;
+}
+
+/* Narrow / mobile-ish — avoid horizontal scroll, keep log intro legible */
+@media (max-width: 36rem) {
+  .kerf-w1-demo-shell {
+    padding: 1rem max(0.65rem, env(safe-area-inset-left)) 1.75rem max(0.65rem, env(safe-area-inset-right));
+    gap: 1rem;
+  }
+
+  .kerf-w1-log-rail-sub {
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    color: color-mix(in srgb, var(--kerf-fg-muted) 65%, var(--kerf-fg));
+  }
 }
