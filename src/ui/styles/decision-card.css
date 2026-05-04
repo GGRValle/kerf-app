@@ -5,19 +5,20 @@
  */
 
 :root {
-  --kerf-bg-app: #12151a;
-  --kerf-bg-card: #1a1f27;
-  --kerf-bg-elevated: #222831;
+  /* Tokens aligned to docs/wireframes/notes.md + kerf_views_master_v1_0.html (May 2026). */
+  --kerf-bg-app: #0a0d11;
+  --kerf-bg-card: #1a1f26;
+  --kerf-bg-elevated: #232932;
   --kerf-bg-control: #2a3140;
-  --kerf-fg: #e8ecf1;
-  --kerf-fg-muted: #9aa3b2;
-  --kerf-border: #343c4a;
-  --kerf-border-strong: #4a5568;
-  --kerf-accent: #3d7dd9;
-  --kerf-accent-hover: #2f6bc4;
-  --kerf-accent-active: #285cb0;
-  --kerf-danger-muted: #a67a7a;
-  --kerf-focus-ring: #7eb8ff;
+  --kerf-fg: #e8e6e1;
+  --kerf-fg-muted: #9097a1;
+  --kerf-border: #2f3641;
+  --kerf-border-strong: #46505d;
+  --kerf-accent: #d4923a;
+  --kerf-accent-hover: #e0a051;
+  --kerf-accent-active: #a87628;
+  --kerf-danger-muted: #cf5b5b;
+  --kerf-focus-ring: #e0a858;
 
   /* Rhythm — typography + spacing (operator console; queue + W1 mirror these). */
   --kerf-radius-xs: 4px;
@@ -69,9 +70,8 @@ body {
   margin: -0.15rem -0.2rem var(--kerf-space-lg);
   padding: 0.65rem var(--kerf-space-md) 0.85rem;
   border-radius: var(--kerf-radius-sm);
-  background: color-mix(in srgb, var(--kerf-bg-elevated) 72%, var(--kerf-bg-card));
-  border: 1px solid color-mix(in srgb, var(--kerf-border) 85%, transparent);
-  border-bottom: 1px solid var(--kerf-border);
+  background: var(--kerf-bg-elevated);
+  border: 1px solid var(--kerf-border);
 }
 
 .kerf-card-identity .kerf-card-header {
@@ -95,7 +95,7 @@ body {
 
 .kerf-title {
   margin: 0 0 0.35rem;
-  font-size: 1.125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: var(--kerf-leading-tight);
@@ -164,7 +164,7 @@ body {
 .kerf-operator-summary {
   padding: 0.7rem var(--kerf-space-md);
   border: 1px solid var(--kerf-border);
-  border-left: 4px solid var(--kerf-accent);
+  border-left: 3px solid var(--kerf-accent);
   border-radius: var(--kerf-radius-sm);
   background: var(--kerf-bg-elevated);
 }
@@ -175,8 +175,8 @@ body {
 
 .kerf-operator-summary-headline {
   margin: 0;
-  font-size: 0.98rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   line-height: var(--kerf-leading-snug);
   color: var(--kerf-fg);
   overflow-wrap: anywhere;
@@ -184,7 +184,7 @@ body {
 
 .kerf-operator-summary-detail {
   margin: 0.3rem 0 0;
-  font-size: 0.86rem;
+  font-size: 0.75rem;
   line-height: var(--kerf-leading-normal);
   color: var(--kerf-fg-muted);
   overflow-wrap: anywhere;
