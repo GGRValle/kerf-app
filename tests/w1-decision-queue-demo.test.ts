@@ -70,8 +70,8 @@ test('w1 interactive demo wires reject reason capture in the example boundary', 
 test('w1 interactive demo uses workflow-aware inline reason form copy', () => {
   const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
 
-  assert.match(src, /False positive reason/);
-  assert.match(src, /Reject reason/);
+  assert.match(src, /Why this is a false positive/);
+  assert.match(src, /Why you are rejecting/);
   assert.match(src, /function renderRejectReasonFormHtml\(/);
   assert.match(src, /labelText/);
   assert.match(src, /placeholderText/);
@@ -181,12 +181,11 @@ test('w1 interactive demo maps drift workflows to acknowledge, false_positive, a
   assert.match(src, /return 'act'/);
 });
 
-test('w1 interactive demo threads actionLogVerbForWorkflow into appendLog from packet workflow', () => {
+test('w1 interactive demo threads actionLogVerbForWorkflow into human-readable operator log lines', () => {
   const src = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
 
-  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'approve\')'));
-  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'reject\')'));
-  assert.ok(src.includes('actionLogVerbForWorkflow(packet.workflow, \'edit\')'));
+  assert.match(src, /formatHumanOperatorLogLine/);
+  assert.match(src, /actionLogVerbForWorkflow\(packet\.workflow, baseAction\)/);
 });
 
 test('w1 interactive demo appends operator decision resolved events for actions', () => {
@@ -223,8 +222,8 @@ test('w1 demo source orders mixed fixtures proposal-first via sortPacketsForW1De
   assert.match(src, /export function workflowDemoRank/);
   assert.match(src, /export function sortPacketsForW1Demo/);
   assert.match(src, /sortPacketsForW1Demo\(seededMixedDecisionPacketListFixture\)/);
-  assert.match(src, /12 cards \(4 proposals, 4 invoices, 4 drift\)/);
-  assert.match(src, /other filters subset the same fixture/);
+  assert.match(src, /Same 12-card fixture everywhere/);
+  assert.match(src, /Proposal shows only the four proposal rows/);
 });
 
 test('sortPacketsForW1Demo ranks proposal → invoice → drift and preserves order within workflow', () => {

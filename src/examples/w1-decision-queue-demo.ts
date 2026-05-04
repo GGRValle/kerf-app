@@ -78,7 +78,7 @@ type DemoQueueFilter =
 const QUEUE_OPTIONS = {
   title: 'Kerf Decision Queue',
   subtitle:
-    'Proposal-first: tinted cards are the four seeded proposals — click one to open the review panel. Seeded read surface · 12 cards (4 proposals, 4 invoices, 4 drift). Proposal filter is the four seeded proposal rows; other filters subset the same fixture.',
+    'Start with the amber-tinted proposal rows (the revenue path in this demo). Click one → read the drafted follow-up on the right → Approve / Edit / Reject → watch the action log. Same 12-card fixture everywhere; Proposal shows only the four proposal rows.',
 } as const;
 
 /** Copy surfaced when a queue filter matches zero cards (bundle / tests grep these). */
@@ -107,13 +107,13 @@ function reasonFormCopyForWorkflow(workflow: DecisionPacket['workflow']): {
 } {
   if (workflow === 'drift_detection') {
     return {
-      labelText: 'False positive reason',
-      placeholderText: 'False positive reason (optional)',
+      labelText: 'Why this is a false positive',
+      placeholderText: 'e.g. scope already updated in the contract…',
     };
   }
   return {
-    labelText: 'Reject reason',
-    placeholderText: 'Reject reason (optional)',
+    labelText: 'Why you are rejecting',
+    placeholderText: 'e.g. tone too pushy, wrong client, wait a week…',
   };
 }
 
@@ -190,7 +190,7 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
   </section>`
     : `<section class="kerf-section" aria-label="Drafted client follow-up">
     <h3>Drafted client follow-up</h3>
-    <p class="kerf-muted">No draft body on this packet.</p>
+    <p class="kerf-muted">This seeded packet has no sample letter body — in product you would still see the same review steps once Right Hand drafts text.</p>
   </section>`;
 
   const refCount = view.sourceBasis.sourceRefs.length;
@@ -214,8 +214,18 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
     <strong>Same actions as the card.</strong> Approve, Edit, or Reject here updates the action log the same way as the queue card footer.
   </p>
 
+  <section class="kerf-section kerf-w1-detail-reader-guide" aria-label="What you are looking at">
+    <h3>At a glance</h3>
+    <ul class="kerf-list kerf-w1-detail-reader-guide-list">
+      <li><strong>Who it is for:</strong> ${escapeHtml(view.title)} — ${escapeHtml(view.subtitle)}</li>
+      <li><strong>What is being sent:</strong> the drafted client follow-up below (demo copy only; nothing leaves this page).</li>
+      <li><strong>Why it needs review:</strong> ${escapeHtml(os.headline)}</li>
+      <li><strong>What to do:</strong> use ${escapeHtml(view.actions.approveLabel)}, ${escapeHtml(view.actions.editLabel)}, or ${escapeHtml(view.actions.rejectLabel)} when you are ready.</li>
+    </ul>
+  </section>
+
   <section class="kerf-section kerf-operator-summary ${toneClass}" aria-label="Operator summary">
-    <h3>The One Thing</h3>
+    <h3>Next step</h3>
     <p class="kerf-operator-summary-headline">${escapeHtml(os.headline)}</p>
     <p class="kerf-operator-summary-detail">${escapeHtml(os.detail)}</p>
   </section>
@@ -257,21 +267,22 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
 
 function renderNonWorkflowDetailPlaceholder(): string {
   return `<div class="kerf-w1-proposal-detail-placeholder">
-  <p class="kerf-muted">This side panel is for proposal follow-up only in this demo.</p>
-  <p class="kerf-meta">Pick a tinted proposal card in the queue, or switch to <strong>All</strong> / <strong>Proposal</strong> and select a proposal row.</p>
+  <p class="kerf-muted">This review panel is tuned for proposal follow-ups in the friends-and-family path.</p>
+  <p class="kerf-meta">Select an <strong>amber-tinted</strong> proposal row, or tap <strong>All</strong> / <strong>Proposal</strong> so a proposal card is selected.</p>
 </div>`;
 }
 
 function renderEmptyDetailPlaceholder(): string {
   return `<div class="kerf-w1-proposal-detail-placeholder">
-  <p class="kerf-muted">No cards in this filter.</p>
+  <p class="kerf-muted">Nothing to show for this filter yet.</p>
+  <p class="kerf-meta">Switch back to <strong>All</strong> to reload the full demo queue.</p>
 </div>`;
 }
 
 function renderNoProposalInViewPlaceholder(): string {
   return `<div class="kerf-w1-proposal-detail-placeholder">
-  <p class="kerf-muted">No proposal cards match this filter.</p>
-  <p class="kerf-meta">Choose <strong>All</strong> (proposals listed first) or <strong>Proposal</strong> (four seeded rows) to load the proposal review panel.</p>
+  <p class="kerf-muted">No proposal rows in this filtered view.</p>
+  <p class="kerf-meta">Choose <strong>All</strong> (proposals stay at the top) or <strong>Proposal</strong> (only the four seeded proposal rows) to open the follow-up review panel.</p>
 </div>`;
 }
 
@@ -361,14 +372,55 @@ function formatTimestamp(): string {
   return new Date().toISOString();
 }
 
-function appendLog(container: HTMLElement, action: string, packetId: string, reason?: string): void {
-  const row = document.createElement('div');
-  row.className = 'kerf-w1-log-entry';
-  const parts = [formatTimestamp(), action, packetId];
-  if (reason !== undefined && reason.length > 0) {
-    parts.push(`reason=${reason}`);
+/** Plain-language line for the action rail; audit row still carries typed fields. */
+function formatHumanOperatorLogLine(
+  packet: DecisionPacket,
+  baseAction: DecisionLogVerb,
+  template: OperatorDecisionBlackboardEventTemplate,
+): string {
+  const recordedVerb = actionLogVerbForWorkflow(packet.workflow, baseAction);
+  const id = template.payload.packetId;
+  const reason = template.payload.reason;
+  const reasonSentence =
+    reason !== null && reason.length > 0 ? ` You added a note: “${reason}”.` : '';
+
+  if (packet.workflow === 'proposal_followup') {
+    if (baseAction === 'approve') {
+      return `You approved this proposal follow-up for the record (demo only — nothing is sent). Log code “${recordedVerb}” · packet ${id}.`;
+    }
+    if (baseAction === 'reject') {
+      return `You rejected this proposal follow-up.${reasonSentence} Log code “${recordedVerb}” · packet ${id}.`;
+    }
+    return `You chose to edit this proposal follow-up before anything goes out. Log code “${recordedVerb}” · packet ${id}.`;
   }
-  row.textContent = parts.join('  ');
+
+  if (packet.workflow === 'invoice_followup') {
+    if (baseAction === 'approve') {
+      return `You approved this invoice follow-up for the record (demo only — nothing is sent). Log code “${recordedVerb}” · packet ${id}.`;
+    }
+    if (baseAction === 'reject') {
+      return `You rejected this invoice follow-up.${reasonSentence} Log code “${recordedVerb}” · packet ${id}.`;
+    }
+    return `You chose to edit this invoice follow-up. Log code “${recordedVerb}” · packet ${id}.`;
+  }
+
+  if (packet.workflow === 'drift_detection') {
+    if (baseAction === 'approve') {
+      return `You acknowledged this drift signal so the team can move on. Log code “${recordedVerb}” · packet ${id}.`;
+    }
+    if (baseAction === 'reject') {
+      return `You marked this drift signal as a false positive.${reasonSentence} Log code “${recordedVerb}” · packet ${id}.`;
+    }
+    return `You chose to act on this drift signal (what happens next stays outside this demo). Log code “${recordedVerb}” · packet ${id}.`;
+  }
+
+  return `Recorded your decision on a queue item. Log code “${recordedVerb}” · packet ${id}.`;
+}
+
+function prependHumanLogRow(container: HTMLElement, text: string): void {
+  const row = document.createElement('div');
+  row.className = 'kerf-w1-log-entry kerf-w1-log-entry--readable';
+  row.textContent = text;
   container.prepend(row);
 }
 
@@ -376,9 +428,11 @@ function appendOperatorDecisionAuditRow(
   container: HTMLElement,
   event: Event<OperatorDecisionResolvedPayload>,
   template: OperatorDecisionBlackboardEventTemplate,
+  packet: DecisionPacket,
+  baseAction: DecisionLogVerb,
 ): void {
   const row = document.createElement('div');
-  row.className = 'kerf-w1-log-entry';
+  row.className = 'kerf-w1-log-entry kerf-w1-log-entry--audit';
   const parts = [
     event.at,
     event.kind,
@@ -394,6 +448,20 @@ function appendOperatorDecisionAuditRow(
   }
   row.textContent = parts.join('  ');
   container.prepend(row);
+  prependHumanLogRow(container, formatHumanOperatorLogLine(packet, baseAction, template));
+}
+
+function humanProposalWorkflowLogLine(event: Event<ProposalFollowupApprovalActionPayload>): string {
+  const st = event.payload.state;
+  if (st === 'approved') {
+    return 'Proposal workflow (demo): this follow-up request is marked approved in bookkeeping — still no outbound send from this page.';
+  }
+  if (st === 'rejected') {
+    const r = event.payload.rejectionReason;
+    const tail = r !== null && r.length > 0 ? ` Reason on file: “${r}”.` : '';
+    return `Proposal workflow (demo): this follow-up request is marked rejected.${tail}`;
+  }
+  return 'Proposal workflow (demo): follow-up state updated for the fixture.';
 }
 
 function appendProposalWorkflowAuditRow(
@@ -401,7 +469,7 @@ function appendProposalWorkflowAuditRow(
   event: Event<ProposalFollowupApprovalActionPayload>,
 ): void {
   const row = document.createElement('div');
-  row.className = 'kerf-w1-log-entry';
+  row.className = 'kerf-w1-log-entry kerf-w1-log-entry--audit';
   const parts = [
     event.at,
     event.kind,
@@ -416,6 +484,7 @@ function appendProposalWorkflowAuditRow(
   }
   row.textContent = parts.join('  ');
   container.prepend(row);
+  prependHumanLogRow(container, humanProposalWorkflowLogLine(event));
 }
 
 function nextOperatorDecisionEventSeq(): number {
@@ -469,7 +538,13 @@ function appendOperatorDecisionAuditEvent(
   const event = eventFromOperatorDecisionTemplate(template, decidedAt);
 
   void operatorDecisionEventLog.append(event).then((stored) => {
-    appendOperatorDecisionAuditRow(container, stored as Event<OperatorDecisionResolvedPayload>, template);
+    appendOperatorDecisionAuditRow(
+      container,
+      stored as Event<OperatorDecisionResolvedPayload>,
+      template,
+      packet,
+      baseAction,
+    );
   });
 }
 
@@ -490,7 +565,13 @@ function appendProposalOperatorDecisionAuditEvent(
     });
     const event = eventFromOperatorDecisionTemplate(template, decidedAt);
     void operatorDecisionEventLog.append(event).then((stored) => {
-      appendOperatorDecisionAuditRow(container, stored as Event<OperatorDecisionResolvedPayload>, template);
+      appendOperatorDecisionAuditRow(
+        container,
+        stored as Event<OperatorDecisionResolvedPayload>,
+        template,
+        packet,
+        baseAction,
+      );
     });
     return;
   }
@@ -509,7 +590,13 @@ function appendProposalOperatorDecisionAuditEvent(
     causedByEventId: `evt_demo_proposal_approval_requested_${request.id}`,
     eventIdPrefix: `evt_demo_operator_decision_${seq}`,
   }).then((result) => {
-    appendOperatorDecisionAuditRow(container, result.decisionEvent, result.decisionTemplate);
+    appendOperatorDecisionAuditRow(
+      container,
+      result.decisionEvent,
+      result.decisionTemplate,
+      packet,
+      baseAction,
+    );
     if (result.workflowEvent !== null) {
       appendProposalWorkflowAuditRow(container, result.workflowEvent);
     }
@@ -817,16 +904,13 @@ function showRejectReasonFormInFooter(
 
 function buildLogActionsForPacket(packet: DecisionPacket, log: HTMLElement): DecisionCardActions {
   return wireDecisionCardHandlers(packet, {
-    onApprove: (packetId) => {
-      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'approve'), packetId);
+    onApprove: (_packetId) => {
       appendOperatorDecisionAuditEvent(log, packet, 'approve');
     },
-    onReject: (packetId, reason) => {
-      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'reject'), packetId, reason);
+    onReject: (_packetId, reason) => {
       appendOperatorDecisionAuditEvent(log, packet, 'reject', reason);
     },
-    onEdit: (packetId) => {
-      appendLog(log, actionLogVerbForWorkflow(packet.workflow, 'edit'), packetId);
+    onEdit: (_packetId) => {
       appendOperatorDecisionAuditEvent(log, packet, 'edit');
     },
   });
