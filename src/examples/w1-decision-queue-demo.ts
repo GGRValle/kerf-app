@@ -175,7 +175,116 @@ function listSnippetHtml(items: readonly string[], emptyLabel: string, maxItems:
   return `<ul class="kerf-list">${slice.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>${more}`;
 }
 
-function renderProposalDetailHtml(view: DecisionCardViewModel): string {
+/** Plain-English line for proposal trigger facts in company-memory copy (fixture-driven). */
+function companyMemoryTriggerLine(trigger: unknown): string | null {
+  if (typeof trigger !== 'string' || trigger.length === 0) {
+    return null;
+  }
+  switch (trigger) {
+    case 'sent_no_view':
+      return 'Recorded signal: proposal was sent and not yet viewed.';
+    case 'viewed_no_decision':
+      return 'Recorded signal: proposal was viewed and no decision is on file yet.';
+    case 'near_expiry':
+      return 'Recorded signal: proposal is near expiry without a recorded decision.';
+    case 'change_requested':
+      return 'Recorded signal: client requested changes.';
+    default:
+      return null;
+  }
+}
+
+/** Human-readable snippets from extracted_facts for the F&F demo (no raw IDs, no validator names). */
+function companyMemoryFactLinesFromPacket(packet: DecisionPacket): string[] {
+  const facts = packet.extracted_facts;
+  const lines: string[] = [];
+  if (typeof facts.project_name === 'string' && facts.project_name.trim().length > 0) {
+    lines.push(`Project name on file: ${facts.project_name.trim()}`);
+  }
+  if (typeof facts.proposal_number === 'string' && facts.proposal_number.trim().length > 0) {
+    lines.push(`Proposal number on file: ${facts.proposal_number.trim()}`);
+  }
+  if (typeof facts.proposal_status === 'string' && facts.proposal_status.trim().length > 0) {
+    lines.push(`Proposal status in memory: ${facts.proposal_status.trim()}`);
+  }
+  const trig = companyMemoryTriggerLine(facts.trigger);
+  if (trig !== null) {
+    lines.push(trig);
+  }
+  const dss = facts.days_since_sent;
+  if (typeof dss === 'number' && Number.isFinite(dss) && dss >= 0) {
+    lines.push(dss === 1 ? 'About one day since the proposal went out.' : `About ${dss} days since the proposal went out.`);
+  }
+  const dsv = facts.days_since_viewed;
+  if (typeof dsv === 'number' && Number.isFinite(dsv) && dsv >= 0) {
+    lines.push(
+      dsv === 1
+        ? 'About one day since the client last viewed the proposal.'
+        : `About ${dsv} days since the client last viewed the proposal.`,
+    );
+  }
+  for (const key of ['service_line', 'primary_trade', 'material_focus'] as const) {
+    const v = facts[key];
+    if (typeof v === 'string' && v.trim().length > 0) {
+      const label = key === 'service_line' ? 'Service line' : key === 'primary_trade' ? 'Primary trade' : 'Material focus';
+      lines.push(`${label} on file: ${v.trim()}`);
+    }
+  }
+  return lines;
+}
+
+function renderCompanyMemoryUsedHtml(view: DecisionCardViewModel, packet: DecisionPacket): string {
+  const refCount = view.sourceBasis.sourceRefs.length;
+  const evCount = view.sourceBasis.evidenceIds.length;
+  const claimCount = view.sourceBasis.claimIds.length;
+  const client =
+    view.recipient.recipientLabel
+    ?? (typeof packet.extracted_facts.client_name === 'string' && packet.extracted_facts.client_name.trim().length > 0
+      ? packet.extracted_facts.client_name.trim()
+      : null);
+  const clientLine =
+    client !== null && client.length > 0
+      ? `<li><strong>Client</strong>: ${escapeHtml(client)}</li>`
+      : `<li><strong>Client</strong>: ${escapeHtml('Client name not on file in this packet.')}</li>`;
+  const amountLabel =
+    view.money.amountLabel !== null && view.money.amountLabel.length > 0
+      ? view.money.amountLabel
+      : 'Proposal amount not on file in this packet.';
+  const followUpLine =
+    view.artifactPreview !== null && view.artifactPreview.length > 0
+      ? 'This packet includes drafted follow-up text Kerf generated for your review.'
+      : 'This seed packet does not include sample follow-up letter body; counts below still reflect what the packet carried.';
+
+  const factLines = companyMemoryFactLinesFromPacket(packet);
+  const factsBlock =
+    factLines.length > 0
+      ? `<p class="kerf-meta kerf-w1-company-memory-facts-label">Additional context from the packet:</p><ul class="kerf-list kerf-w1-company-memory-facts">${factLines
+          .map((line) => `<li>${escapeHtml(line)}</li>`)
+          .join('')}</ul>`
+      : '';
+
+  return `<section class="kerf-section kerf-w1-company-memory" aria-label="Company memory used">
+    <h3>Company memory used</h3>
+    <p class="kerf-meta kerf-w1-company-memory-lede">
+      Kerf used the client, proposal amount, source references, evidence records, claims, and drafted follow-up context
+      available in this packet when assembling this review.
+    </p>
+    <ul class="kerf-list kerf-w1-company-memory-list">
+      ${clientLine}
+      <li><strong>Proposal amount</strong>: ${escapeHtml(amountLabel)}</li>
+      <li><strong>Source references</strong>: ${refCount}</li>
+      <li><strong>Evidence records</strong>: ${evCount}</li>
+      <li><strong>Claims linked to this decision</strong>: ${claimCount}</li>
+      <li><strong>Drafted follow-up</strong>: ${escapeHtml(followUpLine)}</li>
+    </ul>
+    ${factsBlock}
+    <p class="kerf-muted kerf-w1-company-memory-foot">
+      GGR/VIA onboarding data will make this section richer once that intake is wired; nothing here calls the network.
+    </p>
+  </section>`;
+}
+
+function renderProposalDetailHtml(view: DecisionCardViewModel, packet: DecisionPacket): string {
   const os = view.operatorSummary;
   const toneClass = operatorSummaryToneClass(os.tone);
   const amountLine = view.money.amountLabel !== null && view.money.amountLabel.length > 0
@@ -229,6 +338,8 @@ function renderProposalDetailHtml(view: DecisionCardViewModel): string {
     <p class="kerf-operator-summary-headline">${escapeHtml(os.headline)}</p>
     <p class="kerf-operator-summary-detail">${escapeHtml(os.detail)}</p>
   </section>
+
+  ${renderCompanyMemoryUsedHtml(view, packet)}
 
   ${artifactSection}
 
@@ -330,7 +441,7 @@ function paintDetailPanel(detailRoot: HTMLElement, log: HTMLElement): void {
   }
 
   const view = buildDecisionCardViewModel(packet);
-  detailRoot.innerHTML = renderProposalDetailHtml(view);
+  detailRoot.innerHTML = renderProposalDetailHtml(view, packet);
   const footer = detailRoot.querySelector('.kerf-w1-detail-actions');
   if (footer instanceof HTMLElement) {
     unmountDetailActions = wireProposalDetailActions(packet, footer, log);

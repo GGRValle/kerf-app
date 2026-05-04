@@ -335,8 +335,24 @@ test('W1 proposal detail rendering uses buildDecisionCardViewModel for the selec
 
   const demoSrc = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
   assert.match(demoSrc, /buildDecisionCardViewModel\(packet\)/);
-  assert.match(demoSrc, /renderProposalDetailHtml/);
+  assert.match(demoSrc, /renderProposalDetailHtml\(view, packet\)/);
   assert.match(demoSrc, /kerf-operator-summary-headline/);
+});
+
+test('w1 proposal detail source includes company memory KB surface copy', () => {
+  const demoSrc = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+
+  assert.match(demoSrc, /Company memory used/);
+  assert.match(demoSrc, /kerf-w1-company-memory/);
+  assert.match(demoSrc, /Evidence records/);
+  assert.match(demoSrc, /GGR\/VIA onboarding/);
+  assert.match(demoSrc, /companyMemoryFactLinesFromPacket/);
+});
+
+test('w1 standard UI demo CSS styles proposal detail company memory callout', () => {
+  const css = readFileSync(new URL('../src/examples/w1-standard-ui-demo.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.kerf-w1-standard-ui \.kerf-w1-proposal-detail-panel \.kerf-w1-company-memory/);
 });
 
 test('package.json defines the demo:w1-queue:serve hosted-static script', () => {

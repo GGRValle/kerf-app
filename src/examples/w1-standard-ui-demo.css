@@ -626,6 +626,54 @@ html:has(.kerf-w1-standard-ui) body {
   margin-top: 0.35rem;
 }
 
+/* Company memory / KB context — compact callout (Views Master operator read; demo-only copy). */
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory {
+  padding: 0.5rem 0.55rem 0.55rem;
+  border-radius: var(--kerf-radius-sm);
+  border: 1px solid color-mix(in srgb, var(--kerf-w1-brand) 32%, var(--kerf-border));
+  background: color-mix(in srgb, var(--kerf-w1-brand) 5%, var(--kerf-w1-panel-raised));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--kerf-fg) 88%, var(--kerf-fg-muted));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory-lede {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory-list {
+  margin: 0.15rem 0 0.35rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory-facts-label {
+  margin: 0.35rem 0 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory-facts {
+  margin: 0.1rem 0 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory-foot {
+  margin: 0.35rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+}
+
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-meta {
   margin: 0.25rem 0 0;
   font-size: 0.857143rem;
