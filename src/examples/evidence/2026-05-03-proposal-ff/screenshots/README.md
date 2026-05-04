@@ -12,6 +12,12 @@ them.
 
 ## Capture conventions
 
+- **Zoom:** capture at **100%** browser zoom (not Retina-scaled UI zoom that
+  shrinks or enlarges page content).
+- **Viewport:** window (or devtools responsive) width **at least 1280px** so
+  the Standard UI shell lays out as intended: main column with **queue + proposal
+  detail** side by side, plus the **action log** right rail — confirm all three
+  are visible before you capture.
 - **Format:** PNG (lossless; matches the W1 packet under
   [`../../2026-05-02-w1/screenshots/`](../../2026-05-02-w1/screenshots/)).
 - **Browser:** the same desktop browser the demo runbook recommends (Safari, or
