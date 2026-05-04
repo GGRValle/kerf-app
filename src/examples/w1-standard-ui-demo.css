@@ -1082,3 +1082,9 @@ html:has(.kerf-w1-standard-ui) body {
   font-size: 11px;
   line-height: 1.4;
 }
+
+/* Canon screenshot surface: hide build-time demo chrome that is not in the Standard UI wireframes. */
+.kerf-w1-standard-ui .kerf-w1-demo-proposal-path,
+.kerf-w1-standard-ui .kerf-w1-filter-bar {
+  display: none;
+}
