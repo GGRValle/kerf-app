@@ -750,3 +750,335 @@ html:has(.kerf-w1-standard-ui) body {
   border-bottom: 0;
   padding-bottom: 0;
 }
+
+/* === Canon alignment pass (docs/wireframes, PR #96) ===
+ * W1 states post-date the canon HTML; this layer maps them back to canon tokens,
+ * type scale, and first-viewport density from docs/wireframes/notes.md.
+ */
+html:has(.kerf-w1-standard-ui) {
+  font-size: 13px;
+}
+
+html:has(.kerf-w1-standard-ui) body {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #e8e6e1;
+  background: #0a0d11;
+}
+
+.kerf-w1-standard-ui {
+  --kerf-w1-ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --kerf-bg-app: #0a0d11;
+  --kerf-bg-card: #1a1f26;
+  --kerf-bg-elevated: #232932;
+  --kerf-bg-control: #232932;
+  --kerf-fg: #e8e6e1;
+  --kerf-fg-muted: #9097a1;
+  --kerf-fg-mute: #5f6670;
+  --kerf-border: #2f3641;
+  --kerf-border-strong: #46505d;
+  --kerf-danger-muted: #cf5b5b;
+  --kerf-focus-ring: #e0a858;
+  --kerf-radius-xs: 4px;
+  --kerf-radius-sm: 4px;
+  --kerf-radius-md: 6px;
+  --kerf-leading-tight: 1.3;
+  --kerf-leading-snug: 1.35;
+  --kerf-leading-normal: 1.4;
+  --kerf-leading-meta: 1.4;
+  --kerf-space-xs: 4px;
+  --kerf-space-sm: 8px;
+  --kerf-space-md: 10px;
+  --kerf-space-lg: 14px;
+  --kerf-space-xl: 20px;
+  --kerf-card-pad-y-start: 10px;
+  --kerf-card-pad-x: 14px;
+  --kerf-card-pad-y-end: 14px;
+  --kerf-w1-bg: #0a0d11;
+  --kerf-w1-panel: #1a1f26;
+  --kerf-w1-panel-raised: #232932;
+  --kerf-w1-brand: #d4923a;
+  --kerf-w1-brand-muted: #c9a876;
+  --kerf-w1-action: #d4923a;
+  --kerf-w1-action-hover: #e0a858;
+  --kerf-w1-action-active: #8b5e24;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--kerf-fg);
+}
+
+.kerf-w1-topbar {
+  height: 50px;
+  padding: 0 28px;
+  gap: 14px;
+  background: linear-gradient(180deg, #14181f 0%, #0a0d11 100%);
+  border-bottom-color: var(--kerf-border);
+}
+
+.kerf-w1-brand-mark {
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--kerf-w1-brand);
+}
+
+.kerf-w1-topbar-title {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.kerf-w1-brand-tag,
+.kerf-w1-topbar-pill {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.kerf-w1-demo-shell {
+  max-width: 1600px;
+  padding: 20px 28px 28px;
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .kerf-w1-demo-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1180px) {
+  .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 420px);
+    gap: 16px;
+    align-items: start;
+  }
+}
+
+.kerf-w1-standard-ui .kerf-w1-demo-proposal-path {
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border-color: color-mix(in srgb, var(--kerf-w1-brand) 32%, var(--kerf-border));
+  background: color-mix(in srgb, var(--kerf-w1-brand) 6%, var(--kerf-w1-panel));
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-bar {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  gap: 8px;
+  border-radius: 6px;
+  background: var(--kerf-w1-panel);
+}
+
+.kerf-w1-standard-ui .kerf-w1-filter-btn {
+  min-height: 28px;
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.kerf-w1-main-column .kerf-decision-queue {
+  padding: 0;
+}
+
+.kerf-w1-main-column .kerf-queue-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+}
+
+.kerf-w1-standard-ui h1.kerf-queue-title,
+.kerf-w1-standard-ui h2.kerf-title {
+  font-size: 14px;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.kerf-w1-standard-ui .kerf-queue-subtitle {
+  max-width: 72ch;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-queue-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  background: var(--kerf-border);
+}
+
+.kerf-w1-standard-ui .kerf-queue-summary-item {
+  min-width: 0;
+  padding: 8px 10px;
+  gap: 2px;
+  background: var(--kerf-w1-panel-raised);
+}
+
+.kerf-w1-standard-ui .kerf-queue-summary-item dt {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-queue-summary-item dd {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.kerf-w1-main-column .kerf-decision-queue-list {
+  gap: 10px;
+}
+
+.kerf-w1-standard-ui .kerf-decision-card {
+  border-radius: 6px;
+  border-color: var(--kerf-border);
+  background: var(--kerf-w1-panel);
+}
+
+.kerf-w1-standard-ui .kerf-w1-main-column .kerf-card-identity {
+  margin: -2px -2px 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--kerf-w1-panel-raised);
+  border-color: var(--kerf-border);
+}
+
+.kerf-w1-standard-ui .kerf-card-header {
+  gap: 6px;
+}
+
+.kerf-w1-standard-ui .kerf-decision-card .kerf-subtitle,
+.kerf-w1-standard-ui .kerf-decision-card .kerf-meta,
+.kerf-w1-standard-ui .kerf-operator-summary-detail {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-operator-summary-headline,
+.kerf-w1-main-column .kerf-altitude-final {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.kerf-w1-standard-ui .kerf-section {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+.kerf-w1-standard-ui .kerf-section h3,
+.kerf-w1-standard-ui .kerf-section h4 {
+  font-size: 10px;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  color: var(--kerf-fg-muted);
+}
+
+/* Keep proof fields available, but prevent raw packet sections from owning first viewport. */
+.kerf-w1-main-column .kerf-decision-card .kerf-status,
+.kerf-w1-main-column .kerf-decision-card .kerf-source-basis,
+.kerf-w1-main-column .kerf-decision-card .kerf-authoritative,
+.kerf-w1-main-column .kerf-decision-card .kerf-proposed {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-main-column .kerf-decision-card .kerf-status,
+.kerf-w1-main-column .kerf-decision-card .kerf-source-basis,
+.kerf-w1-main-column .kerf-decision-card .kerf-proposed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.kerf-w1-main-column .kerf-decision-card .kerf-source-basis .kerf-list,
+.kerf-w1-main-column .kerf-decision-card .kerf-source-basis .kerf-h4 {
+  display: none;
+}
+
+.kerf-w1-main-column .kerf-decision-card .kerf-source-basis::after {
+  content: "Source refs / evidence / claims available in audit and detail panel";
+  display: block;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-main-column .kerf-authoritative {
+  border-left-color: var(--kerf-w1-brand);
+  background: color-mix(in srgb, var(--kerf-w1-brand) 4%, transparent);
+}
+
+.kerf-w1-standard-ui .kerf-artifact-pre {
+  max-height: 7.5rem;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.kerf-w1-standard-ui .kerf-btn {
+  min-height: 28px;
+  padding: 8px 10px;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.kerf-w1-standard-ui .kerf-btn-primary {
+  background: var(--kerf-w1-action);
+  border-color: var(--kerf-w1-action);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel {
+  padding: 10px 14px 14px;
+  border-radius: 6px;
+  background: var(--kerf-w1-panel);
+  border-color: var(--kerf-border);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-proposal-demo-eyebrow,
+.kerf-w1-log-rail-head h2 {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-section,
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-head {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-artifact-pre {
+  max-height: 11rem;
+}
+
+.kerf-w1-log-panel {
+  border-radius: 6px;
+  border-color: var(--kerf-border);
+  background: var(--kerf-w1-panel);
+}
+
+.kerf-w1-log-rail-head {
+  padding: 10px 14px;
+  background: var(--kerf-w1-panel-raised);
+}
+
+.kerf-w1-log-rail-sub,
+.kerf-w1-log-control-btn {
+  font-size: 11px;
+}
+
+.kerf-w1-log-entry {
+  font-size: 11px;
+  line-height: 1.4;
+}
