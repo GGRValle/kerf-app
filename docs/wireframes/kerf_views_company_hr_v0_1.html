@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kerf · Company / HR Operations Lane · v0.1 · 2026-05-04</title>
+<style>
+:root {
+  --kerf-amber: #D4923A; --kerf-amber-dim: #8B5E24;
+  --kerf-dark: #0F1419; --kerf-panel: #1A1F26; --kerf-panel-2: #232932; --kerf-panel-3: #2A313B;
+  --kerf-border: #2F3641;
+  --kerf-text: #E8E6E1; --kerf-text-dim: #9097A1; --kerf-text-mute: #5F6670;
+  --ggr: #4A7FB0; --ggr-dim: #1B3A5C;
+  --val: #A8794A; --val-dim: #5C3A1B;
+  --hpg: #4A9F74; --hpg-dim: #1B5C3A;
+  --success: #5FB37A; --warn: #E0A858; --alert: #CF5B5B;
+  --rh: #C9A876; --rh-dim: #6B5938;
+  --future: #7E6FCF; --future-dim: #3A2E6B;
+  --sentry: #E0A858; --sentry-dim: #6E512A;
+  --layer-actual: #5FB37A; --layer-tenant: #4A9F74; --layer-override: #C9A876;
+  --layer-public: #9097A1; --layer-inference: #CF5B5B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0A0D11; color: var(--kerf-text); line-height: 1.4;
+  font-size: 13px; padding-bottom: 80px;
+}
+a { color: var(--kerf-amber); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; background: var(--kerf-panel-2); padding: 1px 4px; border-radius: 2px; color: var(--kerf-text); }
+
+.banner-top {
+  background: linear-gradient(90deg, var(--future-dim) 0%, var(--rh-dim) 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 12px 40px; font-size: 11px;
+  letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600;
+  text-align: center;
+}
+.banner-top .label { color: var(--rh); }
+.banner-top code { font-size: 10px; background: rgba(0,0,0,0.3); padding: 1px 5px; }
+
+.doc-header {
+  background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 28px 40px 24px;
+}
+.doc-header h1 { font-size: 24px; font-weight: 600; letter-spacing: 0.01em; margin-bottom: 6px; }
+.doc-header .sub { color: var(--kerf-text-dim); font-size: 12.5px; max-width: 920px; line-height: 1.6; }
+.doc-header .amber { color: var(--kerf-amber); font-weight: 600; }
+.doc-header .rh { color: var(--rh); font-weight: 600; }
+.doc-header .future { color: var(--future); font-weight: 600; }
+.source-cite {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--kerf-panel);
+  border: 1px solid var(--kerf-border);
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: var(--kerf-text-dim);
+}
+.source-cite strong { color: var(--kerf-text); }
+
+.flow-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,13,17,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 12px 40px;
+  display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px;
+}
+.flow-nav a { color: var(--kerf-text-dim); padding: 4px 10px; border-radius: 4px; border: 1px solid transparent; }
+.flow-nav a:hover { color: var(--kerf-text); border-color: var(--kerf-border); text-decoration: none; }
+.flow-nav .nav-label { color: var(--kerf-amber); font-weight: 600; margin-right: 4px; font-family: ui-monospace, monospace; }
+
+.master { padding: 32px 40px; max-width: 1280px; margin: 0 auto; }
+.section { margin-bottom: 70px; scroll-margin-top: 64px; }
+.section-h { border-bottom: 1px solid var(--kerf-border); padding-bottom: 14px; margin-bottom: 26px; }
+.section-h h2 { font-size: 21px; font-weight: 600; margin-bottom: 6px; }
+.section-h .narr { font-size: 13px; color: var(--kerf-text-dim); line-height: 1.6; max-width: 880px; }
+
+.frame-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--kerf-amber); font-weight: 600;
+  padding: 8px 0; border-bottom: 1px solid var(--kerf-border);
+  margin-bottom: 14px;
+}
+.frame-label .frame-note {
+  color: var(--kerf-text-dim); text-transform: none; letter-spacing: 0;
+  font-size: 11px; font-weight: 400; margin-left: 12px;
+}
+.frame { margin-bottom: 50px; scroll-margin-top: 64px; }
+.frame-meta {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 6px 10px; margin-bottom: 8px;
+}
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; border: 1px solid transparent;
+}
+.tag-status-canon  { background: rgba(95,179,122,0.15); color: var(--success); border-color: var(--success); }
+.tag-status-w1     { background: rgba(201,168,118,0.15); color: var(--rh); border-color: var(--rh); }
+.tag-status-aspir  { background: rgba(126,111,207,0.15); color: var(--future); border-color: var(--future); }
+.tag-persona       { background: var(--kerf-panel-2); color: var(--kerf-text-dim); }
+.tag-role          { background: var(--kerf-panel-2); color: var(--kerf-text); }
+.tag-altitude      { background: var(--kerf-panel-3); color: var(--kerf-amber); }
+.tag-tenant-all    { background: var(--kerf-panel-2); color: var(--kerf-text-dim); }
+.tag-i18n          { background: rgba(126,111,207,0.10); color: var(--future); border-color: var(--future-dim); }
+.tag-surface-mobile{ background: rgba(95,179,122,0.10); color: var(--success); border-color: var(--success); }
+.tag-surface-desktop{ background: rgba(74,127,176,0.15); color: var(--ggr); border-color: var(--ggr); }
+.frame-narr { margin: 8px 0 12px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.6; max-width: 920px; }
+.frame-source { font-size: 11px; color: var(--kerf-text-mute); font-family: ui-monospace, monospace; margin-bottom: 14px; }
+.frame-source a { color: var(--kerf-text-dim); }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 8px; overflow: hidden; background: #0A0D11; }
+
+.frame-spec {
+  margin-top: 14px; padding: 14px 16px;
+  background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 6px;
+  font-size: 12px;
+}
+.frame-spec h4 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--kerf-text-dim); margin-bottom: 8px; font-weight: 700;
+}
+.frame-spec h4 + h4 { margin-top: 14px; }
+.frame-spec ul { list-style: none; padding: 0; }
+.frame-spec li { padding: 4px 0 4px 16px; position: relative; color: var(--kerf-text-dim); line-height: 1.55; }
+.frame-spec li::before { content: "·"; color: var(--kerf-amber); position: absolute; left: 4px; font-weight: 700; }
+.frame-spec strong { color: var(--kerf-text); }
+
+/* Source-layer chips */
+.layer-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px; border-radius: 3px;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; border: 1px solid;
+  font-family: ui-monospace, monospace;
+}
+.layer-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+.layer-actual    { color: var(--layer-actual); border-color: var(--layer-actual); background: rgba(95,179,122,0.10); }
+.layer-actual::before    { background: var(--layer-actual); }
+.layer-tenant    { color: var(--layer-tenant); border-color: var(--layer-tenant); background: rgba(74,159,116,0.10); }
+.layer-tenant::before    { background: var(--layer-tenant); }
+.layer-override  { color: var(--layer-override); border-color: var(--layer-override); background: rgba(201,168,118,0.10); }
+.layer-override::before  { background: var(--layer-override); }
+.layer-public    { color: var(--layer-public); border-color: var(--layer-public); background: rgba(144,151,161,0.10); }
+.layer-public::before    { background: var(--layer-public); }
+.layer-inference { color: var(--layer-inference); border-color: var(--layer-inference); background: rgba(207,91,91,0.10); }
+.layer-inference::before { background: var(--layer-inference); }
+
+/* ============= MOBILE CHROME (canon v2 mobile fidelity) ============= */
+.mobile-frame { width: 380px; margin: 24px auto; border: 1px solid var(--kerf-border); border-radius: 32px; background: #000; padding: 8px; box-shadow: 0 16px 56px rgba(0,0,0,0.5); }
+.mobile-screen { background: #0A0D11; border-radius: 26px; overflow: hidden; min-height: 760px; display: flex; flex-direction: column; }
+.mobile-statusbar { padding: 10px 24px 6px; display: flex; justify-content: space-between; font-size: 13px; color: white; font-weight: 600; }
+.mobile-topbar { padding: 8px 16px 12px; display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); border-bottom: 1px solid var(--kerf-border); }
+.mobile-topbar .brand { font-weight: 700; letter-spacing: 0.10em; color: var(--kerf-amber); font-size: 14px; }
+.mobile-topbar .ctx { font-size: 10px; color: var(--kerf-text-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+.mobile-topbar .avatar { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; background: var(--ggr); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.mobile-body { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.mobile-tabbar { background: #0F1419; padding: 10px 14px 22px; border-top: 1px solid var(--kerf-border); display: flex; justify-content: space-around; }
+.mobile-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--kerf-text-dim); font-weight: 500; }
+.mobile-tab .icon { width: 26px; height: 26px; border-radius: 6px; background: var(--kerf-panel-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.mobile-tab.active { color: var(--kerf-amber); }
+.mobile-tab.active .icon { background: var(--kerf-amber-dim); color: var(--kerf-amber); }
+
+.section-marker { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--rh); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+.section-marker::before { content: "●"; font-size: 8px; }
+.section-marker .right { margin-left: auto; color: var(--kerf-text-mute); font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+.dp-card { background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 12px; padding: 14px; position: relative; }
+.dp-card.gated { border-left: 3px solid var(--rh); }
+.dp-card.alert-band { border-top: 3px solid var(--alert); }
+.dp-card.warn-band { border-top: 3px solid var(--warn); }
+.dp-card.success-band { border-top: 3px solid var(--success); }
+.dp-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dp-rh-mark { width: 22px; height: 22px; border-radius: 5px; background: var(--rh); color: var(--kerf-dark); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; letter-spacing: -0.02em; }
+.dp-meta-line { font-size: 11px; color: var(--kerf-text-dim); line-height: 1.4; flex: 1; }
+.dp-meta-line strong { color: var(--kerf-text); font-weight: 600; }
+.dp-meta-line .small { font-size: 10px; color: var(--kerf-text-mute); }
+.dp-status-pill { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.dp-status-pill.gated { background: rgba(201,168,118,0.18); color: var(--rh); }
+.dp-title-row { font-size: 14.5px; font-weight: 700; line-height: 1.3; margin-bottom: 5px; color: var(--kerf-text); letter-spacing: -0.005em; }
+.dp-title-row .amount { color: var(--kerf-amber); margin-left: 4px; }
+.dp-body { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; margin: 6px 0 12px; }
+.dp-action-row { display: flex; gap: 6px; margin-top: 10px; }
+.btn { font-family: inherit; flex: 1; border: 1px solid var(--kerf-border); background: var(--kerf-panel-2); color: var(--kerf-text); padding: 9px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
+.btn-primary { background: var(--kerf-amber); border-color: var(--kerf-amber); color: var(--kerf-dark); }
+.btn-rh { background: var(--rh); border-color: var(--rh); color: var(--kerf-dark); }
+.btn-ghost { background: transparent; }
+.btn-danger { background: rgba(207,91,91,0.12); border-color: var(--alert); color: var(--alert); }
+
+/* Notification on lock screen */
+.lock-screen-bg {
+  background: linear-gradient(135deg, #1a1f3a 0%, #0a0d22 50%, #1a3a3a 100%);
+  padding: 60px 0;
+  min-height: 700px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.lock-clock {
+  color: rgba(255,255,255,0.95);
+  font-weight: 200;
+  font-size: 80px;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.lock-date {
+  color: rgba(255,255,255,0.85);
+  font-size: 18px; font-weight: 500;
+  margin-top: 8px;
+}
+.notification {
+  width: 360px; margin: 36px auto 14px;
+  padding: 14px 16px;
+  background: rgba(38,40,48,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 14px;
+  color: white;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+}
+.notification-h {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+}
+.notification-h .app-icon {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--kerf-amber); color: var(--kerf-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+}
+.notification-h .app { font-size: 13px; font-weight: 600; flex: 1; letter-spacing: 0.02em; }
+.notification-h .when { color: rgba(255,255,255,0.55); font-size: 11px; }
+.notification-title { font-weight: 600; line-height: 1.3; margin-bottom: 4px; font-size: 14px; }
+.notification-body { color: rgba(255,255,255,0.80); line-height: 1.4; font-size: 13px; }
+
+.notification-channel-note {
+  width: 360px; margin: 0 auto;
+  padding: 8px 12px;
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+  line-height: 1.45;
+}
+.notification-channel-note .pill {
+  display: inline-block; padding: 1px 6px;
+  border-radius: 8px; background: rgba(255,255,255,0.10);
+  font-family: ui-monospace, monospace;
+  font-size: 9.5px;
+  margin: 0 2px;
+}
+
+/* Pulse view — canon v2 mobile pattern */
+.pulse-h { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.pulse-h .label { font-size: 11px; color: var(--success); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+.pulse-h .label::before { content: "●"; font-size: 8px; margin-right: 4px; }
+.pulse-h .live { margin-left: auto; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--alert); font-weight: 700; display: flex; align-items: center; gap: 4px; }
+.pulse-h .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--alert); box-shadow: 0 0 6px var(--alert); }
+.pulse-h .window { font-size: 10px; color: var(--kerf-text-mute); }
+.pulse-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pulse-tile { background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 10px 12px; }
+.pulse-tile .label { font-size: 9.5px; color: var(--kerf-text-dim); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; }
+.pulse-tile .value { font-size: 24px; font-weight: 700; color: var(--kerf-text); margin: 4px 0 2px; letter-spacing: -0.02em; }
+.pulse-tile .value.success { color: var(--success); }
+.pulse-tile .value.warn { color: var(--warn); }
+.pulse-tile .value.alert { color: var(--alert); }
+.pulse-tile .delta { font-size: 10px; color: var(--kerf-text-dim); line-height: 1.4; }
+.rh-note { background: var(--rh-dim); border: 1px solid var(--rh); border-radius: 10px; padding: 12px; margin-top: 8px; font-size: 11.5px; color: var(--kerf-text); line-height: 1.55; }
+.rh-note .header { font-size: 10px; color: var(--rh); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; margin-bottom: 6px; }
+.rh-note .header::before { content: "● "; }
+
+/* ============= DESKTOP CHROME — canon v3 §M class names ============= */
+.desktop-frame {
+  background: var(--kerf-dark); border-radius: 8px;
+  border: 1px solid var(--kerf-border);
+  margin: 0 auto; overflow: hidden;
+  width: 100%; max-width: 1100px; height: 640px;
+  display: flex; flex-direction: column;
+}
+.desk-topbar {
+  height: 44px; background: var(--kerf-panel-2);
+  border-bottom: 1px solid var(--kerf-border);
+  display: flex; align-items: center; padding: 0 18px; gap: 14px;
+}
+.desk-brand { font-size: 13px; font-weight: 700; color: var(--kerf-amber); letter-spacing: 0.08em; }
+.desk-search {
+  flex: 1; padding: 4px 10px; font-size: 11px;
+  background: var(--kerf-dark); border: 1px solid var(--kerf-border);
+  border-radius: 4px; color: var(--kerf-text-dim);
+}
+.desk-user { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--kerf-text-dim); }
+.op-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--ggr); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.desk-body { flex: 1; display: flex; min-height: 0; }
+.desk-sidebar {
+  width: 200px; background: var(--kerf-panel);
+  border-right: 1px solid var(--kerf-border);
+  padding: 10px 0; flex-shrink: 0; overflow-y: auto;
+}
+.desk-nav-group {
+  padding: 10px 16px 4px; font-size: 9px; color: var(--kerf-text-mute);
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+.desk-nav-item {
+  padding: 7px 16px; font-size: 11px; color: var(--kerf-text-dim);
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+}
+.desk-nav-item:hover { background: var(--kerf-panel-2); color: var(--kerf-text); }
+.desk-nav-item.active {
+  color: var(--kerf-amber); background: rgba(212,146,58,0.08);
+  border-left: 2px solid var(--kerf-amber); padding-left: 14px;
+}
+.desk-nav-item .nav-badge {
+  margin-left: auto;
+  padding: 0 6px; min-width: 18px; height: 16px;
+  border-radius: 8px; background: var(--kerf-panel-3);
+  font-size: 9px; font-weight: 600; color: var(--kerf-text);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.desk-nav-item .nav-badge.warn { background: rgba(224,168,88,0.20); color: var(--warn); }
+.desk-nav-item .nav-badge.alert { background: rgba(207,91,91,0.20); color: var(--alert); }
+.desk-main { flex: 1; padding: 18px 22px; overflow-y: auto; }
+.desk-h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.desk-sub { font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 16px; }
+
+.desk-metric-row { display: flex; gap: 16px; margin-bottom: 18px; }
+.desk-metric { flex: 1; padding: 14px; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 8px; }
+.desk-metric-val { font-size: 22px; font-weight: 600; color: var(--kerf-amber); }
+.desk-metric-val.warn { color: var(--warn); }
+.desk-metric-val.alert { color: var(--alert); }
+.desk-metric-val.success { color: var(--success); }
+.desk-metric-lbl { font-size: 10px; color: var(--kerf-text-dim); margin-top: 3px; }
+.desk-metric-delta { font-size: 10px; color: var(--success); margin-top: 3px; }
+.desk-metric-delta.down { color: var(--alert); }
+
+.desk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.desk-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.desk-card { background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 14px; }
+.desk-card-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text-dim); margin-bottom: 6px; font-weight: 600; }
+.desk-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.desk-card-big { font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums; margin: 4px 0; }
+
+.intake-desk-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+.intake-desk-table thead th {
+  text-align: left; padding: 8px 10px;
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  border-bottom: 1px solid var(--kerf-border);
+}
+.intake-desk-table tbody td { padding: 9px 10px; border-bottom: 1px solid rgba(47,54,65,0.5); color: var(--kerf-text-dim); }
+.intake-desk-table tbody tr { cursor: pointer; }
+.intake-desk-table tbody tr:hover { background: var(--kerf-panel); }
+.intake-desk-table tbody tr.selected { background: var(--kerf-panel); }
+.intake-desk-table tbody tr.selected td:first-child { box-shadow: inset 2px 0 0 var(--kerf-amber); }
+.intake-desk-table tbody td b { color: var(--kerf-text); font-weight: 600; }
+
+.status-chip { display: inline-block; padding: 1px 7px; font-size: 9px; font-weight: 700; border-radius: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+.status-chip.draft { background: rgba(144,151,161,0.18); color: var(--kerf-text-dim); }
+.status-chip.rec { background: rgba(201,168,118,0.18); color: var(--rh); }
+.status-chip.app { background: rgba(95,179,122,0.18); color: var(--success); }
+.status-chip.warn { background: rgba(224,168,88,0.18); color: var(--warn); }
+.status-chip.alert { background: rgba(207,91,91,0.18); color: var(--alert); }
+.status-chip.locked { background: var(--kerf-amber-dim); color: var(--kerf-text); }
+
+.draft-flag { display: inline-block; padding: 1px 6px; font-size: 9px; background: rgba(126,111,207,0.15); color: var(--future); border-radius: 3px; letter-spacing: 0.04em; }
+
+.dot-status { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.dot-status.success { background: var(--success); }
+.dot-status.warn { background: var(--warn); }
+.dot-status.alert { background: var(--alert); }
+.dot-status.muted { background: var(--kerf-text-mute); }
+
+.privacy-banner-inline {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(207,91,91,0.05);
+  border: 1px solid var(--alert);
+  border-radius: 4px;
+  font-size: 10.5px; color: var(--alert); line-height: 1.5;
+  display: flex; gap: 6px;
+}
+.privacy-banner-inline.future {
+  background: rgba(126,111,207,0.05);
+  border-color: var(--future); color: var(--future);
+}
+
+.footer { margin-top: 80px; padding: 24px 40px; border-top: 1px solid var(--kerf-border); color: var(--kerf-text-mute); font-size: 11px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="banner-top">
+  <span class="label">Company / HR Operations · v0.1</span> &middot;
+  Flow C addendum to <code>kerf_views_master_v0_2.html</code> &middot;
+  built at canon mobile v2 + v3 §M desktop fidelity &middot;
+  <strong>Kerf-native UI · channel-agnostic notifications</strong>
+</div>
+
+<div class="doc-header">
+  <h1>Kerf · <span class="rh">Company / HR Operations</span> Lane · v0.1</h1>
+  <p class="sub">
+    Flow C of the views master. Christian's handoff identified a missing operating lane: <strong>Company / HR Operations</strong>. Built using canon v2 mobile + v3 §M desktop class names directly so changes flow through canon, not parallel design.
+  </p>
+  <p class="sub" style="margin-top: 10px;">
+    <strong>On notifications:</strong> the V1 phase uses Slack as one approval channel because Christian is sole approver and lives there — but Slack chrome is <em>not</em> the Kerf UI. Notifications are channel-agnostic (Slack push / SMS / iMessage / email / OS push); tapping any of them lands the user in <strong>Kerf's own UI</strong> at the relevant Decision Packet. The UI is canon mobile v2 (phone) + canon v3 §M (desktop, V1.5+).
+  </p>
+  <div class="source-cite">
+    <strong>Source basis:</strong> Christian's handoff (Apr 2026) · <code>_AUDIT_2026-05-04_Company_HR_Lane_Readiness.md</code> · <code>D-031-company-hr-lane-schema.md</code> (DRAFT) · <code>project_kerf_company_hr_lane.md</code><br>
+    <strong>Visual basis:</strong> mobile v2 §operator A/B/C/D (3-tier landing · Pulse · 5-rail Blackboard · permission lattice) + v3_apr23 §M Desktop Views (intake queue · MoO dashboard · CO desktop review) + v3 §K MoO role-aware preview.
+  </div>
+</div>
+
+<nav class="flow-nav">
+  <a href="#c1"><span class="nav-label">C·01</span>Cert renewal · notification → DQ (V1)</a>
+  <a href="#c2"><span class="nav-label">C·02</span>Owner mobile · cert in queue (V1)</a>
+  <a href="#c3"><span class="nav-label">C·03</span>Pulse · HR vital signs (V1)</a>
+  <a href="#c4"><span class="nav-label">C·04</span>Desktop · People (V1.5)</a>
+  <a href="#c5"><span class="nav-label">C·05</span>Desktop · Rates (V1.5)</a>
+  <a href="#c6"><span class="nav-label">C·06</span>Desktop · Certifications (V1.5)</a>
+  <a href="#c7"><span class="nav-label">C·07</span>Desktop · PM-safe staffing (V1.5)</a>
+  <a href="#c8"><span class="nav-label">C·08</span>Mobile employee · ES (V2.1)</a>
+</nav>
+
+<div class="master">
+
+<section class="section">
+  <div class="section-h">
+    <h2>Flow C · Company / HR Operations — V1 schema, V1.5 desktop lane, V2.1 ES self-service</h2>
+    <p class="narr">
+      Walk-through: Sentry detects Juan's OSHA-30 cert expires in 12 days. Right Hand drafts a <code>CERTIFICATION_RENEWAL</code> Decision Packet. A notification arrives on Christian's phone (channel-agnostic: Slack push, SMS, iMessage, OS push — operator chooses). He taps it, lands in Kerf's mobile DQ, approves. Pulse view shows the cert deficit + crew on site. Desktop Company lane (V1.5) is where day-to-day HR ops happens, built on canon v3 §M structure. PM gets a safe staffing projection — same UI, narrower read lattice. V2.1 adds Spanish-default mobile employee self-service.
+    </p>
+  </div>
+
+  <!-- ============= C·01 Notification → DQ landing ============= -->
+  <div class="frame" id="c1">
+    <div class="frame-label">C · 01 · CERT EXPIRY · NOTIFICATION → KERF MOBILE DQ <span class="frame-note">V1 · channel-agnostic notification body · tap lands in Kerf UI · NOT Slack chrome</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-canon">V1</span>
+      <span class="tag tag-surface-mobile">Mobile</span>
+      <span class="tag tag-persona">Owner</span>
+      <span class="tag tag-altitude">L1</span>
+      <span class="tag tag-tenant-all">All tenants</span>
+    </div>
+    <p class="frame-narr">
+      8:14 AM. Juan's OSHA-30 expiry threshold hit. Right Hand drafted CERTIFICATION_RENEWAL. A notification arrives on Christian's phone — its visual presentation is iOS lock-screen style, but the <em>channel</em> is operator-configured (Slack push / SMS / iMessage / Apple push / email). Whatever channel it came through, tapping it opens <strong>Kerf's mobile app at the Decision Packet</strong>. The UI a user sees and acts inside is Kerf's own (canon v2 mobile fidelity), not the messaging app's chrome.
+    </p>
+    <p class="frame-source">Source: project_kerf_decision_packet.md (V1 surface discipline · Slack as one approval channel during V1 phase, not the UI) · canon mobile v2 §operator pattern.</p>
+    <div class="frame-render" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: #000;">
+
+      <!-- Left: notification on phone (channel-agnostic) -->
+      <div class="lock-screen-bg">
+        <div class="lock-clock">8:14</div>
+        <div class="lock-date">Monday · May 4</div>
+
+        <div class="notification">
+          <div class="notification-h">
+            <div class="app-icon">K</div>
+            <div class="app">Kerf · Decision ready</div>
+            <div class="when">now</div>
+          </div>
+          <div class="notification-title">L1 · Schedule Juan's OSHA-30 renewal</div>
+          <div class="notification-body">
+            12 days to expiry · SDSU class May 12 · <span style="color:#5FB37A;">●</span> HIGH conf · 4 sources · in routine ceiling
+          </div>
+        </div>
+
+        <div class="notification-channel-note">
+          Notification routed via your channel preference today:<br>
+          <span class="pill">Slack #kerf-decisions</span> · alternates: <span class="pill">SMS</span> <span class="pill">iMessage</span> <span class="pill">email</span> <span class="pill">OS push</span><br>
+          Channel doesn't change the Decision Packet — same content, same Kerf UI on tap.
+        </div>
+      </div>
+
+      <!-- Right: Kerf mobile DQ landing on the Decision Packet -->
+      <div style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 8px; display: flex; justify-content: center;">
+        <div class="mobile-frame" style="margin: 0; box-shadow: 0 8px 28px rgba(0,0,0,0.5);">
+          <div class="mobile-screen">
+            <div class="mobile-statusbar"><span>8:14</span><span>5G ●●●●● 92%</span></div>
+            <div class="mobile-topbar">
+              <span class="brand">KERF</span>
+              <span class="ctx">OWNER · CHRISTIAN · MON</span>
+              <span class="avatar">CA</span>
+            </div>
+            <div class="mobile-body">
+              <div class="section-marker">DECISION · CERT RENEWAL <span class="right">L1 · 8:14 AM</span></div>
+
+              <div class="dp-card gated warn-band">
+                <div class="dp-header-row">
+                  <div class="dp-rh-mark">RH</div>
+                  <div class="dp-meta-line"><strong>L1 · Sentry projection · cert lane</strong> · <span class="small">Juan H · GGR</span></div>
+                  <span class="dp-status-pill gated">Gated</span>
+                </div>
+                <div class="dp-title-row">Schedule Juan's OSHA-30 renewal — 12 days to expire</div>
+                <div class="dp-body">
+                  SDSU class May 12 · last spot available · $185 fee · Mike confirms Carlos covers Coring May 12 · re-shifts Juan's framing day to May 13.
+                </div>
+
+                <div style="margin: 8px 0; padding: 8px 10px; background: var(--kerf-panel-2); border-radius: 6px; font-size: 11px; line-height: 1.55;">
+                  <div style="font-size: 10px; color: var(--kerf-text-mute); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Why · 4 sources</div>
+                  <span class="dot-status warn"></span>Sentry · OSHA-30 expires May 16<br>
+                  <span class="dot-status success"></span>SDSU registry · May 12 confirmed<br>
+                  <span class="dot-status success"></span>Mike SMS · Carlos covers<br>
+                  <span class="dot-status success"></span>Cost KB · $185 standard<br>
+                  <div style="margin-top: 6px;">
+                    <span class="layer-chip layer-tenant">TENANT_MEMORY</span>
+                    <span class="layer-chip layer-public">PUBLIC_REFERENCE</span>
+                  </div>
+                </div>
+
+                <div style="margin: 8px 0; padding: 8px 10px; background: var(--kerf-panel-2); border-radius: 6px; font-size: 11px; line-height: 1.55;">
+                  <div style="font-size: 10px; color: var(--kerf-text-mute); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Effects if approved</div>
+                  Artifact · SDSU registration + calendar updates<br>
+                  Memory · "OSHA-30 lead time = 14d minimum"<br>
+                  Lifecycle · READY → APPROVED → Platform locked
+                </div>
+
+                <div class="dp-action-row">
+                  <button class="btn">Defer</button>
+                  <button class="btn">Edit</button>
+                  <button class="btn btn-rh">Approve</button>
+                </div>
+              </div>
+            </div>
+            <div class="mobile-tabbar">
+              <div class="mobile-tab active"><div class="icon">DQ</div>Decisions</div>
+              <div class="mobile-tab"><div class="icon">BB</div>Board</div>
+              <div class="mobile-tab"><div class="icon">●</div>Capture</div>
+              <div class="mobile-tab"><div class="icon">RH</div>Right Hand</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="frame-spec">
+      <h4>Channel ≠ UI</h4>
+      <ul>
+        <li>The notification on the left is rendered in iOS lock-screen style for illustration. Its <strong>actual delivery channel</strong> is whatever the operator configured: Slack push, SMS, iMessage, email, OS push. Per <code>project_kerf_decision_packet.md</code>: "messaging is channel-agnostic; Slack is one V1 phase channel."</li>
+        <li>The right panel is the <strong>Kerf mobile UI</strong> the user lands in after tapping the notification. Canon mobile v2 fidelity. This is what Kerf's app looks like.</li>
+        <li><strong>Slack chrome (#kerf-decisions sidebar, channel header, message threading) is never the Kerf UI.</strong> A Slack-rendered version of the Decision Packet exists in V1 because Christian is sole approver and approves from inside Slack — but the v0_2 Flow A frames that depict Slack as the UI design are corrected here in favor of channel-agnostic notification + Kerf-native UI.</li>
+      </ul>
+      <h4>v0.2 §5.1 Decision Packet schema rendered in Kerf UI</h4>
+      <ul>
+        <li><code>question</code>, <code>recommendation</code>, <code>recommendation_reason</code> with 4 source items</li>
+        <li><code>evidence_ids[]</code> with source-layer chips per item (TENANT_MEMORY · PUBLIC_REFERENCE)</li>
+        <li><code>artifact_effect</code>, <code>memory_effect</code>, lifecycle transition (effects-if-approved block)</li>
+        <li>Three primary actions: Defer / Edit / Approve. Same contract as every Decision Packet (per <code>project_kerf_decision_packet.md</code> §5.2)</li>
+      </ul>
+      <h4>What the operator sees</h4>
+      <ul>
+        <li>Notification → tap → app opens to this exact Decision Packet detail. No "go to channel, find message, scroll" friction.</li>
+        <li>If the notification routes via Slack, tapping the Slack push uses Slack's deep-link to open Kerf — not navigate inside Slack.</li>
+        <li>If channel is SMS, tapping the SMS link opens Kerf to the same packet.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============= C·02 Owner mobile DQ — multi-card view ============= -->
+  <div class="frame" id="c2">
+    <div class="frame-label">C · 02 · OWNER MOBILE DQ — CERT IN QUEUE WITH OTHER ITEMS <span class="frame-note">V1 · sort altitude → financial impact → age · Sentry-projected lane visible</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-canon">V1</span>
+      <span class="tag tag-surface-mobile">Mobile</span>
+      <span class="tag tag-persona">Owner</span>
+      <span class="tag tag-altitude">L1-L3</span>
+    </div>
+    <p class="frame-narr">
+      9:41 AM. Christian opens the queue normally (not from a notification). Sort is <code>altitude DESC → financial_impact DESC → created_at ASC</code> per v0.2 §5.2. Cert renewal sits in ON DECK — L1 below the L3 site re-grading, but still surfaced. Canon mobile v2 §operator pattern (3-tier landing).
+    </p>
+    <p class="frame-source">Source: canon mobile v2 §operator A · v0.2 §5.2 sort.</p>
+    <div class="frame-render" style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 0;">
+      <div class="mobile-frame">
+        <div class="mobile-screen">
+          <div class="mobile-statusbar"><span>9:41</span><span>5G ●●●●● 92%</span></div>
+          <div class="mobile-topbar">
+            <span class="brand">KERF</span>
+            <span class="ctx">OWNER · CHRISTIAN · MON</span>
+            <span class="avatar">CA</span>
+          </div>
+          <div class="mobile-body">
+            <div class="section-marker">THE ONE THING <span class="right">decide soon</span></div>
+            <div class="dp-card gated alert-band">
+              <div class="dp-header-row">
+                <div class="dp-rh-mark">RH</div>
+                <div class="dp-meta-line"><strong>L3 · GGR · Clem</strong> · <span class="small">2h 33m ago</span></div>
+                <span class="dp-status-pill gated">Gated</span>
+              </div>
+              <div class="dp-title-row">Approve $4,200 site re-grading <span class="amount">+$4,200</span></div>
+              <div class="dp-body">North slope worse than survey · 16 hr machine + 2 days laborer · 2 PROJECT_ACTUAL precedents · MED conf · low N. Owner review required.</div>
+              <div class="dp-action-row">
+                <button class="btn">Defer</button>
+                <button class="btn">Open</button>
+                <button class="btn btn-rh">Approve</button>
+              </div>
+            </div>
+
+            <div class="section-marker">ON DECK <span class="right">2 items</span></div>
+
+            <div class="dp-card gated warn-band">
+              <div class="dp-header-row">
+                <div class="dp-rh-mark">RH</div>
+                <div class="dp-meta-line"><strong>L1 · Sentry projection · cert lane</strong> · <span class="small">8:14 AM</span></div>
+                <span class="dp-status-pill gated">Gated</span>
+              </div>
+              <div class="dp-title-row">Schedule Juan's OSHA-30 renewal — 12 days</div>
+              <div class="dp-body">SDSU May 12 · last spot · Carlos covers Coring · $185 fee. <span style="color: var(--sentry);">●</span> compliance lane.</div>
+              <div class="dp-action-row">
+                <button class="btn">Defer</button>
+                <button class="btn">Open</button>
+                <button class="btn btn-rh">Approve</button>
+              </div>
+            </div>
+
+            <div class="dp-card gated success-band">
+              <div class="dp-header-row">
+                <div class="dp-rh-mark">RH</div>
+                <div class="dp-meta-line"><strong>L2 · Valle · Moore</strong> · <span class="small">1d 9h ago</span></div>
+                <span class="dp-status-pill gated">Routine</span>
+              </div>
+              <div class="dp-title-row">Promote $5/sf zellige labor adjustment to TENANT_MEMORY?</div>
+              <div class="dp-body">Pattern n=3 across CO-204, CO-198, CO-189. Two-step inference firewall · operator confirms.</div>
+              <div class="dp-action-row">
+                <button class="btn">Skip</button>
+                <button class="btn btn-rh">Promote</button>
+              </div>
+            </div>
+          </div>
+          <div class="mobile-tabbar">
+            <div class="mobile-tab active"><div class="icon">DQ</div>Decisions</div>
+            <div class="mobile-tab"><div class="icon">BB</div>Board</div>
+            <div class="mobile-tab"><div class="icon">●</div>Capture</div>
+            <div class="mobile-tab"><div class="icon">RH</div>Right Hand</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h4>v0.2 §5.2 sort visible</h4>
+      <ul>
+        <li><strong>L3 ($4,200 Clem)</strong> on top — highest altitude wins.</li>
+        <li><strong>L1 Juan cert</strong> in ON DECK — surfaced because it's highest in L1 today, despite lower altitude.</li>
+        <li><strong>L2 zellige promote</strong> third — older, but L2 in altitude.</li>
+      </ul>
+      <h4>HR cards visually integrated, not separated</h4>
+      <ul>
+        <li>HR Decision Packets render in the same DQ as CO / invoice / drift cards. No separate "HR tab."</li>
+        <li>Sentry-projected lane shown via inline <span style="color: var(--sentry);">● compliance lane</span> annotation in the body — operator sees provenance.</li>
+        <li>Same Approve/Edit/Reject contract — DQ is workflow-agnostic.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============= C·03 Pulse view with HR vital signs ============= -->
+  <div class="frame" id="c3">
+    <div class="frame-label">C · 03 · PULSE · HR VITAL SIGNS <span class="frame-note">V1 · canon v2 §operator C "The Pulse" pattern · adds CREWS ON SITE + CERT EXPIRY tiles</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-canon">V1</span>
+      <span class="tag tag-surface-mobile">Mobile</span>
+      <span class="tag tag-persona">Owner</span>
+    </div>
+    <p class="frame-narr">
+      The Pulse view from canon mobile v2 — operational state at a glance. HR adds CREWS ON SITE + CERT EXPIRY tiles. Right Hand note offers cross-decision pattern detection (bundle Juan + Carlos cert renewals).
+    </p>
+    <p class="frame-source">Source: canon mobile v2 §operator C The Pulse pattern · adds HR-domain tiles.</p>
+    <div class="frame-render" style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 0;">
+      <div class="mobile-frame">
+        <div class="mobile-screen">
+          <div class="mobile-statusbar"><span>9:42</span><span>5G ●●●●● 92%</span></div>
+          <div class="mobile-topbar">
+            <span class="brand">KERF</span>
+            <span class="ctx">OWNER · CHRISTIAN · MON</span>
+            <span class="avatar">CA</span>
+          </div>
+          <div class="mobile-body">
+            <div class="pulse-h">
+              <span class="label">THE PULSE</span>
+              <span class="window">live · 4hr window</span>
+              <span class="live">LIVE</span>
+            </div>
+            <div style="font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">TODAY'S VITAL SIGNS</div>
+
+            <div class="pulse-tiles">
+              <div class="pulse-tile">
+                <div class="label">ACTIVE JOBS</div>
+                <div class="value">8</div>
+                <div class="delta">3 hot · 5 steady</div>
+              </div>
+              <div class="pulse-tile">
+                <div class="label">ON-TIME %</div>
+                <div class="value success">92%</div>
+                <div class="delta">+4 vs last wk</div>
+              </div>
+              <div class="pulse-tile">
+                <div class="label">CREWS ON SITE</div>
+                <div class="value">4 / 5</div>
+                <div class="delta">Carlos late · Patel</div>
+              </div>
+              <div class="pulse-tile">
+                <div class="label">CASH THIS WK</div>
+                <div class="value">$184k</div>
+                <div class="delta">WIP value</div>
+              </div>
+              <div class="pulse-tile" style="border-color: var(--sentry);">
+                <div class="label" style="color: var(--sentry);">CERT EXPIRY</div>
+                <div class="value warn">2</div>
+                <div class="delta">Juan OSHA · Tue · 12d</div>
+              </div>
+              <div class="pulse-tile">
+                <div class="label">MARGIN-DRIFT</div>
+                <div class="value alert">−1.3pt</div>
+                <div class="delta">Moore HPG sub mix</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px; font-size: 11px; color: var(--rh); display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">◆ Open the Blackboard · 5 rails</span>
+              <span style="margin-left: auto; font-size: 14px;">›</span>
+            </div>
+
+            <div class="rh-note">
+              <div class="header">Right Hand · Note</div>
+              Two cert lapses inside 30 days · Juan's OSHA-30 + Carlos's first-aid (Mar 2). I drafted Juan as Decision Packet (12d to act); Carlos's I'm holding for next week. Want me to bundle them into one SDSU class registration?
+            </div>
+          </div>
+          <div class="mobile-tabbar">
+            <div class="mobile-tab"><div class="icon">DQ</div>Decisions</div>
+            <div class="mobile-tab active"><div class="icon">BB</div>Board</div>
+            <div class="mobile-tab"><div class="icon">●</div>Capture</div>
+            <div class="mobile-tab"><div class="icon">RH</div>Right Hand</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h4>HR-specific tiles added (per D-031)</h4>
+      <ul>
+        <li><strong>CREWS ON SITE</strong> — sourced from <code>employee.role_assigned</code> + check-ins via field Capture.</li>
+        <li><strong>CERT EXPIRY</strong> — Sentry-projected count of certs expiring &lt;30 days. Sentry color (yellow). Tap drills into Certifications projection (frame C·06).</li>
+        <li>Pulse tile pattern from canon mobile v2 — same render, two HR tiles added without changing the layout.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============= C·04 Desktop · People (canon v3 §M structure) ============= -->
+  <div class="frame" id="c4">
+    <div class="frame-label">C · 04 · DESKTOP · COMPANY · PEOPLE <span class="frame-note">V1.5 · canon v3 §M · desk-topbar + desk-sidebar + desk-main · adds Company nav group alongside Today / Projects / Money</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-aspir">V1.5</span>
+      <span class="tag tag-surface-desktop">Desktop</span>
+      <span class="tag tag-persona">Owner / MoO / HR Staff</span>
+    </div>
+    <p class="frame-narr">
+      Desktop Company surface using canon v3 §M structure exactly. The sidebar carries Today / Projects / Money / <strong>Company</strong> as nav groups. Main area uses <code>desk-h1</code> + <code>desk-sub</code> + <code>desk-metric-row</code> + <code>intake-desk-table</code> patterns directly from v3. No invented layouts — same class names so canon updates flow through.
+    </p>
+    <p class="frame-source">Source: canon v3 §M L.1 Intake queue desktop · structure reused for Company → People.</p>
+    <div class="frame-render" style="padding: 16px;">
+      <div class="desktop-frame">
+        <div class="desk-topbar">
+          <div class="desk-brand">KERF</div>
+          <div class="desk-search">⌕ &nbsp; search projects, clients, intake drafts, employees…</div>
+          <div class="desk-user"><span>Christian · Owner</span><div class="op-avatar">CA</div></div>
+        </div>
+        <div class="desk-body">
+          <div class="desk-sidebar">
+            <div class="desk-nav-group">Today</div>
+            <div class="desk-nav-item">◉ The One Thing</div>
+            <div class="desk-nav-item">▣ Blackboard</div>
+            <div class="desk-nav-item">+ Intake queue</div>
+            <div class="desk-nav-item">⟐ Triage</div>
+            <div class="desk-nav-group">Projects</div>
+            <div class="desk-nav-item">⎈ Active · 8</div>
+            <div class="desk-nav-item">⎈ Proposals · 3</div>
+            <div class="desk-nav-item">⎈ Locked · 41</div>
+            <div class="desk-nav-group">Money</div>
+            <div class="desk-nav-item">$ Homeowner pay</div>
+            <div class="desk-nav-item">$ Crew cards</div>
+            <div class="desk-nav-item">$ Job cards</div>
+            <div class="desk-nav-group">Company</div>
+            <div class="desk-nav-item active">👤 People <span class="nav-badge">14</span></div>
+            <div class="desk-nav-item">👥 Crews <span class="nav-badge">5</span></div>
+            <div class="desk-nav-item">$ Rates <span class="nav-badge">7</span></div>
+            <div class="desk-nav-item">📜 Certifications <span class="nav-badge warn">2</span></div>
+            <div class="desk-nav-item">🗓 Time off <span class="nav-badge">3</span></div>
+            <div class="desk-nav-item">📋 Policies <span class="nav-badge">8</span></div>
+            <div class="desk-nav-item">🔧 Equipment</div>
+            <div class="desk-nav-item">⚠ Incidents <span class="nav-badge alert">1</span></div>
+          </div>
+          <div class="desk-main">
+            <div class="desk-h1">Company · People</div>
+            <div class="desk-sub">14 employees · 5 crews · 2 certs expiring &lt;30d · GGR + Valle + HPG</div>
+
+            <div class="desk-metric-row">
+              <div class="desk-metric">
+                <div class="desk-metric-val">14</div>
+                <div class="desk-metric-lbl">Active employees</div>
+                <div class="desk-metric-delta">+1 this quarter</div>
+              </div>
+              <div class="desk-metric">
+                <div class="desk-metric-val">5</div>
+                <div class="desk-metric-lbl">Crews · 4 leads named</div>
+              </div>
+              <div class="desk-metric">
+                <div class="desk-metric-val warn">2</div>
+                <div class="desk-metric-lbl">Cert warnings &lt;30d</div>
+                <div class="desk-metric-delta down">+2 vs last wk</div>
+              </div>
+              <div class="desk-metric">
+                <div class="desk-metric-val">3</div>
+                <div class="desk-metric-lbl">PTO requests pending</div>
+              </div>
+            </div>
+
+            <table class="intake-desk-table">
+              <thead>
+                <tr><th>Name</th><th>Role</th><th>Crew</th><th>Tenant</th><th>Status</th><th>Cert state</th><th>Hire</th></tr>
+              </thead>
+              <tbody>
+                <tr class="selected">
+                  <td><b>Juan Hernández</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">L1 · 4 yr</span></td>
+                  <td>Carpenter-Remodel</td>
+                  <td>Crew B (Mike)</td>
+                  <td>GGR</td>
+                  <td><span class="dot-status success"></span>Active</td>
+                  <td><span class="dot-status warn"></span>OSHA-30 12d</td>
+                  <td>2022-03-14</td>
+                </tr>
+                <tr>
+                  <td><b>Carlos Méndez</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">L1 · 7 yr</span></td>
+                  <td>Tradesman</td>
+                  <td>Crew A (lead)</td>
+                  <td>GGR / Valle</td>
+                  <td><span class="dot-status success"></span>Active</td>
+                  <td><span class="dot-status warn"></span>1st aid 28d</td>
+                  <td>2019-08-02</td>
+                </tr>
+                <tr>
+                  <td><b>José Ramírez</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">L1 · 2 yr</span></td>
+                  <td>Laborer-Semi</td>
+                  <td>Crew B</td>
+                  <td>GGR</td>
+                  <td><span class="dot-status success"></span>Active</td>
+                  <td><span class="dot-status success"></span>current</td>
+                  <td>2024-04-15</td>
+                </tr>
+                <tr>
+                  <td><b>Miguel Torres</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">L0 · 8 mo</span></td>
+                  <td>Laborer-Semi</td>
+                  <td>Crew C</td>
+                  <td>HPG</td>
+                  <td><span class="dot-status success"></span>Active</td>
+                  <td><span class="dot-status success"></span>current</td>
+                  <td>2025-09-01</td>
+                </tr>
+                <tr>
+                  <td><b>Sara Chen</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">MoO · 3 yr</span></td>
+                  <td>Manager of Ops</td>
+                  <td>—</td>
+                  <td>All</td>
+                  <td><span class="dot-status success"></span>Active</td>
+                  <td>—</td>
+                  <td>2023-01-09</td>
+                </tr>
+                <tr>
+                  <td><b>Mike Foley</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">PM · GGR</span></td>
+                  <td>Project Manager</td>
+                  <td>Crew B (lead)</td>
+                  <td>GGR</td>
+                  <td><span class="dot-status success"></span>Active</td>
+                  <td><span class="dot-status success"></span>current</td>
+                  <td>2021-06-20</td>
+                </tr>
+                <tr>
+                  <td><b>Lewis Cabinet Co.</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">sub · Valle</span></td>
+                  <td>Sub · cabinetry</td>
+                  <td>—</td>
+                  <td>Valle</td>
+                  <td><span class="dot-status success"></span>Active</td>
+                  <td><span class="dot-status success"></span>COI on file</td>
+                  <td>2020-11-30</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="margin-top: 18px; padding: 12px; background: var(--kerf-panel); border: 1px solid var(--rh); border-radius: 8px;">
+              <div class="desk-card-label" style="color: var(--rh);">SELECTED · JUAN HERNÁNDEZ</div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 8px; font-size: 11.5px; line-height: 1.6;">
+                <div>
+                  <div style="color: var(--kerf-text-mute); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Currently on</div>
+                  Coring · framing through May 11
+                </div>
+                <div>
+                  <div style="color: var(--kerf-text-mute); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Loaded rate <span style="color: var(--alert);">🔒</span></div>
+                  <span style="color: var(--alert); font-style: italic;">privileged</span>
+                </div>
+                <div>
+                  <div style="color: var(--kerf-text-mute); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Certs · 4</div>
+                  3 current · 1 expires 12d
+                </div>
+                <div>
+                  <div style="color: var(--kerf-text-mute); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Incidents</div>
+                  <span style="color: var(--kerf-text-mute); font-style: italic;">none on file</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="privacy-banner-inline" style="margin-top: 14px;">
+              🔒 <span><strong>Operator-private fields:</strong> rate · incidents · permission changes. Visible to Owner / MoO / delegated HR Staff only. PM, Field, Sub, Office never see these — not redacted, never persisted to those views.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h4>Canon v3 §M structure used directly</h4>
+      <ul>
+        <li><strong>desk-topbar</strong> (44px): brand · search · user — same as v3 L.1 Intake queue.</li>
+        <li><strong>desk-sidebar</strong> (200px): Today / Projects / Money / <strong>Company</strong> as desk-nav-group. Nav-badge counts (warn for 2 cert warnings, alert for 1 incident).</li>
+        <li><strong>desk-main</strong>: desk-h1 + desk-sub + desk-metric-row (4 metrics) + intake-desk-table (employee list) + selected-row card + privacy banner.</li>
+        <li><strong>No invented columns.</strong> No 56px module rail. No 320px right detail panel. The selected-row inline card replaces the right-detail-pane pattern from my prior version.</li>
+      </ul>
+      <h4>Privacy boundaries enforced visually</h4>
+      <ul>
+        <li>"Loaded rate · 🔒 privileged" — visible to operator that the field exists but is not displayed unless role permits.</li>
+        <li>PM rendering of this same view: Rates / Incidents nav items don't appear at all (frame C·07 shows that).</li>
+        <li>Bottom banner makes the privacy contract explicit.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============= C·05 Desktop · Rates ============= -->
+  <div class="frame" id="c5">
+    <div class="frame-label">C · 05 · DESKTOP · COMPANY · RATES <span class="frame-note">V1.5 · labor_resource entity · source-layer chips · two-step memory promotion as inline cards</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-aspir">V1.5</span>
+      <span class="tag tag-surface-desktop">Desktop</span>
+      <span class="tag tag-persona">Owner / MoO</span>
+    </div>
+    <p class="frame-narr">
+      Rates are <code>labor_resource</code> entities — separate from <code>employee</code> so PM "no rates" is structural. Every rate carries a source-layer chip. Pending TENANT_MEMORY promotions live as inline cards in the main area (canon v3 desk-card pattern). Owner confirms the two-step inference firewall.
+    </p>
+    <p class="frame-source">Source: canon v3 §M structure · v0.2 §7 source layers · D-031 labor_resource entity.</p>
+    <div class="frame-render" style="padding: 16px;">
+      <div class="desktop-frame">
+        <div class="desk-topbar">
+          <div class="desk-brand">KERF</div>
+          <div class="desk-search">⌕ &nbsp; search rates, labor resources…</div>
+          <div class="desk-user"><span>Christian · Owner</span><div class="op-avatar">CA</div></div>
+        </div>
+        <div class="desk-body">
+          <div class="desk-sidebar">
+            <div class="desk-nav-group">Today</div>
+            <div class="desk-nav-item">◉ The One Thing</div>
+            <div class="desk-nav-item">▣ Blackboard</div>
+            <div class="desk-nav-group">Company</div>
+            <div class="desk-nav-item">👤 People <span class="nav-badge">14</span></div>
+            <div class="desk-nav-item">👥 Crews <span class="nav-badge">5</span></div>
+            <div class="desk-nav-item active">$ Rates <span class="nav-badge">7</span></div>
+            <div class="desk-nav-item">📜 Certifications <span class="nav-badge warn">2</span></div>
+            <div class="desk-nav-item">🗓 Time off <span class="nav-badge">3</span></div>
+            <div class="desk-nav-item">📋 Policies <span class="nav-badge">8</span></div>
+            <div class="desk-nav-item">🔧 Equipment</div>
+            <div class="desk-nav-item">⚠ Incidents <span class="nav-badge alert">1</span></div>
+          </div>
+          <div class="desk-main">
+            <div class="desk-h1">Company · Rates &amp; Labor Resources</div>
+            <div class="desk-sub">7 resources · last QBO sync 2 min ago · 2 LearningSignals queued for promotion</div>
+
+            <div class="desk-metric-row">
+              <div class="desk-metric"><div class="desk-metric-val">7</div><div class="desk-metric-lbl">Active resources</div></div>
+              <div class="desk-metric"><div class="desk-metric-val">$42</div><div class="desk-metric-lbl">Avg loaded rate · /hr</div></div>
+              <div class="desk-metric"><div class="desk-metric-val warn">2</div><div class="desk-metric-lbl">Pending memory promotions</div></div>
+              <div class="desk-metric"><div class="desk-metric-val success">98%</div><div class="desk-metric-lbl">Estimates within 5% of actual</div></div>
+            </div>
+
+            <table class="intake-desk-table">
+              <thead>
+                <tr><th>Resource</th><th>Default</th><th>Override</th><th>Source</th><th>Last 5-job avg</th><th>Updated</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Carpenter-Remodel</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">Juan, Mike, Carlos</span></td>
+                  <td>$42 / hr</td>
+                  <td style="color: var(--kerf-text-mute);">—</td>
+                  <td><span class="layer-chip layer-tenant">TENANT_MEMORY</span></td>
+                  <td>$41.80</td>
+                  <td>2d ago</td>
+                </tr>
+                <tr>
+                  <td><b>Laborer-Semi</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">José, Miguel</span></td>
+                  <td>$29 / hr</td>
+                  <td style="color: var(--kerf-text-mute);">—</td>
+                  <td><span class="layer-chip layer-tenant">TENANT_MEMORY</span></td>
+                  <td>$28.95</td>
+                  <td>2d ago</td>
+                </tr>
+                <tr>
+                  <td><b>Tradesman</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">Carlos · cross-trade</span></td>
+                  <td>$48 / hr</td>
+                  <td style="color: var(--kerf-text-mute);">—</td>
+                  <td><span class="layer-chip layer-tenant">TENANT_MEMORY</span></td>
+                  <td>$47.60</td>
+                  <td>1w ago</td>
+                </tr>
+                <tr style="background: rgba(201,168,118,0.06);">
+                  <td><b>Zellige tile install</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">Carpenter-Remodel · zellige adder</span></td>
+                  <td>$58 / hr</td>
+                  <td style="color: var(--rh); font-weight: 700;">$60 / hr</td>
+                  <td><span class="layer-chip layer-override">ESTIMATE_OVERRIDE</span></td>
+                  <td>$59.40</td>
+                  <td>3d ago</td>
+                </tr>
+                <tr style="background: rgba(95,179,122,0.04);">
+                  <td><b>Demo</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">Sevadjian-pattern phase</span></td>
+                  <td>$36 / hr</td>
+                  <td style="color: var(--rh); font-weight: 700;">$40 / hr</td>
+                  <td><span class="layer-chip layer-actual">PROJECT_ACTUAL</span></td>
+                  <td>$39.80</td>
+                  <td>5d ago</td>
+                </tr>
+                <tr>
+                  <td><b>Permit pull</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">office only</span></td>
+                  <td>$45 / hr</td>
+                  <td style="color: var(--kerf-text-mute);">—</td>
+                  <td><span class="layer-chip layer-public">PUBLIC_REFERENCE</span></td>
+                  <td style="color: var(--kerf-text-mute);">n/a</td>
+                  <td>cold start</td>
+                </tr>
+                <tr>
+                  <td><b>Subcontractor markup</b><br><span style="font-size:9.5px; color:var(--kerf-text-mute);">default 18%</span></td>
+                  <td>18%</td>
+                  <td style="color: var(--kerf-text-mute);">—</td>
+                  <td><span class="layer-chip layer-tenant">TENANT_MEMORY</span></td>
+                  <td>17.4%</td>
+                  <td>1mo ago</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="desk-grid" style="margin-top: 18px;">
+              <div class="desk-card" style="border-left: 3px solid var(--rh);">
+                <div class="desk-card-label" style="color: var(--rh);">● MEMORY_PROMOTE · L2</div>
+                <div class="desk-card-title">Promote zellige labor $58 → $60 to TENANT_MEMORY?</div>
+                <div style="font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5; margin-top: 6px;">
+                  Pattern n=3 of 5 zellige jobs (CO-204 · CO-198 · CO-189). Two-step firewall: edits were step 1; this is step 2.
+                </div>
+                <div style="display: flex; gap: 6px; margin-top: 10px;">
+                  <button class="btn btn-rh" style="padding: 6px 12px; font-size: 11px;">Promote</button>
+                  <button class="btn" style="padding: 6px 12px; font-size: 11px;">Keep as override</button>
+                </div>
+              </div>
+              <div class="desk-card" style="border-left: 3px solid var(--success);">
+                <div class="desk-card-label" style="color: var(--success);">● MEMORY_PROMOTE · L2</div>
+                <div class="desk-card-title">Demo rate $36 → $40 — confirmed by 5 PROJECT_ACTUAL?</div>
+                <div style="font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5; margin-top: 6px;">
+                  Last 5 closed-job actuals avg $39.80. Currently TENANT_MEMORY default is $36 — out of date by ~12%.
+                </div>
+                <div style="display: flex; gap: 6px; margin-top: 10px;">
+                  <button class="btn btn-rh" style="padding: 6px 12px; font-size: 11px;">Update to $40</button>
+                  <button class="btn" style="padding: 6px 12px; font-size: 11px;">Defer</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h4>Source-layer authority visible everywhere (v0.2 §7)</h4>
+      <ul>
+        <li>Each rate row's <code>source_layer</code> chip — provenance authority at a glance.</li>
+        <li>"Last 5-job avg" sourced from <code>PROJECT_ACTUAL</code> — calibration data. When TENANT_MEMORY drifts &gt;10% from actuals, RH surfaces a MEMORY_PROMOTE.</li>
+      </ul>
+      <h4>Two-step inference firewall as desk-grid cards</h4>
+      <ul>
+        <li>Pending promotions render as desk-card with `[Promote]` and `[Keep as override]`. Per <code>project_kerf_source_layers.md</code>: one-click promotion would defeat source defensibility.</li>
+        <li>Cards use canon v3 §M desk-grid pattern (2-column).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============= C·06 Desktop · Certifications ============= -->
+  <div class="frame" id="c6">
+    <div class="frame-label">C · 06 · DESKTOP · COMPANY · CERTIFICATIONS <span class="frame-note">V1.5 · projection over Sentry's compliance_event stream · NOT a parallel agent</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-aspir">V1.5</span>
+      <span class="tag tag-surface-desktop">Desktop</span>
+      <span class="tag tag-persona">Owner / HR Staff</span>
+    </div>
+    <p class="frame-narr">
+      Certifications view is a projection over Sentry's <code>compliance_event</code> stream. Not a new agent. Sentry-watching state shown as a topbar pill. V1.5 = passive monitoring · V2.0α = active gating refuses lifecycle promotions when prereqs unmet.
+    </p>
+    <p class="frame-source">Source: canon v3 §M structure · D-021 Sentry boundaries · D-031.</p>
+    <div class="frame-render" style="padding: 16px;">
+      <div class="desktop-frame">
+        <div class="desk-topbar">
+          <div class="desk-brand">KERF</div>
+          <div class="desk-search">⌕ &nbsp; search certs · employees · expiries…</div>
+          <div class="desk-user">
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid var(--sentry); border-radius: 10px; font-size: 10.5px; color: var(--sentry); font-weight: 600;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--sentry); display: inline-block;"></span>Sentry · 2 warnings
+            </span>
+            <span>Christian · Owner</span>
+            <div class="op-avatar">CA</div>
+          </div>
+        </div>
+        <div class="desk-body">
+          <div class="desk-sidebar">
+            <div class="desk-nav-group">Today</div>
+            <div class="desk-nav-item">◉ The One Thing</div>
+            <div class="desk-nav-item">▣ Blackboard</div>
+            <div class="desk-nav-group">Company</div>
+            <div class="desk-nav-item">👤 People <span class="nav-badge">14</span></div>
+            <div class="desk-nav-item">👥 Crews <span class="nav-badge">5</span></div>
+            <div class="desk-nav-item">$ Rates <span class="nav-badge">7</span></div>
+            <div class="desk-nav-item active">📜 Certifications <span class="nav-badge warn">2</span></div>
+            <div class="desk-nav-item">🗓 Time off <span class="nav-badge">3</span></div>
+            <div class="desk-nav-item">📋 Policies <span class="nav-badge">8</span></div>
+            <div class="desk-nav-item">🔧 Equipment</div>
+            <div class="desk-nav-item">⚠ Incidents <span class="nav-badge alert">1</span></div>
+          </div>
+          <div class="desk-main">
+            <div class="desk-h1">Company · Certifications</div>
+            <div class="desk-sub">32 active · 2 expiring &lt;30d · 0 expired · projection over Sentry compliance_event stream</div>
+
+            <div class="desk-metric-row">
+              <div class="desk-metric"><div class="desk-metric-val">32</div><div class="desk-metric-lbl">Active certs</div></div>
+              <div class="desk-metric"><div class="desk-metric-val warn">2</div><div class="desk-metric-lbl">Expiring &lt;30d</div></div>
+              <div class="desk-metric"><div class="desk-metric-val success">0</div><div class="desk-metric-lbl">Expired</div></div>
+              <div class="desk-metric"><div class="desk-metric-val">14d</div><div class="desk-metric-lbl">RH lead-time pattern</div></div>
+            </div>
+
+            <table class="intake-desk-table">
+              <thead>
+                <tr><th>Employee</th><th>Cert</th><th>Issuer</th><th>Issued</th><th>Expires</th><th>Days</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr style="background: rgba(224,168,88,0.06);">
+                  <td><b>Juan Hernández</b></td>
+                  <td><b>OSHA-30</b></td>
+                  <td>OSHA Outreach (SDSU)</td>
+                  <td>2021-05-16</td>
+                  <td><b style="color: var(--warn);">2026-05-16</b></td>
+                  <td><b style="color: var(--warn);">12</b></td>
+                  <td><span class="status-chip warn">RH drafted</span></td>
+                </tr>
+                <tr style="background: rgba(224,168,88,0.06);">
+                  <td><b>Carlos Méndez</b></td>
+                  <td><b>First Aid / CPR</b></td>
+                  <td>American Red Cross</td>
+                  <td>2024-06-02</td>
+                  <td><b style="color: var(--warn);">2026-06-02</b></td>
+                  <td><b style="color: var(--warn);">28</b></td>
+                  <td><span class="status-chip warn">RH holding</span></td>
+                </tr>
+                <tr>
+                  <td>Juan Hernández</td><td>OSHA-10</td><td>OSHA Outreach</td><td>2024-08-04</td><td>2027-08-04</td><td>457</td>
+                  <td><span class="status-chip app">Current</span></td>
+                </tr>
+                <tr>
+                  <td>Juan Hernández</td><td>Lead-safe RRP</td><td>EPA</td><td>2024-03-15</td><td>2027-03-15</td><td>315</td>
+                  <td><span class="status-chip app">Current</span></td>
+                </tr>
+                <tr>
+                  <td>Carlos Méndez</td><td>OSHA-30</td><td>OSHA Outreach</td><td>2024-04-12</td><td>2027-04-12</td><td>343</td>
+                  <td><span class="status-chip app">Current</span></td>
+                </tr>
+                <tr>
+                  <td>Mike Foley</td><td>CSLB B-license</td><td>CA CSLB</td><td>2024-12-01</td><td>2026-11-30</td><td>210</td>
+                  <td><span class="status-chip app">Current</span></td>
+                </tr>
+                <tr>
+                  <td>All field crew</td><td>IIPP ack 2026</td><td>Internal</td><td>2026-01-15</td><td>2027-01-15</td><td>256</td>
+                  <td><span class="status-chip app">Current</span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="privacy-banner-inline future" style="margin-top: 14px;">
+              ℹ <span><strong>Sentry phasing:</strong> V1.5 passive — flags warnings, RH drafts renewals, owner approves. V2.0α active — Sentry refuses lifecycle promotions when prereqs unmet (e.g., assigning Juan to project requiring OSHA-30 once expired). Owner override path always available with logged justification.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h4>Architecturally — projection, not new agent</h4>
+      <ul>
+        <li>This view is a <strong>projection</strong> over Sentry's <code>compliance_event</code> stream + the <code>certification</code> entity from D-031.</li>
+        <li>Sentry-watching state shown in topbar pill (yellow with warning count). <strong>Not a new agent.</strong></li>
+        <li>Right Hand drafts CERTIFICATION_RENEWAL Decision Packets — those land in the DQ (frame C·02) and Slack/SMS notification (C·01).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============= C·07 PM-safe staffing (canon v3 §M) ============= -->
+  <div class="frame" id="c7">
+    <div class="frame-label">C · 07 · DESKTOP · PM-SAFE STAFFING <span class="frame-note">V1.5 · same canon v3 §M structure · PM read lattice removes Rates + Incidents from sidebar entirely</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-aspir">V1.5</span>
+      <span class="tag tag-surface-desktop">Desktop</span>
+      <span class="tag tag-persona">PM</span>
+    </div>
+    <p class="frame-narr">
+      Same canon v3 §M structure, PM read lattice. Rates and Incidents nav items <strong>structurally absent</strong> from the Company sidebar — not visually hidden, not persisted to PM read lattice at all (per <code>project_kerf_blackboard.md</code>). Job-relevant fields only: assigned crew, availability, relevant certs, contact, schedule conflicts.
+    </p>
+    <p class="frame-source">Source: canon v3 §M structure · v0.2 §4.2 Read lattice · permissions matrix.</p>
+    <div class="frame-render" style="padding: 16px;">
+      <div class="desktop-frame">
+        <div class="desk-topbar">
+          <div class="desk-brand">KERF</div>
+          <div class="desk-search">⌕ &nbsp; search your projects + crew…</div>
+          <div class="desk-user"><span>Mike Foley · PM · GGR</span><div class="op-avatar" style="background: var(--hpg);">MF</div></div>
+        </div>
+        <div class="desk-body">
+          <div class="desk-sidebar">
+            <div class="desk-nav-group">Today</div>
+            <div class="desk-nav-item">◉ The One Thing</div>
+            <div class="desk-nav-item">▣ Blackboard</div>
+            <div class="desk-nav-group">My projects</div>
+            <div class="desk-nav-item">⎈ Coring (active)</div>
+            <div class="desk-nav-item">⎈ Clem (active)</div>
+            <div class="desk-nav-item">⎈ Patel (close-out)</div>
+            <div class="desk-nav-group">Company</div>
+            <div class="desk-nav-item active">👤 People <span class="nav-badge">10</span></div>
+            <div class="desk-nav-item">👥 Crews <span class="nav-badge">3</span></div>
+            <!-- Rates STRUCTURALLY ABSENT for PM -->
+            <div class="desk-nav-item">📜 Certifications <span class="nav-badge warn">2</span></div>
+            <div class="desk-nav-item">🗓 Time off <span class="nav-badge">3</span></div>
+            <div class="desk-nav-item">📋 Policies <span class="nav-badge">8</span></div>
+            <div class="desk-nav-item">🔧 Equipment</div>
+            <!-- Incidents STRUCTURALLY ABSENT for PM -->
+            <div style="padding: 12px 16px; margin-top: 6px; border-top: 1px solid var(--kerf-border); font-size: 10px; color: var(--kerf-text-mute); line-height: 1.5;">
+              <span style="color: var(--alert);">🔒</span> Rates &amp; Incidents · owner / MoO only
+            </div>
+          </div>
+          <div class="desk-main">
+            <div class="desk-h1">Company · People — your projects</div>
+            <div class="desk-sub">10 employees relevant · 4 hidden (off-project) · PM read lattice</div>
+
+            <div class="desk-metric-row">
+              <div class="desk-metric"><div class="desk-metric-val">10</div><div class="desk-metric-lbl">Visible to you</div></div>
+              <div class="desk-metric"><div class="desk-metric-val">3</div><div class="desk-metric-lbl">Crews you manage</div></div>
+              <div class="desk-metric"><div class="desk-metric-val warn">1</div><div class="desk-metric-lbl">Cert relevant to your jobs</div></div>
+              <div class="desk-metric"><div class="desk-metric-val">2</div><div class="desk-metric-lbl">Schedule conflicts this wk</div></div>
+            </div>
+
+            <table class="intake-desk-table">
+              <thead>
+                <tr><th>Name</th><th>Role</th><th>Currently on</th><th>Avail this wk</th><th>Cert · job-relevant</th><th>Phone</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Juan Hernández</b></td>
+                  <td>Carpenter-Remodel</td>
+                  <td>Coring · framing</td>
+                  <td><span class="dot-status warn"></span>Off May 12 (cert)</td>
+                  <td><span class="dot-status warn"></span>OSHA-30 12d</td>
+                  <td>(619) 555-0114</td>
+                </tr>
+                <tr>
+                  <td><b>Carlos Méndez</b></td>
+                  <td>Tradesman</td>
+                  <td>Patel close-out</td>
+                  <td><span class="dot-status success"></span>Available May 12 + 13</td>
+                  <td><span class="dot-status success"></span>OSHA-30 current</td>
+                  <td>(619) 555-0218</td>
+                </tr>
+                <tr>
+                  <td><b>José Ramírez</b></td>
+                  <td>Laborer-Semi</td>
+                  <td>Coring</td>
+                  <td><span class="dot-status success"></span>Full week</td>
+                  <td><span class="dot-status success"></span>OSHA-10 current</td>
+                  <td>(619) 555-0341</td>
+                </tr>
+                <tr>
+                  <td><b>Miguel Torres</b></td>
+                  <td>Laborer-Semi</td>
+                  <td>Clem (HPG)</td>
+                  <td><span class="dot-status success"></span>Full week</td>
+                  <td><span class="dot-status success"></span>OSHA-10 current</td>
+                  <td>(619) 555-0729</td>
+                </tr>
+                <tr>
+                  <td><b>Lewis Cabinet Co.</b></td>
+                  <td>Sub · cabinetry</td>
+                  <td>Coring delivery 5/14</td>
+                  <td><span class="dot-status success"></span>Confirmed 5/14</td>
+                  <td><span class="dot-status success"></span>COI on file</td>
+                  <td>(619) 555-0822</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="privacy-banner-inline future" style="margin-top: 16px;">
+              ℹ <span><strong>PM view · job-relevant fields only.</strong> Rates, hire-date / tenure, incidents, off-project assignments, disciplinary notes are <strong>not visible</strong> to your role. Owner / MoO can grant additional read scopes per-tenant in V1.5+.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h4>What's structurally absent (not just hidden)</h4>
+      <ul>
+        <li><strong>Rates sub-nav</strong> — doesn't appear. PM has no <code>view</code> on <code>labor_resource</code> in <code>permissions/matrix.ts</code>.</li>
+        <li><strong>Incidents sub-nav</strong> — doesn't appear. <code>incident</code> entity has <code>privilege_class = 'hr_sensitive'</code>; PM read lattice never receives those events.</li>
+        <li><strong>Hire date / tenure</strong> — not shown.</li>
+        <li><strong>Off-project employees</strong> — 4 of 14 filtered at projection layer.</li>
+        <li><strong>Cert types not relevant</strong> — Juan has 4 certs; PM sees only 3 relevant to PM's job types.</li>
+      </ul>
+      <h4>"🔒 Rates &amp; Incidents · owner / MoO only" sub-nav footer</h4>
+      <ul>
+        <li>Visible affordance that more data exists at higher roles. Builds trust ("Kerf isn't hiding things from me opaquely") while enforcing privacy.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============= C·08 Mobile employee · Spanish ============= -->
+  <div class="frame" id="c8">
+    <div class="frame-label">C · 08 · MOBILE EMPLOYEE SELF-SERVICE · ESPAÑOL <span class="frame-note">V2.1 · Spanish-default · canon mobile v2 field tab pattern · Mano Derecha as canonical agent name</span></div>
+    <div class="frame-meta">
+      <span class="tag tag-status-aspir">V2.1</span>
+      <span class="tag tag-surface-mobile">Mobile</span>
+      <span class="tag tag-persona">Field crew · Sub</span>
+      <span class="tag tag-i18n">ES default</span>
+    </div>
+    <p class="frame-narr">
+      Spanish-default mobile employee self-service. <strong>V2.1</strong> with Spanish UI launch. Field crew sees their own schedule, docs, PTO, certs. Submitted PTO becomes a <code>time_off.requested</code> event → RH drafts a PTO_APPROVE Decision Packet → owner approves.
+    </p>
+    <p class="frame-source">Source: canon mobile v2 §field tab pattern · project_kerf_spanish_phase_decision.md.</p>
+    <div class="frame-render" style="background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 36px 0;">
+      <div class="mobile-frame">
+        <div class="mobile-screen">
+          <div class="mobile-statusbar"><span>9:43</span><span>5G ●●●●● 87%</span></div>
+          <div class="mobile-topbar">
+            <span class="brand">KERF</span>
+            <span class="ctx">CARPINTERO · JUAN · LUN</span>
+            <span class="avatar" style="background: var(--hpg);">JH</span>
+          </div>
+          <div class="mobile-body">
+            <div class="section-marker" style="color: var(--kerf-amber);">MI SEMANA <span class="right">Coring · 4 días</span></div>
+            <div style="background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 12px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 8px;">
+                <span>LUN 5/11</span><span>MAR 5/12</span><span>MIE 5/13</span><span>JUE 5/14</span><span>VIE 5/15</span>
+              </div>
+              <div style="display: flex; gap: 4px; height: 36px;">
+                <div style="flex: 1; background: var(--ggr); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; font-weight: 600;">Coring</div>
+                <div style="flex: 1; background: rgba(224,168,88,0.25); border: 1px solid var(--warn); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--warn); font-weight: 600;">OSHA-30</div>
+                <div style="flex: 1; background: var(--hpg); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; font-weight: 600;">Clem</div>
+                <div style="flex: 1; background: var(--hpg); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; font-weight: 600;">Clem</div>
+                <div style="flex: 1; background: var(--ggr); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; font-weight: 600;">Coring</div>
+              </div>
+              <div style="font-size: 11px; color: var(--kerf-text-dim); margin-top: 8px; line-height: 1.5;">
+                <strong style="color: var(--warn);">Mar:</strong> Clase OSHA-30 en SDSU · 8 a.m. – 4 p.m.<br>
+                <strong style="color: var(--kerf-text);">Carlos cubre tu día de Clem.</strong>
+              </div>
+            </div>
+
+            <div class="section-marker" style="color: var(--sentry);">MIS CERTIFICACIONES <span class="right">1 vence pronto</span></div>
+            <div style="background: var(--kerf-panel); border: 1px solid var(--sentry); border-radius: 10px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div>
+                  <div style="font-size: 13px; font-weight: 700;">OSHA-30</div>
+                  <div style="font-size: 11px; color: var(--warn);">Vence en 12 días · 16 mayo</div>
+                </div>
+                <div style="font-size: 22px; color: var(--warn); font-weight: 700;">12d</div>
+              </div>
+              <div style="background: rgba(95,179,122,0.12); border: 1px solid var(--success); border-radius: 6px; padding: 8px 10px; font-size: 11.5px; color: var(--success);">
+                ✓ Christian inscribió tu clase de renovación · SDSU · martes 12 mayo
+              </div>
+            </div>
+
+            <div class="section-marker">DESCANSO / PTO <span class="right">2.5 días disponibles</span></div>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex: 1; background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 10px; font-size: 11px; color: var(--kerf-text-dim);">
+                <div style="color: var(--kerf-text); font-weight: 600;">Acumulado</div>
+                <div>2.5 días</div>
+              </div>
+              <button class="btn btn-rh" style="flex: 1; padding: 12px;">+ Solicitar descanso</button>
+            </div>
+
+            <div class="section-marker">DOCUMENTOS <span class="right">3 archivos</span></div>
+            <div style="background: var(--kerf-panel); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 10px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.7;">
+              📄 W-9 firmado · 2022<br>
+              📄 IIPP firmado · 2026<br>
+              📄 Manual de empleado v3 · firmado feb 2026
+            </div>
+
+            <div class="rh-note">
+              <div class="header">Mano Derecha · nota</div>
+              Nuevo manual de seguridad publicado. Necesito tu firma antes del viernes. Toca para revisar.
+            </div>
+          </div>
+          <div class="mobile-tabbar">
+            <div class="mobile-tab"><div class="icon">🏠</div>Inicio</div>
+            <div class="mobile-tab"><div class="icon">📋</div>Trabajo</div>
+            <div class="mobile-tab"><div class="icon">📓</div>Bitácora</div>
+            <div class="mobile-tab active"><div class="icon">JH</div>Yo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h4>Spanish-first, not Spanish-translation</h4>
+      <ul>
+        <li>Per <code>project_kerf_spanish_phase_decision.md</code> — Spanish is a first-class platform attribute from V1; Spanish UI ships V2.1 Paid Beta.</li>
+        <li>Topbar: <strong>"CARPINTERO · JUAN · LUN"</strong> (native role name, not "Carpenter Juan").</li>
+        <li>"Mano Derecha" is the canonical agent name in ES.</li>
+        <li>Day labels (LUN MAR MIE JUE VIE), date format (16 mayo), labor categories all native ES.</li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+</div>
+
+<div class="footer">
+  Kerf · Company / HR Operations Lane · v0.1 · 2026-05-04 · Flow C addendum to <a href="kerf_views_master_v0_2.html">v0_2 master</a><br>
+  V1 schema · V1.5 desktop lane (canon v3 §M) · V2.1 ES self-service · D-031 DRAFT · UI is Kerf-native · channels are agnostic
+</div>
+
+</body>
+</html>
