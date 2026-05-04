@@ -25,20 +25,6 @@
   --kerf-danger-muted: #a67a7a;
   --kerf-focus-ring: #7eb8ff;
 
-  /* Rhythm — keep in sync with decision-card.css :root (Safari file:// inherits from here). */
-  --kerf-radius-xs: 4px;
-  --kerf-radius-sm: 6px;
-  --kerf-radius-md: 8px;
-  --kerf-leading-tight: 1.28;
-  --kerf-leading-snug: 1.35;
-  --kerf-leading-normal: 1.45;
-  --kerf-leading-meta: 1.4;
-  --kerf-space-xs: 0.25rem;
-  --kerf-space-sm: 0.5rem;
-  --kerf-space-md: 0.75rem;
-  --kerf-space-lg: 1rem;
-  --kerf-space-xl: 1.25rem;
-
   --kerf-w1-bg: #0a0d11;
   --kerf-w1-panel: #1a1f26;
   --kerf-w1-panel-raised: #232932;
@@ -77,18 +63,27 @@
 /* —— Top bar (wireframe .topbar / .app row 1) —— */
 .kerf-w1-topbar {
   flex-shrink: 0;
-  height: 3.125rem;
+  min-height: 50px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0 1.375rem;
+  row-gap: 6px;
+  column-gap: 14px;
+  padding: 8px max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left));
   background: var(--kerf-bg-card);
   border-bottom: 1px solid var(--kerf-border);
 }
 
+@media (min-width: 600px) {
+  .kerf-w1-topbar {
+    padding-left: max(22px, env(safe-area-inset-left));
+    padding-right: max(22px, env(safe-area-inset-right));
+  }
+}
+
 .kerf-w1-brand-mark {
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 14px;
   letter-spacing: 0.12em;
   color: var(--kerf-w1-brand);
 }
@@ -97,19 +92,22 @@
   display: flex;
   flex-direction: column;
   line-height: 1.15;
+  min-width: 0;
+  flex: 1 1 10rem;
 }
 
 .kerf-w1-brand-tag {
-  font-size: 0.5625rem;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--kerf-fg-muted);
+  color: color-mix(in srgb, var(--kerf-fg-muted) 72%, var(--kerf-fg));
 }
 
 .kerf-w1-topbar-title {
-  font-size: 0.75rem;
+  font-size: 12px;
   font-weight: 600;
   color: var(--kerf-fg);
+  overflow-wrap: anywhere;
 }
 
 .kerf-w1-topbar-spacer {
@@ -117,12 +115,12 @@
 }
 
 .kerf-w1-topbar-pill {
-  font-size: 0.625rem;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--kerf-fg-muted);
-  padding: 0.25rem 0.625rem;
+  padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--kerf-border);
   background: var(--kerf-bg-elevated);
@@ -134,17 +132,25 @@
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 1.375rem 1.75rem 2.5rem;
+  padding: 22px max(16px, env(safe-area-inset-left)) 40px max(16px, env(safe-area-inset-right));
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.375rem;
+  gap: 22px;
   align-items: start;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .kerf-w1-demo-shell {
+    padding-left: max(28px, env(safe-area-inset-left));
+    padding-right: max(28px, env(safe-area-inset-right));
+  }
 }
 
 @media (min-width: 1024px) {
   .kerf-w1-demo-shell {
     grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
-    gap: 1.5rem;
+    gap: 24px;
   }
 }
 
@@ -156,7 +162,7 @@
 .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--kerf-space-xl);
+  gap: 1.25rem;
   align-items: stretch;
   min-width: 0;
 }
@@ -165,7 +171,7 @@
   .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap {
     flex-direction: row;
     align-items: flex-start;
-    gap: calc(var(--kerf-space-xl) + 0.1rem);
+    gap: 1.35rem;
   }
 
   .kerf-w1-standard-ui .kerf-w1-queue-detail-wrap #kerf-queue-root {
@@ -182,7 +188,7 @@
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel {
   border: 1px solid var(--kerf-border);
-  border-radius: var(--kerf-radius-md);
+  border-radius: 8px;
   background: var(--kerf-bg-card);
   padding: 0.85rem 0.95rem 1rem;
   min-height: 8rem;
@@ -193,7 +199,6 @@
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-title {
   font-size: 1.02rem;
-  line-height: var(--kerf-leading-tight);
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-head {
@@ -234,16 +239,16 @@
   gap: 0.35rem;
   margin-bottom: 0.85rem;
   padding: 0.35rem 0.45rem;
-  border-radius: var(--kerf-radius-sm);
+  border-radius: 6px;
   border: 1px solid var(--kerf-border);
   background: var(--kerf-bg-card);
 }
 
 .kerf-w1-standard-ui .kerf-w1-filter-btn {
   font-size: 0.72rem;
-  padding: 0.24rem var(--kerf-space-sm);
+  padding: 0.24rem 0.5rem;
   min-height: 1.65rem;
-  border-radius: var(--kerf-radius-xs);
+  border-radius: 4px;
 }
 
 .kerf-w1-standard-ui .kerf-w1-filter-btn[aria-pressed="true"] {
@@ -261,12 +266,12 @@
 }
 
 .kerf-w1-main-column .kerf-queue-header {
-  margin-bottom: calc(var(--kerf-space-lg) + 0.1rem);
+  margin-bottom: 1.1rem;
 }
 
 /* Card stack — slightly tighter rhythm, scannable stack */
 .kerf-w1-main-column .kerf-decision-queue-list {
-  gap: calc(var(--kerf-space-lg) + 0.125rem);
+  gap: 1.125rem;
 }
 
 .kerf-w1-main-column .kerf-decision-card {
@@ -316,13 +321,12 @@
   padding-left: 0.65rem;
   margin-left: -0.05rem;
   background: color-mix(in srgb, var(--kerf-w1-brand) 7%, transparent);
-  border-radius: 0 var(--kerf-radius-sm) var(--kerf-radius-sm) 0;
+  border-radius: 0 6px 6px 0;
 }
 
 .kerf-w1-main-column .kerf-altitude-final {
   font-size: 0.98rem;
   font-weight: 600;
-  line-height: var(--kerf-leading-snug);
 }
 
 /* Audit: secondary via smaller summary only — avoid parent opacity + fg-muted (low contrast). */
@@ -335,8 +339,7 @@
   padding: 0.38rem 0.72rem;
   font-size: 0.8rem;
   min-height: 2rem;
-  border-radius: calc(var(--kerf-radius-sm) - 1px);
-  line-height: var(--kerf-leading-snug);
+  border-radius: 5px;
 }
 
 .kerf-w1-standard-ui .kerf-btn-primary {
@@ -388,13 +391,13 @@
   min-height: 4.6rem;
   resize: vertical;
   border: 1px solid var(--kerf-border-strong);
-  border-radius: calc(var(--kerf-radius-sm) - 1px);
+  border-radius: 5px;
   background: var(--kerf-bg-control);
   color: var(--kerf-fg);
   font: inherit;
   font-size: 0.82rem;
-  line-height: var(--kerf-leading-meta);
-  padding: var(--kerf-space-sm) 0.58rem;
+  line-height: 1.42;
+  padding: 0.5rem 0.58rem;
 }
 
 .kerf-w1-standard-ui .kerf-w1-reject-textarea::placeholder {
@@ -416,26 +419,26 @@
 /* —— Right rail: action / audit log (wireframe cos-rail tone) —— */
 .kerf-w1-log-panel {
   position: sticky;
-  top: var(--kerf-space-md);
+  top: 12px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 3.875rem);
+  max-height: calc(100vh - 62px);
   border: 1px solid var(--kerf-border);
-  border-radius: var(--kerf-radius-sm);
+  border-radius: 6px;
   background: var(--kerf-w1-panel);
   overflow: hidden;
 }
 
 .kerf-w1-log-rail-head {
   flex-shrink: 0;
-  padding: var(--kerf-space-md) 0.875rem;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--kerf-border);
   background: var(--kerf-w1-panel-raised);
 }
 
 .kerf-w1-log-rail-head h2 {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -443,16 +446,16 @@
 }
 
 .kerf-w1-log-rail-sub {
-  margin: 0.3125rem 0 0;
-  font-size: 0.625rem;
-  line-height: var(--kerf-leading-meta);
-  color: var(--kerf-fg-muted);
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--kerf-fg-muted) 68%, var(--kerf-fg));
   overflow-wrap: anywhere;
 }
 
 /* Action log toolbar — clear / reset (demo-only) */
 .kerf-w1-standard-ui .kerf-w1-action-log-controls {
-  margin-top: 0.625rem;
+  margin-top: 10px;
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
@@ -467,7 +470,7 @@
 .kerf-w1-log-entries {
   flex: 1;
   overflow-y: auto;
-  padding: 0.625rem var(--kerf-space-md) var(--kerf-space-md);
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -476,7 +479,7 @@
 .kerf-w1-log-entry {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.72rem;
-  line-height: var(--kerf-leading-snug);
+  line-height: 1.38;
   color: var(--kerf-fg);
   word-break: break-word;
   padding-bottom: 0.4rem;
