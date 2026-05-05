@@ -28,7 +28,7 @@ body background: #0A0D11        /* deep blue-black, darker than --kerf-dark */
 /* NEVER repurpose for status, severity, or agent identity. */
 --ggr:              #4A7FB0     /* GGR Design+Remodel */
 --ggr-dim:          #1B3A5C
---val:              #A8794A     /* Valle Custom Cabinetry */
+--val:              #A8794A     /* VALLE cabinetry + millwork */
 --val-dim:          #5C3A1B
 --hpg:              #4A9F74     /* Hard Point Group */
 --hpg-dim:          #1B5C3A
