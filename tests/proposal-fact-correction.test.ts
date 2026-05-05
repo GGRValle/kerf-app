@@ -81,6 +81,42 @@ test('fact correction event appends to memory EventLog with frozen payload shape
   assert.equal(byEntity[0]?.id, 'evt_test_learning_signal_1');
 });
 
+test('OPERATOR_FIELD_CORRECTION_SOURCE uses op: namespace prefix to avoid validator-id collision', () => {
+  // ValidatorIds match /^V\d+$/ (V1..V18). The operator-source sentinel must be
+  // structurally distinct so it cannot collide at any string-comparison boundary.
+  assert.match(OPERATOR_FIELD_CORRECTION_SOURCE, /^op:/);
+  assert.doesNotMatch(OPERATOR_FIELD_CORRECTION_SOURCE, /^V\d+$/);
+});
+
+test('factCorrectionToEventTemplate produces deterministic draft_id from inputs', () => {
+  const args = {
+    packet: proposalDecisionPacketFixture,
+    correction: {
+      fieldPath: 'extracted_facts.scope',
+      priorValue: 'Cabinet repaint',
+      newValue: 'Cabinet repaint + hardware swap',
+    },
+    actor: { id: 'demo_operator_owner', role: 'owner' as const },
+    decidedAt: '2026-05-03T12:00:00.000Z',
+  };
+
+  const a = factCorrectionToEventTemplate(args);
+  const b = factCorrectionToEventTemplate(args);
+  assert.equal(a.entity.id, b.entity.id, 'same inputs must produce the same draft_id');
+
+  const c = factCorrectionToEventTemplate({
+    ...args,
+    correction: { ...args.correction, fieldPath: 'extracted_facts.client_name' },
+  });
+  assert.notEqual(a.entity.id, c.entity.id, 'different fieldPath must produce a different draft_id');
+
+  const d = factCorrectionToEventTemplate({
+    ...args,
+    decidedAt: '2026-05-03T12:00:01.000Z',
+  });
+  assert.notEqual(a.entity.id, d.entity.id, 'different decidedAt must produce a different draft_id');
+});
+
 test('w1 demo source wires fact correction helper and UI hooks', () => {
   const demoSrc = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
 
