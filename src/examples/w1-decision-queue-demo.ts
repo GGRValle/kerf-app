@@ -381,7 +381,7 @@ function renderCompanyMemoryUsedHtml(view: DecisionCardViewModel, packet: Decisi
     </ul>
     ${factsBlock}
     <p class="kerf-muted kerf-w1-company-memory-foot">
-      GGR/VIA onboarding data will make this section richer once that intake is wired; nothing here calls the network.
+      GGR/Valle onboarding data will make this section richer once that intake is wired; nothing here calls the network.
     </p>
   </section>`;
 }

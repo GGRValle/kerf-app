@@ -345,7 +345,7 @@ test('w1 proposal detail source includes company memory KB surface copy', () => 
   assert.match(demoSrc, /Company memory used/);
   assert.match(demoSrc, /kerf-w1-company-memory/);
   assert.match(demoSrc, /Evidence records/);
-  assert.match(demoSrc, /GGR\/VIA onboarding/);
+  assert.match(demoSrc, /GGR\/Valle onboarding/);
   assert.match(demoSrc, /companyMemoryFactLinesFromPacket/);
 });
 
