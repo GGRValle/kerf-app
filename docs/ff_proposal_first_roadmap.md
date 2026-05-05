@@ -126,13 +126,13 @@ Onboarding is also **revisitable**. Every capture above is also editable later �
 
 ## GGR / Valle Seed Path
 
-The fastest way to prove the onboarding-driven KB works is to ingest **GGR Design + Remodeling** and **Valle Cabinetry + Millwork** as the first tenants. Christian already has the answers to all 12 capture categories above — they live in his head, in QBO, in past proposals, in the team's working knowledge.
+The fastest way to prove the onboarding-driven KB works is to ingest **GGR design + remodeling** and **VALLE cabinetry + millwork** as the first tenants. Christian already has the answers to all 12 capture categories above — they live in his head, in QBO, in past proposals, in the team's working knowledge.
 
 **Why GGR + Valle are the right seed:**
 
 1. **Real data.** Not synthetic fixtures. The `seededProposalReadSurface` fixture in the W1 demo gives a 4-proposal scan, but those proposals don't trace to a real tenant memory chain. GGR + Valle proposals trace to real `LaborResource`, real material costs, real margin posture.
 2. **Low coordination cost.** Christian is the operator; he's the founder; he can answer the 12 capture categories without needing a tenant kickoff call. Any other tenant requires a real intake.
-3. **Two distinct contractor shapes in one tenant cluster.** GGR Design + Remodeling (whole-home remodels; HOA + high-end residential) and Valle Cabinetry + Millwork (cabinetry/millwork; smaller projects; longer-tail material lists) exercise very different proposal-style and margin postures. Validates that the captured KB is parameterized correctly per tenant rather than collapsing into a single shape.
+3. **Two distinct contractor shapes in one tenant cluster.** GGR design + remodeling (whole-home remodels; HOA + high-end residential) and VALLE cabinetry + millwork (cabinetry/millwork; smaller projects; longer-tail material lists) exercise very different proposal-style and margin postures. Validates that the captured KB is parameterized correctly per tenant rather than collapsing into a single shape.
 4. **The first proof packets for "useful company memory."** Same proof-packet shape as the W1 + proposal-ff packets already shipping under `src/examples/evidence/`: a captured onboarding session, the resulting `MemoryRecord` rows, and a proposal review surface that visibly cites tenant-specific memory in its drafts (e.g., "this kitchen is similar to the Asdal residence we closed in October — see source basis").
 
 **Suggested GGR / Valle seed PR sequence (after the spearpoint mobile pass):**

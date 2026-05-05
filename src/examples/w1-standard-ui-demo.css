@@ -1523,3 +1523,32 @@ html:has(.kerf-w1-standard-ui) body {
 .kerf-w1-standard-ui .kerf-w1-demo-proposal-path {
   display: none;
 }
+
+/*
+ * Canon dark scrollbars (Cursor-style): replace browser-default white-track-black-thumb
+ * with track + thumb both in the canon dark-canvas family. Scoped under .kerf-w1-standard-ui
+ * so production surfaces stay generic. Webkit (Safari/Chrome) + Firefox covered.
+ */
+.kerf-w1-standard-ui ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.kerf-w1-standard-ui ::-webkit-scrollbar-track {
+  background: var(--kerf-w1-bg);
+  border-radius: 4px;
+}
+.kerf-w1-standard-ui ::-webkit-scrollbar-thumb {
+  background: var(--kerf-w1-panel-raised);
+  border-radius: 4px;
+  border: 2px solid var(--kerf-w1-bg);
+}
+.kerf-w1-standard-ui ::-webkit-scrollbar-thumb:hover {
+  background: var(--kerf-border-strong);
+}
+.kerf-w1-standard-ui ::-webkit-scrollbar-corner {
+  background: var(--kerf-w1-bg);
+}
+.kerf-w1-standard-ui {
+  scrollbar-color: var(--kerf-w1-panel-raised) var(--kerf-w1-bg);
+  scrollbar-width: thin;
+}

@@ -58,7 +58,7 @@ Labels **#1–#12** match the roadmap capture-priority table **exactly**.
 **Structured shape:** `company_profile` + `Tenant` metadata — legal name, EIN, trades[], license_numbers[], jurisdictions[], brand_asset_uris[] (see KG §3.9.1 row 1).
 
 **Worked example (GGR):**  
-Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR Design + Remodeling**, California **B-General** with **lead-safe** certification in San Diego County; EIN on file in QuickBooks; brand pack is our navy + amber strip.”  
+Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR design + remodeling**, California **B-General** with **lead-safe** certification in San Diego County; EIN on file in QuickBooks; brand pack is our navy + amber strip.”
 **Captured as:** Legal entity + DBA + sole primary trade “design-build residential remodel” + jurisdiction tags (`US-CA`, `San Diego County`) + pointer to brand EvidenceObjects.
 
 ---
@@ -95,7 +95,7 @@ Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR Design + Remodeli
 
 **Structured shape:** Client-mix tags on `MemoryRecord` (`approved_project_type_band` + client-type tag) — KG §3.9.1 row 3.
 
-**Worked example (Valle Cabinetry + Millwork):**
+**Worked example (VALLE cabinetry + millwork):**
 “We’re **70% homeowner kitchen/bath**, **25% small commercial FF&E**, **5% GC package pricing**; typical cabinet jobs **$25–120k sell**, **4–10 weeks** install window.”  
 **Captured as:** Weighted client-type observations + nominal band for proposal tone.
 
