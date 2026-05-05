@@ -101,6 +101,19 @@ In the order the operator hits them on the F&F core path, mapped to the canon fr
 
 Canon F·02 lists a persistent **▸ voice button** in the bottom bar. Mobile v2 §operator pattern reserves `[Std/Graph]·[⌘ modules]·[▸ voice]` as the standing chrome. F&F does not require voice capture. **Reserve the bottom-bar slot but do not wire it to a recorder yet.** Tapping should show a short toast: *"Voice capture coming in W2 — use Slack for now."*
 
+### 3.6 Future surface: onboarding capture (next major mobile path)
+
+Mobile F&F starts and ends with proposal *review* — operators look at drafted follow-ups and act on them. The next major mobile path Kerf surfaces is **onboarding capture**: a guided question flow that produces typed graph memory (per [`docs/ff_proposal_first_roadmap.md`](./ff_proposal_first_roadmap.md) §"Onboarding Is Ingestion, Not Setup" and [`docs/architecture/kerf_knowledge_graph_schema_v0_2.md`](./architecture/kerf_knowledge_graph_schema_v0_2.md) §3.9 Guided Onboarding Ingestion).
+
+**Why this belongs on mobile, not desktop-only:**
+
+- A new tenant's onboarding session is probably initiated from the contractor's phone — they're in the truck or at a job site when they sign up. Forcing them back to a desktop is friction at the moment of highest commitment.
+- Voice-led onboarding (W2+) is phone-native by definition. The bottom-bar `▸ voice` slot reserved per §3.5 carries over directly — onboarding answers can be spoken; Right Hand transcribes and structures them.
+
+**Same shell, additive surface:** the canon four-zone shell (module rail + Right Hand rail + main + log on desktop, single-column at phone widths) is the same surface; onboarding capture occupies the same `main` column when the operator is in onboarding mode. No new app, no new shell — just a new *mode* the existing PWA hosts. Manifest, icons, theme color, hosted URL gate (§5–§6) all reused.
+
+**Sequencing:** onboarding capture is **W2-scope** for mobile — explicit non-goal here (§9). Spearpoint for the F&F window is proposal review; the onboarding mobile pass follows once F&F dry runs validate the proposal-review-on-iPhone shape. PR sequence below (§8) does not include onboarding-capture PRs.
+
 ---
 
 ## 4. Mobile interaction model
