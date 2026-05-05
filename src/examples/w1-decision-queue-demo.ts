@@ -9,8 +9,11 @@ import {
   type Event,
 } from '../blackboard/index.js';
 import {
+  factCorrectionToEventTemplate,
   operatorDecisionToEventTemplate,
   persistProposalOperatorDecision,
+  type FactCorrectionLearningSignalEventTemplate,
+  type FactCorrectionLearningSignalPayload,
   type OperatorDecisionAction,
   type OperatorDecisionBlackboardEventTemplate,
   type OperatorDecisionResolvedPayload,
@@ -194,43 +197,122 @@ function companyMemoryTriggerLine(trigger: unknown): string | null {
   }
 }
 
+interface ProposalFactCorrectionRow {
+  fieldPath: string;
+  label: string;
+  priorValue: unknown;
+  displayLine: string;
+}
+
 /** Human-readable snippets from extracted_facts for the F&F demo (no raw IDs, no validator names). */
-function companyMemoryFactLinesFromPacket(packet: DecisionPacket): string[] {
+function companyMemoryFactRowsFromPacket(packet: DecisionPacket): ProposalFactCorrectionRow[] {
   const facts = packet.extracted_facts;
-  const lines: string[] = [];
+  const rows: ProposalFactCorrectionRow[] = [];
+  const pushStringFact = (field: string, label: string): void => {
+    const value = facts[field];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const clean = value.trim();
+      rows.push({
+        fieldPath: `extracted_facts.${field}`,
+        label,
+        priorValue: clean,
+        displayLine: `${label}: ${clean}`,
+      });
+    }
+  };
+
+  pushStringFact('client_name', 'Client');
   if (typeof facts.project_name === 'string' && facts.project_name.trim().length > 0) {
-    lines.push(`Project name on file: ${facts.project_name.trim()}`);
+    const clean = facts.project_name.trim();
+    rows.push({
+      fieldPath: 'extracted_facts.project_name',
+      label: 'Project name',
+      priorValue: clean,
+      displayLine: `Project name on file: ${clean}`,
+    });
   }
   if (typeof facts.proposal_number === 'string' && facts.proposal_number.trim().length > 0) {
-    lines.push(`Proposal number on file: ${facts.proposal_number.trim()}`);
+    const clean = facts.proposal_number.trim();
+    rows.push({
+      fieldPath: 'extracted_facts.proposal_number',
+      label: 'Proposal number',
+      priorValue: clean,
+      displayLine: `Proposal number on file: ${clean}`,
+    });
   }
   if (typeof facts.proposal_status === 'string' && facts.proposal_status.trim().length > 0) {
-    lines.push(`Proposal status in memory: ${facts.proposal_status.trim()}`);
+    const clean = facts.proposal_status.trim();
+    rows.push({
+      fieldPath: 'extracted_facts.proposal_status',
+      label: 'Proposal status',
+      priorValue: clean,
+      displayLine: `Proposal status in memory: ${clean}`,
+    });
   }
   const trig = companyMemoryTriggerLine(facts.trigger);
   if (trig !== null) {
-    lines.push(trig);
+    rows.push({
+      fieldPath: 'extracted_facts.trigger',
+      label: 'Trigger',
+      priorValue: facts.trigger,
+      displayLine: trig,
+    });
+  }
+  const amount = facts.amount_cents;
+  if (typeof amount === 'number' && Number.isFinite(amount)) {
+    rows.push({
+      fieldPath: 'extracted_facts.amount_cents',
+      label: 'Proposal amount',
+      priorValue: amount,
+      displayLine: `Proposal amount on file: ${formatCentsForDemo(amount)}`,
+    });
   }
   const dss = facts.days_since_sent;
   if (typeof dss === 'number' && Number.isFinite(dss) && dss >= 0) {
-    lines.push(dss === 1 ? 'About one day since the proposal went out.' : `About ${dss} days since the proposal went out.`);
+    rows.push({
+      fieldPath: 'extracted_facts.days_since_sent',
+      label: 'Days since sent',
+      priorValue: dss,
+      displayLine: dss === 1 ? 'About one day since the proposal went out.' : `About ${dss} days since the proposal went out.`,
+    });
   }
   const dsv = facts.days_since_viewed;
   if (typeof dsv === 'number' && Number.isFinite(dsv) && dsv >= 0) {
-    lines.push(
-      dsv === 1
-        ? 'About one day since the client last viewed the proposal.'
-        : `About ${dsv} days since the client last viewed the proposal.`,
-    );
+    rows.push({
+      fieldPath: 'extracted_facts.days_since_viewed',
+      label: 'Days since viewed',
+      priorValue: dsv,
+      displayLine:
+        dsv === 1
+          ? 'About one day since the client last viewed the proposal.'
+          : `About ${dsv} days since the client last viewed the proposal.`,
+    });
   }
   for (const key of ['service_line', 'primary_trade', 'material_focus'] as const) {
     const v = facts[key];
     if (typeof v === 'string' && v.trim().length > 0) {
       const label = key === 'service_line' ? 'Service line' : key === 'primary_trade' ? 'Primary trade' : 'Material focus';
-      lines.push(`${label} on file: ${v.trim()}`);
+      const clean = v.trim();
+      rows.push({
+        fieldPath: `extracted_facts.${key}`,
+        label,
+        priorValue: clean,
+        displayLine: `${label} on file: ${clean}`,
+      });
     }
   }
-  return lines;
+  return rows;
+}
+
+function companyMemoryFactLinesFromPacket(packet: DecisionPacket): string[] {
+  return companyMemoryFactRowsFromPacket(packet).map((row) => row.displayLine);
+}
+
+function formatCentsForDemo(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(cents / 100);
 }
 
 function renderCompanyMemoryUsedHtml(view: DecisionCardViewModel, packet: DecisionPacket): string {
@@ -255,11 +337,11 @@ function renderCompanyMemoryUsedHtml(view: DecisionCardViewModel, packet: Decisi
       ? 'This packet includes drafted follow-up text Kerf generated for your review.'
       : 'This seed packet does not include sample follow-up letter body; counts below still reflect what the packet carried.';
 
-  const factLines = companyMemoryFactLinesFromPacket(packet);
+  const factRows = companyMemoryFactRowsFromPacket(packet);
   const factsBlock =
-    factLines.length > 0
-      ? `<p class="kerf-meta kerf-w1-company-memory-facts-label">Additional context from the packet:</p><ul class="kerf-list kerf-w1-company-memory-facts">${factLines
-          .map((line) => `<li>${escapeHtml(line)}</li>`)
+    factRows.length > 0
+      ? `<p class="kerf-meta kerf-w1-company-memory-facts-label">Kerf used these facts</p><ul class="kerf-list kerf-w1-company-memory-facts">${factRows
+          .map((row) => renderCompanyMemoryFactRowHtml(row))
           .join('')}</ul>`
       : '';
 
@@ -279,9 +361,31 @@ function renderCompanyMemoryUsedHtml(view: DecisionCardViewModel, packet: Decisi
     </ul>
     ${factsBlock}
     <p class="kerf-muted kerf-w1-company-memory-foot">
-      GGR/VIA onboarding data will make this section richer once that intake is wired; nothing here calls the network.
+      GGR Design + Remodeling and Valle Cabinetry + Millwork onboarding data will make this section richer once that intake is wired; nothing here calls the network.
     </p>
   </section>`;
+}
+
+function renderCompanyMemoryFactRowHtml(row: ProposalFactCorrectionRow): string {
+  const fieldPath = escapeHtml(row.fieldPath);
+  const label = escapeHtml(row.label);
+  return `<li class="kerf-w1-used-fact" data-kerf-fact-field="${fieldPath}">
+    <div class="kerf-w1-used-fact-main">
+      <span class="kerf-w1-used-fact-copy">${escapeHtml(row.displayLine)}</span>
+      <button type="button" class="kerf-btn kerf-w1-fact-correct-btn" data-kerf-fact-correct data-field-path="${fieldPath}" title="Correct ${label}">Correct</button>
+    </div>
+    <form class="kerf-w1-fact-correction-form" data-kerf-fact-correction-form data-field-path="${fieldPath}" hidden>
+      <label class="kerf-w1-reject-label">
+        <span class="kerf-w1-reject-label-text">Correct ${label}</span>
+        <textarea class="kerf-w1-reject-textarea" rows="3" placeholder="Type the corrected fact"></textarea>
+      </label>
+      <div class="kerf-w1-reject-form-actions">
+        <button type="submit" class="kerf-btn kerf-btn-primary">Save</button>
+        <button type="button" class="kerf-btn" data-kerf-fact-correction-cancel>Cancel</button>
+      </div>
+    </form>
+    <p class="kerf-w1-fact-correction-status" data-kerf-fact-correction-status hidden></p>
+  </li>`;
 }
 
 function renderProposalDetailHtml(view: DecisionCardViewModel, packet: DecisionPacket): string {
@@ -442,10 +546,16 @@ function paintDetailPanel(detailRoot: HTMLElement, log: HTMLElement): void {
 
   const view = buildDecisionCardViewModel(packet);
   detailRoot.innerHTML = renderProposalDetailHtml(view, packet);
+  const correctionCleanup = wireProposalFactCorrectionActions(packet, detailRoot, log);
   const footer = detailRoot.querySelector('.kerf-w1-detail-actions');
+  let actionCleanup: (() => void) | undefined;
   if (footer instanceof HTMLElement) {
-    unmountDetailActions = wireProposalDetailActions(packet, footer, log);
+    actionCleanup = wireProposalDetailActions(packet, footer, log);
   }
+  unmountDetailActions = () => {
+    correctionCleanup();
+    actionCleanup?.();
+  };
 }
 
 function selectDetailForPacket(queueRoot: HTMLElement, detailRoot: HTMLElement, log: HTMLElement, packetId: string): void {
@@ -598,6 +708,33 @@ function appendProposalWorkflowAuditRow(
   prependHumanLogRow(container, humanProposalWorkflowLogLine(event));
 }
 
+function appendFactCorrectionAuditRow(
+  container: HTMLElement,
+  event: Event<FactCorrectionLearningSignalPayload>,
+  template: FactCorrectionLearningSignalEventTemplate,
+): void {
+  const row = document.createElement('div');
+  row.className = 'kerf-w1-log-entry kerf-w1-log-entry--audit';
+  const parts = [
+    event.at,
+    event.kind,
+    `event=${event.id}`,
+    'signal=field_correction',
+    `field=${template.payload.metadata.field_path}`,
+    `packet=${template.payload.packetId}`,
+    `workflow=${template.payload.workflow}`,
+    `edit_distance=${template.payload.metadata.edit_distance}`,
+    `action_class=${template.action_class}`,
+    `altitude=${template.decision_altitude}`,
+  ];
+  row.textContent = parts.join('  ');
+  container.prepend(row);
+  prependHumanLogRow(
+    container,
+    `corrected fact: ${template.payload.metadata.field_path} — learning signal queued for operator-approved memory promotion.`,
+  );
+}
+
 function nextOperatorDecisionEventSeq(): number {
   operatorDecisionEventSeq += 1;
   return operatorDecisionEventSeq;
@@ -625,6 +762,56 @@ function eventFromOperatorDecisionTemplate(
     sources: template.sources,
     correlationId: `corr_demo_operator_decision_${seq}`,
   };
+}
+
+function eventFromFactCorrectionTemplate(
+  template: FactCorrectionLearningSignalEventTemplate,
+  at: string,
+): Event<FactCorrectionLearningSignalPayload> {
+  const seq = nextOperatorDecisionEventSeq();
+  return {
+    id: `evt_demo_fact_correction_${seq}`,
+    at,
+    actor: DEMO_OPERATOR,
+    kind: template.kind,
+    entity: template.entity,
+    payload: template.payload,
+    data_class: template.data_class,
+    retention_policy: template.retention_policy,
+    privilege_class: template.privilege_class,
+    workflow: template.workflow,
+    decision_authority: template.decision_authority,
+    action_class: template.action_class,
+    decision_altitude: template.decision_altitude,
+    sources: template.sources,
+    correlationId: `corr_demo_fact_correction_${seq}`,
+  };
+}
+
+function appendProposalFactCorrectionAuditEvent(
+  container: HTMLElement,
+  packet: DecisionPacket,
+  fieldPath: string,
+  priorValue: unknown,
+  newValue: string,
+): void {
+  const decidedAt = formatTimestamp();
+  const template = factCorrectionToEventTemplate(packet, {
+    field_path: fieldPath,
+    prior_value: priorValue,
+    new_value: newValue,
+    actor: DEMO_OPERATOR.id,
+    decidedAt,
+  });
+  const event = eventFromFactCorrectionTemplate(template, decidedAt);
+
+  void operatorDecisionEventLog.append(event).then((stored) => {
+    appendFactCorrectionAuditRow(
+      container,
+      stored as Event<FactCorrectionLearningSignalPayload>,
+      template,
+    );
+  });
 }
 
 function appendOperatorDecisionAuditEvent(
@@ -1025,6 +1212,101 @@ function buildLogActionsForPacket(packet: DecisionPacket, log: HTMLElement): Dec
       appendOperatorDecisionAuditEvent(log, packet, 'edit');
     },
   });
+}
+
+function proposalFactRowForField(
+  packet: DecisionPacket,
+  fieldPath: string,
+): ProposalFactCorrectionRow | undefined {
+  return companyMemoryFactRowsFromPacket(packet).find((row) => row.fieldPath === fieldPath);
+}
+
+function hideFactCorrectionForm(form: HTMLFormElement): void {
+  form.hidden = true;
+  const textarea = form.querySelector('textarea');
+  if (textarea instanceof HTMLTextAreaElement) {
+    textarea.value = '';
+  }
+}
+
+function showFactCorrectionStatus(container: Element, message: string): void {
+  const status = container.querySelector('[data-kerf-fact-correction-status]');
+  if (!(status instanceof HTMLElement)) {
+    return;
+  }
+  status.textContent = message;
+  status.hidden = false;
+}
+
+function wireProposalFactCorrectionActions(packet: DecisionPacket, detailRoot: HTMLElement, log: HTMLElement): () => void {
+  const onClick = (event: MouseEvent) => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const correctButton = target.closest('[data-kerf-fact-correct]');
+    if (correctButton instanceof HTMLElement) {
+      const fieldPath = correctButton.getAttribute('data-field-path');
+      const factRow = correctButton.closest('.kerf-w1-used-fact');
+      const form = factRow?.querySelector('[data-kerf-fact-correction-form]');
+      if (fieldPath === null || !(form instanceof HTMLFormElement)) {
+        return;
+      }
+      form.hidden = false;
+      const textarea = form.querySelector('textarea');
+      if (textarea instanceof HTMLTextAreaElement) {
+        const row = proposalFactRowForField(packet, fieldPath);
+        textarea.value = row?.priorValue === undefined ? '' : String(row.priorValue);
+        textarea.focus();
+        textarea.select();
+      }
+      return;
+    }
+
+    const cancelButton = target.closest('[data-kerf-fact-correction-cancel]');
+    if (cancelButton instanceof HTMLElement) {
+      const form = cancelButton.closest('[data-kerf-fact-correction-form]');
+      if (form instanceof HTMLFormElement) {
+        hideFactCorrectionForm(form);
+      }
+    }
+  };
+
+  const onSubmit = (event: SubmitEvent) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches('[data-kerf-fact-correction-form]')) {
+      return;
+    }
+    event.preventDefault();
+    const fieldPath = form.getAttribute('data-field-path');
+    const textarea = form.querySelector('textarea');
+    if (fieldPath === null || !(textarea instanceof HTMLTextAreaElement)) {
+      return;
+    }
+    const newValue = textarea.value.trim();
+    if (newValue.length === 0) {
+      textarea.focus();
+      return;
+    }
+    const row = proposalFactRowForField(packet, fieldPath);
+    if (row === undefined) {
+      return;
+    }
+    appendProposalFactCorrectionAuditEvent(log, packet, fieldPath, row.priorValue, newValue);
+    hideFactCorrectionForm(form);
+    const factRow = form.closest('.kerf-w1-used-fact');
+    if (factRow !== null) {
+      showFactCorrectionStatus(factRow, 'Learning signal queued for this correction.');
+    }
+  };
+
+  detailRoot.addEventListener('click', onClick);
+  detailRoot.addEventListener('submit', onSubmit);
+  return () => {
+    detailRoot.removeEventListener('click', onClick);
+    detailRoot.removeEventListener('submit', onSubmit);
+  };
 }
 
 function wireProposalDetailActions(packet: DecisionPacket, footer: HTMLElement, log: HTMLElement): () => void {

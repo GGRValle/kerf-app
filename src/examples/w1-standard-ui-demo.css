@@ -664,8 +664,57 @@ html:has(.kerf-w1-standard-ui) body {
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory-facts {
   margin: 0.1rem 0 0.25rem;
+  padding-left: 0;
+  list-style: none;
   font-size: 0.75rem;
   line-height: 1.4;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-used-fact {
+  margin: 0;
+  padding: 0.42rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--kerf-border) 72%, transparent);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-used-fact:first-child {
+  border-top: none;
+  padding-top: 0.18rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-used-fact-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: start;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-used-fact-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: color-mix(in srgb, var(--kerf-fg) 92%, var(--kerf-fg-muted));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-btn {
+  flex-shrink: 0;
+  min-height: 1.7rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correction-form {
+  margin-top: 0.45rem;
+  padding: 0.5rem;
+  border-radius: var(--kerf-radius-sm);
+  border: 1px solid color-mix(in srgb, var(--kerf-border-strong) 78%, var(--kerf-border));
+  background: color-mix(in srgb, var(--kerf-bg-control) 42%, var(--kerf-bg-card));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correction-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--success) 78%, var(--kerf-fg));
 }
 
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-company-memory-foot {
