@@ -163,6 +163,54 @@ A promoted tenant knowledge entry. The compounding-knowledge moat lives here.
 
 V10 enforces: every MemoryRecord must trace to one or more LearningSignals. No direct writes.
 
+### 3.9 Guided Onboarding Ingestion
+
+The eight entities in §3.1–§3.8 describe *what's in the graph and how it relates*. This subsection describes *where the graph's first rows come from*: an onboarding-driven question flow rather than a configuration page. Per [`docs/ff_proposal_first_roadmap.md`](../ff_proposal_first_roadmap.md) §"Onboarding Is Ingestion, Not Setup", a new tenant's first 30–60 minutes with Kerf are a Right-Hand-led structured interview, not form-filling.
+
+**The mapping rule:** every onboarding answer becomes typed graph rows that flow through the same Stage 1 → Stage 2 spine as runtime decisions. There is no "settings table" that bypasses the spine. Onboarding answers are first-class evidence with `source_class = TENANT_MEMORY` (or `PROJECT_EVIDENCE` when the answer cites a specific past project).
+
+#### 3.9.1 Onboarding answer → graph entity mapping
+
+| Onboarding capture | Becomes (Stage 1) | Stage 2 / promoted | Notes |
+|---|---|---|---|
+| Company identity (legal name, EIN, license #s, jurisdictions, brand) | `EvidenceObject` (kind=`external_intake_form`, `source_class=TENANT_MEMORY`) → `ExtractedClaim[]` (one per field) | `company_profile` row + `Tenant` metadata | Per D-031 Company / HR Operations Lane (DRAFT canon-side); margin-bearing fields gated to owner/MoO |
+| Service areas | `EvidenceObject` → `ExtractedClaim` (kind=`scope_observation`) | `MemoryRecord` (kind=`approved_project_type_band`) per metro / jurisdiction | Used to flag drafts quoting work outside captured service area |
+| Client types (homeowner / commercial / GC mix) | `EvidenceObject` → `ExtractedClaim` (kind=`client_preference_observation`) | `MemoryRecord` (kind=`approved_project_type_band` with client-type tag) | Tunes Right Hand's draft register |
+| Labor rates (per role) | `EvidenceObject` (kind=`field_note`, source `external_intake_form`) → `ExtractedClaim` (kind=`price_observation`, `source_class=TENANT_MEMORY`) | `LaborResource` row(s) backing per-role `labor_rate` per §6.1 | Owner / MoO only; backs cost projections without per-project re-entry |
+| Materials posture (preferred brands, "always vs never") | `EvidenceObject` → `ExtractedClaim` (kind=`scope_observation`) | `MemoryRecord` (kind=`approved_assembly` placeholder + `approved_exclusion_pattern` for "never" entries) | Drives layered Cost KB retrieval |
+| Vendor / supplier costs | `EvidenceObject` (kind=`supplier_quote` or `external_intake_form`) → `ExtractedClaim` (kind=`price_observation`, `source_class=SUPPLIER_OR_SUB_QUOTE`) | `CostItem` rows + `current_pricing` view per D-030 | Freshness disclosure required on Decision Cards consuming these per D-030 |
+| Crew roles | `EvidenceObject` → `ExtractedClaim` (kind=`scope_observation`) | `crew` rows + `role_assignment` rows per §6.1 | PM-readable; sensitive HR fields owner-only |
+| Proposal style (tone, depth, attachments) | `EvidenceObject` (kind=`external_intake_form`) → `ExtractedClaim` (kind=`client_preference_observation`) | `MemoryRecord` (kind=`approved_assembly` for boilerplate; new memory subkind `approved_proposal_style` reserved for v0.3) | Used as draft scaffold by Right Hand; render-time only |
+| Margin / risk guardrails | `EvidenceObject` → `ExtractedClaim` (kind=`scope_observation`) | `MemoryRecord` (kind=`approved_markup_rule`) + Policy Gate authority floor config | Owner / MoO only per V6 / Charter §VI.2 AT-004 |
+| Approval rules | `EvidenceObject` → `ExtractedClaim` (kind=`scope_observation`) | `MemoryRecord` (kind=`approved_markup_rule` + `approved_self_perform_trade` for trade-by-trade authority) | Drives Policy Gate `system_baseline_altitude` per `decision_type` |
+| Source documents (sample contracts, scope templates, warranty docs) | `EvidenceObject` (kind=`plan_pdf` / `estimate_pdf` / `field_note`) | Used as Right Hand draft scaffolding; promoted to `MemoryRecord` (kind=`approved_assembly` boilerplate) only via operator-approved LearningSignals | Source documents stay first-class evidence; the *reusable patterns* extracted from them are what promote |
+| Past project examples | `EvidenceObject` (kind=`field_note` per project) + `EvidenceObject` (kind=`estimate_pdf` if attached) → `ExtractedClaim[]` (multiple per project) | `MemoryRecord` (per-project, kind=`approved_assembly`) once V10 promotes the per-project lessons | Each becomes a citable comparison anchor for future drafts ("this kitchen is similar to the Asdal close in October") |
+
+#### 3.9.2 Promotion path
+
+Onboarding answers do not auto-promote to `MemoryRecord`. They follow the same V10-gated promotion path as any LearningSignal: the operator confirms each captured answer; the confirmation emits a `LearningSignal` of kind `approval`; V10 promotes to `MemoryRecord` only on explicit operator action.
+
+The onboarding *session itself* is the operator action — Right Hand drafts the captured answers as a batch; the operator approves the batch; V10 promotes the entire batch to `MemoryRecord` rows. This preserves the no-auto-promotion rule (R3, §2) without making the operator click 12 separate buttons.
+
+#### 3.9.3 Proposal context retrieval
+
+The downstream payoff: when Right Hand drafts a proposal follow-up later, the layered retrieval over the source-class taxonomy (§4) reads the new `TENANT_MEMORY` rows the same way it reads any other tenant memory:
+
+1. **Tenant memory layer** (`source_class=TENANT_MEMORY`, ranked above `KERF_SEED`) returns onboarding-captured `LaborResource`, `MemoryRecord`, `MarkupRule`, `approved_assembly` rows specific to the tenant.
+2. **Project evidence layer** (`source_class=PROJECT_EVIDENCE`) overlays the current project's specifics.
+3. **Cost KB layer** (`source_class=KERF_SEED` ↓) provides bootstrap defaults only when tenant memory has no answer.
+4. **Public reference layer** narrows further down per §4.
+
+The drafted proposal cites the layered chain explicitly via the `Citation` rows (per V14 Pathway integrity). The F&F recipient sees, on the Decision Card audit panel, that the draft references *the operator's own rates and material posture* — not generic defaults — because onboarding produced typed memory the proposal surface reads.
+
+#### 3.9.4 What's deferred — captured in graph, not yet UI-widened
+
+The HR / Schedule / Documents / Comms lanes (D-031 / D-032 / D-033 / D-034) **all participate in the same onboarding capture pattern** — the entities they introduce (`employee`, `crew`, `certification`, `equipment`, `schedule_event`, `project_message`, `to_do_item`, etc.) are populated from onboarding answers the same way `LaborResource` and `MemoryRecord` are. The schema is ready; the capture flow ingests them.
+
+**What's deferred is the UI-widening, not the graph capture.** The F&F demo and the W1 surface render proposal-loop entities only. Surfacing HR / Schedule / Documents / Comms as their own UI modules is W2+ work (and material scope per D-031 through D-034). The onboarding session can populate those lanes; the proposal-review surface doesn't yet show them.
+
+This sequencing is intentional. The F&F pitch is "Kerf knows your company because you told it" — proven by the proposal review surface citing tenant memory. Adding HR / Schedule / Documents / Comms surfaces before that pitch lands risks turning the demo into a "yet another contractor SaaS" reading instead of a "decisions, not dashboards" reading.
+
 ---
 
 ## 4. Source Layers
