@@ -4,3 +4,5 @@ export * from './seedEvents.js';
 export * from './decisionPackets.js';
 export * from './proposalReadSurface.js';
 export * from './onboardingSession.js';
+export * from './ggrOnboardingSession.js';
+export * from './valleOnboardingSession.js';
