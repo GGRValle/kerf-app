@@ -7,8 +7,12 @@ import {
   createMemoryEventLog,
   type Actor,
   type Event,
+  type LearningSignalDraftedPayload,
 } from '../blackboard/index.js';
+import type { LearningSignalBlackboardEventTemplate } from '../altitude/index.js';
 import {
+  factCorrectionToEventTemplate,
+  OPERATOR_FIELD_CORRECTION_SOURCE,
   operatorDecisionToEventTemplate,
   persistProposalOperatorDecision,
   type OperatorDecisionAction,
@@ -139,6 +143,19 @@ function actionLogVerbForWorkflow(
   return operatorDecisionActionForWorkflow(workflow, baseAction);
 }
 
+/** Demo action-log verb for `learning_signal.drafted` (distinct rail token for operator fact corrections). */
+const ACTION_LOG_VERB_BY_LEARNING_SIGNAL: Record<'fact_correction' | 'learning_signal_drafted', string> = {
+  fact_correction: 'fact_correction',
+  learning_signal_drafted: 'learning_signal_drafted',
+};
+
+function actionLogVerbForLearningSignalDraft(payload: LearningSignalDraftedPayload): string {
+  if (payload.sourceValidatorId === OPERATOR_FIELD_CORRECTION_SOURCE) {
+    return ACTION_LOG_VERB_BY_LEARNING_SIGNAL.fact_correction;
+  }
+  return ACTION_LOG_VERB_BY_LEARNING_SIGNAL.learning_signal_drafted;
+}
+
 /** Footers currently showing the reject-reason form (demo-only); reset clears these. */
 const activeRejectRestores = new Map<string, () => void>();
 
@@ -149,6 +166,9 @@ let selectedPacketIdForDetail: string | null = null;
 let queueSelectionWired = false;
 let activeQueueFilter: DemoQueueFilter = 'all';
 let queueErrorResetCleanup: (() => void) | undefined;
+
+/** Wire fact-correction UI once (delegated clicks on #kerf-proposal-detail-root). */
+let proposalFactCorrectionWired = false;
 
 function operatorSummaryToneClass(tone: DecisionCardOperatorSummaryTone): string {
   switch (tone) {
@@ -173,6 +193,88 @@ function listSnippetHtml(items: readonly string[], emptyLabel: string, maxItems:
   const rest = items.length > maxItems ? items.length - maxItems : 0;
   const more = rest > 0 ? `<p class="kerf-meta">…and ${rest} more</p>` : '';
   return `<ul class="kerf-list">${slice.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>${more}`;
+}
+
+function truncateForActionLog(value: string, maxLen: number): string {
+  const t = value.trim();
+  if (t.length <= maxLen) return t;
+  return `${t.slice(0, Math.max(0, maxLen - 1))}…`;
+}
+
+function formatFactDisplay(raw: unknown): string {
+  if (raw === null || raw === undefined) return '';
+  if (typeof raw === 'string') return raw.trim();
+  if (typeof raw === 'number' && Number.isFinite(raw)) return String(raw);
+  if (typeof raw === 'boolean') return raw ? 'yes' : 'no';
+  return '';
+}
+
+interface ProposalFactRowSpec {
+  path: string;
+  label: string;
+  displayValue: string;
+}
+
+function proposalFactRowsForDemo(packet: DecisionPacket): ProposalFactRowSpec[] {
+  const rows: ProposalFactRowSpec[] = [];
+  const xf = packet.extracted_facts;
+
+  const push = (path: string, label: string, raw: unknown) => {
+    const displayValue = formatFactDisplay(raw);
+    if (displayValue.length === 0) return;
+    rows.push({ path, label, displayValue });
+  };
+
+  push('extracted_facts.client_name', 'Client', xf.client_name);
+  if (typeof xf.project_name === 'string' && xf.project_name.trim().length > 0) {
+    push('extracted_facts.project_name', 'Project / scope', xf.project_name);
+  } else if (typeof xf.scope === 'string' && xf.scope.trim().length > 0) {
+    push('extracted_facts.scope', 'Project / scope', xf.scope);
+  }
+  push('extracted_facts.labor_assumption', 'Labor assumption', xf.labor_assumption);
+  push('extracted_facts.material_assumption', 'Material assumption', xf.material_assumption);
+  push('extracted_facts.proposal_status', 'Proposal status', xf.proposal_status);
+  if (packet.money_fields?.source_class !== undefined) {
+    push('money_fields.source_class', 'Pricing source class', packet.money_fields.source_class);
+  }
+
+  return rows.slice(0, 6);
+}
+
+function renderFactRowHtml(row: ProposalFactRowSpec): string {
+  return `<div class="kerf-w1-fact-row" data-kerf-w1-fact-path="${escapeHtml(row.path)}" data-kerf-w1-fact-prior="${escapeHtml(row.displayValue)}" data-kerf-w1-fact-label="${escapeHtml(row.label)}">
+  <span class="kerf-w1-fact-label">${escapeHtml(row.label)}</span>
+  <span class="kerf-w1-fact-value">${escapeHtml(row.displayValue)}</span>
+  <button type="button" class="kerf-btn kerf-w1-fact-correct-btn" data-kerf-w1-fact-correct="${escapeHtml(row.path)}">Correct</button>
+</div>`;
+}
+
+function renderKerfUsedFactsSection(packet: DecisionPacket): string {
+  const rows = proposalFactRowsForDemo(packet);
+  if (rows.length === 0) {
+    return '';
+  }
+  return `<section class="kerf-section kerf-w1-facts-used" aria-label="Kerf used these facts">
+  <h3>Kerf used these facts</h3>
+  <p class="kerf-meta kerf-w1-facts-used-lede">
+    Each row is what this packet already carries into review. A correction records an operator learning signal in the demo event log (local only; nothing persists across reload).
+  </p>
+  <div class="kerf-w1-facts-used-list" role="list">
+    ${rows.map(renderFactRowHtml).join('')}
+  </div>
+</section>`;
+}
+
+function renderFactCorrectionFormHtml(fieldPath: string, prior: string, label: string): string {
+  return `<form class="kerf-w1-fact-correct-form" data-kerf-w1-fact-path="${escapeHtml(fieldPath)}" data-kerf-w1-fact-prior="${escapeHtml(prior)}" data-kerf-w1-fact-label="${escapeHtml(label)}">
+  <label class="kerf-w1-fact-correct-label">What should Kerf remember instead?
+    <textarea name="correction" class="kerf-w1-fact-correct-textarea" rows="2" required></textarea>
+  </label>
+  <div class="kerf-w1-fact-correct-actions">
+    <button type="submit" class="kerf-btn kerf-btn-primary">Save correction</button>
+    <button type="button" class="kerf-btn kerf-btn-ghost" data-kerf-w1-fact-correct-cancel>Cancel</button>
+  </div>
+</form>`;
 }
 
 /** Plain-English line for proposal trigger facts in company-memory copy (fixture-driven). */
@@ -342,6 +444,8 @@ function renderProposalDetailHtml(view: DecisionCardViewModel, packet: DecisionP
   ${renderCompanyMemoryUsedHtml(view, packet)}
 
   ${artifactSection}
+
+  ${renderKerfUsedFactsSection(packet)}
 
   <section class="kerf-section kerf-source-basis" aria-label="Source basis">
     <h3>Source basis</h3>
@@ -625,6 +729,145 @@ function eventFromOperatorDecisionTemplate(
     sources: template.sources,
     correlationId: `corr_demo_operator_decision_${seq}`,
   };
+}
+
+function eventFromLearningSignalTemplate(
+  template: LearningSignalBlackboardEventTemplate,
+  at: string,
+): Event<LearningSignalDraftedPayload> {
+  const seq = nextOperatorDecisionEventSeq();
+  return {
+    id: `evt_demo_learning_signal_${seq}`,
+    at,
+    actor: DEMO_OPERATOR,
+    kind: template.kind,
+    entity: template.entity,
+    payload: template.payload,
+    data_class: template.data_class,
+    retention_policy: template.retention_policy,
+    privilege_class: template.privilege_class,
+    workflow: template.workflow,
+    decision_authority: template.decision_authority,
+    action_class: template.action_class,
+    decision_altitude: template.decision_altitude,
+    sources: template.sources,
+    correlationId: `corr_demo_learning_signal_${seq}`,
+  };
+}
+
+function appendFactCorrectionHumanRows(
+  log: HTMLElement,
+  event: Event<LearningSignalDraftedPayload>,
+  template: LearningSignalBlackboardEventTemplate,
+  shortNew: string,
+): void {
+  const row = document.createElement('div');
+  row.className = 'kerf-w1-log-entry kerf-w1-log-entry--audit';
+  const p = event.payload;
+  const meta = p.metadata as { fieldPath?: unknown };
+  const fieldPath = typeof meta.fieldPath === 'string' ? meta.fieldPath : p.packetId;
+  const parts = [
+    event.at,
+    event.kind,
+    `verb=${actionLogVerbForLearningSignalDraft(p)}`,
+    `event=${event.id}`,
+    `sourceValidatorId=${p.sourceValidatorId}`,
+    `packet=${p.packetId}`,
+    `fieldPath=${fieldPath}`,
+  ];
+  row.textContent = parts.join('  ');
+  log.prepend(row);
+  prependHumanLogRow(log, `corrected fact: ${fieldPath} → "${shortNew}"`);
+}
+
+function submitFactCorrection(log: HTMLElement, form: HTMLFormElement): void {
+  const path = form.getAttribute('data-kerf-w1-fact-path');
+  const prior = form.getAttribute('data-kerf-w1-fact-prior') ?? '';
+  const label = form.getAttribute('data-kerf-w1-fact-label') ?? '';
+  const row = form.closest('.kerf-w1-fact-row');
+  if (path === null || !(row instanceof HTMLElement)) {
+    return;
+  }
+  const ta = form.querySelector('textarea[name="correction"]');
+  const newValue = ta instanceof HTMLTextAreaElement ? ta.value.trim() : '';
+  if (newValue.length === 0) {
+    return;
+  }
+  const packetId = selectedPacketIdForDetail;
+  const packet = currentPackets.find((p) => p.packet_id === packetId);
+  if (packet === undefined || packet.workflow !== 'proposal_followup') {
+    return;
+  }
+  const decidedAt = formatTimestamp();
+  const template = factCorrectionToEventTemplate({
+    packet,
+    correction: { fieldPath: path, priorValue: prior, newValue },
+    actor: DEMO_OPERATOR,
+    decidedAt,
+  });
+  const event = eventFromLearningSignalTemplate(template, decidedAt);
+  const shortNew = truncateForActionLog(newValue, 40);
+  void operatorDecisionEventLog.append(event).then((stored) => {
+    appendFactCorrectionHumanRows(
+      log,
+      stored as Event<LearningSignalDraftedPayload>,
+      template,
+      shortNew,
+    );
+  });
+  row.innerHTML = `<span class="kerf-w1-fact-label">${escapeHtml(label)}</span><span class="kerf-w1-fact-value">${escapeHtml(prior)}</span><span class="kerf-w1-fact-recorded" aria-live="polite">✓ correction recorded</span>`;
+}
+
+function wireProposalFactCorrections(detailRoot: HTMLElement, log: HTMLElement): void {
+  detailRoot.addEventListener('click', (ev) => {
+    const t = ev.target;
+    if (!(t instanceof Element)) {
+      return;
+    }
+    if (t.closest('[data-kerf-w1-fact-correct-cancel]')) {
+      const row = t.closest('.kerf-w1-fact-row');
+      if (row instanceof HTMLElement) {
+        const backup = (row as HTMLElement & { __kerfFactBackup?: string }).__kerfFactBackup;
+        if (backup !== undefined) {
+          row.innerHTML = backup;
+          delete (row as HTMLElement & { __kerfFactBackup?: string }).__kerfFactBackup;
+        }
+      }
+      return;
+    }
+    const correctBtn = t.closest('[data-kerf-w1-fact-correct]');
+    if (!(correctBtn instanceof HTMLButtonElement)) {
+      return;
+    }
+    const path = correctBtn.getAttribute('data-kerf-w1-fact-correct');
+    const row = correctBtn.closest('.kerf-w1-fact-row');
+    if (path === null || !(row instanceof HTMLElement)) {
+      return;
+    }
+    const prior = row.getAttribute('data-kerf-w1-fact-prior') ?? '';
+    const label = row.getAttribute('data-kerf-w1-fact-label') ?? '';
+    (row as HTMLElement & { __kerfFactBackup?: string }).__kerfFactBackup = row.innerHTML;
+    row.innerHTML = renderFactCorrectionFormHtml(path, prior, label);
+    const nextTa = row.querySelector('textarea');
+    nextTa?.focus();
+  });
+
+  detailRoot.addEventListener('submit', (ev) => {
+    const form = ev.target;
+    if (!(form instanceof HTMLFormElement) || !form.classList.contains('kerf-w1-fact-correct-form')) {
+      return;
+    }
+    ev.preventDefault();
+    submitFactCorrection(log, form);
+  });
+}
+
+function ensureProposalFactCorrectionWire(detailRoot: HTMLElement, log: HTMLElement): void {
+  if (proposalFactCorrectionWired) {
+    return;
+  }
+  proposalFactCorrectionWired = true;
+  wireProposalFactCorrections(detailRoot, log);
 }
 
 function appendOperatorDecisionAuditEvent(
@@ -1096,6 +1339,7 @@ async function initW1DemoQueue(root: HTMLElement, log: HTMLElement, detailRoot: 
   wireQueueCardSelection(root, detailRoot, log);
   wireFilterBar(root, log, detailRoot);
   wireActionLogControls(log);
+  ensureProposalFactCorrectionWire(detailRoot, log);
 }
 
 function boot(): void {
