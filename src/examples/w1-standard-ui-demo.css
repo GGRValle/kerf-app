@@ -699,6 +699,139 @@ html:has(.kerf-w1-standard-ui) body {
   padding: 0.5rem 0.55rem;
 }
 
+/* Kerf used these facts — correction loop (demo-only; mirrors reject-form density). */
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-facts-used {
+  padding: 0.45rem 0.5rem 0.55rem;
+  border-radius: var(--kerf-radius-sm);
+  border: 1px solid var(--kerf-border);
+  background: color-mix(in srgb, var(--kerf-bg-card) 92%, var(--kerf-w1-panel-raised));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-facts-used h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-facts-used-lede {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-facts-used-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-row {
+  display: grid;
+  grid-template-columns: minmax(5rem, 7rem) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.35rem 0.5rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: var(--kerf-radius-xs);
+  border: 1px solid color-mix(in srgb, var(--kerf-border) 85%, transparent);
+  background: var(--kerf-w1-panel-raised);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-value {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-btn {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.18rem 0.42rem;
+  min-height: 1.45rem;
+  border-radius: var(--kerf-radius-xs);
+  border: 1px solid var(--kerf-border);
+  background: transparent;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-btn:hover {
+  color: var(--kerf-fg);
+  border-color: color-mix(in srgb, var(--kerf-border-strong) 70%, var(--kerf-border));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-recorded {
+  grid-column: 1 / -1;
+  font-size: 0.6875rem;
+  color: color-mix(in srgb, var(--kerf-w1-brand) 88%, var(--kerf-fg-muted));
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-form {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--kerf-fg-muted);
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-textarea {
+  width: 100%;
+  min-height: 3.25rem;
+  resize: vertical;
+  border: 1px solid var(--kerf-border-strong);
+  border-radius: calc(var(--kerf-radius-sm) - 1px);
+  background: var(--kerf-bg-control);
+  color: var(--kerf-fg);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: var(--kerf-leading-meta);
+  padding: var(--kerf-space-sm) 0.58rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-textarea:focus-visible {
+  outline: 2px solid var(--kerf-focus-ring);
+  outline-offset: 2px;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-correct-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-btn-ghost {
+  background: transparent;
+  border-color: var(--kerf-border);
+  color: var(--kerf-fg-muted);
+  font-size: 0.6875rem;
+  padding: 0.22rem 0.5rem;
+  min-height: 1.55rem;
+}
+
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-btn-ghost:hover {
+  color: var(--kerf-fg);
+  border-color: var(--kerf-border-strong);
+}
+
 /*
  * Drafted client follow-up body — read as proposal letter copy, not a code block.
  * Override decision-card's monospace + canvas-bg defaults: sans, panel-2 bg, soft border,
