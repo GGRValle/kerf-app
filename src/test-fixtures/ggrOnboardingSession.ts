@@ -1,5 +1,5 @@
 /**
- * GGR Design + Remodeling — populated onboarding overlay (track A3.1).
+ * GGR design + remodeling — populated onboarding overlay (track A3.1).
  * Tenant-specific memory atop canon `KERF_SEED`; illustrative-only economics (confidence medium where noted).
  */
 
@@ -26,7 +26,8 @@ export const ggrOnboardingSession: OnboardingSession = {
       capturedAt: '2026-06-02T14:04:00.000Z',
       confidence: 'high',
       payload: {
-        legalName: 'GGR Design + Remodeling',
+        legalName: 'Get Green Remodeling, Inc.',
+        dbaName: 'GGR design + remodeling',
         ein: 'EIN-PLACEHOLDER',
         primaryTrades: ['general_contractor', 'design_build_residential'],
         licenseNumbers: [

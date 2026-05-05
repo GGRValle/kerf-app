@@ -1,5 +1,5 @@
 /**
- * Valle Cabinetry + Millwork — populated onboarding overlay (track A3.1).
+ * VALLE cabinetry + millwork — populated onboarding overlay (track A3.1).
  * Cabinetry-shop posture distinct from whole-home remodel overlay (`ggrOnboardingSession`).
  */
 
@@ -26,7 +26,8 @@ export const valleOnboardingSession: OnboardingSession = {
       capturedAt: '2026-06-02T16:04:00.000Z',
       confidence: 'high',
       payload: {
-        legalName: 'Valle Cabinetry + Millwork',
+        legalName: 'Get Green Remodeling, Inc.',
+        dbaName: 'VALLE cabinetry + millwork',
         ein: 'EIN-PLACEHOLDER',
         primaryTrades: ['cabinetry', 'millwork', 'finish_carpentry'],
         licenseNumbers: [

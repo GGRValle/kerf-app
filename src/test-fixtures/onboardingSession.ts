@@ -25,7 +25,7 @@ export const ggrOnboardingSessionSkeletonFixture: OnboardingSession = {
       confidence: 'high',
       payload: {
         legalName: 'Get Green Remodeling, Inc.',
-        dbaName: 'GGR Design + Remodeling',
+        dbaName: 'GGR design + remodeling',
         ein: '00-0000000',
         primaryTrades: ['design-build residential remodel'],
         licenseNumbers: [
