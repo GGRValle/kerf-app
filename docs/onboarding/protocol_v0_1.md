@@ -95,7 +95,7 @@ Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR Design + Remodeli
 
 **Structured shape:** Client-mix tags on `MemoryRecord` (`approved_project_type_band` + client-type tag) — KG §3.9.1 row 3.
 
-**Worked example (VIA — Valle Cabinetry + Millwork):**  
+**Worked example (Valle Cabinetry + Millwork):**
 “We’re **70% homeowner kitchen/bath**, **25% small commercial FF&E**, **5% GC package pricing**; typical cabinet jobs **$25–120k sell**, **4–10 weeks** install window.”  
 **Captured as:** Weighted client-type observations + nominal band for proposal tone.
 
@@ -114,7 +114,7 @@ Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR Design + Remodeli
 
 **Structured shape:** Per-role `LaborResource` / `labor_rate` rows — `base_wage_cents_per_hour`, `burden_multiplier`, `loaded_rate_cents_per_hour`, `effective_from` — KG §6.1 + §3.9.1 row 4.
 
-**Worked example (VIA):**  
+**Worked example (Valle):**
 “**Installer** loaded **$68/hr**, **finisher** **$72/hr**, **shop drawer assembler** **$52/hr**; burden **1.42** on W2; rates effective **Jan 1**.”  
 **Captured as:** Three `LaborResource` candidates with effective_from.
 
@@ -152,7 +152,7 @@ Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR Design + Remodeli
 
 **Structured shape:** `CostItem` + `current_pricing` view (freshness) — KG §3.9.1 row 6; D-030 freshness disclosure on Decision Cards consuming the layer.
 
-**Worked example (VIA):**  
+**Worked example (Valle):**
 “**Cabinet distributor** trade login; typical quote freshness **14 days** on specialty veneers.”  
 **Captured as:** Supplier_quote-backed price_observation claims + freshness expectation metadata.
 
@@ -228,7 +228,7 @@ Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR Design + Remodeli
 
 **Structured shape:** `MemoryRecord` (`approved_markup_rule` + `approved_self_perform_trade` facets) feeding Policy Gate `system_baseline_altitude` — KG §3.9.1 row 10.
 
-**Worked example (VIA):**  
+**Worked example (Valle):**
 “Owner approves **all** client-facing sends; PM drafts only.”  
 **Captured as:** Approval altitude observations per decision_type.
 
@@ -266,7 +266,7 @@ Operator: “We’re **Get Green Remodeling, Inc.**, DBA **GGR Design + Remodeli
 
 **Structured shape:** Per-project `EvidenceObject` + `ExtractedClaim[]` → `MemoryRecord` per comparable anchor — KG §3.9.1 row 12.
 
-**Worked example (VIA):**  
+**Worked example (Valle):**
 “**Ada Boise kitchen** — **$92k sell**, slipped on **long-lead pulls**; lesson: **order decorative hardware at deposit**.”  
 **Captured as:** Comparable project memory suitable for “similar job” citations.
 
@@ -321,7 +321,7 @@ Any capture remains **independently editable** post-session. Each edit emits a `
 
 - **Voice capture** — deferred W2+ per [`docs/proposal_ff_mobile_pwa_plan.md`](../proposal_ff_mobile_pwa_plan.md) §3.5 (**Voice capture** — toast-only in F&F) and §9 Non-goals (**Voice capture wiring**).
 - **TypeScript types** for `OnboardingSession` / `OnboardingAnswer` — track **A2**, separate PR.
-- **GGR/VIA seed importer** — track **A3**, separate PR.
+- **GGR/Valle seed importer** — track **A3**, separate PR.
 - **Dedicated onboarding UI shell** — W2 mobile / PWA surfaces; F&F stays proposal-queue demo until those land.
 - **HR / schedule / documents / comms modules** — graph lanes may ingest per [`§3.9.4`](../architecture/kerf_knowledge_graph_schema_v0_2.md#394-whats-deferred--captured-in-graph-not-yet-ui-widened); **UI widening is W2+**.
 
@@ -345,7 +345,7 @@ Any capture remains **independently editable** post-session. Each edit emits a `
 ## 10. What’s next (outside this file)
 
 1. Land TS types + session envelope (**A2**).  
-2. Land seed importer for GGR/VIA proof tenants (**A3**).  
+2. Land seed importer for GGR/Valle proof tenants (**A3**).
 3. Wire Right Hand orchestration + V10 batch UI when mobile onboarding shell schedules.
 
 ---
