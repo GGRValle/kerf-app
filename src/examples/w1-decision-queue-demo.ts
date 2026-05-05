@@ -21,8 +21,10 @@ import {
 } from '../decisions/index.js';
 import {
   seededMixedDecisionPacketListFixture,
+  ggrOnboardingSession,
   seededProposalReadSurface,
 } from '../test-fixtures/index.js';
+import { deriveTenantContextFacts } from '../onboarding/index.js';
 import {
   requestProposalFollowupApproval,
   type ProposalFollowupApprovalActionPayload,
@@ -241,6 +243,12 @@ function proposalFactRowsForDemo(packet: DecisionPacket): ProposalFactRowSpec[] 
   return rows.slice(0, 6);
 }
 
+function tenantContextFactRowsForDemo(): readonly ProposalFactRowSpec[] {
+  // Tenant overlay row paths are emitted as tenant_context.* so correction events
+  // record fieldPath values like tenant_context.margin_target.
+  return deriveTenantContextFacts(ggrOnboardingSession, { limit: 6 });
+}
+
 function renderFactRowHtml(row: ProposalFactRowSpec): string {
   return `<div class="kerf-w1-fact-row" data-kerf-w1-fact-path="${escapeHtml(row.path)}" data-kerf-w1-fact-prior="${escapeHtml(row.displayValue)}" data-kerf-w1-fact-label="${escapeHtml(row.label)}">
   <span class="kerf-w1-fact-label">${escapeHtml(row.label)}</span>
@@ -250,17 +258,24 @@ function renderFactRowHtml(row: ProposalFactRowSpec): string {
 }
 
 function renderKerfUsedFactsSection(packet: DecisionPacket): string {
-  const rows = proposalFactRowsForDemo(packet);
-  if (rows.length === 0) {
+  const packetRows = proposalFactRowsForDemo(packet);
+  const tenantRows = tenantContextFactRowsForDemo();
+  if (packetRows.length === 0 && tenantRows.length === 0) {
     return '';
   }
+  const packetHtml = packetRows.map(renderFactRowHtml).join('');
+  const tenantHtml = tenantRows.length > 0
+    ? `<div class="kerf-w1-facts-tenant-section">Tenant context (GGR)</div>${tenantRows.map(renderFactRowHtml).join('')}`
+    : '';
+
   return `<section class="kerf-section kerf-w1-facts-used" aria-label="Kerf used these facts">
   <h3>Kerf used these facts</h3>
   <p class="kerf-meta kerf-w1-facts-used-lede">
     Each row is what this packet already carries into review. A correction records an operator learning signal in the demo event log (local only; nothing persists across reload).
   </p>
   <div class="kerf-w1-facts-used-list" role="list">
-    ${rows.map(renderFactRowHtml).join('')}
+    ${packetHtml}
+    ${tenantHtml}
   </div>
 </section>`;
 }

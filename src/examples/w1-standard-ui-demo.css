@@ -726,6 +726,17 @@ html:has(.kerf-w1-standard-ui) body {
   gap: 0.35rem;
 }
 
+.kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-facts-tenant-section {
+  margin-top: 0.35rem;
+  padding-top: 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--kerf-fg-muted);
+  border-top: 1px solid color-mix(in srgb, var(--kerf-border) 82%, transparent);
+}
+
 .kerf-w1-standard-ui .kerf-w1-proposal-detail-panel .kerf-w1-fact-row {
   display: grid;
   grid-template-columns: minmax(5rem, 7rem) minmax(0, 1fr) auto;

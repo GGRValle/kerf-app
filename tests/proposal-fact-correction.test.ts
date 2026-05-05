@@ -128,6 +128,17 @@ test('w1 demo source wires fact correction helper and UI hooks', () => {
   assert.match(demoSrc, /fact_correction/);
 });
 
+test('w1 demo source imports and calls deriveTenantContextFacts for tenant overlay rows', () => {
+  const demoSrc = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+  assert.match(demoSrc, /deriveTenantContextFacts/);
+  assert.match(demoSrc, /tenantContextFactRowsForDemo/);
+});
+
+test('w1 demo source contains tenant_context paths for correction event fieldPath', () => {
+  const demoSrc = readFileSync(new URL('../src/examples/w1-decision-queue-demo.ts', import.meta.url), 'utf8');
+  assert.match(demoSrc, /tenant_context\./);
+});
+
 test('w1 demo HTML documents proposal detail injection surface', () => {
   const html = readFileSync(new URL('../src/examples/w1-decision-queue-demo.html', import.meta.url), 'utf8');
 
