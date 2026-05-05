@@ -124,21 +124,21 @@ Onboarding is also **revisitable**. Every capture above is also editable later �
 - Not optional. The proposal review surface refuses to draft against `MODEL_INFERENCE` alone (V1 / V8); it needs the captured `TENANT_MEMORY` to ground in.
 - Not a one-time event. Re-onboarding is the path for new service-area expansion, new vendor relationships, post-incident policy updates.
 
-## GGR/VIA Seed Path
+## GGR / Valle Seed Path
 
-The fastest way to prove the onboarding-driven KB works is to ingest **GGR Design + Remodel** and **Valle Custom Cabinetry / VIA** as the first tenants. Christian already has the answers to all 12 capture categories above — they live in his head, in QBO, in past proposals, in the team's working knowledge.
+The fastest way to prove the onboarding-driven KB works is to ingest **GGR Design + Remodeling** and **Valle Cabinetry + Millwork** as the first tenants. Christian already has the answers to all 12 capture categories above — they live in his head, in QBO, in past proposals, in the team's working knowledge.
 
-**Why GGR + VIA are the right seed:**
+**Why GGR + Valle are the right seed:**
 
-1. **Real data.** Not synthetic fixtures. The `seededProposalReadSurface` fixture in the W1 demo gives a 4-proposal scan, but those proposals don't trace to a real tenant memory chain. GGR + VIA proposals trace to real `LaborResource`, real material costs, real margin posture.
+1. **Real data.** Not synthetic fixtures. The `seededProposalReadSurface` fixture in the W1 demo gives a 4-proposal scan, but those proposals don't trace to a real tenant memory chain. GGR + Valle proposals trace to real `LaborResource`, real material costs, real margin posture.
 2. **Low coordination cost.** Christian is the operator; he's the founder; he can answer the 12 capture categories without needing a tenant kickoff call. Any other tenant requires a real intake.
-3. **Two distinct contractor shapes in one tenant cluster.** GGR (Design + Remodel; whole-home remodels; HOA + high-end residential) and VIA / Valle Custom Cabinetry (cabinetry-only; smaller projects; longer-tail material lists) exercise very different proposal-style and margin postures. Validates that the captured KB is parameterized correctly per tenant rather than collapsing into a single shape.
+3. **Two distinct contractor shapes in one tenant cluster.** GGR Design + Remodeling (whole-home remodels; HOA + high-end residential) and Valle Cabinetry + Millwork (cabinetry/millwork; smaller projects; longer-tail material lists) exercise very different proposal-style and margin postures. Validates that the captured KB is parameterized correctly per tenant rather than collapsing into a single shape.
 4. **The first proof packets for "useful company memory."** Same proof-packet shape as the W1 + proposal-ff packets already shipping under `src/examples/evidence/`: a captured onboarding session, the resulting `MemoryRecord` rows, and a proposal review surface that visibly cites tenant-specific memory in its drafts (e.g., "this kitchen is similar to the Asdal residence we closed in October — see source basis").
 
-**Suggested GGR/VIA seed PR sequence (after the spearpoint mobile pass):**
+**Suggested GGR / Valle seed PR sequence (after the spearpoint mobile pass):**
 
 1. **GGR onboarding capture session.** Christian sits with Right Hand for 30–60 minutes; answers map to `MemoryRecord` rows; produces a captured `evidence/<date>-ggr-onboarding/PROOF_PACKET.md` with the full session transcript, the resulting graph rows, and a Decision Card screenshot showing GGR-specific draft language.
-2. **VIA onboarding capture session.** Same shape, second tenant. Validates the multi-tenant parameterization isn't fudged.
+2. **Valle onboarding capture session.** Same shape, second tenant. Validates the multi-tenant parameterization isn't fudged.
 3. **Cross-tenant smoke test.** A `npm run smoke:onboarding-kb` harness that opens a JSONL EventLog, ingests both seeded tenants, runs a proposal draft against each, and asserts that the drafts cite tenant-specific memory (not collapsing into a single generic answer).
 4. **F&F demo retargeting.** The hosted F&F URL switches its seeded data from the synthetic `seededProposalReadSurface` to the GGR seeded surface. F&F recipients see proposals that look like real GGR work, not toy demos.
 
