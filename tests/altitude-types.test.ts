@@ -48,7 +48,7 @@ test('altitude module exposes Validator Spec v0.3 closed vocabularies', () => {
   ]);
   assert.equal(VALIDATOR_NAMES.V17, 'Token budget');
   assert.equal(VALIDATOR_NAMES.V18, 'Altitude assignment');
-  assert.deepEqual([...W1_VALIDATOR_IDS], ['V1', 'V2', 'V6', 'V7', 'V8', 'V9', 'V12', 'V17', 'V18']);
+  assert.deepEqual([...W1_VALIDATOR_IDS], ['V1', 'V2', 'V4', 'V6', 'V7', 'V8', 'V9', 'V12', 'V17', 'V18']);
   assert.ok(SAFE_NEXT_ACTIONS.includes('block_token_budget'));
 });
 

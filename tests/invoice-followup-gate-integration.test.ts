@@ -21,6 +21,7 @@ const EVALUATED_AT = '2026-04-10T12:05:00.000Z';
 const CANONICAL_W1_VALIDATOR_ORDER = [
   'V1',
   'V2',
+  'V4',
   'V6',
   'V7',
   'V8',

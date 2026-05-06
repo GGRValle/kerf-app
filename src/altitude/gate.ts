@@ -78,6 +78,7 @@ const MODEL_INFERENCE_SAFE_LABELS = [
 const EXPECTED_OTHER_W1_VALIDATOR_ORDER = [
   'V1',
   'V2',
+  'V4',
   'V6',
   'V7',
   'V8',
@@ -85,6 +86,16 @@ const EXPECTED_OTHER_W1_VALIDATOR_ORDER = [
   'V17',
   'V18',
 ] as const satisfies readonly ValidatorId[];
+
+// V4 — recording-verb detection in proposed_action.description (case-insensitive).
+// Per Validator Spec v0.3 §4 V4 (d): if proposal implies recording AND consent_state
+// is not 'all_party_captured', BLOCK regardless of recording_intent.requested.
+const RECORDING_ACTION_VERBS = [
+  'record',
+  'capture audio',
+  'transcribe',
+  'log conversation',
+] as const;
 
 export interface TokenBudgetOptions {
   perActionTokenCap?: number;
@@ -220,6 +231,63 @@ export function runV2ExternalSendApproval(packet: AltitudePacket): ValidatorResu
     });
   }
   return validatorResult('V2', true, false, { durationMs: Date.now() - started });
+}
+
+/**
+ * V4 — California (and other two-party-consent jurisdictions) recording consent gate.
+ *
+ * Per Validator Spec v0.3 §4 V4 + AT-012. Critical-failure on missing consent in TPC
+ * jurisdictions, on recording verbs without all-party consent, and on the F5 pattern
+ * (model recommends recording while acknowledging consent_risk). All four cases yield
+ * critical=true so deriveSafeNextAction routes to 'block_recording'.
+ */
+export function runV4CARecordingConsent(packet: AltitudePacket): ValidatorResult {
+  const started = Date.now();
+
+  const jurisdiction = packet.jurisdiction;
+  const recording = packet.recording_intent;
+  const flags = packet.compliance_flags ?? [];
+  const description = packet.proposed_action.description.toLowerCase();
+
+  const inTwoPartyJurisdiction =
+    jurisdiction !== undefined && TWO_PARTY_CONSENT_JURISDICTIONS.has(jurisdiction);
+
+  const proposalImpliesRecording = RECORDING_ACTION_VERBS.some((verb) =>
+    description.includes(verb),
+  );
+
+  const consentCaptured = recording?.consent_state === 'all_party_captured';
+
+  // (e) F5 pattern — consent_risk acknowledged but proposal still recommends recording.
+  // Critical regardless of jurisdiction. Highest-precedence V4 failure mode.
+  if (flags.includes('consent_risk') && proposalImpliesRecording && !consentCaptured) {
+    return validatorResult('V4', false, true, {
+      reason: 'recording_consent_risk_acknowledged_but_recommended',
+      durationMs: Date.now() - started,
+    });
+  }
+
+  // (d) Recording verb in proposal AND consent not all-party — block regardless of
+  //     recording_intent.requested. Applies in any jurisdiction (recording verbs
+  //     imply intent to record; absent consent, that's the §632 risk surface).
+  if (proposalImpliesRecording && !consentCaptured) {
+    return validatorResult('V4', false, true, {
+      reason: 'recording_verb_without_all_party_consent',
+      durationMs: Date.now() - started,
+    });
+  }
+
+  // (b) + (c) — TPC jurisdiction AND recording_intent.requested → consent must be
+  //             all_party_captured. Single-party / missing / ambiguous all block.
+  if (inTwoPartyJurisdiction && recording?.requested === true && !consentCaptured) {
+    const state = recording.consent_state ?? 'missing';
+    return validatorResult('V4', false, true, {
+      reason: 'recording_consent_' + state + '_in_two_party_jurisdiction',
+      durationMs: Date.now() - started,
+    });
+  }
+
+  return validatorResult('V4', true, false, { durationMs: Date.now() - started });
 }
 
 export function runV6RoleRedaction(
@@ -509,6 +577,7 @@ export function runPolicyGate(
   const roleVisibility = options.defaultRoleVisibility ?? ['owner', 'admin'];
   const v1 = runV1PricingSourceClass(packet);
   const v2 = runV2ExternalSendApproval(packet);
+  const v4 = runV4CARecordingConsent(packet);
   const v6 = runV6RoleRedaction(packet, roleVisibility);
   const v7 = runV7SourceBasisRequired(packet);
   const v8 = runV8ModelInferenceLabeling(packet);
@@ -521,9 +590,9 @@ export function runPolicyGate(
     assignment: v18.assignment,
     evaluatedAt,
   });
-  const otherValidatorResults = [v1, v2, v6, v7, v8, v9.result, v17, v18.result];
+  const otherValidatorResults = [v1, v2, v4, v6, v7, v8, v9.result, v17, v18.result];
   const v12 = runV12AuditTrailCompleteness(otherValidatorResults);
-  const validatorResults = [v1, v2, v6, v7, v8, v9.result, v12, v17, v18.result];
+  const validatorResults = [v1, v2, v4, v6, v7, v8, v9.result, v12, v17, v18.result];
   const criticalFailures = validatorResults
     .filter((result) => !result.passed && result.critical)
     .map((result) => result.validator_id);
@@ -771,7 +840,11 @@ function deriveSafeNextAction(input: {
 }): SafeNextAction {
   if (input.criticalFailures.length > 0) {
     // Critical-failure precedence follows the W1 safety lane:
-    // external send > pricing > role visibility > source basis > inference labeling > learning signal > token budget > audit trail > generic remediation.
+    // recording consent > external send > pricing > role visibility > source basis > inference labeling > learning signal > token budget > audit trail > generic remediation.
+    // V4 takes top precedence: recording without consent in a TPC jurisdiction is a CA Penal Code §632 violation risk.
+    if (input.criticalFailures.includes('V4')) {
+      return 'block_recording';
+    }
     if (input.criticalFailures.includes('V2')) {
       return 'block_external_send';
     }

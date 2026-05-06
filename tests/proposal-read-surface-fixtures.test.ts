@@ -18,6 +18,7 @@ import {
 const CANONICAL_W1_VALIDATOR_ORDER = [
   'V1',
   'V2',
+  'V4',
   'V6',
   'V7',
   'V8',
