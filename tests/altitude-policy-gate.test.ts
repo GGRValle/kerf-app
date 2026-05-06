@@ -31,6 +31,7 @@ function expectedOtherW1ValidatorResults(): ValidatorResult[] {
   return [
     makeValidatorResult('V1'),
     makeValidatorResult('V2'),
+    makeValidatorResult('V4'),
     makeValidatorResult('V6'),
     makeValidatorResult('V7'),
     makeValidatorResult('V8'),
@@ -131,7 +132,7 @@ test('V18 raises external-send decisions to owner review', () => {
   assert.equal(decision.system_final_altitude, 'L3');
   assert.equal(decision.review_requirement, 'OWNER_REVIEW');
   assert.equal(decision.policy_gate_result.safe_next_action, 'request_owner_approval');
-  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V6', 'V7', 'V8', 'V9', 'V12', 'V17', 'V18']);
+  assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), ['V1', 'V2', 'V4', 'V6', 'V7', 'V8', 'V9', 'V12', 'V17', 'V18']);
 });
 
 test('V18 first-cut applies the money mutation escalation floor', () => {
@@ -150,7 +151,7 @@ test('V18 first-cut applies the money mutation escalation floor', () => {
   assert.deepEqual([...floor.matchedRules], ['money_mutation']);
 });
 
-test('V18 first-cut raises missing two-party recording consent to frontier review', () => {
+test('V18 floor still escalates to L4 even when V4 critical-blocks the missing-consent scenario', () => {
   const decision = runPolicyGate(
     basePacket({
       workflow: 'voice_tour',
@@ -172,7 +173,7 @@ test('V18 first-cut raises missing two-party recording consent to frontier revie
   assert.equal(decision.system_baseline_altitude, 'L2');
   assert.equal(decision.system_final_altitude, 'L4');
   assert.equal(decision.review_requirement, 'FRONTIER_REVIEW');
-  assert.equal(decision.policy_gate_result.safe_next_action, 'request_frontier_review');
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_recording');
 });
 
 test('V17 blocks token budget breaches before downstream action', () => {
@@ -327,6 +328,118 @@ test('V2 passes external send when human approval metadata is present', () => {
 
   assert.equal(decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V2')?.passed, true);
   assert.equal(decision.policy_gate_result.safe_next_action, 'request_owner_approval');
+});
+
+test('V4 passes a default packet with no recording surface', () => {
+  const decision = runPolicyGate(basePacket(), { evaluatedAt: '2026-05-05T22:00:00.000Z' });
+  const v4 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V4');
+  assert.equal(v4?.passed, true);
+  assert.equal(v4?.critical, false);
+});
+
+test('V4 critical-fails the F5 pattern (consent_risk acknowledged but proposal still recommends recording)', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      jurisdiction: 'US-TX',
+      compliance_flags: ['consent_risk'],
+      proposed_action: {
+        type: 'route_to_pm',
+        description: 'Record the call with the homeowner so PM can review tomorrow.',
+        reason: 'Operator wants the conversation captured for follow-up.',
+      },
+    }),
+    { evaluatedAt: '2026-05-05T22:01:00.000Z' },
+  );
+
+  const v4 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V4');
+  assert.equal(v4?.passed, false);
+  assert.equal(v4?.critical, true);
+  assert.match(v4?.reason ?? '', /recording_consent_risk_acknowledged_but_recommended/);
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_recording');
+  assert.ok(decision.policy_gate_result.critical_failures.includes('V4'));
+});
+
+test('V4 critical-fails when proposal has a recording verb without all-party consent (any jurisdiction)', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      jurisdiction: 'US-TX',
+      proposed_action: {
+        type: 'request_human_review',
+        description: 'Transcribe the inbound voicemail and summarize for the operator.',
+        reason: 'Need a transcript for the audit trail.',
+      },
+    }),
+    { evaluatedAt: '2026-05-05T22:02:00.000Z' },
+  );
+
+  const v4 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V4');
+  assert.equal(v4?.passed, false);
+  assert.equal(v4?.critical, true);
+  assert.match(v4?.reason ?? '', /recording_verb_without_all_party_consent/);
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_recording');
+});
+
+test('V4 critical-fails CA recording when consent_state is missing', () => {
+  for (const consentState of ['missing', 'ambiguous', 'single_party'] as const) {
+    const decision = runPolicyGate(
+      basePacket({
+        jurisdiction: 'US-CA',
+        recording_intent: {
+          requested: true,
+          consent_state: consentState,
+        },
+      }),
+      { evaluatedAt: '2026-05-05T22:03:00.000Z' },
+    );
+
+    const v4 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V4');
+    assert.equal(v4?.passed, false, 'V4 must fail for consent_state=' + consentState);
+    assert.equal(v4?.critical, true);
+    assert.match(v4?.reason ?? '', new RegExp('recording_consent_' + consentState + '_in_two_party_jurisdiction'));
+    assert.equal(decision.policy_gate_result.safe_next_action, 'block_recording');
+  }
+});
+
+test('V4 passes CA recording when consent_state is all_party_captured', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      jurisdiction: 'US-CA',
+      recording_intent: {
+        requested: true,
+        consent_state: 'all_party_captured',
+        captured_party_count: 2,
+      },
+    }),
+    { evaluatedAt: '2026-05-05T22:04:00.000Z' },
+  );
+
+  const v4 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V4');
+  assert.equal(v4?.passed, true);
+  assert.equal(v4?.critical, false);
+});
+
+test('V4 takes precedence over V2 when both critical-fail (block_recording over block_external_send)', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      jurisdiction: 'US-CA',
+      recording_intent: {
+        requested: true,
+        consent_state: 'missing',
+      },
+      external_send: {
+        requested: true,
+        channel: 'email',
+        recipient_class: 'client',
+        recipient_id: 'client_clem',
+      },
+    }),
+    { evaluatedAt: '2026-05-05T22:05:00.000Z' },
+  );
+
+  assert.ok(decision.policy_gate_result.critical_failures.includes('V4'));
+  assert.ok(decision.policy_gate_result.critical_failures.includes('V2'));
+  // V4 must win precedence per Validator Spec §safe_next_action ordering
+  assert.equal(decision.policy_gate_result.safe_next_action, 'block_recording');
 });
 
 test('V6 blocks privileged finance fields for restricted role visibility', () => {
@@ -552,6 +665,7 @@ test('V12 passes when the Policy Gate emits the canonical W1 validator audit tra
   assert.deepEqual(decision.policy_gate_result.validator_results.map((result) => result.validator_id), [
     'V1',
     'V2',
+    'V4',
     'V6',
     'V7',
     'V8',
@@ -576,7 +690,7 @@ test('V12 blocks an audit trail missing V7', () => {
 
 test('V12 blocks a duplicate V8 audit result', () => {
   const results = expectedOtherW1ValidatorResults();
-  results[5] = makeValidatorResult('V8');
+  results[6] = makeValidatorResult('V8');
   const v12 = runV12AuditTrailCompleteness(results);
 
   assert.equal(v12.passed, false);
@@ -604,7 +718,7 @@ test('V12 blocks malformed per-result audit fields', () => {
 
   assert.equal(v12.passed, false);
   assert.equal(v12.critical, true);
-  assert.match(v12.reason ?? '', /audit_trail_field_missing.*V6\.duration_ms/);
+  assert.match(v12.reason ?? '', /audit_trail_field_missing.*V4\.duration_ms/);
 });
 
 test('critical failure precedence prefers external send before pricing and role visibility', () => {

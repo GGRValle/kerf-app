@@ -219,6 +219,7 @@ export type ValidatorId = (typeof VALIDATOR_IDS)[number];
 export const W1_VALIDATOR_IDS = [
   'V1',
   'V2',
+  'V4',
   'V6',
   'V7',
   'V8',
