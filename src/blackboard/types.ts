@@ -89,7 +89,8 @@ export type EntityKind =
   | 'tenant_subscription'
   | 'learning_signal'
   | 'signal'
-  | 'drift_alert';
+  | 'drift_alert'
+  | 'evidence_object';
 
 // Lifecycle — Architecture Principle #2.
 // Agents write 'draft'. Humans promote to 'recommended' / 'approved'.
@@ -152,6 +153,7 @@ export type EventKind =
   | 'automation_run'
   | 'guardrail_trip'
   | 'learning_signal.drafted'
+  | 'evidence.captured'
   | 'relation.created';
 
 // SourceRef — trust signal. Every agent-authored event should carry at least one.
@@ -502,6 +504,55 @@ export interface LearningSignalDraftedPayload {
   sourceModel: string;
   createdAt: ISO8601;
   metadata: Readonly<Record<string, unknown>>;
+}
+
+// EvidenceObject — raw input captured from the field. Per KG schema v0.2 §3.1.
+// V1 ships voice_memo only (Day 14 capture stub per D-036); other kinds — photo,
+// voice_transcript, lidar_scan, plan_pdf, plan_dwg, email, sms, estimate_pdf,
+// qbo_transaction, supplier_quote, field_note, external_intake_form — added
+// incrementally as workflows need them.
+export const EVIDENCE_KINDS = [
+  'voice_memo',
+] as const;
+export type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
+
+export const EVIDENCE_SOURCE_CLASSES = [
+  'PROJECT_EVIDENCE',
+  'TENANT_MEMORY',
+  'SUPPLIER_OR_SUB_QUOTE',
+] as const;
+export type EvidenceSourceClass = (typeof EVIDENCE_SOURCE_CLASSES)[number];
+
+export const EVIDENCE_CAPTURE_SURFACES = [
+  'standard_ui',
+  'voice_intake',
+  'mobile_shell',
+  'slack',
+  'email_ingest',
+  'manual',
+] as const;
+export type EvidenceCaptureSurface = (typeof EVIDENCE_CAPTURE_SURFACES)[number];
+
+export interface VoiceMemoEvidencePayload {
+  evidenceId: EntityId;
+  kind: 'voice_memo';
+  projectId: EntityId | null;
+  // Logical URI (kerf:// scheme during V1; physical storage decision deferred).
+  // Pattern: kerf://tenant/<tenant_id>/evidence/voice/<correlation_id>/<timestamp>.opus
+  uri: string;
+  durationMs: number;
+  capturedAt: ISO8601;
+  capturedBy: ActorId;
+  capturedByRole: Role;
+  // Optional GPS context if the operator's device provided permission.
+  capturedAtLat?: number;
+  capturedAtLon?: number;
+  capturedGeofenceId?: EntityId;
+  // ISO 3166-2 jurisdiction at capture time. Feeds V4 when an AltitudePacket
+  // routes a voice memo through the gate.
+  jurisdiction?: string;
+  sourceClass: EvidenceSourceClass;
+  captureSurface: EvidenceCaptureSurface;
 }
 
 // Automation guardrails -- schema for the three gateway-enforced layers in
