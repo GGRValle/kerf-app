@@ -2,3 +2,10 @@ node_modules/
 dist/
 .DS_Store
 src/examples/w1-decision-queue-demo.bundle.js
+
+# Local environment + secrets — never enter canon history.
+# .env.local.example is the public template (tracked); real .env.local is local-only.
+.env
+.env.local
+.env.*.local
+!.env.local.example
