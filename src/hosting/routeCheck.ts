@@ -1,7 +1,7 @@
 import type { EntityId, ISO8601 } from '../blackboard/types.js';
 
 export const HOSTING_ROUTE_CHECK_ACTION = 'hosting_route_check' as const;
-export const HOSTING_ROUTE_REGISTRY_VERSION = '2026-05-02.0' as const;
+export const HOSTING_ROUTE_REGISTRY_VERSION = '2026-05-06.0' as const;
 
 export const HOSTING_ROUTE_TIERS = ['cheap_fast', 'frontier'] as const;
 export type HostingRouteTier = (typeof HOSTING_ROUTE_TIERS)[number];
@@ -35,6 +35,18 @@ export const APPROVED_HOSTING_ENDPOINTS = [
     tier: 'cheap_fast',
     approved_by_decision: 'D-023',
     approved_at: '2026-04-22T00:00:00.000Z',
+    status: 'approved',
+  },
+  // Tier 1 Scout per Architecture v3.5 §28.1 W4 + Patch 003 v0.1 (D-023 lineage;
+  // D-030 supersedes D-023 in naming once Patch 003 locks). Same Groq account
+  // and API key as the 70b entry above; routes select on `model` field.
+  {
+    endpoint: 'groq://llama-4-scout',
+    provider: 'groq',
+    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    tier: 'cheap_fast',
+    approved_by_decision: 'D-023',
+    approved_at: '2026-05-06T00:00:00.000Z',
     status: 'approved',
   },
 ] as const satisfies readonly ApprovedHostingEndpoint[];
