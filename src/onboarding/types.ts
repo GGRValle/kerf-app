@@ -5,6 +5,7 @@
  */
 
 import type { Actor, Cents, EntityId, ISO8601 } from '../blackboard/index.js';
+import type { ProjectTypeTag, ScopeTag } from '../projects/index.js';
 
 /** Closed union — operator self-rates certainty at capture time. */
 export const ONBOARDING_ANSWER_CONFIDENCES = ['high', 'medium', 'low'] as const;
@@ -245,7 +246,24 @@ export interface OnboardingAnswerSourceDocuments {
   };
 }
 
-/** §3.12 — comparable closed-job anchors for retrieval citations. */
+/** §3.12 — comparable closed-job anchors for retrieval citations.
+ *
+ * Phase 0 intake tagging (PR #126) added `project_type_tag` + `scope_tags`
+ * to project entities so variance-band lookups can match (project_type ×
+ * scope) dimensions. THIS comparable type is the OTHER side of that match
+ * — historical comparables need the same structured tags so variance bands
+ * can join them to a new project. Without these, every variance lookup
+ * would degrade to free-text matching on `scopeSummary` (lossy) or no match.
+ *
+ * Validation: pass any comparable through `validateProjectTags` (from
+ * `src/projects/index.ts`) — TypeScript's structural typing makes the
+ * comparable structurally assignable to ProjectTags so no separate
+ * validator is needed.
+ *
+ * `scopeSummary` is RETAINED alongside the structured tags; it remains the
+ * human-readable summary for display, while the tags drive structured
+ * matching.
+ */
 export interface PastProjectComparable {
   projectLabel: string;
   anonymizeInDrafts?: boolean;
@@ -255,6 +273,10 @@ export interface PastProjectComparable {
   whatWentWrong: readonly string[];
   lessonsForFutureQuotes: readonly string[];
   photoEvidenceUris?: readonly string[];
+  /** Phase 0 intake tag: required, single-valued. Drives variance-band matching. */
+  project_type_tag: ProjectTypeTag;
+  /** Phase 0 intake tags: required as an array, may be empty. Drives variance-band matching. */
+  scope_tags: readonly ScopeTag[];
 }
 
 export interface OnboardingAnswerPastProjectExamples {

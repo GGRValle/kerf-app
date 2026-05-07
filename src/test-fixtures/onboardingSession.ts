@@ -215,6 +215,8 @@ export const ggrOnboardingSessionSkeletonFixture: OnboardingSession = {
             whatWentWell: ['clear deposit milestone', 'long-lead appliances ordered early'],
             whatWentWrong: ['decorative hardware arrived late'],
             lessonsForFutureQuotes: ['order decorative hardware at deposit'],
+            project_type_tag: 'kitchen_remodel',
+            scope_tags: ['cabinetry', 'countertops', 'appliances', 'plumbing_fixtures', 'lighting'],
           },
         ],
       },
