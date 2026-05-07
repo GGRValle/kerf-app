@@ -29,7 +29,12 @@ import type {
   SourceRef,
 } from '../blackboard/types.js';
 import { DRIFT_PATTERNS, DRIFT_SEVERITIES } from '../blackboard/types.js';
-import type { AltitudePacket } from '../altitude/index.js';
+import type { AltitudePacket, DecisionPacket } from '../altitude/index.js';
+import { runPolicyGate } from '../altitude/index.js';
+import {
+  buildGateAuditEvent,
+  type GateAuditEventTemplate,
+} from './gateAudit.js';
 import { ValidationError } from '../shared/errors.js';
 import type { Clock } from '../shared/time.js';
 import { systemClock } from '../shared/time.js';
@@ -492,6 +497,64 @@ export function driftAlertToAltitudePacket(
     status: 'READY_FOR_GATE',
     created_at: opts.evaluatedAt,
   };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Gated workflow seam.
+//
+// `gatedDriftDetection` composes driftAlertToAltitudePacket → runPolicyGate
+// and emits a `decision.surfaced` audit event with the validator chain.
+// Same shape as gatedInvoiceFollowup / gatedProposalFollowup.
+//
+// `actionClass` is `read_only` (drift detection surfaces an internal summary,
+// it does NOT propose an external send) — note this differs from the two
+// follow-up workflows. That keeps the gate's V6 role-redaction enforcement
+// aligned with what the workflow ACTUALLY does downstream.
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface GatedDriftDetectionOpts {
+  readonly tenantId: EntityId;
+  readonly evaluatedAt: ISO8601;
+  readonly modelSourceId?: string;
+  readonly packetIdSuffix?: string;
+  readonly gateRunId?: string;
+}
+
+export interface GatedDriftDetectionResult {
+  readonly packet: AltitudePacket;
+  readonly decision: DecisionPacket;
+  readonly events: readonly GateAuditEventTemplate[];
+}
+
+export function gatedDriftDetection(
+  alert: DriftAlert,
+  opts: GatedDriftDetectionOpts,
+): GatedDriftDetectionResult {
+  const packet = driftAlertToAltitudePacket(alert, {
+    tenantId: opts.tenantId,
+    evaluatedAt: opts.evaluatedAt,
+    ...(opts.modelSourceId !== undefined ? { modelSourceId: opts.modelSourceId } : {}),
+    ...(opts.packetIdSuffix !== undefined ? { packetIdSuffix: opts.packetIdSuffix } : {}),
+  });
+
+  const decision = runPolicyGate(packet, {
+    evaluatedAt: opts.evaluatedAt,
+    ...(opts.gateRunId !== undefined ? { gateRunId: opts.gateRunId } : {}),
+  });
+
+  const auditEvent = buildGateAuditEvent({
+    decision,
+    entityId: alert.alertId,
+    entityKind: 'drift_alert',
+    decisionAuthority: DEFAULT_DECISION_AUTHORITY,
+    actionClass: 'read_only',
+    sources: alert.event.sources.length > 0 ? alert.event.sources : defaultSourcesForAlert(alert),
+    dataClass: DEFAULT_DATA_CLASS,
+    retentionPolicy: DEFAULT_RETENTION_POLICY,
+    privilegeClass: DEFAULT_PRIVILEGE_CLASS,
+  });
+
+  return { packet, decision, events: [auditEvent] };
 }
 
 function defaultAlertId(pattern: DriftPattern, detectedAt: ISO8601): EntityId {

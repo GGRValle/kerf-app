@@ -1,4 +1,9 @@
-import type { AltitudePacket } from '../altitude/index.js';
+import type { AltitudePacket, DecisionPacket } from '../altitude/index.js';
+import { runPolicyGate } from '../altitude/index.js';
+import {
+  buildGateAuditEvent,
+  type GateAuditEventTemplate,
+} from './gateAudit.js';
 import type {
   ActionClass,
   BlackboardEntityRef,
@@ -259,6 +264,64 @@ const DEFAULT_DATA_CLASS: DataClass = 'internal';
 const DEFAULT_RETENTION_POLICY: RetentionPolicy = 'until_close+7y';
 const DEFAULT_PRIVILEGE_CLASS: PrivilegeClass | null = null;
 const DEFAULT_DECISION_ALTITUDE: DecisionAltitude = 'L0';
+
+// ──────────────────────────────────────────────────────────────────────────
+// Gated workflow seam.
+//
+// Same shape as `gatedInvoiceFollowup`: composes
+// proposalCandidateToAltitudePacket → runPolicyGate, returns
+// `{ packet, decision, events }` with a `decision.surfaced` audit event
+// carrying the validator chain. See `src/workflows/gateAudit.ts` for the
+// shared event-template type.
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface GatedProposalFollowupOpts {
+  readonly tenantId: EntityId;
+  readonly evaluatedAt: ISO8601;
+  readonly jurisdiction?: string;
+  readonly modelSourceId?: string;
+  readonly packetIdSuffix?: string;
+  readonly gateRunId?: string;
+}
+
+export interface GatedProposalFollowupResult {
+  readonly packet: AltitudePacket;
+  readonly decision: DecisionPacket;
+  readonly events: readonly GateAuditEventTemplate[];
+}
+
+export function gatedProposalFollowup(
+  candidate: ProposalFollowupCandidate,
+  draft: ProposalFollowupDraft,
+  opts: GatedProposalFollowupOpts,
+): GatedProposalFollowupResult {
+  const packet = proposalCandidateToAltitudePacket(candidate, draft, {
+    tenantId: opts.tenantId,
+    evaluatedAt: opts.evaluatedAt,
+    ...(opts.jurisdiction !== undefined ? { jurisdiction: opts.jurisdiction } : {}),
+    ...(opts.modelSourceId !== undefined ? { modelSourceId: opts.modelSourceId } : {}),
+    ...(opts.packetIdSuffix !== undefined ? { packetIdSuffix: opts.packetIdSuffix } : {}),
+  });
+
+  const decision = runPolicyGate(packet, {
+    evaluatedAt: opts.evaluatedAt,
+    ...(opts.gateRunId !== undefined ? { gateRunId: opts.gateRunId } : {}),
+  });
+
+  const auditEvent = buildGateAuditEvent({
+    decision,
+    entityId: proposalFollowupId(candidate.proposalId),
+    entityKind: 'proposal_followup',
+    decisionAuthority: DEFAULT_DECISION_AUTHORITY,
+    actionClass: 'send_external',
+    sources: proposalAltitudeSourceRefs(candidate),
+    dataClass: DEFAULT_DATA_CLASS,
+    retentionPolicy: DEFAULT_RETENTION_POLICY,
+    privilegeClass: DEFAULT_PRIVILEGE_CLASS,
+  });
+
+  return { packet, decision, events: [auditEvent] };
+}
 
 export function calculateProposalFollowupDaysSince(date: Date, asOf: Date): number {
   return Math.max(0, Math.floor((utcDay(asOf) - utcDay(date)) / MS_DAY));
