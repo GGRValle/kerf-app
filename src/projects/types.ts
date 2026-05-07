@@ -29,35 +29,45 @@ import { ValidationError } from '../shared/errors.js';
  * order so drop-down UIs render the common cases first.
  *
  * Mapping rationale grounded in worked examples:
- *   - kitchen_remodel       → Mark and Grace's kitchen scope; Clem Kitchen.
- *   - primary_bath_remodel  → Ault primary bath; Coring Primary Bath; Dunne primary bath.
- *   - secondary_bath_remodel→ guest/secondary bath scopes (no current example yet).
- *   - whole_home_remodel    → multi-room remodel covering >2 rooms; the
- *                             Mark and Grace project (kitchen + primary bath)
- *                             also leans here when one room can't anchor it.
- *   - addition              → square-footage addition (no current example yet).
- *   - adu                   → accessory dwelling unit (San Diego market common).
- *   - design_build_misc     → catch-all for design+build work that doesn't
- *                             fit a room-typed category (whole-home staging,
- *                             commercial tenant improvement, etc).
- *   - cabinetry_only        → Valle scope: Moore Cabinet Run; cabinetry-only
- *                             projects executed without a paired remodel.
- *   - millwork_only         → Valle scope: trim/built-ins delivered as a
- *                             standalone scope, no cabinets.
- *   - vanity_only           → Valle e-commerce scope: a single-vanity sale
- *                             from the online vanity collection.
- *
- * NOTE: M+G's "kitchen + primary bath" multi-room shape is a known taxonomy
- * edge — see Thread 6 PR description for the canon-keeper question.
+ *   - kitchen_remodel        → Clem Kitchen; the kitchen portion of M+G when
+ *                              tagged separately.
+ *   - primary_bath_remodel   → Coring Primary Bath; the bath-only portions of
+ *                              Ault and Dunne when one room dominates the scope.
+ *   - secondary_bath_remodel → guest/secondary bath scopes.
+ *   - multi_room_remodel     → BOUNDED multi-room work (typically 2 rooms,
+ *                              up to ~3-4 rooms but not whole-home). M+G
+ *                              (kitchen + primary bath), Ault (primary bath
+ *                              + bedroom), and Dunne (primary bath + bedroom
+ *                              refresh) all live here. Distinct from
+ *                              whole_home_remodel because variance bands need
+ *                              to discriminate "kitchen-only $30K" from
+ *                              "kitchen + primary bath $90K" — different
+ *                              archetypes with different cost realities.
+ *   - whole_home_remodel     → full-house gut covering most/all rooms.
+ *   - addition               → square-footage addition.
+ *   - adu                    → accessory dwelling unit (San Diego market common).
+ *   - targeted_remodel       → bounded scope that doesn't fit a room-typed
+ *                              category: flooring-only refresh, deck rebuild,
+ *                              exterior repaint, single-system replacement,
+ *                              etc. NOT a catch-all — if a project genuinely
+ *                              doesn't fit any tag, that's a Decision Log
+ *                              signal to extend the taxonomy.
+ *   - cabinetry_only         → Valle scope: Moore Cabinet Run; cabinetry-only
+ *                              projects executed without a paired remodel.
+ *   - millwork_only          → Valle scope: trim/built-ins delivered as a
+ *                              standalone scope, no cabinets.
+ *   - vanity_only            → Valle e-commerce scope: a single-vanity sale
+ *                              from the online vanity collection.
  */
 export const PROJECT_TYPE_TAGS = [
   'kitchen_remodel',
   'primary_bath_remodel',
   'secondary_bath_remodel',
+  'multi_room_remodel',
   'whole_home_remodel',
   'addition',
   'adu',
-  'design_build_misc',
+  'targeted_remodel',
   'cabinetry_only',
   'millwork_only',
   'vanity_only',
@@ -86,6 +96,9 @@ export function isProjectTypeTag(value: unknown): value is ProjectTypeTag {
  *   - `electrical` is rough + panel work; `lighting` is finish (fixtures,
  *     dimmers, switches). The two split because they're often subbed to
  *     different crews and tracked separately on cost sheets.
+ *   - `windows_doors` is its own scope: distinct supplier (e.g. WinDor on
+ *     M+G), distinct install crew, distinct cost dynamics. Doesn't fold into
+ *     framing (different trades) or exterior (interior doors are scope too).
  *   - `cabinetry` and `millwork` are both wood scopes but distinct:
  *     cabinetry = cabinets + countertops install; millwork = trim, built-ins,
  *     panels. Valle treats them as separate revenue streams.
@@ -97,6 +110,7 @@ export function isProjectTypeTag(value: unknown): value is ProjectTypeTag {
 export const SCOPE_TAGS = [
   'demolition',
   'framing',
+  'windows_doors',
   'structural',
   'foundation',
   'plumbing',
