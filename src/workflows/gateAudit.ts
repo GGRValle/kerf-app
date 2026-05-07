@@ -36,8 +36,16 @@ import type {
   ValidatorResult,
 } from '../altitude/types.js';
 
-/** Workflows that have a `gated*` orchestrator on top of their AltitudePacket constructor. */
-export type GatedWorkflowName = 'invoice_followup' | 'proposal_followup' | 'drift_detection';
+/**
+ * Workflows that emit gate-audit events. V1: invoice_followup, proposal_followup,
+ * drift_detection (Thread 4 gated seams) plus proposal_generation (Thread 5
+ * Estimator runner — see src/runner/).
+ */
+export type GatedWorkflowName =
+  | 'invoice_followup'
+  | 'proposal_followup'
+  | 'drift_detection'
+  | 'proposal_generation';
 
 /**
  * Payload shape for the `decision.surfaced` event emitted by every `gated*`
@@ -119,7 +127,12 @@ export function buildGateAuditEvent(opts: BuildGateAuditEventOpts): GateAuditEve
   const gate: PolicyGateResult = decision.policy_gate_result;
 
   const workflow = decision.workflow as GatedWorkflowName;
-  if (workflow !== 'invoice_followup' && workflow !== 'proposal_followup' && workflow !== 'drift_detection') {
+  if (
+    workflow !== 'invoice_followup' &&
+    workflow !== 'proposal_followup' &&
+    workflow !== 'drift_detection' &&
+    workflow !== 'proposal_generation'
+  ) {
     throw new Error(
       `buildGateAuditEvent: unsupported workflow "${decision.workflow}". ` +
         `Add to GatedWorkflowName union before calling.`,
