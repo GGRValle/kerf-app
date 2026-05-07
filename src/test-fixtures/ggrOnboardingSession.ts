@@ -315,6 +315,8 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['ZIP sequencing prevented rework mid-inspection'],
             whatWentWrong: ['Countertops templating slipped when slab yard bottleneck hit'],
             lessonsForFutureQuotes: ['Hold countertop deposits earlier when Boise slab queues stretch beyond 10 days'],
+            project_type_tag: 'kitchen_remodel',
+            scope_tags: ['demolition', 'framing', 'electrical', 'drywall', 'cabinetry', 'countertops', 'appliances', 'paint'],
           },
           {
             projectLabel: 'Boise Heights master bath retreat',
@@ -323,6 +325,8 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['HOA board packet landed first pass'],
             whatWentWrong: ['Decorative plumbing finishes arrived without staging bins'],
             lessonsForFutureQuotes: ['Stage decorative plumbing SKUs before drywall close'],
+            project_type_tag: 'primary_bath_remodel',
+            scope_tags: ['demolition', 'plumbing', 'electrical', 'drywall', 'tile', 'plumbing_fixtures', 'lighting'],
           },
           {
             projectLabel: 'North End historic veneer kitchen',
@@ -331,6 +335,12 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['Wood West elevations matched historic casing heights'],
             whatWentWrong: ['Lead-safe containment consumed extra labor week'],
             lessonsForFutureQuotes: ['Quote lead-safe containment as explicit allowance line on pre-1978 shells'],
+            // targeted_remodel rather than kitchen_remodel: the work is a
+            // bounded reface + period restoration, not a full kitchen
+            // remodel. Tagging this as kitchen_remodel would skew kitchen
+            // variance bands toward higher costs from non-comparable inputs.
+            project_type_tag: 'targeted_remodel',
+            scope_tags: ['structural', 'cabinetry', 'millwork', 'paint'],
           },
           {
             projectLabel: 'Meridian ADU carve-out',
@@ -339,6 +349,8 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['Parallel inspections stayed coordinated'],
             whatWentWrong: ['Site drainage exposed unknown irrigation trunk'],
             lessonsForFutureQuotes: ['Always CCTV irrigation trunk before trench assumptions'],
+            project_type_tag: 'adu',
+            scope_tags: ['framing', 'structural', 'electrical', 'plumbing', 'drywall', 'cabinetry', 'countertops', 'appliances', 'plumbing_fixtures', 'lighting', 'paint'],
           },
           {
             projectLabel: 'Eagle ranch partial main-floor remodel',
@@ -347,6 +359,8 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['Client-selected appliance package locked before framing'],
             whatWentWrong: ['GC coordination delay on steel beam delivery'],
             lessonsForFutureQuotes: ['Steel beam vendor confirmation date gates framing mobilization'],
+            project_type_tag: 'multi_room_remodel',
+            scope_tags: ['demolition', 'framing', 'structural', 'electrical', 'drywall', 'cabinetry', 'countertops', 'appliances', 'paint'],
           },
           {
             projectLabel: 'Garden City waterfront cosmetic refresh',
@@ -355,6 +369,8 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['Fast turnaround under tight Airbnb downtime'],
             whatWentWrong: ['Paint VOC restrictions tightened mid-job'],
             lessonsForFutureQuotes: ['Verify STR HOA VOC packets before interior bids'],
+            project_type_tag: 'kitchen_remodel',
+            scope_tags: ['paint', 'cabinetry', 'countertops', 'plumbing_fixtures', 'lighting'],
           },
           {
             projectLabel: 'Boise Bench aging-in-place bath',
@@ -363,6 +379,8 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['Accessible hardware SKUs pre-approved by OT consultant'],
             whatWentWrong: ['Glass vendor measurement delayed waterproofing sign-off'],
             lessonsForFutureQuotes: ['Pair glass vendor measure same day as flood test'],
+            project_type_tag: 'primary_bath_remodel',
+            scope_tags: ['demolition', 'framing', 'plumbing', 'drywall', 'tile', 'plumbing_fixtures'],
           },
         ],
       },

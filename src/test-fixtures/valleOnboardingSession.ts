@@ -283,6 +283,8 @@ export const valleOnboardingSession: OnboardingSession = {
             whatWentWell: ['Wood West lead times matched fabrication cadence'],
             whatWentWrong: ['Customer-selected pulls conflicted with drawer stacks'],
             lessonsForFutureQuotes: ['Lock decorative hardware families before drawer box cuts'],
+            project_type_tag: 'cabinetry_only',
+            scope_tags: ['cabinetry', 'millwork'],
           },
           {
             projectLabel: 'Hayden Island commercial millwork wall',
@@ -291,6 +293,8 @@ export const valleOnboardingSession: OnboardingSession = {
             whatWentWell: ['Shop dry assemblies shortened field hours'],
             whatWentWrong: ['GC RFI loop delayed veneer dye lot approval'],
             lessonsForFutureQuotes: ['Require GC sign-off on dye lots before pressing veneer'],
+            project_type_tag: 'millwork_only',
+            scope_tags: ['millwork', 'lighting'],
           },
           {
             projectLabel: 'Meridian pantry + mud built-ins',
@@ -299,6 +303,8 @@ export const valleOnboardingSession: OnboardingSession = {
             whatWentWell: ['Scaled drawings prevented jobsite tweaks'],
             whatWentWrong: ['Outlet relocation missed on first field measure'],
             lessonsForFutureQuotes: ['Field measure checklist must confirm outlet elevations'],
+            project_type_tag: 'cabinetry_only',
+            scope_tags: ['cabinetry', 'millwork'],
           },
           {
             projectLabel: 'Boise bench condo refresh cabinets',
@@ -307,6 +313,8 @@ export const valleOnboardingSession: OnboardingSession = {
             whatWentWell: ['Fast turnaround under HOA exterior quiet rules'],
             whatWentWrong: ['Elevator booking capped daily haul volume'],
             lessonsForFutureQuotes: ['Pre-book elevator slots before promising install date'],
+            project_type_tag: 'cabinetry_only',
+            scope_tags: ['cabinetry'],
           },
           {
             projectLabel: 'Garden City dental millwork reception',
@@ -315,6 +323,8 @@ export const valleOnboardingSession: OnboardingSession = {
             whatWentWell: ['Mock-up signed before fabrication batch'],
             whatWentWrong: ['Infection-control film slowed adhesive cure'],
             lessonsForFutureQuotes: ['Extend cure calendar when healthcare barrier films applied'],
+            project_type_tag: 'millwork_only',
+            scope_tags: ['millwork', 'countertops'],
           },
           {
             projectLabel: 'Nampa GC package — multifamily clubhouse bar',
@@ -323,6 +333,8 @@ export const valleOnboardingSession: OnboardingSession = {
             whatWentWell: ['Package pricing locked deposit-for-buyouts upfront'],
             whatWentWrong: ['Site storage lacked conditioned space'],
             lessonsForFutureQuotes: ['Confirm conditioned laydown before quoting phased installs'],
+            project_type_tag: 'cabinetry_only',
+            scope_tags: ['cabinetry', 'millwork'],
           },
           {
             projectLabel: 'Eagle lakeshore vanity millwork',
@@ -331,6 +343,8 @@ export const valleOnboardingSession: OnboardingSession = {
             whatWentWell: ['Moisture conditioning avoided veneer cupping'],
             whatWentWrong: ['Tile setter sequencing bumped install slot'],
             lessonsForFutureQuotes: ['Coordinate waterproofing sign-offs before cabinet anchor dates'],
+            project_type_tag: 'cabinetry_only',
+            scope_tags: ['cabinetry', 'millwork'],
           },
         ],
       },
