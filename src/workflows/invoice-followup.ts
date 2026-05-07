@@ -1,6 +1,12 @@
 import type {
   AltitudePacket,
+  DecisionPacket,
 } from '../altitude/index.js';
+import { runPolicyGate } from '../altitude/index.js';
+import {
+  buildGateAuditEvent,
+  type GateAuditEventTemplate,
+} from './gateAudit.js';
 import type {
   ActionClass,
   BlackboardEntityRef,
@@ -272,6 +278,75 @@ const DEFAULT_DATA_CLASS: DataClass = 'internal';
 const DEFAULT_RETENTION_POLICY: RetentionPolicy = 'until_close+7y';
 const DEFAULT_PRIVILEGE_CLASS: PrivilegeClass | null = null;
 const DEFAULT_DECISION_ALTITUDE: DecisionAltitude = 'L0';
+
+// ──────────────────────────────────────────────────────────────────────────
+// Gated workflow seam.
+//
+// `gatedInvoiceFollowup` is the production-callable entry point for the
+// invoice-followup workflow once a candidate + draft are in hand. It composes
+// the existing `invoiceCandidateToAltitudePacket` constructor with
+// `runPolicyGate`, then emits a `decision.surfaced` audit event carrying the
+// validator chain (V12 audit trail).
+//
+// Pure / no-I/O — returns `{ packet, decision, events }`. Callers persist
+// `events` via createMemoryEventLog or createJsonlEventLog. This matches the
+// existing convention where workflows return BlackboardEventTemplate values
+// and callers handle the append.
+//
+// Per Thread 4 brief: blocked outcomes (BLOCKED_PENDING_SOURCE etc.)
+// propagate honestly to the caller via `decision.status` — `decision.allowed`
+// is also reachable via `decision.policy_gate_result.allowed`. Callers MUST
+// check before forwarding the draft externally; the gate is now real.
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface GatedInvoiceFollowupOpts {
+  readonly tenantId: EntityId;
+  readonly evaluatedAt: ISO8601;
+  readonly jurisdiction?: string;
+  readonly modelSourceId?: string;
+  readonly packetIdSuffix?: string;
+  /** Override for the gate's gate_run_id; defaults to packet_id + ':gate:' + evaluatedAt. */
+  readonly gateRunId?: string;
+}
+
+export interface GatedInvoiceFollowupResult {
+  readonly packet: AltitudePacket;
+  readonly decision: DecisionPacket;
+  readonly events: readonly GateAuditEventTemplate[];
+}
+
+export function gatedInvoiceFollowup(
+  candidate: InvoiceFollowupCandidate,
+  draft: InvoiceFollowupDraft,
+  opts: GatedInvoiceFollowupOpts,
+): GatedInvoiceFollowupResult {
+  const packet = invoiceCandidateToAltitudePacket(candidate, draft, {
+    tenantId: opts.tenantId,
+    evaluatedAt: opts.evaluatedAt,
+    ...(opts.jurisdiction !== undefined ? { jurisdiction: opts.jurisdiction } : {}),
+    ...(opts.modelSourceId !== undefined ? { modelSourceId: opts.modelSourceId } : {}),
+    ...(opts.packetIdSuffix !== undefined ? { packetIdSuffix: opts.packetIdSuffix } : {}),
+  });
+
+  const decision = runPolicyGate(packet, {
+    evaluatedAt: opts.evaluatedAt,
+    ...(opts.gateRunId !== undefined ? { gateRunId: opts.gateRunId } : {}),
+  });
+
+  const auditEvent = buildGateAuditEvent({
+    decision,
+    entityId: invoiceFollowupId(candidate.invoiceId),
+    entityKind: 'invoice_followup',
+    decisionAuthority: DEFAULT_DECISION_AUTHORITY,
+    actionClass: 'send_external',
+    sources: invoiceAltitudeSourceRefs(candidate),
+    dataClass: DEFAULT_DATA_CLASS,
+    retentionPolicy: DEFAULT_RETENTION_POLICY,
+    privilegeClass: DEFAULT_PRIVILEGE_CLASS,
+  });
+
+  return { packet, decision, events: [auditEvent] };
+}
 
 export function calculateInvoiceFollowupDaysPastDue(dueDate: Date, asOf: Date): number {
   return Math.max(0, Math.floor((utcDay(asOf) - utcDay(dueDate)) / MS_DAY));
