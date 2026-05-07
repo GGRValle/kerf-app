@@ -1,0 +1,55 @@
+# Kerf-app CI verify gate.
+#
+# Runs on every pull request targeting main and on every push to main.
+# Four checks (in order): npm ci → npm test → npm run typecheck →
+# npm run smoke:proposal-ff. Hermetic — no env files, no secrets.
+#
+# Branch protection that requires this `verify` job to pass before merge
+# is configured in the GitHub UI by Christian after this PR lands; the
+# workflow file alone does not enforce anything until that toggle is set.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel stale runs on the same ref when a new commit lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # `npm ci` triggers the package's `prepare` hook, which runs `npm run
+      # build` (tsc emit to dist/). That implicit build also type-checks,
+      # so the explicit `typecheck` step below is partially redundant —
+      # we keep it because a named, separately-reported step gives clearer
+      # PR-check logs than a failure inside the install phase.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Smoke proof — proposal-ff
+        run: npm run smoke:proposal-ff
