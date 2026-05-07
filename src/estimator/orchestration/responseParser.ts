@@ -1,0 +1,307 @@
+// Estimator response parser — the SUSPENDERS in our belt-and-suspenders
+// trust-discipline architecture.
+//
+// Per Thread 9 brief: even if the LLM ignores the prompt and returns
+// fabricated prices for `precision_allowed: false` scopes, this parser
+// REJECTS those prices and converts the offending lines into
+// `gaps_flagged` entries. The packetBuilder is the second enforcement
+// layer (defense in depth).
+//
+// Two-phase design:
+//
+//   1. parseRawResponse(content) → RawEstimatorResponse
+//      Lenient JSON shape validation. Accepts any plausible response.
+//      Throws ResponseParseError only on malformed JSON or
+//      schema-incompatible shapes.
+//
+//   2. enforceTrustDiscipline(raw, bandsByScope) → EstimatorResponse
+//      The trust core. For each line item with a price, look up the
+//      corresponding band by scope_tag. If the band's
+//      precision_allowed === false, the price is REJECTED and the line
+//      is moved to gaps_flagged with a reason citing the band rung.
+//      LOW-band line items get hedge language injected if absent.
+
+import { isScopeTag, type ScopeTag } from '../../projects/index.js';
+import type { RenderedBand } from '../varianceIntegration/index.js';
+import type {
+  EstimatorGap,
+  EstimatorLineItem,
+  EstimatorResponse,
+  RawEstimatorResponse,
+  RawGap,
+  RawLineItem,
+} from './types.js';
+
+/** Hedge keywords that satisfy the LOW-band wording requirement. */
+const LOW_HEDGE_KEYWORDS: readonly string[] = [
+  'directional',
+  'cross-archetype',
+  'cross archetype',
+  'not specific to this archetype',
+  'sanity check',
+];
+
+/** Prefix prepended to LOW-band descriptions that don't already carry a hedge. */
+const LOW_HEDGE_PREFIX = '[Directional, cross-archetype] ';
+
+export class ResponseParseError extends Error {
+  constructor(message: string) {
+    super(`ResponseParseError: ${message}`);
+    this.name = 'ResponseParseError';
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Phase 1 — JSON parse + lenient shape validation
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Parse the raw model content as JSON and validate the lenient shape.
+ * Accepts JSON wrapped in markdown code fences (```json ... ```); strips
+ * fences before parsing.
+ *
+ * Throws `ResponseParseError` on malformed JSON or fundamentally incompatible
+ * shapes. Does NOT enforce trust discipline — that's `enforceTrustDiscipline`.
+ */
+export function parseRawResponse(content: string): RawEstimatorResponse {
+  const stripped = stripCodeFence(content.trim());
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripped);
+  } catch (err) {
+    throw new ResponseParseError(
+      `JSON parse failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  if (!isObject(parsed)) {
+    throw new ResponseParseError('top-level response must be a JSON object');
+  }
+
+  const lineItems = parsed['line_items'];
+  if (!Array.isArray(lineItems)) {
+    throw new ResponseParseError('"line_items" must be an array');
+  }
+  const parsedLineItems: RawLineItem[] = [];
+  for (const [i, raw] of lineItems.entries()) {
+    parsedLineItems.push(parseRawLineItem(raw, i));
+  }
+
+  const gapsRaw = parsed['gaps_flagged'];
+  if (!Array.isArray(gapsRaw)) {
+    throw new ResponseParseError('"gaps_flagged" must be an array');
+  }
+  const parsedGaps: RawGap[] = [];
+  for (const [i, raw] of gapsRaw.entries()) {
+    parsedGaps.push(parseRawGap(raw, i));
+  }
+
+  const projectTotal = parsed['project_total_cents'];
+  if (projectTotal !== null && !(typeof projectTotal === 'number' && Number.isInteger(projectTotal))) {
+    throw new ResponseParseError('"project_total_cents" must be integer or null');
+  }
+
+  const operatorSummary = parsed['operator_summary'];
+  if (typeof operatorSummary !== 'string') {
+    throw new ResponseParseError('"operator_summary" must be a string');
+  }
+
+  return {
+    line_items: parsedLineItems,
+    project_total_cents: projectTotal,
+    gaps_flagged: parsedGaps,
+    operator_summary: operatorSummary,
+  };
+}
+
+function parseRawLineItem(raw: unknown, index: number): RawLineItem {
+  if (!isObject(raw)) {
+    throw new ResponseParseError(`line_items[${index}] must be an object`);
+  }
+  const scopeTag = raw['scope_tag'];
+  if (typeof scopeTag !== 'string') {
+    throw new ResponseParseError(`line_items[${index}].scope_tag must be a string`);
+  }
+  const description = raw['description'];
+  if (typeof description !== 'string') {
+    throw new ResponseParseError(`line_items[${index}].description must be a string`);
+  }
+  const price = raw['price_cents'];
+  if (price !== null && !(typeof price === 'number' && Number.isInteger(price))) {
+    throw new ResponseParseError(`line_items[${index}].price_cents must be integer or null`);
+  }
+  const confidence = raw['confidence'];
+  if (typeof confidence !== 'string') {
+    throw new ResponseParseError(`line_items[${index}].confidence must be a string`);
+  }
+  const bandUri = raw['band_source_uri'];
+  if (bandUri !== null && typeof bandUri !== 'string') {
+    throw new ResponseParseError(`line_items[${index}].band_source_uri must be a string or null`);
+  }
+  return {
+    scope_tag: scopeTag,
+    description,
+    price_cents: price,
+    confidence,
+    band_source_uri: bandUri,
+  };
+}
+
+function parseRawGap(raw: unknown, index: number): RawGap {
+  if (!isObject(raw)) {
+    throw new ResponseParseError(`gaps_flagged[${index}] must be an object`);
+  }
+  const scopeTag = raw['scope_tag'];
+  if (typeof scopeTag !== 'string') {
+    throw new ResponseParseError(`gaps_flagged[${index}].scope_tag must be a string`);
+  }
+  const reason = raw['reason'];
+  if (typeof reason !== 'string') {
+    throw new ResponseParseError(`gaps_flagged[${index}].reason must be a string`);
+  }
+  return { scope_tag: scopeTag, reason };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Phase 2 — trust-discipline enforcement
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface EnforceTrustDisciplineInput {
+  readonly raw: RawEstimatorResponse;
+  /** Bands keyed by scope_tag — the bands that were embedded in the prompt. */
+  readonly bandsByScope: ReadonlyMap<ScopeTag, RenderedBand>;
+}
+
+/**
+ * Apply trust discipline to a parsed response:
+ *
+ *   - Drop line_items whose `scope_tag` is not a valid `ScopeTag` value.
+ *   - For each line item with a price_cents:
+ *       If its band has `precision_allowed: false` → REJECT the price.
+ *         Move the line to gaps_flagged with a reason naming the band
+ *         rung; remove the offending line_item.
+ *   - For each LOW-band line item: ensure the description contains a hedge
+ *     keyword. If absent, prepend the hedge prefix.
+ *   - Coerce confidence values to the closed union; default to MODEL_INFERENCE
+ *     for unrecognized values to be safe.
+ *   - Filter operator_summary on output? No — the rendering layer is
+ *     responsible for operator-facing wording discipline upstream; the
+ *     packet builder validates separately.
+ *
+ * Returns a clean `EstimatorResponse`. Never throws on enforcement; only on
+ * fundamentally unrecoverable schema issues (none expected after Phase 1).
+ */
+export function enforceTrustDiscipline(
+  input: EnforceTrustDisciplineInput,
+): EstimatorResponse {
+  const { raw, bandsByScope } = input;
+  const cleanLineItems: EstimatorLineItem[] = [];
+  const cleanGaps: EstimatorGap[] = raw.gaps_flagged
+    .map((g) => coerceGap(g))
+    .filter((g): g is EstimatorGap => g !== null);
+
+  // Track scopes we've placed in gaps so we don't double-emit if the LLM
+  // returned both a violating line_item AND a gap entry for the same scope.
+  const scopesAlreadyInGaps = new Set<ScopeTag>(cleanGaps.map((g) => g.scope_tag));
+
+  for (const rawLine of raw.line_items) {
+    const scopeTag = coerceScopeTag(rawLine.scope_tag);
+    if (scopeTag === null) {
+      // Unknown scope — drop quietly. This isn't a security issue (the
+      // closed enum prevents downstream confusion); just discard.
+      continue;
+    }
+
+    const band = bandsByScope.get(scopeTag);
+    const linePrice = rawLine.price_cents;
+
+    // ── TRUST DISCIPLINE ENFORCEMENT ──────────────────────────────────
+    // If the band exists and precision_allowed is false, the LLM is not
+    // permitted to attach a price to this scope. Move to gaps.
+    if (band !== undefined && band.precision_allowed === false && linePrice !== null) {
+      if (!scopesAlreadyInGaps.has(scopeTag)) {
+        cleanGaps.push({
+          scope_tag: scopeTag,
+          reason:
+            `Trust-discipline override: model returned price ${linePrice} cents but the variance band for ` +
+            `${scopeTag} carries precision_allowed=false (basis=${band.basis}, rung=${band.cascade_rung}). ` +
+            `Price rejected; surface the gap honestly.`,
+        });
+        scopesAlreadyInGaps.add(scopeTag);
+      }
+      continue;
+    }
+
+    // Coerce confidence into the closed union.
+    const confidence = coerceConfidence(rawLine.confidence);
+
+    // LOW-band hedge enforcement: even if the LLM dropped the hedge, we
+    // ensure it's present.
+    let description = rawLine.description;
+    if (band !== undefined && band.confidence === 'LOW' && !descriptionHasHedge(description)) {
+      description = LOW_HEDGE_PREFIX + description;
+    }
+
+    cleanLineItems.push({
+      scope_tag: scopeTag,
+      description,
+      price_cents: linePrice,
+      confidence,
+      band_source_uri: rawLine.band_source_uri,
+    });
+  }
+
+  return {
+    line_items: cleanLineItems,
+    project_total_cents:
+      raw.project_total_cents !== null && Number.isInteger(raw.project_total_cents)
+        ? raw.project_total_cents
+        : null,
+    gaps_flagged: cleanGaps,
+    operator_summary: raw.operator_summary,
+  };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Coercion helpers
+// ──────────────────────────────────────────────────────────────────────────
+
+function coerceScopeTag(s: string): ScopeTag | null {
+  return isScopeTag(s) ? s : null;
+}
+
+function coerceGap(g: RawGap): EstimatorGap | null {
+  const tag = coerceScopeTag(g.scope_tag);
+  if (tag === null) return null;
+  return { scope_tag: tag, reason: g.reason };
+}
+
+function coerceConfidence(s: string): EstimatorLineItem['confidence'] {
+  if (s === 'HIGH' || s === 'LOW' || s === 'MODEL_INFERENCE') return s;
+  // Anything else collapses to MODEL_INFERENCE — the most-conservative
+  // bucket. The LLM may have invented a label; we default safe.
+  return 'MODEL_INFERENCE';
+}
+
+function descriptionHasHedge(description: string): boolean {
+  const lower = description.toLowerCase();
+  return LOW_HEDGE_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Internal — JSON helpers
+// ──────────────────────────────────────────────────────────────────────────
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * Strip ```json ... ``` or ``` ... ``` code fences from the LLM output.
+ * Most models wrap structured output in fences regardless of instruction.
+ */
+function stripCodeFence(text: string): string {
+  const fenceRe = /^```(?:json)?\s*([\s\S]*?)\s*```$/i;
+  const match = fenceRe.exec(text);
+  return match !== null ? (match[1] ?? text).trim() : text;
+}
