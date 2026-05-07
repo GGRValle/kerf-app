@@ -335,7 +335,11 @@ export const ggrOnboardingSession: OnboardingSession = {
             whatWentWell: ['Wood West elevations matched historic casing heights'],
             whatWentWrong: ['Lead-safe containment consumed extra labor week'],
             lessonsForFutureQuotes: ['Quote lead-safe containment as explicit allowance line on pre-1978 shells'],
-            project_type_tag: 'kitchen_remodel',
+            // targeted_remodel rather than kitchen_remodel: the work is a
+            // bounded reface + period restoration, not a full kitchen
+            // remodel. Tagging this as kitchen_remodel would skew kitchen
+            // variance bands toward higher costs from non-comparable inputs.
+            project_type_tag: 'targeted_remodel',
             scope_tags: ['structural', 'cabinetry', 'millwork', 'paint'],
           },
           {

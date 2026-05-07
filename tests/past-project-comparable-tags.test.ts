@@ -88,13 +88,18 @@ test('the generic skeleton onboarding session comparable carries valid tags', ()
 // Brand-typical archetype coverage — guard against silent fixture drift.
 // ──────────────────────────────────────────────────────────────────────────
 
-test('GGR fixture covers expected archetype mix (kitchen, primary_bath, multi-room, adu)', () => {
+test('GGR fixture covers expected archetype mix (kitchen, primary_bath, multi-room, adu, targeted)', () => {
   const comparables = comparablesFromSession(ggrOnboardingSession);
   const types = new Set(comparables.map((c) => c.project_type_tag));
   assert.ok(types.has('kitchen_remodel'), 'GGR should include at least one kitchen_remodel comparable');
   assert.ok(types.has('primary_bath_remodel'), 'GGR should include at least one primary_bath_remodel comparable');
   assert.ok(types.has('multi_room_remodel'), 'GGR should include at least one multi_room_remodel comparable');
   assert.ok(types.has('adu'), 'GGR should include at least one adu comparable');
+  assert.ok(
+    types.has('targeted_remodel'),
+    'GGR should include at least one targeted_remodel comparable (bounded scope, not a full remodel) ' +
+      'so variance bands can discriminate kitchen-typed bounded scope from kitchen_remodel costs',
+  );
 });
 
 test('Valle fixture covers cabinetry_only + millwork_only archetypes', () => {
