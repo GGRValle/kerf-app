@@ -20,7 +20,7 @@ const BASE_REQUEST = {
   workflow: 'invoice_followup',
 } as const satisfies HostingRouteCheckRequest;
 
-test('approved hosting endpoint registry is seeded from D-023 (70b + Scout Tier 1)', () => {
+test('approved hosting endpoint registry is seeded from D-023 (70b + Scout + Whisper Tier 1)', () => {
   assert.deepEqual(APPROVED_HOSTING_ENDPOINTS, [
     {
       endpoint: 'groq://llama-70b',
@@ -40,9 +40,19 @@ test('approved hosting endpoint registry is seeded from D-023 (70b + Scout Tier 
       approved_at: '2026-05-06T00:00:00.000Z',
       status: 'approved',
     },
+    {
+      endpoint: 'groq://whisper-large-v3-turbo',
+      provider: 'groq',
+      model: 'whisper-large-v3-turbo',
+      tier: 'cheap_fast',
+      approved_by_decision: 'D-023',
+      approved_at: '2026-05-08T00:00:00.000Z',
+      status: 'approved',
+    },
   ]);
   assert.equal(approvedHostingEndpoint('groq://llama-70b')?.approved_by_decision, 'D-023');
   assert.equal(approvedHostingEndpoint('groq://llama-4-scout')?.approved_by_decision, 'D-023');
+  assert.equal(approvedHostingEndpoint('groq://whisper-large-v3-turbo')?.approved_by_decision, 'D-023');
 });
 
 test('checkHostingRoute allows approved hosted endpoints with adapter audit action', () => {
