@@ -152,6 +152,7 @@ export async function runEstimate(
     appendedEventIds: appendedIds,
     modelCallerOutput: estimateOutput.modelCallerOutput,
     bandsByScope: estimateOutput.bandsByScope,
+    estimatorResponse: estimateOutput.estimatorResponse,
     endToEndDurationMs: Date.now() - startMs,
   };
 }

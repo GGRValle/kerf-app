@@ -17,6 +17,7 @@ import type { AltitudePacket, DecisionPacket } from '../altitude/index.js';
 import type { ProjectTypeTag, ScopeTag } from '../projects/index.js';
 import type { RenderedBand } from '../estimator/varianceIntegration/index.js';
 import type {
+  EstimatorResponse,
   ModelCaller,
   ModelCallerSuccess,
 } from '../estimator/orchestration/index.js';
@@ -87,5 +88,11 @@ export interface EstimateRunResult {
   readonly appendedEventIds: readonly EventId[];
   readonly modelCallerOutput: ModelCallerSuccess;
   readonly bandsByScope: ReadonlyMap<ScopeTag, RenderedBand>;
+  /**
+   * The disciplined post-enforcement EstimatorResponse used to build the
+   * AltitudePacket. CLI / UI consumers render line items, gaps, and the
+   * operator summary from here. See PR #130 trust-discipline guarantees.
+   */
+  readonly estimatorResponse: EstimatorResponse;
   readonly endToEndDurationMs: number;
 }

@@ -4,8 +4,8 @@
 // CI does not run this — it requires real Groq + a real audio file. Tests
 // stub the Whisper caller; live runs use this CLI.
 
-import { readFileSync } from 'node:fs';
-import { resolve, basename } from 'node:path';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { dirname, resolve, basename } from 'node:path';
 
 import {
   isProjectTypeTag,
@@ -15,13 +15,17 @@ import {
   makeGroqModelCaller,
 } from '../../estimator/orchestration/index.js';
 import { createFixtureTenantStore } from '../../tenant/index.js';
-import { createMemoryEventLog } from '../../blackboard/index.js';
+import { createJsonlEventLog } from '../../blackboard/node.js';
 import type {
   ActorId,
   EntityId,
   ISO8601,
   Role,
 } from '../../blackboard/types.js';
+import {
+  formatDecisionPacketBody,
+  KERF_EVENT_LOG_PATH,
+} from '../../runner/cliFormat.js';
 import {
   makeGroqWhisperCaller,
   runVoiceEstimate,
@@ -35,11 +39,17 @@ interface ParsedArgs {
   readonly project?: string;
   readonly language?: string;
   readonly jurisdiction?: string;
+  readonly quiet: boolean;
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
   const out: Record<string, string> = {};
+  let quiet = false;
   for (const arg of argv) {
+    if (arg === '--quiet') {
+      quiet = true;
+      continue;
+    }
     const m = /^--([^=]+)=(.*)$/.exec(arg);
     if (m !== null && typeof m[1] === 'string' && typeof m[2] === 'string') {
       out[m[1]] = m[2];
@@ -55,6 +65,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     project: out['project'],
     language: out['language'],
     jurisdiction: out['jurisdiction'],
+    quiet,
   };
 }
 
@@ -101,11 +112,17 @@ async function main(): Promise<void> {
     ...(args.jurisdiction !== undefined ? { jurisdiction: args.jurisdiction } : {}),
   };
 
+  // Persist events to a local JSONL file so DecisionPackets survive after
+  // the process exits. Path is gitignored (.kerf/ in .gitignore).
+  const eventLogPath = resolve(KERF_EVENT_LOG_PATH);
+  mkdirSync(dirname(eventLogPath), { recursive: true });
+  const eventLog = await createJsonlEventLog(eventLogPath);
+
   const result = await runVoiceEstimate(inputs, {
     modelCaller: makeGroqModelCaller({ apiKey, baseUrl }),
     whisperCaller: makeGroqWhisperCaller({ apiKey, baseUrl }),
     tenantStore: createFixtureTenantStore(),
-    eventLog: createMemoryEventLog(),
+    eventLog,
     actorTenantId: tenantId as EntityId,
     actor: {
       id: 'cli_invoker' as ActorId,
@@ -130,6 +147,7 @@ async function main(): Promise<void> {
     whisper_cost_nano_usd: result.whisperCostNanoUsd,
     estimator_end_to_end_ms: result.estimate.endToEndDurationMs,
     voice_runner_end_to_end_ms: result.endToEndDurationMs,
+    event_log_path: eventLogPath,
     estimate: {
       allowed: result.estimate.allowed,
       blocked_reasons: result.estimate.blockedReasons,
@@ -147,6 +165,10 @@ async function main(): Promise<void> {
     },
   };
   console.log(JSON.stringify(trimmed, null, 2));
+
+  if (!args.quiet) {
+    console.log(formatDecisionPacketBody(result.estimate));
+  }
 }
 
 main().catch((err) => {

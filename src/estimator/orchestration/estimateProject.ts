@@ -34,6 +34,7 @@ import { buildEstimatorAltitudePacket } from './packetBuilder.js';
 import type {
   EstimatorDeps,
   EstimatorInputs,
+  EstimatorResponse,
   ModelCallerSuccess,
 } from './types.js';
 
@@ -50,6 +51,16 @@ export interface EstimateProjectResult {
   readonly modelCallerOutput: ModelCallerSuccess;
   /** Echoed so the caller can audit which bands the LLM was given. */
   readonly bandsByScope: ReadonlyMap<ScopeTag, RenderedBand>;
+  /**
+   * The disciplined post-enforcement EstimatorResponse used to build the
+   * AltitudePacket. Surfaced so CLI / UI consumers can render line items,
+   * gaps, and operator summary — none of which survive the AltitudePacket
+   * shape (the packet keeps only counts in `extracted_facts`).
+   *
+   * Discipline guarantee from PR #130: no `price_cents` for any scope whose
+   * band had `precision_allowed: false`. Safe to render verbatim.
+   */
+  readonly estimatorResponse: EstimatorResponse;
 }
 
 /**
@@ -116,5 +127,10 @@ export async function estimateProject(
     modelCallerOutput: modelResult,
   });
 
-  return { packet, modelCallerOutput: modelResult, bandsByScope };
+  return {
+    packet,
+    modelCallerOutput: modelResult,
+    bandsByScope,
+    estimatorResponse: cleanResponse,
+  };
 }

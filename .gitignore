@@ -9,3 +9,8 @@ src/examples/w1-decision-queue-demo.bundle.js
 .env.local
 .env.*.local
 !.env.local.example
+samples/voice-memos/
+
+# Runner CLI persistence — JSONL event log for `npm run estimate` /
+# `npm run estimate-voice` runs. Local-only operator history; never canon.
+.kerf/
