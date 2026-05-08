@@ -1,7 +1,7 @@
 import type { EntityId, ISO8601 } from '../blackboard/types.js';
 
 export const HOSTING_ROUTE_CHECK_ACTION = 'hosting_route_check' as const;
-export const HOSTING_ROUTE_REGISTRY_VERSION = '2026-05-06.0' as const;
+export const HOSTING_ROUTE_REGISTRY_VERSION = '2026-05-08.0' as const;
 
 export const HOSTING_ROUTE_TIERS = ['cheap_fast', 'frontier'] as const;
 export type HostingRouteTier = (typeof HOSTING_ROUTE_TIERS)[number];
@@ -47,6 +47,20 @@ export const APPROVED_HOSTING_ENDPOINTS = [
     tier: 'cheap_fast',
     approved_by_decision: 'D-023',
     approved_at: '2026-05-06T00:00:00.000Z',
+    status: 'approved',
+  },
+  // Tier 1 voice transcription per Architecture v3.5 §28.1 W4 (Thread 3
+  // finish, voice runtime input adapter). Same Groq account and API key
+  // as the chat endpoints; routes select on `model` field. Tier marker
+  // `cheap_fast` is shared with the chat tier — Whisper turbo is the
+  // analogous low-cost transcription model.
+  {
+    endpoint: 'groq://whisper-large-v3-turbo',
+    provider: 'groq',
+    model: 'whisper-large-v3-turbo',
+    tier: 'cheap_fast',
+    approved_by_decision: 'D-023',
+    approved_at: '2026-05-08T00:00:00.000Z',
     status: 'approved',
   },
 ] as const satisfies readonly ApprovedHostingEndpoint[];
