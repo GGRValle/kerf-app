@@ -18,6 +18,7 @@
     "smoke:proposal-ff": "tsx src/examples/proposal-ff-smoke.ts",
     "smoke:groq-tier1": "node --env-file=.env.local --import tsx src/examples/groq-tier1-smoke.ts",
     "sample:estimator-live": "node --env-file=.env.local --import tsx src/examples/estimator-live-sample.ts",
+    "estimate": "node --env-file=.env.local --import tsx src/runner/runner.cli.ts",
     "demo:decision-card": "tsx src/examples/decision-card-demo.ts",
     "demo:decision-queue": "tsx src/examples/decision-queue-demo.ts",
     "demo:w1-queue:esbuild": "npx --yes esbuild@0.25.0 src/examples/w1-decision-queue-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/w1-decision-queue-demo.bundle.js",

@@ -154,6 +154,7 @@ export type EventKind =
   | 'guardrail_trip'
   | 'learning_signal.drafted'
   | 'evidence.captured'
+  | 'estimate.altitude_packet_drafted'
   | 'relation.created';
 
 // SourceRef — trust signal. Every agent-authored event should carry at least one.
