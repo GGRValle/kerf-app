@@ -187,6 +187,27 @@ test('runEstimate happy path produces a result with allowed=true and surfaced=tr
   assert.ok(result.endToEndDurationMs >= 0);
 });
 
+test('runEstimate result surfaces the disciplined EstimatorResponse for CLI / UI body rendering', async () => {
+  // Belt-and-suspenders consequence: the operator-facing line items live
+  // in EstimateRunResult.estimatorResponse — the AltitudePacket only
+  // keeps counts in extracted_facts. CLIs read the response to print the
+  // human-readable body.
+  const inputs = baseInputs();
+  const result = await runEstimate(inputs, {
+    modelCaller: stubModelCaller(happyPathContent()),
+    tenantStore: createFixtureTenantStore(),
+    eventLog: createMemoryEventLog(),
+    actorTenantId: 'tenant_ggr' as EntityId,
+    actor: ACTOR,
+  });
+  assert.ok(result.estimatorResponse);
+  assert.equal(result.estimatorResponse.line_items.length, 1);
+  assert.equal(result.estimatorResponse.line_items[0]?.scope_tag, 'cabinetry');
+  assert.equal(result.estimatorResponse.line_items[0]?.price_cents, 12_500_000);
+  assert.equal(result.estimatorResponse.project_total_cents, 12_500_000);
+  assert.match(result.estimatorResponse.operator_summary, /Kitchen total project price/);
+});
+
 test('runEstimate honest blocked outcome: input forces V2 critical-fail; allowed=false; full audit trail returned', async () => {
   // To force V2 (external_send-without-approval) on an Estimator packet —
   // Estimator does NOT propose external_send by default. So V2 won't fire

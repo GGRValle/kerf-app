@@ -4,22 +4,33 @@
 //   npm run estimate -- --tenant=ggr --archetype=kitchen_remodel \
 //     --scope=cabinetry,tile,plumbing --notes="primary kitchen, mid-range finishes"
 //
+// Optional flags:
+//   --quiet            Print only the metadata JSON; skip the human-readable
+//                      DecisionPacket body. Useful for CI / scripting.
+//
 // The CLI:
 //   1. Parses args with a small zero-dep arg parser (no commander/yargs in V1)
 //   2. Loads .env.local via Node's --env-file flag (npm script does this)
-//   3. Constructs runner deps using makeGroqModelCaller + createFixtureTenantStore
+//   3. Constructs runner deps using makeGroqModelCaller + createFixtureTenantStore +
+//      a JSONL-backed event log under .kerf/events.jsonl (gitignored)
 //   4. Calls runEstimate()
-//   5. Prints structured JSON output to stdout
+//   5. Prints structured JSON output to stdout (metadata)
+//   6. Unless --quiet, prints a human-readable DecisionPacket body
+//      (line items, gaps, operator summary) so the operator can judge
+//      the estimate without re-fetching from the event log
 //
 // Local-only by design (V1). HTTP/REST API surface is V2.0+.
 
-import { createMemoryEventLog } from '../blackboard/index.js';
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { createJsonlEventLog } from '../blackboard/node.js';
 import { isProjectTypeTag, isScopeTag, type ProjectTypeTag, type ScopeTag } from '../projects/index.js';
 import { makeGroqModelCaller } from '../estimator/orchestration/index.js';
 import { createFixtureTenantStore } from '../tenant/index.js';
 import type { EntityId, ISO8601, Role } from '../blackboard/types.js';
 import { runEstimate } from './estimateRunner.js';
-import type { RunnerInputs } from './types.js';
+import type { EstimateRunResult, RunnerInputs } from './types.js';
+import { formatDecisionPacketBody, KERF_EVENT_LOG_PATH } from './cliFormat.js';
 
 interface ParsedArgs {
   readonly tenant: string;
@@ -27,11 +38,17 @@ interface ParsedArgs {
   readonly scope: readonly string[];
   readonly notes?: string;
   readonly project?: string;
+  readonly quiet: boolean;
 }
 
 function parseArgs(argv: readonly string[]): ParsedArgs {
   const out: Record<string, string> = {};
+  let quiet = false;
   for (const arg of argv) {
+    if (arg === '--quiet') {
+      quiet = true;
+      continue;
+    }
     const m = /^--([^=]+)=(.*)$/.exec(arg);
     if (m !== null && typeof m[1] === 'string' && typeof m[2] === 'string') {
       out[m[1]] = m[2];
@@ -46,6 +63,7 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     scope: out['scope'].split(',').map((s) => s.trim()).filter((s) => s.length > 0),
     notes: out['notes'],
     project: out['project'],
+    quiet,
   };
 }
 
@@ -78,7 +96,12 @@ async function main(): Promise<void> {
 
   const modelCaller = makeGroqModelCaller({ apiKey, baseUrl });
   const tenantStore = createFixtureTenantStore();
-  const eventLog = createMemoryEventLog();
+
+  // Persist events to a local JSONL file so DecisionPackets survive after
+  // the process exits. Path is gitignored (.kerf/ in .gitignore).
+  const eventLogPath = resolve(KERF_EVENT_LOG_PATH);
+  mkdirSync(dirname(eventLogPath), { recursive: true });
+  const eventLog = await createJsonlEventLog(eventLogPath);
 
   const requestedAt = new Date().toISOString() as ISO8601;
   const invocationId = `inv_cli_${requestedAt.replace(/[^0-9]/g, '').slice(0, 14)}`;
@@ -133,11 +156,16 @@ async function main(): Promise<void> {
     claim_ids_count: result.altitudePacket.claim_ids.length,
     appended_event_ids: result.appendedEventIds,
     surfaced: result.surfaced,
+    event_log_path: eventLogPath,
     tokens_in: result.modelCallerOutput.tokensIn,
     tokens_out: result.modelCallerOutput.tokensOut,
     cost_nano_usd: result.modelCallerOutput.costNanoUsd,
   };
   console.log(JSON.stringify(trimmed, null, 2));
+
+  if (!args.quiet) {
+    console.log(formatDecisionPacketBody(result));
+  }
 }
 
 main().catch((err) => {
