@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kerf — Transcript review (mock)</title>
+    <link rel="stylesheet" href="../ui/styles/decision-card.css" />
+    <link rel="stylesheet" href="../examples/w1-standard-ui-demo.css" />
+    <style>
+      .kerf-tr-page {
+        max-width: 42rem;
+        margin: 0 auto;
+        padding: 0 var(--kerf-space-md) var(--kerf-space-xl);
+      }
+      .kerf-tr-lead {
+        margin: var(--kerf-space-md) 0 var(--kerf-space-lg);
+        font-size: 0.9rem;
+        color: var(--kerf-fg-muted);
+        line-height: 1.5;
+      }
+      .kerf-tr-card {
+        border-radius: var(--kerf-radius-md);
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-card);
+        padding: var(--kerf-space-md) var(--kerf-space-lg);
+        margin-bottom: var(--kerf-space-lg);
+      }
+      .kerf-tr-h2 {
+        margin: 0 0 var(--kerf-space-sm);
+        font-size: 1rem;
+        font-weight: 650;
+        color: var(--kerf-fg);
+      }
+      .kerf-tr-dl {
+        margin: 0;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .kerf-tr-dl > div {
+        display: grid;
+        grid-template-columns: 6rem 1fr;
+        gap: var(--kerf-space-sm);
+        font-size: 0.88rem;
+      }
+      .kerf-tr-dl dt {
+        margin: 0;
+        color: var(--kerf-fg-muted);
+        font-weight: 600;
+      }
+      .kerf-tr-dl dd {
+        margin: 0;
+        color: var(--kerf-fg);
+      }
+      .kerf-tr-pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: var(--kerf-fg);
+        max-height: 20rem;
+        overflow: auto;
+      }
+      .kerf-tr-foot {
+        margin: var(--kerf-space-lg) 0 0;
+      }
+      .kerf-tr-back {
+        color: var(--kerf-accent);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+      .kerf-tr-empty {
+        padding: var(--kerf-space-lg);
+        border-radius: var(--kerf-radius-md);
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-card);
+        font-size: 0.9rem;
+        color: var(--kerf-fg-muted);
+      }
+      .kerf-tr-empty a {
+        color: var(--kerf-accent);
+        font-weight: 600;
+      }
+    </style>
+    <script src="./transcript-review.bundle.js"></script>
+  </head>
+  <body>
+    <div class="kerf-w1-standard-ui">
+      <header class="kerf-w1-topbar" role="banner">
+        <span class="kerf-w1-brand-mark" aria-hidden="true">KERF</span>
+        <div class="kerf-w1-brand-lockup">
+          <span class="kerf-w1-topbar-title">Transcript review</span>
+          <span class="kerf-w1-brand-tag">Mock handoff</span>
+        </div>
+        <span class="kerf-w1-topbar-spacer" aria-hidden="true"></span>
+        <span class="kerf-w1-topbar-pill">Local only</span>
+      </header>
+      <div class="kerf-tr-page">
+        <div id="kerf-tr-app-root"></div>
+      </div>
+    </div>
+  </body>
+</html>

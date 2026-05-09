@@ -25,6 +25,18 @@
     "demo:w1-queue:esbuild": "npx --yes esbuild@0.25.0 src/examples/w1-decision-queue-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/w1-decision-queue-demo.bundle.js",
     "demo:w1-queue": "npm run demo:w1-queue:esbuild && node -e \"console.log('Built src/examples/w1-decision-queue-demo.bundle.js \u2014 open src/examples/w1-decision-queue-demo.html in a browser.')\"",
     "demo:w1-queue:serve": "npm run demo:w1-queue:esbuild && node -e \"console.log('\\nKerf W1 demo: http://localhost:8000/examples/w1-decision-queue-demo.html\\n(static server; no auth, no fetch, no backend writes; Ctrl-C to stop)\\n')\" && python3 -m http.server 8000 --directory src",
+    "demo:v15-slice:esbuild": "npm run demo:v15-vertical-slice:esbuild",
+    "demo:v15-slice": "npm run demo:v15-vertical-slice",
+    "demo:v15-slice:serve": "npm run demo:v15-vertical-slice:serve",
+    "demo:v15-vertical-slice:esbuild": "npx --yes esbuild@0.25.0 src/examples/v15-vertical-slice/app.ts --bundle --platform=browser --format=iife --outfile=src/examples/v15-vertical-slice/app.bundle.js",
+    "demo:v15-vertical-slice": "npm run demo:v15-vertical-slice:esbuild && node -e \"console.log('Built src/examples/v15-vertical-slice/app.bundle.js — use demo:v15-vertical-slice:serve (e.g. http://localhost:8010/field-capture).')\"",
+    "demo:v15-vertical-slice:serve": "npm run demo:v15-vertical-slice:esbuild && node scripts/serve-v15-vertical-slice.mjs",
+    "demo:audit-f37:esbuild": "npx --yes esbuild@0.25.0 src/examples/audit-f37/audit-f37-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/audit-f37/audit-f37-demo.bundle.js",
+    "demo:audit-f37": "npm run demo:audit-f37:esbuild && node -e \"console.log('Built src/examples/audit-f37/audit-f37-demo.bundle.js — use demo:audit-f37:serve for /audit/<packetId>.')\"",
+    "demo:audit-f37:serve": "npm run demo:audit-f37:esbuild && node scripts/serve-audit-f37.mjs",
+    "demo:field-capture:esbuild": "npx --yes esbuild@0.25.0 src/examples/field-capture-app.ts --bundle --platform=browser --format=iife --outfile=src/field-capture/field-capture.bundle.js && npx --yes esbuild@0.25.0 src/examples/transcript-review-app.ts --bundle --platform=browser --format=iife --outfile=src/transcript-review/transcript-review.bundle.js",
+    "demo:field-capture": "npm run demo:field-capture:esbuild && node -e \"console.log('Built field-capture + transcript-review bundles. Serve from src: python3 -m http.server 8000 --directory src  then open http://localhost:8000/field-capture/')\"",
+    "demo:field-capture:serve": "npm run demo:field-capture:esbuild && node -e \"console.log('\\nF·33 Field capture: http://localhost:8000/field-capture/\\nTranscript review: http://localhost:8000/transcript-review/\\n(static server from src/; Ctrl-C to stop)\\n')\" && python3 -m http.server 8000 --directory src",
     "test-fixtures:validate": "tsx -e \"import('./src/test-fixtures/index.js').then(m => { const events = m.seedWorld(); console.log('seed produced', events.length, 'events'); })\""
   },
   "devDependencies": {

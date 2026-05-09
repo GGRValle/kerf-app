@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kerf · V1.5 vertical slice (use port 8010)</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 40rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        line-height: 1.5;
+      }
+      code {
+        font-size: 0.95em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>V1.5 vertical slice</h1>
+    <p>
+      The full Kerf shell and routes run from the dedicated demo server on <strong>port 8010</strong> (path-based
+      navigation). This file is not a second app shell — it only points operators to the canonical entry.
+    </p>
+    <p>From the repo root:</p>
+    <pre><code>npm run demo:v15-vertical-slice:serve</code></pre>
+    <p>Then open <a href="http://localhost:8010/dashboard">http://localhost:8010/dashboard</a> (or <code>/field-capture</code>, <code>/transcript-review</code>, etc.).</p>
+    <p>
+      <code>npm run demo:v15-slice</code> and <code>demo:v15-slice:serve</code> are aliases for the same 8010 flow.
+    </p>
+  </body>
+</html>

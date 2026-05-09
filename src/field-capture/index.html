@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kerf — Field capture</title>
+    <link rel="stylesheet" href="../ui/styles/decision-card.css" />
+    <link rel="stylesheet" href="../examples/w1-standard-ui-demo.css" />
+    <style>
+      .kerf-fc-page {
+        max-width: 42rem;
+        margin: 0 auto;
+        padding: 0 var(--kerf-space-md) var(--kerf-space-xl);
+      }
+      .kerf-fc-main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--kerf-space-lg);
+      }
+      .kerf-fc-card {
+        border-radius: var(--kerf-radius-md);
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-card);
+        padding: var(--kerf-space-md) var(--kerf-space-lg);
+      }
+      .kerf-fc-card--preview {
+        border-color: color-mix(in srgb, var(--kerf-accent) 35%, var(--kerf-border));
+        background: color-mix(in srgb, var(--kerf-accent) 6%, var(--kerf-bg-card));
+      }
+      .kerf-fc-h2 {
+        margin: 0 0 var(--kerf-space-sm);
+        font-size: 1rem;
+        font-weight: 650;
+        color: var(--kerf-fg);
+      }
+      .kerf-fc-muted {
+        margin: 0 0 var(--kerf-space-sm);
+        font-size: 0.85rem;
+        color: var(--kerf-fg-muted);
+        line-height: var(--kerf-leading-normal);
+      }
+      .kerf-fc-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--kerf-fg-muted);
+        margin-bottom: var(--kerf-space-xs);
+      }
+      .kerf-fc-select {
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: var(--kerf-space-md);
+        padding: 0.5rem 0.65rem;
+        border-radius: var(--kerf-radius-sm);
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-elevated);
+        color: var(--kerf-fg);
+        font-size: 0.95rem;
+      }
+      .kerf-fc-dl {
+        margin: 0;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .kerf-fc-dl > div {
+        display: grid;
+        grid-template-columns: 6.5rem 1fr;
+        gap: var(--kerf-space-sm);
+        font-size: 0.88rem;
+      }
+      .kerf-fc-dl dt {
+        margin: 0;
+        color: var(--kerf-fg-muted);
+        font-weight: 600;
+      }
+      .kerf-fc-dl dd {
+        margin: 0;
+        color: var(--kerf-fg);
+      }
+      .kerf-fc-pill {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: color-mix(in srgb, var(--kerf-accent) 18%, var(--kerf-bg-elevated));
+        border: 1px solid color-mix(in srgb, var(--kerf-accent) 40%, var(--kerf-border));
+        color: var(--kerf-fg);
+      }
+      .kerf-fc-mode-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .kerf-fc-mode-chip {
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-elevated);
+        color: var(--kerf-fg-muted);
+      }
+      .kerf-fc-mode-chip--on {
+        border-color: color-mix(in srgb, var(--kerf-accent) 55%, var(--kerf-border));
+        background: color-mix(in srgb, var(--kerf-accent) 14%, var(--kerf-bg-elevated));
+        color: var(--kerf-fg);
+      }
+      .kerf-fc-textarea {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 8rem;
+        padding: 0.65rem 0.75rem;
+        border-radius: var(--kerf-radius-sm);
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-elevated);
+        color: var(--kerf-fg);
+        font-size: 0.95rem;
+        line-height: 1.5;
+        resize: vertical;
+      }
+      .kerf-fc-photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+        gap: var(--kerf-space-md);
+      }
+      .kerf-fc-photo-card {
+        border-radius: var(--kerf-radius-sm);
+        border: 1px solid var(--kerf-border);
+        overflow: hidden;
+        background: var(--kerf-bg-elevated);
+      }
+      .kerf-fc-thumb {
+        aspect-ratio: 4 / 3;
+        background: linear-gradient(135deg, #2a3140, #1a1f26);
+      }
+      .kerf-fc-thumb--issue {
+        background: radial-gradient(circle at 72% 78%, color-mix(in srgb, var(--kerf-danger-muted) 45%, transparent), #232932 55%);
+      }
+      .kerf-fc-thumb--material {
+        background: linear-gradient(160deg, #4a5568, #232932 60%, #c9a87633);
+      }
+      .kerf-fc-thumb--measure {
+        background: repeating-linear-gradient(
+            -8deg,
+            #2a3140,
+            #2a3140 3px,
+            #343c4a 3px,
+            #343c4a 6px
+          ),
+          #232932;
+      }
+      .kerf-fc-thumb--room {
+        background: linear-gradient(145deg, #3d4a5c, #232932 58%, #d4923a22);
+      }
+      .kerf-fc-photo-body {
+        padding: 0.5rem 0.55rem 0.65rem;
+      }
+      .kerf-fc-photo-label {
+        font-size: 0.72rem;
+        color: var(--kerf-fg-muted);
+        line-height: 1.35;
+        margin-bottom: 0.35rem;
+      }
+      .kerf-fc-tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+      .kerf-fc-tag {
+        cursor: pointer;
+        font-size: 0.65rem;
+        padding: 0.2rem 0.45rem;
+        border-radius: 4px;
+        border: 1px solid var(--kerf-border);
+        background: var(--kerf-bg-card);
+        color: var(--kerf-fg-muted);
+      }
+      .kerf-fc-tag--on {
+        border-color: color-mix(in srgb, var(--kerf-accent) 50%, var(--kerf-border));
+        color: var(--kerf-fg);
+        background: color-mix(in srgb, var(--kerf-accent) 12%, var(--kerf-bg-card));
+      }
+      .kerf-fc-add-photo {
+        cursor: pointer;
+        min-height: 7rem;
+        border-radius: var(--kerf-radius-sm);
+        border: 2px dashed color-mix(in srgb, var(--kerf-accent) 45%, var(--kerf-border));
+        background: color-mix(in srgb, var(--kerf-accent) 5%, var(--kerf-bg-elevated));
+        color: var(--kerf-fg-muted);
+        font-size: 0.8rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+      }
+      .kerf-fc-add-plus {
+        font-size: 1.75rem;
+        font-weight: 300;
+        color: var(--kerf-accent);
+        line-height: 1;
+      }
+      .kerf-fc-voice-box {
+        display: flex;
+        gap: var(--kerf-space-md);
+        align-items: flex-start;
+        padding: var(--kerf-space-md);
+        border-radius: var(--kerf-radius-md);
+        border: 1px dashed color-mix(in srgb, var(--kerf-accent) 40%, var(--kerf-border));
+        background: color-mix(in srgb, var(--kerf-accent) 6%, var(--kerf-bg-elevated));
+      }
+      .kerf-fc-voice-ico {
+        font-size: 1.75rem;
+        line-height: 1;
+      }
+      .kerf-fc-voice-title {
+        font-weight: 650;
+        font-size: 0.95rem;
+        color: var(--kerf-fg);
+      }
+      .kerf-fc-voice-consent {
+        margin: 0.35rem 0 0;
+        font-size: 0.78rem;
+        color: var(--kerf-fg-muted);
+        line-height: 1.45;
+      }
+      .kerf-fc-preview-dl {
+        margin: 0;
+        display: grid;
+        gap: 0.55rem;
+      }
+      .kerf-fc-preview-dl > div {
+        display: grid;
+        grid-template-columns: 9.5rem 1fr;
+        gap: var(--kerf-space-sm);
+        font-size: 0.82rem;
+      }
+      .kerf-fc-preview-dl dt {
+        margin: 0;
+        color: var(--kerf-fg-muted);
+        font-weight: 600;
+      }
+      .kerf-fc-preview-dl dd {
+        margin: 0;
+        color: var(--kerf-fg);
+      }
+      .kerf-fc-preview-note {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .kerf-fc-gate {
+        color: color-mix(in srgb, var(--kerf-accent) 90%, var(--kerf-fg));
+        font-weight: 600;
+      }
+      .kerf-fc-notices {
+        display: flex;
+        flex-direction: column;
+        gap: var(--kerf-space-sm);
+      }
+      .kerf-fc-notice {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        padding: 0.65rem 0.75rem;
+        border-radius: var(--kerf-radius-sm);
+        border: 1px solid var(--kerf-border);
+      }
+      .kerf-fc-notice--ai {
+        background: var(--kerf-bg-elevated);
+        color: var(--kerf-fg);
+      }
+      .kerf-fc-notice--gate {
+        background: color-mix(in srgb, var(--kerf-accent) 8%, var(--kerf-bg-card));
+        color: var(--kerf-fg-muted);
+      }
+      .kerf-fc-cta-row {
+        display: flex;
+        flex-direction: column;
+        gap: var(--kerf-space-sm);
+        align-items: flex-start;
+        padding-bottom: var(--kerf-space-xl);
+      }
+      .kerf-fc-primary {
+        min-height: 2.75rem;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        font-size: 0.95rem;
+      }
+      .kerf-fc-cta-hint {
+        margin: 0;
+        font-size: 0.78rem;
+        color: var(--kerf-fg-muted);
+        max-width: 36rem;
+      }
+    </style>
+    <!-- Build: npm run demo:field-capture — bundle: ./field-capture.bundle.js -->
+    <script src="./field-capture.bundle.js"></script>
+  </head>
+  <body>
+    <div class="kerf-w1-standard-ui">
+      <header class="kerf-w1-topbar" role="banner">
+        <span class="kerf-w1-brand-mark" aria-hidden="true">KERF</span>
+        <div class="kerf-w1-brand-lockup">
+          <span class="kerf-w1-topbar-title">Field capture</span>
+          <span class="kerf-w1-brand-tag">F·33 · vertical slice</span>
+        </div>
+        <span class="kerf-w1-topbar-spacer" aria-hidden="true"></span>
+        <span class="kerf-w1-topbar-pill">Mock · no writes</span>
+      </header>
+      <div class="kerf-fc-page">
+        <p class="kerf-meta" style="margin: var(--kerf-space-md) 0 var(--kerf-space-lg)">
+          Route: <code>/field-capture/</code> when served from repo <code>src/</code> (e.g.
+          <code>npm run demo:field-capture:serve</code> or
+          <code>python3 -m http.server 8000 --directory src</code> →
+          <code>http://localhost:8000/field-capture/</code>). Next step in the slice:
+          <code>/transcript-review/</code> on the same server. Capture uses text, photos, and voice placeholder — no
+          Policy Gate execution on this page; approval is explicit in copy only.
+        </p>
+        <div id="kerf-fc-app-root"></div>
+      </div>
+    </div>
+  </body>
+</html>
