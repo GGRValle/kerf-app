@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="kerf-route" content="/draft-review" />
+    <title>Kerf · F-35 Draft Review (demo)</title>
+    <!--
+      F-35 Draft Review — static demo page mirroring the renderer output of
+      `src/examples/f35-draft-review.ts` (`renderF35DraftReviewPage`). Open
+      from disk (file://) or via any static server. The TypeScript renderer is
+      the source of truth; this HTML mirrors its sections so the screen is
+      reviewable without a bundle step.
+
+      Demo guarantees:
+      - No fetch, no Platform calls, no auth, no backend writes.
+      - No Policy Gate logic, validators, QBO writes, external sends,
+        autonomous pricing, or multi-tenancy.
+      - Money is shown as display values only; storage is integer cents in the
+        renderer fixture.
+    -->
+    <style>
+      :root {
+        color-scheme: light;
+        --kerf-f35-bg: #f7f8fa;
+        --kerf-f35-fg: #1f2330;
+        --kerf-f35-fg-muted: #5b6373;
+        --kerf-f35-border: #d8dde5;
+        --kerf-f35-card: #ffffff;
+        --kerf-f35-accent: #1f4ed8;
+        --kerf-f35-warn: #b45309;
+        --kerf-f35-danger: #b91c1c;
+        --kerf-f35-success: #166534;
+      }
+      body {
+        margin: 0;
+        background: var(--kerf-f35-bg);
+        color: var(--kerf-f35-fg);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.45;
+      }
+      main {
+        max-width: 64rem;
+        margin: 0 auto;
+        padding: 1.25rem;
+      }
+      .kerf-f35-screen {
+        display: grid;
+        gap: 1rem;
+      }
+      .kerf-f35-route {
+        margin: 0 0 0.25rem;
+        font-size: 0.78rem;
+        color: var(--kerf-f35-fg-muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .kerf-f35-route code {
+        background: var(--kerf-f35-card);
+        border: 1px solid var(--kerf-f35-border);
+        border-radius: 4px;
+        padding: 0 0.35rem;
+      }
+      .kerf-f35-title {
+        margin: 0.25rem 0 0.75rem;
+        font-size: 1.6rem;
+      }
+      .kerf-f35-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+        gap: 0.5rem 1.25rem;
+        margin: 0;
+      }
+      .kerf-f35-meta__row {
+        display: grid;
+        grid-template-columns: minmax(6.5rem, max-content) 1fr;
+        gap: 0.5rem;
+        align-items: baseline;
+      }
+      .kerf-f35-meta dt {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--kerf-f35-fg-muted);
+      }
+      .kerf-f35-meta dd {
+        margin: 0;
+      }
+      .kerf-f35-status-pill {
+        display: inline-block;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid var(--kerf-f35-border);
+        font-size: 0.82rem;
+        font-weight: 600;
+        background: var(--kerf-f35-card);
+      }
+      .kerf-f35-status-pill--blocked {
+        color: var(--kerf-f35-danger);
+        border-color: color-mix(in srgb, var(--kerf-f35-danger) 35%, var(--kerf-f35-border));
+        background: color-mix(in srgb, var(--kerf-f35-danger) 8%, var(--kerf-f35-card));
+      }
+      .kerf-f35-status-pill--approval {
+        color: var(--kerf-f35-warn);
+        border-color: color-mix(in srgb, var(--kerf-f35-warn) 35%, var(--kerf-f35-border));
+        background: color-mix(in srgb, var(--kerf-f35-warn) 10%, var(--kerf-f35-card));
+      }
+      .kerf-f35-status-pill--review {
+        color: var(--kerf-f35-accent);
+        border-color: color-mix(in srgb, var(--kerf-f35-accent) 35%, var(--kerf-f35-border));
+        background: color-mix(in srgb, var(--kerf-f35-accent) 8%, var(--kerf-f35-card));
+      }
+      .kerf-f35-section {
+        background: var(--kerf-f35-card);
+        border: 1px solid var(--kerf-f35-border);
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+      }
+      .kerf-f35-h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1.05rem;
+      }
+      .kerf-f35-muted {
+        color: var(--kerf-f35-fg-muted);
+        font-size: 0.88rem;
+        margin: 0 0 0.5rem;
+      }
+      .kerf-f35-ai-notice {
+        background: color-mix(in srgb, var(--kerf-f35-warn) 8%, var(--kerf-f35-card));
+        border: 1px solid color-mix(in srgb, var(--kerf-f35-warn) 35%, var(--kerf-f35-border));
+        border-radius: 8px;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.92rem;
+      }
+      .kerf-f35-ai-notice p {
+        margin: 0;
+      }
+      .kerf-f35-summary__title {
+        margin: 0 0 0.35rem;
+        font-size: 1rem;
+      }
+      .kerf-f35-summary__scope,
+      .kerf-f35-summary__reason,
+      .kerf-f35-summary__capture {
+        margin: 0.25rem 0;
+      }
+      .kerf-f35-line-list,
+      .kerf-f35-source-ref-list,
+      .kerf-f35-assumption-list,
+      .kerf-f35-unsafe__list {
+        list-style: none;
+        margin: 0.5rem 0 0;
+        padding: 0;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .kerf-f35-line {
+        border: 1px solid var(--kerf-f35-border);
+        border-radius: 6px;
+        padding: 0.6rem 0.75rem;
+        background: color-mix(in srgb, var(--kerf-f35-bg) 50%, var(--kerf-f35-card));
+      }
+      .kerf-f35-line__head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: baseline;
+      }
+      .kerf-f35-line__desc {
+        margin: 0;
+        font-weight: 600;
+      }
+      .kerf-f35-line__amount {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .kerf-f35-line__qty,
+      .kerf-f35-line__basis,
+      .kerf-f35-line__ref {
+        margin: 0.2rem 0;
+        font-size: 0.9rem;
+        color: var(--kerf-f35-fg-muted);
+      }
+      .kerf-f35-confidence {
+        margin-left: 0.4rem;
+        padding: 0.05rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        border: 1px solid var(--kerf-f35-border);
+        background: var(--kerf-f35-card);
+        color: var(--kerf-f35-fg);
+      }
+      .kerf-f35-confidence--low,
+      .kerf-f35-confidence--unknown {
+        color: var(--kerf-f35-warn);
+        border-color: color-mix(in srgb, var(--kerf-f35-warn) 35%, var(--kerf-f35-border));
+      }
+      .kerf-f35-flags {
+        display: grid;
+        gap: 0.25rem;
+        margin-top: 0.4rem;
+      }
+      .kerf-f35-flag {
+        display: inline-block;
+        padding: 0.1rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.82rem;
+        background: color-mix(in srgb, var(--kerf-f35-warn) 10%, var(--kerf-f35-card));
+        border: 1px solid color-mix(in srgb, var(--kerf-f35-warn) 30%, var(--kerf-f35-border));
+        color: var(--kerf-f35-fg);
+      }
+      .kerf-f35-flag--missing {
+        background: color-mix(in srgb, var(--kerf-f35-danger) 8%, var(--kerf-f35-card));
+        border-color: color-mix(in srgb, var(--kerf-f35-danger) 30%, var(--kerf-f35-border));
+      }
+      .kerf-f35-source-ref,
+      .kerf-f35-assumption {
+        border: 1px solid var(--kerf-f35-border);
+        border-radius: 6px;
+        padding: 0.5rem 0.7rem;
+        background: color-mix(in srgb, var(--kerf-f35-bg) 50%, var(--kerf-f35-card));
+      }
+      .kerf-f35-source-ref__kind {
+        margin: 0 0 0.15rem;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--kerf-f35-fg-muted);
+      }
+      .kerf-f35-source-ref__label {
+        margin: 0 0 0.15rem;
+        font-weight: 600;
+      }
+      .kerf-f35-source-ref__ref,
+      .kerf-f35-source-ref__note {
+        margin: 0.15rem 0 0;
+        font-size: 0.88rem;
+        color: var(--kerf-f35-fg-muted);
+      }
+      .kerf-f35-assumption {
+        display: flex;
+        gap: 0.6rem;
+        align-items: baseline;
+      }
+      .kerf-f35-assumption__pill {
+        flex: none;
+        padding: 0.05rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        border: 1px solid var(--kerf-f35-border);
+        background: var(--kerf-f35-card);
+      }
+      .kerf-f35-assumption__pill--missing_info {
+        color: var(--kerf-f35-danger);
+        border-color: color-mix(in srgb, var(--kerf-f35-danger) 30%, var(--kerf-f35-border));
+      }
+      .kerf-f35-unsafe--blocked {
+        border-color: color-mix(in srgb, var(--kerf-f35-danger) 35%, var(--kerf-f35-border));
+        background: color-mix(in srgb, var(--kerf-f35-danger) 6%, var(--kerf-f35-card));
+      }
+      .kerf-f35-unsafe__lede {
+        margin: 0 0 0.4rem;
+      }
+      .kerf-f35-unsafe__item {
+        padding: 0.3rem 0.45rem;
+        border-radius: 4px;
+        background: var(--kerf-f35-card);
+        border: 1px solid color-mix(in srgb, var(--kerf-f35-danger) 25%, var(--kerf-f35-border));
+        color: var(--kerf-f35-fg);
+      }
+      .kerf-f35-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .kerf-f35-btn {
+        display: inline-block;
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid var(--kerf-f35-border);
+        background: var(--kerf-f35-card);
+        color: var(--kerf-f35-fg);
+        font: inherit;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .kerf-f35-btn:focus-visible {
+        outline: 2px solid var(--kerf-f35-accent);
+        outline-offset: 2px;
+      }
+      .kerf-f35-btn--primary {
+        background: var(--kerf-f35-accent);
+        color: #fff;
+        border-color: var(--kerf-f35-accent);
+      }
+      .kerf-f35-actions__caveat {
+        flex-basis: 100%;
+        margin: 0.25rem 0 0;
+        color: var(--kerf-f35-fg-muted);
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article class="kerf-f35-screen" data-kerf-f35-route="/draft-review">
+        <header class="kerf-f35-head" aria-label="Draft Review header">
+          <p class="kerf-f35-route" data-kerf-f35-route="/draft-review">
+            Route: <code>/draft-review</code>
+          </p>
+          <h1 class="kerf-f35-title">Draft Review</h1>
+          <dl class="kerf-f35-meta">
+            <div class="kerf-f35-meta__row">
+              <dt>Project</dt>
+              <dd>Demo Project · Rivera Kitchen Refresh</dd>
+            </div>
+            <div class="kerf-f35-meta__row">
+              <dt>Client</dt>
+              <dd>Demo Client Rivera</dd>
+            </div>
+            <div class="kerf-f35-meta__row">
+              <dt>Draft type</dt>
+              <dd>Change Order Draft</dd>
+            </div>
+            <div class="kerf-f35-meta__row">
+              <dt>Status</dt>
+              <dd>
+                <span
+                  class="kerf-f35-status-pill kerf-f35-status-pill--approval"
+                  data-kerf-f35-status="approval_required"
+                  >Approval Required</span
+                >
+              </dd>
+            </div>
+          </dl>
+        </header>
+
+        <aside class="kerf-f35-ai-notice" role="note" aria-label="AI source notice">
+          <p data-kerf-f35-ai-notice="true">
+            AI-assisted draft. Verify source refs, quantities, pricing, and assumptions before sending.
+          </p>
+        </aside>
+
+        <section class="kerf-f35-section kerf-f35-summary" aria-label="Draft summary">
+          <h2 class="kerf-f35-h2">Summary</h2>
+          <h3 class="kerf-f35-summary__title">
+            Change order — outlet relocation + tile material allowance update
+          </h3>
+          <p class="kerf-f35-summary__scope">
+            Two added scope items captured during walkthrough: relocate one kitchen outlet on the north
+            wall, and bump the tile material allowance to match the selected porcelain SKU.
+          </p>
+          <p class="kerf-f35-summary__reason">
+            <strong>Why Kerf drafted this:</strong> New asks surfaced in the 2026-05-08 site walk
+            transcript that were not in the original estimate.
+          </p>
+          <p class="kerf-f35-summary__capture">
+            <strong>Source capture:</strong>
+            <code>transcript://walkthrough/2026-05-08T10:14Z</code>
+          </p>
+        </section>
+
+        <section
+          class="kerf-f35-section kerf-f35-unsafe kerf-f35-unsafe--blocked"
+          role="alert"
+          aria-label="Unsafe to send"
+        >
+          <h2 class="kerf-f35-h2">Unsafe to send</h2>
+          <p class="kerf-f35-unsafe__lede">
+            <strong>Do not send externally.</strong> Resolve the items below before continuing.
+          </p>
+          <ul class="kerf-f35-unsafe__list">
+            <li class="kerf-f35-unsafe__item" data-kerf-f35-block-reason="missing_source">
+              Missing source — required transcript, photo, or catalog ref is absent.
+            </li>
+            <li class="kerf-f35-unsafe__item" data-kerf-f35-block-reason="unsupported_pricing">
+              Unsupported pricing — at least one line lacks a sourced rate.
+            </li>
+            <li
+              class="kerf-f35-unsafe__item"
+              data-kerf-f35-block-reason="external_send_requires_approval"
+            >
+              External send requires approval — operator must approve before this leaves Kerf.
+            </li>
+          </ul>
+        </section>
+
+        <section class="kerf-f35-section kerf-f35-scope" aria-label="Scope lines">
+          <h2 class="kerf-f35-h2">Scope lines</h2>
+          <p class="kerf-f35-muted">
+            Display amounts only — pricing is not committed by this screen.
+          </p>
+          <ul class="kerf-f35-line-list">
+            <li class="kerf-f35-line" data-kerf-f35-line-id="line_outlet_relocation">
+              <div class="kerf-f35-line__head">
+                <p class="kerf-f35-line__desc">Relocate one kitchen outlet on north wall</p>
+                <p
+                  class="kerf-f35-line__amount"
+                  aria-label="Display amount only — not a stored price"
+                >
+                  $185.00
+                </p>
+              </div>
+              <p class="kerf-f35-line__qty"><strong>1</strong> each</p>
+              <p class="kerf-f35-line__basis">
+                <span class="kerf-f35-basis">Transcript</span>
+                <span
+                  class="kerf-f35-confidence kerf-f35-confidence--medium"
+                  data-kerf-f35-confidence="medium"
+                  >medium confidence</span
+                >
+              </p>
+              <p class="kerf-f35-line__ref">
+                <strong>Ref:</strong>
+                <code>transcript://walkthrough/2026-05-08T10:14Z#t=00:04:12</code>
+              </p>
+              <div class="kerf-f35-flags">
+                <span class="kerf-f35-flag kerf-f35-flag--assumption" data-kerf-f35-flag="assumption">
+                  Assumption: Wall is open to studs (no patch/paint included).
+                </span>
+              </div>
+            </li>
+            <li class="kerf-f35-line" data-kerf-f35-line-id="line_tile_material_allowance">
+              <div class="kerf-f35-line__head">
+                <p class="kerf-f35-line__desc">
+                  Tile material allowance bump (porcelain, kitchen backsplash)
+                </p>
+                <p
+                  class="kerf-f35-line__amount"
+                  aria-label="Display amount only — not a stored price"
+                >
+                  $336.00
+                </p>
+              </div>
+              <p class="kerf-f35-line__qty"><strong>42</strong> sq ft</p>
+              <p class="kerf-f35-line__basis">
+                <span class="kerf-f35-basis">Past job / cost memory</span>
+                <span
+                  class="kerf-f35-confidence kerf-f35-confidence--low"
+                  data-kerf-f35-confidence="low"
+                  >low confidence</span
+                >
+              </p>
+              <p class="kerf-f35-line__ref">
+                <strong>Ref:</strong>
+                <code>past_job://job/ggr_2025_rivera/cost_memory/tile_porcelain</code>
+              </p>
+              <div class="kerf-f35-flags">
+                <span class="kerf-f35-flag kerf-f35-flag--missing" data-kerf-f35-flag="missing_info">
+                  Missing: Final SKU not confirmed — allowance is placeholder until selection sheet
+                  returns.
+                </span>
+              </div>
+            </li>
+            <li class="kerf-f35-line" data-kerf-f35-line-id="line_labor_install">
+              <div class="kerf-f35-line__head">
+                <p class="kerf-f35-line__desc">Labor — backsplash install</p>
+                <p
+                  class="kerf-f35-line__amount"
+                  aria-label="Display amount only — not a stored price"
+                >
+                  $540.00
+                </p>
+              </div>
+              <p class="kerf-f35-line__qty"><strong>6</strong> hours</p>
+              <p class="kerf-f35-line__basis">
+                <span class="kerf-f35-basis">Operator edit</span>
+                <span
+                  class="kerf-f35-confidence kerf-f35-confidence--high"
+                  data-kerf-f35-confidence="high"
+                  >high confidence</span
+                >
+              </p>
+              <p class="kerf-f35-line__ref">
+                <strong>Ref:</strong>
+                <code>operator_edit://owner/2026-05-08T11:22Z</code>
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section class="kerf-f35-section kerf-f35-source-refs" aria-label="Source refs">
+          <h2 class="kerf-f35-h2">Source refs</h2>
+          <ul class="kerf-f35-source-ref-list">
+            <li class="kerf-f35-source-ref" data-kerf-f35-source-kind="transcript">
+              <p class="kerf-f35-source-ref__kind">Transcript</p>
+              <p class="kerf-f35-source-ref__label">Walkthrough transcript — outlet ask</p>
+              <p class="kerf-f35-source-ref__ref">
+                <code>transcript://walkthrough/2026-05-08T10:14Z#t=00:04:12</code>
+              </p>
+              <p class="kerf-f35-source-ref__note">
+                Client asked to move the outlet to clear the new range hood.
+              </p>
+            </li>
+            <li class="kerf-f35-source-ref" data-kerf-f35-source-kind="photo">
+              <p class="kerf-f35-source-ref__kind">Photo</p>
+              <p class="kerf-f35-source-ref__label">Site photo — north wall outlet</p>
+              <p class="kerf-f35-source-ref__ref">
+                <code>photo://site/2026-05-08/IMG_0142.jpg</code>
+              </p>
+            </li>
+            <li class="kerf-f35-source-ref" data-kerf-f35-source-kind="past_job_memory">
+              <p class="kerf-f35-source-ref__kind">Past job / cost memory</p>
+              <p class="kerf-f35-source-ref__label">
+                Past job · porcelain backsplash cost memory (placeholder)
+              </p>
+              <p class="kerf-f35-source-ref__ref">
+                <code>past_job://job/ggr_2025_rivera/cost_memory/tile_porcelain</code>
+              </p>
+              <p class="kerf-f35-source-ref__note">
+                Placeholder until the cost KB lookup adapter is wired.
+              </p>
+            </li>
+            <li class="kerf-f35-source-ref" data-kerf-f35-source-kind="operator_edit">
+              <p class="kerf-f35-source-ref__kind">Operator edit</p>
+              <p class="kerf-f35-source-ref__label">Owner edit — install hours adjusted</p>
+              <p class="kerf-f35-source-ref__ref">
+                <code>operator_edit://owner/2026-05-08T11:22Z</code>
+              </p>
+            </li>
+            <li class="kerf-f35-source-ref" data-kerf-f35-source-kind="catalog">
+              <p class="kerf-f35-source-ref__kind">Catalog</p>
+              <p class="kerf-f35-source-ref__label">Catalog placeholder · porcelain backsplash SKU</p>
+              <p class="kerf-f35-source-ref__ref">
+                <code>catalog://placeholder/porcelain-backsplash</code>
+              </p>
+              <p class="kerf-f35-source-ref__note">Catalog adapter not wired in this demo.</p>
+            </li>
+            <li class="kerf-f35-source-ref" data-kerf-f35-source-kind="pricing_source">
+              <p class="kerf-f35-source-ref__kind">Pricing source</p>
+              <p class="kerf-f35-source-ref__label">
+                Pricing source placeholder · labor rate sheet
+              </p>
+              <p class="kerf-f35-source-ref__ref">
+                <code>pricing_source://placeholder/labor-rate-sheet</code>
+              </p>
+              <p class="kerf-f35-source-ref__note">Source needs verification before send.</p>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          class="kerf-f35-section kerf-f35-assumptions"
+          aria-label="Assumptions and missing info"
+        >
+          <h2 class="kerf-f35-h2">Assumptions / missing info</h2>
+          <ul class="kerf-f35-assumption-list">
+            <li
+              class="kerf-f35-assumption"
+              data-kerf-f35-assumption-kind="assumption"
+            >
+              <span class="kerf-f35-assumption__pill kerf-f35-assumption__pill--assumption"
+                >Assumption</span
+              >
+              <span class="kerf-f35-assumption__prompt">Outlet relocation wall confirmed?</span>
+            </li>
+            <li
+              class="kerf-f35-assumption"
+              data-kerf-f35-assumption-kind="assumption"
+            >
+              <span class="kerf-f35-assumption__pill kerf-f35-assumption__pill--assumption"
+                >Assumption</span
+              >
+              <span class="kerf-f35-assumption__prompt">Cabinet scope included?</span>
+            </li>
+            <li
+              class="kerf-f35-assumption"
+              data-kerf-f35-assumption-kind="missing_info"
+            >
+              <span class="kerf-f35-assumption__pill kerf-f35-assumption__pill--missing_info"
+                >Missing info</span
+              >
+              <span class="kerf-f35-assumption__prompt">Tile material allowance missing</span>
+            </li>
+            <li
+              class="kerf-f35-assumption"
+              data-kerf-f35-assumption-kind="missing_info"
+            >
+              <span class="kerf-f35-assumption__pill kerf-f35-assumption__pill--missing_info"
+                >Missing info</span
+              >
+              <span class="kerf-f35-assumption__prompt">Labor rate source needs verification</span>
+            </li>
+          </ul>
+        </section>
+
+        <footer
+          class="kerf-f35-actions"
+          role="group"
+          aria-label="Continue actions (mock-only)"
+        >
+          <a
+            class="kerf-f35-btn kerf-f35-btn--primary"
+            href="/decisions/demo-decision-001"
+            data-kerf-f35-action="open-decision"
+            >Open Decision Card</a
+          >
+          <button
+            type="button"
+            class="kerf-f35-btn"
+            data-kerf-f35-action="request-more-info"
+          >
+            Request More Info
+          </button>
+          <a
+            class="kerf-f35-btn"
+            href="/transcript-review"
+            data-kerf-f35-action="back-to-transcript"
+            >Back to Transcript</a
+          >
+          <p class="kerf-f35-actions__caveat">
+            Buttons are mock-only — no approvals, no external sends, no money movement.
+          </p>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>
