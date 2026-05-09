@@ -309,19 +309,26 @@ function renderAiNotice(): string {
 </aside>`;
 }
 
-function renderActions(fixture: F35DraftReviewFixture): string {
+function renderActions(fixture: F35DraftReviewFixture, v15Shell: boolean): string {
   const decisionHref = `/decisions/${encodeURIComponent(fixture.decision_id)}`;
-  const transcriptHref = fixture.transcript_route;
+  const transcriptHref = v15Shell ? '/transcript-review' : fixture.transcript_route;
+  const navAttr = v15Shell ? ' data-kerf-v15-nav="true"' : '';
   return `<footer class="kerf-f35-actions" role="group" aria-label="Continue actions (mock-only)">
-  <a class="kerf-f35-btn kerf-f35-btn--primary" href="${escapeHtml(decisionHref)}" data-kerf-f35-action="open-decision">Open Decision Card</a>
+  <a class="kerf-f35-btn kerf-f35-btn--primary" href="${escapeHtml(decisionHref)}" data-kerf-f35-action="open-decision"${navAttr}>Open Decision Card</a>
   <button type="button" class="kerf-f35-btn" data-kerf-f35-action="request-more-info">Request More Info</button>
-  <a class="kerf-f35-btn" href="${escapeHtml(transcriptHref)}" data-kerf-f35-action="back-to-transcript">Back to Transcript</a>
+  <a class="kerf-f35-btn" href="${escapeHtml(transcriptHref)}" data-kerf-f35-action="back-to-transcript"${navAttr}>Back to Transcript</a>
   <p class="kerf-f35-actions__caveat">Buttons are mock-only — no approvals, no external sends, no money movement.</p>
 </footer>`;
 }
 
+export type F35RenderOptions = {
+  /** When true, decision/transcript links use History API paths + v15 nav interception. */
+  readonly v15Shell?: boolean;
+};
+
 /** Renders the full /draft-review screen body for both demo HTML and tests. */
-export function renderF35DraftReviewPage(fixture: F35DraftReviewFixture): string {
+export function renderF35DraftReviewPage(fixture: F35DraftReviewFixture, options?: F35RenderOptions): string {
+  const v15Shell = options?.v15Shell === true;
   return `<article class="kerf-f35-screen" data-kerf-f35-route="${escapeHtml(F35_DRAFT_REVIEW_ROUTE)}">
   ${renderHeader(fixture)}
   ${renderAiNotice()}
@@ -330,7 +337,7 @@ export function renderF35DraftReviewPage(fixture: F35DraftReviewFixture): string
   ${renderScopeLines(fixture)}
   ${renderSourceRefs(fixture)}
   ${renderAssumptions(fixture)}
-  ${renderActions(fixture)}
+  ${renderActions(fixture, v15Shell)}
 </article>`;
 }
 
