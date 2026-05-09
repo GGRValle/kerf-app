@@ -15,4 +15,5 @@ export * from './hosting/index.js';
 export * from './workflows/index.js';
 export * from './decisions/index.js';
 export * from './payments/index.js';
+export * from './releaseFence/index.js';
 // test-fixtures intentionally NOT re-exported — consume via '@kerf/core/test-fixtures'.
