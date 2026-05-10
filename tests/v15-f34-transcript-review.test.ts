@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { matchRoute } from '../src/examples/v15-vertical-slice/router.js';
 import { F34_AUDIT_HINT, F34_REQUIRED_NOTICE } from '../src/examples/v15-vertical-slice/f34-transcript-review-mock.js';
+import { resolveF34TranscriptReviewCopy } from '../src/examples/v15-vertical-slice/f34-transcript-review-handoff.js';
 
 test('router matches /transcript-review', () => {
   assert.deepEqual(matchRoute('/transcript-review'), { name: 'transcript-review' });
@@ -29,4 +30,16 @@ test('pages wires transcript-review route to F-34 builders', () => {
   const src = readFileSync(new URL('../src/examples/v15-vertical-slice/pages.ts', import.meta.url), 'utf8');
   assert.match(src, /buildTranscriptReviewMainHtml/);
   assert.match(src, /buildTranscriptReviewRailHtml/);
+});
+
+test('F-34 handoff module resolves copy from FieldCaptureHandoffV1 reader', () => {
+  const src = readFileSync(new URL('../src/examples/v15-vertical-slice/f34-transcript-review-handoff.ts', import.meta.url), 'utf8');
+  assert.match(src, /readFieldCaptureHandoffFromSessionStorage/);
+  assert.match(src, /resolveF34TranscriptReviewCopy/);
+});
+
+test('resolveF34TranscriptReviewCopy falls back to mock when no sessionStorage handoff (Node)', () => {
+  const r = resolveF34TranscriptReviewCopy();
+  assert.equal(r.source, 'mock');
+  assert.match(r.transcriptOriginal, /be trap/);
 });

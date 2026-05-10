@@ -147,23 +147,69 @@ export function encodeHandoffToHash(handoff: FieldCaptureHandoffV1): string {
   return encodeURIComponent(JSON.stringify(handoff));
 }
 
+/** Shared JSON guard for URL hash + sessionStorage handoff payloads (F-33 → F-34). */
+export function parseFieldCaptureHandoffJson(parsed: unknown): FieldCaptureHandoffV1 | null {
+  if (typeof parsed !== 'object' || parsed === null) {
+    return null;
+  }
+  const o = parsed as Record<string, unknown>;
+  if (o.v !== 1) {
+    return null;
+  }
+  if (
+    typeof o.project_id !== 'string'
+    || typeof o.project_name !== 'string'
+    || typeof o.client_name !== 'string'
+    || typeof o.location !== 'string'
+    || typeof o.workflow !== 'string'
+  ) {
+    return null;
+  }
+  if (!Array.isArray(o.modes)) {
+    return null;
+  }
+  if (typeof o.text_note !== 'string' || typeof o.manual_transcript !== 'string') {
+    return null;
+  }
+  if (!Array.isArray(o.photos)) {
+    return null;
+  }
+  if (typeof o.created_at_iso !== 'string') {
+    return null;
+  }
+  return parsed as FieldCaptureHandoffV1;
+}
+
 export function decodeHandoffFromHash(hash: string): FieldCaptureHandoffV1 | null {
   if (!hash || hash === '#') return null;
   const raw = hash.startsWith('#') ? hash.slice(1) : hash;
   try {
     const parsed: unknown = JSON.parse(decodeURIComponent(raw));
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      (parsed as FieldCaptureHandoffV1).v === 1 &&
-      typeof (parsed as FieldCaptureHandoffV1).project_id === 'string'
-    ) {
-      return parsed as FieldCaptureHandoffV1;
-    }
+    return parseFieldCaptureHandoffJson(parsed);
   } catch {
     /* invalid */
   }
   return null;
+}
+
+/**
+ * Reads F-33 → F-34 handoff from sessionStorage (same-origin demo only).
+ * Returns null when missing, invalid JSON, or shape mismatch — callers should fall back to fixtures.
+ */
+export function readFieldCaptureHandoffFromSessionStorage(): FieldCaptureHandoffV1 | null {
+  if (typeof sessionStorage === 'undefined') {
+    return null;
+  }
+  try {
+    const raw = sessionStorage.getItem(FIELD_CAPTURE_HANDOFF_STORAGE_KEY);
+    if (raw === null || raw.trim().length === 0) {
+      return null;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    return parseFieldCaptureHandoffJson(parsed);
+  } catch {
+    return null;
+  }
 }
 
 /** Test helper — round-trip through URL hash encoding. */

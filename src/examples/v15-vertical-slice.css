@@ -363,6 +363,11 @@ html:has(#kerf-v15-root) body {
   background: var(--v15-warn-bg);
 }
 
+.kerf-f34-callout--handoff {
+  border: 1px solid color-mix(in srgb, var(--v15-ok) 35%, var(--v15-border));
+  background: color-mix(in srgb, var(--v15-ok) 10%, var(--v15-panel));
+}
+
 .kerf-f34-callout p {
   margin: 0;
 }

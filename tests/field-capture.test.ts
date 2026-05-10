@@ -6,12 +6,23 @@ import test from 'node:test';
 import {
   FIELD_CAPTURE_COPY,
   fieldCaptureProjectListFixture,
+  parseFieldCaptureHandoffJson,
+  readFieldCaptureHandoffFromSessionStorage,
   roundTripFieldCaptureHandoff,
   type FieldCaptureHandoffV1,
 } from '../src/examples/field-capture-mock.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
+
+test('parseFieldCaptureHandoffJson rejects incomplete payloads', () => {
+  assert.equal(parseFieldCaptureHandoffJson({ v: 1, project_id: 'x' }), null);
+  assert.equal(parseFieldCaptureHandoffJson(null), null);
+});
+
+test('readFieldCaptureHandoffFromSessionStorage is null outside a browser', () => {
+  assert.equal(readFieldCaptureHandoffFromSessionStorage(), null);
+});
 
 test('field capture handoff round-trips through hash encoding', () => {
   const h: FieldCaptureHandoffV1 = {
@@ -27,6 +38,9 @@ test('field capture handoff round-trips through hash encoding', () => {
     photos: [{ id: 'p1', label: 'Photo 1', tags: ['room', 'before'] }],
     created_at_iso: '2026-05-09T12:00:00.000Z',
   };
+  const parsed = parseFieldCaptureHandoffJson(JSON.parse(JSON.stringify(h)) as unknown);
+  assert.ok(parsed);
+  assert.equal(parsed!.project_id, h.project_id);
   const back = roundTripFieldCaptureHandoff(h);
   assert.ok(back);
   assert.equal(back!.project_id, h.project_id);

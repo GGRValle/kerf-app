@@ -1,3 +1,4 @@
+import { FIELD_CAPTURE_HANDOFF_STORAGE_KEY } from '../field-capture-mock.js';
 import {
   F34_AUDIT_HINT,
   F34_CAPTURE_META,
@@ -5,10 +6,10 @@ import {
   F34_REQUIRED_NOTICE,
   F34_SCOPE_ROWS,
   F34_TRANSCRIPT_EDITS,
-  F34_TRANSCRIPT_ORIGINAL,
   F34_TRANSCRIPT_SEGMENTS,
   type ScopeTagType,
 } from './f34-transcript-review-mock.js';
+import { resolveF34TranscriptReviewCopy, type F34ResolvedTranscriptCopy } from './f34-transcript-review-handoff.js';
 import { f34AllMissingResolved, getF34ResolvedMissingIds } from './f34-transcript-review-state.js';
 
 function esc(s: string): string {
@@ -27,13 +28,17 @@ function confidenceClass(c: 'high' | 'medium' | 'low'): string {
   return `kerf-f34-conf kerf-f34-conf--${c}`;
 }
 
-export function buildTranscriptReviewMainHtml(): string {
-  const editsList = F34_TRANSCRIPT_EDITS.map(
-    (e) =>
-      `<li><span class="kerf-f34-edits__ts">${esc(e.atLabel)}</span> · <strong>${esc(e.originalToken)}</strong> → <strong>${esc(e.currentToken)}</strong> · ${esc(e.source)}</li>`,
-  ).join('');
-
-  const segmentsHtml = F34_TRANSCRIPT_SEGMENTS.map(
+function buildSegmentsHtml(r: F34ResolvedTranscriptCopy): string {
+  if (r.source === 'handoff') {
+    return `<article class="kerf-f34-segment" aria-labelledby="kerf-f34-seg-handoff-h">
+  <header class="kerf-f34-segment__head">
+    <h3 id="kerf-f34-seg-handoff-h" class="kerf-f34-segment__title">Captured text</h3>
+    <p class="kerf-f34-segment__src">F-33 field capture handoff · sessionStorage</p>
+  </header>
+  <p class="kerf-f34-segment__body">${esc(r.transcriptCurrent)}</p>
+</article>`;
+  }
+  return F34_TRANSCRIPT_SEGMENTS.map(
     (seg) => `<article class="kerf-f34-segment" aria-labelledby="${esc(seg.id)}-h">
   <header class="kerf-f34-segment__head">
     <h3 id="${esc(seg.id)}-h" class="kerf-f34-segment__title">${esc(seg.timeLabel)}</h3>
@@ -42,6 +47,43 @@ export function buildTranscriptReviewMainHtml(): string {
   <p class="kerf-f34-segment__body">${seg.htmlBody}</p>
 </article>`,
   ).join('');
+}
+
+export function buildTranscriptReviewMainHtml(): string {
+  const r = resolveF34TranscriptReviewCopy();
+
+  const editsList = F34_TRANSCRIPT_EDITS.map(
+    (e) =>
+      `<li><span class="kerf-f34-edits__ts">${esc(e.atLabel)}</span> · <strong>${esc(e.originalToken)}</strong> → <strong>${esc(e.currentToken)}</strong> · ${esc(e.source)}</li>`,
+  ).join('');
+
+  const segmentsHtml = buildSegmentsHtml(r);
+
+  const legendHtml =
+    r.source === 'mock'
+      ? `<div class="kerf-f34-legend" aria-label="Highlight legend">
+      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--corrected"></span> Corrected low-confidence</span>
+      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--lowconf"></span> Low confidence</span>
+      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--gap"></span> Missing detail</span>
+    </div>`
+      : `<p class="kerf-f34-muted">Demo token highlights are disabled for handoff text (plain copy only). Use the built-in sample path without handoff to see overlays.</p>`;
+
+  const editsBody =
+    r.source === 'handoff'
+      ? `<p class="kerf-f34-muted">No operator edit overlays are recorded for this handoff session yet.</p>`
+      : `<ol class="kerf-f34-edits__list">${editsList}</ol>`;
+
+  const handoffBanner =
+    r.source === 'handoff'
+      ? `<div class="kerf-f34-callout kerf-f34-callout--handoff" role="status">
+    <p>Loaded <strong>F-33 handoff</strong> from <code>${esc(FIELD_CAPTURE_HANDOFF_STORAGE_KEY)}</code>. Project and transcript fields below reflect that payload until you clear sessionStorage.</p>
+  </div>`
+      : '';
+
+  const locationBlock =
+    r.locationLine.length > 0 ? `<p class="kerf-f34-muted">${esc(r.locationLine)}</p>` : '';
+  const workflowBlock =
+    r.workflowLabel.length > 0 ? `<p class="kerf-f34-muted">${esc(r.workflowLabel)}</p>` : '';
 
   const scopeRows = F34_SCOPE_ROWS.map(
     (row) => `<tr>
@@ -59,16 +101,18 @@ export function buildTranscriptReviewMainHtml(): string {
     <div class="kerf-f34-pagehead__row">
       <div>
         <p class="kerf-f34-kicker">Project / client</p>
-        <p class="kerf-f34-strong">${esc(F34_CAPTURE_META.projectLabel)}</p>
-        <p class="kerf-f34-muted">${esc(F34_CAPTURE_META.clientLabel)}</p>
+        <p class="kerf-f34-strong">${esc(r.projectLabel)}</p>
+        <p class="kerf-f34-muted">${esc(r.clientLabel)}</p>
+        ${locationBlock}
+        ${workflowBlock}
       </div>
       <div>
         <p class="kerf-f34-kicker">Capture source</p>
-        <p class="kerf-f34-strong">${esc(F34_CAPTURE_META.captureSource)}</p>
+        <p class="kerf-f34-strong">${esc(r.captureSource)}</p>
       </div>
       <div>
         <p class="kerf-f34-kicker">Capture time</p>
-        <p class="kerf-f34-strong">${esc(F34_CAPTURE_META.captureTimeDisplay)}</p>
+        <p class="kerf-f34-strong">${esc(r.captureTimeDisplay)}</p>
       </div>
       <div>
         <p class="kerf-f34-kicker">Status</p>
@@ -81,6 +125,7 @@ export function buildTranscriptReviewMainHtml(): string {
     </div>
   </header>
 
+  ${handoffBanner}
   <div class="kerf-f34-callout kerf-f34-callout--notice" role="note">
     <p>${esc(F34_REQUIRED_NOTICE)}</p>
   </div>
@@ -89,21 +134,17 @@ export function buildTranscriptReviewMainHtml(): string {
   <section class="kerf-f34-panel" aria-labelledby="kerf-f34-transcript-h">
     <h2 id="kerf-f34-transcript-h" class="kerf-f34-h2">Transcript panel · transcript_current</h2>
     <p class="kerf-f34-prose">Kerf wraps confidence, edits, and scope extraction. <strong>transcript_original</strong> stays immutable below; what you read here is <strong>transcript_current</strong> (working text with overlays applied).</p>
-    <div class="kerf-f34-legend" aria-label="Highlight legend">
-      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--corrected"></span> Corrected low-confidence</span>
-      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--lowconf"></span> Low confidence</span>
-      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--gap"></span> Missing detail</span>
-    </div>
+    ${legendHtml}
     <div class="kerf-f34-transcript-wrap">
       ${segmentsHtml}
     </div>
     <section class="kerf-f34-edits" aria-label="transcript_edits · operator overlay events">
       <h3 class="kerf-f34-h3">transcript_edits (audit overlay)</h3>
-      <ol class="kerf-f34-edits__list">${editsList}</ol>
+      ${editsBody}
     </section>
     <details class="kerf-f34-original">
       <summary>transcript_original (immutable source artifact)</summary>
-      <pre class="kerf-f34-original__pre" role="document">${esc(F34_TRANSCRIPT_ORIGINAL)}</pre>
+      <pre class="kerf-f34-original__pre" role="document">${esc(r.transcriptOriginal)}</pre>
       <p class="kerf-f34-muted">This text is never overwritten in the UI — only copied from capture. Corrections live as events and in transcript_current.</p>
     </details>
   </section>
