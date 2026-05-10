@@ -10,6 +10,7 @@ import {
   renderF35DraftReviewPage,
   type F35DraftReviewFixture,
 } from '../src/examples/f35-draft-review.ts';
+import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../src/demo/verticalSliceFlowIds.js';
 
 const HTML_PATH = new URL('../src/examples/f35-draft-review.html', import.meta.url);
 
@@ -149,6 +150,21 @@ test('F-35 continue actions expose Decision Card, More Info, and Back to Transcr
   assert.match(html, /Back to Transcript/);
 });
 
+test('F-35 demo fixture decision_id matches vertical-slice spine packet id', () => {
+  assert.equal(f35DraftReviewDemoFixture.decision_id, VERTICAL_SLICE_FLOW_PACKET_ID);
+});
+
+test('F-35 v15 shell option uses path transcript link and v15 nav on spine links', () => {
+  const html = renderF35DraftReviewPage(f35DraftReviewDemoFixture, { v15Shell: true });
+  const decisionHref = `/decisions/${encodeURIComponent(VERTICAL_SLICE_FLOW_PACKET_ID)}`;
+  assert.ok(html.includes(`href="${escapeHtml(decisionHref)}"`), 'Open Decision href must target spine packet id');
+  assert.match(html, /data-kerf-f35-action="open-decision" data-kerf-v15-nav="true"/);
+  assert.match(
+    html,
+    /href="\/transcript-review"[^>]*data-kerf-f35-action="back-to-transcript" data-kerf-v15-nav="true"/,
+  );
+});
+
 test('F-35 fixture stores money as integer cents only', () => {
   for (const line of f35DraftReviewDemoFixture.scope_lines) {
     assert.equal(
@@ -202,7 +218,11 @@ test('F-35 static demo HTML has no inline scripts or fetch handlers', () => {
 
 test('F-35 static demo HTML mirrors renderer route and links /decisions/[id]', () => {
   const staticHtml = readFileSync(HTML_PATH, 'utf8');
-  assert.match(staticHtml, /href="\/decisions\/demo-decision-001"/);
+  assert.ok(
+    staticHtml.includes(`href="/decisions/${VERTICAL_SLICE_FLOW_PACKET_ID}"`),
+    'expected static HTML Open Decision link to use vertical-slice spine packet id',
+  );
+  assert.doesNotMatch(staticHtml, /demo-decision-001/);
   assert.match(staticHtml, /href="\/transcript-review"/);
   assert.match(staticHtml, /data-kerf-f35-action="open-decision"/);
 });

@@ -1,4 +1,5 @@
 import type { ValidatorResult } from '../../altitude/types.js';
+import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../../demo/verticalSliceFlowIds.js';
 import { formatDisplayDollarsFromCents } from '../f35-draft-review.js';
 import type { F36DecisionCardModel } from './f36-decision-mock.js';
 import { f36ExternalSendAllowed } from './f36-decision-mock.js';
@@ -68,8 +69,14 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
   const srcStatusValue = srcStatusRaw === '' ? '—' : esc(srcStatusRaw);
   const idSafe = routeDecisionId.replace(/[^a-zA-Z0-9_-]/g, '_');
   const idBase = `kerf-f36-${idSafe}`;
-  const altitudePacketId = packet.packet_id;
-  const auditHref = `/audit/${encodeURIComponent(altitudePacketId)}`;
+  /** Audit deep-link always uses the spine flow packet id (same as nav + F-37 resolve). */
+  const auditFlowPacketId = VERTICAL_SLICE_FLOW_PACKET_ID;
+  const auditHref = `/audit/${encodeURIComponent(auditFlowPacketId)}`;
+  const systemRail = packet.system_final_blackboard_rail;
+  const systemRailLabel = systemRail !== undefined ? esc(systemRail) : '—';
+  const systemSourceStatus = packet.system_source_status;
+  const systemSourceStatusLabel =
+    systemSourceStatus !== undefined ? esc(systemSourceStatus) : '—';
 
   const validators = gate.validator_results
     .map((v) => {
@@ -97,7 +104,7 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
       <span class="kerf-v15-f36-pill">${esc(client)}</span>
       <span class="kerf-v15-f36-pill kerf-v15-f36-pill--muted">Project <code>${esc(String(project))}</code></span>
       <span class="kerf-v15-f36-pill">Route id <code>${esc(routeDecisionId)}</code></span>
-      <span class="kerf-v15-f36-pill kerf-v15-f36-pill--muted">Altitude packet <code>${esc(altitudePacketId)}</code></span>
+      <span class="kerf-v15-f36-pill kerf-v15-f36-pill--muted">Spine packet <code>${esc(auditFlowPacketId)}</code></span>
     </p>
     <dl class="kerf-v15-f36-dl">
       <div><dt>Workflow (surface)</dt><dd><code>${esc(surfaceWorkflow)}</code> · packet workflow <code>${esc(packet.workflow)}</code></dd></div>
@@ -118,6 +125,8 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
         <dt>system_final_altitude</dt>
         <dd><span class="kerf-v15-f36-alt">${esc(packet.system_final_altitude)}</span></dd>
       </div>
+      <div><dt>system_final_blackboard_rail</dt><dd><code>${systemRailLabel}</code></dd></div>
+      <div><dt>system_source_status</dt><dd><code>${systemSourceStatusLabel}</code></dd></div>
       <div><dt>safe_next_action</dt><dd><code>${esc(gate.safe_next_action)}</code></dd></div>
       <div><dt>required_human_approval</dt><dd>${gate.required_human_approval ? 'Yes' : 'No'}</dd></div>
       <div><dt>external_send_allowed</dt><dd>${extAllowed ? 'Yes (demo gate output)' : 'No'}</dd></div>
@@ -184,7 +193,7 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
       <button type="button" class="kerf-v15-btn kerf-v15-btn--primary" disabled title="Demo only">Approve Draft</button>
       <button type="button" class="kerf-v15-btn" disabled title="Demo only">Reject</button>
       <button type="button" class="kerf-v15-btn" disabled title="Demo only">Request More Info</button>
-      <a class="kerf-v15-btn" href="${auditHref}" data-kerf-v15-nav="true" title="Opens read-only audit stream for packet ${esc(altitudePacketId)}">Open Audit</a>
+      <a class="kerf-v15-btn" href="${auditHref}" data-kerf-v15-nav="true" title="Opens read-only audit stream for spine packet ${esc(auditFlowPacketId)}">Open Audit</a>
     </div>
   </section>
 </article>`;

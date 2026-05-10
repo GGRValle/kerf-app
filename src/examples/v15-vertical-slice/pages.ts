@@ -8,6 +8,7 @@ import { F35_AI_NOTICE, f35DraftReviewDemoFixture, renderF35DraftReviewPage } fr
 import { FIELD_CAPTURE_COPY } from '../field-capture-mock.js';
 import { buildTranscriptReviewMainHtml, buildTranscriptReviewRailHtml } from './f34-transcript-review-html.js';
 import { F34_REQUIRED_NOTICE } from './f34-transcript-review-mock.js';
+import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../../demo/verticalSliceFlowIds.js';
 import { buildF36DecisionCardHtml } from './f36-decision-card-html.js';
 import { f36ModelForRouteId } from './f36-decision-mock.js';
 import { DEMO_DECISION_ID, DEMO_PACKET_ID } from './mock.js';
@@ -79,10 +80,21 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
 <p><a class="kerf-v15-btn" href="/decisions/${esc(DEMO_DECISION_ID)}" data-kerf-v15-nav="true">Open demo decision</a></p>`,
       };
     case 'decision-detail': {
+      const spineId = VERTICAL_SLICE_FLOW_PACKET_ID;
+      if (route.id !== spineId) {
+        return {
+          title: 'Decision route',
+          subtitle: 'This demo only mounts F-36 on the vertical-slice spine packet id.',
+          notice: 'AI-assisted. Review before approval.',
+          bodyHtml: `<p class="kerf-v15-prose">The URL <code>${esc(route.id)}</code> is not the spine flow packet for this shell. Use the canonical id so audit and decisions stay aligned.</p>
+<p class="kerf-v15-prose">Spine packet: <code>${esc(spineId)}</code></p>
+<p><a class="kerf-v15-btn kerf-v15-btn--primary" href="/decisions/${esc(spineId)}" data-kerf-v15-nav="true">Open approval card (spine)</a></p>`,
+        };
+      }
       const f36 = f36ModelForRouteId(route.id);
       return {
         title: f36.decisionTitle,
-        subtitle: `Approval card · ${esc(f36.packet.extracted_facts.client_name ?? 'Client')} · route <code>${esc(route.id)}</code>`,
+        subtitle: `Approval card · ${esc(f36.packet.extracted_facts.client_name ?? 'Client')} · spine route <code>${esc(spineId)}</code>`,
         notice: 'Approval required before any external send. AI-assisted. Review before approval.',
         bodyHtml: buildF36DecisionCardHtml(f36, route.id),
         railHtml: `<aside class="kerf-v15-rail" aria-label="Review context">

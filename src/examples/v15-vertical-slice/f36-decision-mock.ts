@@ -187,6 +187,10 @@ export const F36_DEFAULT_MODEL: F36DecisionCardModel = {
   ],
 };
 
+/**
+ * Returns the F-36 demo model. Call only when `route.id === VERTICAL_SLICE_FLOW_PACKET_ID`
+ * (enforced in `pages.ts`) so the card, spine links, and `/audit/*` target stay coherent.
+ */
 export function f36ModelForRouteId(_id: string): F36DecisionCardModel {
   return F36_DEFAULT_MODEL;
 }

@@ -11,6 +11,8 @@
  *   at the render boundary and never used as storage.
  */
 
+import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../demo/verticalSliceFlowIds.js';
+
 /** Money is always integer cents at this boundary; floats are forbidden. */
 export type Cents = number;
 
@@ -454,6 +456,6 @@ export const f35DraftReviewDemoFixture: F35DraftReviewFixture = {
     'unsupported_pricing',
     'external_send_requires_approval',
   ],
-  decision_id: 'demo-decision-001',
+  decision_id: VERTICAL_SLICE_FLOW_PACKET_ID,
   transcript_route: '/transcript-review',
 };
