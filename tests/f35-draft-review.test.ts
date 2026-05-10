@@ -9,6 +9,7 @@ import {
   formatDisplayDollarsFromCents,
   renderF35DraftReviewPage,
   type F35DraftReviewFixture,
+  type F35RenderOptions,
 } from '../src/examples/f35-draft-review.ts';
 
 const HTML_PATH = new URL('../src/examples/f35-draft-review.html', import.meta.url);
@@ -191,6 +192,130 @@ test('F-35 source module avoids fetch, Platform contracts, and Policy Gate calls
   assert.equal(/contracts\/platform/.test(src), false);
   assert.equal(/runPolicyGate/.test(src), false);
   assert.equal(/createStubPlatformClient/.test(src), false);
+});
+
+// ---------------------------------------------------------------------------
+// v15Shell option — guards `f056aa7` (renderer accepts v15 shell link options).
+// The renderer must keep its single-arg call shape working unchanged AND emit
+// in-shell nav markers when embedded under the V1.5 History API shell. These
+// tests do not import any v15 scaffold module — they only assert against the
+// F-35 renderer's own output strings.
+// ---------------------------------------------------------------------------
+
+test('F-35 v15Shell · single-arg call shape is preserved (no options arg)', () => {
+  const oneArg = renderF35DraftReviewPage(f35DraftReviewDemoFixture);
+  const emptyOptions = renderF35DraftReviewPage(f35DraftReviewDemoFixture, {});
+  const explicitFalse = renderF35DraftReviewPage(f35DraftReviewDemoFixture, { v15Shell: false });
+  assert.equal(oneArg, emptyOptions, 'one-arg and {} call must produce identical HTML');
+  assert.equal(oneArg, explicitFalse, 'one-arg and { v15Shell: false } must produce identical HTML');
+});
+
+test('F-35 v15Shell · default mode emits no v15 nav-interception attribute', () => {
+  const html = renderF35DraftReviewPage(f35DraftReviewDemoFixture);
+  assert.doesNotMatch(html, /data-kerf-v15-nav=/);
+});
+
+test('F-35 v15Shell · v15Shell: true marks both anchor actions as in-shell nav', () => {
+  const html = renderF35DraftReviewPage(f35DraftReviewDemoFixture, { v15Shell: true });
+  const navMarkers = html.match(/data-kerf-v15-nav="true"/g) ?? [];
+  assert.equal(
+    navMarkers.length,
+    2,
+    'v15Shell mode must mark exactly two action anchors (open-decision + back-to-transcript)',
+  );
+  assert.match(
+    html,
+    /<a[^>]*data-kerf-f35-action="open-decision"[^>]*data-kerf-v15-nav="true"/,
+    'Open Decision Card anchor must carry the v15 nav marker',
+  );
+  assert.match(
+    html,
+    /<a[^>]*data-kerf-f35-action="back-to-transcript"[^>]*data-kerf-v15-nav="true"/,
+    'Back to Transcript anchor must carry the v15 nav marker',
+  );
+});
+
+test('F-35 v15Shell · v15Shell: true does not mark the inert Request More Info button', () => {
+  const html = renderF35DraftReviewPage(f35DraftReviewDemoFixture, { v15Shell: true });
+  assert.doesNotMatch(
+    html,
+    /<button[^>]*data-kerf-f35-action="request-more-info"[^>]*data-kerf-v15-nav=/,
+    'the mock-only button must stay inert (no v15 nav marker)',
+  );
+});
+
+test('F-35 v15Shell · v15Shell: true forces transcript link to /transcript-review even if fixture overrides', () => {
+  const fixture: F35DraftReviewFixture = {
+    ...f35DraftReviewDemoFixture,
+    transcript_route: '/some/other/transcript/path?ignored=1',
+  };
+
+  const defaultHtml = renderF35DraftReviewPage(fixture);
+  assert.match(
+    defaultHtml,
+    /href="\/some\/other\/transcript\/path\?ignored=1"/,
+    'default mode must honor the fixture-supplied transcript_route',
+  );
+
+  const v15Html = renderF35DraftReviewPage(fixture, { v15Shell: true });
+  assert.match(
+    v15Html,
+    /<a\b[^>]*\bhref="\/transcript-review"[^>]*\bdata-kerf-f35-action="back-to-transcript"/,
+    'v15Shell mode must pin the transcript anchor to /transcript-review',
+  );
+  assert.doesNotMatch(
+    v15Html,
+    /\/some\/other\/transcript\/path/,
+    'v15Shell mode must not leak the fixture-supplied transcript_route',
+  );
+});
+
+test('F-35 v15Shell · v15Shell: true preserves canonical route marker, AI notice, and full surface', () => {
+  const html = renderF35DraftReviewPage(f35DraftReviewDemoFixture, { v15Shell: true });
+  assert.match(html, /data-kerf-f35-route="\/draft-review"/);
+  assert.match(html, /data-kerf-f35-ai-notice="true"/);
+  assert.ok(
+    html.includes(escapeHtml(F35_AI_NOTICE)),
+    'AI/source notice copy must still appear in v15Shell mode',
+  );
+  assert.match(html, /<section class="kerf-f35-section kerf-f35-summary"/);
+  assert.match(html, /<section class="kerf-f35-section kerf-f35-scope"/);
+  assert.match(html, /<section class="kerf-f35-section kerf-f35-source-refs"/);
+  assert.match(html, /<section class="kerf-f35-section kerf-f35-assumptions"/);
+  assert.match(html, /<section class="kerf-f35-section kerf-f35-unsafe kerf-f35-unsafe--blocked"/);
+});
+
+test('F-35 v15Shell · Open Decision Card href is unchanged across modes', () => {
+  const decisionHref = `/decisions/${encodeURIComponent(f35DraftReviewDemoFixture.decision_id)}`;
+  const defaultHtml = renderF35DraftReviewPage(f35DraftReviewDemoFixture);
+  const v15Html = renderF35DraftReviewPage(f35DraftReviewDemoFixture, { v15Shell: true });
+  for (const html of [defaultHtml, v15Html]) {
+    assert.ok(
+      html.includes(`href="${escapeHtml(decisionHref)}"`),
+      'decision-card href must stay /decisions/[id] in both modes (only link semantics change)',
+    );
+  }
+});
+
+test('F-35 v15Shell · F35RenderOptions is exported and shaped { v15Shell?: boolean }', () => {
+  const options: F35RenderOptions = { v15Shell: true };
+  assert.equal(options.v15Shell, true);
+  const empty: F35RenderOptions = {};
+  assert.equal(empty.v15Shell, undefined);
+});
+
+test('F-35 v15Shell · source module imports no v15 scaffold modules', () => {
+  const src = readFileSync(new URL('../src/examples/f35-draft-review.ts', import.meta.url), 'utf8');
+  assert.equal(
+    /from\s+['"][^'"]*v15-vertical-slice/.test(src),
+    false,
+    'F-35 must not import from any v15-vertical-slice scaffold module',
+  );
+  assert.equal(
+    /from\s+['"]\.\.\/demo\//.test(src),
+    false,
+    'F-35 must not import from ../demo/ scaffold (untracked WIP boundary)',
+  );
 });
 
 test('F-35 static demo HTML has no inline scripts or fetch handlers', () => {
