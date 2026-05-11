@@ -45,6 +45,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # V1.5 vertical slice introduces bundle-dependent smoke tests
+      # (tests/v15-vertical-slice-pages.test.ts:"V1.5 spine wiring sources
+      # omit legacy demo-decision-001" and
+      # tests/v15-vertical-slice-8010-http-smoke.test.ts) that read
+      # src/examples/v15-vertical-slice/app.bundle.js, which is gitignored.
+      # Build it before running tests so CI has the same source set as a
+      # local `npm run demo:v15-vertical-slice` run.
+      - name: Build V1.5 demo bundle
+        run: npm run demo:v15-vertical-slice:esbuild
+
       - name: Run tests
         run: npm test
 
