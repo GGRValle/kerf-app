@@ -25,6 +25,7 @@ export type WorkflowKind =
   | 'invoice_followup'
   | 'proposal_generation'
   | 'proposal_followup'
+  | 'field_capture'
   | 'drift_detection'
   | 'intake'
   | 'compliance'

@@ -2,7 +2,12 @@
  * Canonical vertical-slice mocks (Agent 7). Import from `@kerf/core` via `./demo/index.js`.
  */
 
-import type { ISO8601 } from '../blackboard/index.js';
+import type { ISO8601, SourceRef } from '../blackboard/index.js';
+import {
+  dryRunFieldCaptureDecision,
+  type FieldCaptureInput,
+} from '../workflows/index.js';
+import { ACTORS } from '../test-fixtures/index.js';
 import type {
   BlackboardWritePreview,
   DraftReviewLine,
@@ -15,12 +20,122 @@ import type {
   VerticalSliceModelMetadata,
   VerticalSlicePolicyGateResult,
   VerticalSliceSourceRef,
+  VerticalSliceDryRunDemoFixture,
   VerticalSliceUiDecisionPacket,
   VerticalSliceValidatorResult,
 } from './types.js';
+import { fieldCaptureDryRunToVerticalSliceDemoFixture } from './verticalSliceDryRunMapper.js';
 import { VERTICAL_SLICE_FLOW_ALT_PACKET_ID, VERTICAL_SLICE_FLOW_PACKET_ID } from './verticalSliceFlowIds.js';
 
 const ISO = (s: string): ISO8601 => s;
+
+export const VERTICAL_SLICE_FIELD_CAPTURE_EVALUATED_AT = ISO('2026-05-10T16:10:00.000Z');
+
+const transcriptSourceRef: SourceRef = {
+  kind: 'transcript',
+  uri: 'kerf://tenant/tenant_ggr/evidence/transcripts/transcript_vertical_slice_001.txt',
+  excerpt: 'Pantry shelf should be twelf inches deep per plan.',
+};
+
+const photoSourceRef: SourceRef = {
+  kind: 'photo',
+  uri: 'kerf://tenant/tenant_ggr/evidence/photos/pantry_rough_opening_001.jpg',
+  excerpt: 'Pantry rough opening and face-frame condition.',
+};
+
+export const verticalSliceFieldCaptureInput: FieldCaptureInput = {
+  capture_id: 'field_capture_vertical_slice_001',
+  tenant_id: 'tenant_ggr',
+  project_id: 'proj-valle-kitchen-204',
+  evidence_id: 'evidence_voice_vertical_slice_001',
+  transcript_id: 'transcript_vertical_slice_001',
+  transcript_original:
+    'Pantry shelf should be twelf inches deep per plan. Rough opening matches framing sheet F-12.',
+  transcript_segments: [
+    {
+      segment_id: 'seg-001',
+      transcript_id: 'transcript_vertical_slice_001',
+      text: 'Pantry shelf should be twelf inches deep per plan.',
+      start_ms: 0,
+      end_ms: 4_200,
+      speaker_label: 'Field lead',
+      source_ref: transcriptSourceRef,
+    },
+    {
+      segment_id: 'seg-002',
+      transcript_id: 'transcript_vertical_slice_001',
+      text: 'Rough opening matches framing sheet F-12.',
+      start_ms: 4_500,
+      end_ms: 9_000,
+      speaker_label: 'Field lead',
+      source_ref: photoSourceRef,
+    },
+  ],
+  transcript_edits: [
+    {
+      edit_id: 'edit-001',
+      transcript_id: 'transcript_vertical_slice_001',
+      segment_id: 'seg-001',
+      edited_at: ISO('2026-05-10T15:01:00.000Z'),
+      edited_by: ACTORS.office.id,
+      operation: 'replace_text',
+      before_text: 'twelf',
+      after_text: 'twelve',
+      reason: 'operator_typo',
+      source_ref: transcriptSourceRef,
+    },
+  ],
+  transcript_language: 'en',
+  transcript_confidence: 0.82,
+  scope_lines: [
+    {
+      line_id: 'scope-pantry-01',
+      description: 'Adjust pantry shelf depth to match verified field measure.',
+      area: 'pantry',
+      trade: 'carpentry',
+      quantity: 1,
+      unit: 'ea',
+      source_segment_ids: ['seg-001', 'seg-002'],
+      source_refs: [transcriptSourceRef, photoSourceRef],
+    },
+    {
+      line_id: 'scope-trim-02',
+      description: 'Review pantry face-frame trim after shelf depth correction.',
+      area: 'pantry',
+      trade: 'finish',
+      quantity: 8,
+      unit: 'lf',
+      source_segment_ids: ['seg-002'],
+      source_refs: [photoSourceRef],
+    },
+  ],
+  captured_at: ISO('2026-05-10T14:22:00.000Z'),
+  captured_by: ACTORS.fieldSuper,
+  capture_surface: 'mobile_shell',
+  jurisdiction: 'US-CA',
+  source_refs: [transcriptSourceRef, photoSourceRef],
+  review_focus: 'pantry field capture and draft review',
+};
+
+export function createVerticalSliceFieldCaptureDemoFixture(
+  packetId = VERTICAL_SLICE_FLOW_PACKET_ID,
+): VerticalSliceDryRunDemoFixture {
+  const dryRun = dryRunFieldCaptureDecision(verticalSliceFieldCaptureInput, {
+    evaluated_at: VERTICAL_SLICE_FIELD_CAPTURE_EVALUATED_AT,
+    packet_id: packetId,
+    gate_run_id: 'gate_vertical_slice_field_capture_001',
+    model_suggested_altitude: 'L1',
+  });
+
+  return fieldCaptureDryRunToVerticalSliceDemoFixture(dryRun, {
+    project_name: 'Valle - Kitchen + pantry refresh',
+    client_name: 'Valle household',
+    title: 'Field capture - pantry depth review',
+  });
+}
+
+export const verticalSliceFieldCaptureDemoFixture: VerticalSliceDryRunDemoFixture =
+  createVerticalSliceFieldCaptureDemoFixture();
 
 const refVoice: VerticalSliceSourceRef = {
   id: 'sr-voice-001',
@@ -52,9 +167,9 @@ const refQbo: VerticalSliceSourceRef = {
 
 /** Audit/settings only — not shown as “powered by” marketing chrome. */
 export const mockModelMetadata: VerticalSliceModelMetadata = {
-  model_family: 'Llama',
-  model_provider: 'Groq',
-  model_route: 'tier1_fast',
+  model_family: 'audit_redacted',
+  model_provider: 'audit_redacted',
+  model_route: 'mock',
 };
 
 const segmentsOriginal: readonly TranscriptSegment[] = [

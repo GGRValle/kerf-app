@@ -12,6 +12,7 @@
 
 import type { Cents, ISO8601 } from '../blackboard/index.js';
 import type { AltitudeLevel, SafeNextAction } from '../altitude/types.js';
+import type { FieldCaptureDryRunResult } from '../workflows/index.js';
 
 export type { AltitudeLevel, SafeNextAction };
 
@@ -139,6 +140,7 @@ export type DisclaimerVariant = (typeof DISCLAIMER_VARIANTS)[number];
  */
 export interface VerticalSliceUiDecisionPacket {
   id: string;
+  altitude_packet_id?: string;
   workflow: VerticalSliceWorkflow;
   title: string;
   project_id: string;
@@ -151,6 +153,11 @@ export interface VerticalSliceUiDecisionPacket {
   requires_human_approval: boolean;
   external_send_allowed: boolean;
   blocked_reasons: readonly string[];
+  money_fields?: {
+    amount_cents: Cents | null;
+    source_class: string | null;
+    source_status: string | null;
+  };
   source_refs: readonly VerticalSliceSourceRef[];
   validator_results: readonly VerticalSliceValidatorResult[];
   ai_assisted: boolean;
@@ -193,9 +200,37 @@ export interface FieldCaptureDemoPayload {
 }
 
 export interface BlackboardWritePreview {
+  mode?: 'preview_only';
+  persistence_performed?: false;
   rail: string;
   summary: string;
   proposed_markdown: string;
   affected_entity_ids: readonly string[];
   source_refs: readonly VerticalSliceSourceRef[];
+}
+
+export interface VerticalSliceDraftReviewPayload {
+  workflow: VerticalSliceWorkflow;
+  project_id: string;
+  scope_lines: readonly ScopeLine[];
+  draft_lines: readonly DraftReviewLine[];
+}
+
+export interface VerticalSliceDryRunDemoFixture {
+  workflow: 'field_capture';
+  field_capture_input: FieldCaptureDryRunResult['field_capture_input'];
+  transcript_review_payload: FieldCaptureDryRunResult['transcript_review_payload'];
+  draft_review_payload: FieldCaptureDryRunResult['draft_review_payload'];
+  altitude_packet: FieldCaptureDryRunResult['altitude_packet'];
+  policy_gate_result: FieldCaptureDryRunResult['policy_gate_result'];
+  decision_packet_raw: FieldCaptureDryRunResult['decision_packet'];
+  audit_event_preview: FieldCaptureDryRunResult['audit_event_preview'];
+  field_capture_payload: FieldCaptureDemoPayload;
+  draft_review_payload_ui: VerticalSliceDraftReviewPayload;
+  decision_packet: VerticalSliceUiDecisionPacket;
+  source_refs: readonly VerticalSliceSourceRef[];
+  validator_results: readonly VerticalSliceValidatorResult[];
+  audit_timeline: readonly VerticalSliceAuditEvent[];
+  audit_events: readonly VerticalSliceAuditEvent[];
+  blackboard_write_preview: BlackboardWritePreview;
 }
