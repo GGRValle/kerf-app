@@ -32,6 +32,7 @@ const WORKFLOW_BASELINES: Readonly<Record<AltitudeWorkflowKind, AltitudeLevel>> 
   proposal_followup: 'L2',
   drift_detection: 'L1',
   proposal_generation: 'L2',
+  field_capture: 'L2',
   intake: 'L2',
   memory_promotion: 'L2',
   voice_tour: 'L2',
