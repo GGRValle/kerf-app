@@ -2,6 +2,10 @@ node_modules/
 dist/
 .DS_Store
 src/examples/w1-decision-queue-demo.bundle.js
+src/examples/v15-vertical-slice/app.bundle.js
+src/field-capture/field-capture.bundle.js
+src/transcript-review/transcript-review.bundle.js
+src/examples/audit-f37/audit-f37-demo.bundle.js
 
 # Local environment + secrets — never enter canon history.
 # .env.local.example is the public template (tracked); real .env.local is local-only.

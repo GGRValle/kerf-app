@@ -19,6 +19,7 @@ test('altitude module exposes Validator Spec v0.3 closed vocabularies', () => {
     'invoice_followup',
     'proposal_followup',
     'proposal_generation',
+    'field_capture',
     'drift_detection',
     'intake',
     'compliance',

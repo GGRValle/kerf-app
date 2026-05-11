@@ -39,13 +39,14 @@ import type {
 /**
  * Workflows that emit gate-audit events. V1: invoice_followup, proposal_followup,
  * drift_detection (Thread 4 gated seams) plus proposal_generation (Thread 5
- * Estimator runner — see src/runner/).
+ * Estimator runner — see src/runner/) and field_capture dry-run previews.
  */
 export type GatedWorkflowName =
   | 'invoice_followup'
   | 'proposal_followup'
   | 'drift_detection'
-  | 'proposal_generation';
+  | 'proposal_generation'
+  | 'field_capture';
 
 /**
  * Payload shape for the `decision.surfaced` event emitted by every `gated*`
@@ -131,7 +132,8 @@ export function buildGateAuditEvent(opts: BuildGateAuditEventOpts): GateAuditEve
     workflow !== 'invoice_followup' &&
     workflow !== 'proposal_followup' &&
     workflow !== 'drift_detection' &&
-    workflow !== 'proposal_generation'
+    workflow !== 'proposal_generation' &&
+    workflow !== 'field_capture'
   ) {
     throw new Error(
       `buildGateAuditEvent: unsupported workflow "${decision.workflow}". ` +

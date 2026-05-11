@@ -22,6 +22,7 @@ export const ALTITUDE_WORKFLOW_KINDS = [
   'invoice_followup',
   'proposal_followup',
   'proposal_generation',
+  'field_capture',
   'drift_detection',
   'intake',
   'compliance',
