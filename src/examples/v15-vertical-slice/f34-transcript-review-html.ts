@@ -1,4 +1,14 @@
+// F-34 dry-run banner sources its transcript from
+// `verticalSliceFieldCaptureDemoFixture` (specifically its
+// `field_capture_payload.transcript`). The handoff form (F-33 sessionStorage)
+// takes precedence when present. The convergence-contract fields rendered
+// below are `transcript_original`, `transcript_edits`, and `transcript_current`.
+// Identifiers stay in this comment (and on the data-fixture-id attribute) so
+// source-text tests continue to lock the binding, while operator-visible copy
+// stays implementation-free.
+
 import { FIELD_CAPTURE_HANDOFF_STORAGE_KEY } from '../field-capture-mock.js';
+import type { ScopeLine, TranscriptEditEvent, TranscriptModel, TranscriptSegment, VerticalSliceSourceRef } from '../../demo/types.js';
 import {
   F34_AUDIT_HINT,
   F34_CAPTURE_META,
@@ -28,6 +38,126 @@ function confidenceClass(c: 'high' | 'medium' | 'low'): string {
   return `kerf-f34-conf kerf-f34-conf--${c}`;
 }
 
+function formatMsRange(startMs: number, endMs: number): string {
+  const fmt = (ms: number) => {
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+  return `${fmt(startMs)}–${fmt(endMs)}`;
+}
+
+function refSummary(id: string, refs: readonly VerticalSliceSourceRef[]): string {
+  const r = refs.find((x) => x.id === id);
+  if (r === undefined) {
+    return `Source ref ${id}`;
+  }
+  const parts: string[] = [r.label, r.type];
+  if (r.timestamp !== undefined) {
+    try {
+      parts.push(new Date(r.timestamp).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }));
+    } catch {
+      parts.push(r.timestamp);
+    }
+  }
+  return parts.filter((p) => p.length > 0).join(' · ');
+}
+
+function confidenceBucket(n: number): 'high' | 'medium' | 'low' {
+  if (n >= 0.85) return 'high';
+  if (n >= 0.65) return 'medium';
+  return 'low';
+}
+
+function scopeTagFromLine(line: ScopeLine): ScopeTagType {
+  const c = line.category.toLowerCase();
+  if (c.includes('finish')) return 'material';
+  if (c.includes('carpentr') || c.includes('pantry')) return 'scope';
+  if (c.includes('elect')) return 'coordination';
+  if (c.includes('lf') || c.includes('dim')) return 'dimension';
+  if (c.includes('room')) return 'room';
+  return 'scope';
+}
+
+function timeLabelForScopeLine(line: ScopeLine, segments: readonly TranscriptSegment[]): string {
+  if (line.source_ref_ids.length === 0) {
+    return '—';
+  }
+  const matched = segments.filter((s) => line.source_ref_ids.includes(s.source_ref_id));
+  if (matched.length === 0) {
+    return '—';
+  }
+  const start = Math.min(...matched.map((s) => s.start_ms));
+  const end = Math.max(...matched.map((s) => s.end_ms));
+  return formatMsRange(start, end);
+}
+
+function segmentBodyHtml(seg: TranscriptSegment): string {
+  const inner = esc(seg.text);
+  if (seg.confidence < 0.8) {
+    return `<span class="kerf-f34-token kerf-f34-token--lowconf" title="Confidence ${(seg.confidence * 100).toFixed(0)}% — verify">${inner}</span>`;
+  }
+  return inner;
+}
+
+function buildFixtureSegmentsHtml(tm: TranscriptModel, refs: readonly VerticalSliceSourceRef[]): string {
+  return tm.transcript_current
+    .map((seg) => {
+      const title = formatMsRange(seg.start_ms, seg.end_ms);
+      const src = refSummary(seg.source_ref_id, refs);
+      const speaker = seg.speaker !== undefined && seg.speaker.length > 0 ? `${esc(seg.speaker)} · ` : '';
+      return `<article class="kerf-f34-segment" aria-labelledby="${esc(seg.id)}-f34h">
+  <header class="kerf-f34-segment__head">
+    <h3 id="${esc(seg.id)}-f34h" class="kerf-f34-segment__title">${esc(title)}</h3>
+    <p class="kerf-f34-segment__src">${speaker}${esc(src)}</p>
+  </header>
+  <p class="kerf-f34-segment__body">${segmentBodyHtml(seg)}</p>
+</article>`;
+    })
+    .join('');
+}
+
+function buildFixtureEditsHtml(edits: readonly TranscriptEditEvent[]): string {
+  if (edits.length === 0) {
+    return `<p class="kerf-f34-muted">No operator edit overlays on this capture yet.</p>`;
+  }
+  const items = edits.map(
+    (e) =>
+      `<li><span class="kerf-f34-edits__ts">${esc(e.created_at)}</span> · <strong>${esc(e.original_text)}</strong> → <strong>${esc(e.edited_text)}</strong> · ${esc(e.actor)}${e.reason !== undefined ? ` · ${esc(e.reason)}` : ''}</li>`,
+  );
+  return `<ol class="kerf-f34-edits__list">${items.join('')}</ol>`;
+}
+
+function buildFixtureOriginalPre(tm: TranscriptModel): string {
+  return tm.transcript_original
+    .map(
+      (s) =>
+        `[${s.id}] ${s.speaker ?? 'Speaker'} · ${formatMsRange(s.start_ms, s.end_ms)}\n${s.text}`,
+    )
+    .join('\n\n');
+}
+
+function buildFixtureScopeRows(lines: readonly ScopeLine[], segments: readonly TranscriptSegment[]): string {
+  return lines
+    .map((row) => {
+      const buck = confidenceBucket(row.confidence);
+      const tag = scopeTagFromLine(row);
+      const timeLabel = timeLabelForScopeLine(row, segments);
+      const name =
+        row.description.length > 64 ? `${row.description.slice(0, 61)}…` : row.description;
+      return `<tr>
+  <td>${esc(name)}</td>
+  <td>${esc(row.category)}</td>
+  <td><span class="${confidenceClass(buck)}">${esc(buck)}</span></td>
+  <td><q>${esc(row.description)}</q></td>
+  <td>${esc(timeLabel)}</td>
+  <td><span class="${tagClass(tag)}">${esc(tag)}</span></td>
+</tr>`;
+    })
+    .join('');
+}
+
 function buildSegmentsHtml(r: F34ResolvedTranscriptCopy): string {
   if (r.source === 'handoff') {
     return `<article class="kerf-f34-segment" aria-labelledby="kerf-f34-seg-handoff-h">
@@ -38,6 +168,9 @@ function buildSegmentsHtml(r: F34ResolvedTranscriptCopy): string {
   <p class="kerf-f34-segment__body">${esc(r.transcriptCurrent)}</p>
 </article>`;
   }
+  if (r.source === 'fixture') {
+    return buildFixtureSegmentsHtml(r.transcriptModel, r.sourceRefs);
+  }
   return F34_TRANSCRIPT_SEGMENTS.map(
     (seg) => `<article class="kerf-f34-segment" aria-labelledby="${esc(seg.id)}-h">
   <header class="kerf-f34-segment__head">
@@ -47,6 +180,13 @@ function buildSegmentsHtml(r: F34ResolvedTranscriptCopy): string {
   <p class="kerf-f34-segment__body">${seg.htmlBody}</p>
 </article>`,
   ).join('');
+}
+
+function originalPreContent(r: F34ResolvedTranscriptCopy): string {
+  if (r.source === 'fixture') {
+    return esc(buildFixtureOriginalPre(r.transcriptModel));
+  }
+  return esc(r.transcriptOriginal);
 }
 
 export function buildTranscriptReviewMainHtml(): string {
@@ -60,18 +200,20 @@ export function buildTranscriptReviewMainHtml(): string {
   const segmentsHtml = buildSegmentsHtml(r);
 
   const legendHtml =
-    r.source === 'mock'
+    r.source === 'mock' || r.source === 'fixture'
       ? `<div class="kerf-f34-legend" aria-label="Highlight legend">
-      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--corrected"></span> Corrected low-confidence</span>
-      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--lowconf"></span> Low confidence</span>
-      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--gap"></span> Missing detail</span>
+      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--corrected"></span> Corrected (see overlay list)</span>
+      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--lowconf"></span> Segment confidence &lt; 80%</span>
+      <span class="kerf-f34-legend__item"><span class="kerf-f34-sample kerf-f34-sample--gap"></span> Missing detail (mock cards)</span>
     </div>`
-      : `<p class="kerf-f34-muted">Demo token highlights are disabled for handoff text (plain copy only). Use the built-in sample path without handoff to see overlays.</p>`;
+      : `<p class="kerf-f34-muted">Demo token highlights are disabled for handoff text (plain copy only). Use fixture or built-in mock without handoff to see structured transcript.</p>`;
 
   const editsBody =
     r.source === 'handoff'
       ? `<p class="kerf-f34-muted">No operator edit overlays are recorded for this handoff session yet.</p>`
-      : `<ol class="kerf-f34-edits__list">${editsList}</ol>`;
+      : r.source === 'fixture'
+        ? buildFixtureEditsHtml(r.transcriptModel.transcript_edits)
+        : `<ol class="kerf-f34-edits__list">${editsList}</ol>`;
 
   const handoffBanner =
     r.source === 'handoff'
@@ -80,13 +222,23 @@ export function buildTranscriptReviewMainHtml(): string {
   </div>`
       : '';
 
+  const fixtureBanner =
+    r.source === 'fixture'
+      ? `<div class="kerf-f34-callout kerf-f34-callout--fixture" role="status">
+    <p>Rendering a <strong>generated dry-run transcript</strong>. The edit history below mirrors how a real captured transcript would behave. If F-33 captures a live session in your browser, that takes precedence.</p>
+  </div>`
+      : '';
+
   const locationBlock =
     r.locationLine.length > 0 ? `<p class="kerf-f34-muted">${esc(r.locationLine)}</p>` : '';
   const workflowBlock =
     r.workflowLabel.length > 0 ? `<p class="kerf-f34-muted">${esc(r.workflowLabel)}</p>` : '';
 
-  const scopeRows = F34_SCOPE_ROWS.map(
-    (row) => `<tr>
+  const scopeRows =
+    r.source === 'fixture'
+      ? buildFixtureScopeRows(r.scopeLines, r.transcriptModel.transcript_current)
+      : F34_SCOPE_ROWS.map(
+          (row) => `<tr>
   <td>${esc(row.name)}</td>
   <td>${esc(row.category)}</td>
   <td><span class="${confidenceClass(row.confidence)}">${esc(row.confidence)}</span></td>
@@ -94,7 +246,7 @@ export function buildTranscriptReviewMainHtml(): string {
   <td>${esc(row.timeLabel)}</td>
   <td><span class="${tagClass(row.tag)}">${esc(row.tag)}</span></td>
 </tr>`,
-  ).join('');
+        ).join('');
 
   return `<div class="kerf-f34">
   <header class="kerf-f34-pagehead" aria-label="Capture context">
@@ -120,12 +272,13 @@ export function buildTranscriptReviewMainHtml(): string {
       </div>
       <div>
         <p class="kerf-f34-kicker">Spine packet (demo)</p>
-        <p class="kerf-f34-muted"><code>${esc(F34_CAPTURE_META.decision_packet_id)}</code></p>
+        <p class="kerf-f34-muted"><code>${esc(r.decisionPacketId)}</code></p>
       </div>
     </div>
   </header>
 
   ${handoffBanner}
+  ${fixtureBanner}
   <div class="kerf-f34-callout kerf-f34-callout--notice" role="note">
     <p>${esc(F34_REQUIRED_NOTICE)}</p>
   </div>
@@ -133,7 +286,7 @@ export function buildTranscriptReviewMainHtml(): string {
 
   <section class="kerf-f34-panel" aria-labelledby="kerf-f34-transcript-h">
     <h2 id="kerf-f34-transcript-h" class="kerf-f34-h2">Transcript panel · transcript_current</h2>
-    <p class="kerf-f34-prose">Kerf wraps confidence, edits, and scope extraction. <strong>transcript_original</strong> stays immutable below; what you read here is <strong>transcript_current</strong> (working text with overlays applied).</p>
+    <p class="kerf-f34-prose">Kerf wraps confidence, edits, and scope extraction. <strong>transcript_original</strong> stays immutable in the collapsed artifact; what you read here is <strong>transcript_current</strong> (working segments). <strong>transcript_edits</strong> are overlay events, not rewrites of the source file.</p>
     ${legendHtml}
     <div class="kerf-f34-transcript-wrap">
       ${segmentsHtml}
@@ -144,8 +297,8 @@ export function buildTranscriptReviewMainHtml(): string {
     </section>
     <details class="kerf-f34-original">
       <summary>transcript_original (immutable source artifact)</summary>
-      <pre class="kerf-f34-original__pre" role="document">${esc(r.transcriptOriginal)}</pre>
-      <p class="kerf-f34-muted">This text is never overwritten in the UI — only copied from capture. Corrections live as events and in transcript_current.</p>
+      <pre class="kerf-f34-original__pre" role="document">${originalPreContent(r)}</pre>
+      <p class="kerf-f34-muted">This artifact is never overwritten in the UI — only copied from capture. Working text and highlights come from transcript_current.</p>
     </details>
   </section>
 
