@@ -4,7 +4,14 @@ import {
   buildF37UnknownPacketHtml,
   resolveF37Packet,
 } from '../audit-f37/f37-audit-view-html.js';
-import { F35_AI_NOTICE, f35DraftReviewDemoFixture, renderF35DraftReviewPage } from '../f35-draft-review.js';
+import {
+  F35_AI_NOTICE,
+  f35DraftReviewDemoFixture,
+  f35FixtureFromVerticalSliceDryRun,
+  renderF35DraftReviewPage,
+  type F35DraftReviewFixture,
+} from '../f35-draft-review.js';
+import { verticalSliceFieldCaptureDemoFixture } from '../../demo/index.js';
 import { FIELD_CAPTURE_COPY } from '../field-capture-mock.js';
 import { buildTranscriptReviewMainHtml, buildTranscriptReviewRailHtml } from './f34-transcript-review-html.js';
 import { F34_REQUIRED_NOTICE } from './f34-transcript-review-mock.js';
@@ -64,13 +71,25 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
         bodyHtml: buildTranscriptReviewMainHtml(),
         railHtml: buildTranscriptReviewRailHtml(),
       };
-    case 'draft-review':
+    case 'draft-review': {
+      // Prefer the generated dry-run fixture (Codex convergence) so /draft-review
+      // exercises the same spine packet id, integer amount_cents, and source
+      // refs that F-36 / F-37 consume. If the adapter throws at construction
+      // time (e.g. mid-migration shape mismatch), fall back to the hand-authored
+      // demo fixture so the screen still renders the rich F-35 surface.
+      let fixture: F35DraftReviewFixture;
+      try {
+        fixture = f35FixtureFromVerticalSliceDryRun(verticalSliceFieldCaptureDemoFixture);
+      } catch {
+        fixture = f35DraftReviewDemoFixture;
+      }
       return {
         title: 'Draft Review',
         subtitle: 'F-35 · Draft before decisions (read-only demo).',
         notice: F35_AI_NOTICE,
-        bodyHtml: `<div class="kerf-v15-f35-embed">${renderF35DraftReviewPage(f35DraftReviewDemoFixture, { v15Shell: true })}</div>`,
+        bodyHtml: `<div class="kerf-v15-f35-embed">${renderF35DraftReviewPage(fixture, { v15Shell: true })}</div>`,
       };
+    }
     case 'decisions-list':
       return {
         title: 'Decisions',

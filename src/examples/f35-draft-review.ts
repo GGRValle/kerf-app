@@ -12,6 +12,11 @@
  */
 
 import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../demo/verticalSliceFlowIds.js';
+import type {
+  DraftReviewLine,
+  VerticalSliceDryRunDemoFixture,
+  VerticalSliceSourceRef,
+} from '../demo/types.js';
 
 /** Money is always integer cents at this boundary; floats are forbidden. */
 export type Cents = number;
@@ -459,3 +464,333 @@ export const f35DraftReviewDemoFixture: F35DraftReviewFixture = {
   decision_id: VERTICAL_SLICE_FLOW_PACKET_ID,
   transcript_route: '/transcript-review',
 };
+
+// ---------------------------------------------------------------------------
+// Generated-fixture adapter (Codex convergence)
+// ---------------------------------------------------------------------------
+//
+// F-35 historically rendered a hand-authored mock fixture (above). After the
+// Codex convergence landed, `verticalSliceFieldCaptureDemoFixture` provides
+// canonical generated draft-review lines, source refs, and a spine-aligned
+// `decision_packet.id` (`VERTICAL_SLICE_FLOW_PACKET_ID`).
+//
+// `f35FixtureFromVerticalSliceDryRun` projects that generated handoff into the
+// existing `F35DraftReviewFixture` shape so the existing rich F-35 surface
+// renders without re-authoring the renderer. The hand-authored fixture above
+// is preserved as a fallback (e.g. unit-test invariants, hostile-input
+// regression tests, demo HTML mirror).
+//
+// Invariants this adapter MUST preserve:
+//   1. `amount_cents` stays an integer; no float math, no dollar strings.
+//   2. USD formatting only happens at the render boundary
+//      (`formatDisplayDollarsFromCents`).
+//   3. Unsafe-to-send warnings remain prominent; per-line
+//      `unsafe_to_send_flags` and `decision_packet.blocked_reasons` are folded
+//      into `block_reasons` for the banner.
+//   4. `decision_id` is `decision_packet.id` (spine packet id) — never the
+//      legacy literal.
+//   5. No fetch, no persistence, no backend writes, no pricing authority.
+
+const VOICE_TRANSCRIPT_SOURCE_KINDS = new Set([
+  'voice',
+  'transcript',
+  'audio',
+  'audio_capture',
+]);
+const PHOTO_SOURCE_KINDS = new Set(['photo', 'image', 'site_photo']);
+const PAST_JOB_SOURCE_KINDS = new Set([
+  'past_job_memory',
+  'past_job',
+  'memory',
+  'cost_memory',
+]);
+const OPERATOR_EDIT_SOURCE_KINDS = new Set([
+  'operator_edit',
+  'office_edit',
+  'manual',
+  'human_edit',
+]);
+const CATALOG_SOURCE_KINDS = new Set(['catalog', 'sku', 'product']);
+const PRICING_SOURCE_KINDS = new Set([
+  'pricing_source',
+  'rate_sheet',
+  'price_book',
+  'external',
+  'qbo',
+]);
+
+/**
+ * Coerce a generated `VerticalSliceSourceRef.type` (open string) into the
+ * closed `F35SourceBasis` enum. Unknown types fall back to `'operator_edit'`
+ * because the label table treats that as the most generic "human-provided"
+ * source — never claims a sourced-pricing basis we cannot back up.
+ */
+function coerceSourceBasis(raw: string | undefined): F35SourceBasis {
+  if (raw === undefined) {
+    return 'operator_edit';
+  }
+  const k = raw.trim().toLowerCase();
+  if (VOICE_TRANSCRIPT_SOURCE_KINDS.has(k)) return 'transcript';
+  if (PHOTO_SOURCE_KINDS.has(k)) return 'photo';
+  if (PAST_JOB_SOURCE_KINDS.has(k)) return 'past_job_memory';
+  if (OPERATOR_EDIT_SOURCE_KINDS.has(k)) return 'operator_edit';
+  if (CATALOG_SOURCE_KINDS.has(k)) return 'catalog';
+  if (PRICING_SOURCE_KINDS.has(k)) return 'pricing_source';
+  return 'operator_edit';
+}
+
+/**
+ * Project a numeric `[0,1]` pricing confidence onto the closed F-35 enum.
+ * Thresholds bias conservative: anything ≥0.85 is "high", and below 0.30 is
+ * "unknown" rather than "low" to avoid suggesting a sourced rate when we have
+ * one. Non-numeric / out-of-range inputs map to `'unknown'`.
+ */
+function bucketPricingConfidence(raw: number | undefined): F35PricingConfidence {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return 'unknown';
+  if (raw >= 0.85) return 'high';
+  if (raw >= 0.6) return 'medium';
+  if (raw >= 0.3) return 'low';
+  return 'unknown';
+}
+
+/**
+ * Pick the most useful display ref token for a draft line. Prefers a resolved
+ * `VerticalSliceSourceRef.uri`, then `id`, and falls back to the line's
+ * descriptive `source_basis` text. Never returns an empty string.
+ */
+function pickLineSourceRef(
+  line: DraftReviewLine,
+  refIndex: ReadonlyMap<string, VerticalSliceSourceRef>,
+): string {
+  for (const refId of line.source_ref_ids) {
+    const ref = refIndex.get(refId);
+    if (ref !== undefined) {
+      if (ref.uri !== undefined && ref.uri.length > 0) return ref.uri;
+      return ref.id;
+    }
+  }
+  if (line.source_basis.length > 0) return line.source_basis;
+  return line.scope_line_id;
+}
+
+/**
+ * If a line has zero/one matched source refs the basis is its kind; if it has
+ * multiple, prefer transcript/photo over operator_edit so the badge reflects
+ * the strongest evidence the operator can audit.
+ */
+function pickLineSourceBasis(
+  line: DraftReviewLine,
+  refIndex: ReadonlyMap<string, VerticalSliceSourceRef>,
+): F35SourceBasis {
+  const priority: readonly F35SourceBasis[] = [
+    'transcript',
+    'photo',
+    'catalog',
+    'past_job_memory',
+    'pricing_source',
+    'operator_edit',
+  ];
+  const seen = new Set<F35SourceBasis>();
+  for (const refId of line.source_ref_ids) {
+    const ref = refIndex.get(refId);
+    if (ref !== undefined) {
+      seen.add(coerceSourceBasis(ref.type));
+    }
+  }
+  for (const candidate of priority) {
+    if (seen.has(candidate)) return candidate;
+  }
+  return 'operator_edit';
+}
+
+/** Join repeated-flag arrays into the existing single-string slot. */
+function joinFlagsForDisplay(flags: readonly string[]): string | undefined {
+  if (flags.length === 0) return undefined;
+  return flags.map((f) => f.replace(/_/g, ' ')).join('; ');
+}
+
+/**
+ * Map known `decision_packet.blocked_reasons` / per-line
+ * `unsafe_to_send_flags` text into the closed `F35BlockReason` enum.
+ * Anything we cannot positively classify falls back to `'missing_source'`
+ * because the renderer must render the banner conservatively — never silently
+ * drop an upstream block reason.
+ */
+function coerceBlockReason(raw: string): F35BlockReason {
+  const k = raw.trim().toLowerCase();
+  if (k.includes('pricing_confidence') || k.includes('unsupported_pricing') || k.includes('price')) {
+    return 'unsupported_pricing';
+  }
+  if (k.includes('expired') || k.includes('stale_quote')) return 'expired_quote';
+  if (k.includes('approval') || k.includes('owner') || k.includes('external')) {
+    return 'external_send_requires_approval';
+  }
+  if (k.includes('role') || k.includes('visibility')) return 'role_visibility_issue';
+  if (k.includes('source') || k.includes('missing')) return 'missing_source';
+  return 'missing_source';
+}
+
+function buildBlockReasons(
+  generated: VerticalSliceDryRunDemoFixture,
+): readonly F35BlockReason[] {
+  const out = new Set<F35BlockReason>();
+  for (const r of generated.decision_packet.blocked_reasons) {
+    out.add(coerceBlockReason(r));
+  }
+  for (const line of generated.draft_review_payload_ui.draft_lines) {
+    for (const r of line.unsafe_to_send_flags) {
+      out.add(coerceBlockReason(r));
+    }
+  }
+  if (
+    generated.decision_packet.requires_human_approval &&
+    generated.decision_packet.external_send_allowed === false
+  ) {
+    out.add('external_send_requires_approval');
+  }
+  return Array.from(out);
+}
+
+function buildAssumptionsList(
+  generated: VerticalSliceDryRunDemoFixture,
+): readonly F35Assumption[] {
+  const out: F35Assumption[] = [];
+  const seen = new Set<string>();
+  for (const line of generated.draft_review_payload_ui.draft_lines) {
+    for (const flag of line.assumption_flags) {
+      const id = `assumption_${line.id}_${flag}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push({ id, prompt: flag.replace(/_/g, ' '), category: 'assumption' });
+    }
+    for (const flag of line.missing_info_flags) {
+      const id = `missing_${line.id}_${flag}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push({ id, prompt: flag.replace(/_/g, ' '), category: 'missing_info' });
+    }
+  }
+  return out;
+}
+
+function buildScopeSummary(
+  generated: VerticalSliceDryRunDemoFixture,
+): string {
+  const lines = generated.draft_review_payload_ui.draft_lines;
+  if (lines.length === 0) {
+    return 'No draft lines generated yet — review the source capture before continuing.';
+  }
+  const descriptions = lines.map((l) => l.description.trim()).filter((d) => d.length > 0);
+  if (descriptions.length === 0) return 'Generated draft lines have no descriptions yet.';
+  return descriptions.join('; ');
+}
+
+function pickSourceCaptureRef(
+  generated: VerticalSliceDryRunDemoFixture,
+): string {
+  const first = generated.source_refs[0];
+  if (first !== undefined) {
+    return first.uri ?? first.id;
+  }
+  return generated.field_capture_payload.project_id;
+}
+
+function pickDraftType(
+  generated: VerticalSliceDryRunDemoFixture,
+): F35DraftType {
+  return generated.decision_packet.workflow === 'change_order'
+    ? 'change_order_draft'
+    : 'estimate_draft';
+}
+
+function pickStatus(
+  generated: VerticalSliceDryRunDemoFixture,
+  blockReasons: readonly F35BlockReason[],
+): F35DraftStatus {
+  if (blockReasons.length > 0 && generated.decision_packet.external_send_allowed === false) {
+    if (generated.decision_packet.requires_human_approval) return 'approval_required';
+    return 'blocked';
+  }
+  if (generated.decision_packet.requires_human_approval) return 'approval_required';
+  return 'needs_review';
+}
+
+function mapGeneratedSourceRefs(
+  refs: readonly VerticalSliceSourceRef[],
+): readonly F35SourceRef[] {
+  return refs.map((ref) => {
+    const kind = coerceSourceBasis(ref.type);
+    const out: F35SourceRef = {
+      kind,
+      label: ref.label,
+      ref: ref.uri ?? ref.id,
+      ...(ref.excerpt !== undefined && ref.excerpt.length > 0 ? { note: ref.excerpt } : {}),
+    };
+    return out;
+  });
+}
+
+function mapGeneratedDraftLines(
+  generated: VerticalSliceDryRunDemoFixture,
+): readonly F35ScopeLine[] {
+  const refIndex = new Map<string, VerticalSliceSourceRef>();
+  for (const ref of generated.source_refs) {
+    refIndex.set(ref.id, ref);
+  }
+  return generated.draft_review_payload_ui.draft_lines.map((line) => {
+    if (!Number.isInteger(line.amount_cents)) {
+      throw new Error(
+        `F-35 generated adapter: amount_cents must be an integer (line ${line.id})`,
+      );
+    }
+    const assumption = joinFlagsForDisplay(line.assumption_flags);
+    const missing = joinFlagsForDisplay(line.missing_info_flags);
+    const out: F35ScopeLine = {
+      id: line.id,
+      description: line.description,
+      quantity: line.quantity,
+      unit: line.unit,
+      amount_cents: line.amount_cents,
+      source_basis: pickLineSourceBasis(line, refIndex),
+      pricing_confidence: bucketPricingConfidence(line.pricing_confidence),
+      source_ref: pickLineSourceRef(line, refIndex),
+      ...(assumption !== undefined ? { assumption } : {}),
+      ...(missing !== undefined ? { missing_info: missing } : {}),
+    };
+    return out;
+  });
+}
+
+/**
+ * Project a generated dry-run handoff into the F-35 fixture shape.
+ *
+ * Inputs are read-only; this never mutates `generated`. Money values pass
+ * through as integer cents — formatting is the renderer's job.
+ *
+ * Designed for the V1.5 vertical-slice happy path. Calling sites can still
+ * fall back to `f35DraftReviewDemoFixture` when (a) the generator is offline,
+ * or (b) a specific test wants the closed/canonical mock surface.
+ */
+export function f35FixtureFromVerticalSliceDryRun(
+  generated: VerticalSliceDryRunDemoFixture,
+): F35DraftReviewFixture {
+  const blockReasons = buildBlockReasons(generated);
+  const fixture: F35DraftReviewFixture = {
+    project_label: generated.decision_packet.project_name,
+    client_label: generated.decision_packet.client_name,
+    draft_type: pickDraftType(generated),
+    status: pickStatus(generated, blockReasons),
+    title: generated.decision_packet.title,
+    scope_summary: buildScopeSummary(generated),
+    generation_reason:
+      'Generated from vertical-slice dry-run fixture (no live workflow run; no external sends).',
+    source_capture_ref: pickSourceCaptureRef(generated),
+    scope_lines: mapGeneratedDraftLines(generated),
+    source_refs: mapGeneratedSourceRefs(generated.source_refs),
+    assumptions: buildAssumptionsList(generated),
+    block_reasons: blockReasons,
+    decision_id: generated.decision_packet.id,
+    transcript_route: '/transcript-review',
+  };
+  return fixture;
+}
