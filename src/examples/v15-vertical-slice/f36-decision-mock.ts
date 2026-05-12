@@ -1,14 +1,15 @@
 import type { DecisionPacket } from '../../altitude/types.js';
+import {
+  decisionPacketToVerticalSliceUiDecisionPacket,
+  verticalSliceFieldCaptureDemoFixture,
+  type VerticalSliceDryRunDemoFixture,
+  type VerticalSliceUiDecisionPacket,
+  type VerticalSliceWorkflow,
+} from '../../demo/index.js';
 import { DEMO_DECISION_ID } from './mock.js';
 
 /** Product-facing workflow label for the F-36 shell (may differ from `packet.workflow`). */
-export type F36SurfaceWorkflow =
-  | 'field_capture'
-  | 'invoice_followup'
-  | 'proposal_followup'
-  | 'drift_detection'
-  | 'estimate_draft'
-  | 'change_order';
+export type F36SurfaceWorkflow = VerticalSliceWorkflow;
 
 /** UX status for the approval card header (not the same as `DecisionPacket.status`). */
 export type F36SurfaceStatus =
@@ -18,7 +19,8 @@ export type F36SurfaceStatus =
   | 'needs_more_info';
 
 export interface F36DecisionCardModel {
-  readonly packet: DecisionPacket;
+  readonly packet: VerticalSliceUiDecisionPacket;
+  readonly rawPacket: DecisionPacket;
   readonly decisionTitle: string;
   readonly surfaceWorkflow: F36SurfaceWorkflow;
   readonly surfaceStatus: F36SurfaceStatus;
@@ -176,16 +178,21 @@ export const F36_DEMO_DECISION_PACKET: DecisionPacket = {
   },
 };
 
-export const F36_DEFAULT_MODEL: F36DecisionCardModel = {
-  packet: F36_DEMO_DECISION_PACKET,
-  decisionTitle: 'Proposal follow-up: viewed, no reply',
-  surfaceWorkflow: 'proposal_followup',
-  surfaceStatus: 'approval_required',
-  riskFlags: [
-    'Client-visible channel (email) requested.',
-    'Pricing trace is model-inference tier — do not restate dollar totals.',
-  ],
-};
+export function f36ModelFromDecisionPacket(packet: DecisionPacket): F36DecisionCardModel {
+  return modelFromUiDecision(decisionPacketToVerticalSliceUiDecisionPacket(packet), packet);
+}
+
+export function f36ModelFromVerticalSliceFixture(
+  fixture: VerticalSliceDryRunDemoFixture = verticalSliceFieldCaptureDemoFixture,
+): F36DecisionCardModel {
+  return modelFromUiDecision(fixture.decision_packet, fixture.decision_packet_raw);
+}
+
+export const F36_FALLBACK_MODEL: F36DecisionCardModel =
+  f36ModelFromDecisionPacket(F36_DEMO_DECISION_PACKET);
+
+export const F36_DEFAULT_MODEL: F36DecisionCardModel =
+  f36ModelFromVerticalSliceFixture(verticalSliceFieldCaptureDemoFixture);
 
 /**
  * Returns the F-36 demo model. Call only when `route.id === VERTICAL_SLICE_FLOW_PACKET_ID`
@@ -195,9 +202,9 @@ export function f36ModelForRouteId(_id: string): F36DecisionCardModel {
   return F36_DEFAULT_MODEL;
 }
 
-export function f36ExternalSendAllowed(packet: DecisionPacket): boolean {
-  const gate = packet.policy_gate_result;
-  if (packet.external_send?.requested !== true) {
+export function f36ExternalSendAllowed(packet: VerticalSliceUiDecisionPacket): boolean {
+  const gate = packet.policy_gate;
+  if (packet.external_send_allowed !== true) {
     return false;
   }
   if (!gate.allowed) {
@@ -210,4 +217,46 @@ export function f36ExternalSendAllowed(packet: DecisionPacket): boolean {
     return false;
   }
   return true;
+}
+
+function modelFromUiDecision(
+  packet: VerticalSliceUiDecisionPacket,
+  rawPacket: DecisionPacket,
+): F36DecisionCardModel {
+  return {
+    packet,
+    rawPacket,
+    decisionTitle: packet.title,
+    surfaceWorkflow: packet.workflow,
+    surfaceStatus: surfaceStatusForDecision(packet),
+    riskFlags: riskFlagsForDecision(packet),
+  };
+}
+
+function surfaceStatusForDecision(packet: VerticalSliceUiDecisionPacket): F36SurfaceStatus {
+  if (packet.requires_human_approval) {
+    return 'approval_required';
+  }
+  if (!packet.policy_gate.allowed || packet.blocked_reasons.length > 0) {
+    return 'blocked';
+  }
+  if (packet.safe_next_action === 'request_human_review') {
+    return 'needs_more_info';
+  }
+  return 'draft_ready';
+}
+
+function riskFlagsForDecision(packet: VerticalSliceUiDecisionPacket): readonly string[] {
+  const flags: string[] = [];
+  if (packet.requires_human_approval) {
+    flags.push('Human approval required before this packet can move forward.');
+  }
+  if (!packet.external_send_allowed) {
+    flags.push('External send is disabled in this read-only demo handoff.');
+  }
+  const money = packet.money_fields;
+  if (money?.source_class !== null && money?.source_class !== undefined) {
+    flags.push(`Money source class is ${money.source_class}; keep pricing read-only until reviewed.`);
+  }
+  return flags;
 }

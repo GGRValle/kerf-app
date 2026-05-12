@@ -1,4 +1,4 @@
-import type { ValidatorResult } from '../../altitude/types.js';
+import type { VerticalSliceValidatorResult } from '../../demo/index.js';
 import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../../demo/verticalSliceFlowIds.js';
 import { formatDisplayDollarsFromCents } from '../f35-draft-review.js';
 import type { F36DecisionCardModel } from './f36-decision-mock.js';
@@ -12,14 +12,11 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function validatorTone(v: ValidatorResult): 'pass' | 'warn' | 'block' {
-  if (v.passed) {
-    return 'pass';
-  }
-  return v.critical ? 'block' : 'warn';
+function validatorTone(v: VerticalSliceValidatorResult): 'pass' | 'warn' | 'block' {
+  return v.status;
 }
 
-function safeActionCopy(v: ValidatorResult, gateSafeNext: string): string {
+function safeActionCopy(v: VerticalSliceValidatorResult, gateSafeNext: string): string {
   if (validatorTone(v) !== 'block') {
     return '';
   }
@@ -30,10 +27,10 @@ function safeActionCopy(v: ValidatorResult, gateSafeNext: string): string {
 }
 
 export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecisionId: string): string {
-  const { packet, decisionTitle, surfaceWorkflow, surfaceStatus, riskFlags } = model;
-  const gate = packet.policy_gate_result;
-  const client = packet.extracted_facts.client_name ?? 'Client';
-  const project = packet.project_id ?? packet.extracted_facts.project_id ?? '—';
+  const { packet, rawPacket, decisionTitle, surfaceWorkflow, surfaceStatus, riskFlags } = model;
+  const gate = packet.policy_gate;
+  const client = packet.client_name;
+  const project = packet.project_name !== '' ? packet.project_name : packet.project_id;
   const extAllowed = f36ExternalSendAllowed(packet);
 
   const blockedList =
@@ -47,7 +44,8 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
           .map((ref) => {
             const uri = ref.uri !== undefined ? `<span class="kerf-v15-f36-ref__uri">${esc(ref.uri)}</span>` : '';
             const ex = ref.excerpt !== undefined ? esc(ref.excerpt) : '';
-            return `<li><span class="kerf-v15-f36-ref__kind">${esc(ref.kind)}</span>${uri ? ` · ${uri}` : ''}${ex ? `<div class="kerf-v15-f36-ref__ex">${ex}</div>` : ''}</li>`;
+            const label = ref.label !== '' ? ` · ${esc(ref.label)}` : '';
+            return `<li><span class="kerf-v15-f36-ref__kind">${esc(ref.type)}</span>${label}${uri ? ` · ${uri}` : ''}${ex ? `<div class="kerf-v15-f36-ref__ex">${ex}</div>` : ''}</li>`;
           })
           .join('')}</ul>`
       : `<p class="kerf-v15-f36-muted">No source refs on this packet.</p>`;
@@ -59,12 +57,12 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
 
   const mf = packet.money_fields;
   const cents = mf?.amount_cents;
-  const centsLabel = cents !== undefined && Number.isFinite(cents) ? String(cents) : '';
+  const centsLabel = cents !== null && cents !== undefined && Number.isFinite(cents) ? String(cents) : '';
   const centsValue = centsLabel === '' ? '—' : centsLabel;
   const displayUsd =
-    cents !== undefined && Number.isFinite(cents) ? formatDisplayDollarsFromCents(cents) : '—';
-  const srcClassRaw = mf?.source_class !== undefined ? String(mf.source_class) : '';
-  const srcStatusRaw = mf?.source_status !== undefined ? String(mf.source_status) : '';
+    cents !== null && cents !== undefined && Number.isFinite(cents) ? formatDisplayDollarsFromCents(cents) : '—';
+  const srcClassRaw = mf?.source_class !== null && mf?.source_class !== undefined ? String(mf.source_class) : '';
+  const srcStatusRaw = mf?.source_status !== null && mf?.source_status !== undefined ? String(mf.source_status) : '';
   const srcClassValue = srcClassRaw === '' ? '—' : esc(srcClassRaw);
   const srcStatusValue = srcStatusRaw === '' ? '—' : esc(srcStatusRaw);
   const idSafe = routeDecisionId.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -72,9 +70,9 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
   /** Audit deep-link always uses the spine flow packet id (same as nav + F-37 resolve). */
   const auditFlowPacketId = VERTICAL_SLICE_FLOW_PACKET_ID;
   const auditHref = `/audit/${encodeURIComponent(auditFlowPacketId)}`;
-  const systemRail = packet.system_final_blackboard_rail;
+  const systemRail = rawPacket.system_final_blackboard_rail;
   const systemRailLabel = systemRail !== undefined ? esc(systemRail) : '—';
-  const systemSourceStatus = packet.system_source_status;
+  const systemSourceStatus = rawPacket.system_source_status;
   const systemSourceStatusLabel =
     systemSourceStatus !== undefined ? esc(systemSourceStatus) : '—';
 
@@ -88,21 +86,22 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
     <span class="kerf-v15-f36-val__name">${esc(v.validator_name)}</span>
     <span class="kerf-v15-f36-val__id">${esc(v.validator_id)}</span>
   </div>
-  ${v.reason !== undefined ? `<p class="kerf-v15-f36-val__reason">${esc(v.reason)}</p>` : ''}
+  <p class="kerf-v15-f36-val__reason">${esc(v.explanation)}</p>
   ${safe !== '' ? `<p class="kerf-v15-f36-val__safe"><strong>Safe action:</strong> ${esc(safe)}</p>` : ''}
 </li>`;
     })
     .join('');
 
   const auditRail = packet.model_suggested_blackboard_rail ?? '—';
-  const auditInference = packet.model_inference_label ?? '—';
+  const auditInference = packet.model_suggested_inference_label ?? '—';
+  const auditAltitude = packet.model_suggested_altitude ?? '—';
 
   return `<article class="kerf-v15-f36" aria-label="Approval-required decision card">
   <header class="kerf-v15-f36-header">
     <h2 class="kerf-v15-f36-title">${esc(decisionTitle)}</h2>
     <p class="kerf-v15-f36-meta">
-      <span class="kerf-v15-f36-pill">${esc(client)}</span>
-      <span class="kerf-v15-f36-pill kerf-v15-f36-pill--muted">Project <code>${esc(String(project))}</code></span>
+    <span class="kerf-v15-f36-pill">${esc(client)}</span>
+      <span class="kerf-v15-f36-pill kerf-v15-f36-pill--muted">Project <code>${esc(project)}</code></span>
       <span class="kerf-v15-f36-pill">Route id <code>${esc(routeDecisionId)}</code></span>
       <span class="kerf-v15-f36-pill kerf-v15-f36-pill--muted">Spine packet <code>${esc(auditFlowPacketId)}</code></span>
     </p>
@@ -161,9 +160,9 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
 
   <section class="kerf-v15-f36-section" aria-labelledby="kerf-v15-f36-proposed-title">
     <h3 id="kerf-v15-f36-proposed-title" class="kerf-v15-f36-h">Proposed action</h3>
-    <p class="kerf-v15-f36-prose"><strong>${esc(packet.proposed_action.description)}</strong></p>
+    <p class="kerf-v15-f36-prose"><strong>${esc(rawPacket.proposed_action.description)}</strong></p>
     <h4 class="kerf-v15-f36-subh">Why Kerf recommends it</h4>
-    <p class="kerf-v15-f36-prose">${esc(packet.proposed_action.reason)}</p>
+    <p class="kerf-v15-f36-prose">${esc(rawPacket.proposed_action.reason)}</p>
     <h4 class="kerf-v15-f36-subh">Source refs</h4>
     ${refs}
     <h4 class="kerf-v15-f36-subh">Risk flags</h4>
@@ -172,7 +171,7 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
 
   <section class="kerf-v15-f36-section" aria-labelledby="kerf-v15-f36-val-title">
     <h3 id="kerf-v15-f36-val-title" class="kerf-v15-f36-h">Validator summary</h3>
-    <p class="kerf-v15-f36-muted">Mock results carried on <code>policy_gate_result.validator_results</code> — this UI does not run validators.</p>
+    <p class="kerf-v15-f36-muted">Policy Gate results carried on <code>decision_packet.policy_gate.validator_results</code> — this UI does not run validators.</p>
     <ol class="kerf-v15-f36-val-list">${validators}</ol>
   </section>
 
@@ -180,9 +179,9 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
     <summary class="kerf-v15-f36-audit__summary">Model suggestion (audit / debug)</summary>
     <p class="kerf-v15-f36-audit__banner"><strong>Audit only.</strong> Routing uses <code>system_final_*</code> fields.</p>
     <dl class="kerf-v15-f36-grid kerf-v15-f36-grid--audit">
-      <div><dt>model_suggested_altitude</dt><dd><code>${esc(packet.model_suggested_altitude)}</code></dd></div>
+      <div><dt>model_suggested_altitude</dt><dd><code>${esc(auditAltitude)}</code></dd></div>
       <div><dt>model_suggested_blackboard_rail</dt><dd><code>${esc(auditRail)}</code></dd></div>
-      <div><dt>model_inference_label</dt><dd><code>${esc(auditInference)}</code> <span class="kerf-v15-f36-muted">(model packet inference label)</span></dd></div>
+      <div><dt>model_suggested_inference_label</dt><dd><code>${esc(auditInference)}</code> <span class="kerf-v15-f36-muted">(model packet inference label)</span></dd></div>
     </dl>
   </details>
 

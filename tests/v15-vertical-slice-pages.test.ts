@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { verticalSliceFieldCaptureDemoFixture } from '../src/demo/index.js';
 import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../src/demo/verticalSliceFlowIds.js';
 import { resolveF37Packet } from '../src/examples/audit-f37/f37-audit-view-html.js';
 import { FIELD_CAPTURE_COPY } from '../src/examples/field-capture-mock.js';
@@ -80,6 +81,17 @@ test('V1.5 draft-review page embeds F-35 fixture body with spine Open Decision l
 
 test('V1.5 decision-detail (spine) surfaces F-36 money, system_final, audit link', () => {
   const page = buildPage({ name: 'decision-detail', id: VERTICAL_SLICE_FLOW_PACKET_ID });
+  const generated = verticalSliceFieldCaptureDemoFixture.decision_packet;
+  assert.equal(page.title, generated.title);
+  assert.ok(page.subtitle.includes(generated.client_name));
+  assert.ok(page.bodyHtml.includes(generated.title));
+  assert.ok(page.bodyHtml.includes(generated.client_name));
+  assert.ok(page.bodyHtml.includes(generated.project_name));
+  assert.ok(page.bodyHtml.includes(generated.safe_next_action));
+  const firstValidator = generated.validator_results[0];
+  assert.ok(firstValidator);
+  assert.ok(page.bodyHtml.includes(firstValidator.validator_name));
+  assert.equal(page.bodyHtml.includes('Proposal follow-up: viewed, no reply'), false);
   assert.match(page.bodyHtml, /system_final_altitude/);
   assert.match(page.bodyHtml, /system_final_blackboard_rail/);
   assert.match(page.bodyHtml, /amount_cents/);
