@@ -783,7 +783,7 @@ export function f35FixtureFromVerticalSliceDryRun(
     title: generated.decision_packet.title,
     scope_summary: buildScopeSummary(generated),
     generation_reason:
-      'Generated from vertical-slice dry-run fixture (no live workflow run; no external sends).',
+      'Generated from reviewed field capture in the demo dry run; no live workflow run or external sends.',
     source_capture_ref: pickSourceCaptureRef(generated),
     scope_lines: mapGeneratedDraftLines(generated),
     source_refs: mapGeneratedSourceRefs(generated.source_refs),
