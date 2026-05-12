@@ -5,10 +5,55 @@ import {
   invoiceDecisionPacketFixture,
   proposalDecisionPacketFixture,
 } from '../src/test-fixtures/index.js';
-import { F37_DEFAULT_PACKET_ID } from '../src/examples/audit-f37/audit-f37-demo.js';
+import {
+  buildF37AuditPageHtml,
+  buildF37Timeline,
+  F37_DEFAULT_PACKET_ID,
+  resolveF37Packet,
+} from '../src/examples/audit-f37/f37-audit-view-html.js';
+import { verticalSliceFieldCaptureDemoFixture } from '../src/demo/index.js';
 
 test('F-37 default packet id matches proposal fixture', () => {
   assert.equal(F37_DEFAULT_PACKET_ID, proposalDecisionPacketFixture.packet_id);
+});
+
+test('F-37 default route resolves the generated field-capture dry-run packet', () => {
+  const packet = resolveF37Packet(F37_DEFAULT_PACKET_ID);
+  assert.equal(packet, verticalSliceFieldCaptureDemoFixture.decision_packet_raw);
+});
+
+test('F-37 generated path consumes audit_timeline from verticalSliceFieldCaptureDemoFixture', () => {
+  const packet = resolveF37Packet(F37_DEFAULT_PACKET_ID);
+  assert.ok(packet);
+  const timeline = buildF37Timeline(packet);
+  assert.equal(timeline.length, verticalSliceFieldCaptureDemoFixture.audit_timeline.length);
+  assert.deepEqual(
+    timeline.map((event) => event.id),
+    verticalSliceFieldCaptureDemoFixture.audit_timeline.map((event) => event.id),
+  );
+  assert.equal(timeline[0]?.kind, verticalSliceFieldCaptureDemoFixture.audit_timeline[0]?.type);
+  assert.equal(timeline[0]?.metadata?.workflow, 'field_capture');
+});
+
+test('F-37 generated page renders fixture transcript, validators, and Blackboard preview', () => {
+  const packet = resolveF37Packet(F37_DEFAULT_PACKET_ID);
+  assert.ok(packet);
+  const selected = verticalSliceFieldCaptureDemoFixture.audit_timeline[0]!.id;
+  const html = buildF37AuditPageHtml(packet, selected, 'embedded');
+
+  assert.match(html, /Pantry shelf should be twelf inches deep per plan/);
+  assert.match(html, /Pantry shelf should be twelve inches deep per plan/);
+  assert.match(html, /Policy Gate emitted a DecisionPacket for operator review/);
+  assert.match(html, /Authoritative gate output from the field-capture dry run/);
+  assert.match(html, /Preview Policy Gate decision for operator review/);
+  assert.match(html, /persistence_performed|Persistence performed/);
+  assert.doesNotMatch(html, /Powered by|Llama|Groq/i);
+  assert.doesNotMatch(html, /verticalSliceFieldCaptureDemoFixture|generated field-capture fixture/);
+  assert.equal(html.includes('Placeholder audit'), false);
+});
+
+test('F-37 still resolves invoice fallback packet for contrast route', () => {
+  assert.equal(resolveF37Packet(invoiceDecisionPacketFixture.packet_id), invoiceDecisionPacketFixture);
 });
 
 test('F-37 HTML loads decision-card styles, demo CSS, and IIFE bundle', () => {
