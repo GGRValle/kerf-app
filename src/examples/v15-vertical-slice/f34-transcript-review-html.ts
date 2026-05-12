@@ -1,11 +1,11 @@
+/** F-34 transcript review HTML; source resolution lives in `f34-transcript-review-handoff.ts`. */
 // F-34 dry-run banner sources its transcript from
 // `verticalSliceFieldCaptureDemoFixture` (specifically its
 // `field_capture_payload.transcript`). The handoff form (F-33 sessionStorage)
 // takes precedence when present. The convergence-contract fields rendered
 // below are `transcript_original`, `transcript_edits`, and `transcript_current`.
-// Identifiers stay in this comment (and on the data-fixture-id attribute) so
-// source-text tests continue to lock the binding, while operator-visible copy
-// stays implementation-free.
+// Identifiers stay in this comment block so source-text tests continue to lock
+// the binding, while operator-visible copy stays implementation-free.
 
 import { FIELD_CAPTURE_HANDOFF_STORAGE_KEY } from '../field-capture-mock.js';
 import type { ScopeLine, TranscriptEditEvent, TranscriptModel, TranscriptSegment, VerticalSliceSourceRef } from '../../demo/types.js';

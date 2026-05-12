@@ -216,6 +216,39 @@ export interface VerticalSliceDraftReviewPayload {
   draft_lines: readonly DraftReviewLine[];
 }
 
+/**
+ * Single generated handoff object from `fieldCaptureDryRunToVerticalSliceDemoFixture`
+ * (`verticalSliceFieldCaptureDemoFixture` is the cached instance).
+ *
+ * **Safe wiring order (F-33 → F-37)** — each step only reads slices of this object;
+ * do not fork parallel mock trees for the same spine id.
+ *
+ * 1. **F-33 Field capture** — `field_capture_input` (workflow ingress / replay of what
+ *    was captured) plus **`field_capture_payload`** for UI-shaped field capture:
+ *    `project_id`, `project_name`, `scope_lines`, `transcript` (see F-34), `model`
+ *    (audit/settings metadata only — never main “powered by” chrome).
+ * 2. **F-34 Transcript review** — **`field_capture_payload.transcript`** only:
+ *    `transcript_original` (immutable), `transcript_edits` (overlay events),
+ *    `transcript_current` (derived working copy). Prefer this over re-parsing
+ *    `field_capture_input.transcript_original` strings in UI.
+ * 3. **F-35 Draft review** — **`draft_review_payload_ui`**: `scope_lines`, `draft_lines`
+ *    with **`amount_cents`** as integer cents. Use `draft_review_payload` only when you
+ *    need the workflow-native draft record; UI tables should use `_ui`.
+ * 4. **F-36 Decision / approval card** — **`decision_packet`** (`VerticalSliceUiDecisionPacket`):
+ *    authoritative: **`system_final_altitude`**, **`safe_next_action`** (flattened from gate),
+ *    **`requires_human_approval`**, **`policy_gate`**, top-level **`validator_results`**.
+ *    Audit-only: **`model_suggested_*`**. For wire parity / diff tooling use
+ *    **`decision_packet_raw`** + **`policy_gate_result`** — do not duplicate
+ *    `DecisionPacket`, `PolicyGateResult`, or `ValidatorResult` types in demos.
+ * 5. **F-37 Audit stream** — **`audit_timeline`** and **`audit_events`** (same sequence;
+ *    both kept so list UIs and exporters can pick one contract). **`blackboard_write_preview`**
+ *    for the rail card. Raw engine preview: **`audit_event_preview`** when correlating
+ *    to `SourceRef`-shaped payloads — mapper already projects **`source_refs`** for lists.
+ *
+ * **Gaps / boundaries:** F-33–F-37 HTML demos today may still read legacy screen fixtures;
+ * wiring should **migrate by replacing imports** with slices of this object, not by
+ * introducing a second `DecisionPacket` instance for the same packet id.
+ */
 export interface VerticalSliceDryRunDemoFixture {
   workflow: 'field_capture';
   field_capture_input: FieldCaptureDryRunResult['field_capture_input'];

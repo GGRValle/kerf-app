@@ -1,3 +1,10 @@
+/**
+ * Maps `FieldCaptureDryRunResult` → `VerticalSliceDryRunDemoFixture` without cloning
+ * engine artifacts (`altitude_packet`, `policy_gate_result`, `decision_packet`, …).
+ *
+ * Per-surface consumption order and field ownership: see **`VerticalSliceDryRunDemoFixture`**
+ * in `./types.js`.
+ */
 import type {
   DecisionPacket,
   PolicyGateResult,
