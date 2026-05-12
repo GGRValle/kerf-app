@@ -15,7 +15,40 @@ import type { V15FieldCaptureState } from './v15-field-capture-state.js';
 const ALL_TAGS: PhotoTag[] = ['room', 'issue', 'material', 'measurement', 'before', 'after'];
 
 function selectedProject(state: V15FieldCaptureState) {
+  const fixture = state.generatedFixture;
+  const generated = fixture?.payload;
+  if (fixture !== undefined && generated !== undefined && generated.project_id === state.projectId) {
+    return {
+      id: generated.project_id,
+      project_name: generated.project_name,
+      client_name: fixture.clientName,
+      location: fixture.fieldCaptureInput.jurisdiction ?? 'Generated field capture',
+      workflow: 'field_note' as const,
+    };
+  }
   return projectById(state.projectId) ?? fieldCaptureProjectListFixture[0]!;
+}
+
+function projectOptionsHtml(state: V15FieldCaptureState): string {
+  const generated = state.generatedFixture?.payload;
+  const generatedOption =
+    generated === undefined
+      ? ''
+      : `<option value="${escapeHtml(generated.project_id)}"${
+          generated.project_id === state.projectId ? ' selected' : ''
+        }>${escapeHtml(generated.project_name)} · dry-run context</option>`;
+
+  const fallbackOptions = fieldCaptureProjectListFixture
+    .filter((proj) => proj.id !== generated?.project_id)
+    .map(
+      (proj) =>
+        `<option value="${escapeHtml(proj.id)}"${proj.id === state.projectId ? ' selected' : ''}>${escapeHtml(
+          proj.project_name,
+        )}</option>`,
+    )
+    .join('');
+
+  return generatedOption + fallbackOptions;
 }
 
 function photoThumbClass(tags: readonly PhotoTag[]): string {
@@ -49,6 +82,53 @@ function previewRawNote(state: V15FieldCaptureState): string {
   return parts.join('\n\n');
 }
 
+function joinedTranscriptText(segments: readonly { readonly text: string }[]): string {
+  return segments.map((segment) => segment.text).join('\n');
+}
+
+function generatedFixtureContextHtml(state: V15FieldCaptureState): string {
+  const fixture = state.generatedFixture;
+  if (fixture === undefined) {
+    return '';
+  }
+
+  const { payload, transcript, sourceRefs } = fixture;
+  const sourceRows = sourceRefs
+    .map((ref) => {
+      const detail = [ref.type, ref.uri, ref.excerpt].filter((part): part is string => typeof part === 'string' && part.length > 0);
+      return `<li><strong>${escapeHtml(ref.label)}</strong>${detail.length > 0 ? ` · ${escapeHtml(detail.join(' · '))}` : ''}</li>`;
+    })
+    .join('');
+  const editRows =
+    transcript.transcript_edits.length === 0
+      ? '<li>No overlay edits recorded.</li>'
+      : transcript.transcript_edits
+          .map(
+            (edit) =>
+              `<li><code>${escapeHtml(edit.segment_id)}</code>: ${escapeHtml(edit.original_text)} -> ${escapeHtml(
+                edit.edited_text,
+              )}</li>`,
+          )
+          .join('');
+
+  return `<section class="kerf-fc-card" aria-labelledby="kerf-v15-fc-generated-h">
+        <h2 id="kerf-v15-fc-generated-h" class="kerf-fc-h2">Generated fixture context</h2>
+        <p class="kerf-fc-muted">Loaded from the generated dry-run field capture. The original transcript stays immutable; edits are overlays; current is the rendered working view.</p>
+        <dl class="kerf-fc-preview-dl">
+          <div><dt>Project</dt><dd>${escapeHtml(payload.project_name)}</dd></div>
+          <div><dt>Capture id</dt><dd><code>${escapeHtml(fixture.fieldCaptureInput.capture_id)}</code></dd></div>
+          <div><dt>Source context</dt><dd><ul>${sourceRows}</ul></dd></div>
+          <div><dt>transcript_current</dt><dd class="kerf-fc-preview-note">${escapeHtml(
+            joinedTranscriptText(transcript.transcript_current),
+          )}</dd></div>
+          <div><dt>transcript_edits</dt><dd><ul>${editRows}</ul></dd></div>
+          <div><dt>transcript_original</dt><dd class="kerf-fc-preview-note">${escapeHtml(
+            joinedTranscriptText(transcript.transcript_original),
+          )}</dd></div>
+        </dl>
+      </section>`;
+}
+
 function modeChip(id: CaptureModeId, label: string, state: V15FieldCaptureState): string {
   const on = state.modes.has(id);
   return `<button type="button" role="checkbox" aria-checked="${on ? 'true' : 'false'}" class="kerf-fc-mode-chip${
@@ -80,15 +160,7 @@ export function buildV15FieldCaptureHandoff(state: V15FieldCaptureState): FieldC
 export function buildV15FieldCaptureHtml(state: V15FieldCaptureState): string {
   const p = selectedProject(state);
   const wfLabel = FIELD_WORKFLOW_LABELS[p.workflow];
-
-  const projectOptions = fieldCaptureProjectListFixture
-    .map(
-      (proj) =>
-        `<option value="${escapeHtml(proj.id)}"${proj.id === state.projectId ? ' selected' : ''}>${escapeHtml(
-          proj.project_name,
-        )}</option>`,
-    )
-    .join('');
+  const projectOptions = projectOptionsHtml(state);
 
   return `<div class="kerf-fc-page">
     <p class="kerf-v15-prose" style="margin:0 0 1rem;font-size:0.85rem;color:var(--kerf-fg-muted)">
@@ -172,6 +244,8 @@ export function buildV15FieldCaptureHtml(state: V15FieldCaptureState): string {
       </section>`
           : ''
       }
+
+      ${generatedFixtureContextHtml(state)}
 
       <section class="kerf-fc-card kerf-fc-card--preview" aria-labelledby="kerf-v15-fc-preview-h">
         <h2 id="kerf-v15-fc-preview-h" class="kerf-fc-h2">Capture packet preview</h2>

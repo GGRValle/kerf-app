@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { verticalSliceFieldCaptureDemoFixture } from '../src/demo/index.js';
 import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../src/demo/verticalSliceFlowIds.js';
+import { verticalSliceFieldCaptureDemoFixture } from '../src/demo/index.js';
 import { resolveF37Packet } from '../src/examples/audit-f37/f37-audit-view-html.js';
 import { FIELD_CAPTURE_COPY } from '../src/examples/field-capture-mock.js';
 import { proposalDecisionPacketFixture } from '../src/test-fixtures/index.js';
@@ -26,12 +28,12 @@ test('V1.5 spine: DEMO_* ids and VERTICAL_SLICE_FLOW_PACKET_ID are one value', (
   assert.equal(DEMO_PACKET_ID, VERTICAL_SLICE_FLOW_PACKET_ID);
 });
 
-test('V1.5 spine: /decisions/<id> and /audit/<id> resolve the same proposal DecisionPacket', () => {
+test('V1.5 spine: /audit/<id> resolves the generated field-capture DecisionPacket', () => {
   const fromDecisionRoute = resolveF37Packet(DEMO_DECISION_ID);
   const fromAuditRoute = resolveF37Packet(DEMO_PACKET_ID);
   assert.ok(fromDecisionRoute);
   assert.equal(fromDecisionRoute, fromAuditRoute);
-  assert.equal(fromDecisionRoute, proposalDecisionPacketFixture);
+  assert.equal(fromDecisionRoute, verticalSliceFieldCaptureDemoFixture.decision_packet_raw);
 });
 
 test('V1.5 spine wiring sources omit legacy demo-decision-001', () => {
@@ -80,6 +82,17 @@ test('V1.5 draft-review page embeds F-35 fixture body with spine Open Decision l
 
 test('V1.5 decision-detail (spine) surfaces F-36 money, system_final, audit link', () => {
   const page = buildPage({ name: 'decision-detail', id: VERTICAL_SLICE_FLOW_PACKET_ID });
+  const generated = verticalSliceFieldCaptureDemoFixture.decision_packet;
+  assert.equal(page.title, generated.title);
+  assert.ok(page.subtitle.includes(generated.client_name));
+  assert.ok(page.bodyHtml.includes(generated.title));
+  assert.ok(page.bodyHtml.includes(generated.client_name));
+  assert.ok(page.bodyHtml.includes(generated.project_name));
+  assert.ok(page.bodyHtml.includes(generated.safe_next_action));
+  const firstValidator = generated.validator_results[0];
+  assert.ok(firstValidator);
+  assert.ok(page.bodyHtml.includes(firstValidator.validator_name));
+  assert.equal(page.bodyHtml.includes('Proposal follow-up: viewed, no reply'), false);
   assert.match(page.bodyHtml, /system_final_altitude/);
   assert.match(page.bodyHtml, /system_final_blackboard_rail/);
   assert.match(page.bodyHtml, /amount_cents/);
@@ -93,12 +106,12 @@ test('V1.5 decision-detail (spine) surfaces F-36 money, system_final, audit link
   assert.match(page.bodyHtml, /disabled[^\n]{0,120}Approve Draft|Approve Draft[^\n]{0,120}disabled/);
 });
 
-test('V1.5 audit page embeds F-37 timeline for proposal fixture id', () => {
+test('V1.5 audit page embeds F-37 generated timeline for spine fixture id', () => {
   const page = buildPage({
     name: 'audit-detail',
-    packetId: proposalDecisionPacketFixture.packet_id,
+    packetId: VERTICAL_SLICE_FLOW_PACKET_ID,
   });
-  assert.match(page.bodyHtml, /field_capture_created/);
+  assert.match(page.bodyHtml, /decision\.surfaced/);
   assert.match(page.bodyHtml, /Validator results/);
   assert.match(page.bodyHtml, /Blackboard write preview/);
 });
@@ -118,7 +131,8 @@ test('V1.5 audit at /audit/<VERTICAL_SLICE_FLOW_PACKET_ID> embeds full F-37 surf
   assert.match(page.bodyHtml, /Validator results/);
   assert.match(page.bodyHtml, /Safe next action/);
   assert.match(page.bodyHtml, /Blackboard write preview/);
-  assert.match(page.bodyHtml, /Rail · Movement/);
+  assert.match(page.bodyHtml, /Policy Gate preview/);
+  assert.match(page.bodyHtml, /Persistence performed/);
   assert.match(
     page.bodyHtml,
     /AI-assisted output is logged with source refs, validator results, and human review state/,

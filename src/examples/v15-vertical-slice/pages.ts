@@ -113,7 +113,7 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
       const f36 = f36ModelForRouteId(route.id);
       return {
         title: f36.decisionTitle,
-        subtitle: `Approval card · ${esc(f36.packet.extracted_facts.client_name ?? 'Client')} · spine route <code>${esc(spineId)}</code>`,
+        subtitle: `Approval card · ${esc(f36.packet.client_name)} · spine route <code>${esc(spineId)}</code>`,
         notice: 'Approval required before any external send. AI-assisted. Review before approval.',
         bodyHtml: buildF36DecisionCardHtml(f36, route.id),
         railHtml: `<aside class="kerf-v15-rail" aria-label="Review context">
