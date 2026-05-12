@@ -2,13 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-test('v15 vertical slice HTML loads shell bundle and shared tokens stylesheet', () => {
+test('v15 vertical slice HTML loads shell bundle via root-relative paths (deep-link safe)', () => {
+  // Root-relative paths are required so deep-route reloads (e.g.
+  // /decisions/<id>, /audit/<id>) resolve assets against the server root
+  // rather than the current URL path. Browser-relative paths would
+  // SPA-fallback to index.html when fetched from a deep route, causing a
+  // silent blank-page failure. See P1 deep-link fix.
+  //
+  // The previous test asserted that index.html referenced a shared
+  // decision-card.css stylesheet, but that link pointed outside the V1.5
+  // server's root and 404'd silently. F-36 uses kerf-v15-f36-* classes
+  // defined in app.css, so the cross-tree link was dead code and removed.
   const html = readFileSync(new URL('../src/examples/v15-vertical-slice/index.html', import.meta.url), 'utf8');
 
-  assert.match(html, /decision-card\.css/);
-  assert.match(html, /\.\/app\.css/);
-  assert.match(html, /\.\/app\.bundle\.js/);
+  // Root-relative paths present
+  assert.match(html, /href="\/app\.css"/);
+  assert.match(html, /src="\/app\.bundle\.js"/);
+  assert.match(html, /href="\/f33-embed\.css"/);
+  assert.match(html, /href="\/f35-embed\.css"/);
+  assert.match(html, /href="\/f37-embed\.css"/);
   assert.match(html, /id="kerf-v15-root"/);
+
+  // Browser-relative paths must NOT appear — they regress deep-link reload
+  assert.doesNotMatch(html, /href="\.\/app\.css"/);
+  assert.doesNotMatch(html, /src="\.\/app\.bundle\.js"/);
 });
 
 test('v15 vertical slice router documents required paths', () => {

@@ -1,6 +1,11 @@
 /**
  * V1.5 vertical slice shell — scoped under .kerf-v15-shell.
- * Load after decision-card.css for shared --kerf-* tokens.
+ * Note: this demo does NOT load the shared `src/ui/styles/decision-card.css`
+ * (it lives outside the V1.5 server root). Where this file references
+ * `--kerf-*` tokens, the demo currently falls back to browser defaults.
+ * Restoring proper kerf token styling on the V1.5 demo is tracked as a
+ * separate cosmetic follow-up; this comment intentionally surfaces the
+ * gap so future readers don't assume decision-card.css is loaded here.
  */
 
 .kerf-v15-shell {
