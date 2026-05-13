@@ -13,6 +13,7 @@ import {
   v15FieldCaptureReplaceState,
   type V15FieldCaptureState,
 } from './v15-field-capture-state.js';
+import { v15PersistContextDryRunFromHandoff } from './v15-context-dry-run-session.js';
 import { v15F37SetSelectedEventId } from './v15-f37-selection.js';
 
 const ROOT_ID = 'kerf-v15-root';
@@ -71,11 +72,13 @@ function navigateTo(url: string): void {
 }
 
 function persistFieldCaptureHandoff(state: V15FieldCaptureState): void {
+  const handoff = buildV15FieldCaptureHandoff(state);
   try {
-    sessionStorage.setItem(FIELD_CAPTURE_HANDOFF_STORAGE_KEY, JSON.stringify(buildV15FieldCaptureHandoff(state)));
+    sessionStorage.setItem(FIELD_CAPTURE_HANDOFF_STORAGE_KEY, JSON.stringify(handoff));
   } catch {
     /* ignore */
   }
+  v15PersistContextDryRunFromHandoff(handoff);
 }
 
 function toggleFcMode(id: CaptureModeId): void {

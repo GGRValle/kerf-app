@@ -56,13 +56,14 @@ test('F-33 manual browser-text handoff path still serializes typed note and past
   assert.equal(handoff.manual_transcript, manualState.manualTranscript);
 });
 
-test('F-33 active job handoff is persisted before leaving the page', () => {
+test('F-33 active job context dry-run is persisted before leaving the page', () => {
   const html = buildV15FieldCaptureHtml(v15FieldCaptureInitialState());
   const appSrc = readFileSync(new URL('../src/examples/v15-vertical-slice/app.ts', import.meta.url), 'utf8');
 
-  assert.match(html, /Changing this job updates the capture handoff used by Transcript Review/);
+  assert.match(html, /Add job context here; Kerf builds a local dry-run for Transcript, Draft, Decision, and Audit/);
   assert.match(appSrc, /function persistFieldCaptureHandoff/);
   assert.match(appSrc, /FIELD_CAPTURE_HANDOFF_STORAGE_KEY/);
+  assert.match(appSrc, /v15PersistContextDryRunFromHandoff/);
   assert.match(appSrc, /sel\.addEventListener\('change'/);
   assert.match(appSrc, /persistFieldCaptureHandoff\(next\)/);
 });
