@@ -95,6 +95,7 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
   const auditRail = packet.model_suggested_blackboard_rail ?? '—';
   const auditInference = packet.model_suggested_inference_label ?? '—';
   const auditAltitude = packet.model_suggested_altitude ?? '—';
+  const safeNextLabel = gate.safe_next_action.replace(/_/g, ' ');
 
   return `<article class="kerf-v15-f36" aria-label="Approval-required decision card">
   <header class="kerf-v15-f36-header">
@@ -116,9 +117,31 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
     <p>AI-assisted. Review before approval.</p>
   </div>
 
-  <section class="kerf-v15-f36-section kerf-v15-f36-section--authority" aria-labelledby="kerf-v15-f36-routing-title">
-    <h3 id="kerf-v15-f36-routing-title" class="kerf-v15-f36-h">Authoritative routing</h3>
-    <p class="kerf-v15-f36-lead">System final fields and policy gate output drive what Kerf does next. Model suggestions are shown only in the audit panel below.</p>
+  <section class="kerf-v15-f36-section kerf-v15-f36-section--review" aria-labelledby="kerf-v15-f36-review-title">
+    <h3 id="kerf-v15-f36-review-title" class="kerf-v15-f36-h">Review first</h3>
+    <div class="kerf-v15-f36-review-grid">
+      <div class="kerf-v15-f36-review-card">
+        <span class="kerf-v15-f36-review-label">Recommended action</span>
+        <p class="kerf-v15-f36-prose"><strong>${esc(rawPacket.proposed_action.description)}</strong></p>
+        <p class="kerf-v15-f36-muted">${esc(rawPacket.proposed_action.reason)}</p>
+      </div>
+      <div class="kerf-v15-f36-review-card kerf-v15-f36-review-card--hold">
+        <span class="kerf-v15-f36-review-label">Hold because</span>
+        ${blockedList}
+      </div>
+    </div>
+    <dl class="kerf-v15-f36-next-grid">
+      <div><dt>safe_next_action</dt><dd><code>${esc(gate.safe_next_action)}</code><span>${esc(safeNextLabel)}</span></dd></div>
+      <div><dt>Human approval</dt><dd>${gate.required_human_approval ? 'Required' : 'Not required'}</dd></div>
+      <div><dt>External send</dt><dd>${extAllowed ? 'Allowed' : 'Blocked'}</dd></div>
+    </dl>
+  </section>
+
+  <details class="kerf-v15-f36-details">
+    <summary class="kerf-v15-f36-details__summary">System details</summary>
+    <section class="kerf-v15-f36-section kerf-v15-f36-section--authority" aria-labelledby="kerf-v15-f36-routing-title">
+      <h3 id="kerf-v15-f36-routing-title" class="kerf-v15-f36-h">System routing</h3>
+      <p class="kerf-v15-f36-lead">System final fields and policy gate output drive what Kerf does next. Model suggestions are shown only in the audit panel below.</p>
     <dl class="kerf-v15-f36-grid">
       <div class="kerf-v15-f36-highlight">
         <dt>system_final_altitude</dt>
@@ -156,24 +179,28 @@ export function buildF36DecisionCardHtml(model: F36DecisionCardModel, routeDecis
         </div>
       </div>
     </div>
-  </section>
+    </section>
+  </details>
 
-  <section class="kerf-v15-f36-section" aria-labelledby="kerf-v15-f36-proposed-title">
-    <h3 id="kerf-v15-f36-proposed-title" class="kerf-v15-f36-h">Proposed action</h3>
-    <p class="kerf-v15-f36-prose"><strong>${esc(rawPacket.proposed_action.description)}</strong></p>
-    <h4 class="kerf-v15-f36-subh">Why Kerf recommends it</h4>
-    <p class="kerf-v15-f36-prose">${esc(rawPacket.proposed_action.reason)}</p>
-    <h4 class="kerf-v15-f36-subh">Source refs</h4>
-    ${refs}
-    <h4 class="kerf-v15-f36-subh">Risk flags</h4>
-    ${risks}
-  </section>
+  <details class="kerf-v15-f36-details">
+    <summary class="kerf-v15-f36-details__summary">Source context and risk flags</summary>
+    <section class="kerf-v15-f36-section" aria-labelledby="kerf-v15-f36-context-title">
+      <h3 id="kerf-v15-f36-context-title" class="kerf-v15-f36-h">Supporting context</h3>
+      <h4 class="kerf-v15-f36-subh">Source refs</h4>
+      ${refs}
+      <h4 class="kerf-v15-f36-subh">Risk flags</h4>
+      ${risks}
+    </section>
+  </details>
 
-  <section class="kerf-v15-f36-section" aria-labelledby="kerf-v15-f36-val-title">
-    <h3 id="kerf-v15-f36-val-title" class="kerf-v15-f36-h">Validator summary</h3>
-    <p class="kerf-v15-f36-muted">Policy Gate results carried on <code>decision_packet.policy_gate.validator_results</code> — this UI does not run validators.</p>
-    <ol class="kerf-v15-f36-val-list">${validators}</ol>
-  </section>
+  <details class="kerf-v15-f36-details">
+    <summary class="kerf-v15-f36-details__summary">Validator summary</summary>
+    <section class="kerf-v15-f36-section" aria-labelledby="kerf-v15-f36-val-title">
+      <h3 id="kerf-v15-f36-val-title" class="kerf-v15-f36-h">Validator summary</h3>
+      <p class="kerf-v15-f36-muted">Policy Gate results carried on <code>decision_packet.policy_gate.validator_results</code> — this UI does not run validators.</p>
+      <ol class="kerf-v15-f36-val-list">${validators}</ol>
+    </section>
+  </details>
 
   <details class="kerf-v15-f36-audit">
     <summary class="kerf-v15-f36-audit__summary">Model suggestion (audit / debug)</summary>

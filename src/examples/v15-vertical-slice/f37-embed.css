@@ -165,6 +165,27 @@
   border-top: 1px solid var(--kerf-border);
 }
 
+.kerf-f37__support {
+  padding: var(--kerf-space-md) var(--kerf-space-lg);
+  border: 1px solid var(--kerf-border);
+  border-radius: var(--kerf-radius-md);
+  background: var(--kerf-bg-elevated);
+}
+
+.kerf-f37__support[open] {
+  background: var(--kerf-bg-card);
+}
+
+.kerf-f37__support-summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 0.9rem;
+}
+
+.kerf-f37__support > p:first-of-type {
+  margin-top: var(--kerf-space-md);
+}
+
 .kerf-f37__section h3 {
   margin: 0 0 var(--kerf-space-md);
   font-size: 0.95rem;
