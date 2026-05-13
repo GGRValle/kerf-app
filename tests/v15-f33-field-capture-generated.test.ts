@@ -56,6 +56,17 @@ test('F-33 manual browser-text handoff path still serializes typed note and past
   assert.equal(handoff.manual_transcript, manualState.manualTranscript);
 });
 
+test('F-33 active job handoff is persisted before leaving the page', () => {
+  const html = buildV15FieldCaptureHtml(v15FieldCaptureInitialState());
+  const appSrc = readFileSync(new URL('../src/examples/v15-vertical-slice/app.ts', import.meta.url), 'utf8');
+
+  assert.match(html, /Changing this job updates the capture handoff used by Transcript Review/);
+  assert.match(appSrc, /function persistFieldCaptureHandoff/);
+  assert.match(appSrc, /FIELD_CAPTURE_HANDOFF_STORAGE_KEY/);
+  assert.match(appSrc, /sel\.addEventListener\('change'/);
+  assert.match(appSrc, /persistFieldCaptureHandoff\(next\)/);
+});
+
 test('F-33 field capture embed does not directly invoke dryRunFieldCaptureDecision', () => {
   const files = [
     '../src/examples/v15-vertical-slice/v15-field-capture-state.ts',

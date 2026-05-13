@@ -70,6 +70,14 @@ function navigateTo(url: string): void {
   render();
 }
 
+function persistFieldCaptureHandoff(state: V15FieldCaptureState): void {
+  try {
+    sessionStorage.setItem(FIELD_CAPTURE_HANDOFF_STORAGE_KEY, JSON.stringify(buildV15FieldCaptureHandoff(state)));
+  } catch {
+    /* ignore */
+  }
+}
+
 function toggleFcMode(id: CaptureModeId): void {
   const s = v15FieldCaptureGetState();
   const modes = new Set(s.modes);
@@ -81,7 +89,9 @@ function toggleFcMode(id: CaptureModeId): void {
   if (modes.size === 0) {
     modes.add('text_note');
   }
-  v15FieldCaptureReplaceState({ ...s, modes });
+  const next = { ...s, modes };
+  v15FieldCaptureReplaceState(next);
+  persistFieldCaptureHandoff(next);
   render();
 }
 
@@ -100,16 +110,20 @@ function togglePhotoTag(photoId: string, tag: PhotoTag): void {
     }
     return { ...p, tags };
   });
-  v15FieldCaptureReplaceState({ ...s, photos });
+  const next = { ...s, photos };
+  v15FieldCaptureReplaceState(next);
+  persistFieldCaptureHandoff(next);
   render();
 }
 
 function addMockPhoto(): void {
   const s = v15FieldCaptureGetState();
-  v15FieldCaptureReplaceState({
+  const next = {
     ...s,
-    photos: [...s.photos, { id: `ph_new_${Date.now()}`, label: 'New photo (mock)', tags: ['room'] }],
-  });
+    photos: [...s.photos, { id: `ph_new_${Date.now()}`, label: 'New photo (mock)', tags: ['room' as PhotoTag] }],
+  };
+  v15FieldCaptureReplaceState(next);
+  persistFieldCaptureHandoff(next);
   render();
 }
 
@@ -117,6 +131,7 @@ function patchFcTextNote(text: string): void {
   const s = v15FieldCaptureGetState();
   const next: V15FieldCaptureState = { ...s, textNote: text };
   v15FieldCaptureReplaceState(next);
+  persistFieldCaptureHandoff(next);
   const dd = document.querySelector('.kerf-fc-preview-note');
   if (dd !== null) {
     dd.textContent = previewRawNote(next);
@@ -127,6 +142,7 @@ function patchFcManualTranscript(text: string): void {
   const s = v15FieldCaptureGetState();
   const next: V15FieldCaptureState = { ...s, manualTranscript: text };
   v15FieldCaptureReplaceState(next);
+  persistFieldCaptureHandoff(next);
   const dd = document.querySelector('.kerf-fc-preview-note');
   if (dd !== null) {
     dd.textContent = previewRawNote(next);
@@ -157,7 +173,9 @@ function wireFieldCaptureAfterRender(path: string): void {
   if (sel instanceof HTMLSelectElement) {
     sel.addEventListener('change', () => {
       const s = v15FieldCaptureGetState();
-      v15FieldCaptureReplaceState({ ...s, projectId: sel.value });
+      const next = { ...s, projectId: sel.value };
+      v15FieldCaptureReplaceState(next);
+      persistFieldCaptureHandoff(next);
       render();
     });
   }
@@ -239,12 +257,7 @@ function onDocumentClick(ev: MouseEvent): void {
   const fcSubmit = t.closest('#kerf-v15-fc-submit');
   if (fcSubmit instanceof HTMLButtonElement) {
     ev.preventDefault();
-    const handoff = buildV15FieldCaptureHandoff(v15FieldCaptureGetState());
-    try {
-      sessionStorage.setItem(FIELD_CAPTURE_HANDOFF_STORAGE_KEY, JSON.stringify(handoff));
-    } catch {
-      /* ignore */
-    }
+    persistFieldCaptureHandoff(v15FieldCaptureGetState());
     navigateTo('/transcript-review');
     return;
   }
