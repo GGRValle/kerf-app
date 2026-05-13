@@ -169,6 +169,29 @@ body {
   border-top: 1px solid var(--kerf-border);
 }
 
+.kerf-f37__support {
+  padding: 0;
+  border: 1px solid var(--kerf-border);
+  border-radius: var(--kerf-radius-md);
+  background: color-mix(in srgb, var(--kerf-bg-elevated) 68%, transparent);
+}
+
+.kerf-f37__support[open] {
+  padding: 0 0 var(--kerf-space-lg);
+}
+
+.kerf-f37__support-summary {
+  cursor: pointer;
+  padding: var(--kerf-space-md) var(--kerf-space-lg);
+  font-weight: 700;
+  color: var(--kerf-fg);
+}
+
+.kerf-f37__support > p:first-of-type {
+  margin-top: 0;
+  padding: 0 var(--kerf-space-lg);
+}
+
 .kerf-f37__section h3 {
   margin: 0 0 var(--kerf-space-md);
   font-size: 0.95rem;

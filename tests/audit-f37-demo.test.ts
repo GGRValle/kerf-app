@@ -44,6 +44,10 @@ test('F-37 generated page renders fixture transcript, validators, and Blackboard
   assert.match(html, /Pantry shelf should be twelf inches deep per plan/);
   assert.match(html, /Pantry shelf should be twelve inches deep per plan/);
   assert.match(html, /Policy Gate emitted a DecisionPacket for operator review/);
+  assert.match(html, /<details class="kerf-f37__section kerf-f37__support">/);
+  assert.match(html, /<summary id="f37-transcript-h" class="kerf-f37__support-summary">Transcript preservation<\/summary>/);
+  assert.match(html, /<summary id="f37-val-h" class="kerf-f37__support-summary">Validator results<\/summary>/);
+  assert.match(html, /<summary id="f37-bb-h" class="kerf-f37__support-summary">Blackboard write preview<\/summary>/);
   assert.match(html, /Authoritative gate output from the field-capture dry run/);
   assert.match(html, /Preview Policy Gate decision for operator review/);
   assert.match(html, /persistence_performed|Persistence performed/);

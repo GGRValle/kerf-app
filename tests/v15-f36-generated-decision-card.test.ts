@@ -49,6 +49,13 @@ test('F-36 HTML renders generated decision fields with audit-only model suggesti
   assert.ok(html.includes(generated.project_name));
   assert.ok(html.includes(generated.system_final_altitude));
   assert.ok(html.includes(generated.safe_next_action));
+  assert.match(html, /Review first/);
+  assert.match(html, /Recommended action/);
+  assert.match(html, /Hold because/);
+  assert.match(html, /<details class="kerf-v15-f36-details">/);
+  assert.match(html, /System details/);
+  assert.match(html, /Source context and risk flags/);
+  assert.match(html, /Validator summary/);
   assert.match(html, /Model suggestion \(audit \/ debug\)/);
   assert.match(html, /model_suggested_altitude/);
   assert.match(html, /Audit only/);

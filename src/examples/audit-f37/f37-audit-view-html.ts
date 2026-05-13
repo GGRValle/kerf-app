@@ -343,15 +343,15 @@ function renderTranscriptSection(transcript?: TranscriptModel): string {
   const edits = transcript ? renderTranscriptEdits(transcript) : TRANSCRIPT_EDIT_SNIPPET;
   const current = transcript ? renderTranscriptLines(transcript.transcript_current) : transcriptCurrentDisplay();
   return `
-  <section class="kerf-f37__section" aria-labelledby="f37-transcript-h">
-    <h3 id="f37-transcript-h">Transcript preservation</h3>
+  <details class="kerf-f37__section kerf-f37__support">
+    <summary id="f37-transcript-h" class="kerf-f37__support-summary">Transcript preservation</summary>
     <p><strong>Original (immutable)</strong> — stored once; never edited in place.</p>
     <pre class="kerf-f37__mono" aria-label="Original transcript">${escapeHtml(original)}</pre>
     <p><strong>Edits (overlay events)</strong> — each edit is an append-only correction record.</p>
     <pre class="kerf-f37__mono" aria-label="Transcript overlay">${escapeHtml(edits)}</pre>
     <p><strong>Current view</strong> — rendered for operators as original + ordered overlays (demo text below).</p>
     <pre class="kerf-f37__mono" aria-label="Rendered current transcript">${escapeHtml(current)}</pre>
-  </section>`;
+  </details>`;
 }
 
 function renderValidators(packet: DecisionPacket): string {
@@ -374,15 +374,15 @@ function renderValidators(packet: DecisionPacket): string {
     .join('');
   const safeNext = escapeHtml(packet.policy_gate_result.safe_next_action);
   return `
-  <section class="kerf-f37__section" aria-labelledby="f37-val-h">
-    <h3 id="f37-val-h">Validator results</h3>
+  <details class="kerf-f37__section kerf-f37__support">
+    <summary id="f37-val-h" class="kerf-f37__support-summary">Validator results</summary>
     <p>Authoritative gate output on the DecisionPacket (read-only).</p>
     <p><strong>Safe next action:</strong> <span class="kerf-f37__mono">${safeNext}</span></p>
     <table class="kerf-f37__table">
       <thead><tr><th>Validator</th><th>Status</th><th>Explanation</th><th>Corrected fields</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-  </section>`;
+  </details>`;
 }
 
 function generatedValidatorStatusPill(v: VerticalSliceValidatorResult): { label: string; className: string } {
@@ -411,15 +411,15 @@ function renderGeneratedValidators(fixture: VerticalSliceDryRunDemoFixture): str
     })
     .join('');
   return `
-  <section class="kerf-f37__section" aria-labelledby="f37-val-h">
-    <h3 id="f37-val-h">Validator results</h3>
+  <details class="kerf-f37__section kerf-f37__support">
+    <summary id="f37-val-h" class="kerf-f37__support-summary">Validator results</summary>
     <p>Authoritative gate output from the field-capture dry run (read-only).</p>
     <p><strong>Safe next action:</strong> <span class="kerf-f37__mono">${escapeHtml(fixture.decision_packet.safe_next_action)}</span></p>
     <table class="kerf-f37__table">
       <thead><tr><th>Validator</th><th>Status</th><th>Explanation</th><th>Corrected fields</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-  </section>`;
+  </details>`;
 }
 
 function renderBlackboardPreview(packet: DecisionPacket): string {
@@ -433,8 +433,8 @@ function renderBlackboardPreview(packet: DecisionPacket): string {
       ? 'Invoice follow-up draft queued for owner review.'
       : 'Proposal follow-up draft queued for owner review.';
   return `
-  <section class="kerf-f37__section" aria-labelledby="f37-bb-h">
-    <h3 id="f37-bb-h">Blackboard write preview</h3>
+  <details class="kerf-f37__section kerf-f37__support">
+    <summary id="f37-bb-h" class="kerf-f37__support-summary">Blackboard write preview</summary>
     <p>What <strong>would</strong> post after an explicit operator commit (no write in this demo).</p>
     <dl class="kerf-f37__rail-grid">
       <dt>Rail · Movement</dt><dd>${escapeHtml(movement)}</dd>
@@ -447,13 +447,13 @@ function renderBlackboardPreview(packet: DecisionPacket): string {
       <dt>Source refs</dt><dd>${renderSourceRefs(packet.source_refs)}</dd>
       <dt>Retention / audit</dt><dd>until_close+7y · append-only audit chain (see timeline).</dd>
     </dl>
-  </section>`;
+  </details>`;
 }
 
 function renderGeneratedBlackboardPreview(preview: BlackboardWritePreview): string {
   return `
-  <section class="kerf-f37__section" aria-labelledby="f37-bb-h">
-    <h3 id="f37-bb-h">Blackboard write preview</h3>
+  <details class="kerf-f37__section kerf-f37__support">
+    <summary id="f37-bb-h" class="kerf-f37__support-summary">Blackboard write preview</summary>
     <p>What <strong>would</strong> post after an explicit operator commit (no write in this demo).</p>
     <dl class="kerf-f37__rail-grid">
       <dt>Rail</dt><dd>${escapeHtml(preview.rail)}</dd>
@@ -465,7 +465,7 @@ function renderGeneratedBlackboardPreview(preview: BlackboardWritePreview): stri
       <dt>Source refs</dt><dd>${renderSourceRefs(preview.source_refs.map(sourceRefFromVertical))}</dd>
       <dt>Retention / audit</dt><dd>until_close+7y · append-only audit chain (see timeline).</dd>
     </dl>
-  </section>`;
+  </details>`;
 }
 
 export type F37AuditVariant = 'standalone' | 'embedded';
