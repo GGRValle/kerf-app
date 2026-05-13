@@ -32,6 +32,68 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function buildBlackboardPreviewHtml(): string {
+  const fixture = v15GetActiveVerticalSliceFixture();
+  const preview = fixture.blackboard_write_preview;
+  const decision = fixture.decision_packet;
+  const sources = preview.source_refs
+    .map((ref) => `<li><strong>${esc(ref.label)}</strong>${ref.excerpt !== undefined ? ` — ${esc(ref.excerpt)}` : ''}</li>`)
+    .join('');
+  const affected = preview.affected_entity_ids
+    .map((id) => `<li><code>${esc(id)}</code></li>`)
+    .join('');
+  const scopeRows = fixture.field_capture_payload.scope_lines
+    .slice(0, 6)
+    .map((line) => {
+      const missing = line.missing_info !== undefined && line.missing_info.length > 0
+        ? ` <span class="kerf-v15-card__meta">Needs: ${esc(line.missing_info.join(', '))}</span>`
+        : '';
+      return `<li><strong>${esc(line.description)}</strong> <span class="kerf-v15-card__meta">${esc(line.category)}</span>${missing}</li>`;
+    })
+    .join('');
+
+  return `<section class="kerf-v15-card" aria-labelledby="kerf-v15-blackboard-preview-h">
+  <div class="kerf-v15-card__head">
+    <p class="kerf-v15-card__meta">Preview only · no Blackboard write happened</p>
+    <h2 id="kerf-v15-blackboard-preview-h" class="kerf-v15-card__title">Current dry-run memory preview</h2>
+  </div>
+  <p class="kerf-v15-prose">This shows what the active field-capture dry run would hand to Blackboard after human review. It follows the context you typed in Field Capture; it does not persist anything.</p>
+  <dl class="kerf-fc-preview-dl">
+    <div><dt>Project</dt><dd>${esc(decision.project_name)}</dd></div>
+    <div><dt>Client</dt><dd>${esc(decision.client_name)}</dd></div>
+    <div><dt>Rail</dt><dd><code>${esc(preview.rail)}</code></dd></div>
+    <div><dt>Summary</dt><dd>${esc(preview.summary)}</dd></div>
+    <div><dt>Persistence</dt><dd>${preview.persistence_performed === false ? 'Not performed' : 'Unknown'}</dd></div>
+  </dl>
+</section>
+
+<section class="kerf-v15-card" aria-labelledby="kerf-v15-blackboard-note-h">
+  <div class="kerf-v15-card__head">
+    <h2 id="kerf-v15-blackboard-note-h" class="kerf-v15-card__title">Blackboard write preview</h2>
+    <p class="kerf-v15-card__meta">Generated from the same DecisionPacket as Decision and Audit</p>
+  </div>
+  <pre class="kerf-v15-pre" role="document">${esc(preview.proposed_markdown)}</pre>
+</section>
+
+<section class="kerf-v15-card" aria-labelledby="kerf-v15-blackboard-scope-h">
+  <div class="kerf-v15-card__head">
+    <h2 id="kerf-v15-blackboard-scope-h" class="kerf-v15-card__title">Scope memory candidates</h2>
+    <p class="kerf-v15-card__meta">Extracted from transcript_current for review</p>
+  </div>
+  <ul class="kerf-v15-kicker">${scopeRows}</ul>
+</section>
+
+<section class="kerf-v15-card" aria-labelledby="kerf-v15-blackboard-sources-h">
+  <div class="kerf-v15-card__head">
+    <h2 id="kerf-v15-blackboard-sources-h" class="kerf-v15-card__title">Source refs and affected ids</h2>
+  </div>
+  <p class="kerf-v15-prose"><strong>Sources</strong></p>
+  <ul class="kerf-v15-kicker">${sources}</ul>
+  <p class="kerf-v15-prose"><strong>Affected ids</strong></p>
+  <ul class="kerf-v15-kicker">${affected}</ul>
+</section>`;
+}
+
 export interface PageFrameContent {
   title: string;
   subtitle: string;
@@ -152,9 +214,9 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
     case 'blackboard':
       return {
         title: 'Blackboard',
-        subtitle: 'System memory surface (graphical rail in production).',
-        notice: 'Demo layout only — no graph queries or writes.',
-        bodyHtml: `<p class="kerf-v15-prose">Blackboard placeholder. Use this route to validate nav and layout without touching core Blackboard modules.</p>`,
+        subtitle: 'System memory surface (read-only preview).',
+        notice: 'Preview only — no graph queries or writes.',
+        bodyHtml: buildBlackboardPreviewHtml(),
       };
   }
 }
