@@ -4,16 +4,24 @@ import {
   type CaptureModeId,
   type PhotoTag,
 } from '../field-capture-mock.js';
-import { f34ResetDemoState, f34ToggleMissingResolved } from './f34-transcript-review-state.js';
+import {
+  f34ResetDemoState,
+  getF34ClarificationAnswers,
+  setF34ClarificationAnswer,
+} from './f34-transcript-review-state.js';
 import { matchRoute } from './router.js';
 import { renderShell } from './shell.js';
 import { buildV15FieldCaptureHandoff } from './v15-field-capture-html.js';
+import { initV15RecordButton, type V15TranscribeMeta } from './v15-record-button.js';
 import {
   v15FieldCaptureGetState,
   v15FieldCaptureReplaceState,
   type V15FieldCaptureState,
 } from './v15-field-capture-state.js';
-import { v15PersistContextDryRunFromHandoff } from './v15-context-dry-run-session.js';
+import {
+  v15PersistContextDryRunFromHandoff,
+  v15RefreshContextDryRunFromSession,
+} from './v15-context-dry-run-session.js';
 import { v15F37SetSelectedEventId } from './v15-f37-selection.js';
 
 const ROOT_ID = 'kerf-v15-root';
@@ -78,6 +86,7 @@ function persistFieldCaptureHandoff(state: V15FieldCaptureState): void {
   } catch {
     /* ignore */
   }
+  f34ResetDemoState();
   v15PersistContextDryRunFromHandoff(handoff);
 }
 
@@ -217,6 +226,51 @@ function wireFieldCaptureAfterRender(path: string): void {
   });
 
   document.getElementById('kerf-v15-fc-add-photo')?.addEventListener('click', addMockPhoto);
+
+  // Voice Record button — appends Whisper transcript to the text-note field so
+  // the existing F-33 → F-34 handoff path picks it up (carve-out: kill-switch
+  // voice-in dogfood, 2026-05-13).
+  initV15RecordButton({
+    onTranscript: (transcript: string, _meta: V15TranscribeMeta): void => {
+      appendVoiceTranscriptToTextNote(transcript);
+    },
+  });
+}
+
+function appendVoiceTranscriptToTextNote(transcript: string): void {
+  const text = transcript.trim();
+  if (text.length === 0) {
+    return;
+  }
+  const s = v15FieldCaptureGetState();
+  // If text-note mode is off, turn it on so the operator sees the transcript
+  // landing somewhere visible. We don't re-render the whole page (that would
+  // wipe the voice card's "done" state with the transcript still visible);
+  // instead we patch the textarea value in place.
+  const modes = new Set(s.modes);
+  modes.add('text_note');
+  const existing = s.textNote.trim();
+  const joined = existing.length === 0 ? text : `${existing}\n\n${text}`;
+  const next: V15FieldCaptureState = { ...s, modes, textNote: joined };
+  v15FieldCaptureReplaceState(next);
+  persistFieldCaptureHandoff(next);
+  // Targeted DOM updates (mirrors patchFcTextNote's no-render pattern):
+  //   - textarea value gets the new text (operator can still edit afterward)
+  //   - the preview-note DD refreshes to show what F-34 will receive
+  // If the textarea isn't present (text_note mode was off), a full render
+  // is needed to materialize it. In that case render() also re-inits the
+  // record button as idle — the operator's transcript is preserved in the
+  // textarea so the data isn't lost.
+  const ta = document.getElementById('kerf-v15-fc-text-note');
+  if (ta instanceof HTMLTextAreaElement) {
+    ta.value = joined;
+    const dd = document.querySelector('.kerf-fc-preview-note');
+    if (dd !== null) {
+      dd.textContent = previewRawNote(next);
+    }
+  } else {
+    render();
+  }
 }
 
 function onDocumentClick(ev: MouseEvent): void {
@@ -234,17 +288,15 @@ function onDocumentClick(ev: MouseEvent): void {
   if (resetBtn instanceof HTMLButtonElement) {
     ev.preventDefault();
     f34ResetDemoState();
+    v15RefreshContextDryRunFromSession({});
     render();
     return;
   }
-  const resolveBtn = t.closest('[data-kerf-f34-resolve]');
-  if (resolveBtn instanceof HTMLButtonElement) {
+  const applyBtn = t.closest('[data-kerf-f34-apply="true"]');
+  if (applyBtn instanceof HTMLButtonElement) {
     ev.preventDefault();
-    const id = resolveBtn.getAttribute('data-kerf-f34-resolve');
-    if (id !== null && id.length > 0) {
-      f34ToggleMissingResolved(id);
-      render();
-    }
+    v15RefreshContextDryRunFromSession(getF34ClarificationAnswers());
+    render();
     return;
   }
   const f37Btn = t.closest('[data-f37-event]');
@@ -287,8 +339,20 @@ function onPopState(): void {
   render();
 }
 
+function onDocumentInput(ev: Event): void {
+  const t = ev.target;
+  if (!(t instanceof HTMLTextAreaElement)) {
+    return;
+  }
+  const clarificationId = t.getAttribute('data-kerf-f34-answer');
+  if (clarificationId !== null && clarificationId.length > 0) {
+    setF34ClarificationAnswer(clarificationId, t.value);
+  }
+}
+
 function boot(): void {
   document.addEventListener('click', onDocumentClick);
+  document.addEventListener('input', onDocumentInput);
   window.addEventListener('popstate', onPopState);
   normalizeBootUrl();
   render();

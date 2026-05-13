@@ -1,4 +1,5 @@
 import type { Actor, EntityId, ISO8601, SourceRef } from '../../blackboard/index.js';
+import type { DraftReviewLine, ScopeLine } from '../../demo/types.js';
 import {
   fieldCaptureDryRunToVerticalSliceDemoFixture,
   verticalSliceFieldCaptureDemoFixture,
@@ -11,7 +12,14 @@ import {
   type FieldCaptureTranscriptSegment,
   type FieldCaptureInput,
 } from '../../workflows/index.js';
-import type { FieldCaptureHandoffV1 } from '../field-capture-mock.js';
+import {
+  readFieldCaptureHandoffFromSessionStorage,
+  type FieldCaptureHandoffV1,
+} from '../field-capture-mock.js';
+import {
+  deriveV15ClarificationQuestions,
+  type V15ClarificationQuestion,
+} from './v15-context-clarifications.js';
 
 export const V15_CONTEXT_DRY_RUN_STORAGE_KEY = 'kerf_v15_context_dry_run_fixture_v1';
 
@@ -46,6 +54,19 @@ export function v15PersistContextDryRunFromHandoff(
   return fixture;
 }
 
+export function v15RefreshContextDryRunFromSession(
+  clarificationAnswers: Readonly<Record<string, string>>,
+): VerticalSliceDryRunDemoFixture | null {
+  const handoff = readFieldCaptureHandoffFromSessionStorage();
+  if (handoff === null) {
+    return null;
+  }
+  const fixture = v15BuildContextDryRunFixtureFromHandoff(handoff, clarificationAnswers);
+  activeContextFixture = fixture;
+  writeStoredContextFixture(fixture);
+  return fixture;
+}
+
 export function v15ClearContextDryRunFixture(): void {
   activeContextFixture = null;
   if (typeof sessionStorage === 'undefined') {
@@ -60,6 +81,7 @@ export function v15ClearContextDryRunFixture(): void {
 
 export function v15BuildContextDryRunFixtureFromHandoff(
   handoff: FieldCaptureHandoffV1,
+  clarificationAnswers: Readonly<Record<string, string>> = {},
 ): VerticalSliceDryRunDemoFixture {
   const contextText = contextTextFromHandoff(handoff);
   const capturedAt = safeIso(handoff.created_at_iso);
@@ -111,7 +133,7 @@ export function v15BuildContextDryRunFixtureFromHandoff(
     model_suggested_altitude: 'L1',
   });
 
-  return fieldCaptureDryRunToVerticalSliceDemoFixture(dryRun, {
+  const fixture = fieldCaptureDryRunToVerticalSliceDemoFixture(dryRun, {
     project_name: handoff.project_name,
     client_name: handoff.client_name,
     title: `${handoff.project_name} - field context review`,
@@ -121,6 +143,8 @@ export function v15BuildContextDryRunFixtureFromHandoff(
       model_provider: 'audit_redacted',
     },
   });
+
+  return annotateFixtureWithClarifications(fixture, clarificationAnswers);
 }
 
 function readStoredContextFixture(): VerticalSliceDryRunDemoFixture | null {
@@ -313,4 +337,222 @@ function slug(value: string): string {
 function safeIso(value: string): ISO8601 {
   const t = Date.parse(value);
   return (Number.isFinite(t) ? new Date(t).toISOString() : new Date().toISOString()) as ISO8601;
+}
+
+function annotateFixtureWithClarifications(
+  fixture: VerticalSliceDryRunDemoFixture,
+  clarificationAnswers: Readonly<Record<string, string>>,
+): VerticalSliceDryRunDemoFixture {
+  const questions = deriveV15ClarificationQuestions(fixture);
+  if (questions.length === 0) {
+    return fixture;
+  }
+
+  const questionMap = new Map<string, readonly V15ClarificationQuestion[]>();
+  for (const question of questions) {
+    if (question.target_line_id === undefined) {
+      continue;
+    }
+    const current = questionMap.get(question.target_line_id) ?? [];
+    questionMap.set(question.target_line_id, [...current, question]);
+  }
+
+  const scopeLines = fixture.field_capture_payload.scope_lines.map((line) =>
+    annotateScopeLine(line, questionMap.get(line.id) ?? [], clarificationAnswers)
+  );
+  const lineIndex = new Map(scopeLines.map((line) => [line.id, line]));
+  const draftLines = fixture.draft_review_payload_ui.draft_lines.map((line) =>
+    annotateDraftLine(line, lineIndex.get(line.scope_line_id), questionMap.get(line.scope_line_id) ?? [], clarificationAnswers)
+  );
+  const summary = clarificationSummary(questions, clarificationAnswers);
+
+  return {
+    ...fixture,
+    field_capture_payload: {
+      ...fixture.field_capture_payload,
+      scope_lines: scopeLines,
+    },
+    draft_review_payload_ui: {
+      ...fixture.draft_review_payload_ui,
+      scope_lines: scopeLines,
+      draft_lines: draftLines,
+    },
+    blackboard_write_preview: {
+      ...fixture.blackboard_write_preview,
+      summary,
+      proposed_markdown: appendClarificationMarkdown(
+        fixture.blackboard_write_preview.proposed_markdown,
+        questions,
+        clarificationAnswers,
+      ),
+    },
+  };
+}
+
+function annotateScopeLine(
+  line: ScopeLine,
+  questions: readonly V15ClarificationQuestion[],
+  clarificationAnswers: Readonly<Record<string, string>>,
+): ScopeLine {
+  let quantity = line.quantity;
+  let unit = line.unit;
+  const missing = new Set(line.missing_info ?? []);
+  const assumptions = new Set(line.assumptions ?? []);
+
+  for (const question of questions) {
+    const answer = clarificationAnswers[question.id]?.trim() ?? '';
+    const flag = missingFlagForQuestion(question);
+    const parsedQuantity = question.kind === 'quantity' ? parseClarifiedQuantity(answer) : null;
+
+    if (question.kind === 'quantity') {
+      quantity = undefined;
+      unit = undefined;
+    }
+
+    if (answer.length === 0) {
+      missing.add(flag);
+      continue;
+    }
+
+    assumptions.add(`Operator clarification: ${answer}`);
+    if (question.kind === 'quantity') {
+      if (parsedQuantity !== null) {
+        missing.delete(flag);
+        quantity = parsedQuantity.quantity;
+        unit = parsedQuantity.unit;
+        assumptions.add(`Quantity clarified by operator: ${parsedQuantity.quantity} ${parsedQuantity.unit}`);
+      } else {
+        missing.add(flag);
+      }
+      continue;
+    }
+    missing.delete(flag);
+  }
+
+  return {
+    ...line,
+    ...(quantity !== undefined ? { quantity } : {}),
+    ...(unit !== undefined ? { unit } : {}),
+    ...(quantity === undefined ? {} : {}),
+    missing_info: [...missing],
+    assumptions: [...assumptions],
+  };
+}
+
+function annotateDraftLine(
+  line: DraftReviewLine,
+  scopeLine: ScopeLine | undefined,
+  questions: readonly V15ClarificationQuestion[],
+  clarificationAnswers: Readonly<Record<string, string>>,
+): DraftReviewLine {
+  const assumptionFlags = new Set(line.assumption_flags);
+  const missingFlags = new Set(scopeLine?.missing_info ?? line.missing_info_flags);
+  let sourceBasis = line.source_basis;
+  let quantity = scopeLine?.quantity ?? line.quantity;
+  let unit = scopeLine?.unit ?? line.unit;
+
+  for (const question of questions) {
+    const answer = clarificationAnswers[question.id]?.trim() ?? '';
+    if (answer.length === 0) {
+      missingFlags.add(missingFlagForQuestion(question));
+      continue;
+    }
+    assumptionFlags.add('operator_clarified');
+    sourceBasis = 'Field capture transcript plus operator clarification; no pricing authority assigned in dry run.';
+    if (question.kind === 'quantity') {
+      const parsed = parseClarifiedQuantity(answer);
+      if (parsed !== null) {
+        missingFlags.delete(missingFlagForQuestion(question));
+        quantity = parsed.quantity;
+        unit = parsed.unit;
+      } else {
+        missingFlags.add(missingFlagForQuestion(question));
+      }
+      continue;
+    }
+    missingFlags.delete(missingFlagForQuestion(question));
+  }
+
+  return {
+    ...line,
+    quantity,
+    unit,
+    source_basis: sourceBasis,
+    assumption_flags: [...assumptionFlags],
+    missing_info_flags: [...missingFlags],
+  };
+}
+
+function missingFlagForQuestion(question: V15ClarificationQuestion): string {
+  switch (question.kind) {
+    case 'quantity':
+      return 'Quantity requires operator review';
+    case 'scope':
+      return 'Scope inclusion requires operator review';
+    case 'allowance':
+      return 'Allowance detail requires operator review';
+    case 'verification':
+      return 'Operator assumption required before draft';
+  }
+}
+
+function parseClarifiedQuantity(
+  answer: string,
+): { quantity: number; unit: string } | null {
+  if (answer.trim().length === 0) {
+    return null;
+  }
+  const match = /\b(\d+(?:\.\d+)?)\s*(linear feet|lineal feet|lf|sq ft|sf|square feet|feet|ft|inches|inch|in|outlets?|lights?|doors?|windows?|shelves|shelf|each|ea)?\b/i.exec(answer);
+  if (match === null || match[1] === undefined) {
+    return null;
+  }
+  const quantity = Number(match[1]);
+  if (!Number.isFinite(quantity)) {
+    return null;
+  }
+  const unit = match[2] !== undefined ? unitFor(match[2]) : inferClarifiedUnit(answer);
+  return { quantity, unit };
+}
+
+function inferClarifiedUnit(answer: string): string {
+  const lower = answer.toLowerCase();
+  if (lower.includes('shelf')) return 'shelf';
+  if (lower.includes('outlet')) return 'outlet';
+  if (lower.includes('light')) return 'light';
+  if (lower.includes('door')) return 'door';
+  if (lower.includes('window')) return 'window';
+  return 'ea';
+}
+
+function clarificationSummary(
+  questions: readonly V15ClarificationQuestion[],
+  clarificationAnswers: Readonly<Record<string, string>>,
+): string {
+  const answered = questions.filter((question) => (clarificationAnswers[question.id]?.trim().length ?? 0) > 0).length;
+  const pending = questions.length - answered;
+  if (questions.length === 0) {
+    return 'No clarification questions surfaced from this field capture.';
+  }
+  if (answered === 0) {
+    return `${pending} clarification question${pending === 1 ? '' : 's'} still open; dry run proceeds with flagged assumptions.`;
+  }
+  return `${answered} clarification answer${answered === 1 ? '' : 's'} recorded; ${pending} still open for review.`;
+}
+
+function appendClarificationMarkdown(
+  base: string,
+  questions: readonly V15ClarificationQuestion[],
+  clarificationAnswers: Readonly<Record<string, string>>,
+): string {
+  if (questions.length === 0) {
+    return base;
+  }
+  const lines = questions.map((question) => {
+    const answer = clarificationAnswers[question.id]?.trim();
+    if (answer !== undefined && answer.length > 0) {
+      return `- Answered: ${question.prompt} -> ${answer}`;
+    }
+    return `- Pending: ${question.prompt}`;
+  });
+  return `${base.trimEnd()}\n\n## Clarification review\n${lines.join('\n')}\n`;
 }

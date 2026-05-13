@@ -12,7 +12,6 @@ import type { ScopeLine, TranscriptEditEvent, TranscriptModel, TranscriptSegment
 import {
   F34_AUDIT_HINT,
   F34_CAPTURE_META,
-  F34_MISSING_INFO_CARDS,
   F34_REQUIRED_NOTICE,
   F34_SCOPE_ROWS,
   F34_TRANSCRIPT_EDITS,
@@ -20,13 +19,14 @@ import {
   type ScopeTagType,
 } from './f34-transcript-review-mock.js';
 import { resolveF34TranscriptReviewCopy, type F34ResolvedTranscriptCopy } from './f34-transcript-review-handoff.js';
-import { f34AllMissingResolved, getF34ResolvedMissingIds } from './f34-transcript-review-state.js';
+import { getF34ClarificationAnswers, getF34ResolvedMissingIds } from './f34-transcript-review-state.js';
+import { deriveV15ClarificationQuestionsFromScopeLines } from './v15-context-clarifications.js';
 
-type MissingInfoCardView = {
+type ClarificationCardView = {
   readonly id: string;
   readonly title: string;
   readonly sourceQuote: string;
-  readonly mockAnswer: string;
+  readonly placeholder: string;
 };
 
 function esc(s: string): string {
@@ -165,50 +165,17 @@ function buildFixtureScopeRows(lines: readonly ScopeLine[], segments: readonly T
     .join('');
 }
 
-function lineNeedsClarification(line: ScopeLine): boolean {
-  if (line.missing_info !== undefined && line.missing_info.length > 0) {
-    return true;
-  }
-  const text = line.description.toLowerCase();
-  return /\b(unclear|confirm|verify|whether|included|allowance|missing|unknown|separate|which|how many)\b/.test(text);
-}
-
-function isSafetyInstruction(line: ScopeLine): boolean {
-  return /\b(do not send|don't send|external send|client yet|approval required)\b/i.test(line.description);
-}
-
-function cardTitleForLine(line: ScopeLine): string {
-  const text = line.description.trim();
-  if (/\b(whether|included|allowance)\b/i.test(text)) {
-    return 'Confirm what is included before drafting';
-  }
-  if (/\b(unclear|confirm|verify|missing|unknown|separate)\b/i.test(text)) {
-    return text.length > 84 ? `${text.slice(0, 81).trimEnd()}…` : text;
-  }
-  const label = text.length > 64 ? `${text.slice(0, 61).trimEnd()}…` : text;
-  return `Confirm quantity/details for: ${label}`;
-}
-
-function missingCardsForResolvedCopy(r: F34ResolvedTranscriptCopy): readonly MissingInfoCardView[] {
+function clarificationCardsForResolvedCopy(r: F34ResolvedTranscriptCopy): readonly ClarificationCardView[] {
   if (r.source !== 'fixture') {
-    return F34_MISSING_INFO_CARDS.map((card) => ({
-      id: card.id,
-      title: card.title,
-      sourceQuote: 'Legacy F-34 demo card.',
-      mockAnswer: card.mockAnswer,
-    }));
+    return [];
   }
 
-  const cards = r.scopeLines
-    .filter((line) => lineNeedsClarification(line) && !isSafetyInstruction(line))
-    .map((line, index): MissingInfoCardView => ({
-      id: `scope-${line.id.replace(/[^a-z0-9_-]+/gi, '-')}-${index + 1}`,
-      title: cardTitleForLine(line),
-      sourceQuote: line.description,
-      mockAnswer: `Operator reviewed this source line: "${line.description}"`,
-    }));
-
-  return cards.slice(0, 6);
+  return deriveV15ClarificationQuestionsFromScopeLines(r.scopeLines).map((question) => ({
+    id: question.id,
+    title: question.prompt,
+    sourceQuote: question.source_quote,
+    placeholder: question.placeholder,
+  }));
 }
 
 function buildSegmentsHtml(r: F34ResolvedTranscriptCopy): string {
@@ -378,27 +345,29 @@ export function buildTranscriptReviewMainHtml(): string {
 
 export function buildTranscriptReviewRailHtml(): string {
   const r = resolveF34TranscriptReviewCopy();
-  const missingCards = missingCardsForResolvedCopy(r);
+  const missingCards = clarificationCardsForResolvedCopy(r);
   const resolved = getF34ResolvedMissingIds();
-  const currentMissingIds = missingCards.map((c) => c.id);
-  const allResolved = currentMissingIds.length === 0 || f34AllMissingResolved(currentMissingIds);
+  const answers = getF34ClarificationAnswers();
+  const answeredCount = missingCards.filter((card) => resolved.has(card.id)).length;
+  const unresolvedCount = missingCards.length - answeredCount;
 
-  const continueBlock = allResolved
-    ? `<div class="kerf-f34-continue" role="group" aria-label="Continue gate">
+  const continueHint = missingCards.length === 0
+    ? 'No clarification questions surfaced from this capture.'
+    : unresolvedCount === 0
+      ? 'All clarification prompts have answers in this browser session.'
+      : `${unresolvedCount} clarification prompt${unresolvedCount === 1 ? '' : 's'} still open. Kerf proceeds with flagged assumptions where needed.`;
+  const continueBlock = `<div class="kerf-f34-continue" role="group" aria-label="Continue gate">
   <a class="kerf-v15-btn kerf-v15-btn--primary kerf-f34-continue" href="/draft-review" data-kerf-v15-nav="true">Continue to Draft</a>
-  <p class="kerf-f34-hint">${missingCards.length === 0 ? 'No missing-information cards surfaced from this capture.' : 'All missing-information cards are resolved for this demo session.'}</p>
-</div>`
-    : `<div class="kerf-f34-continue" role="group" aria-label="Continue gate">
-  <button type="button" class="kerf-v15-btn kerf-v15-btn--primary kerf-f34-continue" disabled aria-describedby="kerf-f34-continue-hint">Continue to Draft</button>
-  <p id="kerf-f34-continue-hint" class="kerf-f34-hint">Resolve every missing-information card below to enable draft.</p>
+  <p class="kerf-f34-hint">${esc(continueHint)}</p>
 </div>`;
 
   const cards = missingCards.map((card) => {
     const isResolved = resolved.has(card.id);
-    const statusLabel = isResolved ? 'Resolved' : 'Unresolved';
+    const statusLabel = isResolved ? 'Answered' : 'Open';
     const statusClass = isResolved ? 'kerf-f34-mi__status kerf-f34-mi__status--ok' : 'kerf-f34-mi__status kerf-f34-mi__status--open';
+    const answer = answers[card.id] ?? '';
     const answerBlock = isResolved
-      ? `<p class="kerf-f34-mi__answer"><strong>Recorded (demo):</strong> ${esc(card.mockAnswer)}</p>`
+      ? `<p class="kerf-f34-mi__answer"><strong>Recorded for this dry run:</strong> ${esc(answer)}</p>`
       : `<p class="kerf-f34-mi__answer kerf-f34-mi__answer--pending"><strong>Source context:</strong> ${esc(card.sourceQuote)}</p>`;
     return `<article class="kerf-f34-mi" data-kerf-f34-card="${esc(card.id)}">
   <header class="kerf-f34-mi__head">
@@ -406,17 +375,25 @@ export function buildTranscriptReviewRailHtml(): string {
     <span class="${statusClass}">${statusLabel}</span>
   </header>
   ${answerBlock}
-  <button type="button" class="kerf-v15-btn kerf-f34-mi__btn" data-kerf-f34-resolve="${esc(card.id)}">${isResolved ? 'Mark unresolved (demo)' : 'Mark answered (demo)'}</button>
+  <label class="kerf-f34-mi__label" for="${esc(card.id)}-answer">Clarification answer</label>
+  <textarea id="${esc(card.id)}-answer" class="kerf-f34-mi__input" rows="3" data-kerf-f34-answer="${esc(card.id)}" placeholder="${esc(card.placeholder)}">${esc(answer)}</textarea>
 </article>`;
   }).join('');
   const resetHtml = resolved.size > 0
-    ? '<p class="kerf-f34-muted"><button type="button" class="kerf-f34-linkbtn" data-kerf-f34-reset="true">Clear resolved answers</button></p>'
+    ? '<p class="kerf-f34-muted"><button type="button" class="kerf-f34-linkbtn" data-kerf-f34-reset="true">Clear answered clarifications</button></p>'
+    : '';
+  const applyHtml = missingCards.length > 0
+    ? `<div class="kerf-f34-continue" role="group" aria-label="Clarification apply">
+  <button type="button" class="kerf-v15-btn kerf-v15-btn--primary kerf-f34-mi__btn" data-kerf-f34-apply="true">Apply answers to dry run</button>
+  <p class="kerf-f34-hint">Answers stay local to this browser session and update Draft Review, Decision, and Blackboard preview.</p>
+</div>`
     : '';
 
   return `<div class="kerf-f34-rail">
   <h2 class="kerf-f34-h2">Missing information</h2>
-  <p class="kerf-f34-prose">Each card tracks a gap Right Hand could not safely infer from the current capture.</p>
+  <p class="kerf-f34-prose">Each prompt tracks a gap Kerf could not safely infer from the current capture. You can answer what you know now, then proceed with open gaps still flagged downstream.</p>
   <div class="kerf-f34-mi-stack">${cards}</div>
+  ${applyHtml}
   ${continueBlock}
   ${resetHtml}
 </div>`;

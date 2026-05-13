@@ -152,11 +152,21 @@
   font-variant-numeric: tabular-nums;
 }
 .kerf-f35-line__qty,
+.kerf-f35-line__quantity-status,
 .kerf-f35-line__basis,
 .kerf-f35-line__ref {
   margin: 0.2rem 0;
   font-size: 0.9rem;
   color: var(--kerf-f35-fg-muted);
+}
+.kerf-f35-line__quantity-status {
+  font-size: 0.82rem;
+}
+.kerf-f35-line__quantity-status--clarified_by_operator {
+  color: var(--kerf-f35-ok);
+}
+.kerf-f35-line__quantity-status--missing_quantity {
+  color: var(--kerf-f35-warn);
 }
 .kerf-f35-confidence {
   margin-left: 0.4rem;

@@ -1,55 +1,72 @@
 /**
- * F-34 demo: in-memory + sessionStorage resolution for missing-info cards.
- * No backend writes — toggles only affect this browser tab.
+ * F-34 demo: local-only clarification answers for review gaps.
+ * No backend writes — answers only affect this browser tab and dry-run fixture.
  */
-const STORAGE_KEY = 'kerf_f34_missing_resolved_v1';
+const STORAGE_KEY = 'kerf_f34_clarification_answers_v1';
 
-function readIds(): Set<string> {
+type ClarificationAnswerMap = Record<string, string>;
+
+function readAnswers(): ClarificationAnswerMap {
   if (typeof sessionStorage === 'undefined') {
-    return new Set();
+    return {};
   }
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw === null || raw.length === 0) {
-      return new Set();
+      return {};
     }
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      return new Set();
+    if (typeof parsed !== 'object' || parsed === null) {
+      return {};
     }
-    return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+    const out: ClarificationAnswerMap = {};
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === 'string' && key.length > 0) {
+        out[key] = value;
+      }
+    }
+    return out;
   } catch {
-    return new Set();
+    return {};
   }
 }
 
-function writeIds(ids: Set<string>): void {
+function writeAnswers(answers: ClarificationAnswerMap): void {
   if (typeof sessionStorage === 'undefined') {
     return;
   }
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
   } catch {
     /* ignore quota / private mode */
   }
 }
 
-export function getF34ResolvedMissingIds(): Set<string> {
-  return readIds();
+export function getF34ClarificationAnswers(): Readonly<Record<string, string>> {
+  return readAnswers();
 }
 
-export function f34ToggleMissingResolved(cardId: string): void {
-  const next = readIds();
-  if (next.has(cardId)) {
-    next.delete(cardId);
+export function getF34ResolvedMissingIds(): Set<string> {
+  const answers = readAnswers();
+  return new Set(
+    Object.entries(answers)
+      .filter(([, value]) => value.trim().length > 0)
+      .map(([key]) => key),
+  );
+}
+
+export function setF34ClarificationAnswer(cardId: string, answer: string): void {
+  const next = readAnswers();
+  if (answer.trim().length === 0) {
+    delete next[cardId];
   } else {
-    next.add(cardId);
+    next[cardId] = answer;
   }
-  writeIds(next);
+  writeAnswers(next);
 }
 
 export function f34AllMissingResolved(requiredIds: readonly string[]): boolean {
-  const s = readIds();
+  const s = getF34ResolvedMissingIds();
   return requiredIds.length > 0 && requiredIds.every((id) => s.has(id));
 }
 

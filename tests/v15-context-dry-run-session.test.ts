@@ -4,12 +4,17 @@ import test from 'node:test';
 import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../src/demo/index.js';
 import type { FieldCaptureHandoffV1 } from '../src/examples/field-capture-mock.js';
 import { buildTranscriptReviewRailHtml } from '../src/examples/v15-vertical-slice/f34-transcript-review-html.js';
-import { f34ResetDemoState, f34ToggleMissingResolved } from '../src/examples/v15-vertical-slice/f34-transcript-review-state.js';
+import {
+  f34ResetDemoState,
+  getF34ClarificationAnswers,
+  setF34ClarificationAnswer,
+} from '../src/examples/v15-vertical-slice/f34-transcript-review-state.js';
 import { buildPage } from '../src/examples/v15-vertical-slice/pages.js';
 import {
   v15BuildContextDryRunFixtureFromHandoff,
   v15ClearContextDryRunFixture,
   v15PersistContextDryRunFromHandoff,
+  v15RefreshContextDryRunFromSession,
 } from '../src/examples/v15-vertical-slice/v15-context-dry-run-session.js';
 
 const handoff: FieldCaptureHandoffV1 = {
@@ -85,6 +90,13 @@ test('V1.5 context dry-run builder turns typed context into transcript, scope, a
     fixture.field_capture_payload.scope_lines.some((line) => line.category === 'electrical' && line.quantity === 2),
     'expected a generated electrical scope line from typed context',
   );
+  assert.ok(
+    fixture.field_capture_payload.scope_lines.some(
+      (line) => line.description.includes('pantry shelves 12 inches deep')
+        && line.missing_info?.includes('Quantity requires operator review'),
+    ),
+    'expected quantity ambiguity to be flagged for operator review',
+  );
   assert.match(draftText, /backsplash tile/i);
   assert.ok(
     fixture.source_refs.some(
@@ -152,28 +164,61 @@ test('V1.5 pages render the persisted context dry-run across Draft, Decision, an
   }
 });
 
-test('F-34 Missing information cards follow the current context dry-run and reset visibly clears answers', () => {
+test('F-34 clarification prompts follow the current context dry-run and reset visibly clears answers', () => {
   const restoreStorage = installSessionStorageMock();
+  sessionStorage.setItem('kerf_field_capture_handoff_v1', JSON.stringify(handoff));
   v15PersistContextDryRunFromHandoff(handoff);
   try {
     const initialRail = buildTranscriptReviewRailHtml();
-    assert.match(initialRail, /Cabinet scope is unclear and needs confirmation/);
-    assert.match(initialRail, /Confirm what is included before drafting/);
-    assert.doesNotMatch(initialRail, /Which wall needs outlet relocation/);
-    assert.doesNotMatch(initialRail, /Clear resolved answers/);
+    assert.match(initialRail, /2 shelves at 12 in depth/);
+    assert.match(initialRail, /Should cabinetry be priced in this draft/);
+    assert.match(initialRail, /Continue to Draft/);
+    assert.doesNotMatch(initialRail, /disabled aria-describedby/);
+    assert.doesNotMatch(initialRail, /Clear answered clarifications/);
 
-    const firstId = /data-kerf-f34-resolve="([^"]+)"/.exec(initialRail)?.[1];
-    assert.ok(firstId, 'expected at least one context-derived missing-info card');
-    f34ToggleMissingResolved(firstId);
+    const quantityId = 'clarify-quantity-field_capture_context_proj_clem_kitchen-scope_002';
+    assert.match(initialRail, new RegExp(quantityId));
+    setF34ClarificationAnswer(quantityId, '2 shelves');
+    v15RefreshContextDryRunFromSession(getF34ClarificationAnswers());
 
     const resolvedRail = buildTranscriptReviewRailHtml();
-    assert.match(resolvedRail, /Resolved/);
-    assert.match(resolvedRail, /Clear resolved answers/);
+    assert.doesNotMatch(resolvedRail, /What quantity should Kerf use for/);
+    assert.match(resolvedRail, /Clear answered clarifications/);
 
     f34ResetDemoState();
+    v15RefreshContextDryRunFromSession({});
     const resetRail = buildTranscriptReviewRailHtml();
-    assert.match(resetRail, /Unresolved/);
-    assert.doesNotMatch(resetRail, /Clear resolved answers/);
+    assert.match(resetRail, /Open/);
+    assert.doesNotMatch(resetRail, /Clear answered clarifications/);
+  } finally {
+    v15ClearContextDryRunFixture();
+    restoreStorage();
+  }
+});
+
+test('clarification answers update generated draft review and Blackboard preview without pricing authority', () => {
+  const restoreStorage = installSessionStorageMock();
+  sessionStorage.setItem('kerf_field_capture_handoff_v1', JSON.stringify(handoff));
+  v15PersistContextDryRunFromHandoff(handoff);
+  try {
+    const before = buildPage({ name: 'draft-review' }).bodyHtml;
+    assert.match(before, /Missing: Quantity requires operator review/);
+
+    setF34ClarificationAnswer('clarify-quantity-field_capture_context_proj_clem_kitchen-scope_002', '2 shelves');
+    setF34ClarificationAnswer('clarify-allowance-field_capture_context_proj_clem_kitchen-scope_004', 'allowance only');
+    v15RefreshContextDryRunFromSession(getF34ClarificationAnswers());
+
+    const afterDraft = buildPage({ name: 'draft-review' }).bodyHtml;
+    const blackboard = buildPage({ name: 'blackboard' }).bodyHtml;
+    const shelfLine = /data-kerf-f35-line-id="field_capture_context_proj_clem_kitchen:draft_line_002"[\s\S]*?<\/li>/.exec(afterDraft)?.[0] ?? '';
+
+    assert.match(shelfLine, />2<\/strong> shelf/);
+    assert.match(shelfLine, /Quantity clarified by operator/);
+    assert.match(afterDraft, /operator clarified/i);
+    assert.doesNotMatch(shelfLine, /Missing: Quantity requires operator review/);
+    assert.match(blackboard, /Clarification review/);
+    assert.match(blackboard, /Answered: Is this 2 shelves at 12 in depth/);
+    assert.match(blackboard, /allowance only/);
   } finally {
     v15ClearContextDryRunFixture();
     restoreStorage();
