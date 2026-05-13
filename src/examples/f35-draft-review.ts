@@ -37,6 +37,7 @@ export type F35BlockReason =
   | 'external_send_requires_approval';
 
 export type F35PricingConfidence = 'high' | 'medium' | 'low' | 'unknown';
+export type F35QuantityStatus = 'clarified_by_operator' | 'inferred_from_transcript' | 'missing_quantity';
 
 export type F35SourceBasis =
   | 'transcript'
@@ -59,6 +60,7 @@ export interface F35ScopeLine {
   readonly description: string;
   readonly quantity: number;
   readonly unit: string;
+  readonly quantity_status?: F35QuantityStatus;
   readonly amount_cents: Cents;
   readonly source_basis: F35SourceBasis;
   readonly pricing_confidence: F35PricingConfidence;
@@ -135,6 +137,12 @@ const PRICING_CONFIDENCE_LABELS: Readonly<Record<F35PricingConfidence, string>> 
   medium: 'medium confidence',
   low: 'low confidence',
   unknown: 'confidence unknown',
+};
+
+const QUANTITY_STATUS_LABELS: Readonly<Record<F35QuantityStatus, string>> = {
+  clarified_by_operator: 'Quantity clarified by operator',
+  inferred_from_transcript: 'Quantity inferred from transcript',
+  missing_quantity: 'Quantity still needs review',
 };
 
 /** Escape text for HTML body / attribute contexts. */
@@ -216,12 +224,14 @@ function renderScopeLineCard(line: F35ScopeLine): string {
   const flagsHtml =
     flags.length > 0 ? `<div class="kerf-f35-flags">${flags.join('')}</div>` : '';
 
+  const quantityStatus = line.quantity_status ?? inferQuantityStatusFromFallback(line);
   return `<li class="kerf-f35-line" data-kerf-f35-line-id="${escapeHtml(line.id)}">
   <div class="kerf-f35-line__head">
     <p class="kerf-f35-line__desc">${escapeHtml(line.description)}</p>
     <p class="kerf-f35-line__amount" aria-label="Display amount only — not a stored price">${escapeHtml(formatDisplayDollarsFromCents(line.amount_cents))}</p>
   </div>
   <p class="kerf-f35-line__qty"><strong>${escapeHtml(String(line.quantity))}</strong> ${escapeHtml(line.unit)}</p>
+  <p class="kerf-f35-line__quantity-status kerf-f35-line__quantity-status--${escapeHtml(quantityStatus)}">${escapeHtml(QUANTITY_STATUS_LABELS[quantityStatus])}</p>
   <p class="kerf-f35-line__basis">
     <span class="kerf-f35-basis">${escapeHtml(SOURCE_BASIS_LABELS[line.source_basis])}</span>
     <span class="${pricingToneClass(line.pricing_confidence)}" data-kerf-f35-confidence="${escapeHtml(line.pricing_confidence)}">${escapeHtml(PRICING_CONFIDENCE_LABELS[line.pricing_confidence])}</span>
@@ -229,6 +239,16 @@ function renderScopeLineCard(line: F35ScopeLine): string {
   <p class="kerf-f35-line__ref"><strong>Ref:</strong> <code>${escapeHtml(line.source_ref)}</code></p>
   ${flagsHtml}
 </li>`;
+}
+
+function inferQuantityStatusFromFallback(line: F35ScopeLine): F35QuantityStatus {
+  if (line.missing_info !== undefined && line.missing_info.length > 0) {
+    return 'missing_quantity';
+  }
+  if (line.assumption !== undefined && /operator clarified/i.test(line.assumption)) {
+    return 'clarified_by_operator';
+  }
+  return 'inferred_from_transcript';
 }
 
 function renderScopeLines(fixture: F35DraftReviewFixture): string {
@@ -370,6 +390,7 @@ export const f35DraftReviewDemoFixture: F35DraftReviewFixture = {
       description: 'Relocate one kitchen outlet on north wall',
       quantity: 1,
       unit: 'each',
+      quantity_status: 'inferred_from_transcript',
       amount_cents: 18_500,
       source_basis: 'transcript',
       pricing_confidence: 'medium',
@@ -381,6 +402,7 @@ export const f35DraftReviewDemoFixture: F35DraftReviewFixture = {
       description: 'Tile material allowance bump (porcelain, kitchen backsplash)',
       quantity: 42,
       unit: 'sq ft',
+      quantity_status: 'missing_quantity',
       amount_cents: 33_600,
       source_basis: 'past_job_memory',
       pricing_confidence: 'low',
@@ -392,6 +414,7 @@ export const f35DraftReviewDemoFixture: F35DraftReviewFixture = {
       description: 'Labor — backsplash install',
       quantity: 6,
       unit: 'hours',
+      quantity_status: 'clarified_by_operator',
       amount_cents: 54_000,
       source_basis: 'operator_edit',
       pricing_confidence: 'high',
@@ -750,6 +773,7 @@ function mapGeneratedDraftLines(
       description: line.description,
       quantity: line.quantity,
       unit: line.unit,
+      quantity_status: quantityStatusForLine(line),
       amount_cents: line.amount_cents,
       source_basis: pickLineSourceBasis(line, refIndex),
       pricing_confidence: bucketPricingConfidence(line.pricing_confidence),
@@ -759,6 +783,16 @@ function mapGeneratedDraftLines(
     };
     return out;
   });
+}
+
+function quantityStatusForLine(line: DraftReviewLine): F35QuantityStatus {
+  if (line.missing_info_flags.includes('Quantity requires operator review')) {
+    return 'missing_quantity';
+  }
+  if (line.assumption_flags.includes('operator_clarified')) {
+    return 'clarified_by_operator';
+  }
+  return 'inferred_from_transcript';
 }
 
 /**

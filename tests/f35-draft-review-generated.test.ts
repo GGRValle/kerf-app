@@ -75,6 +75,12 @@ test('F-35 generated adapter · projects scope-line identifiers and descriptions
     assert.equal(fixture.scope_lines[i]!.description, src[i]!.description);
     assert.equal(fixture.scope_lines[i]!.quantity, src[i]!.quantity);
     assert.equal(fixture.scope_lines[i]!.unit, src[i]!.unit);
+    assert.ok(
+      ['clarified_by_operator', 'inferred_from_transcript', 'missing_quantity'].includes(
+        fixture.scope_lines[i]!.quantity_status,
+      ),
+      `line ${src[i]!.id}: quantity_status must be a closed F-35 enum value`,
+    );
   }
 });
 
@@ -126,6 +132,23 @@ test('F-35 generated adapter · folds assumption_flags + missing_info_flags into
         `line ${srcLine.id}: missing_info_flags must surface as a missing_info string`,
       );
     }
+  }
+});
+
+test('F-35 generated adapter · labels quantity status from clarification and missing-info flags', () => {
+  const fixture = f35FixtureFromVerticalSliceDryRun(verticalSliceFieldCaptureDemoFixture);
+  for (let i = 0; i < verticalSliceFieldCaptureDemoFixture.draft_review_payload_ui.draft_lines.length; i++) {
+    const srcLine = verticalSliceFieldCaptureDemoFixture.draft_review_payload_ui.draft_lines[i]!;
+    const adaptedLine = fixture.scope_lines[i]!;
+    if (srcLine.missing_info_flags.includes('Quantity requires operator review')) {
+      assert.equal(adaptedLine.quantity_status, 'missing_quantity');
+      continue;
+    }
+    if (srcLine.assumption_flags.includes('operator_clarified')) {
+      assert.equal(adaptedLine.quantity_status, 'clarified_by_operator');
+      continue;
+    }
+    assert.equal(adaptedLine.quantity_status, 'inferred_from_transcript');
   }
 });
 

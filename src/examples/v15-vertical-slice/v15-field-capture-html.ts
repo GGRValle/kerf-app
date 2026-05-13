@@ -222,11 +222,14 @@ export function buildV15FieldCaptureHtml(state: V15FieldCaptureState): string {
         state.modes.has('voice')
           ? `<section class="kerf-fc-card" aria-labelledby="kerf-v15-fc-voice-h">
         <h2 id="kerf-v15-fc-voice-h" class="kerf-fc-h2">Voice</h2>
+        <p class="kerf-fc-muted">Record from this device's microphone. Audio is sent to Groq Whisper turbo for transcription; transcript becomes your field note below (you can edit before continuing). No autonomous send; no persistence on the server.</p>
         <div class="kerf-fc-voice-box">
           <div class="kerf-fc-voice-ico" aria-hidden="true">🎙</div>
-          <div>
-            <div class="kerf-fc-voice-title">${escapeHtml(FIELD_CAPTURE_COPY.voiceTitle)}</div>
-            <p class="kerf-fc-voice-consent">${escapeHtml(FIELD_CAPTURE_COPY.voiceConsent)}</p>
+          <div class="kerf-fc-voice-controls">
+            <button type="button" id="kerf-v15-voice-record" class="kerf-v15-btn kerf-v15-btn--primary kerf-fc-voice-btn" aria-pressed="false" data-state="idle">Record voice note</button>
+            <p id="kerf-v15-voice-status" class="kerf-fc-voice-status" aria-live="polite"></p>
+            <p id="kerf-v15-voice-error" class="kerf-fc-voice-error" role="alert" style="display:none"></p>
+            <pre id="kerf-v15-voice-transcript" class="kerf-fc-voice-transcript" aria-live="polite" style="display:none"></pre>
           </div>
         </div>
       </section>`
