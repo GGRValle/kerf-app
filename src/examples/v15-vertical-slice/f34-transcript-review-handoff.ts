@@ -14,6 +14,7 @@ import {
   F34_TRANSCRIPT_CURRENT,
   F34_TRANSCRIPT_ORIGINAL,
 } from './f34-transcript-review-mock.js';
+import { v15GetContextDryRunFixture } from './v15-context-dry-run-session.js';
 
 export type F34TranscriptReviewResolvedSource = 'fixture' | 'handoff' | 'mock';
 
@@ -105,8 +106,28 @@ function captureSourceFromFixtureSurface(surface: string): string {
   return `${human} · demo fixture`;
 }
 
-/** Prefer generated fixture when no F-33 handoff; handoff wins when present. */
+/** Prefer a local context dry-run, then F-33 handoff, then the generated fixture fallback. */
 export function resolveF34TranscriptReviewCopy(): F34ResolvedTranscriptCopy {
+  const contextFixture = v15GetContextDryRunFixture();
+  if (contextFixture !== null) {
+    const input = contextFixture.field_capture_input;
+    return {
+      source: 'fixture',
+      projectLabel: contextFixture.decision_packet.project_name,
+      clientLabel: contextFixture.decision_packet.client_name,
+      locationLine: input.jurisdiction ?? '',
+      workflowLabel: 'Field capture (local dry run)',
+      captureSource: captureSourceFromFixtureSurface(
+        input.capture_surface !== undefined ? String(input.capture_surface) : 'field_capture',
+      ),
+      captureTimeDisplay: formatHandoffTime(input.captured_at),
+      transcriptModel: contextFixture.field_capture_payload.transcript,
+      sourceRefs: contextFixture.source_refs,
+      decisionPacketId: contextFixture.decision_packet.id,
+      scopeLines: contextFixture.field_capture_payload.scope_lines,
+    };
+  }
+
   const handoff = readFieldCaptureHandoffFromSessionStorage();
   if (handoff !== null) {
     const text = transcriptTextFromHandoff(handoff);

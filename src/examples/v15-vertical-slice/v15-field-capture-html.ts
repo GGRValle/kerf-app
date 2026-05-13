@@ -88,7 +88,7 @@ function joinedTranscriptText(segments: readonly { readonly text: string }[]): s
 
 function generatedFixtureContextHtml(state: V15FieldCaptureState): string {
   const fixture = state.generatedFixture;
-  if (fixture === undefined) {
+  if (fixture === undefined || state.textNote.trim().length > 0 || state.manualTranscript.trim().length > 0) {
     return '';
   }
 
@@ -171,7 +171,7 @@ export function buildV15FieldCaptureHtml(state: V15FieldCaptureState): string {
         <h2 id="kerf-v15-fc-project-h" class="kerf-fc-h2">Project / client</h2>
         <label class="kerf-fc-label" for="kerf-v15-fc-project-select">Active job</label>
         <select id="kerf-v15-fc-project-select" class="kerf-fc-select">${projectOptions}</select>
-        <p class="kerf-fc-muted">Changing this job updates the capture handoff used by Transcript Review. Draft, Decision, and Audit remain on the single generated spine packet until live runs are wired.</p>
+        <p class="kerf-fc-muted">Add job context here; Kerf builds a local dry-run for Transcript, Draft, Decision, and Audit. No upload or backend write.</p>
         <dl class="kerf-fc-dl">
           <div><dt>Client</dt><dd>${escapeHtml(p.client_name)}</dd></div>
           <div><dt>Location</dt><dd>${escapeHtml(p.location)}</dd></div>
@@ -271,7 +271,7 @@ export function buildV15FieldCaptureHtml(state: V15FieldCaptureState): string {
         <button type="button" class="kerf-v15-btn kerf-v15-btn--primary kerf-fc-primary" id="kerf-v15-fc-submit">
           ${escapeHtml(FIELD_CAPTURE_COPY.primaryCta)}
         </button>
-        <p class="kerf-fc-cta-hint">Mock only — continues to <code>/transcript-review</code> with the current active-job handoff in sessionStorage.</p>
+        <p class="kerf-fc-cta-hint">Local dry-run only — continues to <code>/transcript-review</code> using the current active job and context.</p>
       </div>
     </div>
   </div>`;

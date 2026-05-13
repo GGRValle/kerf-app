@@ -11,15 +11,15 @@ import {
   renderF35DraftReviewPage,
   type F35DraftReviewFixture,
 } from '../f35-draft-review.js';
-import { verticalSliceFieldCaptureDemoFixture } from '../../demo/index.js';
 import { FIELD_CAPTURE_COPY } from '../field-capture-mock.js';
 import { buildTranscriptReviewMainHtml, buildTranscriptReviewRailHtml } from './f34-transcript-review-html.js';
 import { F34_REQUIRED_NOTICE } from './f34-transcript-review-mock.js';
 import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../../demo/verticalSliceFlowIds.js';
 import { buildF36DecisionCardHtml } from './f36-decision-card-html.js';
-import { f36ModelForRouteId } from './f36-decision-mock.js';
+import { f36ModelFromVerticalSliceFixture } from './f36-decision-mock.js';
 import { DEMO_DECISION_ID, DEMO_PACKET_ID } from './mock.js';
 import type { MatchedRoute } from './router.js';
+import { v15GetActiveVerticalSliceFixture } from './v15-context-dry-run-session.js';
 import { buildV15FieldCaptureHtml } from './v15-field-capture-html.js';
 import { v15FieldCaptureGetState } from './v15-field-capture-state.js';
 import { v15F37GetSelectedEventId } from './v15-f37-selection.js';
@@ -79,7 +79,7 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
       // demo fixture so the screen still renders the rich F-35 surface.
       let fixture: F35DraftReviewFixture;
       try {
-        fixture = f35FixtureFromVerticalSliceDryRun(verticalSliceFieldCaptureDemoFixture);
+        fixture = f35FixtureFromVerticalSliceDryRun(v15GetActiveVerticalSliceFixture());
       } catch {
         fixture = f35DraftReviewDemoFixture;
       }
@@ -110,7 +110,7 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
 <p><a class="kerf-v15-btn kerf-v15-btn--primary" href="/decisions/${esc(spineId)}" data-kerf-v15-nav="true">Open approval card (spine)</a></p>`,
         };
       }
-      const f36 = f36ModelForRouteId(route.id);
+      const f36 = f36ModelFromVerticalSliceFixture(v15GetActiveVerticalSliceFixture());
       return {
         title: f36.decisionTitle,
         subtitle: `Approval card · ${esc(f36.packet.client_name)} · spine route <code>${esc(spineId)}</code>`,
@@ -127,7 +127,10 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
       };
     }
     case 'audit-detail': {
-      const packet = resolveF37Packet(route.packetId);
+      const activeFixture = v15GetActiveVerticalSliceFixture();
+      const packet = route.packetId === activeFixture.decision_packet_raw.packet_id
+        ? activeFixture.decision_packet_raw
+        : resolveF37Packet(route.packetId);
       if (packet === null) {
         return {
           title: `Audit · ${esc(route.packetId)}`,
@@ -136,13 +139,14 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
           bodyHtml: `<div class="kerf-v15-f37-embed">${buildF37UnknownPacketHtml(route.packetId)}</div>`,
         };
       }
-      const events = buildF37Timeline(packet);
+      const fixtureForPacket = route.packetId === activeFixture.decision_packet_raw.packet_id ? activeFixture : undefined;
+      const events = buildF37Timeline(packet, fixtureForPacket);
       const sel = v15F37GetSelectedEventId(route.packetId, events[0]?.id ?? '');
       return {
         title: `Audit · ${esc(route.packetId)}`,
         subtitle: 'F-37 · Event stream (fixture-backed, read-only).',
         notice: 'Read-only demo — timeline render only; no Policy Gate execution or validator runs.',
-        bodyHtml: `<div class="kerf-v15-f37-embed">${buildF37AuditPageHtml(packet, sel, 'embedded')}</div>`,
+        bodyHtml: `<div class="kerf-v15-f37-embed">${buildF37AuditPageHtml(packet, sel, 'embedded', fixtureForPacket)}</div>`,
       };
     }
     case 'blackboard':

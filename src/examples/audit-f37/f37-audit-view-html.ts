@@ -66,7 +66,16 @@ function offsetIso(iso: string, addMinutes: number): string {
   return new Date(t + addMinutes * 60_000).toISOString();
 }
 
-function generatedFixtureForPacket(packet: DecisionPacket): VerticalSliceDryRunDemoFixture | null {
+function generatedFixtureForPacket(
+  packet: DecisionPacket,
+  fixtureOverride?: VerticalSliceDryRunDemoFixture,
+): VerticalSliceDryRunDemoFixture | null {
+  if (
+    fixtureOverride !== undefined &&
+    packet.packet_id === fixtureOverride.decision_packet_raw.packet_id
+  ) {
+    return fixtureOverride;
+  }
   if (packet.packet_id !== verticalSliceFieldCaptureDemoFixture.decision_packet_raw.packet_id) {
     return null;
   }
@@ -131,8 +140,11 @@ function buildGeneratedF37Timeline(fixture: VerticalSliceDryRunDemoFixture): F37
   }));
 }
 
-export function buildF37Timeline(packet: DecisionPacket): F37TimelineEvent[] {
-  const generatedFixture = generatedFixtureForPacket(packet);
+export function buildF37Timeline(
+  packet: DecisionPacket,
+  fixtureOverride?: VerticalSliceDryRunDemoFixture,
+): F37TimelineEvent[] {
+  const generatedFixture = generatedFixtureForPacket(packet, fixtureOverride);
   if (generatedFixture !== null) {
     return buildGeneratedF37Timeline(generatedFixture);
   }
@@ -479,9 +491,14 @@ export function buildF37UnknownPacketHtml(packetId: string): string {
     </div>`;
 }
 
-export function buildF37AuditPageHtml(packet: DecisionPacket, selectedId: string, variant: F37AuditVariant): string {
-  const generatedFixture = generatedFixtureForPacket(packet);
-  const events = buildF37Timeline(packet);
+export function buildF37AuditPageHtml(
+  packet: DecisionPacket,
+  selectedId: string,
+  variant: F37AuditVariant,
+  fixtureOverride?: VerticalSliceDryRunDemoFixture,
+): string {
+  const generatedFixture = generatedFixtureForPacket(packet, fixtureOverride);
+  const events = buildF37Timeline(packet, fixtureOverride);
   const selected = events.find((e) => e.id === selectedId) ?? events[0];
   if (selected === undefined) {
     return buildF37UnknownPacketHtml(packet.packet_id);
