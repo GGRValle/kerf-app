@@ -141,6 +141,19 @@ test('V1.5 audit at /audit/<VERTICAL_SLICE_FLOW_PACKET_ID> embeds full F-37 surf
   assert.equal(page.bodyHtml.includes('Wire Blackboard read adapters'), false);
 });
 
+test('V1.5 blackboard route renders a read-only write preview instead of placeholder copy', () => {
+  const page = buildPage({ name: 'blackboard' });
+
+  assert.equal(page.title, 'Blackboard');
+  assert.match(page.subtitle, /read-only preview/);
+  assert.match(page.notice, /Preview only/);
+  assert.match(page.bodyHtml, /Current dry-run memory preview/);
+  assert.match(page.bodyHtml, /Blackboard write preview/);
+  assert.match(page.bodyHtml, /Scope memory candidates/);
+  assert.match(page.bodyHtml, /Source refs and affected ids/);
+  assert.equal(page.bodyHtml.includes('Blackboard placeholder'), false);
+});
+
 test('V1.5 pages + F-37 builder sources contain no audit placeholder copy', () => {
   const pages = readFileSync(new URL('../src/examples/v15-vertical-slice/pages.ts', import.meta.url), 'utf8');
   assert.equal(pages.includes('Placeholder audit'), false);

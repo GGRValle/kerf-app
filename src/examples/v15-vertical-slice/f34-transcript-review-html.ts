@@ -22,6 +22,13 @@ import {
 import { resolveF34TranscriptReviewCopy, type F34ResolvedTranscriptCopy } from './f34-transcript-review-handoff.js';
 import { f34AllMissingResolved, getF34ResolvedMissingIds } from './f34-transcript-review-state.js';
 
+type MissingInfoCardView = {
+  readonly id: string;
+  readonly title: string;
+  readonly sourceQuote: string;
+  readonly mockAnswer: string;
+};
+
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -156,6 +163,52 @@ function buildFixtureScopeRows(lines: readonly ScopeLine[], segments: readonly T
 </tr>`;
     })
     .join('');
+}
+
+function lineNeedsClarification(line: ScopeLine): boolean {
+  if (line.missing_info !== undefined && line.missing_info.length > 0) {
+    return true;
+  }
+  const text = line.description.toLowerCase();
+  return /\b(unclear|confirm|verify|whether|included|allowance|missing|unknown|separate|which|how many)\b/.test(text);
+}
+
+function isSafetyInstruction(line: ScopeLine): boolean {
+  return /\b(do not send|don't send|external send|client yet|approval required)\b/i.test(line.description);
+}
+
+function cardTitleForLine(line: ScopeLine): string {
+  const text = line.description.trim();
+  if (/\b(whether|included|allowance)\b/i.test(text)) {
+    return 'Confirm what is included before drafting';
+  }
+  if (/\b(unclear|confirm|verify|missing|unknown|separate)\b/i.test(text)) {
+    return text.length > 84 ? `${text.slice(0, 81).trimEnd()}…` : text;
+  }
+  const label = text.length > 64 ? `${text.slice(0, 61).trimEnd()}…` : text;
+  return `Confirm quantity/details for: ${label}`;
+}
+
+function missingCardsForResolvedCopy(r: F34ResolvedTranscriptCopy): readonly MissingInfoCardView[] {
+  if (r.source !== 'fixture') {
+    return F34_MISSING_INFO_CARDS.map((card) => ({
+      id: card.id,
+      title: card.title,
+      sourceQuote: 'Legacy F-34 demo card.',
+      mockAnswer: card.mockAnswer,
+    }));
+  }
+
+  const cards = r.scopeLines
+    .filter((line) => lineNeedsClarification(line) && !isSafetyInstruction(line))
+    .map((line, index): MissingInfoCardView => ({
+      id: `scope-${line.id.replace(/[^a-z0-9_-]+/gi, '-')}-${index + 1}`,
+      title: cardTitleForLine(line),
+      sourceQuote: line.description,
+      mockAnswer: `Operator reviewed this source line: "${line.description}"`,
+    }));
+
+  return cards.slice(0, 6);
 }
 
 function buildSegmentsHtml(r: F34ResolvedTranscriptCopy): string {
@@ -324,41 +377,47 @@ export function buildTranscriptReviewMainHtml(): string {
 }
 
 export function buildTranscriptReviewRailHtml(): string {
+  const r = resolveF34TranscriptReviewCopy();
+  const missingCards = missingCardsForResolvedCopy(r);
   const resolved = getF34ResolvedMissingIds();
-  const allResolved = f34AllMissingResolved(F34_MISSING_INFO_CARDS.map((c) => c.id));
+  const currentMissingIds = missingCards.map((c) => c.id);
+  const allResolved = currentMissingIds.length === 0 || f34AllMissingResolved(currentMissingIds);
 
   const continueBlock = allResolved
     ? `<div class="kerf-f34-continue" role="group" aria-label="Continue gate">
   <a class="kerf-v15-btn kerf-v15-btn--primary kerf-f34-continue" href="/draft-review" data-kerf-v15-nav="true">Continue to Draft</a>
-  <p class="kerf-f34-hint">All missing-information cards are resolved for this mock session.</p>
+  <p class="kerf-f34-hint">${missingCards.length === 0 ? 'No missing-information cards surfaced from this capture.' : 'All missing-information cards are resolved for this demo session.'}</p>
 </div>`
     : `<div class="kerf-f34-continue" role="group" aria-label="Continue gate">
   <button type="button" class="kerf-v15-btn kerf-v15-btn--primary kerf-f34-continue" disabled aria-describedby="kerf-f34-continue-hint">Continue to Draft</button>
   <p id="kerf-f34-continue-hint" class="kerf-f34-hint">Resolve every missing-information card below to enable draft.</p>
 </div>`;
 
-  const cards = F34_MISSING_INFO_CARDS.map((card) => {
+  const cards = missingCards.map((card) => {
     const isResolved = resolved.has(card.id);
     const statusLabel = isResolved ? 'Resolved' : 'Unresolved';
     const statusClass = isResolved ? 'kerf-f34-mi__status kerf-f34-mi__status--ok' : 'kerf-f34-mi__status kerf-f34-mi__status--open';
     const answerBlock = isResolved
-      ? `<p class="kerf-f34-mi__answer"><strong>Selected (mock):</strong> ${esc(card.mockAnswer)}</p>`
-      : `<p class="kerf-f34-mi__answer kerf-f34-mi__answer--pending">No answer recorded yet.</p>`;
+      ? `<p class="kerf-f34-mi__answer"><strong>Recorded (demo):</strong> ${esc(card.mockAnswer)}</p>`
+      : `<p class="kerf-f34-mi__answer kerf-f34-mi__answer--pending"><strong>Source context:</strong> ${esc(card.sourceQuote)}</p>`;
     return `<article class="kerf-f34-mi" data-kerf-f34-card="${esc(card.id)}">
   <header class="kerf-f34-mi__head">
     <h3 class="kerf-f34-mi__title">${esc(card.title)}</h3>
     <span class="${statusClass}">${statusLabel}</span>
   </header>
   ${answerBlock}
-  <button type="button" class="kerf-v15-btn kerf-f34-mi__btn" data-kerf-f34-resolve="${esc(card.id)}">${isResolved ? 'Mark unresolved (demo)' : 'Mark resolved (mock)'}</button>
+  <button type="button" class="kerf-v15-btn kerf-f34-mi__btn" data-kerf-f34-resolve="${esc(card.id)}">${isResolved ? 'Mark unresolved (demo)' : 'Mark answered (demo)'}</button>
 </article>`;
   }).join('');
+  const resetHtml = resolved.size > 0
+    ? '<p class="kerf-f34-muted"><button type="button" class="kerf-f34-linkbtn" data-kerf-f34-reset="true">Clear resolved answers</button></p>'
+    : '';
 
   return `<div class="kerf-f34-rail">
   <h2 class="kerf-f34-h2">Missing information</h2>
-  <p class="kerf-f34-prose">Each card tracks a gap Right Hand could not infer from audio alone.</p>
+  <p class="kerf-f34-prose">Each card tracks a gap Right Hand could not safely infer from the current capture.</p>
   <div class="kerf-f34-mi-stack">${cards}</div>
   ${continueBlock}
-  <p class="kerf-f34-muted"><button type="button" class="kerf-f34-linkbtn" data-kerf-f34-reset="true">Reset demo resolution state</button></p>
+  ${resetHtml}
 </div>`;
 }

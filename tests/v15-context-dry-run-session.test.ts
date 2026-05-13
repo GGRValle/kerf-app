@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { VERTICAL_SLICE_FLOW_PACKET_ID } from '../src/demo/index.js';
 import type { FieldCaptureHandoffV1 } from '../src/examples/field-capture-mock.js';
+import { buildTranscriptReviewRailHtml } from '../src/examples/v15-vertical-slice/f34-transcript-review-html.js';
+import { f34ResetDemoState, f34ToggleMissingResolved } from '../src/examples/v15-vertical-slice/f34-transcript-review-state.js';
 import { buildPage } from '../src/examples/v15-vertical-slice/pages.js';
 import {
   v15BuildContextDryRunFixtureFromHandoff,
@@ -31,6 +33,30 @@ const handoff: FieldCaptureHandoffV1 = {
   ],
   created_at_iso: '2026-05-12T17:30:00.000Z',
 };
+
+function installSessionStorageMock(): () => void {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+  const store = new Map<string, string>();
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    configurable: true,
+    value: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, String(value));
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+    },
+  });
+  return () => {
+    if (original === undefined) {
+      delete (globalThis as { sessionStorage?: unknown }).sessionStorage;
+    } else {
+      Object.defineProperty(globalThis, 'sessionStorage', original);
+    }
+  };
+}
 
 test('V1.5 context dry-run builder preserves one spine packet id and project context', () => {
   const fixture = v15BuildContextDryRunFixtureFromHandoff(handoff);
@@ -107,6 +133,7 @@ test('V1.5 pages render the persisted context dry-run across Draft, Decision, an
     const draft = buildPage({ name: 'draft-review' }).bodyHtml;
     const decision = buildPage({ name: 'decision-detail', id: VERTICAL_SLICE_FLOW_PACKET_ID }).bodyHtml;
     const audit = buildPage({ name: 'audit-detail', packetId: VERTICAL_SLICE_FLOW_PACKET_ID }).bodyHtml;
+    const blackboard = buildPage({ name: 'blackboard' });
 
     assert.match(draft, /backsplash tile/i);
     assert.match(draft, /External send requires approval/i);
@@ -114,8 +141,42 @@ test('V1.5 pages render the persisted context dry-run across Draft, Decision, an
     assert.match(decision, /system_final_altitude/);
     assert.match(audit, /Client wants to move 2 outlets/i);
     assert.match(audit, /Blackboard write preview/);
+    assert.equal(blackboard.notice, 'Preview only — no graph queries or writes.');
+    assert.match(blackboard.bodyHtml, /Current dry-run memory preview/);
+    assert.match(blackboard.bodyHtml, /Scope memory candidates/);
+    assert.match(blackboard.bodyHtml, /Client wants to move 2 outlets/i);
+    assert.match(blackboard.bodyHtml, /Persistence<\/dt><dd>Not performed/);
+    assert.equal(blackboard.bodyHtml.includes('Blackboard placeholder'), false);
   } finally {
     v15ClearContextDryRunFixture();
+  }
+});
+
+test('F-34 Missing information cards follow the current context dry-run and reset visibly clears answers', () => {
+  const restoreStorage = installSessionStorageMock();
+  v15PersistContextDryRunFromHandoff(handoff);
+  try {
+    const initialRail = buildTranscriptReviewRailHtml();
+    assert.match(initialRail, /Cabinet scope is unclear and needs confirmation/);
+    assert.match(initialRail, /Confirm what is included before drafting/);
+    assert.doesNotMatch(initialRail, /Which wall needs outlet relocation/);
+    assert.doesNotMatch(initialRail, /Clear resolved answers/);
+
+    const firstId = /data-kerf-f34-resolve="([^"]+)"/.exec(initialRail)?.[1];
+    assert.ok(firstId, 'expected at least one context-derived missing-info card');
+    f34ToggleMissingResolved(firstId);
+
+    const resolvedRail = buildTranscriptReviewRailHtml();
+    assert.match(resolvedRail, /Resolved/);
+    assert.match(resolvedRail, /Clear resolved answers/);
+
+    f34ResetDemoState();
+    const resetRail = buildTranscriptReviewRailHtml();
+    assert.match(resetRail, /Unresolved/);
+    assert.doesNotMatch(resetRail, /Clear resolved answers/);
+  } finally {
+    v15ClearContextDryRunFixture();
+    restoreStorage();
   }
 });
 
