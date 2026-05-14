@@ -1,4 +1,11 @@
 import type { ScopeLine, VerticalSliceDryRunDemoFixture } from '../../demo/types.js';
+import {
+  formatDebugOverlayForHit,
+  formatDebugOverlayForMiss,
+  formatRangeForPrompt,
+  lookupCostKbSeed,
+  type KerfCostKbLookupHit,
+} from './v15-cost-kb-seed.js';
 
 export type V15ClarificationQuestionKind = 'quantity' | 'scope' | 'allowance' | 'verification';
 
@@ -9,6 +16,14 @@ export interface V15ClarificationQuestion {
   readonly source_quote: string;
   readonly target_line_id?: string;
   readonly placeholder: string;
+  /**
+   * Dogfood-only trust-verification overlay. Names the tier(s) consulted
+   * and the matched source_ref_ids. NOT operator-voice; rendered as small
+   * monospace under the prompt during dogfood. Optional — only the
+   * tiers-consulted prompts (currently the generic-verification branch)
+   * populate it.
+   */
+  readonly debug_overlay?: string;
 }
 
 function lineNeedsClarification(line: ScopeLine): boolean {
@@ -97,6 +112,27 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     };
   }
   if (lineNeedsClarification(line)) {
+    // Tier 1 (seed cost-KB) consult. If a trade match exists and rows pass
+    // the gate, augment the operator-voice prompt with a "typical range"
+    // framing — per the safety-gate rules, never as a point estimate, never
+    // as a client-facing quote. The debug overlay carries the provenance
+    // (source_ref_ids, confidence, row count) for dogfood trust verification.
+    const tier1: KerfCostKbLookupHit | null = lookupCostKbSeed({
+      scope_text: text,
+      use: 'clarification_range',
+    });
+    if (tier1 !== null && tier1.aggregate_low_cents > 0 && tier1.aggregate_high_cents > 0) {
+      const range = formatRangeForPrompt(tier1);
+      return {
+        id: `clarify-verify-${idBase}`,
+        kind: 'verification',
+        prompt: `My read on "${text}" — typical range I'm seeing is ${range}, but that's a wide spread. What's the scope and size we're working with so I can tighten this up?`,
+        source_quote: text,
+        target_line_id: line.id,
+        placeholder: 'Example: 200 SF, mid-range materials, owner provides appliances',
+        debug_overlay: formatDebugOverlayForHit(tier1),
+      };
+    }
     return {
       id: `clarify-verify-${idBase}`,
       kind: 'verification',
@@ -104,6 +140,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: proceed with placeholder, verify in field, client to confirm',
+      debug_overlay: formatDebugOverlayForMiss(null),
     };
   }
   return null;

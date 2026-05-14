@@ -13,6 +13,7 @@ import { matchRoute } from './router.js';
 import { renderShell } from './shell.js';
 import { buildV15FieldCaptureHandoff } from './v15-field-capture-html.js';
 import { initV15RecordButton, type V15TranscribeMeta } from './v15-record-button.js';
+import { loadV15CostKbSeed } from './v15-cost-kb-seed.js';
 import {
   v15FieldCaptureGetState,
   v15FieldCaptureReplaceState,
@@ -355,7 +356,17 @@ function boot(): void {
   document.addEventListener('input', onDocumentInput);
   window.addEventListener('popstate', onPopState);
   normalizeBootUrl();
+  // Render immediately so the shell paints, then load the cost-KB seed
+  // and re-render so any open F-34 clarifications can consult tier 1
+  // (operator-facing prompt augmented with range, debug overlay shown).
+  // Seed load is best-effort — render() works fine even if the seed never
+  // arrives; F-34 just falls back to ungrounded voice in that case.
   render();
+  void loadV15CostKbSeed().then((manifest) => {
+    if (manifest !== null) {
+      render();
+    }
+  });
 }
 
 if (typeof document !== 'undefined') {
