@@ -257,7 +257,12 @@ test('V1.5 context dry-run source is local-only and pages consume the active fix
 
   assert.match(appSrc, /v15PersistContextDryRunFromHandoff/);
   assert.match(pagesSrc, /v15GetActiveVerticalSliceFixture/);
-  assert.match(pagesSrc, /f35FixtureFromVerticalSliceDryRun\(v15GetActiveVerticalSliceFixture\(\)\)/);
+  // PR #156: pages.ts factored the call into two lines so the active
+  // fixture reference can be passed to the kitchen-scaffold detector too.
+  // Pattern assertion (not literal call form) — locks both that the
+  // active fixture is the source AND that the F-35 adapter consumes it.
+  assert.match(pagesSrc, /v15GetActiveVerticalSliceFixture\(\)/);
+  assert.match(pagesSrc, /f35FixtureFromVerticalSliceDryRun\(/);
   assert.match(pagesSrc, /f36ModelFromVerticalSliceFixture\(v15GetActiveVerticalSliceFixture\(\)\)/);
   assert.match(pagesSrc, /buildF37AuditPageHtml\(packet, sel, 'embedded', fixtureForPacket\)/);
 });
