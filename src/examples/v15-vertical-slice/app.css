@@ -860,3 +860,21 @@
   max-height: 14rem;
   overflow: auto;
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * F-34 clarification debug overlay (cost-KB seed tier-1 trust verification).
+ * Small, muted, monospace. Dogfood-only; not operator voice. Surfaces the
+ * tier + source_ref_ids matched so the operator can audit citations.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+.kerf-f34-mi__debug {
+  margin: 0.45rem 0 0;
+  padding: 0.25rem 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  color: var(--kerf-fg-muted);
+  background: var(--kerf-bg-app);
+  border: 1px dashed var(--kerf-border);
+  border-radius: var(--kerf-radius-xs);
+  word-break: break-all;
+}

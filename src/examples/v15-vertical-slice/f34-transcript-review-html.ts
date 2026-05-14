@@ -27,6 +27,14 @@ type ClarificationCardView = {
   readonly title: string;
   readonly sourceQuote: string;
   readonly placeholder: string;
+  /**
+   * Optional dogfood-only trust-verification overlay. Renders as small
+   * muted monospace under the answer textarea when present. NOT operator
+   * voice — surfaces the tier consulted + source_ref_ids so the operator
+   * can spot confidently-wrong citations during dogfood. Empty / absent
+   * for prompts that didn't consult any grounding tier.
+   */
+  readonly debugOverlay?: string;
 };
 
 function esc(s: string): string {
@@ -175,6 +183,9 @@ function clarificationCardsForResolvedCopy(r: F34ResolvedTranscriptCopy): readon
     title: question.prompt,
     sourceQuote: question.source_quote,
     placeholder: question.placeholder,
+    ...(question.debug_overlay !== undefined && question.debug_overlay.length > 0
+      ? { debugOverlay: question.debug_overlay }
+      : {}),
   }));
 }
 
@@ -369,6 +380,10 @@ export function buildTranscriptReviewRailHtml(): string {
     const answerBlock = isResolved
       ? `<p class="kerf-f34-mi__answer"><strong>Recorded for this dry run:</strong> ${esc(answer)}</p>`
       : `<p class="kerf-f34-mi__answer kerf-f34-mi__answer--pending"><strong>Source context:</strong> ${esc(card.sourceQuote)}</p>`;
+    const debugHtml =
+      card.debugOverlay !== undefined && card.debugOverlay.length > 0
+        ? `\n  <p class="kerf-f34-mi__debug" aria-label="Dogfood trust overlay">${esc(card.debugOverlay)}</p>`
+        : '';
     return `<article class="kerf-f34-mi" data-kerf-f34-card="${esc(card.id)}">
   <header class="kerf-f34-mi__head">
     <h3 class="kerf-f34-mi__title">${esc(card.title)}</h3>
@@ -376,7 +391,7 @@ export function buildTranscriptReviewRailHtml(): string {
   </header>
   ${answerBlock}
   <label class="kerf-f34-mi__label" for="${esc(card.id)}-answer">Clarification answer</label>
-  <textarea id="${esc(card.id)}-answer" class="kerf-f34-mi__input" rows="3" data-kerf-f34-answer="${esc(card.id)}" placeholder="${esc(card.placeholder)}">${esc(answer)}</textarea>
+  <textarea id="${esc(card.id)}-answer" class="kerf-f34-mi__input" rows="3" data-kerf-f34-answer="${esc(card.id)}" placeholder="${esc(card.placeholder)}">${esc(answer)}</textarea>${debugHtml}
 </article>`;
   }).join('');
   const resetHtml = resolved.size > 0
