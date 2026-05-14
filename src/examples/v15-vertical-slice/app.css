@@ -878,3 +878,53 @@
   border-radius: var(--kerf-radius-xs);
   word-break: break-all;
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * F-34 severity chips (PR #155). Drives the visual weight of the three
+ * tiers in "Decisions needed" so blockers pull the eye first.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+.kerf-f34-mi__head-meta {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.kerf-f34-mi__severity {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+
+.kerf-f34-mi__severity--blocking {
+  color: #b00020;
+  background: rgba(176, 0, 32, 0.07);
+}
+
+.kerf-f34-mi__severity--risk {
+  color: #a45a00;
+  background: rgba(164, 90, 0, 0.07);
+}
+
+.kerf-f34-mi__severity--context {
+  color: var(--kerf-fg-muted);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Left-border accent on the card so the eye can scan severity without
+ * reading the chip label. Same color family as the chip. */
+.kerf-f34-mi--blocking {
+  border-left: 3px solid rgba(176, 0, 32, 0.55);
+}
+.kerf-f34-mi--risk {
+  border-left: 3px solid rgba(164, 90, 0, 0.45);
+}
+.kerf-f34-mi--context {
+  border-left: 3px solid rgba(0, 0, 0, 0.15);
+}

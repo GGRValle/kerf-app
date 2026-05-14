@@ -202,10 +202,21 @@ test('F-35 generated adapter · drives renderF35DraftReviewPage happy path with 
       html.includes(`data-kerf-f35-line-id="${line.id}"`),
       `expected adapter-line id ${line.id} in render`,
     );
-    assert.ok(
-      html.includes(formatDisplayDollarsFromCents(line.amount_cents)),
-      `expected USD-formatted display for ${line.id} (cents=${line.amount_cents})`,
-    );
+    // PR #155: when amount_cents > 0 the renderer formats USD as before;
+    // when amount_cents === 0 the renderer substitutes "Awaiting quantity"
+    // or "Awaiting review" for the $0.00 string so the operator doesn't
+    // read the line as "broken product".
+    if (line.amount_cents > 0) {
+      assert.ok(
+        html.includes(formatDisplayDollarsFromCents(line.amount_cents)),
+        `expected USD-formatted display for ${line.id} (cents=${line.amount_cents})`,
+      );
+    } else {
+      assert.ok(
+        html.includes('Awaiting quantity') || html.includes('Awaiting review'),
+        `expected awaiting-status amount for zero-cents line ${line.id}`,
+      );
+    }
   }
   const decisionHref = `/decisions/${encodeURIComponent(fixture.decision_id)}`;
   assert.ok(html.includes(`href="${escapeHtml(decisionHref)}"`));
@@ -226,11 +237,27 @@ test('F-35 generated adapter · render output formats cents only at boundary (no
   const fixture = f35FixtureFromVerticalSliceDryRun(verticalSliceFieldCaptureDemoFixture);
   const html = renderF35DraftReviewPage(fixture);
   for (const line of fixture.scope_lines) {
-    assert.ok(
-      html.includes(formatDisplayDollarsFromCents(line.amount_cents)),
-      `${line.id}: USD-formatted amount must appear in render output`,
-    );
+    // PR #155: zero-cents lines render as "Awaiting ..." status, not $0.00.
+    // Positive cents still format at the boundary as $X.YY.
+    if (line.amount_cents > 0) {
+      assert.ok(
+        html.includes(formatDisplayDollarsFromCents(line.amount_cents)),
+        `${line.id}: USD-formatted amount must appear in render output (cents=${line.amount_cents})`,
+      );
+    } else {
+      // Awaiting-status substitution for zero amounts (PR #155).
+      const hasAwaiting =
+        html.includes('Awaiting quantity') || html.includes('Awaiting review');
+      assert.ok(
+        hasAwaiting,
+        `${line.id}: zero-cents line should render as Awaiting status, not $0.00`,
+      );
+    }
   }
+  // Raw cents strings (e.g. integer values larger than typical amounts)
+  // must NOT appear unformatted in the output. This is the original
+  // invariant the test was guarding.
+  assert.doesNotMatch(html, /amount_cents/, 'raw amount_cents field name leaked');
 });
 
 test('F-35 fallback fixture · still imports and renders without the generator', () => {

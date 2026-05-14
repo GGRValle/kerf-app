@@ -254,10 +254,20 @@ function renderScopeLineCard(line: F35ScopeLine): string {
 
   const quantityStatus = line.quantity_status ?? inferQuantityStatusFromFallback(line);
   const tier1Html = renderTier1GroundingBlock(line.tier1_grounding);
+  // Operator-facing copy: strip leading transcript timestamps so descriptions
+  // like "0:08–0:16 and they want to update..." render as "and they want to
+  // update...". Timestamps stay in the audit trail; they don't belong in the
+  // operator's mental model of a scope line.
+  const cleanDesc = stripScopeTimestampPrefix(line.description);
+  // Suppress the $0.00 noise when there's nothing to commit yet: an
+  // amount of 0 with low confidence reads as "broken product" to the
+  // operator (per ChatGPT feedback 2026-05-14). Replace with a status
+  // phrase. The underlying amount_cents is unchanged.
+  const amountDisplay = formatScopeLineAmount(line, quantityStatus);
   return `<li class="kerf-f35-line" data-kerf-f35-line-id="${escapeHtml(line.id)}">
   <div class="kerf-f35-line__head">
-    <p class="kerf-f35-line__desc">${escapeHtml(line.description)}</p>
-    <p class="kerf-f35-line__amount" aria-label="Display amount only — not a stored price">${escapeHtml(formatDisplayDollarsFromCents(line.amount_cents))}</p>
+    <p class="kerf-f35-line__desc">${escapeHtml(cleanDesc)}</p>
+    <p class="kerf-f35-line__amount kerf-f35-line__amount--${amountDisplay.kind}" aria-label="${escapeHtml(amountDisplay.ariaLabel)}">${escapeHtml(amountDisplay.text)}</p>
   </div>
   <p class="kerf-f35-line__qty"><strong>${escapeHtml(String(line.quantity))}</strong> ${escapeHtml(line.unit)}</p>
   <p class="kerf-f35-line__quantity-status kerf-f35-line__quantity-status--${escapeHtml(quantityStatus)}">${escapeHtml(QUANTITY_STATUS_LABELS[quantityStatus])}</p>
@@ -268,6 +278,62 @@ function renderScopeLineCard(line: F35ScopeLine): string {
   <p class="kerf-f35-line__ref"><strong>Ref:</strong> <code>${escapeHtml(line.source_ref)}</code></p>
   ${tier1Html}${flagsHtml}
 </li>`;
+}
+
+/**
+ * Strip a leading transcript timestamp prefix from operator-facing scope
+ * text. Patterns like "0:00", "0:00–0:01", "0:08-0:16", "00:08–00:16"
+ * embed into descriptions when scope lines are derived from transcript
+ * segments. Timestamps belong in the audit trail, not the prompt body.
+ *
+ * Returns the original string if no leading timestamp pattern is found.
+ */
+export function stripScopeTimestampPrefix(text: string): string {
+  // Leading "M:SS" or "MM:SS" or "M:SS–M:SS" / "M:SS-M:SS" range, then
+  // mandatory whitespace, then the rest of the description.
+  const m = /^\s*\d{1,2}:\d{2}(?:\s*[–—\-]\s*\d{1,2}:\d{2})?\s+(\S.*)$/u.exec(text);
+  if (m === null) return text.trim();
+  return m[1]!.trim();
+}
+
+interface F35AmountDisplay {
+  readonly text: string;
+  readonly kind: 'amount' | 'awaiting_quantity' | 'awaiting_review';
+  readonly ariaLabel: string;
+}
+
+/**
+ * Format the amount slot for a scope line. When `amount_cents` is 0 and
+ * the line clearly needs operator input (missing quantity or unknown
+ * pricing confidence), replace "$0.00" with a status phrase. The $0.00
+ * underlying value is unchanged in storage — only the display text
+ * changes (per ChatGPT 2026-05-14 dogfood feedback: "even though
+ * architecturally correct, psychologically [$0.00] feels broken").
+ */
+function formatScopeLineAmount(
+  line: F35ScopeLine,
+  quantityStatus: F35QuantityStatus,
+): F35AmountDisplay {
+  if (line.amount_cents > 0) {
+    return {
+      text: formatDisplayDollarsFromCents(line.amount_cents),
+      kind: 'amount',
+      ariaLabel: 'Display amount only — not a stored price',
+    };
+  }
+  // amount_cents === 0 — pick the most informative status phrase.
+  if (quantityStatus === 'missing_quantity' || line.quantity === 0) {
+    return {
+      text: 'Awaiting quantity',
+      kind: 'awaiting_quantity',
+      ariaLabel: 'Amount pending — quantity not yet confirmed',
+    };
+  }
+  return {
+    text: 'Awaiting review',
+    kind: 'awaiting_review',
+    ariaLabel: 'Amount pending — line requires operator review',
+  };
 }
 
 function renderTier1GroundingBlock(grounding: F35Tier1Grounding | undefined): string {

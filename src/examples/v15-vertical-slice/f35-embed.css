@@ -325,3 +325,16 @@
   border-radius: 3px;
   word-break: break-all;
 }
+
+/* F-35 amount-display states (PR #155). When amount_cents === 0, the
+ * renderer substitutes "Awaiting review" / "Awaiting quantity" for the
+ * $0.00 string so the operator stops reading "broken product" when the
+ * line just hasn't been priced yet. Underlying amount_cents is unchanged. */
+
+.kerf-f35-line__amount--awaiting_quantity,
+.kerf-f35-line__amount--awaiting_review {
+  font-style: italic;
+  color: var(--kerf-f35-fg-muted, #6a7570);
+  font-weight: normal;
+  white-space: nowrap;
+}

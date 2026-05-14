@@ -1,4 +1,5 @@
 import type { ScopeLine, VerticalSliceDryRunDemoFixture } from '../../demo/types.js';
+import { stripScopeTimestampPrefix } from '../f35-draft-review.js';
 import {
   formatDebugOverlayForHit,
   formatDebugOverlayForMiss,
@@ -9,6 +10,21 @@ import {
 
 export type V15ClarificationQuestionKind = 'quantity' | 'scope' | 'allowance' | 'verification';
 
+/**
+ * Severity tier on a clarification question (PR #155, 2026-05-14 ChatGPT
+ * feedback). Drives visual ordering + chip color in the F-34 rail so the
+ * operator's eye lands on blockers first, not on flattened equal-weight
+ * cards.
+ *
+ *   - `blocking` — cannot proceed safely. Missing quantity, unclear scope
+ *     inclusion, scope-vs-aside ambiguity.
+ *   - `risk`     — can proceed with assumptions, but the operator should
+ *     name them. Pricing range only, finish unspecified, allowance gaps.
+ *   - `context`  — helpful but non-blocking. Tier-1 KB grounding, "are we
+ *     sending this" routing decisions.
+ */
+export type V15ClarificationSeverity = 'blocking' | 'risk' | 'context';
+
 export interface V15ClarificationQuestion {
   readonly id: string;
   readonly kind: V15ClarificationQuestionKind;
@@ -16,6 +32,12 @@ export interface V15ClarificationQuestion {
   readonly source_quote: string;
   readonly target_line_id?: string;
   readonly placeholder: string;
+  /**
+   * Severity tier — drives visual order + chip color in the F-34 rail.
+   * Required as of PR #155 so flattened-equal-weight rendering can't
+   * regress.
+   */
+  readonly severity: V15ClarificationSeverity;
   /**
    * Dogfood-only trust-verification overlay. Names the tier(s) consulted
    * and the matched source_ref_ids. NOT operator-voice; rendered as small
@@ -41,20 +63,23 @@ function countAndSizeConflict(line: ScopeLine): boolean {
 }
 
 function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
-  const text = line.description.trim();
+  // Strip leading transcript timestamps from operator-facing copy so
+  // "0:08–0:16 and they want to update..." doesn't bleed into prompts
+  // (PR #155, ChatGPT feedback 2026-05-14: timestamps belong in the
+  // audit trail, not in operator copy).
+  const text = stripScopeTimestampPrefix(line.description.trim());
   const idBase = line.id.replace(/[^a-z0-9_-]+/gi, '-');
 
   // Voice polish 2026-05-13 (PR #152): the seven prompts below match the
   // voice of three real operator clarification-answer-box texts captured in
   // docs/architecture/dogfood_finding_clarification_prompt_voice_2026-05-13.md.
-  // Targets conversational + partly domain-aware only. Name-awareness and
-  // pushback-handling are explicitly NOT attempted here (May 16+ work). The
-  // selection logic (which template fires for which keyword) is unchanged;
-  // only the prompt strings are polished.
+  // Severity tier added in PR #155 — drives F-34 rail visual ordering
+  // (Blocking → Risk → Context) and chip color.
   if (countAndSizeConflict(line)) {
     return {
       id: `clarify-quantity-${idBase}`,
       kind: 'quantity',
+      severity: 'blocking',
       prompt: 'My read is 2 shelves at 12 in depth — does that match, or did you mean different numbers?',
       source_quote: text,
       target_line_id: line.id,
@@ -65,6 +90,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-quantity-${idBase}`,
       kind: 'quantity',
+      severity: 'blocking',
       prompt: 'How many outlets are we adding or moving here?',
       source_quote: text,
       target_line_id: line.id,
@@ -75,6 +101,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-quantity-${idBase}`,
       kind: 'quantity',
+      severity: 'blocking',
       prompt: `My read on "${text}" is missing a quantity — what should I use?`,
       source_quote: text,
       target_line_id: line.id,
@@ -85,6 +112,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-scope-${idBase}`,
       kind: 'scope',
+      severity: 'blocking',
       prompt: 'Are we pricing cabinetry into this draft, breaking it out as a separate line item, or keeping it out of scope?',
       source_quote: text,
       target_line_id: line.id,
@@ -95,6 +123,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-allowance-${idBase}`,
       kind: 'allowance',
+      severity: 'risk',
       prompt: 'On backsplash tile — is this in scope as I draft, allowance-only, or still waiting on final selection?',
       source_quote: text,
       target_line_id: line.id,
@@ -105,6 +134,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-verify-${idBase}`,
       kind: 'verification',
+      severity: 'context',
       prompt: 'Want me to hold this internal-only for now, or draft something for your review?',
       source_quote: text,
       target_line_id: line.id,
@@ -123,6 +153,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
       return {
         id: `clarify-verify-${idBase}`,
         kind: 'verification',
+        severity: 'blocking',
         prompt: `That ended in a question — "${text}" — was that part of the scope you want priced, or an aside that snuck into the capture?`,
         source_quote: text,
         target_line_id: line.id,
@@ -146,6 +177,11 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
       return {
         id: `clarify-verify-${idBase}`,
         kind: 'verification',
+        // Tier-1-grounded prompts are CONTEXT severity: they ground a
+        // decision in real numbers rather than block on a missing field.
+        // The line still needs operator review, but the system has data
+        // to bring to that review.
+        severity: 'context',
         prompt: `${opener} "${text}" — typical range I'm seeing is ${range}, but that's a wide spread. What's the scope and size we're working with so I can tighten this up?`,
         source_quote: text,
         target_line_id: line.id,
@@ -156,6 +192,10 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-verify-${idBase}`,
       kind: 'verification',
+      // Ungrounded verification — operator must name an assumption. Risk
+      // tier: can proceed with an assumption, but the assumption is the
+      // operator's responsibility, not the system's.
+      severity: 'risk',
       prompt: `${opener} "${text}" isn't clear yet — what should I assume if we move forward?`,
       source_quote: text,
       target_line_id: line.id,
@@ -171,6 +211,13 @@ export function deriveV15ClarificationQuestions(
 ): readonly V15ClarificationQuestion[] {
   return deriveV15ClarificationQuestionsFromScopeLines(fixture.field_capture_payload.scope_lines);
 }
+
+// Stable sort key per severity tier — lower wins (renders first).
+const SEVERITY_ORDER: Record<V15ClarificationSeverity, number> = {
+  blocking: 0,
+  risk: 1,
+  context: 2,
+};
 
 export function deriveV15ClarificationQuestionsFromScopeLines(
   scopeLines: readonly ScopeLine[],
@@ -190,7 +237,17 @@ export function deriveV15ClarificationQuestionsFromScopeLines(
     }
   }
 
-  return questions;
+  // Stable sort by severity tier so blockers surface first in the F-34 rail.
+  // Within a tier, original document order is preserved.
+  return questions
+    .map((q, idx) => ({ q, idx }))
+    .sort((a, b) => {
+      const sa = SEVERITY_ORDER[a.q.severity];
+      const sb = SEVERITY_ORDER[b.q.severity];
+      if (sa !== sb) return sa - sb;
+      return a.idx - b.idx;
+    })
+    .map(({ q }) => q);
 }
 
 export function findClarificationQuestion(

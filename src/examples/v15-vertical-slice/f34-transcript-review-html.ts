@@ -28,6 +28,11 @@ type ClarificationCardView = {
   readonly sourceQuote: string;
   readonly placeholder: string;
   /**
+   * Severity tier — drives the chip color + visual ordering of the card
+   * in the F-34 rail. Required as of PR #155.
+   */
+  readonly severity: 'blocking' | 'risk' | 'context';
+  /**
    * Optional dogfood-only trust-verification overlay. Renders as small
    * muted monospace under the answer textarea when present. NOT operator
    * voice — surfaces the tier consulted + source_ref_ids so the operator
@@ -35,6 +40,12 @@ type ClarificationCardView = {
    * for prompts that didn't consult any grounding tier.
    */
   readonly debugOverlay?: string;
+};
+
+const SEVERITY_CHIP_LABEL: Record<ClarificationCardView['severity'], string> = {
+  blocking: 'Blocking',
+  risk: 'Risk',
+  context: 'Context',
 };
 
 function esc(s: string): string {
@@ -183,6 +194,7 @@ function clarificationCardsForResolvedCopy(r: F34ResolvedTranscriptCopy): readon
     title: question.prompt,
     sourceQuote: question.source_quote,
     placeholder: question.placeholder,
+    severity: question.severity,
     ...(question.debug_overlay !== undefined && question.debug_overlay.length > 0
       ? { debugOverlay: question.debug_overlay }
       : {}),
@@ -384,10 +396,11 @@ export function buildTranscriptReviewRailHtml(): string {
       card.debugOverlay !== undefined && card.debugOverlay.length > 0
         ? `\n  <p class="kerf-f34-mi__debug" aria-label="Dogfood trust overlay">${esc(card.debugOverlay)}</p>`
         : '';
-    return `<article class="kerf-f34-mi" data-kerf-f34-card="${esc(card.id)}">
+    const severityChip = `<span class="kerf-f34-mi__severity kerf-f34-mi__severity--${esc(card.severity)}" aria-label="Severity ${esc(SEVERITY_CHIP_LABEL[card.severity])}">${esc(SEVERITY_CHIP_LABEL[card.severity])}</span>`;
+    return `<article class="kerf-f34-mi kerf-f34-mi--${esc(card.severity)}" data-kerf-f34-card="${esc(card.id)}" data-kerf-f34-severity="${esc(card.severity)}">
   <header class="kerf-f34-mi__head">
     <h3 class="kerf-f34-mi__title">${esc(card.title)}</h3>
-    <span class="${statusClass}">${statusLabel}</span>
+    <div class="kerf-f34-mi__head-meta">${severityChip}<span class="${statusClass}">${statusLabel}</span></div>
   </header>
   ${answerBlock}
   <label class="kerf-f34-mi__label" for="${esc(card.id)}-answer">Clarification answer</label>
@@ -405,8 +418,8 @@ export function buildTranscriptReviewRailHtml(): string {
     : '';
 
   return `<div class="kerf-f34-rail">
-  <h2 class="kerf-f34-h2">Missing information</h2>
-  <p class="kerf-f34-prose">Each prompt tracks a gap Kerf could not safely infer from the current capture. You can answer what you know now, then proceed with open gaps still flagged downstream.</p>
+  <h2 class="kerf-f34-h2">Decisions needed</h2>
+  <p class="kerf-f34-prose">Each prompt is a decision Kerf can't make safely on its own from this capture. Blocking decisions sit at the top; risk-flagged and context items follow. You can answer what you know now and proceed with open items still flagged downstream.</p>
   <div class="kerf-f34-mi-stack">${cards}</div>
   ${applyHtml}
   ${continueBlock}
