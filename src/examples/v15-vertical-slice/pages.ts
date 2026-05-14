@@ -23,6 +23,9 @@ import { v15GetActiveVerticalSliceFixture } from './v15-context-dry-run-session.
 import { buildV15FieldCaptureHtml } from './v15-field-capture-html.js';
 import { v15FieldCaptureGetState } from './v15-field-capture-state.js';
 import { v15F37GetSelectedEventId } from './v15-f37-selection.js';
+import { detectBathArchetype } from './v15-bath-archetype.js';
+import { instantiateBathScaffold } from './v15-bath-scaffold.js';
+import { renderBathScaffoldSection } from './v15-bath-scaffold-html.js';
 import { detectKitchenArchetype } from './v15-kitchen-archetype.js';
 import { instantiateKitchenScaffold } from './v15-kitchen-scaffold.js';
 import { renderKitchenScaffoldSection } from './v15-kitchen-scaffold-html.js';
@@ -59,6 +62,18 @@ function renderKitchenScaffoldFromActiveFixture(
   if (detection === null) return '';
   const scaffold = instantiateKitchenScaffold(detection);
   return renderKitchenScaffoldSection(scaffold);
+}
+
+function renderBathScaffoldFromActiveFixture(
+  activeFixture: ReturnType<typeof v15GetActiveVerticalSliceFixture> | null,
+): string {
+  if (activeFixture === null) return '';
+  const transcriptText = activeFixture.field_capture_input?.transcript_original ?? '';
+  if (transcriptText.length === 0) return '';
+  const detection = detectBathArchetype(transcriptText);
+  if (detection === null) return '';
+  const scaffold = instantiateBathScaffold(detection);
+  return renderBathScaffoldSection(scaffold);
 }
 
 function buildBlackboardPreviewHtml(): string {
@@ -183,7 +198,10 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
       // still render below for raw-capture audit; the scaffold is the new
       // primary content. Strictly deterministic — regex archetype detect,
       // hardcoded scope template, KB tier-1 lookup per line, never a quote.
-      const scaffoldHtml = renderKitchenScaffoldFromActiveFixture(activeFixture);
+      let scaffoldHtml = renderKitchenScaffoldFromActiveFixture(activeFixture);
+      if (scaffoldHtml === '') {
+        scaffoldHtml = renderBathScaffoldFromActiveFixture(activeFixture);
+      }
       return {
         title: 'Draft Review',
         subtitle: 'F-35 · Draft before decisions (read-only demo).',
