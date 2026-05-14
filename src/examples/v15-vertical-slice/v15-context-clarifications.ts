@@ -29,11 +29,18 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
   const text = line.description.trim();
   const idBase = line.id.replace(/[^a-z0-9_-]+/gi, '-');
 
+  // Voice polish 2026-05-13 (PR #152): the seven prompts below match the
+  // voice of three real operator clarification-answer-box texts captured in
+  // docs/architecture/dogfood_finding_clarification_prompt_voice_2026-05-13.md.
+  // Targets conversational + partly domain-aware only. Name-awareness and
+  // pushback-handling are explicitly NOT attempted here (May 16+ work). The
+  // selection logic (which template fires for which keyword) is unchanged;
+  // only the prompt strings are polished.
   if (countAndSizeConflict(line)) {
     return {
       id: `clarify-quantity-${idBase}`,
       kind: 'quantity',
-      prompt: 'Is this 2 shelves at 12 in depth, or should Kerf use a different shelf quantity?',
+      prompt: 'My read is 2 shelves at 12 in depth — does that match, or did you mean different numbers?',
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: 2 shelves at 12 in depth',
@@ -43,7 +50,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-quantity-${idBase}`,
       kind: 'quantity',
-      prompt: 'How many outlets are being added or moved here?',
+      prompt: 'How many outlets are we adding or moving here?',
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: move 2 outlets',
@@ -53,7 +60,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-quantity-${idBase}`,
       kind: 'quantity',
-      prompt: `What quantity should Kerf use for "${text}"?`,
+      prompt: `My read on "${text}" is missing a quantity — what should I use?`,
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: 2 shelves, 42 sq ft, 1 outlet',
@@ -63,7 +70,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-scope-${idBase}`,
       kind: 'scope',
-      prompt: 'Should cabinetry be priced in this draft, as a separate line item, or out of scope?',
+      prompt: 'Are we pricing cabinetry into this draft, breaking it out as a separate line item, or keeping it out of scope?',
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: separate line item, included, out of scope',
@@ -73,7 +80,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-allowance-${idBase}`,
       kind: 'allowance',
-      prompt: 'Is backsplash tile included in this scope, allowance-only, or still awaiting final selection?',
+      prompt: 'On backsplash tile — is this in scope as I draft, allowance-only, or still waiting on final selection?',
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: allowance only, included, final SKU selected',
@@ -83,7 +90,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-verify-${idBase}`,
       kind: 'verification',
-      prompt: 'Should Kerf keep this internal-only for now, or proceed with an internal draft for review?',
+      prompt: 'Want me to hold this internal-only for now, or draft something for your review?',
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: keep internal only until owner review',
@@ -93,7 +100,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-verify-${idBase}`,
       kind: 'verification',
-      prompt: `What should Kerf assume for "${text}" if you proceed now?`,
+      prompt: `My read on "${text}" isn't clear — what should I assume if we move forward?`,
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: proceed with placeholder, verify in field, client to confirm',
