@@ -287,3 +287,41 @@
   color: var(--kerf-f35-fg-muted);
   font-size: 0.85rem;
 }
+
+/* F-35 tier-1 cost-KB grounding block (PR #154).
+ * Renders beneath each scope line when the seed has a gate-passing trade
+ * match for the line's description. "Typical range $X-$Y" is operator
+ * voice; the debug overlay underneath is dogfood-only (tier + source_ref
+ * ids + confidence). Per Pricing_Gate_v0_2: range only, never a quote. */
+
+.kerf-f35-tier1 {
+  margin: 0.55rem 0 0;
+  padding: 0.5rem 0.65rem;
+  background: rgba(60, 130, 75, 0.06);
+  border: 1px solid rgba(60, 130, 75, 0.25);
+  border-left: 3px solid rgba(60, 130, 75, 0.7);
+  border-radius: 4px;
+}
+
+.kerf-f35-tier1__line {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--kerf-f35-fg, #1c2a1f);
+}
+
+.kerf-f35-tier1__note {
+  color: var(--kerf-f35-fg-muted, #6a7570);
+  font-size: 0.78rem;
+}
+
+.kerf-f35-tier1__debug {
+  margin: 0.35rem 0 0;
+  padding: 0.2rem 0.4rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--kerf-f35-fg-muted, #6a7570);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(60, 130, 75, 0.35);
+  border-radius: 3px;
+  word-break: break-all;
+}

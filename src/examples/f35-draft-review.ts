@@ -17,6 +17,11 @@ import type {
   VerticalSliceDryRunDemoFixture,
   VerticalSliceSourceRef,
 } from '../demo/types.js';
+import {
+  formatDebugOverlayForHit,
+  lookupCostKbSeed,
+  type KerfCostKbLookupHit,
+} from './v15-vertical-slice/v15-cost-kb-seed.js';
 
 /** Money is always integer cents at this boundary; floats are forbidden. */
 export type Cents = number;
@@ -55,6 +60,27 @@ export interface F35SourceRef {
   readonly note?: string;
 }
 
+/**
+ * Optional tier-1 cost-KB grounding payload on a scope line. The renderer
+ * surfaces this as a "Typical range" block beneath the line plus a small
+ * monospace dogfood debug overlay. Populated by the v15 vertical-slice
+ * adapter (`f35FixtureFromVerticalSliceDryRun`) when the seed has a
+ * gate-passing trade match; absent on the standalone F-35 fixture so the
+ * standalone demo stays seed-agnostic.
+ *
+ * SAFETY (per Pricing_Gate_v0_2): only RANGE_ONLY rows feed this; the
+ * range is operator-voice context, NEVER a client-facing point estimate.
+ * `amount_cents` on the parent line stays the authoritative display
+ * amount; this grounding is supplementary.
+ */
+export interface F35Tier1Grounding {
+  readonly aggregate_low_cents: Cents;
+  readonly aggregate_high_cents: Cents;
+  readonly uom: string;
+  /** Dogfood-only trust-verification line; not operator voice. */
+  readonly debug_overlay: string;
+}
+
 export interface F35ScopeLine {
   readonly id: string;
   readonly description: string;
@@ -67,6 +93,8 @@ export interface F35ScopeLine {
   readonly source_ref: string;
   readonly assumption?: string;
   readonly missing_info?: string;
+  /** Optional tier-1 cost-KB grounding (range, not a quote). See F35Tier1Grounding. */
+  readonly tier1_grounding?: F35Tier1Grounding;
 }
 
 export interface F35Assumption {
@@ -225,6 +253,7 @@ function renderScopeLineCard(line: F35ScopeLine): string {
     flags.length > 0 ? `<div class="kerf-f35-flags">${flags.join('')}</div>` : '';
 
   const quantityStatus = line.quantity_status ?? inferQuantityStatusFromFallback(line);
+  const tier1Html = renderTier1GroundingBlock(line.tier1_grounding);
   return `<li class="kerf-f35-line" data-kerf-f35-line-id="${escapeHtml(line.id)}">
   <div class="kerf-f35-line__head">
     <p class="kerf-f35-line__desc">${escapeHtml(line.description)}</p>
@@ -237,8 +266,25 @@ function renderScopeLineCard(line: F35ScopeLine): string {
     <span class="${pricingToneClass(line.pricing_confidence)}" data-kerf-f35-confidence="${escapeHtml(line.pricing_confidence)}">${escapeHtml(PRICING_CONFIDENCE_LABELS[line.pricing_confidence])}</span>
   </p>
   <p class="kerf-f35-line__ref"><strong>Ref:</strong> <code>${escapeHtml(line.source_ref)}</code></p>
-  ${flagsHtml}
+  ${tier1Html}${flagsHtml}
 </li>`;
+}
+
+function renderTier1GroundingBlock(grounding: F35Tier1Grounding | undefined): string {
+  if (grounding === undefined) {
+    return '';
+  }
+  const lowDollars = Math.round(grounding.aggregate_low_cents / 100);
+  const highDollars = Math.round(grounding.aggregate_high_cents / 100);
+  const uom = grounding.uom.toLowerCase();
+  const unit = uom === 'sf' ? '/SF' : uom === 'lf' ? '/LF' : uom === 'ea' ? ' per unit' : uom === 'hr' ? '/hour' : '';
+  const range = `$${lowDollars.toLocaleString('en-US')}–$${highDollars.toLocaleString('en-US')}${unit}`;
+  // Operator-voice "typical range" framing per Pricing_Gate_v0_2: never a
+  // quote, never a point estimate, never client-facing without review.
+  return `<div class="kerf-f35-tier1" data-kerf-f35-tier1="present">
+    <p class="kerf-f35-tier1__line"><strong>Typical range:</strong> ${escapeHtml(range)}<span class="kerf-f35-tier1__note"> · range only, not a quote</span></p>
+    <p class="kerf-f35-tier1__debug" aria-label="Dogfood trust overlay">${escapeHtml(grounding.debug_overlay)}</p>
+  </div>`;
 }
 
 function inferQuantityStatusFromFallback(line: F35ScopeLine): F35QuantityStatus {
@@ -768,6 +814,25 @@ function mapGeneratedDraftLines(
     }
     const assumption = joinFlagsForDisplay(line.assumption_flags);
     const missing = joinFlagsForDisplay(line.missing_info_flags);
+    // Tier-1 cost-KB consult (PR #154). Reads from the browser-side seed
+    // cache populated by v15-cost-kb-seed.loadV15CostKbSeed() at app boot;
+    // returns null when the cache is empty (tests, server-side render, or
+    // before the fetch completes). Augments the scope line with a "Typical
+    // range" block per Pricing_Gate_v0_2 (range only, never a quote).
+    const tier1: KerfCostKbLookupHit | null = lookupCostKbSeed({
+      scope_text: line.description,
+      use: 'clarification_range',
+    });
+    const tier1Grounding: F35Tier1Grounding | undefined =
+      tier1 !== null && tier1.aggregate_low_cents > 0 && tier1.aggregate_high_cents > 0
+        ? {
+            aggregate_low_cents: tier1.aggregate_low_cents,
+            aggregate_high_cents: tier1.aggregate_high_cents,
+            uom: tier1.predominant_uom,
+            debug_overlay: formatDebugOverlayForHit(tier1),
+          }
+        : undefined;
+
     const out: F35ScopeLine = {
       id: line.id,
       description: line.description,
@@ -780,6 +845,7 @@ function mapGeneratedDraftLines(
       source_ref: pickLineSourceRef(line, refIndex),
       ...(assumption !== undefined ? { assumption } : {}),
       ...(missing !== undefined ? { missing_info: missing } : {}),
+      ...(tier1Grounding !== undefined ? { tier1_grounding: tier1Grounding } : {}),
     };
     return out;
   });

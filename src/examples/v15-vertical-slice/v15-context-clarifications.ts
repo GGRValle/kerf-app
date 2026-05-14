@@ -112,6 +112,25 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     };
   }
   if (lineNeedsClarification(line)) {
+    // Off-topic / aside detection (PR #154 dogfood fix): voice capture
+    // sometimes picks up operator asides phrased as questions ("What's the
+    // problem with this gas tank that's burning for heat?"). The system
+    // shouldn't ask "what should I assume" for those — it should ask if
+    // they were really meant as scope. Detection is mechanical: a scope
+    // line that ends in a question mark is more likely an aside than a
+    // declarative scope item.
+    if (text.endsWith('?')) {
+      return {
+        id: `clarify-verify-${idBase}`,
+        kind: 'verification',
+        prompt: `That ended in a question — "${text}" — was that part of the scope you want priced, or an aside that snuck into the capture?`,
+        source_quote: text,
+        target_line_id: line.id,
+        placeholder: 'Example: aside, drop it / yes, include it / split into a separate note',
+        debug_overlay: 'tier1·aside_detected_question_mark',
+      };
+    }
+
     // Tier 1 (seed cost-KB) consult. If a trade match exists and rows pass
     // the gate, augment the operator-voice prompt with a "typical range"
     // framing — per the safety-gate rules, never as a point estimate, never
@@ -121,12 +140,13 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
       scope_text: text,
       use: 'clarification_range',
     });
+    const opener = pickVerificationOpener(text);
     if (tier1 !== null && tier1.aggregate_low_cents > 0 && tier1.aggregate_high_cents > 0) {
       const range = formatRangeForPrompt(tier1);
       return {
         id: `clarify-verify-${idBase}`,
         kind: 'verification',
-        prompt: `My read on "${text}" — typical range I'm seeing is ${range}, but that's a wide spread. What's the scope and size we're working with so I can tighten this up?`,
+        prompt: `${opener} "${text}" — typical range I'm seeing is ${range}, but that's a wide spread. What's the scope and size we're working with so I can tighten this up?`,
         source_quote: text,
         target_line_id: line.id,
         placeholder: 'Example: 200 SF, mid-range materials, owner provides appliances',
@@ -136,7 +156,7 @@ function questionForLine(line: ScopeLine): V15ClarificationQuestion | null {
     return {
       id: `clarify-verify-${idBase}`,
       kind: 'verification',
-      prompt: `My read on "${text}" isn't clear — what should I assume if we move forward?`,
+      prompt: `${opener} "${text}" isn't clear yet — what should I assume if we move forward?`,
       source_quote: text,
       target_line_id: line.id,
       placeholder: 'Example: proceed with placeholder, verify in field, client to confirm',
@@ -178,4 +198,44 @@ export function findClarificationQuestion(
   questionId: string,
 ): V15ClarificationQuestion | null {
   return deriveV15ClarificationQuestions(fixture).find((question) => question.id === questionId) ?? null;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Opener variation for the generic-verification template.
+//
+// Dogfood feedback 2026-05-14: when voice transcripts hit the generic
+// verification template (which they almost always do, because the more
+// specific templates require keyword matches that natural scope sentences
+// rarely satisfy), every prompt starts with "My read on...". That's the
+// new monotony — same shell, different words. Three deterministic openers
+// spread the voice across consecutive prompts.
+//
+// All three variants come from the operator-voice spec captured in
+// docs/architecture/dogfood_finding_clarification_prompt_voice_2026-05-13.md:
+//   - "My read on X" matches answer-box example #2 ("my read is a 5' x 6'…")
+//   - "On X" matches the existing tile/backsplash template ("On backsplash
+//     tile —"), already shipped in PR #152
+//   - "Looking at X" is a minimal natural variant of "my read on X"
+//
+// No new voice patterns invented beyond those — Right Hand voice canon
+// expansion is still May 16+ work.
+//
+// Deterministic selection (same text -> same opener) so the test posture
+// from PR #152 stays stable. Hash function is a djb2 variant of
+// `text.length` blended with the first few char codes.
+// ──────────────────────────────────────────────────────────────────────────
+
+const VERIFICATION_OPENERS: readonly string[] = [
+  'My read on',
+  'Looking at',
+  'On',
+];
+
+function pickVerificationOpener(text: string): string {
+  let hash = 5381;
+  for (let i = 0; i < Math.min(text.length, 32); i++) {
+    hash = ((hash << 5) + hash) ^ text.charCodeAt(i);
+  }
+  const idx = Math.abs(hash) % VERIFICATION_OPENERS.length;
+  return VERIFICATION_OPENERS[idx]!;
 }
