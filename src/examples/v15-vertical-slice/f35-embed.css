@@ -338,3 +338,187 @@
   font-weight: normal;
   white-space: nowrap;
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * Kitchen scope scaffold section (PR #156, 2026-05-14).
+ *
+ * Renders at the top of /draft-review when the transcript triggers
+ * archetype detection. "Working draft detected" framing per ChatGPT.
+ * Visually distinct from the transcript-derived scope-line list below.
+ * Scaffold lines carry quantity_basis / materials_basis / pricing_basis
+ * pills so the operator can audit every inferred number.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+.kerf-f35-scaffold {
+  border: 2px solid rgba(60, 130, 75, 0.35);
+  background: rgba(60, 130, 75, 0.04);
+  margin: 0 0 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 6px;
+}
+
+.kerf-f35-scaffold__head {
+  border-bottom: 1px dashed rgba(60, 130, 75, 0.3);
+  padding-bottom: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.kerf-f35-scaffold__pretitle {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(60, 130, 75, 0.85);
+  font-weight: 600;
+}
+
+.kerf-f35-scaffold__title {
+  margin: 0.25rem 0 0.45rem;
+  font-size: 1.15rem;
+  color: var(--kerf-f35-fg, #1c2a1f);
+}
+
+.kerf-f35-scaffold__materials {
+  margin: 0.35rem 0;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.kerf-f35-scaffold__materials-empty {
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--kerf-f35-fg-muted, #6a7570);
+  font-style: italic;
+}
+
+.kerf-f35-scaffold__chip {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.78rem;
+  background: #fff;
+  border: 1px solid rgba(60, 130, 75, 0.35);
+  border-radius: 999px;
+  color: var(--kerf-f35-fg, #1c2a1f);
+}
+
+.kerf-f35-scaffold__caveat {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+  color: var(--kerf-f35-fg-muted, #6a7570);
+}
+
+.kerf-f35-scaffold__lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.kerf-f35-scaffold__line {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  padding: 0.7rem 0.85rem;
+}
+
+.kerf-f35-scaffold__line-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: baseline;
+  margin: 0 0 0.4rem;
+}
+
+.kerf-f35-scaffold__scope {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--kerf-f35-fg, #1c2a1f);
+}
+
+.kerf-f35-scaffold__qty {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  color: var(--kerf-f35-fg, #1c2a1f);
+  white-space: nowrap;
+}
+
+.kerf-f35-scaffold__assumption {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  color: var(--kerf-f35-fg, #1c2a1f);
+  line-height: 1.4;
+}
+
+.kerf-f35-scaffold__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0;
+}
+
+.kerf-f35-scaffold__pill {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  line-height: 1.4;
+}
+
+.kerf-f35-scaffold__pill--qty {
+  color: #5c6770;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.kerf-f35-scaffold__pill--material {
+  color: #1c5a2a;
+  background: rgba(60, 130, 75, 0.06);
+}
+
+.kerf-f35-scaffold__pill--range {
+  color: #0b4a78;
+  background: rgba(11, 74, 120, 0.05);
+}
+
+.kerf-f35-scaffold__pill--no-range {
+  color: #6a7570;
+  background: rgba(0, 0, 0, 0.02);
+  font-style: italic;
+}
+
+.kerf-f35-scaffold__provenance {
+  font-style: normal;
+  opacity: 0.7;
+  font-size: 0.95em;
+}
+
+.kerf-f35-scaffold__refine {
+  margin: 0.45rem 0 0;
+  font-size: 0.78rem;
+  color: var(--kerf-f35-fg-muted, #6a7570);
+  font-style: italic;
+}
+
+.kerf-f35-scaffold__debug {
+  margin: 0.4rem 0 0;
+  padding: 0.2rem 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--kerf-f35-fg-muted, #6a7570);
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  word-break: break-all;
+}
+
+.kerf-f35-scaffold__footnote {
+  margin: 0.85rem 0 0;
+  font-size: 0.78rem;
+  color: var(--kerf-f35-fg-muted, #6a7570);
+  line-height: 1.5;
+}

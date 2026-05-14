@@ -23,6 +23,9 @@ import { v15GetActiveVerticalSliceFixture } from './v15-context-dry-run-session.
 import { buildV15FieldCaptureHtml } from './v15-field-capture-html.js';
 import { v15FieldCaptureGetState } from './v15-field-capture-state.js';
 import { v15F37GetSelectedEventId } from './v15-f37-selection.js';
+import { detectKitchenArchetype } from './v15-kitchen-archetype.js';
+import { instantiateKitchenScaffold } from './v15-kitchen-scaffold.js';
+import { renderKitchenScaffoldSection } from './v15-kitchen-scaffold-html.js';
 
 function esc(s: string): string {
   return s
@@ -30,6 +33,32 @@ function esc(s: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+/**
+ * PR #156 helper: read the transcript text from the active vertical-slice
+ * fixture (live recording when present; demo fixture otherwise), run the
+ * deterministic kitchen-archetype detector against it, and render the
+ * scaffold section if a kitchen is detected.
+ *
+ * Returns an empty string when:
+ *   - no active fixture (fallback to demo fixture path threw)
+ *   - transcript text is empty
+ *   - archetype detector returns null (no kitchen mention)
+ *
+ * The empty-string contract lets the caller include this unconditionally
+ * in the page body composition without branching.
+ */
+function renderKitchenScaffoldFromActiveFixture(
+  activeFixture: ReturnType<typeof v15GetActiveVerticalSliceFixture> | null,
+): string {
+  if (activeFixture === null) return '';
+  const transcriptText = activeFixture.field_capture_input?.transcript_original ?? '';
+  if (transcriptText.length === 0) return '';
+  const detection = detectKitchenArchetype(transcriptText);
+  if (detection === null) return '';
+  const scaffold = instantiateKitchenScaffold(detection);
+  return renderKitchenScaffoldSection(scaffold);
 }
 
 function buildBlackboardPreviewHtml(): string {
@@ -140,16 +169,26 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
       // time (e.g. mid-migration shape mismatch), fall back to the hand-authored
       // demo fixture so the screen still renders the rich F-35 surface.
       let fixture: F35DraftReviewFixture;
+      let activeFixture: ReturnType<typeof v15GetActiveVerticalSliceFixture> | null;
       try {
-        fixture = f35FixtureFromVerticalSliceDryRun(v15GetActiveVerticalSliceFixture());
+        activeFixture = v15GetActiveVerticalSliceFixture();
+        fixture = f35FixtureFromVerticalSliceDryRun(activeFixture);
       } catch {
+        activeFixture = null;
         fixture = f35DraftReviewDemoFixture;
       }
+      // PR #156: kitchen archetype scope scaffold. If the active transcript
+      // describes a kitchen, render a "Working draft detected" scaffold at
+      // the top of /draft-review. The transcript-derived F-35 scope lines
+      // still render below for raw-capture audit; the scaffold is the new
+      // primary content. Strictly deterministic — regex archetype detect,
+      // hardcoded scope template, KB tier-1 lookup per line, never a quote.
+      const scaffoldHtml = renderKitchenScaffoldFromActiveFixture(activeFixture);
       return {
         title: 'Draft Review',
         subtitle: 'F-35 · Draft before decisions (read-only demo).',
         notice: F35_AI_NOTICE,
-        bodyHtml: `<div class="kerf-v15-f35-embed">${renderF35DraftReviewPage(fixture, { v15Shell: true })}</div>`,
+        bodyHtml: `${scaffoldHtml}<div class="kerf-v15-f35-embed">${renderF35DraftReviewPage(fixture, { v15Shell: true })}</div>`,
       };
     }
     case 'decisions-list':
