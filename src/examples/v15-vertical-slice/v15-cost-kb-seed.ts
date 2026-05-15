@@ -171,6 +171,99 @@ export interface KerfCostKbLookupQuery {
   readonly manifest?: KerfCostKbSeedManifest | null;
 }
 
+// Per-trade material vocabulary. Patterns match BOTH the scope_text AND
+// the row's item_name; a row is "material-matched" when at least one
+// pattern from at least one named material matches its item_name AND
+// that material is named in scope_text.
+const MATERIAL_VOCAB: Record<string, readonly RegExp[]> = {
+  // Flooring
+  LVP: [/\bLVP\b/i, /\bluxury vinyl(?:\s*plank)?\b/i, /\bvinyl plank\b/i],
+  hardwood: [/\bhardwood\b/i, /\bsolid oak\b/i, /\bwhite oak floor\b/i],
+  'engineered hardwood': [/\bengineered (?:wood|hardwood)\b/i],
+  'tile flooring': [/\btile floor(?:ing)?\b/i, /\bceramic floor tile\b/i, /\bporcelain floor tile\b/i],
+  // Countertops
+  quartzite: [/\bquartzite\b/i],
+  quartz: [/\bquartz(?!ite)\b/i],
+  granite: [/\bgranite\b/i],
+  marble: [/\bmarble\b/i],
+  soapstone: [/\bsoapstone\b/i],
+  'butcher block': [/\bbutcher block\b/i],
+  laminate: [/\blaminate\b/i],
+  'solid surface': [/\bsolid surface\b/i, /\bcorian\b/i],
+  // Decking
+  'composite decking': [/\bcomposite (?:deck|decking)\b/i, /\btrex\b/i, /\btimbertech\b/i],
+  'pressure-treated': [/\bpressure[- ]treated\b/i, /\bPT (?:deck|decking)\b/i],
+  cedar: [/\bcedar\b/i],
+  redwood: [/\bredwood\b/i],
+  'tropical hardwood': [/\bipe\b/i, /\bcumaru\b/i, /\btigerwood\b/i, /\btropical hardwood\b/i],
+  // Roofing
+  'asphalt shingle': [/\basphalt shingle\b/i, /\barchitectural shingle\b/i],
+  'metal roof': [/\bmetal roof\b/i, /\bstanding seam\b/i],
+  'tile roof': [/\btile roof\b/i, /\bclay tile\b/i, /\bconcrete tile roof\b/i],
+};
+
+/**
+ * Identify which canonical materials appear in `scope_text`. Returns the
+ * set of material keys (e.g., {"LVP", "quartzite"}) named in the text.
+ * Empty set when no known material is mentioned.
+ */
+function materialsNamedInScope(scopeText: string): ReadonlySet<string> {
+  const named = new Set<string>();
+  for (const [material, patterns] of Object.entries(MATERIAL_VOCAB)) {
+    for (const p of patterns) {
+      if (p.test(scopeText)) {
+        named.add(material);
+        break;
+      }
+    }
+  }
+  return named;
+}
+
+/**
+ * For a candidate row, does its `item_name` match any of the named
+ * materials? A material is considered to match the row when at least one
+ * of its detection patterns matches the row's item_name.
+ */
+function rowMatchesNamedMaterials(
+  row: KerfCostKbSeedRow,
+  namedMaterials: ReadonlySet<string>,
+): boolean {
+  if (namedMaterials.size === 0) return false;
+  const itemName = row.item_name ?? '';
+  if (itemName.length === 0) return false;
+  for (const material of namedMaterials) {
+    const patterns = MATERIAL_VOCAB[material];
+    if (patterns === undefined) continue;
+    for (const p of patterns) {
+      if (p.test(itemName)) return true;
+    }
+  }
+  return false;
+}
+
+/** Materials from `namedMaterials` that matched at least one kept row, sorted. */
+function materialsDrivingNarrowing(
+  rows: readonly KerfCostKbSeedRow[],
+  namedMaterials: ReadonlySet<string>,
+): readonly string[] {
+  const m = new Set<string>();
+  for (const row of rows) {
+    const itemName = row.item_name ?? '';
+    for (const material of namedMaterials) {
+      const patterns = MATERIAL_VOCAB[material];
+      if (patterns === undefined) continue;
+      for (const p of patterns) {
+        if (p.test(itemName)) {
+          m.add(material);
+          break;
+        }
+      }
+    }
+  }
+  return [...m].sort((a, b) => a.localeCompare(b));
+}
+
 export interface KerfCostKbLookupHit {
   readonly trade: string;
   /** Matched rows, sorted authority-rank ascending (best authority first). */
@@ -184,6 +277,20 @@ export interface KerfCostKbLookupHit {
   readonly max_confidence: number;
   /** All source_ref_ids cited. */
   readonly source_ref_ids: readonly string[];
+  /**
+   * True when material-specific narrowing fired (one or more named
+   * materials in scope_text matched at least one row's item_name).
+   * False when the result reflects the trade-level set (no material
+   * named OR no row's item_name matched the named material).
+   * Used by debug overlays and future audit; NOT used to widen pricing
+   * authority.
+   */
+  readonly material_narrowed: boolean;
+  /**
+   * The named materials that drove the narrowing decision. Empty when
+   * material_narrowed is false. Sorted alphabetically for stable output.
+   */
+  readonly narrowed_materials: readonly string[];
 }
 
 /**
@@ -212,14 +319,36 @@ export function lookupCostKbSeed(query: KerfCostKbLookupQuery): KerfCostKbLookup
   if (matches.length === 0) {
     return null;
   }
-  matches.sort((a, b) => (a.authority_rank ?? 99) - (b.authority_rank ?? 99));
+
+  // PR #158: material-specific narrowing. When the scope text names a
+  // known material AND at least one matched row's item_name matches that
+  // material, narrow to just those rows. When narrowing produces zero
+  // rows, fall back to the trade-level matches (safety net per the brief:
+  // a tighter-but-wrong range is worse than a wider correct range for
+  // operator trust).
+  const namedMaterials = materialsNamedInScope(query.scope_text);
+  let narrowedMatches: KerfCostKbSeedRow[] = matches;
+  let materialNarrowed = false;
+  if (namedMaterials.size > 0) {
+    const materialOnly = matches.filter((r) => rowMatchesNamedMaterials(r, namedMaterials));
+    if (materialOnly.length > 0) {
+      narrowedMatches = materialOnly;
+      materialNarrowed = true;
+    }
+  }
+
+  narrowedMatches.sort((a, b) => (a.authority_rank ?? 99) - (b.authority_rank ?? 99));
+
+  const narrowed_materials = materialNarrowed
+    ? materialsDrivingNarrowing(narrowedMatches, namedMaterials)
+    : [];
 
   const lows: number[] = [];
   const highs: number[] = [];
   const uoms: string[] = [];
   let maxConf = 0;
   const refIds: string[] = [];
-  for (const row of matches) {
+  for (const row of narrowedMatches) {
     if (row.range_low_cents !== null) lows.push(row.range_low_cents);
     else if (row.default_cost_cents !== null) lows.push(row.default_cost_cents);
     if (row.range_high_cents !== null) highs.push(row.range_high_cents);
@@ -231,12 +360,14 @@ export function lookupCostKbSeed(query: KerfCostKbLookupQuery): KerfCostKbLookup
 
   return {
     trade,
-    rows: matches,
+    rows: narrowedMatches,
     aggregate_low_cents: lows.length === 0 ? 0 : Math.min(...lows),
     aggregate_high_cents: highs.length === 0 ? 0 : Math.max(...highs),
     predominant_uom: mode(uoms),
     max_confidence: maxConf,
     source_ref_ids: refIds,
+    material_narrowed: materialNarrowed,
+    narrowed_materials,
   };
 }
 
@@ -378,7 +509,8 @@ export function formatDebugOverlayForHit(hit: KerfCostKbLookupHit): string {
   const refs = hit.source_ref_ids.slice(0, 3).join(', ');
   const more = hit.source_ref_ids.length > 3 ? ` +${hit.source_ref_ids.length - 3}` : '';
   const conf = hit.max_confidence.toFixed(2);
-  return `tier1·${hit.trade}·${hit.rows.length}row·conf=${conf}·refs=${refs}${more}`;
+  const matBadge = hit.material_narrowed ? `·mat=${hit.narrowed_materials.join(',')}` : '';
+  return `tier1·${hit.trade}·${hit.rows.length}row·conf=${conf}${matBadge}·refs=${refs}${more}`;
 }
 
 export function formatDebugOverlayForMiss(trade: string | null): string {
