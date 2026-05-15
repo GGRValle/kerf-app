@@ -2,20 +2,22 @@
 
 - **For:** Cursor agent, `GGRValle/kerf-app`
 - **From:** Claude Code (Agent 8 / integration lead)
-- **Date:** 2026-05-15
-- **Reference PRs:** #153 (cost-KB seed loader at tier 1), #161 (material matcher)
-- **Branch from:** `main` (latest, **AFTER persistence Step 4 HTTP endpoints land** — wait for green-light)
+- **Date:** 2026-05-15 (refreshed for dispatch)
+- **Reference PRs:** #153 (cost-KB seed loader at tier 1), #161 (material matcher), **#165–#171 (persistence stack — landed)**, **#176 (SourceRef tightening — landed)**, **#180 (Right Hand Home + Module Drawer canon — landed)**
+- **Branch from:** `main` (latest)
 - **Target branch:** `feature/v15-tier2-kb-ingestion-ui`
 - **Target test count after merge:** +15 to +25
 - **Estimated effort:** 4–6 hours
 
 ---
 
-## ⚠️ DO NOT START UNTIL PERSISTENCE STEP 4 LANDS
+## ✅ DISPATCHABLE — persistence stack landed
 
-This brief depends on the persistence layer's HTTP endpoints (Step 4 of `docs/architecture/persistence_layer_v15_design_2026-05-14.md` §12). Specifically the `POST /api/kb/ingestions` endpoint that emits `kb.ingested` events.
+This brief was originally gated on the persistence layer's HTTP endpoints. **Those endpoints landed on main on 2026-05-15** (PR #171 — see `scripts/serve-v15-vertical-slice.ts`). The serve script has been converted from `.mjs` → `.ts` via the `tsx` loader; reference it as `scripts/serve-v15-vertical-slice.ts` throughout your work.
 
-Integration lead will tell you when Step 4 is on `main` and the brief is dispatchable. **If you start before then, your code has nowhere to call.**
+You'll be adding a `POST /api/kb/ingestions` endpoint to that same TypeScript serve script (alongside the existing `POST /api/projects` / `POST /api/projects/<id>/captures` / `GET /api/projects` / `GET /api/projects/<id>` endpoints) and emitting `kb.ingested` events through the existing `eventStore.append()` path.
+
+**Canon note (post-#180)**: Tier-2 KB ingestion is a **Right Hand module drawer destination** (Phase 1 drawer item: Cost KB / Money). It is NOT a top-nav route. The V1.5 spine still uses a flat top-nav for now (Step 6 will refactor to the drawer pattern), so for this brief: wire `/kb-ingestion` as a route that the future module drawer will link to. Don't add a nav entry to the V1.5 hamburger menu — the brief originally requested that, but post-#180 the cleaner path is "route exists, drawer will reach it."
 
 ---
 
@@ -128,9 +130,20 @@ async function loadAllAuthoritySources(tenant: string): Promise<KerfCostKbSeedRo
 }
 ```
 
-### 4.3 New: `scripts/serve-v15-vertical-slice.mjs` — `POST /api/kb/ingestions` endpoint
+### 4.3 New: `POST /api/kb/ingestions` endpoint in `scripts/serve-v15-vertical-slice.ts`
 
-Accepts multipart-form-data (for xlsx upload) OR JSON body (for CSV-paste pre-parsed by browser). Calls `ingestKbRows`. Returns IngestionResult or 4xx with validation errors.
+The serve script is TypeScript now (PR #171 converted from `.mjs`). It already runs via `node --import tsx scripts/serve-v15-vertical-slice.ts` (see `package.json` `demo:v15-vertical-slice:serve` script).
+
+Add the endpoint following the pattern of the existing handlers in the same file (`handleCreateProject`, `handleRecordCapture`, `handleListProjects`, `handleGetProject`):
+
+- Accepts JSON body (for CSV-paste pre-parsed by the browser) OR multipart-form-data (for xlsx upload — defer multipart impl if you need to scope down; CSV-paste path alone is enough for V1.5 dispatch)
+- Calls `ingestKbRows` for parse + validate + persist
+- Emits `kb.ingested` event via the module-level `eventStore.append()` (already wired in the serve script)
+- Returns IngestionResult `{ok: true, ingestion_id, row_count}` on success, `400` with `errors: string[]` array on validation failure
+
+**Important — source_refs rule (PR #176 carryover)**: the `kb.ingested` event type is in `SOURCE_REFS_OPTIONAL_TYPES` (along with `project.created`), so empty `source_refs: []` is permitted. Do NOT synthesize a placeholder ref — pass empty.
+
+Validate the request body against `PersistenceTenantId` (`'tenant_ggr' | 'tenant_valle'`) the same way the other endpoints do. The `authority_rank` field must be an integer in `[1, 7]` per the validator.
 
 ### 4.4 New: `src/examples/v15-vertical-slice/pages/kb-ingestion.ts`
 
