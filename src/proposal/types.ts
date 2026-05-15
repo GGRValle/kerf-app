@@ -46,21 +46,29 @@
  */
 
 import type { SourceRef } from '../blackboard/types.js';
+import type {
+  PersistenceActor,
+  PersistenceTenantId,
+} from '../persistence/events.js';
 
 // ──────────────────────────────────────────────────────────────────────────
-// Tenant + actor (mirror of persistence layer types)
+// Tenant + actor (consolidated with persistence layer)
 // ──────────────────────────────────────────────────────────────────────────
 
 /**
- * Tenant id. Mirrors `PersistenceTenantId` in src/persistence/events.ts.
- * When that lands, this local definition replaces with an import.
+ * Tenant id. Re-exported from the persistence layer (`src/persistence/events.ts`).
+ * Originally a local mirror in PR #173; consolidated post-persistence-merge.
+ * Keeping the `ProposalTenantId` alias so consumers don't have to refactor
+ * imports — both names refer to the same persistence-layer type.
  */
-export type ProposalTenantId = 'tenant_ggr' | 'tenant_valle';
+export type ProposalTenantId = PersistenceTenantId;
 
-export interface ProposalActor {
-  readonly id: string;
-  readonly role: 'owner' | 'estimator' | 'pm' | 'field_super' | 'office';
-}
+/**
+ * Operator actor metadata. Re-exported alias of `PersistenceActor` for the
+ * same reason — single source of truth in persistence layer; proposal-side
+ * consumers keep their familiar name.
+ */
+export type ProposalActor = PersistenceActor;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Status + kind discriminators

@@ -20,6 +20,9 @@ import {
   type DecisionApprovedEvent,
   type ActualsRecordedEvent,
   type KbIngestedEvent,
+  type ProposalDraftedEvent,
+  type ProposalEditedEvent,
+  type ProposalAcceptedEvent,
 } from '../src/persistence/events.ts';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -153,6 +156,44 @@ function kbIngested(over: Partial<KbIngestedEvent> = {}): unknown {
   };
 }
 
+function proposalDrafted(over: Partial<ProposalDraftedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'proposal.drafted',
+    proposal_id: 'prop_test_001',
+    proposal_number: 'GGR-2026-514',
+    decision_packet_id: 'altpkt_test_001',
+    division_count: 8,
+    line_count: 27,
+    total_cents: 4_156_500, // $41,565.00 — Dunne proposal total
+    ...over,
+  };
+}
+
+function proposalEdited(over: Partial<ProposalEditedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'proposal.edited',
+    proposal_id: 'prop_test_001',
+    field: 'divisions[0].sections[0].lines[1].quantity',
+    before: 12,
+    after: 14.31,
+    ...over,
+  };
+}
+
+function proposalAccepted(over: Partial<ProposalAcceptedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'proposal.accepted',
+    proposal_id: 'prop_test_001',
+    accepted_by: 'browser_operator',
+    accepted_at: ISO_AT,
+    total_cents: 4_156_500,
+    ...over,
+  };
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Happy-path tests — each event type validates clean
 // ──────────────────────────────────────────────────────────────────────────
@@ -199,6 +240,21 @@ test('actuals.recorded happy path validates (integer cents)', () => {
 
 test('kb.ingested happy path validates', () => {
   const r = validatePersistenceEvent(kbIngested());
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('proposal.drafted happy path validates', () => {
+  const r = validatePersistenceEvent(proposalDrafted());
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('proposal.edited happy path validates', () => {
+  const r = validatePersistenceEvent(proposalEdited());
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('proposal.accepted happy path validates', () => {
+  const r = validatePersistenceEvent(proposalAccepted());
   assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
 });
 
@@ -337,6 +393,126 @@ test('decision.drafted REJECTS non-array blocked_reasons', () => {
     decisionDrafted({ blocked_reasons: 'pricing' as never }),
   );
   assert.equal(r.ok, false);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Proposal event regressions (Step A)
+// ──────────────────────────────────────────────────────────────────────────
+
+test('proposal.drafted REJECTS float total_cents', () => {
+  const r = validatePersistenceEvent(proposalDrafted({ total_cents: 4_156_500.5 as never }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('total_cents')));
+});
+
+test('proposal.drafted REJECTS negative total_cents', () => {
+  const r = validatePersistenceEvent(proposalDrafted({ total_cents: -1 as never }));
+  assert.equal(r.ok, false);
+});
+
+test('proposal.drafted REJECTS string total_cents (no string formatting)', () => {
+  const r = validatePersistenceEvent(proposalDrafted({ total_cents: '$41,565.00' as never }));
+  assert.equal(r.ok, false);
+});
+
+test('proposal.drafted REJECTS missing proposal_number', () => {
+  const event = proposalDrafted() as Record<string, unknown>;
+  delete event['proposal_number'];
+  const r = validatePersistenceEvent(event);
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('proposal_number')));
+});
+
+test('proposal.drafted ACCEPTS null decision_packet_id (operator-typed proposal not from a decision)', () => {
+  const r = validatePersistenceEvent(proposalDrafted({ decision_packet_id: null }));
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('proposal.drafted REJECTS empty-string decision_packet_id (must be null OR non-empty)', () => {
+  const r = validatePersistenceEvent(proposalDrafted({ decision_packet_id: '' as never }));
+  assert.equal(r.ok, false);
+});
+
+test('proposal.drafted REJECTS non-integer division_count', () => {
+  const r = validatePersistenceEvent(proposalDrafted({ division_count: 8.5 as never }));
+  assert.equal(r.ok, false);
+});
+
+test('proposal.drafted REJECTS negative line_count', () => {
+  const r = validatePersistenceEvent(proposalDrafted({ line_count: -1 as never }));
+  assert.equal(r.ok, false);
+});
+
+test('proposal.edited REJECTS missing field', () => {
+  const event = proposalEdited() as Record<string, unknown>;
+  delete event['field'];
+  const r = validatePersistenceEvent(event);
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('field')));
+});
+
+test('proposal.edited ACCEPTS string-to-string before/after (status transition)', () => {
+  const r = validatePersistenceEvent(proposalEdited({
+    field: 'status',
+    before: 'draft',
+    after: 'review',
+  }));
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('proposal.edited ACCEPTS object-to-object before/after (nested edit)', () => {
+  const r = validatePersistenceEvent(proposalEdited({
+    field: 'payment_schedule[0]',
+    before: { milestone_id: 'pm_dp', amount_cents: 50_000, kind: 'down_payment' },
+    after: { milestone_id: 'pm_dp', amount_cents: 100_000, kind: 'down_payment' },
+  }));
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('proposal.accepted REJECTS non-ISO accepted_at', () => {
+  const r = validatePersistenceEvent(proposalAccepted({ accepted_at: '2026-05-20 09:00:00' as never }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('accepted_at')));
+});
+
+test('proposal.accepted REJECTS float total_cents (final commit must be integer)', () => {
+  const r = validatePersistenceEvent(proposalAccepted({ total_cents: 4_156_500.99 as never }));
+  assert.equal(r.ok, false);
+});
+
+test('proposal.accepted REJECTS empty accepted_by', () => {
+  const r = validatePersistenceEvent(proposalAccepted({ accepted_by: '' as never }));
+  assert.equal(r.ok, false);
+});
+
+test('proposal.accepted ACCEPTS "client_signature" as accepted_by (DocuSign-style flow)', () => {
+  const r = validatePersistenceEvent(proposalAccepted({ accepted_by: 'client_signature' }));
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('proposal.drafted REJECTS empty source_refs (non-empty rule from #176)', () => {
+  // proposal.drafted is NOT in SOURCE_REFS_OPTIONAL_TYPES — must carry refs
+  const r = validatePersistenceEvent(proposalDrafted({ source_refs: [] }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('source_refs')));
+});
+
+test('proposal.accepted REJECTS empty source_refs (non-empty rule from #176)', () => {
+  const r = validatePersistenceEvent(proposalAccepted({ source_refs: [] }));
+  assert.equal(r.ok, false);
+});
+
+test('Dunne golden snapshot: proposal.drafted with GGR-2026-514 structural snapshot validates', () => {
+  // Mirrors the Dunne v5 proposal's actual numbers (8 CSI divisions, ~27 lines, $41,565)
+  const r = validatePersistenceEvent(proposalDrafted({
+    proposal_id: 'prop_dunne_2026',
+    proposal_number: 'GGR-2026-514',
+    decision_packet_id: null, // operator-typed scope (no decision packet)
+    division_count: 8,
+    line_count: 27,
+    total_cents: 4_156_500,
+  }));
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
 });
 
 // ──────────────────────────────────────────────────────────────────────────
