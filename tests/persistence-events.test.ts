@@ -28,13 +28,19 @@ import {
 
 const ISO_AT = '2026-05-15T14:32:11.000Z';
 
+const wellFormedSourceRef = {
+  kind: 'voice' as const,
+  uri: 'kerf://intake/x',
+  excerpt: 'foo',
+};
+
 const baseHeader = {
   event_id: 'evt_test_001',
   tenant_id: 'tenant_ggr' as const,
   correlation_id: 'proj_test_001',
   actor: { id: 'browser_operator', role: 'owner' as const },
   at: ISO_AT,
-  source_refs: [],
+  source_refs: [wellFormedSourceRef],
 };
 
 function projectCreated(over: Partial<ProjectCreatedEvent> = {}): unknown {
@@ -44,6 +50,7 @@ function projectCreated(over: Partial<ProjectCreatedEvent> = {}): unknown {
     project_id: 'proj_test_001',
     project_name: 'Test kitchen remodel',
     client_name: 'Test Client',
+    source_refs: [],
     ...over,
   };
 }
@@ -141,6 +148,7 @@ function kbIngested(over: Partial<KbIngestedEvent> = {}): unknown {
     source_file: 'ggr_past_estimates_v1.xlsx',
     row_count: 142,
     authority_rank: 2, // TENANT_MEMORY
+    source_refs: [],
     ...over,
   };
 }
@@ -329,6 +337,62 @@ test('decision.drafted REJECTS non-array blocked_reasons', () => {
     decisionDrafted({ blocked_reasons: 'pricing' as never }),
   );
   assert.equal(r.ok, false);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// source_refs shape + non-empty rule
+// ──────────────────────────────────────────────────────────────────────────
+
+test('capture.recorded REJECTS empty source_refs', () => {
+  const r = validatePersistenceEvent(captureRecorded({ source_refs: [] }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('source_refs')));
+});
+
+test('capture.recorded REJECTS source_refs with missing kind', () => {
+  const r = validatePersistenceEvent(captureRecorded({ source_refs: [{}] }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('kind')));
+});
+
+test('capture.recorded REJECTS source_refs with unknown kind', () => {
+  const r = validatePersistenceEvent(
+    captureRecorded({ source_refs: [{ kind: 'unknown' }] }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('kind')));
+});
+
+test('scaffold.refined REJECTS source_refs with non-string uri', () => {
+  const r = validatePersistenceEvent(
+    scaffoldRefined({ source_refs: [{ kind: 'voice', uri: 123 }] }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('uri')));
+});
+
+test('project.created ACCEPTS empty source_refs', () => {
+  const r = validatePersistenceEvent(projectCreated({ source_refs: [] }));
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('kb.ingested ACCEPTS empty source_refs', () => {
+  const r = validatePersistenceEvent(kbIngested({ source_refs: [] }));
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('capture.recorded ACCEPTS well-formed SourceRef', () => {
+  const r = validatePersistenceEvent(
+    captureRecorded({ source_refs: [wellFormedSourceRef] }),
+  );
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
+});
+
+test('actuals.recorded ACCEPTS well-formed SourceRef', () => {
+  const r = validatePersistenceEvent(
+    actualsRecorded({ source_refs: [{ kind: 'external', uri: 'qbo://invoice/1' }] }),
+  );
+  assert.equal(r.ok, true, r.ok ? '' : r.errors.join('\n'));
 });
 
 // ──────────────────────────────────────────────────────────────────────────

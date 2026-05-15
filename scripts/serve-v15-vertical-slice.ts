@@ -35,6 +35,7 @@ import {
   readProjectProjection,
   type ProjectProjection,
 } from '../src/persistence/projections.ts';
+import { buildMobileValidationHarnessHtml } from '../src/examples/v15-vertical-slice/m-validation-harness.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../src/examples/v15-vertical-slice');
@@ -666,6 +667,22 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(405).end();
     return;
   }
+
+  // Dev-only mobile validation harness (not SPA / not in operator nav).
+  if (url.pathname === '/m/check' || url.pathname === '/m') {
+    const harnessHtml = buildMobileValidationHarnessHtml();
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    if (req.method === 'HEAD') {
+      res.end();
+      return;
+    }
+    res.end(harnessHtml);
+    return;
+  }
+
   let pathname = url.pathname;
   if (pathname === '/') {
     pathname = '/index.html';
@@ -695,7 +712,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   const transcribeReady = Boolean(process.env.GROQ_API_KEY && process.env.GROQ_BASE_URL);
   console.log(
-    `\nKerf V1.5 vertical slice (port ${PORT}):\n  http://localhost:${PORT}/field-capture  — F·33 Field Capture\n  http://localhost:${PORT}/dashboard     — home\n  POST /transcribe                       — ${
+    `\nKerf V1.5 vertical slice (port ${PORT}):\n  http://localhost:${PORT}/field-capture  — F·33 Field Capture\n  http://localhost:${PORT}/dashboard     — home\n  http://localhost:${PORT}/m/check       — mobile validation harness (dev)\n  POST /transcribe                       — ${
       transcribeReady ? 'READY (Groq Whisper)' : 'NOT CONFIGURED (set GROQ_API_KEY + GROQ_BASE_URL in .env.local)'
     }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
   );
