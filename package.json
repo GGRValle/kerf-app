@@ -30,7 +30,7 @@
     "demo:v15-slice:serve": "npm run demo:v15-vertical-slice:serve",
     "demo:v15-vertical-slice:esbuild": "npx --yes esbuild@0.25.0 src/examples/v15-vertical-slice/app.ts --bundle --platform=browser --format=iife --outfile=src/examples/v15-vertical-slice/app.bundle.js",
     "demo:v15-vertical-slice": "npm run demo:v15-vertical-slice:esbuild && node -e \"console.log('Built src/examples/v15-vertical-slice/app.bundle.js — use demo:v15-vertical-slice:serve (e.g. http://localhost:8010/field-capture).')\"",
-    "demo:v15-vertical-slice:serve": "npm run demo:v15-vertical-slice:esbuild && node scripts/serve-v15-vertical-slice.mjs",
+    "demo:v15-vertical-slice:serve": "npm run demo:v15-vertical-slice:esbuild && node --import tsx scripts/serve-v15-vertical-slice.ts",
     "demo:audit-f37:esbuild": "npx --yes esbuild@0.25.0 src/examples/audit-f37/audit-f37-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/audit-f37/audit-f37-demo.bundle.js",
     "demo:audit-f37": "npm run demo:audit-f37:esbuild && node -e \"console.log('Built src/examples/audit-f37/audit-f37-demo.bundle.js — use demo:audit-f37:serve for /audit/<packetId>.')\"",
     "demo:audit-f37:serve": "npm run demo:audit-f37:esbuild && node scripts/serve-audit-f37.mjs",

@@ -68,7 +68,7 @@ test('v15 vertical slice pages use review-before-approval notice', () => {
 });
 
 test('v15 SPA serve script binds to port 8010 by default', () => {
-  const src = readFileSync(new URL('../scripts/serve-v15-vertical-slice.mjs', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../scripts/serve-v15-vertical-slice.ts', import.meta.url), 'utf8');
 
   assert.match(src, /8010/);
   assert.match(src, /v15-vertical-slice/);

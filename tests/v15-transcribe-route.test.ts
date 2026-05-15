@@ -1,5 +1,5 @@
 /**
- * POST /transcribe route smoke test for `scripts/serve-v15-vertical-slice.mjs`.
+ * POST /transcribe route smoke test for `scripts/serve-v15-vertical-slice.ts`.
  *
  * Spins up the real serve script with `GROQ_BASE_URL` pointed at a local
  * stub HTTP server that imitates Groq's `/audio/transcriptions` endpoint.
@@ -158,7 +158,7 @@ interface ServeProcess {
 }
 
 async function startServe(env: NodeJS.ProcessEnv, port: number): Promise<ServeProcess> {
-  const child = spawn('node', ['scripts/serve-v15-vertical-slice.mjs'], {
+  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
     env: { ...process.env, ...env, PORT: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],
