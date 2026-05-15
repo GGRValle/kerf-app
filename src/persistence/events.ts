@@ -55,7 +55,10 @@ export type PersistenceEventType =
   | 'decision.drafted'
   | 'decision.approved'
   | 'actuals.recorded'
-  | 'kb.ingested';
+  | 'kb.ingested'
+  | 'proposal.drafted'
+  | 'proposal.edited'
+  | 'proposal.accepted';
 
 /**
  * Tenant id. Single-tenant in this phase — 'tenant_ggr' or 'tenant_valle'.
@@ -212,6 +215,68 @@ export interface KbIngestedEvent extends BasePersistenceEvent {
   readonly authority_rank: number;
 }
 
+/**
+ * Operator generates a new proposal artifact (status enters `draft`).
+ * Per-line content lives in the proposal projection; this event carries
+ * the structural + financial snapshot for audit + drift detection.
+ * Matches the proposal artifact data model in src/proposal/types.ts.
+ */
+export interface ProposalDraftedEvent extends BasePersistenceEvent {
+  readonly type: 'proposal.drafted';
+  readonly proposal_id: string;
+  /** GGR-YYYY-NNN format per src/proposal/numbering.ts. */
+  readonly proposal_number: string;
+  /** Approved decision packet this proposal draws from; null when operator-typed from scratch. */
+  readonly decision_packet_id: string | null;
+  /** Number of CSI divisions in the proposal at draft moment. */
+  readonly division_count: number;
+  /** Total line count across all divisions + sections. */
+  readonly line_count: number;
+  /** Integer cents — snapshot of total_cents at draft time. */
+  readonly total_cents: number;
+}
+
+/**
+ * Operator edits a field on an existing proposal (status: draft / review / sent).
+ * Per-apply granularity matching `scaffold.refined`: one event per confirmed
+ * edit batch on a single field. `before`/`after` are JSON-serializable.
+ *
+ * Field path examples (operator UI knows the canonical path; this is free-form):
+ *   - `divisions[0].sections[1].lines[2].quantity`
+ *   - `payment_schedule[0].amount_cents`
+ *   - `tax_treatment`
+ *   - `scope_of_work_narrative`
+ *   - `status` (transitions like draft→review, review→sent)
+ */
+export interface ProposalEditedEvent extends BasePersistenceEvent {
+  readonly type: 'proposal.edited';
+  readonly proposal_id: string;
+  /** Field path that was edited. Free-form string (operator UI populates). */
+  readonly field: string;
+  /** JSON-serializable previous value. */
+  readonly before: unknown;
+  /** JSON-serializable new value. */
+  readonly after: unknown;
+}
+
+/**
+ * Operator transitions a proposal to `accepted` (final commit). Mirrors
+ * `decision.approved` in structure: explicit accepted_by + accepted_at so
+ * the audit lineage shows who locked the artifact and when. CA §7159
+ * down-payment cap is enforced upstream in `validateProposal` — this
+ * event records the post-validation commit only.
+ */
+export interface ProposalAcceptedEvent extends BasePersistenceEvent {
+  readonly type: 'proposal.accepted';
+  readonly proposal_id: string;
+  /** Free-string accepted_by: operator id, 'client_signature', or similar. */
+  readonly accepted_by: string;
+  /** ISO8601 — mirrors locked_at on the ProposalArtifact. */
+  readonly accepted_at: string;
+  /** Integer cents — final locked total at acceptance. */
+  readonly total_cents: number;
+}
+
 export type PersistenceEvent =
   | ProjectCreatedEvent
   | CaptureRecordedEvent
@@ -221,7 +286,10 @@ export type PersistenceEvent =
   | DecisionDraftedEvent
   | DecisionApprovedEvent
   | ActualsRecordedEvent
-  | KbIngestedEvent;
+  | KbIngestedEvent
+  | ProposalDraftedEvent
+  | ProposalEditedEvent
+  | ProposalAcceptedEvent;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Validation
@@ -264,6 +332,9 @@ const VALID_EVENT_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'decision.approved',
   'actuals.recorded',
   'kb.ingested',
+  'proposal.drafted',
+  'proposal.edited',
+  'proposal.accepted',
 ]);
 
 const VALID_SOURCE_REF_KINDS: ReadonlySet<SourceRef['kind']> = new Set([
@@ -487,6 +558,54 @@ function validateKbIngested(input: Record<string, unknown>): readonly string[] {
   return errors;
 }
 
+function validateProposalDrafted(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['proposal_id'])) errors.push('proposal_id must be a non-empty string');
+  if (!nonEmptyString(input['proposal_number'])) errors.push('proposal_number must be a non-empty string');
+  if (input['decision_packet_id'] !== null && !nonEmptyString(input['decision_packet_id'])) {
+    errors.push('decision_packet_id must be a non-empty string or null');
+  }
+  if (
+    typeof input['division_count'] !== 'number' ||
+    !Number.isInteger(input['division_count']) ||
+    input['division_count'] < 0
+  ) {
+    errors.push('division_count must be a non-negative integer');
+  }
+  if (
+    typeof input['line_count'] !== 'number' ||
+    !Number.isInteger(input['line_count']) ||
+    input['line_count'] < 0
+  ) {
+    errors.push('line_count must be a non-negative integer');
+  }
+  if (!isIntegerCents(input['total_cents'])) {
+    errors.push('total_cents must be a non-negative integer (cents — no floats, no formatting)');
+  }
+  return errors;
+}
+
+function validateProposalEdited(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['proposal_id'])) errors.push('proposal_id must be a non-empty string');
+  if (!nonEmptyString(input['field'])) errors.push('field must be a non-empty string');
+  // before/after are unknown by design — operator UI populates with the
+  // canonical before/after for the edited field. No further validation
+  // here; projection layer enforces type consistency per field.
+  return errors;
+}
+
+function validateProposalAccepted(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['proposal_id'])) errors.push('proposal_id must be a non-empty string');
+  if (!nonEmptyString(input['accepted_by'])) errors.push('accepted_by must be a non-empty string');
+  if (!isIso8601(input['accepted_at'])) errors.push('accepted_at must be an ISO8601 timestamp');
+  if (!isIntegerCents(input['total_cents'])) {
+    errors.push('total_cents must be a non-negative integer (cents — no floats, no formatting)');
+  }
+  return errors;
+}
+
 /**
  * Validate an arbitrary input as a PersistenceEvent. Returns a discriminated
  * result. Never throws.
@@ -531,6 +650,15 @@ export function validatePersistenceEvent(input: unknown): ValidationResult<Persi
       break;
     case 'kb.ingested':
       typeErrors = validateKbIngested(record);
+      break;
+    case 'proposal.drafted':
+      typeErrors = validateProposalDrafted(record);
+      break;
+    case 'proposal.edited':
+      typeErrors = validateProposalEdited(record);
+      break;
+    case 'proposal.accepted':
+      typeErrors = validateProposalAccepted(record);
       break;
   }
   const allErrors = [...baseErrors, ...typeErrors];
