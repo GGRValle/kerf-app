@@ -161,13 +161,51 @@ End your review with a single comment on PR #171 (top of stack) using this exact
 
 ---
 
-## Constraints — do NOT do any of these during review
+## Constraints — what each worker may and may not do
 
-- Do NOT push commits to any of `feature/v15-persistence-{events,event-store,projections,http-endpoints}`. Comments on the PRs only.
+The two paths have **different operational envelopes** because Codex runs as a review-only pair (no shell, no write) while Cursor runs as an SDK harness with full repo-write authority bounded only by the standing rules.
+
+### For Codex (primary, pair-review only)
+
+- Comments on the PRs only — no pushes, no merges, no file edits anywhere in the repo
 - Do NOT merge any of the PRs yourself. Christian holds the merge button.
 - Do NOT modify `docs/architecture/persistence_layer_v15_design_2026-05-14.md` — that's the design contract under review.
 - Do NOT touch `src/proposal/*` or PR #173 — that's a separate independent branch.
 - Standard repo rules from the standing preamble still apply: no force-push, no `reset --hard`, no `clean -fd`, no branch deletion.
+
+### For Cursor SDK fallback (full write authority within standing rules)
+
+Cursor runs as an SDK harness with the same authority Claude carries on this repo. It MAY:
+
+- Read all files in the repo
+- Run `npm`, `git`, `gh` commands locally
+- Edit files in `src/`, `tests/`, `scripts/`, `docs/`
+- Commit and push to **NEW** feature branches
+- Open NEW PRs targeting the appropriate base in the stack
+
+It MUST NOT (these are the standing-rules hard limits — non-negotiable):
+
+- Force-push (`--force` or `--force-with-lease`)
+- `git reset --hard`, `git clean -fd`, `rm -rf`
+- Delete branches before their PR has merged
+- Push directly to `main`
+- Push commits directly to any of the 4 review branches (`feature/v15-persistence-*`) — those are Claude's; pushing onto them creates merge-conflict pain mid-review. Fixes go on NEW branches instead.
+- Merge any PR (#165 / #166 / #170 / #171) — Christian holds the merge button
+- Modify `docs/architecture/persistence_layer_v15_design_2026-05-14.md` — design contract under review
+- Touch `src/proposal/*` or PR #173 — separate independent track
+
+**If Cursor finds issues that need code fixes:**
+1. Branch from the appropriate base in the stack:
+   - Issue in events vocabulary → branch from `feature/v15-persistence-events` as `fix/v15-persistence-events-<short-desc>`
+   - Issue in event store → branch from `feature/v15-persistence-event-store` as `fix/v15-persistence-event-store-<short-desc>`
+   - Issue in projections → branch from `feature/v15-persistence-projections` as `fix/v15-persistence-projections-<short-desc>`
+   - Issue in HTTP endpoints → branch from `feature/v15-persistence-http-endpoints` as `fix/v15-persistence-http-<short-desc>`
+2. Make the fix as a focused, small commit
+3. Run the full verification gate (`npm run typecheck` + `npm test` — expect green)
+4. Push + open a PR targeting the branch the fix branched from (NOT main)
+5. Reference the PR number(s) in the review comment on #171 ("Found issue X, proposed fix in #NNN")
+6. Apply the standing-rules report block (branch / commit / files changed / tests run / what could break)
+7. **Stop after the fix PR is open.** Do not chain further fixes; let Christian + Claude review the fix before continuing.
 
 ## Why this matters for the 30-day target
 
@@ -177,13 +215,22 @@ Persistence is the gating dependency for V1.5 release (30% of remaining work per
 
 ## Fallback: Cursor SDK execution
 
-If Codex is unavailable or returns ambiguous answers, the same brief works for a Cursor SDK worker. Cursor should:
+If Codex is unavailable or returns ambiguous answers, dispatch this same brief to a Cursor SDK worker. **Cursor operates with full repo-write authority within the standing rules** (see the per-worker constraints section above) — it's not a read-only review, it's a full review-and-fix path.
+
+Cursor's flow:
 
 1. Read the standing rules preamble verbatim before starting
 2. Execute Phases 1–4 as described
-3. Post the review comment on PR #171 using the exact format in Phase 5
-4. **Stop after the comment** — do not push any code changes; this is a review task, not a build task
+3. If Phase 4 finds **no code-level issues** → post the review comment on PR #171 (Phase 5 format) and stop
+4. If Phase 4 finds **code-level issues**:
+   - Branch from the appropriate base in the stack (see "For Cursor SDK fallback" rules above for the naming convention)
+   - Make the focused fix in one commit
+   - Run `npm run typecheck` and `npm test` — both must be green before pushing
+   - Push the fix branch and open a PR targeting the parent stack branch (not main)
+   - Reference the fix PR number(s) in the review comment on #171
+   - Apply the standing-rules report block (branch / commit / files changed / tests run / what could break)
+   - Stop. Do not chain further fixes; let Christian + Claude review the fix PR before continuing.
 
-Cursor invocation hint: dispatch with `--no-write` posture enabled if available; otherwise add to the task prompt:
+The "branch + small focused commit + PR back into the stack" pattern is what keeps Codex's review trail clean and lets Christian see exactly what changed vs. Claude's original proposal.
 
-> Read-only review. Do not edit files in `src/persistence/*` or `scripts/serve-v15-vertical-slice.ts`. Do not push commits. Only output: a comment to post on PR #171 in the format specified in §Phase 5.
+**Cursor's authority is bounded by the standing-rules hard limits**: no force-push, no `reset --hard`, no `clean -fd`, no `rm -rf`, no pre-merge branch deletion, no direct push to `main`, no direct push to any of the 4 review branches, no merging of any PR, no touching the design doc or the proposal PR #173.
