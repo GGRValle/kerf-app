@@ -245,6 +245,131 @@ test('POST /api/projects/<id>/captures appends capture.recorded + updates projec
   }
 });
 
+test('POST captures with NO source_refs synthesizes from audio_uri (PR #176 follow-up)', async () => {
+  // PR #176 tightened source_refs validation: capture.recorded now
+  // requires non-empty source_refs. The serve script synthesizes a
+  // sensible default from audio_uri / transcript_text so real-world
+  // browser captures don't break.
+  const proc = await startServe();
+  try {
+    await httpJsonRequest('POST', `http://127.0.0.1:${proc.port}/api/projects`, {
+      tenant_id: 'tenant_ggr',
+      project_id: 'proj_synth_audio',
+      project_name: 'Synthesis Test Audio',
+      client_name: 'Synth Client',
+    });
+    // Note: NO source_refs in the request body
+    const capRes = await httpJsonRequest(
+      'POST',
+      `http://127.0.0.1:${proc.port}/api/projects/proj_synth_audio/captures`,
+      {
+        tenant_id: 'tenant_ggr',
+        capture_id: 'cap_synth_audio',
+        transcript_text: 'recording audio only',
+        audio_uri: 'kerf://voice-intake/synth/recording.webm',
+        duration_ms: 3_000,
+      },
+    );
+    assert.equal(capRes.status, 201, `expected 201, got ${capRes.status}: ${capRes.body}`);
+    const parsed = JSON.parse(capRes.body);
+    assert.equal(parsed.event.type, 'capture.recorded');
+    assert.deepEqual(parsed.event.source_refs, [
+      { kind: 'voice', uri: 'kerf://voice-intake/synth/recording.webm' },
+    ]);
+  } finally {
+    await stopServe(proc);
+  }
+});
+
+test('POST captures with NO source_refs and NO audio synthesizes from transcript_text', async () => {
+  const proc = await startServe();
+  try {
+    await httpJsonRequest('POST', `http://127.0.0.1:${proc.port}/api/projects`, {
+      tenant_id: 'tenant_ggr',
+      project_id: 'proj_synth_text',
+      project_name: 'Synthesis Test Text',
+      client_name: 'Synth Client',
+    });
+    const capRes = await httpJsonRequest(
+      'POST',
+      `http://127.0.0.1:${proc.port}/api/projects/proj_synth_text/captures`,
+      {
+        tenant_id: 'tenant_ggr',
+        capture_id: 'cap_synth_text',
+        transcript_text: 'text-only capture, no audio',
+        duration_ms: 0,
+      },
+    );
+    assert.equal(capRes.status, 201, `expected 201, got ${capRes.status}: ${capRes.body}`);
+    const parsed = JSON.parse(capRes.body);
+    assert.equal(parsed.event.source_refs.length, 1);
+    assert.equal(parsed.event.source_refs[0].kind, 'transcript');
+    assert.match(parsed.event.source_refs[0].excerpt, /text-only capture/);
+  } finally {
+    await stopServe(proc);
+  }
+});
+
+test('POST captures with NO source_refs / audio / transcript synthesizes placeholder', async () => {
+  // Defensive: even with zero capture content, validator still passes
+  // because we synthesize a deterministic placeholder source_ref.
+  const proc = await startServe();
+  try {
+    await httpJsonRequest('POST', `http://127.0.0.1:${proc.port}/api/projects`, {
+      tenant_id: 'tenant_ggr',
+      project_id: 'proj_synth_empty',
+      project_name: 'Synthesis Test Empty',
+      client_name: 'Synth Client',
+    });
+    const capRes = await httpJsonRequest(
+      'POST',
+      `http://127.0.0.1:${proc.port}/api/projects/proj_synth_empty/captures`,
+      {
+        tenant_id: 'tenant_ggr',
+        capture_id: 'cap_synth_empty',
+        duration_ms: 1_000,
+      },
+    );
+    assert.equal(capRes.status, 201, `expected 201, got ${capRes.status}: ${capRes.body}`);
+    const parsed = JSON.parse(capRes.body);
+    assert.equal(parsed.event.source_refs.length, 1);
+    assert.equal(parsed.event.source_refs[0].kind, 'voice');
+    assert.match(parsed.event.source_refs[0].uri, /^kerf:\/\/capture\/cap_synth_empty$/);
+  } finally {
+    await stopServe(proc);
+  }
+});
+
+test('POST captures with empty source_refs array synthesizes (treats [] as absent)', async () => {
+  // Edge case: caller sends source_refs: [] explicitly. We treat this
+  // as "no refs supplied" and synthesize, matching the absent-field path.
+  const proc = await startServe();
+  try {
+    await httpJsonRequest('POST', `http://127.0.0.1:${proc.port}/api/projects`, {
+      tenant_id: 'tenant_ggr',
+      project_id: 'proj_synth_empty_array',
+      project_name: 'Synthesis Empty Array',
+      client_name: 'Synth Client',
+    });
+    const capRes = await httpJsonRequest(
+      'POST',
+      `http://127.0.0.1:${proc.port}/api/projects/proj_synth_empty_array/captures`,
+      {
+        tenant_id: 'tenant_ggr',
+        capture_id: 'cap_empty_arr',
+        transcript_text: 'some text',
+        duration_ms: 1_000,
+        source_refs: [],
+      },
+    );
+    assert.equal(capRes.status, 201, `expected 201, got ${capRes.status}: ${capRes.body}`);
+    const parsed = JSON.parse(capRes.body);
+    assert.equal(parsed.event.source_refs.length, 1);
+  } finally {
+    await stopServe(proc);
+  }
+});
+
 test('POST captures against unknown project returns 404 and does NOT append', async () => {
   const proc = await startServe();
   try {

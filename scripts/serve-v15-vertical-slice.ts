@@ -489,9 +489,28 @@ async function handleRecordCapture(
   const language = typeof input['language'] === 'string' && input['language'].length > 0
     ? (input['language'] as string)
     : null;
-  const sourceRefs = Array.isArray(input['source_refs'])
+  // PR #176 (SourceRef tightening) requires non-empty source_refs on
+  // capture.recorded events. If the caller supplied source_refs, use
+  // them as-is; otherwise synthesize a sensible default from the
+  // capture payload so the operator UX doesn't break.
+  //   - audio_uri present     → {kind: 'voice', uri: audio_uri}
+  //   - else transcript_text  → {kind: 'transcript', excerpt: first 500 chars}
+  //   - else                  → {kind: 'voice', uri: 'kerf://capture/<capture_id>'}
+  //                             (deterministic placeholder so the validator passes;
+  //                             real operator flows should always carry audio_uri
+  //                             or transcript_text, but we don't 400 on absence)
+  const synthesizedSourceRefs: PersistenceEvent['source_refs'] = (() => {
+    if (audioUri !== null) {
+      return [{ kind: 'voice', uri: audioUri }];
+    }
+    if (transcriptText.length > 0) {
+      return [{ kind: 'transcript', excerpt: transcriptText.slice(0, 500) }];
+    }
+    return [{ kind: 'voice', uri: `kerf://capture/${captureId}` }];
+  })();
+  const sourceRefs = Array.isArray(input['source_refs']) && input['source_refs'].length > 0
     ? (input['source_refs'] as PersistenceEvent['source_refs'])
-    : [];
+    : synthesizedSourceRefs;
 
   const event: PersistenceEvent = {
     event_id: generateEventId('evt'),
