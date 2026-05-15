@@ -522,3 +522,66 @@
   color: var(--kerf-f35-fg-muted, #6a7570);
   line-height: 1.5;
 }
+
+/* Mobile baseline (2026-05-15) — max-width 720px only */
+@media (max-width: 720px) {
+  .kerf-v15-f35-embed {
+    max-width: 100%;
+    padding: 0.65rem 0.5rem;
+    box-sizing: border-box;
+  }
+
+  .kerf-f35-section {
+    padding: 0.65rem 0.6rem;
+  }
+
+  .kerf-f35-line__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .kerf-f35-line__amount {
+    align-self: flex-start;
+    white-space: normal;
+  }
+
+  .kerf-f35-scaffold {
+    padding: 0.75rem 0.65rem;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .kerf-f35-scaffold__line-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .kerf-f35-scaffold__qty {
+    white-space: normal;
+    align-self: flex-start;
+  }
+
+  .kerf-f35-scaffold__meta {
+    gap: 0.3rem;
+  }
+
+  .kerf-f35-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0.5rem 0.95rem;
+  }
+
+  .kerf-f35-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .kerf-f35-meta__row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}

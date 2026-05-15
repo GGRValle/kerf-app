@@ -756,27 +756,6 @@
   color: var(--kerf-fg-muted);
 }
 
-@media (max-width: 720px) {
-  .kerf-v15-nav-toggle {
-    display: inline-flex;
-  }
-
-  .kerf-v15-nav {
-    display: none;
-    flex-direction: column;
-    width: 100%;
-    padding-top: 0.35rem;
-  }
-
-  .kerf-v15-shell--nav-open .kerf-v15-nav {
-    display: flex;
-  }
-
-  .kerf-v15-nav__link {
-    width: 100%;
-  }
-}
-
 /* ───────────────────────────────────────────────────────────────────────────
  * Voice Record button (F-33 carve-out, 2026-05-13).
  * Minimal styling — layout + state indication. Uses existing kerf-v15-btn
@@ -927,4 +906,122 @@
 }
 .kerf-f34-mi--context {
   border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * Mobile baseline (PR mobile-responsive-baseline, 2026-05-15).
+ * @media (max-width: 720px) only — desktop layout unchanged above.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .kerf-v15-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .kerf-v15-nav {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    padding-top: 0.35rem;
+  }
+
+  .kerf-v15-shell--nav-open .kerf-v15-nav {
+    display: flex;
+  }
+
+  .kerf-v15-nav__link {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .kerf-v15-topbar {
+    min-width: 0;
+  }
+
+  .kerf-v15-brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .kerf-v15-main {
+    padding: 0.65rem 0.5rem;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .kerf-v15-frame {
+    max-width: 100%;
+  }
+
+  .kerf-v15-frame__split {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .kerf-v15-frame__main,
+  .kerf-v15-frame__rail {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .kerf-v15-btn,
+  .kerf-v15-btn--primary {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .kerf-v15-f36-actions .kerf-v15-btn {
+    min-height: 44px;
+  }
+
+  .kerf-f34-pagehead__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .kerf-f34-tablewrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kerf-f34-mi__head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .kerf-f34-mi__input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .kerf-fc-voice-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .kerf-fc-voice-btn {
+    min-height: 48px;
+    min-width: 48px;
+    align-self: flex-start;
+    padding: 0.6rem 1.1rem;
+    box-sizing: border-box;
+  }
 }
