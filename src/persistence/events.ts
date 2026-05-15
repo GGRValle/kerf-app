@@ -266,6 +266,20 @@ const VALID_EVENT_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'kb.ingested',
 ]);
 
+const VALID_SOURCE_REF_KINDS: ReadonlySet<SourceRef['kind']> = new Set([
+  'voice',
+  'photo',
+  'transcript',
+  'doc',
+  'external',
+]);
+
+/** Event types that may carry an empty source_refs array per design §5 / §11. */
+const SOURCE_REFS_OPTIONAL_TYPES: ReadonlySet<PersistenceEventType> = new Set([
+  'project.created',
+  'kb.ingested',
+]);
+
 function nonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.length > 0;
 }
@@ -278,8 +292,56 @@ function isIntegerCents(v: unknown): v is number {
   return typeof v === 'number' && Number.isInteger(v) && v >= 0;
 }
 
+function validateSourceRefs(
+  sourceRefs: unknown,
+  eventType: PersistenceEventType | null,
+): readonly string[] {
+  const errors: string[] = [];
+  if (!Array.isArray(sourceRefs)) {
+    errors.push('source_refs must be an array');
+    return errors;
+  }
+  if (
+    eventType !== null &&
+    !SOURCE_REFS_OPTIONAL_TYPES.has(eventType) &&
+    sourceRefs.length === 0
+  ) {
+    errors.push(
+      `source_refs must be non-empty for event type "${eventType}" (empty allowed only for project.created and kb.ingested)`,
+    );
+  }
+  for (let i = 0; i < sourceRefs.length; i++) {
+    const entry = sourceRefs[i];
+    const prefix = `source_refs[${i}]`;
+    if (typeof entry !== 'object' || entry === null) {
+      errors.push(`${prefix} must be an object`);
+      continue;
+    }
+    const ref = entry as Record<string, unknown>;
+    if (!nonEmptyString(ref['kind'])) {
+      errors.push(`${prefix}.kind must be a non-empty string`);
+    } else if (!VALID_SOURCE_REF_KINDS.has(ref['kind'] as SourceRef['kind'])) {
+      errors.push(
+        `${prefix}.kind "${ref['kind']}" is not a recognized SourceRef kind (expected voice, photo, transcript, doc, or external)`,
+      );
+    }
+    if (ref['uri'] !== undefined && typeof ref['uri'] !== 'string') {
+      errors.push(`${prefix}.uri must be a string when present`);
+    }
+    if (ref['excerpt'] !== undefined && typeof ref['excerpt'] !== 'string') {
+      errors.push(`${prefix}.excerpt must be a string when present`);
+    }
+  }
+  return errors;
+}
+
 function validateBase(input: Record<string, unknown>): readonly string[] {
   const errors: string[] = [];
+  const eventType = nonEmptyString(input['type'])
+    ? VALID_EVENT_TYPES.has(input['type'] as PersistenceEventType)
+      ? (input['type'] as PersistenceEventType)
+      : null
+    : null;
   if (!nonEmptyString(input['event_id'])) errors.push('event_id must be a non-empty string');
   if (!nonEmptyString(input['type'])) {
     errors.push('type must be a non-empty string');
@@ -304,7 +366,7 @@ function validateBase(input: Record<string, unknown>): readonly string[] {
     }
   }
   if (!isIso8601(input['at'])) errors.push('at must be an ISO8601 timestamp');
-  if (!Array.isArray(input['source_refs'])) errors.push('source_refs must be an array');
+  errors.push(...validateSourceRefs(input['source_refs'], eventType));
   return errors;
 }
 

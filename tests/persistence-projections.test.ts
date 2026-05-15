@@ -48,11 +48,16 @@ function cleanup(dir: string): void {
 }
 
 const ISO_BASE = '2026-05-15T';
+const wellFormedSourceRef = {
+  kind: 'voice' as const,
+  uri: 'kerf://intake/x',
+  excerpt: 'foo',
+};
 const baseHeader = {
   tenant_id: 'tenant_ggr' as const,
   correlation_id: 'proj_alpha',
   actor: { id: 'browser_operator', role: 'owner' as const },
-  source_refs: [],
+  source_refs: [wellFormedSourceRef],
 };
 
 function evt<T extends PersistenceEvent['type']>(
@@ -76,6 +81,7 @@ function projectCreated(at = '10:00:00'): PersistenceEvent {
     client_name: 'Alpha Client',
     jurisdiction: 'CA Poway',
     archetype_hint: 'kitchen_remodel',
+    source_refs: [],
   });
 }
 

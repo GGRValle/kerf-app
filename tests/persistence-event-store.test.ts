@@ -48,6 +48,12 @@ function cleanup(path: string): void {
 
 const ISO_AT = '2026-05-15T20:00:00.000Z';
 
+const wellFormedSourceRef = {
+  kind: 'voice' as const,
+  uri: 'kerf://intake/x',
+  excerpt: 'foo',
+};
+
 function projectCreated(over: Record<string, unknown> = {}): PersistenceEvent {
   return {
     event_id: `evt_${randomBytes(4).toString('hex')}`,
@@ -72,7 +78,7 @@ function captureRecorded(over: Record<string, unknown> = {}): PersistenceEvent {
     correlation_id: 'proj_alpha',
     actor: { id: 'browser_operator', role: 'owner' },
     at: ISO_AT,
-    source_refs: [],
+    source_refs: [wellFormedSourceRef],
     capture_id: 'cap_001',
     transcript_text: 'kitchen 10 by 12 with quartzite counters',
     audio_uri: null,
@@ -159,7 +165,7 @@ test('append REJECTS float cents on actuals.recorded (architectural invariant)',
       correlation_id: 'proj_alpha',
       actor: { id: 'browser_operator', role: 'owner' },
       at: ISO_AT,
-      source_refs: [],
+      source_refs: [wellFormedSourceRef],
       writeback_id: 'wb_001',
       line_id: 'scaffold_line_1',
       actual_cents: 1234.5, // FLOAT — must be rejected
