@@ -29,6 +29,7 @@ import {
   commitScaffoldEditInput,
   mountScaffoldEditInput,
 } from './v15-scaffold-edit-interaction.js';
+import { scheduleMobileDomProbeReport } from './m-dom-probe.js';
 
 const ROOT_ID = 'kerf-v15-root';
 
@@ -61,6 +62,7 @@ function render(): void {
   root.innerHTML = renderShell(path);
   syncNavToggle(false);
   wireFieldCaptureAfterRender(path);
+  scheduleMobileDomProbeReport(window, path);
 }
 
 function syncNavToggle(open: boolean): void {
