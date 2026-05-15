@@ -24,6 +24,11 @@ import {
   v15RefreshContextDryRunFromSession,
 } from './v15-context-dry-run-session.js';
 import { v15F37SetSelectedEventId } from './v15-f37-selection.js';
+import {
+  cancelScaffoldEditInput,
+  commitScaffoldEditInput,
+  mountScaffoldEditInput,
+} from './v15-scaffold-edit-interaction.js';
 import { scheduleMobileDomProbeReport } from './m-dom-probe.js';
 
 const ROOT_ID = 'kerf-v15-root';
@@ -319,6 +324,12 @@ function onDocumentClick(ev: MouseEvent): void {
     navigateTo('/transcript-review');
     return;
   }
+  const editBtn = t.closest('[data-kerf-v15-edit]');
+  if (editBtn instanceof HTMLButtonElement) {
+    ev.preventDefault();
+    mountScaffoldEditInput(editBtn);
+    return;
+  }
   const link = t.closest('a[data-kerf-v15-nav="true"]');
   if (!(link instanceof HTMLAnchorElement)) {
     return;
@@ -344,6 +355,9 @@ function onPopState(): void {
 
 function onDocumentInput(ev: Event): void {
   const t = ev.target;
+  if (t instanceof HTMLInputElement && t.hasAttribute('data-kerf-v15-editing')) {
+    return;
+  }
   if (!(t instanceof HTMLTextAreaElement)) {
     return;
   }
@@ -353,9 +367,50 @@ function onDocumentInput(ev: Event): void {
   }
 }
 
+function finishScaffoldEdit(input: HTMLInputElement): void {
+  if (input.dataset.kerfV15CommitDone === 'true') {
+    return;
+  }
+  input.dataset.kerfV15CommitDone = 'true';
+  if (commitScaffoldEditInput(input)) {
+    render();
+  } else {
+    cancelScaffoldEditInput(input);
+    render();
+  }
+}
+
+function onDocumentKeydown(ev: KeyboardEvent): void {
+  const t = ev.target;
+  if (!(t instanceof HTMLInputElement) || !t.hasAttribute('data-kerf-v15-editing')) {
+    return;
+  }
+  if (ev.key === 'Escape') {
+    ev.preventDefault();
+    t.dataset.kerfV15CommitDone = 'true';
+    cancelScaffoldEditInput(t);
+    render();
+    return;
+  }
+  if (ev.key === 'Enter') {
+    ev.preventDefault();
+    finishScaffoldEdit(t);
+  }
+}
+
+function onScaffoldEditBlur(ev: FocusEvent): void {
+  const t = ev.target;
+  if (!(t instanceof HTMLInputElement) || !t.hasAttribute('data-kerf-v15-editing')) {
+    return;
+  }
+  finishScaffoldEdit(t);
+}
+
 function boot(): void {
   document.addEventListener('click', onDocumentClick);
   document.addEventListener('input', onDocumentInput);
+  document.addEventListener('keydown', onDocumentKeydown);
+  document.addEventListener('focusout', onScaffoldEditBlur);
   window.addEventListener('popstate', onPopState);
   normalizeBootUrl();
   // Render immediately so the shell paints, then load the cost-KB seed
