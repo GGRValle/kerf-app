@@ -285,3 +285,68 @@
   color: var(--kerf-fg-muted);
   max-width: 36rem;
 }
+
+/* Mobile baseline (2026-05-15) — max-width 720px only */
+@media (max-width: 720px) {
+  .kerf-fc-page {
+    max-width: 100%;
+    padding-left: var(--kerf-space-sm);
+    padding-right: var(--kerf-space-sm);
+    box-sizing: border-box;
+  }
+
+  .kerf-fc-card {
+    padding: var(--kerf-space-md);
+  }
+
+  .kerf-fc-dl > div {
+    grid-template-columns: 1fr;
+    gap: 0.15rem 0;
+  }
+
+  .kerf-fc-dl dt {
+    margin-bottom: 0.1rem;
+  }
+
+  .kerf-fc-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--kerf-space-sm);
+  }
+
+  .kerf-fc-mode-chip {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0.35rem 0.85rem;
+  }
+
+  .kerf-fc-tag {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+  .kerf-fc-add-photo {
+    min-height: 5.5rem;
+  }
+
+  .kerf-fc-voice-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--kerf-space-sm);
+  }
+
+  .kerf-fc-primary {
+    min-height: 44px;
+    width: 100%;
+    max-width: 22rem;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .kerf-fc-preview-dl > div {
+    grid-template-columns: 1fr;
+  }
+}
