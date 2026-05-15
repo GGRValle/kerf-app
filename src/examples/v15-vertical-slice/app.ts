@@ -24,6 +24,7 @@ import {
   v15RefreshContextDryRunFromSession,
 } from './v15-context-dry-run-session.js';
 import { v15F37SetSelectedEventId } from './v15-f37-selection.js';
+import { scheduleMobileDomProbeReport } from './m-dom-probe.js';
 
 const ROOT_ID = 'kerf-v15-root';
 
@@ -56,6 +57,7 @@ function render(): void {
   root.innerHTML = renderShell(path);
   syncNavToggle(false);
   wireFieldCaptureAfterRender(path);
+  scheduleMobileDomProbeReport(window, path);
 }
 
 function syncNavToggle(open: boolean): void {
