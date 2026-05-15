@@ -29,6 +29,9 @@ import { renderBathScaffoldSection } from './v15-bath-scaffold-html.js';
 import { detectKitchenArchetype } from './v15-kitchen-archetype.js';
 import { instantiateKitchenScaffold } from './v15-kitchen-scaffold.js';
 import { renderKitchenScaffoldSection } from './v15-kitchen-scaffold-html.js';
+import { detectOutdoorKitchenArchetype } from './v15-outdoor-kitchen-archetype.js';
+import { instantiateOutdoorKitchenScaffold } from './v15-outdoor-kitchen-scaffold.js';
+import { renderOutdoorKitchenScaffoldSection } from './v15-outdoor-kitchen-scaffold-html.js';
 
 function esc(s: string): string {
   return s
@@ -74,6 +77,18 @@ function renderBathScaffoldFromActiveFixture(
   if (detection === null) return '';
   const scaffold = instantiateBathScaffold(detection);
   return renderBathScaffoldSection(scaffold);
+}
+
+function renderOutdoorKitchenScaffoldFromActiveFixture(
+  activeFixture: ReturnType<typeof v15GetActiveVerticalSliceFixture> | null,
+): string {
+  if (activeFixture === null) return '';
+  const transcriptText = activeFixture.field_capture_input?.transcript_original ?? '';
+  if (transcriptText.length === 0) return '';
+  const detection = detectOutdoorKitchenArchetype(transcriptText);
+  if (detection === null) return '';
+  const scaffold = instantiateOutdoorKitchenScaffold(detection);
+  return renderOutdoorKitchenScaffoldSection(scaffold);
 }
 
 function buildBlackboardPreviewHtml(): string {
@@ -201,6 +216,9 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
       let scaffoldHtml = renderKitchenScaffoldFromActiveFixture(activeFixture);
       if (scaffoldHtml === '') {
         scaffoldHtml = renderBathScaffoldFromActiveFixture(activeFixture);
+      }
+      if (scaffoldHtml === '') {
+        scaffoldHtml = renderOutdoorKitchenScaffoldFromActiveFixture(activeFixture);
       }
       return {
         title: 'Draft Review',
