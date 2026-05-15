@@ -504,6 +504,59 @@
   font-style: italic;
 }
 
+.kerf-f35-scaffold__edit-trigger {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted rgba(28, 90, 42, 0.45);
+  text-underline-offset: 0.15em;
+}
+
+.kerf-f35-scaffold__edit-trigger:hover,
+.kerf-f35-scaffold__edit-trigger:focus-visible {
+  text-decoration-style: solid;
+  outline: none;
+}
+
+.kerf-f35-scaffold__edit-trigger--add {
+  font-size: 0.78rem;
+  color: #1c5a2a;
+}
+
+.kerf-f35-scaffold__edit-trigger--inline {
+  display: inline;
+}
+
+.kerf-f35-scaffold__edit-input {
+  width: min(6.5rem, 42vw);
+  max-width: 100%;
+  padding: 0.1rem 0.35rem;
+  font: inherit;
+  font-size: 0.95rem;
+  border: 1px solid rgba(28, 90, 42, 0.35);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.kerf-f35-scaffold__refined-pill {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.12rem 0.45rem;
+  font-size: 0.68rem;
+  font-style: normal;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  color: #1c5a2a;
+  background: rgba(60, 130, 75, 0.12);
+  border: 1px solid rgba(28, 90, 42, 0.25);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
 .kerf-f35-scaffold__debug {
   margin: 0.4rem 0 0;
   padding: 0.2rem 0.45rem;
