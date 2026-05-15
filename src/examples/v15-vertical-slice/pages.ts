@@ -32,6 +32,9 @@ import { renderKitchenScaffoldSection } from './v15-kitchen-scaffold-html.js';
 import { detectOutdoorKitchenArchetype } from './v15-outdoor-kitchen-archetype.js';
 import { instantiateOutdoorKitchenScaffold } from './v15-outdoor-kitchen-scaffold.js';
 import { renderOutdoorKitchenScaffoldSection } from './v15-outdoor-kitchen-scaffold-html.js';
+import { detectDeckArchetype } from './v15-deck-archetype.js';
+import { instantiateDeckScaffold } from './v15-deck-scaffold.js';
+import { renderDeckScaffoldSection } from './v15-deck-scaffold-html.js';
 
 function esc(s: string): string {
   return s
@@ -89,6 +92,18 @@ function renderOutdoorKitchenScaffoldFromActiveFixture(
   if (detection === null) return '';
   const scaffold = instantiateOutdoorKitchenScaffold(detection);
   return renderOutdoorKitchenScaffoldSection(scaffold);
+}
+
+function renderDeckScaffoldFromActiveFixture(
+  activeFixture: ReturnType<typeof v15GetActiveVerticalSliceFixture> | null,
+): string {
+  if (activeFixture === null) return '';
+  const transcriptText = activeFixture.field_capture_input?.transcript_original ?? '';
+  if (transcriptText.length === 0) return '';
+  const detection = detectDeckArchetype(transcriptText);
+  if (detection === null) return '';
+  const scaffold = instantiateDeckScaffold(detection);
+  return renderDeckScaffoldSection(scaffold);
 }
 
 function buildBlackboardPreviewHtml(): string {
@@ -219,6 +234,9 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
       }
       if (scaffoldHtml === '') {
         scaffoldHtml = renderOutdoorKitchenScaffoldFromActiveFixture(activeFixture);
+      }
+      if (scaffoldHtml === '') {
+        scaffoldHtml = renderDeckScaffoldFromActiveFixture(activeFixture);
       }
       return {
         title: 'Draft Review',

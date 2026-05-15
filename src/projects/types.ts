@@ -58,6 +58,11 @@ import { ValidationError } from '../shared/errors.js';
  *                              standalone scope, no cabinets.
  *   - vanity_only            → Valle e-commerce scope: a single-vanity sale
  *                              from the online vanity collection.
+ *   - deck                   → deck rebuild / new deck — wood, composite, or
+ *                              hybrid; distinct from whole-room remodels.
+ *   - outdoor_kitchen        → built-in outdoor cooking + counter runs
+ *                              (parallel scaffold brief).
+ *   - patio_or_hardscape     → patios, walks, flatwork (reserved; scaffold TBD).
  */
 export const PROJECT_TYPE_TAGS = [
   'kitchen_remodel',
@@ -71,6 +76,9 @@ export const PROJECT_TYPE_TAGS = [
   'cabinetry_only',
   'millwork_only',
   'vanity_only',
+  'deck',
+  'outdoor_kitchen',
+  'patio_or_hardscape',
 ] as const;
 
 export type ProjectTypeTag = (typeof PROJECT_TYPE_TAGS)[number];
