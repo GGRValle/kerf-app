@@ -75,7 +75,25 @@ export type DailyLogEntryKind =
   | 'blocker'            // crew hits an issue (material wrong, code question, weather)
   | 'change_signal'      // crew identifies scope-change candidate (owner asked for X)
   | 'safety_note'        // OSHA/safety event
-  | 'end_of_day';        // close: what's done, what's left, what's needed tomorrow
+  | 'end_of_day'         // close: what's done, what's left, what's needed tomorrow
+  | 'clock_event';       // clock-in/out, lunch boundary, break boundary (operational record only, NOT payroll)
+
+/**
+ * Clock event sub-kinds. Operational record + audit lineage; NOT a payroll/timesheet pipeline.
+ * Sub-kind lives in the entry's `extracted_facts` payload (no separate field — keeps the
+ * DailyLogEntry shape stable across kinds).
+ *
+ * Captured from the Field Hand HOME tab (live clock card + Clock In/Out button) and surfaced
+ * in the LOG tab Time sub-tab + the auto-compiled timeline. The current-clock-state projection
+ * rolls these up per (tenant × project × actor): "currently clocked in" + "active since".
+ */
+export type ClockEventSubKind =
+  | 'clock_in'           // shift start
+  | 'clock_out'          // shift end
+  | 'lunch_start'        // off-the-clock lunch boundary
+  | 'lunch_end'
+  | 'break_start'        // shorter break (paid or unpaid — record only)
+  | 'break_end';
 ```
 
 `DailyLogExtractedFacts` is the structured residue of the entry — what Kerf extracted from the transcript (per the canon §7 of routing/memory brief):
@@ -114,6 +132,7 @@ Per the routing/memory brief §10's hard-cap one-week MVP rules:
 | **Right Hand relay card** | Office-side surface showing today's Field Daily entries grouped by project; click into per-entry detail |
 | **§13 disclosure** | Trust signal on the relay card (per `feedback_audit_deep_link_not_top_nav.md`); audit is one click deep |
 | **Audit trail** | `daily_log.entry_captured` events feed the existing event log |
+| **Clock events** | `clock_event` entry kind (clock_in / clock_out / lunch_start / lunch_end / break_start / break_end) — captured on Field Hand HOME tab; flows through `daily_log.entry_captured`; surfaced on LOG → Time sub-tab + auto-compiled timeline. **Operational record + audit lineage only — NOT a payroll/timesheet pipeline.** |
 
 ### EXPLICITLY OUT OF SCOPE for the MVP
 
@@ -163,15 +182,33 @@ Five new event types — proposed for inclusion in `src/persistence/events.ts` a
 
 ### 7.1 `/field` (or `/m/field`) — Field Hand mobile capture
 
-Mobile-first (matches Priority 5 of the 30-day brief). Operator (Christian, his son, future crew) sees:
+Mobile-first (matches Priority 5 of the 30-day brief). Per the operator-canon wireframes (`docs/wireframes/kerf_wireframes_mobile_v2.html` FRAMES 2–5), the Field Hand surface is **task-focused, not module-focused** — uses a bottom nav of four tabs instead of the operator Module Drawer pattern (see `right_hand_home_module_drawer_2026-05-15.md` §5 for why).
 
-- Active project switcher (per the `/projects` route from persistence Step 6)
-- "Capture daily update" primary CTA
-- Sub-actions: morning brief / progress / blocker / change signal / safety / end of day
-- Voice record button (reuses PR #150's `MediaRecorder` substrate)
-- Photo capture button (D-043 substrate; minimum for MVP is camera-input HTML `<input type="file" accept="image/*" capture="environment">`)
+**Bottom nav (persistent across all tabs)**:
+
+```
+HOME  ·  JOB  ·  LOG  ·  ME
+```
+
+Plus a **persistent voice record button** to the left of the tab strip — voice capture is universal; no surface gates it.
+
+**HOME tab** — current job header (project name, project address, day N of N) · **live clock status card** (elapsed time + "Clocked in since 7:42 AM" + Clock-out button — see clock_event entry kind in §3) · today's task + estimated duration · this-week schedule · captures-today summary.
+
+**JOB tab** — sub-tabs: `Scope / Docs / Crew / Materials`. Materials shows three-way state (delivered / pending / on-order / missing) with one-tap field actions (mark delivered, flag missing, request order more — see operator-routing rule below).
+
+**LOG tab** — sub-tabs: `Daily / Time / Photos / Issues`. Auto-compiled timeline of the day; entries include clock_event (clock-in / lunch / break / clock-out), sms, task, photo batches, voice captures. Every entry is source-tagged.
+
+**ME tab** — personal surface: hours this week + pay period (operational record, computed from clock_events; not a payroll feed), L0→L3 career ladder (separate talent-ladder feature), Right Hand "Coach" nudges when office acts on the field user's behalf.
+
+**Capture entry points** (across HOME / JOB / LOG / ME, surfaced via the voice button or the inline "Capture daily update" action where relevant):
+
+- Sub-actions: morning brief / progress / blocker / change signal / safety / end of day / **clock event**
+- Voice record (reuses PR #150's `MediaRecorder` substrate)
+- Photo capture (D-043 substrate; minimum for MVP is camera-input HTML `<input type="file" accept="image/*" capture="environment">`)
 - Brief description text area (optional supplement to voice)
 - Submit → emits `daily_log.entry_captured`; Field Capture play runs; result lands on Blackboard preview
+
+**Authority rule (locked)**: Field can update reality — clock-in/out, daily log, mark material delivered/missing, flag a blocker. Field **cannot** autonomously create POs, commit spend, send vendor/client communication, change project budget, or alter proposal pricing. "Order more" routes to office as a draft/request. "Material missing" lands on Right Hand's relay queue as an "expedite?" decision card. This matches the V1.5 architectural posture: LLMs and field users propose; deterministic gates and human approval dispose.
 
 ### 7.2 `/relay` — Right Hand relay-card list
 
@@ -302,7 +339,7 @@ Per the routing/memory brief §10 and 30-day brief:
 - ❌ Auto-create change orders (relay surfaces the signal; operator drafts the CO manually)
 - ❌ Live job-cam streaming
 - ❌ GPS / geofence verification
-- ❌ Time tracking (clock-in/clock-out for payroll)
+- ❌ **Payroll / timesheet export** is out of scope. (Clock events ARE captured as an operational record + audit lineage — see `clock_event` entry kind in §3. They do not auto-route to a payroll pipeline, do not compute overtime, do not generate timesheets for export. The ME tab "hours this week" / "hours this pay period" displays are computed from clock_events for the field user's own visibility only.)
 - ❌ Inventory management
 - ❌ Subcontractor coordination surfaces
 - ❌ Material ordering flow
