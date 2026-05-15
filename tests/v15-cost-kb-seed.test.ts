@@ -248,3 +248,230 @@ test('cabinetry rows are absent from seed (Proposed_Rows curation deferred)', ()
     `cabinetry rows should be absent from seed (loaded ${cabRows.length})`,
   );
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// PR #158 — material-specific tier-1 narrowing
+// ──────────────────────────────────────────────────────────────────────────
+
+test('material narrowing: LVP in scope_text keeps only Flooring rows whose item_name matches LVP', () => {
+  const tradeWide = lookupCostKbSeed({
+    scope_text: 'flooring install for kitchen',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: MANIFEST,
+  });
+  const lvpNarrow = lookupCostKbSeed({
+    scope_text: 'LVP flooring install for kitchen',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: MANIFEST,
+  });
+  assert.ok(tradeWide !== null && lvpNarrow !== null);
+  assert.ok(tradeWide!.rows.length > lvpNarrow!.rows.length);
+  assert.equal(lvpNarrow!.material_narrowed, true);
+  assert.deepEqual(lvpNarrow!.narrowed_materials, ['LVP']);
+  for (const row of lvpNarrow!.rows) {
+    assert.match(row.item_name, /\b(LVP|luxury vinyl|vinyl plank|LVT)\b/i, row.cost_row_id);
+  }
+});
+
+test('material narrowing: quartzite + LVP each narrow on separate trade_hint lookups', () => {
+  const ct = lookupCostKbSeed({
+    scope_text: 'quartzite countertops for island',
+    use: 'clarification_range',
+    trade_hint: 'Countertops',
+    manifest: MANIFEST,
+  });
+  const fl = lookupCostKbSeed({
+    scope_text: 'LVP flooring throughout',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: MANIFEST,
+  });
+  assert.ok(ct !== null && fl !== null);
+  assert.equal(ct!.material_narrowed, true);
+  assert.ok(ct!.narrowed_materials.includes('quartzite'));
+  assert.ok(ct!.rows.length >= 1);
+  for (const row of ct!.rows) {
+    assert.match(row.item_name, /quartzite/i, row.cost_row_id);
+  }
+  assert.equal(fl!.material_narrowed, true);
+  assert.deepEqual(fl!.narrowed_materials, ['LVP']);
+});
+
+test('material narrowing: unknown material phrase falls back to trade-level (purpleheart)', () => {
+  const hit = lookupCostKbSeed({
+    scope_text: 'purpleheart flooring exotic species',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: MANIFEST,
+  });
+  assert.ok(hit !== null);
+  assert.equal(hit!.material_narrowed, false);
+  assert.deepEqual(hit!.narrowed_materials, []);
+  assert.ok(hit!.rows.length > 3);
+});
+
+test('material narrowing: known material in scope but no row item_name match falls back (marble flooring)', () => {
+  const hit = lookupCostKbSeed({
+    scope_text: 'marble flooring look in bath',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: MANIFEST,
+  });
+  assert.ok(hit !== null);
+  assert.equal(hit!.material_narrowed, false);
+  assert.deepEqual(hit!.narrowed_materials, []);
+});
+
+test('material narrowing: no MATERIAL_VOCAB term leaves trade-level behavior', () => {
+  const hit = lookupCostKbSeed({
+    scope_text: 'flooring tear-out and reinstall 120 SF',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: MANIFEST,
+  });
+  assert.ok(hit !== null);
+  assert.equal(hit!.material_narrowed, false);
+  assert.deepEqual(hit!.narrowed_materials, []);
+});
+
+test('material narrowing: authority_rank sort still applies after narrow (synthetic)', () => {
+  const mkLvp = (
+    id: string,
+    rank: number,
+    low: number,
+    high: number,
+  ): KerfCostKbSeedRow => ({
+    cost_row_id: id,
+    row_version: 'v0.test',
+    tenant_id: 'seed_global',
+    source_layer: 'KERF_SEED',
+    authority_rank: rank,
+    pricing_basis_state: 'RANGE_ONLY',
+    curator_review_status: 'NEEDS_FOUNDER',
+    trade: 'Flooring',
+    scope_category: 'material',
+    item_name: 'LVP test row',
+    uom: 'SF',
+    measurement_basis: 'finished_surface',
+    range_low_cents: low,
+    range_high_cents: high,
+    default_cost_cents: null,
+    currency: 'USD',
+    labor_basis_type: 'not_labor',
+    confidence_score: 0.5,
+    freshness_window_days: 90,
+    source_published_date: '2026-01-01',
+    source_data_period: 'Q1 2026',
+    last_reviewed_at: '2026-05-14',
+    source_ref_id: `SRC-${id}`,
+    source_url: '',
+    review_notes: 'test',
+    founder_review_required: false,
+    sheet: '09_Flooring',
+  });
+  const synthetic: KerfCostKbSeedManifest = {
+    ...MANIFEST,
+    trade_rows: [
+      mkLvp('LVP-R5', 5, 400, 800),
+      mkLvp('LVP-R3', 3, 500, 900),
+      mkLvp('LVP-R1', 1, 600, 1000),
+    ],
+    trade_row_count: 3,
+  };
+  const hit = lookupCostKbSeed({
+    scope_text: 'LVP install',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: synthetic,
+  });
+  assert.ok(hit !== null);
+  assert.equal(hit!.material_narrowed, true);
+  assert.equal(hit!.rows[0]!.cost_row_id, 'LVP-R1');
+  assert.equal(hit!.rows[1]!.cost_row_id, 'LVP-R3');
+  assert.equal(hit!.rows[2]!.cost_row_id, 'LVP-R5');
+});
+
+test('material narrowing: BLOCKED LVP row never enters hit even when scope names LVP', () => {
+  const blockedLvp: KerfCostKbSeedRow = {
+    cost_row_id: 'LVP-BLOCK',
+    row_version: 'v0.test',
+    tenant_id: 'seed_global',
+    source_layer: 'KERF_SEED',
+    authority_rank: 1,
+    pricing_basis_state: 'BLOCKED',
+    curator_review_status: 'NEEDS_SOURCE',
+    trade: 'Flooring',
+    scope_category: 'material',
+    item_name: 'LVP blocked row',
+    uom: 'SF',
+    measurement_basis: 'finished_surface',
+    range_low_cents: 50,
+    range_high_cents: 100,
+    default_cost_cents: null,
+    currency: 'USD',
+    labor_basis_type: 'not_labor',
+    confidence_score: 0.9,
+    freshness_window_days: 90,
+    source_published_date: '2026-01-01',
+    source_data_period: 'Q1 2026',
+    last_reviewed_at: '2026-05-14',
+    source_ref_id: 'SRC-LVP-BLK',
+    source_url: '',
+    review_notes: 'test',
+    founder_review_required: true,
+    sheet: '09_Flooring',
+  };
+  const okHardwood: KerfCostKbSeedRow = {
+    ...blockedLvp,
+    cost_row_id: 'HW-OK',
+    authority_rank: 5,
+    pricing_basis_state: 'RANGE_ONLY',
+    item_name: 'Solid hardwood flooring — installed',
+    source_ref_id: 'SRC-HW-OK',
+    range_low_cents: 900,
+    range_high_cents: 2500,
+  };
+  const synthetic: KerfCostKbSeedManifest = {
+    ...MANIFEST,
+    trade_rows: [blockedLvp, okHardwood],
+    trade_row_count: 2,
+  };
+  const hit = lookupCostKbSeed({
+    scope_text: 'LVP flooring only',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: synthetic,
+  });
+  assert.ok(hit !== null);
+  assert.equal(hit!.material_narrowed, false);
+  assert.ok(!hit!.rows.some((r) => r.cost_row_id === 'LVP-BLOCK'));
+  assert.equal(hit!.rows.length, 1);
+  assert.equal(hit!.rows[0]!.cost_row_id, 'HW-OK');
+});
+
+test('formatDebugOverlayForHit includes mat= segment when material_narrowed', () => {
+  const hit = lookupCostKbSeed({
+    scope_text: 'LVP flooring',
+    use: 'clarification_range',
+    trade_hint: 'Flooring',
+    manifest: MANIFEST,
+  });
+  assert.ok(hit !== null);
+  const overlay = formatDebugOverlayForHit(hit!);
+  assert.match(overlay, /·mat=LVP/);
+});
+
+test('formatDebugOverlayForHit omits mat= when trade-level only (no vocab hit)', () => {
+  const hit = lookupCostKbSeed({
+    scope_text: 'wood deck around the back of the house',
+    use: 'clarification_range',
+    manifest: MANIFEST,
+  });
+  assert.ok(hit !== null);
+  assert.equal(hit!.material_narrowed, false);
+  const overlay = formatDebugOverlayForHit(hit!);
+  assert.doesNotMatch(overlay, /·mat=/);
+  assert.match(overlay, /tier1·Decking/);
+});
