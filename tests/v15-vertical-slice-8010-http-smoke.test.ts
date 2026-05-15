@@ -1,5 +1,5 @@
 /**
- * HTTP smoke for `scripts/serve-v15-vertical-slice.mjs` (default port 8010 in docs).
+ * HTTP smoke for `scripts/serve-v15-vertical-slice.ts` (default port 8010 in docs).
  * Uses a high ephemeral PORT to avoid colliding with a dev server on 8010.
  */
 import assert from 'node:assert/strict';
@@ -54,7 +54,7 @@ async function waitForOk(url: string, timeoutMs: number): Promise<void> {
 
 test('v15 vertical slice static server: index shell + app bundle (8010 stack)', async () => {
   const port = 18_010 + Math.floor(Math.random() * 900);
-  const child = spawn('node', ['scripts/serve-v15-vertical-slice.mjs'], {
+  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
     env: { ...process.env, PORT: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -92,7 +92,7 @@ test('v15 vertical slice static server: index shell + app bundle (8010 stack)', 
  */
 test('v15 deep-link reload: HTML at nested routes contains root-relative asset paths', async () => {
   const port = 18_010 + Math.floor(Math.random() * 900);
-  const child = spawn('node', ['scripts/serve-v15-vertical-slice.mjs'], {
+  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
     env: { ...process.env, PORT: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],

@@ -1,0 +1,702 @@
+/**
+ * Static server with SPA fallback for the V1.5 vertical slice demo (port 8010).
+ * Serves src/examples/v15-vertical-slice/ so /dashboard etc. resolve to index.html.
+ *
+ * Converted from .mjs -> .ts on 2026-05-15 so persistence-layer modules
+ * (src/persistence/*) can be imported directly. Runs via tsx loader.
+ *
+ * Routes:
+ *   POST /transcribe                — Whisper audio transcription (PR #150)
+ *   POST /api/projects              — create project (emits project.created)
+ *   POST /api/projects/<id>/captures — record a capture (emits capture.recorded)
+ *   GET  /api/projects              — list projects (reads projection files)
+ *   GET  /api/projects/<id>         — single project projection
+ *   GET  /...                       — static + SPA fallback to index.html
+ *
+ * GROQ_API_KEY + GROQ_BASE_URL must be in .env.local (Node loads it
+ * on startup; if missing, /transcribe returns 503 with a clear error
+ * and the rest of the server keeps working).
+ */
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
+
+import {
+  validatePersistenceEvent,
+  type PersistenceEvent,
+  type PersistenceTenantId,
+} from '../src/persistence/events.ts';
+import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
+import {
+  defaultProjectionPath,
+  rebuildAndPersistProjection,
+  readProjectProjection,
+  type ProjectProjection,
+} from '../src/persistence/projections.ts';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, '../src/examples/v15-vertical-slice');
+const PORT = Number(process.env.PORT) || 8010;
+const ENV_FILE = path.resolve(__dirname, '../.env.local');
+
+// Load .env.local if present; missing file is non-fatal — /transcribe will
+// return a clear error if GROQ_* vars aren't set when it's called.
+try {
+  process.loadEnvFile(ENV_FILE);
+} catch (err) {
+  // process.loadEnvFile throws ENOENT if the file is missing; that's fine.
+  if (
+    err &&
+    typeof err === 'object' &&
+    'code' in err &&
+    (err as { code: string }).code !== 'ENOENT'
+  ) {
+    console.warn(`[serve-v15] loadEnvFile error: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+// Persistence event store path. Defaults to <repo>/.kerf/events.jsonl;
+// PERSISTENCE_DIR env var overrides for tests + isolated dogfood runs.
+const PERSISTENCE_DIR = process.env['PERSISTENCE_DIR'] ?? path.resolve(__dirname, '..', '.kerf');
+const EVENTS_PATH = path.join(PERSISTENCE_DIR, 'events.jsonl');
+const projectionPathFor = (tenant: PersistenceTenantId, projectId: string): string =>
+  path.join(PERSISTENCE_DIR, 'projects', tenant, projectId, 'index.json');
+
+const eventStore = createPersistenceEventStore({
+  filepath: EVENTS_PATH,
+  onWarn: (m): void => console.warn(`[persistence] ${m}`),
+});
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+};
+
+const TRANSCRIBE_MAX_BYTES = 25 * 1024 * 1024; // 25 MiB — Groq Whisper file-size cap
+const TRANSCRIBE_ALLOWED_PREFIX = 'audio/';
+const TRANSCRIBE_ALLOWED_OCTET = 'application/octet-stream';
+const WHISPER_MODEL = 'whisper-large-v3-turbo';
+const WHISPER_ENDPOINT_ID = 'groq://whisper-large-v3-turbo'; // matches D-023 registry
+
+function safeFilePath(urlPath: string): string | null {
+  const decoded = decodeURIComponent(urlPath.split('?')[0] ?? '/');
+  const rel = decoded.replace(/^\/+/, '');
+  const candidate = path.resolve(ROOT, rel);
+  const rootResolved = path.resolve(ROOT);
+  if (!candidate.startsWith(rootResolved)) {
+    return null;
+  }
+  return candidate;
+}
+
+async function tryFile(filePath: string): Promise<Buffer | null> {
+  try {
+    const st = await fs.stat(filePath);
+    if (!st.isFile()) {
+      return null;
+    }
+    return await fs.readFile(filePath);
+  } catch {
+    return null;
+  }
+}
+
+function jsonResponse(res: http.ServerResponse, status: number, body: unknown): void {
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+  });
+  res.end(JSON.stringify(body));
+}
+
+function readRequestBody(req: http.IncomingMessage, maxBytes: number): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    req.on('data', (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        reject(Object.assign(new Error('payload too large'), { code: 'PAYLOAD_TOO_LARGE' }));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      resolve(Buffer.concat(chunks));
+    });
+    req.on('error', reject);
+  });
+}
+
+function filenameForContentType(ct: string): string {
+  // Whisper inspects the filename extension to pick a codec — pass the right one
+  if (ct.startsWith('audio/webm')) return 'recording.webm';
+  if (ct.startsWith('audio/mp4') || ct.startsWith('audio/m4a')) return 'recording.m4a';
+  if (ct.startsWith('audio/mpeg')) return 'recording.mp3';
+  if (ct.startsWith('audio/wav') || ct.startsWith('audio/x-wav')) return 'recording.wav';
+  if (ct.startsWith('audio/ogg')) return 'recording.ogg';
+  // Browser MediaRecorder default is webm/opus on Chrome, mp4 on Safari.
+  // If the browser uploaded as octet-stream (defensive fallback), default to webm.
+  return 'recording.webm';
+}
+
+async function handleTranscribe(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  const apiKey = process.env.GROQ_API_KEY;
+  const baseUrl = process.env.GROQ_BASE_URL;
+  if (!apiKey || !baseUrl) {
+    jsonResponse(res, 503, {
+      error: 'transcribe_not_configured',
+      reason:
+        'GROQ_API_KEY and GROQ_BASE_URL must be set (typically in .env.local). Restart the serve script after updating .env.local.',
+    });
+    return;
+  }
+
+  const contentType = String(req.headers['content-type'] ?? '').toLowerCase();
+  if (
+    !contentType.startsWith(TRANSCRIBE_ALLOWED_PREFIX) &&
+    !contentType.startsWith(TRANSCRIBE_ALLOWED_OCTET)
+  ) {
+    jsonResponse(res, 415, {
+      error: 'unsupported_content_type',
+      reason: `expected audio/* or application/octet-stream, got ${contentType || '(none)'}`,
+    });
+    return;
+  }
+
+  let audioBuf: Buffer;
+  try {
+    audioBuf = await readRequestBody(req, TRANSCRIBE_MAX_BYTES);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, {
+        error: 'payload_too_large',
+        reason: `audio exceeds ${TRANSCRIBE_MAX_BYTES} bytes (Groq Whisper file cap)`,
+      });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'read_body_failed',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+
+  if (audioBuf.length === 0) {
+    jsonResponse(res, 400, {
+      error: 'empty_audio',
+      reason: 'request body was empty; record at least a short clip before submitting',
+    });
+    return;
+  }
+
+  const invocationId = `inv_voice_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
+  const filename = filenameForContentType(contentType);
+  const sourceRefUri = `kerf://voice-intake/${invocationId}/${filename}`;
+
+  const url = `${baseUrl.replace(/\/$/, '')}/audio/transcriptions`;
+  const formData = new FormData();
+  // Node 22 has File globally; fall back to Blob if File isn't present.
+  const audioBlob = new Blob([audioBuf], { type: contentType.split(';')[0] || 'audio/webm' });
+  formData.append('file', audioBlob, filename);
+  formData.append('model', WHISPER_MODEL);
+  formData.append('response_format', 'verbose_json');
+
+  const startMs = Date.now();
+  let upstream;
+  try {
+    upstream = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: formData,
+    });
+  } catch (err) {
+    jsonResponse(res, 502, {
+      error: 'upstream_network_error',
+      reason: err instanceof Error ? err.message : String(err),
+      invocationId,
+      endpoint: WHISPER_ENDPOINT_ID,
+    });
+    return;
+  }
+
+  const latencyMs = Date.now() - startMs;
+  if (!upstream.ok) {
+    let body = '';
+    try {
+      body = await upstream.text();
+    } catch {
+      body = '<unreadable upstream body>';
+    }
+    jsonResponse(res, 502, {
+      error: 'upstream_api_error',
+      httpStatus: upstream.status,
+      reason: body.slice(0, 1000),
+      latencyMs,
+      invocationId,
+      endpoint: WHISPER_ENDPOINT_ID,
+    });
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = await upstream.json();
+  } catch (err) {
+    jsonResponse(res, 502, {
+      error: 'upstream_parse_error',
+      reason: err instanceof Error ? err.message : String(err),
+      latencyMs,
+      invocationId,
+    });
+    return;
+  }
+
+  const transcript = typeof parsed?.text === 'string' ? parsed.text.trim() : '';
+  const durationSec = typeof parsed?.duration === 'number' ? parsed.duration : 0;
+  const durationMs = Math.round(durationSec * 1000) || latencyMs;
+  // Mirror src/voice/runtime/whisperClient.ts:33 cost math (nano-USD/ms).
+  const costNanoUsd = Math.floor((durationMs * 40_000_000) / 3_600_000);
+  const language = typeof parsed?.language === 'string' ? parsed.language : null;
+
+  jsonResponse(res, 200, {
+    transcript,
+    language,
+    durationMs,
+    latencyMs,
+    costNanoUsd,
+    invocationId,
+    sourceRefUri,
+    endpoint: WHISPER_ENDPOINT_ID,
+    model: WHISPER_MODEL,
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// V1.5 persistence HTTP endpoints (Step 4)
+//
+// Four endpoints wire the operator UI to the JSONL event store + per-project
+// projections. Architecture invariants (from the 30-day brief):
+//   - Deterministic core; LLMs at edges only — no LLM in these handlers
+//   - All inputs untrusted; validatePersistenceEvent() runs before any write
+//   - No autonomous writes — every event carries an operator-supplied actor
+//   - tenant_id required on every event (forward-compat with multi-tenant 2027)
+//   - Money as integer cents (not relevant on these 4 endpoints, but a global
+//     invariant: never accept floats for cents-typed fields)
+//
+// Endpoints:
+//   POST /api/projects             — emit project.created, rebuild projection
+//   POST /api/projects/:id/captures — emit capture.recorded, rebuild projection
+//   GET  /api/projects             — list projects (optional ?tenant=)
+//   GET  /api/projects/:id          — single projection (optional ?tenant=)
+//
+// Cap JSON body at 1 MiB — these are operator UI payloads, not audio.
+// ──────────────────────────────────────────────────────────────────────────
+
+const JSON_BODY_MAX_BYTES = 1 * 1024 * 1024;
+const VALID_TENANT_IDS: readonly PersistenceTenantId[] = ['tenant_ggr', 'tenant_valle'];
+
+async function readJsonBody(req: http.IncomingMessage): Promise<unknown> {
+  const buf = await readRequestBody(req, JSON_BODY_MAX_BYTES);
+  if (buf.length === 0) {
+    throw Object.assign(new Error('request body was empty'), { code: 'EMPTY_BODY' });
+  }
+  return JSON.parse(buf.toString('utf8'));
+}
+
+function isPersistenceTenantId(v: unknown): v is PersistenceTenantId {
+  return typeof v === 'string' && (VALID_TENANT_IDS as readonly string[]).includes(v);
+}
+
+function generateEventId(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`;
+}
+
+async function handleCreateProject(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  if (typeof body !== 'object' || body === null) {
+    jsonResponse(res, 400, { error: 'invalid_body', reason: 'body must be a JSON object' });
+    return;
+  }
+  const input = body as Record<string, unknown>;
+  if (!isPersistenceTenantId(input['tenant_id'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+    });
+    return;
+  }
+  const tenant = input['tenant_id'];
+  const projectId =
+    typeof input['project_id'] === 'string' && input['project_id'].length > 0
+      ? (input['project_id'] as string)
+      : generateEventId('proj');
+
+  const event: PersistenceEvent = {
+    event_id: generateEventId('evt'),
+    type: 'project.created',
+    tenant_id: tenant,
+    correlation_id: projectId,
+    actor: (input['actor'] as PersistenceEvent['actor']) ?? {
+      id: 'browser_operator',
+      role: 'owner',
+    },
+    at: new Date().toISOString(),
+    source_refs: [],
+    project_id: projectId,
+    project_name: String(input['project_name'] ?? ''),
+    client_name: String(input['client_name'] ?? ''),
+    ...(typeof input['jurisdiction'] === 'string' && input['jurisdiction'].length > 0
+      ? { jurisdiction: input['jurisdiction'] }
+      : {}),
+    ...(typeof input['archetype_hint'] === 'string' && input['archetype_hint'].length > 0
+      ? { archetype_hint: input['archetype_hint'] }
+      : {}),
+  };
+
+  const validation = validatePersistenceEvent(event);
+  if (!validation.ok) {
+    jsonResponse(res, 400, { error: 'invalid_event', errors: validation.errors });
+    return;
+  }
+
+  try {
+    await eventStore.append(validation.event);
+  } catch (err) {
+    jsonResponse(res, 500, {
+      error: 'append_failed',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+
+  const allEvents = await eventStore.readAll();
+  const projection = await rebuildAndPersistProjection({
+    events: allEvents,
+    tenant,
+    projectId,
+    pathFor: projectionPathFor,
+  });
+  jsonResponse(res, 201, { event: validation.event, projection });
+}
+
+async function handleRecordCapture(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  projectId: string,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  if (typeof body !== 'object' || body === null) {
+    jsonResponse(res, 400, { error: 'invalid_body', reason: 'body must be a JSON object' });
+    return;
+  }
+  const input = body as Record<string, unknown>;
+  if (!isPersistenceTenantId(input['tenant_id'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+    });
+    return;
+  }
+  const tenant = input['tenant_id'];
+
+  // Verify the project exists under this tenant (read existing projection).
+  const projectionPath = projectionPathFor(tenant, projectId);
+  let existingProjection: ProjectProjection | null = null;
+  try {
+    existingProjection = await readProjectProjection(projectionPath);
+  } catch (err) {
+    // Corrupted projection — recoverable by rebuilding from events. Don't
+    // 500; let the rebuild after append heal it.
+    console.warn(
+      `[persistence] projection at ${projectionPath} unreadable; will rebuild after append: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  }
+  if (existingProjection === null) {
+    // Verify the project exists in the event log even if projection is missing.
+    const projectEvents = await eventStore.readByCorrelation(projectId);
+    const hasCreated = projectEvents.some((e) => e.type === 'project.created' && e.tenant_id === tenant);
+    if (!hasCreated) {
+      jsonResponse(res, 404, {
+        error: 'project_not_found',
+        reason: `no project.created event for project_id=${projectId} under tenant=${tenant}`,
+      });
+      return;
+    }
+  }
+
+  const captureId =
+    typeof input['capture_id'] === 'string' && input['capture_id'].length > 0
+      ? (input['capture_id'] as string)
+      : generateEventId('cap');
+  const transcriptText = typeof input['transcript_text'] === 'string' ? input['transcript_text'] : '';
+  const audioUri = typeof input['audio_uri'] === 'string' && input['audio_uri'].length > 0
+    ? (input['audio_uri'] as string)
+    : null;
+  const durationMs = typeof input['duration_ms'] === 'number' ? input['duration_ms'] : 0;
+  const language = typeof input['language'] === 'string' && input['language'].length > 0
+    ? (input['language'] as string)
+    : null;
+  const sourceRefs = Array.isArray(input['source_refs'])
+    ? (input['source_refs'] as PersistenceEvent['source_refs'])
+    : [];
+
+  const event: PersistenceEvent = {
+    event_id: generateEventId('evt'),
+    type: 'capture.recorded',
+    tenant_id: tenant,
+    correlation_id: projectId,
+    actor: (input['actor'] as PersistenceEvent['actor']) ?? {
+      id: 'browser_operator',
+      role: 'field_super',
+    },
+    at: new Date().toISOString(),
+    source_refs: sourceRefs,
+    capture_id: captureId,
+    transcript_text: transcriptText,
+    audio_uri: audioUri,
+    duration_ms: durationMs,
+    language,
+  };
+
+  const validation = validatePersistenceEvent(event);
+  if (!validation.ok) {
+    jsonResponse(res, 400, { error: 'invalid_event', errors: validation.errors });
+    return;
+  }
+
+  try {
+    await eventStore.append(validation.event);
+  } catch (err) {
+    jsonResponse(res, 500, {
+      error: 'append_failed',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+
+  const allEvents = await eventStore.readAll();
+  const projection = await rebuildAndPersistProjection({
+    events: allEvents,
+    tenant,
+    projectId,
+    pathFor: projectionPathFor,
+  });
+  jsonResponse(res, 201, { event: validation.event, projection });
+}
+
+async function handleListProjects(
+  res: http.ServerResponse,
+  tenantFilter: PersistenceTenantId | null,
+): Promise<void> {
+  // List = scan event log for project.created, optionally filtered by tenant.
+  // Returns a small summary (no full projection — keep payload bounded).
+  const allEvents = await eventStore.readAll();
+  const seen = new Map<string, { tenant_id: PersistenceTenantId; project_id: string; project_name: string; client_name: string; created_at: string; last_activity_at: string }>();
+  for (const e of allEvents) {
+    if (e.type === 'project.created' && (tenantFilter === null || e.tenant_id === tenantFilter)) {
+      seen.set(e.project_id, {
+        tenant_id: e.tenant_id,
+        project_id: e.project_id,
+        project_name: e.project_name,
+        client_name: e.client_name,
+        created_at: e.at,
+        last_activity_at: e.at,
+      });
+    }
+  }
+  // Compute last activity per project by walking all events that match a known project_id.
+  for (const e of allEvents) {
+    const entry = seen.get(e.correlation_id);
+    if (entry !== undefined && e.at > entry.last_activity_at) {
+      entry.last_activity_at = e.at;
+    }
+  }
+  const projects = [...seen.values()].sort((a, b) =>
+    b.last_activity_at.localeCompare(a.last_activity_at),
+  );
+  jsonResponse(res, 200, { projects });
+}
+
+async function handleGetProject(
+  res: http.ServerResponse,
+  projectId: string,
+  tenantHint: PersistenceTenantId | null,
+): Promise<void> {
+  // Try the projection cache first under each candidate tenant.
+  const candidateTenants: readonly PersistenceTenantId[] =
+    tenantHint !== null ? [tenantHint] : VALID_TENANT_IDS;
+  for (const tenant of candidateTenants) {
+    const projectionPath = projectionPathFor(tenant, projectId);
+    let cached: ProjectProjection | null = null;
+    try {
+      cached = await readProjectProjection(projectionPath);
+    } catch (err) {
+      console.warn(
+        `[persistence] projection at ${projectionPath} unreadable; rebuilding from events: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+    if (cached !== null) {
+      jsonResponse(res, 200, { projection: cached });
+      return;
+    }
+  }
+
+  // No projection found — try to rebuild from events.
+  const allEvents = await eventStore.readAll();
+  const projectEvents = allEvents.filter((e) => e.correlation_id === projectId);
+  const createdEvt = projectEvents.find((e) => e.type === 'project.created');
+  if (createdEvt === undefined) {
+    jsonResponse(res, 404, {
+      error: 'project_not_found',
+      reason: `no project.created event for project_id=${projectId}`,
+    });
+    return;
+  }
+  const projection = await rebuildAndPersistProjection({
+    events: allEvents,
+    tenant: createdEvt.tenant_id,
+    projectId,
+    pathFor: projectionPathFor,
+  });
+  jsonResponse(res, 200, { projection });
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url ?? '/', `http://127.0.0.1:${PORT}`);
+
+  if (req.method === 'POST' && url.pathname === '/transcribe') {
+    await handleTranscribe(req, res);
+    return;
+  }
+
+  // ── /api/projects routes ─────────────────────────────────────────────
+  if (url.pathname === '/api/projects') {
+    if (req.method === 'POST') {
+      await handleCreateProject(req, res);
+      return;
+    }
+    if (req.method === 'GET') {
+      const tenantParam = url.searchParams.get('tenant');
+      const tenantFilter = isPersistenceTenantId(tenantParam) ? tenantParam : null;
+      await handleListProjects(res, tenantFilter);
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  // /api/projects/<id> and /api/projects/<id>/captures
+  const apiProjectMatch = url.pathname.match(/^\/api\/projects\/([^/]+)(\/captures)?\/?$/);
+  if (apiProjectMatch !== null) {
+    const projectId = decodeURIComponent(apiProjectMatch[1]!);
+    const isCapturesRoute = apiProjectMatch[2] === '/captures';
+    if (isCapturesRoute) {
+      if (req.method === 'POST') {
+        await handleRecordCapture(req, res, projectId);
+        return;
+      }
+      res.writeHead(405).end();
+      return;
+    }
+    if (req.method === 'GET') {
+      const tenantParam = url.searchParams.get('tenant');
+      const tenantHint = isPersistenceTenantId(tenantParam) ? tenantParam : null;
+      await handleGetProject(res, projectId, tenantHint);
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405).end();
+    return;
+  }
+  let pathname = url.pathname;
+  if (pathname === '/') {
+    pathname = '/index.html';
+  }
+  const filePath = safeFilePath(pathname);
+  if (filePath === null) {
+    res.writeHead(403).end();
+    return;
+  }
+  let body = await tryFile(filePath);
+  let contentType: string;
+  if (body === null) {
+    body = await fs.readFile(path.join(ROOT, 'index.html'));
+    contentType = MIME['.html'];
+  } else {
+    const ext = path.extname(filePath);
+    contentType = (MIME as Record<string, string | undefined>)[ext] ?? 'application/octet-stream';
+  }
+  res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-store' });
+  if (req.method === 'HEAD') {
+    res.end();
+    return;
+  }
+  res.end(body);
+});
+
+server.listen(PORT, () => {
+  const transcribeReady = Boolean(process.env.GROQ_API_KEY && process.env.GROQ_BASE_URL);
+  console.log(
+    `\nKerf V1.5 vertical slice (port ${PORT}):\n  http://localhost:${PORT}/field-capture  — F·33 Field Capture\n  http://localhost:${PORT}/dashboard     — home\n  POST /transcribe                       — ${
+      transcribeReady ? 'READY (Groq Whisper)' : 'NOT CONFIGURED (set GROQ_API_KEY + GROQ_BASE_URL in .env.local)'
+    }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
+  );
+});
