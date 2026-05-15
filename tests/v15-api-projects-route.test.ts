@@ -217,6 +217,13 @@ test('POST /api/projects/<id>/captures appends capture.recorded + updates projec
         duration_ms: 5_400,
         language: 'en',
         actor: { id: 'browser_operator', role: 'field_super' },
+        source_refs: [
+          {
+            kind: 'voice',
+            uri: 'kerf://voice-intake/test/recording.webm',
+            excerpt: 'walking the kitchen now',
+          },
+        ],
       },
     );
     assert.equal(capRes.status, 201, `expected 201, got ${capRes.status}: ${capRes.body}`);
