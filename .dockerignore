@@ -1,0 +1,47 @@
+# Files NOT shipped to Fly's remote builder.
+#
+# Goals:
+#   - Keep build context small (faster deploys)
+#   - Don't ship local persistence/event logs (operator data)
+#   - Don't ship test artifacts / evidence captures
+#   - Don't ship secrets
+
+# Dependency dirs (re-installed in build)
+node_modules
+npm-debug.log
+
+# Local persistence — operator data must NEVER end up in a container image
+.kerf
+.kerf/**
+.env.local
+.env
+
+# Build artifacts (regenerated in build stage)
+dist
+src/examples/v15-vertical-slice/app.bundle.js
+src/examples/v15-vertical-slice/*.bundle.js
+src/field-capture/*.bundle.js
+src/transcript-review/*.bundle.js
+src/examples/audit-f37/*.bundle.js
+src/examples/v15-vertical-slice/app.bundle.js.map
+
+# Test outputs / coverage / frozen evidence
+coverage
+test-results
+src/examples/evidence
+
+# Editor / OS junk
+.DS_Store
+.vscode
+.idea
+*.swp
+
+# Git history (not needed at runtime)
+.git
+.github
+
+# Docs / wireframes / briefs (not needed at runtime)
+docs
+
+# Test fixtures + tests (not needed at runtime; bundle build doesn't touch them)
+tests
