@@ -3,6 +3,7 @@ export type VerticalSlicePhase = 'capture' | 'review' | 'draft' | 'approve' | 'a
 export type MatchedRoute =
   | { name: 'dashboard' }
   | { name: 'field-capture' }
+  | { name: 'field-daily' }
   | { name: 'transcript-review' }
   | { name: 'draft-review' }
   | { name: 'decisions-list' }
@@ -26,6 +27,9 @@ export function matchRoute(pathname: string): MatchedRoute {
   }
   if (p === '/field-capture') {
     return { name: 'field-capture' };
+  }
+  if (p === '/field') {
+    return { name: 'field-daily' };
   }
   if (p === '/transcript-review') {
     return { name: 'transcript-review' };
@@ -67,6 +71,7 @@ export function matchRoute(pathname: string): MatchedRoute {
 export function phaseForRoute(route: MatchedRoute): VerticalSlicePhase {
   switch (route.name) {
     case 'field-capture':
+    case 'field-daily':
       return 'capture';
     case 'transcript-review':
       return 'review';

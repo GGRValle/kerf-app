@@ -37,7 +37,7 @@ export type I18nKey =
   | 'error.validation'
   | 'error.contract'
 
-  // Right Hand — Field Daily relay (/relay)
+  // Right Hand — Field Daily relay (/relay) — B.5
   | 'rh.relay.brand.title'
   | 'rh.relay.list.subtitle'
   | 'rh.relay.list.loading'
@@ -68,7 +68,24 @@ export type I18nKey =
   | 'rh.relay.facts.client_decision_flags'
   | 'rh.relay.facts.materials_needed'
   | 'rh.relay.facts.inspection_notes'
-  | 'rh.relay.facts.safety_notes';
+  | 'rh.relay.facts.safety_notes'
+
+  // Field Daily — /field capture surface (B.4)
+  | 'field.brand.title'
+  | 'field.project.label'
+  | 'field.project.loading'
+  | 'field.project.empty'
+  | 'field.transcript.test_label'
+  | 'field.transcript.placeholder'
+  | 'field.voice.section_label'
+  | 'field.voice.record_button'
+  | 'field.submit.label'
+  | 'field.submit.working'
+  | 'field.confirm.title'
+  | 'field.confirm.event_id'
+  | 'field.confirm.transcript_preview'
+  | 'field.error.title'
+  | 'field.notice.entry_kind';
 
 export type Locale = 'en' | 'es';
 

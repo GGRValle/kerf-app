@@ -793,3 +793,44 @@
 .kerf-relay-detail__audit a {
   color: #0f766e;
 }
+
+.kerf-v15-prose--error {
+  color: #b42318;
+}
+
+/* Field Daily /field capture (Step B.4) */
+.kerf-field-daily__brand {
+  margin-bottom: 1rem;
+}
+
+.kerf-field-daily__brand-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.kerf-field-daily__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.kerf-field-daily__select,
+.kerf-field-daily__textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+}
+
+.kerf-field-daily__record {
+  min-height: 3rem;
+  min-width: 8rem;
+  font-size: 1.1rem;
+}
+
+.kerf-field-daily__feedback {
+  margin-top: 1rem;
+}
