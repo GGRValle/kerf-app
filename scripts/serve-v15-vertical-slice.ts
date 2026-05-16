@@ -45,6 +45,7 @@ import {
 import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
 import { runFieldCapturePlay } from '../src/persistence/fieldCapture.ts';
 import { adaptDailyLogFactsToDriftSignal } from '../src/persistence/driftAdapter.ts';
+import { runRelayCardSurfacingPlay } from '../src/persistence/relayCardSurfacer.ts';
 import {
   defaultProjectionPath,
   rebuildAndPersistProjection,
@@ -854,6 +855,57 @@ async function handleCreateDailyLogEntry(
     }
   }
 
+  // ────────────────────────────────────────────────────────────────────────
+  // Step C.1 — relay-card surfacing play.
+  //
+  // Closes the last automation gap in the Step B vertical slice. Without
+  // this, B.5's /relay UI used `daily_log.facts_extracted` events as a
+  // proxy with `rc_proxy_*` synthetic IDs — and B.6's review endpoint
+  // returned 404 for those proxy IDs because no `relay_card.surfaced`
+  // event ever fired automatically.
+  //
+  // The surfacing play applies a deterministic rule table over
+  // (severity, facts, recent-surface-history) → surface event | null.
+  // Same error policy as the play handler: log warnings + report in
+  // `play_error`, don't 5xx the request. The captured + facts + drift
+  // events have already been appended and are durable.
+  //
+  // Recent-surface-history for the dedupe window (24h, warn-severity)
+  // comes from `eventStore.readAll()`. This is fine for V1.5 dogfood
+  // volume; V2.0 will move to a per-project index when volume grows.
+  // ────────────────────────────────────────────────────────────────────────
+
+  let surfacedEvent: RelayCardSurfacedEvent | null = null;
+
+  if (driftEvent !== null) {
+    try {
+      const allEventsForHistory = await eventStore.readAll();
+      const surfaceHistory = allEventsForHistory.filter(
+        (e): e is RelayCardSurfacedEvent => e.type === 'relay_card.surfaced',
+      );
+      const candidate = runRelayCardSurfacingPlay(
+        driftEvent,
+        factsEvent!, // factsEvent is non-null when driftEvent is non-null
+        surfaceHistory,
+      );
+      if (candidate !== null) {
+        const surfacedValidation = validatePersistenceEvent(candidate);
+        if (!surfacedValidation.ok) {
+          throw new Error(
+            `surfaced_event validation: ${surfacedValidation.errors.join(', ')}`,
+          );
+        }
+        await eventStore.append(surfacedValidation.event);
+        surfacedEvent = candidate;
+      }
+    } catch (err) {
+      playError = `relay_card_surfacer: ${err instanceof Error ? err.message : String(err)}`;
+      console.warn(
+        `[scheduler] relay-card surfacing failed for entry_id=${entryId}: ${playError}`,
+      );
+    }
+  }
+
   const allEvents = await eventStore.readAll();
   const projection = await rebuildAndPersistProjection({
     events: allEvents,
@@ -865,6 +917,7 @@ async function handleCreateDailyLogEntry(
     event: validation.event,
     facts_event: factsEvent,
     drift_event: driftEvent,
+    surfaced_event: surfacedEvent,
     ...(playError !== null ? { play_error: playError } : {}),
     projection,
   });

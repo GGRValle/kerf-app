@@ -170,10 +170,12 @@ test('POST daily-log/entries: progress_update happy path emits daily_log.entry_c
     assert.equal(parsed.event.clock_sub_kind, null);
 
     // events.jsonl should contain the full chain since the play scheduler
-    // is now wired into the endpoint:
-    //   project.created → daily_log.entry_captured → daily_log.facts_extracted → daily_log.drift_detected
-    // (drift fires because the transcript has 'galvanized' + 'bumping' →
-    // money_risk + behind + scope_change → severity 'block' per B.3 rules.)
+    // is now wired into the endpoint (Step C.1 added surfacing on drift):
+    //   project.created
+    //   → daily_log.entry_captured
+    //   → daily_log.facts_extracted
+    //   → daily_log.drift_detected   (severity 'block' per B.3 precedence)
+    //   → relay_card.surfaced        (severity 'block' always surfaces per C.1)
     const eventsRaw = await readFile(path.join(proc.persistenceDir, 'events.jsonl'), 'utf8');
     const eventLines = eventsRaw.trim().split('\n');
     const eventTypes = eventLines.map((l) => JSON.parse(l).type);
@@ -182,6 +184,7 @@ test('POST daily-log/entries: progress_update happy path emits daily_log.entry_c
       'daily_log.entry_captured',
       'daily_log.facts_extracted',
       'daily_log.drift_detected',
+      'relay_card.surfaced',
     ]);
   } finally {
     await stopServe(proc);

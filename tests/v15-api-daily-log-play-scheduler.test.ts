@@ -187,15 +187,20 @@ test('Henderson POST: scheduler emits captured + facts + drift (severity block)'
     assert.ok(parsed.drift_event, 'drift_event must be present (Henderson fires drift)');
     assert.equal(parsed.drift_event.type, 'daily_log.drift_detected');
     assert.equal(parsed.drift_event.severity, 'block');
+    // Step C.1: severity 'block' always surfaces a relay card automatically
+    assert.ok(parsed.surfaced_event, 'surfaced_event must be present (block surfaces per C.1)');
+    assert.equal(parsed.surfaced_event.type, 'relay_card.surfaced');
+    assert.match(parsed.surfaced_event.relay_card_id, /^rcs_/);
     assert.equal(parsed.play_error, undefined, 'happy path has no play_error');
 
-    // Event log contains the full chain in order
+    // Event log contains the full chain in order (Step C.1 adds surfaced)
     const types = await readEventTypes(proc.persistenceDir);
     assert.deepEqual(types, [
       'project.created',
       'daily_log.entry_captured',
       'daily_log.facts_extracted',
       'daily_log.drift_detected',
+      'relay_card.surfaced',
     ]);
   } finally {
     await stopServe(proc);
