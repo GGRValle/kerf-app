@@ -32,4 +32,20 @@ export const ES: TranslationMap = {
 
   'error.validation': 'Validación fallida.',
   'error.contract': 'Violación de contrato.',
+
+  'field.brand.title': 'KERF · CAMPO',
+  'field.project.label': 'Proyecto',
+  'field.project.loading': 'Cargando proyectos…',
+  'field.project.empty': 'Aún no hay proyectos — créelo primero desde la oficina.',
+  'field.transcript.test_label': 'ESCRIBIR TRANSCRIPCIÓN (solo pruebas)',
+  'field.transcript.placeholder': 'Pegue o escriba lo que habría dicho en obra…',
+  'field.voice.section_label': 'Captura de voz',
+  'field.voice.record_button': 'Grabar',
+  'field.submit.label': 'Enviar entrada del diario',
+  'field.submit.working': 'Enviando…',
+  'field.confirm.title': 'Entrada capturada',
+  'field.confirm.event_id': 'Id de evento',
+  'field.confirm.transcript_preview': 'Vista previa de transcripción',
+  'field.error.title': 'No se pudo guardar la entrada',
+  'field.notice.entry_kind': 'Actualización de avance · tenant_ggr (demo V1.5)',
 };

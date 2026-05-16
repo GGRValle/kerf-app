@@ -35,7 +35,24 @@ export type I18nKey =
 
   // Generic
   | 'error.validation'
-  | 'error.contract';
+  | 'error.contract'
+
+  // Field Daily — /field capture surface (Step B.4)
+  | 'field.brand.title'
+  | 'field.project.label'
+  | 'field.project.loading'
+  | 'field.project.empty'
+  | 'field.transcript.test_label'
+  | 'field.transcript.placeholder'
+  | 'field.voice.section_label'
+  | 'field.voice.record_button'
+  | 'field.submit.label'
+  | 'field.submit.working'
+  | 'field.confirm.title'
+  | 'field.confirm.event_id'
+  | 'field.confirm.transcript_preview'
+  | 'field.error.title'
+  | 'field.notice.entry_kind';
 
 export type Locale = 'en' | 'es';
 

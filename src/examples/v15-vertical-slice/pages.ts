@@ -36,6 +36,7 @@ import { detectDeckArchetype } from './v15-deck-archetype.js';
 import { instantiateDeckScaffold } from './v15-deck-scaffold.js';
 import { renderDeckScaffoldSection } from './v15-deck-scaffold-html.js';
 import { buildKbIngestionDetailHtml, buildKbIngestionListHtml } from './pages/kb-ingestion.js';
+import { buildFieldDailyCaptureHtml } from './pages/field-daily-capture.js';
 
 function esc(s: string): string {
   return s
@@ -191,6 +192,7 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
 <li><a href="/draft-review" data-kerf-v15-nav="true">Open F-35 Draft Review</a></li>
 <li><a href="/decisions/${esc(DEMO_DECISION_ID)}" data-kerf-v15-nav="true">Jump to approval card</a></li>
 <li><a href="/audit/${esc(DEMO_PACKET_ID)}" data-kerf-v15-nav="true">Open audit stream</a></li>
+<li><a href="/field" data-kerf-v15-nav="true">Field Daily capture</a> <span class="kerf-v15-card__meta">(/field · Step B)</span></li>
 <li><a href="/kb-ingestion" data-kerf-v15-nav="true">Tier-2 Cost KB ingestion</a> <span class="kerf-v15-card__meta">(module drawer destination)</span></li>
 </ul>`,
       };
@@ -200,6 +202,13 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
         subtitle: 'F·33 · Contractor field signal (text, photos, voice placeholder).',
         notice: FIELD_CAPTURE_COPY.gateNotice,
         bodyHtml: buildV15FieldCaptureHtml(v15FieldCaptureGetState()),
+      };
+    case 'field-daily':
+      return {
+        title: 'Field',
+        subtitle: 'Field Daily · progress_update capture (Step B.4).',
+        notice: 'Deterministic extraction after submit. No LLM on this screen.',
+        bodyHtml: buildFieldDailyCaptureHtml('en'),
       };
     case 'transcript-review':
       return {

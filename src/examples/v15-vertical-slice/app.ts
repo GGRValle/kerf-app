@@ -31,6 +31,7 @@ import {
 } from './v15-scaffold-edit-interaction.js';
 import { scheduleMobileDomProbeReport } from './m-dom-probe.js';
 import { initKbIngestionDetailPage, initKbIngestionListPage } from './v15-kb-ingestion-client.js';
+import { initFieldDailyCapturePage } from './v15-field-daily-client.js';
 
 const ROOT_ID = 'kerf-v15-root';
 
@@ -69,6 +70,8 @@ function render(): void {
     initKbIngestionListPage();
   } else if (route.name === 'kb-ingestion-detail') {
     initKbIngestionDetailPage(route.ingestionId);
+  } else if (route.name === 'field-daily') {
+    initFieldDailyCapturePage();
   }
 }
 
