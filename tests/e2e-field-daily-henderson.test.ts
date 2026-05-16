@@ -73,20 +73,20 @@ import {
 // ──────────────────────────────────────────────────────────────────────────
 
 const HENDERSON_TRANSCRIPT =
-  'Mike here at Henderson — we pulled the tub surround and there\'s ' +
+  'Kevin here at Henderson — we pulled the tub surround and there\'s ' +
   'galvanized all the way back to the main. Gotta replace about 8 feet. ' +
   'Bumping you on the CO.';
 
 const HENDERSON_ENTRY_ID = 'dle_henderson_e2e_001';
 const HENDERSON_TENANT = 'tenant_ggr';
 const HENDERSON_CORRELATION = 'proj_henderson_bath';
-const HENDERSON_ACTOR = { id: 'mike_reyes', role: 'field_super' as const };
+const HENDERSON_ACTOR = { id: 'kevin_cheeseman', role: 'field_super' as const };
 const HENDERSON_CAPTURED_AT = '2026-05-16T08:32:00.000Z';
 
 const HENDERSON_VOICE_REF = {
   kind: 'voice' as const,
   uri: 'kerf://voice-intake/henderson/recording-001.m4a',
-  excerpt: 'Mike here at Henderson — we pulled the tub surround',
+  excerpt: 'Kevin here at Henderson — we pulled the tub surround',
 };
 
 function makeHendersonCapturedEvent(

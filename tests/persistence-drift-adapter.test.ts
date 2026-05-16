@@ -52,7 +52,7 @@ function makeFactsEvent(
       {
         kind: 'transcript',
         uri: 'kerf://daily-log/dle_henderson_001',
-        excerpt: 'Mike here at Henderson',
+        excerpt: 'Kevin here at Henderson',
       },
     ],
     entry_id: 'dle_henderson_001',
@@ -62,7 +62,7 @@ function makeFactsEvent(
 }
 
 const HENDERSON_TRANSCRIPT =
-  'Mike here at Henderson — we pulled the tub surround and there\'s ' +
+  'Kevin here at Henderson — we pulled the tub surround and there\'s ' +
   'galvanized all the way back to the main. Gotta replace about 8 feet. ' +
   'Bumping you on the CO.';
 
@@ -210,14 +210,14 @@ test('adapter propagates tenant_id, correlation_id, actor, entry_id from facts e
   const event = makeFactsEvent(facts, {
     tenant_id: 'tenant_valle',
     correlation_id: 'proj_test_corr',
-    actor: { id: 'mike_reyes', role: 'pm' },
+    actor: { id: 'kevin_cheeseman', role: 'pm' },
     entry_id: 'dle_propagation_test',
   });
   const out = adaptDailyLogFactsToDriftSignal(event);
   assert.ok(out);
   assert.equal(out.tenant_id, 'tenant_valle');
   assert.equal(out.correlation_id, 'proj_test_corr');
-  assert.deepEqual(out.actor, { id: 'mike_reyes', role: 'pm' });
+  assert.deepEqual(out.actor, { id: 'kevin_cheeseman', role: 'pm' });
   assert.equal(out.entry_id, 'dle_propagation_test');
 });
 
