@@ -273,6 +273,36 @@ Photo SourceRef shape:
 
 ---
 
+## 9.5 i18n plumbing — required from Day 1
+
+Field Hand is the **bilingual half** of the agent-surface pair (Mano de Campo / Field Hand). Per the corporate-structure + brand-style canon, Spanish operator surfaces are scheduled for V2.1 (`docs/wireframes/kerf_wireframes_mobile_v2.html` header carries the `EN · ES v2.1` flag).
+
+**Hard rule for any Field Hand UI built in V1.5**: every user-facing string MUST go through an i18n key from Day 1. English-only is acceptable today; the Spanish translation pass is deferred to V2.1. But if strings are hardcoded now, every UI surface gets a retrofit later. That cost compounds.
+
+Pattern (matches existing i18n substrate where present):
+
+```typescript
+// ✅ Right
+const homeGreeting = t('field.home.greeting'); // → English now, Spanish later
+
+// ❌ Wrong
+const homeGreeting = 'Welcome back, Mike';     // hardcoded → retrofit later
+```
+
+The i18n keyspace under `field.*` is the namespace for Field Hand surfaces. The Right Hand keyspace is `rh.*`.
+
+---
+
+## 9.6 Voice canon dependency — relay-card UI blocks until locked
+
+Per `docs/architecture/dogfood_finding_clarification_prompt_voice_2026-05-13.md`: Right Hand voice canon work is queued for May 16+. Relay cards are a Right Hand voice surface — the operator reads "Right Hand says: 'Mike on Henderson found galvanized; office sent the CO draft to Mrs. Henderson; expect inbound questions by 2pm'" — that voice IS what makes the relay card feel like a working agent vs a notification feed.
+
+**Hard rule**: any `/relay` UI code that includes operator-facing copy (the "Right Hand says" voice strings) is **blocked until the RH voice canon ships**. The relay-card data shape + persistence event + extraction logic can ship without the voice canon (they're substrate). But the rendered copy must wait — or it will drift from the clarification surface's voice and the V1.5 dogfood loop hears two different "Right Hand" voices, which kills credibility.
+
+Mitigation: stub the relay-card render with placeholder copy that's clearly marked `[voice canon pending — placeholder]` so the substrate can be wired without the voice locking in early.
+
+---
+
 ## 10. Plays vs agents (canonical)
 
 Per `project_kerf_architecture_principles.md` §5 and §9 of the routing/memory brief:
@@ -304,28 +334,80 @@ This matters because "agent" framing tempts implementation as a personality-bear
 
 ---
 
-## 12. Build plan (after Codex review)
+## 12. Build plan (revised 2026-05-16 — vertical slice over horizontal shell)
 
-| Step | Description | Effort |
+**Revised approach** (per the 2026-05-16 canon-amendment review): build one event type END-TO-END before scaffolding the full HOME/JOB/LOG/ME shell. Shell-first risks building empty rooms — you don't know if the substrate actually carries until you push one event all the way through.
+
+### 12.1 Step A — substrate (DONE, 2026-05-15)
+
+Persistence event vocabulary landed on main (PR #185): 5 new event types + 4 helper enums + 25 tests. Field Capture / Schedule-Drift play substrate is reachable via `daily_log.*` and `relay_card.*` events.
+
+### 12.2 Step B — VERTICAL SLICE for `progress_update` (next)
+
+The first user-facing build is a **single capture kind** wired end-to-end through every layer. Pick `progress_update` (the highest-volume entry kind in real GGR practice). Build the full path:
+
+```
+Field Hand voice button (mobile)
+  → Whisper transcribe (existing PR #150 substrate)
+  → daily_log.entry_captured event emitted (server)
+  → Field Capture play extracts 9 facts (deterministic)
+  → daily_log.facts_extracted event emitted
+  → Drift adapter consults Track A validator
+  → daily_log.drift_detected event (if drift)
+  → Right Hand relay card surfaced on /relay
+  → operator reviews → relay_card.reviewed event
+  → §13 disclosure / audit deep-link from the card
+```
+
+**One event kind through every layer.** Validates the substrate. Catches integration gaps shell-first hides.
+
+Estimated effort: ~12 hours over 2-3 days.
+
+Build sequence within Step B:
+1. Field Capture play handler (~2h)
+2. Deterministic 9-fact extractor (regex + classifiers, `progress_update` only) (~3h)
+3. Drift adapter to Track A (~1h)
+4. Minimal `/field` capture surface (voice button + submit, NO HOME/JOB/LOG/ME shell yet) (~2h)
+5. Minimal `/relay` surface (list of cards, click into one, mark reviewed) (~2h)
+6. §13 disclosure + audit deep-link (~1h)
+7. End-to-end test (Henderson golden fixture path through every layer) (~1h)
+
+### 12.3 Step C — expand to remaining entry kinds (after vertical slice locks)
+
+Once the `progress_update` path is proven, extend the extractor + classifier coverage to: `morning_brief`, `blocker`, `change_signal`, `safety_note`, `end_of_day`, `clock_event` (sub-kinds). Same persistence + relay machinery; just more kinds entering the flow.
+
+Estimated effort: ~6 hours.
+
+### 12.4 Step D — Field Hand shell (HOME/JOB/LOG/ME)
+
+ONLY after the vertical slice proves the substrate carries. Build HOME with smart-summary lead (§5 of `right_hand_home_module_drawer_2026-05-15.md`), then JOB / LOG / ME tabs. By this point we know what the shell actually needs to surface vs what's theoretical.
+
+Estimated effort: ~6 hours.
+
+### 12.5 Step E — polish
+
+Photo upload (D-043 use labels), per-project daily-log timeline (`/projects/<id>/daily-log`), mobile responsive sweep, dogfood iteration with Christian + son.
+
+Estimated effort: ~4 hours.
+
+### Total revised estimate
+
+| Phase | Effort | Calendar |
 |---|---|---|
-| **Step A** | Add 5 daily-log events to persistence vocabulary (extends Step 1 PR #165) | 1 hour |
-| **Step B** | `DailyLogEntry` + `DailyLogExtractedFacts` types in `src/persistence/dailyLog.ts` | 2 hours |
-| **Step C** | Field Capture play extends to emit `daily_log.entry_captured` | 3 hours |
-| **Step D** | Deterministic facts extractor (regex + classifiers for the 9 fact categories) | 4 hours |
-| **Step E** | `/field` mobile capture surface | 5 hours |
-| **Step F** | Photo upload endpoint + storage (extends serve script) | 3 hours |
-| **Step G** | Drift adapter (Field Daily extracted facts → Track A drift input) | 2 hours |
-| **Step H** | `/relay` list + `/relay/<id>` detail surfaces | 5 hours |
-| **Step I** | `/projects/<id>/daily-log` timeline | 2 hours |
-| **Step J** | §13 disclosure + audit deep-link wiring | 1 hour |
+| Step A (substrate) | 0h — DONE | Closed 2026-05-15 |
+| Step B (vertical slice on `progress_update`) | ~12h | 2-3 days |
+| Step C (expand to remaining kinds) | ~6h | 1 day |
+| Step D (HOME/JOB/LOG/ME shell on proven substrate) | ~6h | 1 day |
+| Step E (polish + dogfood) | ~4h | 1 day |
+| **Revised total** | **~28h** | **~5-6 focused days** |
 
-**Total estimated effort:** ~28 hours of build (4-5 focused days).
+Pacing matches the original ~28h estimate but the sequencing is inverted: substrate proved end-to-end first, shell second. This is the "vertical slice over horizontal shell" pattern locked at the 2026-05-16 review.
 
-Pacing per the routing/memory brief §10:
-- **Week 1 (May 19–27)**: Steps A–C land (foundation)
-- **Week 2 (May 27 – June 2)**: Steps D–G (real capture + extraction + drift)
-- **Late Week 3 (June 3–8)**: Steps H–J (relay surface + audit polish)
-- **Week 4**: dogfood Christian + son on a real GGR/Valle job; iterate
+### 12.6 The thesis question — acceptance frame for every PR
+
+**Can Kerf turn daily field behavior into office action with almost no extra typing?**
+
+Every PR in this push must close some piece of that thesis. If a PR doesn't bring us measurably closer to a field user tapping voice → office Right Hand surfaces a decision card without operator typing, it doesn't ship. This is the acceptance frame for Steps B-E.
 
 ---
 
@@ -340,6 +422,7 @@ Per the routing/memory brief §10 and 30-day brief:
 - ❌ Live job-cam streaming
 - ❌ GPS / geofence verification
 - ❌ **Payroll / timesheet export** is out of scope. (Clock events ARE captured as an operational record + audit lineage — see `clock_event` entry kind in §3. They do not auto-route to a payroll pipeline, do not compute overtime, do not generate timesheets for export. The ME tab "hours this week" / "hours this pay period" displays are computed from clock_events for the field user's own visibility only.)
+- ❌ **Labor-compliance instrument** is out of scope. (Per the 2026-05-16 canon-amendment review: California has meal-break tracking obligations, sixth-day overtime rules, ABC-test exposure on contractor-vs-employee classification, and other labor-code surfaces. None of those are in scope for V1.5 Field Daily. **The clock_event UI must not imply legal compliance until Compliance Agent governance is in place** (post-V1.5; not yet built). Plain-English framing in the ME tab + LOG → Time sub-tab: "Hours logged for your own record" — NOT "Compliance log" / "Timesheet" / "Pay period."  This is non-negotiable: implying legal compliance without delivering it creates worse liability than not tracking at all.)
 - ❌ Inventory management
 - ❌ Subcontractor coordination surfaces
 - ❌ Material ordering flow
