@@ -83,33 +83,46 @@ export type MarkupBasis =
 
 ---
 
-### 2.4 `business_unit_margin_pct` — margin canon per business unit
+### 2.4 Business-unit margin rows — **tenant data, not platform canon**
 
-**The miss:** Treated Valle as pass-through-at-cost based on the Dunne fixture. Moorhead is Valle at **45% retail GM** (per the operator's internal pricing v3, row C9 of the Rates & Assumptions sheet). Two different conventions, same business unit (Valle), depending on project context. Without an explicit canon row stating which mode applies to which project class, the system has no way to choose correctly.
+**Critical framing correction (post-2026-05-16-amendment-review):** business-unit margin percentages and business-unit names are **tenant configuration**, NOT platform canon. Kerf the platform must never know "what Valle's retail margin is." That belongs to the tenant.
 
-**Proposed canon rows (first concrete delivery):**
+**The miss in tonight's reasoning:** Treated Valle as pass-through-at-cost based on the Dunne fixture. Moorhead is Valle at 45% retail GM (per the operator's internal pricing v3, row C9 of the Rates & Assumptions sheet). Two different conventions, same business unit (Valle), depending on project context. Without an explicit row stating which mode applies to which project class, the system has no way to choose correctly.
+
+**Resolution (the right way to capture this):**
+
+- `business_unit` is a **tenant-scoped free string** (e.g., `'Valle Custom Cabinetry'` for `tenant_ggr`; different strings for other contractors using Kerf). NOT a platform enum. The platform schema has the field; the tenant defines the values.
+- `billing_mode` is a **tenant-scoped free string** (e.g., `'retail_45'`, `'pass_through'`, `'cost_plus_fixed_fee'`). NOT a platform enum. Each tenant defines their own billing-mode labels.
+- `gm_target` is a plain `number` between 0 and 1.0. Platform schema field; tenant data value.
+- These rows only exist as `source_layer: 'TENANT_MEMORY'` (`authority_rank: 2`) with explicit `tenant_id`. They are **never** `KERF_SEED` rows. The next contractor onboarding to Kerf brings their own tenant-memory rows; the platform doesn't pre-populate this data.
+
+**Proposed tenant-memory rows for `tenant_ggr` (illustrative — these are GGR's tenant configuration, not platform constants):**
 
 ```ts
-// Row 1
+// All three rows are tenant_ggr's TENANT_MEMORY data.
+// Another contractor onboarding to Kerf would have their own rows with
+// their own business_unit names, billing_mode labels, and gm_target values.
+
+// Row 1 — tenant_ggr's standard Valle retail margin
 {
-  cost_row_id: 'MGN-VALLE-001',
+  cost_row_id: 'tenant_ggr/MGN-VALLE-001',
   source_layer: 'TENANT_MEMORY',
   authority_rank: 2,
   rule_kind: 'business_unit_margin',
   tenant_id: 'tenant_ggr',
-  business_unit: 'Valle Custom Cabinetry',
-  billing_mode: 'retail_45',
-  gm_target: 0.45,
+  business_unit: 'Valle Custom Cabinetry',     // tenant_ggr's business unit (free string)
+  billing_mode: 'retail_45',                   // tenant_ggr's billing-mode label (free string)
+  gm_target: 0.45,                              // tenant_ggr's chosen rate
   applies_when: 'client_facing_proposal_with_valle_scope',
-  notes: 'Valle direct retail GM. Standard convention for external client-facing
-          GGR/Valle proposals. Distinct from MGN-VALLE-002 (pass-through context).',
+  notes: 'Tenant_ggr Valle direct retail GM. Standard for external proposals.
+          Distinct from the pass-through row below (shared-ownership context).',
   curator_review_status: 'APPROVED_CLIENT_VISIBLE',
   founder_review_required: true,
 }
 
-// Row 2
+// Row 2 — tenant_ggr's Valle pass-through context
 {
-  cost_row_id: 'MGN-VALLE-002',
+  cost_row_id: 'tenant_ggr/MGN-VALLE-002',
   source_layer: 'TENANT_MEMORY',
   authority_rank: 2,
   rule_kind: 'business_unit_margin',
@@ -118,15 +131,15 @@ export type MarkupBasis =
   billing_mode: 'pass_through',
   gm_target: 0.0,
   applies_when: 'shared_ownership_internal_pricing',
-  notes: 'Pass-through at cost for shared-ownership / favor-pricing contexts.
-          Dunne-fixture convention. NOT default; explicit operator selection required.',
+  notes: 'Tenant_ggr Valle pass-through at cost for shared-ownership contexts.
+          Dunne-fixture convention. Explicit operator selection required.',
   curator_review_status: 'APPROVED_DOGFOOD',
   founder_review_required: true,
 }
 
-// Row 3
+// Row 3 — tenant_ggr's GGR self-perform GC margin
 {
-  cost_row_id: 'MGN-GGR-001',
+  cost_row_id: 'tenant_ggr/MGN-GGR-001',
   source_layer: 'TENANT_MEMORY',
   authority_rank: 2,
   rule_kind: 'business_unit_margin',
@@ -135,15 +148,28 @@ export type MarkupBasis =
   billing_mode: 'retail_35',
   gm_target: 0.35,
   applies_when: 'ggr_gc_scope_self_performed',
-  notes: 'GGR self-perform GC scope standard margin. Applies to demo, framing,
-          drywall, paint, electrical-coordination, PM. Matches Dunne cost sheet
-          + Moorhead internal pricing.',
+  notes: 'Tenant_ggr GGR self-perform GC margin. Applies to demo, framing,
+          drywall, paint, electrical-coordination, PM.',
   curator_review_status: 'APPROVED_CLIENT_VISIBLE',
   founder_review_required: true,
 }
 ```
 
-These are the **first three canon rows** that emerge from tonight's pulse test. Smallest concrete delivery. Each is one row in a tier-2 batch ingestion through PR #186.
+The `cost_row_id` prefix `tenant_ggr/...` makes tenant scope explicit in the id itself. Another tenant's similarly-shaped row would be `tenant_smith_construction/MGN-OWN-001` or similar — different prefix, different tenant_id, no overlap with `tenant_ggr` rows.
+
+**What the platform schema carries vs what the tenant owns:**
+
+| The platform schema HAS | The platform schema NEVER HAS |
+|---|---|
+| Field `business_unit` (free string) | Value `'Valle Custom Cabinetry'` as a constant |
+| Field `billing_mode` (free string) | Values `'retail_45'` / `'retail_35'` as a closed enum |
+| Field `gm_target` (number 0–1) | Number `0.45` baked into a default or constant |
+| Field `tenant_id` (the discriminator) | Knowledge of which tenant_id is "the founders" |
+| Field `rule_kind: 'business_unit_margin'` | Knowledge that any specific business unit exists |
+
+Every value in the right column lives in `TENANT_MEMORY` rows ingested through the curator gate (PR #186). The platform code reads these rows; it doesn't define them.
+
+These are the **first three tenant-memory rows for `tenant_ggr`** that emerge from tonight's pulse test. Smallest concrete delivery. Each is one row in a tier-2 batch ingestion through PR #186.
 
 ---
 
@@ -179,27 +205,52 @@ This dimension is less mature than the other four. Listed here as a **direction*
 
 ## 3. Schema extensions to `cost_row`
 
-Today's `KerfCostKbSeedRow` shape (in `src/examples/v15-vertical-slice/v15-cost-kb-seed.ts`) is missing the four dimensions in §2. Proposed extensions:
+Today's `KerfCostKbSeedRow` shape (in `src/examples/v15-vertical-slice/v15-cost-kb-seed.ts`) is missing the dimensions in §2. Proposed extensions, with explicit tenant-vs-platform split:
 
 ```ts
 export interface KerfCostKbSeedRow {
   // ... existing fields (cost_row_id, trade, item_name, uom, range_low_cents,
   //                     range_high_cents, default_cost_cents, authority_rank,
-  //                     pricing_basis_state, curator_review_status, etc.)
+  //                     pricing_basis_state, curator_review_status, tenant_id,
+  //                     source_layer, etc.)
 
-  // NEW FIELDS (post-Moorhead):
-  readonly scope_inclusion: ScopeInclusion;            // §2.1
-  readonly delivery_mode: DeliveryMode;                // §2.2
-  readonly markup_basis: MarkupBasis;                  // §2.3
-  /** Only meaningful when rule_kind === 'business_unit_margin'. */
-  readonly business_unit?: string;
-  readonly billing_mode?: string;
-  readonly gm_target?: number;
-  /** New row kind: rule rows live alongside trade rows. */
-  readonly rule_kind?: 'trade_rate' | 'business_unit_margin' | 'implied_subscope';
-  /** Schema migration: existing rows default to 'trade_rate'. */
+  // ─── PLATFORM-CANON DIMENSIONS (closed allowlist; same for every tenant) ───
+  readonly scope_inclusion: ScopeInclusion;            // §2.1 — platform enum
+  readonly delivery_mode: DeliveryMode;                // §2.2 — platform enum
+  readonly markup_basis: MarkupBasis;                  // §2.3 — platform enum
+  readonly rule_kind: 'trade_rate' | 'business_unit_margin' | 'implied_subscope';
+  // ↑ platform enum; new row kind for rule rows alongside trade rows.
+  // Schema migration: existing rows default to 'trade_rate'.
+
+  // ─── TENANT-OWNED VALUES (free strings; tenant defines, platform stores) ───
+  // Only meaningful when rule_kind === 'business_unit_margin'.
+  // MUST coexist with source_layer === 'TENANT_MEMORY' and a non-null tenant_id.
+  // Forbidden on KERF_SEED rows. Validator enforces.
+  readonly business_unit?: string;        // free string; tenant defines (e.g. 'Valle Custom Cabinetry')
+  readonly billing_mode?: string;         // free string; tenant defines (e.g. 'retail_45')
+  readonly gm_target?: number;            // 0–1.0; tenant chooses
+  readonly applies_when?: string;         // free string; tenant-described trigger condition
 }
 ```
+
+### 3.0 Tenant-vs-platform discipline (the explicit boundary)
+
+The schema split above is the principle this whole doc enforces:
+
+| Dimension class | Allowlist values | Where defined | Where stored |
+|---|---|---|---|
+| `scope_inclusion` | 4 platform values | Platform canon | KERF_SEED + TENANT_MEMORY + PROJECT_ACTUAL rows |
+| `delivery_mode` | 5 platform values | Platform canon | KERF_SEED + TENANT_MEMORY + PROJECT_ACTUAL rows |
+| `markup_basis` | 3 platform values | Platform canon | KERF_SEED + TENANT_MEMORY + PROJECT_ACTUAL rows |
+| `rule_kind` | 3 platform values | Platform canon | All rows |
+| `business_unit` | open string | Tenant-defined | TENANT_MEMORY rows only |
+| `billing_mode` | open string | Tenant-defined | TENANT_MEMORY rows only |
+| `gm_target` | number 0–1 | Tenant-defined | TENANT_MEMORY rows only |
+| `applies_when` | open string | Tenant-defined | TENANT_MEMORY rows only |
+
+**Validator rule (must be implemented when schema lands):** If `rule_kind === 'business_unit_margin'`, then `source_layer` MUST be `'TENANT_MEMORY'` and `tenant_id` MUST be non-null. If a KERF_SEED row carries `business_unit` or `billing_mode` or `gm_target`, that's a schema violation and the row must be rejected at ingestion.
+
+The platform code reads these fields and applies the math; **the platform never authors them**.
 
 ### 3.1 Migration plan for existing tier-1 rows
 
@@ -343,11 +394,12 @@ That's the loop. Each pulse-test iteration closes one or two dimensions until th
 
 ## 9. Decision needed (post-Codex-review)
 
-Three things needed from operator + Codex before schema work starts:
+Four things needed from operator + Codex before schema work starts:
 
-1. **Approve the four dimensions** (`scope_inclusion`, `delivery_mode`, `markup_basis`, `business_unit_margin_pct`) or refine the allowlist values
-2. **Approve the three canon rows** for Valle 45% retail + Valle pass-through + GGR 35% (§2.4)
-3. **Approve the lookup-validator wiring posture** — warning-only on out-of-range and no-matching-scope-row, not hard-block
+1. **Approve the three platform-canon dimensions** (`scope_inclusion`, `delivery_mode`, `markup_basis`) and their allowlist values from §2.1–§2.3. These are closed enums baked into platform code.
+2. **Approve the tenant-vs-platform split for business-unit margin** (§2.4 + §3.0). The four fields (`business_unit`, `billing_mode`, `gm_target`, `applies_when`) are tenant-owned free strings/numbers, never platform constants. Validator rejects KERF_SEED rows that carry them.
+3. **Approve the three tenant-memory rows for `tenant_ggr`** (Valle 45% retail + Valle pass-through + GGR 35%) as the smallest concrete delivery for the canon-row pattern. These are GGR's tenant configuration, not platform canon.
+4. **Approve the lookup-validator wiring posture** — warning-only on out-of-range and no-matching-scope-row, not hard-block
 
 Once these are locked, the implementation path is:
 - Schema extension PR (cost_row + ProposalLineItem types + validators) — ~3h
