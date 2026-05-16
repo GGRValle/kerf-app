@@ -16,6 +16,7 @@
  *   GET  /api/kb/ingestions         — list kb.ingested summaries (?tenant_id=)
  *   GET  /api/kb/tier2-rows         — JSON rows for browser merge (?tenant_id=)
  *   POST /api/kb/tier2/review       — row-level curator transition (rewrites JSONL)
+ *   GET  /api/field-daily/relay-feed — relay list DTOs (?tenant_id=) for /relay UI
  *   GET  /...                       — static + SPA fallback to index.html
  *
  * GROQ_API_KEY + GROQ_BASE_URL must be in .env.local (Node loads it
@@ -43,6 +44,7 @@ import {
   type ProjectProjection,
 } from '../src/persistence/projections.ts';
 import { buildMobileValidationHarnessHtml } from '../src/examples/v15-vertical-slice/m-validation-harness.ts';
+import { buildRelayFeedFromEvents } from '../src/examples/v15-vertical-slice/relay-feed-build.ts';
 import {
   applyTier2RowReview,
   defaultKbActualsFilepath,
@@ -790,6 +792,22 @@ async function handleCreateDailyLogEntry(
   jsonResponse(res, 201, { event: validation.event, projection });
 }
 
+async function handleRelayFeedGet(
+  res: http.ServerResponse,
+  tenantParam: string | null,
+): Promise<void> {
+  if (!isPersistenceTenantId(tenantParam)) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: `tenant_id must be one of: ${VALID_TENANT_IDS.join(', ')}`,
+    });
+    return;
+  }
+  const allEvents = await eventStore.readAll();
+  const items = buildRelayFeedFromEvents(allEvents, tenantParam);
+  jsonResponse(res, 200, { items });
+}
+
 async function handleListProjects(
   res: http.ServerResponse,
   tenantFilter: PersistenceTenantId | null,
@@ -1076,6 +1094,15 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/kb/tier2/review') {
     if (req.method === 'POST') {
       await handleTier2ReviewPost(req, res);
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  if (url.pathname === '/api/field-daily/relay-feed') {
+    if (req.method === 'GET') {
+      await handleRelayFeedGet(res, url.searchParams.get('tenant_id'));
       return;
     }
     res.writeHead(405).end();

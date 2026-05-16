@@ -692,3 +692,104 @@
   background: rgba(15, 23, 42, 0.03);
   border-radius: 6px;
 }
+
+/* Field Daily Step B.5 — /relay office surface */
+.kerf-relay__brand-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.kerf-relay-list__items {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.kerf-relay-card {
+  margin: 0 0 0.5rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 6px;
+}
+
+.kerf-relay-card__link {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.kerf-relay-card__link:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.kerf-relay-card__project {
+  font-weight: 600;
+}
+
+.kerf-relay-card__meta {
+  font-size: 0.78rem;
+  color: #6a7570;
+}
+
+.kerf-relay-facts {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+.kerf-relay-facts th,
+.kerf-relay-facts td {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.kerf-relay-facts th {
+  width: 38%;
+  background: rgba(15, 23, 42, 0.04);
+  font-weight: 600;
+}
+
+.kerf-relay-drift {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kerf-relay-drift--info {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.kerf-relay-drift--caution {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.kerf-relay-drift--warn {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.kerf-relay-drift--block {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.kerf-relay-detail__audit {
+  margin: 1rem 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.kerf-relay-detail__audit a {
+  color: #0f766e;
+}
