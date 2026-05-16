@@ -31,11 +31,16 @@ import crypto from 'node:crypto';
 import {
   validatePersistenceEvent,
   type ClockEventSubKind,
+  type DailyLogDriftDetectedEvent,
+  type DailyLogEntryCapturedEvent,
   type DailyLogEntryKind,
+  type DailyLogFactsExtractedEvent,
   type PersistenceEvent,
   type PersistenceTenantId,
 } from '../src/persistence/events.ts';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
+import { runFieldCapturePlay } from '../src/persistence/fieldCapture.ts';
+import { adaptDailyLogFactsToDriftSignal } from '../src/persistence/driftAdapter.ts';
 import {
   defaultProjectionPath,
   rebuildAndPersistProjection,
@@ -780,6 +785,70 @@ async function handleCreateDailyLogEntry(
     return;
   }
 
+  // ────────────────────────────────────────────────────────────────────────
+  // Play scheduler — invoke the Field Capture chain inline.
+  //
+  // The captured event is durable (appended above). The play handler (B.1)
+  // and drift adapter (B.3) are pure, deterministic substrate modules; we
+  // invoke them here so the chain runs on every real capture, not just in
+  // tests. Without this, `/relay` would have no facts_extracted events to
+  // surface from real POSTs.
+  //
+  // Error policy: derived-event failures are LOGGED + reported as
+  // `play_error` in the response, but do NOT 5xx the request. The captured
+  // event has already been written and is the audit-anchor of record. A
+  // future scheduler retry (or manual re-run) could re-derive facts/drift
+  // from the captured event.
+  //
+  // Originally scoped as "Step C+" wiring; pulled forward 2026-05-16 so the
+  // B.5 /relay surface has actual data on real captures (the closed-loop
+  // demo). See: docs/architecture/canon_drift_audit_2026-05-16_session.md
+  // for the substrate-vs-design-doc reconciliation that landed alongside.
+  // ────────────────────────────────────────────────────────────────────────
+
+  let factsEvent: DailyLogFactsExtractedEvent | null = null;
+  let driftEvent: DailyLogDriftDetectedEvent | null = null;
+  let playError: string | null = null;
+
+  const captured = validation.event as DailyLogEntryCapturedEvent;
+
+  // Step 1 — facts extraction (B.1 play handler + B.2 extractor).
+  try {
+    const candidate = runFieldCapturePlay(captured);
+    const factsValidation = validatePersistenceEvent(candidate);
+    if (!factsValidation.ok) {
+      throw new Error(`facts_event validation: ${factsValidation.errors.join(', ')}`);
+    }
+    await eventStore.append(factsValidation.event);
+    factsEvent = candidate;
+  } catch (err) {
+    playError = `play_handler: ${err instanceof Error ? err.message : String(err)}`;
+    console.warn(
+      `[scheduler] facts derivation failed for entry_id=${entryId}: ${playError}`,
+    );
+  }
+
+  // Step 2 — drift classification (B.3 adapter). Only runs if facts succeeded;
+  // the adapter takes a fully-validated facts event as input.
+  if (factsEvent !== null) {
+    try {
+      const driftCandidate = adaptDailyLogFactsToDriftSignal(factsEvent);
+      if (driftCandidate !== null) {
+        const driftValidation = validatePersistenceEvent(driftCandidate);
+        if (!driftValidation.ok) {
+          throw new Error(`drift_event validation: ${driftValidation.errors.join(', ')}`);
+        }
+        await eventStore.append(driftValidation.event);
+        driftEvent = driftCandidate;
+      }
+    } catch (err) {
+      playError = `drift_adapter: ${err instanceof Error ? err.message : String(err)}`;
+      console.warn(
+        `[scheduler] drift derivation failed for entry_id=${entryId}: ${playError}`,
+      );
+    }
+  }
+
   const allEvents = await eventStore.readAll();
   const projection = await rebuildAndPersistProjection({
     events: allEvents,
@@ -787,7 +856,13 @@ async function handleCreateDailyLogEntry(
     projectId,
     pathFor: projectionPathFor,
   });
-  jsonResponse(res, 201, { event: validation.event, projection });
+  jsonResponse(res, 201, {
+    event: validation.event,
+    facts_event: factsEvent,
+    drift_event: driftEvent,
+    ...(playError !== null ? { play_error: playError } : {}),
+    projection,
+  });
 }
 
 async function handleListProjects(

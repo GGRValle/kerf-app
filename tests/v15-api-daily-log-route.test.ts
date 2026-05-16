@@ -169,11 +169,20 @@ test('POST daily-log/entries: progress_update happy path emits daily_log.entry_c
     assert.equal(parsed.event.audio_uri, 'kerf://voice-intake/dl/recording.m4a');
     assert.equal(parsed.event.clock_sub_kind, null);
 
-    // events.jsonl should contain: project.created + daily_log.entry_captured
+    // events.jsonl should contain the full chain since the play scheduler
+    // is now wired into the endpoint:
+    //   project.created → daily_log.entry_captured → daily_log.facts_extracted → daily_log.drift_detected
+    // (drift fires because the transcript has 'galvanized' + 'bumping' →
+    // money_risk + behind + scope_change → severity 'block' per B.3 rules.)
     const eventsRaw = await readFile(path.join(proc.persistenceDir, 'events.jsonl'), 'utf8');
     const eventLines = eventsRaw.trim().split('\n');
-    assert.equal(eventLines.length, 2);
-    assert.equal(JSON.parse(eventLines[1]!).type, 'daily_log.entry_captured');
+    const eventTypes = eventLines.map((l) => JSON.parse(l).type);
+    assert.deepEqual(eventTypes, [
+      'project.created',
+      'daily_log.entry_captured',
+      'daily_log.facts_extracted',
+      'daily_log.drift_detected',
+    ]);
   } finally {
     await stopServe(proc);
   }
