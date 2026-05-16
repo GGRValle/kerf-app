@@ -37,7 +37,8 @@
     "demo:field-capture:esbuild": "npx --yes esbuild@0.25.0 src/examples/field-capture-app.ts --bundle --platform=browser --format=iife --outfile=src/field-capture/field-capture.bundle.js && npx --yes esbuild@0.25.0 src/examples/transcript-review-app.ts --bundle --platform=browser --format=iife --outfile=src/transcript-review/transcript-review.bundle.js",
     "demo:field-capture": "npm run demo:field-capture:esbuild && node -e \"console.log('Built field-capture + transcript-review bundles. Serve from src: python3 -m http.server 8000 --directory src  then open http://localhost:8000/field-capture/')\"",
     "demo:field-capture:serve": "npm run demo:field-capture:esbuild && node -e \"console.log('\\nF·33 Field capture: http://localhost:8000/field-capture/\\nTranscript review: http://localhost:8000/transcript-review/\\n(static server from src/; Ctrl-C to stop)\\n')\" && python3 -m http.server 8000 --directory src",
-    "test-fixtures:validate": "tsx -e \"import('./src/test-fixtures/index.js').then(m => { const events = m.seedWorld(); console.log('seed produced', events.length, 'events'); })\""
+    "test-fixtures:validate": "tsx -e \"import('./src/test-fixtures/index.js').then(m => { const events = m.seedWorld(); console.log('seed produced', events.length, 'events'); })\"",
+    "deploy:fly": "fly deploy --remote-only"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

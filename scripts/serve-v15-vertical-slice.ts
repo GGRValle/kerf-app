@@ -1285,8 +1285,78 @@ async function handleTier2ReviewPost(
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Basic-auth middleware (Step C.4 — optional gate for internet deploy)
+//
+// If BOTH BASIC_AUTH_USER and BASIC_AUTH_PASS are set in env, every request
+// must include a valid Basic auth header. If NEITHER is set, the server is
+// open (current dev/test behavior).
+//
+// Exempt: /health  (Fly's HTTP checker needs unauthenticated access)
+//
+// Single-tenant V1.5 dogfood scope — V2.0 will replace this with real
+// auth + user accounts.
+// ──────────────────────────────────────────────────────────────────────────
+
+const BASIC_AUTH_USER = process.env['BASIC_AUTH_USER'];
+const BASIC_AUTH_PASS = process.env['BASIC_AUTH_PASS'];
+const BASIC_AUTH_ENABLED =
+  typeof BASIC_AUTH_USER === 'string' &&
+  BASIC_AUTH_USER.length > 0 &&
+  typeof BASIC_AUTH_PASS === 'string' &&
+  BASIC_AUTH_PASS.length > 0;
+const BASIC_AUTH_EXPECTED = BASIC_AUTH_ENABLED
+  ? 'Basic ' + Buffer.from(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`).toString('base64')
+  : null;
+
+function isBasicAuthExemptPath(pathname: string): boolean {
+  return pathname === '/health';
+}
+
+function basicAuthCheck(req: http.IncomingMessage, url: URL): { allowed: boolean; reason?: string } {
+  if (!BASIC_AUTH_ENABLED || BASIC_AUTH_EXPECTED === null) {
+    return { allowed: true };
+  }
+  if (isBasicAuthExemptPath(url.pathname)) {
+    return { allowed: true };
+  }
+  const header = req.headers['authorization'];
+  if (typeof header !== 'string' || header.length === 0) {
+    return { allowed: false, reason: 'missing_auth_header' };
+  }
+  if (header !== BASIC_AUTH_EXPECTED) {
+    return { allowed: false, reason: 'invalid_credentials' };
+  }
+  return { allowed: true };
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://127.0.0.1:${PORT}`);
+
+  // /health is always unauthenticated + always 200 (used by Fly's HTTP
+  // checker). Returns a small JSON status payload for ad-hoc curl checks.
+  if (url.pathname === '/health') {
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      jsonResponse(res, 200, {
+        ok: true,
+        service: 'kerf-v15-internal',
+        auth_enabled: BASIC_AUTH_ENABLED,
+      });
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  const authResult = basicAuthCheck(req, url);
+  if (!authResult.allowed) {
+    res.writeHead(401, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'WWW-Authenticate': 'Basic realm="kerf-v15-internal"',
+    });
+    res.end(JSON.stringify({ error: 'auth_required', reason: authResult.reason }));
+    return;
+  }
 
   if (req.method === 'POST' && url.pathname === '/transcribe') {
     await handleTranscribe(req, res);
