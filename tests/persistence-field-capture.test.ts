@@ -171,21 +171,24 @@ test('dailyLogExtractor module imports no LLM / fetch / external services', asyn
 });
 
 // ──────────────────────────────────────────────────────────────────────────
-// Stub contract (B.1 only — B.2 replaces the stub body)
+// Extractor contract (B.2 — real extractor; deep tests in
+// tests/persistence-daily-log-extractor.test.ts)
 // ──────────────────────────────────────────────────────────────────────────
 
-test('extractDailyLogFacts stub returns the empty 9-field shape', () => {
-  const facts = extractDailyLogFacts('any transcript text here', 'progress_update');
+test('extractDailyLogFacts returns EMPTY_EXTRACTED_FACTS for empty transcript', () => {
+  const facts = extractDailyLogFacts('', 'progress_update');
   assert.deepEqual(facts, EMPTY_EXTRACTED_FACTS);
 });
 
-test('extractDailyLogFacts stub returns the same shape regardless of entry_kind', () => {
-  const kinds = ['morning_brief', 'progress_update', 'blocker', 'change_signal',
-                 'safety_note', 'end_of_day', 'clock_event'];
-  for (const kind of kinds) {
-    const facts = extractDailyLogFacts('test', kind);
-    assert.deepEqual(facts, EMPTY_EXTRACTED_FACTS, `${kind} should return empty stub`);
-  }
+test('extractDailyLogFacts returns non-empty for the Henderson golden transcript', () => {
+  // Smoke test from the play side; the real extractor lock lives in
+  // tests/persistence-daily-log-extractor.test.ts. This test only
+  // confirms the play and extractor are wired together end-to-end.
+  const facts = extractDailyLogFacts(
+    "Mike here at Henderson — we pulled the tub surround and there's galvanized all the way back to the main. Bumping you.",
+    'progress_update',
+  );
+  assert.notDeepStrictEqual(facts, EMPTY_EXTRACTED_FACTS, 'extractor must populate facts for non-empty transcript');
 });
 
 test('EMPTY_EXTRACTED_FACTS has all 9 required keys', () => {
