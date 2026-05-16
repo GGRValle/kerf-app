@@ -159,7 +159,7 @@ async function readEvents(persistenceDir: string): Promise<Array<Record<string, 
 // ──────────────────────────────────────────────────────────────────────────
 
 const HENDERSON_TRANSCRIPT =
-  'Mike here at Henderson — we pulled the tub surround and there\'s ' +
+  'Kevin here at Henderson — we pulled the tub surround and there\'s ' +
   'galvanized all the way back to the main. Gotta replace about 8 feet. ' +
   'Bumping you on the CO.';
 

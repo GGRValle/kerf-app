@@ -7,7 +7,7 @@
  * Locked against the Henderson golden fixture transcript (from
  * `kerf_wireframes_mobile_v2.html` FRAME 7 demo):
  *
- *   "Mike here at Henderson — we pulled the tub surround and there's
+ *   "Kevin here at Henderson — we pulled the tub surround and there's
  *    galvanized all the way back to the main. Gotta replace about
  *    8 feet. Bumping you on the CO."
  *

@@ -127,7 +127,7 @@ export const ggrOnboardingSessionSkeletonFixture: OnboardingSession = {
       payload: {
         roles: [
           {
-            roleOrPersonLabel: 'Mike (lead)',
+            roleOrPersonLabel: 'Kevin (lead)',
             canRunJobsSolo: true,
             requiresLeadPresent: false,
             soloCeilingSellCents: 40_000_000,
