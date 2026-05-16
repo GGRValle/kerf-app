@@ -58,7 +58,56 @@ export type PersistenceEventType =
   | 'kb.ingested'
   | 'proposal.drafted'
   | 'proposal.edited'
-  | 'proposal.accepted';
+  | 'proposal.accepted'
+  | 'daily_log.entry_captured'
+  | 'daily_log.facts_extracted'
+  | 'daily_log.drift_detected'
+  | 'relay_card.surfaced'
+  | 'relay_card.reviewed';
+
+/**
+ * Daily Log entry kinds — what kind of field capture this is. Per
+ * `docs/architecture/field_daily_workflow_design_2026-05-15.md` §3.
+ *
+ * `clock_event` is the 7th kind added by the 2026-05-15 amendment to
+ * support clock-in/out / lunch / break boundaries as operational record
+ * entries (NOT a payroll pipeline — see Field Daily §13).
+ */
+export type DailyLogEntryKind =
+  | 'morning_brief'
+  | 'progress_update'
+  | 'blocker'
+  | 'change_signal'
+  | 'safety_note'
+  | 'end_of_day'
+  | 'clock_event';
+
+/**
+ * Clock event sub-kinds. Only meaningful when DailyLogEntryKind === 'clock_event'.
+ * Operational record + audit lineage. Surfaced on Field Hand HOME tab's live
+ * clock card + LOG → Time sub-tab.
+ */
+export type ClockEventSubKind =
+  | 'clock_in'
+  | 'clock_out'
+  | 'lunch_start'
+  | 'lunch_end'
+  | 'break_start'
+  | 'break_end';
+
+/**
+ * Drift severity per Track A's existing drift signal vocabulary
+ * (consumed-not-duplicated per Field Daily §8).
+ */
+export type DailyLogDriftSeverity = 'info' | 'caution' | 'warn' | 'block';
+
+/**
+ * Relay-card review outcomes. The operator's posture toward the surfaced
+ * card. `actioned` implies a follow-up artifact was created (CO draft,
+ * material expedite request, etc.); `acknowledged` is "I've seen it,
+ * nothing to do"; `dismissed` is explicit non-action with audit trail.
+ */
+export type RelayCardReviewOutcome = 'acknowledged' | 'actioned' | 'dismissed';
 
 /**
  * Tenant id. Single-tenant in this phase — 'tenant_ggr' or 'tenant_valle'.
@@ -277,6 +326,95 @@ export interface ProposalAcceptedEvent extends BasePersistenceEvent {
   readonly total_cents: number;
 }
 
+/**
+ * Field Hand captures a daily log entry (voice/text/photo). Canonical
+ * event — derived events (facts_extracted, drift_detected) follow once
+ * the deterministic Field Capture play has run.
+ *
+ * Per docs/architecture/field_daily_workflow_design_2026-05-15.md §6.
+ */
+export interface DailyLogEntryCapturedEvent extends BasePersistenceEvent {
+  readonly type: 'daily_log.entry_captured';
+  readonly entry_id: string;
+  /** Discriminator: which kind of field capture this is. */
+  readonly entry_kind: DailyLogEntryKind;
+  /** Voice → Whisper transcript; null for photo-only or text-only entries. */
+  readonly transcript_text: string | null;
+  /** kerf:// URI to the audio blob; null when no voice was captured. */
+  readonly audio_uri: string | null;
+  /** kerf:// URIs to photo refs (D-043 substrate; each photo carries a use label upstream). */
+  readonly photo_uris: readonly string[];
+  /**
+   * Only populated when entry_kind === 'clock_event'. Null otherwise.
+   * Operator UI sets this directly on Field Hand HOME tab clock-in/out
+   * button taps — no NLP needed.
+   */
+  readonly clock_sub_kind: ClockEventSubKind | null;
+}
+
+/**
+ * Field Capture play emits structured extraction from a captured entry.
+ * The extracted facts are CANDIDATES — Right Hand surfaces them on the
+ * relay card; nothing auto-fires.
+ *
+ * Per Field Daily §3 + §6. The 9 extracted-facts fields are JSON-stable
+ * for projection rollup but stay loose on the event itself (validator
+ * checks shape, not domain semantics).
+ */
+export interface DailyLogFactsExtractedEvent extends BasePersistenceEvent {
+  readonly type: 'daily_log.facts_extracted';
+  /** Links back to the daily_log.entry_captured event that triggered extraction. */
+  readonly entry_id: string;
+  /**
+   * 9-field DailyLogExtractedFacts payload — see Field Daily §3 for the
+   * canonical shape. Kept as readonly object here so the validator stays
+   * boundary-focused; downstream projection layer enforces per-field types.
+   */
+  readonly facts: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * Schedule/Drift play fires when a Field Daily entry indicates the project
+ * is off-plan. CONSUMES Track A's existing drift validator (Field Daily §8);
+ * does NOT duplicate it. Severity values mirror Track A's vocabulary.
+ */
+export interface DailyLogDriftDetectedEvent extends BasePersistenceEvent {
+  readonly type: 'daily_log.drift_detected';
+  /** Links back to the entry that triggered drift detection. */
+  readonly entry_id: string;
+  readonly severity: DailyLogDriftSeverity;
+  /** Plain-English drift summary surfaced to the operator on the relay card. */
+  readonly description: string;
+}
+
+/**
+ * Right Hand surfaces a relay card to the operator (owner/PM). One relay
+ * card per Field Daily entry that warrants office-side attention.
+ *
+ * Per Field Daily §7.2 (the /relay surface).
+ */
+export interface RelayCardSurfacedEvent extends BasePersistenceEvent {
+  readonly type: 'relay_card.surfaced';
+  readonly relay_card_id: string;
+  /** Links back to the source Field Daily entry. */
+  readonly entry_id: string;
+  /** Operator id this card was surfaced TO (audience scope). */
+  readonly surfaced_to: string;
+}
+
+/**
+ * Operator reviews a relay card. Terminal event in the field-to-office
+ * relay loop — `acknowledged` / `actioned` / `dismissed` outcomes per
+ * the canonical state machine in Field Daily §7.3.
+ */
+export interface RelayCardReviewedEvent extends BasePersistenceEvent {
+  readonly type: 'relay_card.reviewed';
+  readonly relay_card_id: string;
+  readonly reviewer: string;
+  readonly reviewed_at: string;
+  readonly outcome: RelayCardReviewOutcome;
+}
+
 export type PersistenceEvent =
   | ProjectCreatedEvent
   | CaptureRecordedEvent
@@ -289,7 +427,12 @@ export type PersistenceEvent =
   | KbIngestedEvent
   | ProposalDraftedEvent
   | ProposalEditedEvent
-  | ProposalAcceptedEvent;
+  | ProposalAcceptedEvent
+  | DailyLogEntryCapturedEvent
+  | DailyLogFactsExtractedEvent
+  | DailyLogDriftDetectedEvent
+  | RelayCardSurfacedEvent
+  | RelayCardReviewedEvent;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Validation
@@ -335,6 +478,43 @@ const VALID_EVENT_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'proposal.drafted',
   'proposal.edited',
   'proposal.accepted',
+  'daily_log.entry_captured',
+  'daily_log.facts_extracted',
+  'daily_log.drift_detected',
+  'relay_card.surfaced',
+  'relay_card.reviewed',
+]);
+
+const VALID_DAILY_LOG_ENTRY_KINDS: ReadonlySet<DailyLogEntryKind> = new Set([
+  'morning_brief',
+  'progress_update',
+  'blocker',
+  'change_signal',
+  'safety_note',
+  'end_of_day',
+  'clock_event',
+]);
+
+const VALID_CLOCK_SUB_KINDS: ReadonlySet<ClockEventSubKind> = new Set([
+  'clock_in',
+  'clock_out',
+  'lunch_start',
+  'lunch_end',
+  'break_start',
+  'break_end',
+]);
+
+const VALID_DRIFT_SEVERITIES: ReadonlySet<DailyLogDriftSeverity> = new Set([
+  'info',
+  'caution',
+  'warn',
+  'block',
+]);
+
+const VALID_RELAY_REVIEW_OUTCOMES: ReadonlySet<RelayCardReviewOutcome> = new Set([
+  'acknowledged',
+  'actioned',
+  'dismissed',
 ]);
 
 const VALID_SOURCE_REF_KINDS: ReadonlySet<SourceRef['kind']> = new Set([
@@ -606,6 +786,91 @@ function validateProposalAccepted(input: Record<string, unknown>): readonly stri
   return errors;
 }
 
+function validateDailyLogEntryCaptured(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['entry_id'])) errors.push('entry_id must be a non-empty string');
+  if (!nonEmptyString(input['entry_kind'])) {
+    errors.push('entry_kind must be a non-empty string');
+  } else if (!VALID_DAILY_LOG_ENTRY_KINDS.has(input['entry_kind'] as DailyLogEntryKind)) {
+    errors.push(`entry_kind "${input['entry_kind']}" is not a recognized DailyLogEntryKind`);
+  }
+  if (input['transcript_text'] !== null && typeof input['transcript_text'] !== 'string') {
+    errors.push('transcript_text must be a string or null');
+  }
+  if (input['audio_uri'] !== null && !nonEmptyString(input['audio_uri'])) {
+    errors.push('audio_uri must be a non-empty string or null');
+  }
+  if (!Array.isArray(input['photo_uris'])) {
+    errors.push('photo_uris must be an array');
+  } else {
+    for (let i = 0; i < input['photo_uris'].length; i++) {
+      if (typeof input['photo_uris'][i] !== 'string') {
+        errors.push(`photo_uris[${i}] must be a string`);
+      }
+    }
+  }
+  // clock_sub_kind: required-non-null when entry_kind === 'clock_event';
+  // must be null otherwise. Catches misuse in either direction.
+  if (input['entry_kind'] === 'clock_event') {
+    if (input['clock_sub_kind'] === null || input['clock_sub_kind'] === undefined) {
+      errors.push('clock_sub_kind must be set when entry_kind === "clock_event"');
+    } else if (!VALID_CLOCK_SUB_KINDS.has(input['clock_sub_kind'] as ClockEventSubKind)) {
+      errors.push(
+        `clock_sub_kind "${input['clock_sub_kind']}" is not a recognized ClockEventSubKind`,
+      );
+    }
+  } else {
+    if (input['clock_sub_kind'] !== null && input['clock_sub_kind'] !== undefined) {
+      errors.push('clock_sub_kind must be null when entry_kind !== "clock_event"');
+    }
+  }
+  return errors;
+}
+
+function validateDailyLogFactsExtracted(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['entry_id'])) errors.push('entry_id must be a non-empty string');
+  if (typeof input['facts'] !== 'object' || input['facts'] === null || Array.isArray(input['facts'])) {
+    errors.push('facts must be a non-null object (DailyLogExtractedFacts shape)');
+  }
+  return errors;
+}
+
+function validateDailyLogDriftDetected(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['entry_id'])) errors.push('entry_id must be a non-empty string');
+  if (!nonEmptyString(input['severity'])) {
+    errors.push('severity must be a non-empty string');
+  } else if (!VALID_DRIFT_SEVERITIES.has(input['severity'] as DailyLogDriftSeverity)) {
+    errors.push(`severity "${input['severity']}" is not a recognized DriftSeverity (expected info|caution|warn|block)`);
+  }
+  if (!nonEmptyString(input['description'])) errors.push('description must be a non-empty string');
+  return errors;
+}
+
+function validateRelayCardSurfaced(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['relay_card_id'])) errors.push('relay_card_id must be a non-empty string');
+  if (!nonEmptyString(input['entry_id'])) errors.push('entry_id must be a non-empty string');
+  if (!nonEmptyString(input['surfaced_to'])) errors.push('surfaced_to must be a non-empty string');
+  return errors;
+}
+
+function validateRelayCardReviewed(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['relay_card_id'])) errors.push('relay_card_id must be a non-empty string');
+  if (!nonEmptyString(input['reviewer'])) errors.push('reviewer must be a non-empty string');
+  if (!isIso8601(input['reviewed_at'])) errors.push('reviewed_at must be an ISO8601 timestamp');
+  if (!nonEmptyString(input['outcome'])) {
+    errors.push('outcome must be a non-empty string');
+  } else if (!VALID_RELAY_REVIEW_OUTCOMES.has(input['outcome'] as RelayCardReviewOutcome)) {
+    errors.push(
+      `outcome "${input['outcome']}" is not a recognized RelayCardReviewOutcome (expected acknowledged|actioned|dismissed)`,
+    );
+  }
+  return errors;
+}
+
 /**
  * Validate an arbitrary input as a PersistenceEvent. Returns a discriminated
  * result. Never throws.
@@ -659,6 +924,21 @@ export function validatePersistenceEvent(input: unknown): ValidationResult<Persi
       break;
     case 'proposal.accepted':
       typeErrors = validateProposalAccepted(record);
+      break;
+    case 'daily_log.entry_captured':
+      typeErrors = validateDailyLogEntryCaptured(record);
+      break;
+    case 'daily_log.facts_extracted':
+      typeErrors = validateDailyLogFactsExtracted(record);
+      break;
+    case 'daily_log.drift_detected':
+      typeErrors = validateDailyLogDriftDetected(record);
+      break;
+    case 'relay_card.surfaced':
+      typeErrors = validateRelayCardSurfaced(record);
+      break;
+    case 'relay_card.reviewed':
+      typeErrors = validateRelayCardReviewed(record);
       break;
   }
   const allErrors = [...baseErrors, ...typeErrors];
