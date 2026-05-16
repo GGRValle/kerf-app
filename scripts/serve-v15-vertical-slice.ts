@@ -9,6 +9,7 @@
  *   POST /transcribe                — Whisper audio transcription (PR #150)
  *   POST /api/projects              — create project (emits project.created)
  *   POST /api/projects/<id>/captures — record a capture (emits capture.recorded)
+ *   POST /api/projects/<id>/daily-log/entries — Field Daily entry (emits daily_log.entry_captured)
  *   GET  /api/projects              — list projects (reads projection files)
  *   GET  /api/projects/<id>         — single project projection
  *   POST /api/kb/ingestions         — tier-2 Cost KB batch (emits kb.ingested)
@@ -29,6 +30,8 @@ import crypto from 'node:crypto';
 
 import {
   validatePersistenceEvent,
+  type ClockEventSubKind,
+  type DailyLogEntryKind,
   type PersistenceEvent,
   type PersistenceTenantId,
 } from '../src/persistence/events.ts';
@@ -569,6 +572,224 @@ async function handleRecordCapture(
   jsonResponse(res, 201, { event: validation.event, projection });
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Field Daily: POST /api/projects/<id>/daily-log/entries
+//
+// Field Hand submission → daily_log.entry_captured event. First server-side
+// anchor of the vertical slice flow (per Field Daily §12.2 revised plan):
+//
+//   Field Hand voice button → Whisper transcribe → THIS ENDPOINT
+//     → daily_log.entry_captured event → Field Capture play (future)
+//
+// Mirrors handleRecordCapture's pattern: validation flow, source_refs
+// synthesis (PR #176 rule applies — daily_log.entry_captured is NOT in
+// SOURCE_REFS_OPTIONAL_TYPES; non-empty refs required).
+// ──────────────────────────────────────────────────────────────────────────
+
+const VALID_DAILY_LOG_ENTRY_KINDS_RUNTIME: readonly DailyLogEntryKind[] = [
+  'morning_brief',
+  'progress_update',
+  'blocker',
+  'change_signal',
+  'safety_note',
+  'end_of_day',
+  'clock_event',
+];
+
+const VALID_CLOCK_SUB_KINDS_RUNTIME: readonly ClockEventSubKind[] = [
+  'clock_in',
+  'clock_out',
+  'lunch_start',
+  'lunch_end',
+  'break_start',
+  'break_end',
+];
+
+function isDailyLogEntryKind(v: unknown): v is DailyLogEntryKind {
+  return typeof v === 'string' && (VALID_DAILY_LOG_ENTRY_KINDS_RUNTIME as readonly string[]).includes(v);
+}
+
+function isClockEventSubKind(v: unknown): v is ClockEventSubKind {
+  return typeof v === 'string' && (VALID_CLOCK_SUB_KINDS_RUNTIME as readonly string[]).includes(v);
+}
+
+async function handleCreateDailyLogEntry(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  projectId: string,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  if (typeof body !== 'object' || body === null) {
+    jsonResponse(res, 400, { error: 'invalid_body', reason: 'body must be a JSON object' });
+    return;
+  }
+  const input = body as Record<string, unknown>;
+  if (!isPersistenceTenantId(input['tenant_id'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+    });
+    return;
+  }
+  const tenant = input['tenant_id'];
+
+  if (!isDailyLogEntryKind(input['entry_kind'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_entry_kind',
+      reason: `entry_kind must be one of: ${VALID_DAILY_LOG_ENTRY_KINDS_RUNTIME.join(', ')}`,
+    });
+    return;
+  }
+  const entryKind = input['entry_kind'];
+
+  // Cross-field rule: clock_sub_kind must be set iff entry_kind === 'clock_event'.
+  let clockSubKind: ClockEventSubKind | null = null;
+  if (entryKind === 'clock_event') {
+    if (!isClockEventSubKind(input['clock_sub_kind'])) {
+      jsonResponse(res, 400, {
+        error: 'invalid_clock_sub_kind',
+        reason: `entry_kind=clock_event requires clock_sub_kind in [${VALID_CLOCK_SUB_KINDS_RUNTIME.join(', ')}]`,
+      });
+      return;
+    }
+    clockSubKind = input['clock_sub_kind'];
+  } else if (
+    input['clock_sub_kind'] !== undefined &&
+    input['clock_sub_kind'] !== null
+  ) {
+    jsonResponse(res, 400, {
+      error: 'invalid_clock_sub_kind',
+      reason: 'clock_sub_kind must be null/absent when entry_kind !== clock_event',
+    });
+    return;
+  }
+
+  // Verify project exists (mirrors handleRecordCapture path).
+  const projectionPath = projectionPathFor(tenant, projectId);
+  let existingProjection: ProjectProjection | null = null;
+  try {
+    existingProjection = await readProjectProjection(projectionPath);
+  } catch (err) {
+    console.warn(
+      `[persistence] projection at ${projectionPath} unreadable; will check event log: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  }
+  if (existingProjection === null) {
+    const projectEvents = await eventStore.readByCorrelation(projectId);
+    const hasCreated = projectEvents.some((e) => e.type === 'project.created' && e.tenant_id === tenant);
+    if (!hasCreated) {
+      jsonResponse(res, 404, {
+        error: 'project_not_found',
+        reason: `no project.created event for project_id=${projectId} under tenant=${tenant}`,
+      });
+      return;
+    }
+  }
+
+  const entryId =
+    typeof input['entry_id'] === 'string' && input['entry_id'].length > 0
+      ? (input['entry_id'] as string)
+      : generateEventId('dle');
+  const transcriptText =
+    input['transcript_text'] === null
+      ? null
+      : typeof input['transcript_text'] === 'string'
+        ? (input['transcript_text'] as string)
+        : null;
+  const audioUri =
+    typeof input['audio_uri'] === 'string' && input['audio_uri'].length > 0
+      ? (input['audio_uri'] as string)
+      : null;
+  const photoUris = Array.isArray(input['photo_uris'])
+    ? (input['photo_uris'] as readonly unknown[]).filter((u): u is string => typeof u === 'string')
+    : [];
+
+  // PR #176 source_refs rule: daily_log.entry_captured requires non-empty
+  // source_refs (NOT in SOURCE_REFS_OPTIONAL_TYPES). Synthesize from
+  // available payload so real-world browser submissions don't 400 when
+  // operator omits the field.
+  const synthesizedSourceRefs: PersistenceEvent['source_refs'] = (() => {
+    if (audioUri !== null) {
+      return [{ kind: 'voice', uri: audioUri }];
+    }
+    if (transcriptText !== null && transcriptText.length > 0) {
+      return [{ kind: 'transcript', excerpt: transcriptText.slice(0, 500) }];
+    }
+    if (photoUris.length > 0) {
+      return [{ kind: 'photo', uri: photoUris[0]! }];
+    }
+    // Clock events typically have no transcript/audio/photo; use a
+    // deterministic placeholder so the validator passes.
+    return [{ kind: 'external', uri: `kerf://daily-log/${entryId}` }];
+  })();
+  const sourceRefs = Array.isArray(input['source_refs']) && input['source_refs'].length > 0
+    ? (input['source_refs'] as PersistenceEvent['source_refs'])
+    : synthesizedSourceRefs;
+
+  const event: PersistenceEvent = {
+    event_id: generateEventId('evt'),
+    type: 'daily_log.entry_captured',
+    tenant_id: tenant,
+    correlation_id: projectId,
+    actor: (input['actor'] as PersistenceEvent['actor']) ?? {
+      id: 'browser_operator',
+      role: 'field_super',
+    },
+    at: new Date().toISOString(),
+    source_refs: sourceRefs,
+    entry_id: entryId,
+    entry_kind: entryKind,
+    transcript_text: transcriptText,
+    audio_uri: audioUri,
+    photo_uris: photoUris,
+    clock_sub_kind: clockSubKind,
+  };
+
+  const validation = validatePersistenceEvent(event);
+  if (!validation.ok) {
+    jsonResponse(res, 400, { error: 'invalid_event', errors: validation.errors });
+    return;
+  }
+
+  try {
+    await eventStore.append(validation.event);
+  } catch (err) {
+    jsonResponse(res, 500, {
+      error: 'append_failed',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+
+  const allEvents = await eventStore.readAll();
+  const projection = await rebuildAndPersistProjection({
+    events: allEvents,
+    tenant,
+    projectId,
+    pathFor: projectionPathFor,
+  });
+  jsonResponse(res, 201, { event: validation.event, projection });
+}
+
 async function handleListProjects(
   res: http.ServerResponse,
   tenantFilter: PersistenceTenantId | null,
@@ -800,14 +1021,22 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // /api/projects/<id> and /api/projects/<id>/captures
-  const apiProjectMatch = url.pathname.match(/^\/api\/projects\/([^/]+)(\/captures)?\/?$/);
+  // /api/projects/<id>, /api/projects/<id>/captures, /api/projects/<id>/daily-log/entries
+  const apiProjectMatch = url.pathname.match(/^\/api\/projects\/([^/]+)(\/captures|\/daily-log\/entries)?\/?$/);
   if (apiProjectMatch !== null) {
     const projectId = decodeURIComponent(apiProjectMatch[1]!);
-    const isCapturesRoute = apiProjectMatch[2] === '/captures';
-    if (isCapturesRoute) {
+    const subRoute = apiProjectMatch[2];
+    if (subRoute === '/captures') {
       if (req.method === 'POST') {
         await handleRecordCapture(req, res, projectId);
+        return;
+      }
+      res.writeHead(405).end();
+      return;
+    }
+    if (subRoute === '/daily-log/entries') {
+      if (req.method === 'POST') {
+        await handleCreateDailyLogEntry(req, res, projectId);
         return;
       }
       res.writeHead(405).end();
@@ -904,6 +1133,6 @@ server.listen(PORT, () => {
   console.log(
     `\nKerf V1.5 vertical slice (port ${PORT}):\n  http://localhost:${PORT}/field-capture  — F·33 Field Capture\n  http://localhost:${PORT}/dashboard     — home\n  http://localhost:${PORT}/m/check       — mobile validation harness (dev)\n  POST /transcribe                       — ${
       transcribeReady ? 'READY (Groq Whisper)' : 'NOT CONFIGURED (set GROQ_API_KEY + GROQ_BASE_URL in .env.local)'
-    }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
+    }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/projects/<id>/daily-log/entries — Field Daily entry (daily_log.entry_captured)\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
   );
 });
