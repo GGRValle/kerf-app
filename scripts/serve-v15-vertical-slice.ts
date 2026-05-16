@@ -10,12 +10,14 @@
  *   POST /api/projects              — create project (emits project.created)
  *   POST /api/projects/<id>/captures — record a capture (emits capture.recorded)
  *   POST /api/projects/<id>/daily-log/entries — Field Daily entry (emits daily_log.entry_captured)
+ *   POST /api/relay-cards/<id>/review — relay card review (emits relay_card.reviewed)
  *   GET  /api/projects              — list projects (reads projection files)
  *   GET  /api/projects/<id>         — single project projection
  *   POST /api/kb/ingestions         — tier-2 Cost KB batch (emits kb.ingested)
  *   GET  /api/kb/ingestions         — list kb.ingested summaries (?tenant_id=)
  *   GET  /api/kb/tier2-rows         — JSON rows for browser merge (?tenant_id=)
  *   POST /api/kb/tier2/review       — row-level curator transition (rewrites JSONL)
+ *   GET  /api/field-daily/relay-feed — relay list DTOs (?tenant_id=) for /relay UI
  *   GET  /...                       — static + SPA fallback to index.html
  *
  * GROQ_API_KEY + GROQ_BASE_URL must be in .env.local (Node loads it
@@ -31,11 +33,18 @@ import crypto from 'node:crypto';
 import {
   validatePersistenceEvent,
   type ClockEventSubKind,
+  type DailyLogDriftDetectedEvent,
+  type DailyLogEntryCapturedEvent,
   type DailyLogEntryKind,
+  type DailyLogFactsExtractedEvent,
   type PersistenceEvent,
   type PersistenceTenantId,
+  type RelayCardReviewOutcome,
+  type RelayCardSurfacedEvent,
 } from '../src/persistence/events.ts';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
+import { runFieldCapturePlay } from '../src/persistence/fieldCapture.ts';
+import { adaptDailyLogFactsToDriftSignal } from '../src/persistence/driftAdapter.ts';
 import {
   defaultProjectionPath,
   rebuildAndPersistProjection,
@@ -43,6 +52,7 @@ import {
   type ProjectProjection,
 } from '../src/persistence/projections.ts';
 import { buildMobileValidationHarnessHtml } from '../src/examples/v15-vertical-slice/m-validation-harness.ts';
+import { buildRelayFeedFromEvents } from '../src/examples/v15-vertical-slice/relay-feed-build.ts';
 import {
   applyTier2RowReview,
   defaultKbActualsFilepath,
@@ -780,6 +790,70 @@ async function handleCreateDailyLogEntry(
     return;
   }
 
+  // ────────────────────────────────────────────────────────────────────────
+  // Play scheduler — invoke the Field Capture chain inline.
+  //
+  // The captured event is durable (appended above). The play handler (B.1)
+  // and drift adapter (B.3) are pure, deterministic substrate modules; we
+  // invoke them here so the chain runs on every real capture, not just in
+  // tests. Without this, `/relay` would have no facts_extracted events to
+  // surface from real POSTs.
+  //
+  // Error policy: derived-event failures are LOGGED + reported as
+  // `play_error` in the response, but do NOT 5xx the request. The captured
+  // event has already been written and is the audit-anchor of record. A
+  // future scheduler retry (or manual re-run) could re-derive facts/drift
+  // from the captured event.
+  //
+  // Originally scoped as "Step C+" wiring; pulled forward 2026-05-16 so the
+  // B.5 /relay surface has actual data on real captures (the closed-loop
+  // demo). See: docs/architecture/canon_drift_audit_2026-05-16_session.md
+  // for the substrate-vs-design-doc reconciliation that landed alongside.
+  // ────────────────────────────────────────────────────────────────────────
+
+  let factsEvent: DailyLogFactsExtractedEvent | null = null;
+  let driftEvent: DailyLogDriftDetectedEvent | null = null;
+  let playError: string | null = null;
+
+  const captured = validation.event as DailyLogEntryCapturedEvent;
+
+  // Step 1 — facts extraction (B.1 play handler + B.2 extractor).
+  try {
+    const candidate = runFieldCapturePlay(captured);
+    const factsValidation = validatePersistenceEvent(candidate);
+    if (!factsValidation.ok) {
+      throw new Error(`facts_event validation: ${factsValidation.errors.join(', ')}`);
+    }
+    await eventStore.append(factsValidation.event);
+    factsEvent = candidate;
+  } catch (err) {
+    playError = `play_handler: ${err instanceof Error ? err.message : String(err)}`;
+    console.warn(
+      `[scheduler] facts derivation failed for entry_id=${entryId}: ${playError}`,
+    );
+  }
+
+  // Step 2 — drift classification (B.3 adapter). Only runs if facts succeeded;
+  // the adapter takes a fully-validated facts event as input.
+  if (factsEvent !== null) {
+    try {
+      const driftCandidate = adaptDailyLogFactsToDriftSignal(factsEvent);
+      if (driftCandidate !== null) {
+        const driftValidation = validatePersistenceEvent(driftCandidate);
+        if (!driftValidation.ok) {
+          throw new Error(`drift_event validation: ${driftValidation.errors.join(', ')}`);
+        }
+        await eventStore.append(driftValidation.event);
+        driftEvent = driftCandidate;
+      }
+    } catch (err) {
+      playError = `drift_adapter: ${err instanceof Error ? err.message : String(err)}`;
+      console.warn(
+        `[scheduler] drift derivation failed for entry_id=${entryId}: ${playError}`,
+      );
+    }
+  }
+
   const allEvents = await eventStore.readAll();
   const projection = await rebuildAndPersistProjection({
     events: allEvents,
@@ -787,7 +861,168 @@ async function handleCreateDailyLogEntry(
     projectId,
     pathFor: projectionPathFor,
   });
-  jsonResponse(res, 201, { event: validation.event, projection });
+  jsonResponse(res, 201, {
+    event: validation.event,
+    facts_event: factsEvent,
+    drift_event: driftEvent,
+    ...(playError !== null ? { play_error: playError } : {}),
+    projection,
+  });
+}
+
+async function handleRelayFeedGet(
+  res: http.ServerResponse,
+  tenantParam: string | null,
+): Promise<void> {
+  if (!isPersistenceTenantId(tenantParam)) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: `tenant_id must be one of: ${VALID_TENANT_IDS.join(', ')}`,
+    });
+    return;
+  }
+  const allEvents = await eventStore.readAll();
+  const items = buildRelayFeedFromEvents(allEvents, tenantParam);
+  jsonResponse(res, 200, { items });
+}
+
+const VALID_RELAY_REVIEW_OUTCOMES: readonly RelayCardReviewOutcome[] = [
+  'acknowledged',
+  'actioned',
+  'dismissed',
+];
+
+function isRelayCardReviewOutcome(v: unknown): v is RelayCardReviewOutcome {
+  return typeof v === 'string' && (VALID_RELAY_REVIEW_OUTCOMES as readonly string[]).includes(v);
+}
+
+async function findRelayCardSurfaced(
+  relayCardId: string,
+  tenant: PersistenceTenantId,
+): Promise<RelayCardSurfacedEvent | null> {
+  const allEvents = await eventStore.readAll();
+  for (let i = allEvents.length - 1; i >= 0; i--) {
+    const e = allEvents[i]!;
+    if (
+      e.type === 'relay_card.surfaced' &&
+      e.tenant_id === tenant &&
+      e.relay_card_id === relayCardId
+    ) {
+      return e;
+    }
+  }
+  return null;
+}
+
+async function handleRelayCardReview(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  relayCardId: string,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  if (typeof body !== 'object' || body === null) {
+    jsonResponse(res, 400, { error: 'invalid_body', reason: 'body must be a JSON object' });
+    return;
+  }
+  const input = body as Record<string, unknown>;
+  if (!isPersistenceTenantId(input['tenant_id'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+    });
+    return;
+  }
+  const tenant = input['tenant_id'];
+
+  const reviewer = typeof input['reviewer'] === 'string' ? input['reviewer'].trim() : '';
+  if (reviewer.length === 0) {
+    jsonResponse(res, 400, {
+      error: 'invalid_reviewer',
+      reason: 'reviewer must be a non-empty string',
+    });
+    return;
+  }
+
+  if (!isRelayCardReviewOutcome(input['outcome'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_outcome',
+      reason: `outcome must be one of: ${VALID_RELAY_REVIEW_OUTCOMES.join(', ')}`,
+    });
+    return;
+  }
+  const outcome = input['outcome'];
+
+  const surfaced = await findRelayCardSurfaced(relayCardId, tenant);
+  if (surfaced === null) {
+    jsonResponse(res, 404, {
+      error: 'relay_card_not_found',
+      reason: `no relay_card.surfaced event for relay_card_id=${relayCardId} under tenant=${tenant}`,
+    });
+    return;
+  }
+
+  const reviewedAt = new Date().toISOString();
+  const event: PersistenceEvent = {
+    event_id: generateEventId('evt'),
+    type: 'relay_card.reviewed',
+    tenant_id: tenant,
+    correlation_id: surfaced.correlation_id,
+    actor: surfaced.actor,
+    at: reviewedAt,
+    source_refs: surfaced.source_refs,
+    relay_card_id: relayCardId,
+    reviewer,
+    reviewed_at: reviewedAt,
+    outcome,
+  };
+
+  const validation = validatePersistenceEvent(event);
+  if (!validation.ok) {
+    jsonResponse(res, 400, { error: 'invalid_event', errors: validation.errors });
+    return;
+  }
+
+  try {
+    await eventStore.append(validation.event);
+  } catch (err) {
+    jsonResponse(res, 500, {
+      error: 'append_failed',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+
+  const allEvents = await eventStore.readAll();
+  await rebuildAndPersistProjection({
+    events: allEvents,
+    tenant,
+    projectId: surfaced.correlation_id,
+    pathFor: projectionPathFor,
+  });
+
+  jsonResponse(res, 200, {
+    event_id: validation.event.event_id,
+    type: validation.event.type,
+    outcome: validation.event.outcome,
+    reviewed_at: validation.event.reviewed_at,
+  });
 }
 
 async function handleListProjects(
@@ -1076,6 +1311,26 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/kb/tier2/review') {
     if (req.method === 'POST') {
       await handleTier2ReviewPost(req, res);
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  if (url.pathname === '/api/field-daily/relay-feed') {
+    if (req.method === 'GET') {
+      await handleRelayFeedGet(res, url.searchParams.get('tenant_id'));
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  const relayReviewMatch = url.pathname.match(/^\/api\/relay-cards\/([^/]+)\/review\/?$/);
+  if (relayReviewMatch !== null) {
+    const relayCardId = decodeURIComponent(relayReviewMatch[1]!);
+    if (req.method === 'POST') {
+      await handleRelayCardReview(req, res, relayCardId);
       return;
     }
     res.writeHead(405).end();
