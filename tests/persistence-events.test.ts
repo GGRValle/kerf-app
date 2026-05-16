@@ -882,7 +882,7 @@ test('Henderson golden flow: 5 events validate end-to-end (capture → extract �
   const captured = dailyLogEntryCaptured({
     entry_id: 'dle_henderson_001',
     entry_kind: 'change_signal',
-    transcript_text: 'Mike here at Henderson — we pulled the tub surround and there\'s galvanized all the way back to the main',
+    transcript_text: 'Kevin here at Henderson — we pulled the tub surround and there\'s galvanized all the way back to the main',
   });
   const extracted = dailyLogFactsExtracted({ entry_id: 'dle_henderson_001' });
   const drift = dailyLogDriftDetected({ entry_id: 'dle_henderson_001', severity: 'warn' });

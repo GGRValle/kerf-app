@@ -35,7 +35,7 @@ const ISO_AT = '2026-05-16T08:32:00.000Z';
 const wellFormedSourceRef = {
   kind: 'voice' as const,
   uri: 'kerf://voice-intake/henderson/recording.m4a',
-  excerpt: 'Mike here at Henderson',
+  excerpt: 'Kevin here at Henderson',
 };
 
 function makeCapturedEntry(
@@ -52,7 +52,7 @@ function makeCapturedEntry(
     entry_id: 'dle_henderson_001',
     entry_kind: 'progress_update',
     transcript_text:
-      'Mike here at Henderson — we pulled the tub surround and there\'s galvanized all the way back to the main. Gotta replace about 8 feet. Bumping you on the CO.',
+      'Kevin here at Henderson — we pulled the tub surround and there\'s galvanized all the way back to the main. Gotta replace about 8 feet. Bumping you on the CO.',
     audio_uri: 'kerf://voice-intake/henderson/recording.m4a',
     photo_uris: [],
     clock_sub_kind: null,
@@ -74,13 +74,13 @@ test('runFieldCapturePlay propagates tenant_id, correlation_id, actor, entry_id'
   const entry = makeCapturedEntry({
     tenant_id: 'tenant_valle',
     correlation_id: 'proj_test_corr',
-    actor: { id: 'mike_reyes', role: 'pm' },
+    actor: { id: 'kevin_cheeseman', role: 'pm' },
     entry_id: 'dle_propagation_test',
   });
   const out = runFieldCapturePlay(entry);
   assert.equal(out.tenant_id, 'tenant_valle');
   assert.equal(out.correlation_id, 'proj_test_corr');
-  assert.deepEqual(out.actor, { id: 'mike_reyes', role: 'pm' });
+  assert.deepEqual(out.actor, { id: 'kevin_cheeseman', role: 'pm' });
   assert.equal(out.entry_id, 'dle_propagation_test');
 });
 
@@ -185,7 +185,7 @@ test('extractDailyLogFacts returns non-empty for the Henderson golden transcript
   // tests/persistence-daily-log-extractor.test.ts. This test only
   // confirms the play and extractor are wired together end-to-end.
   const facts = extractDailyLogFacts(
-    "Mike here at Henderson — we pulled the tub surround and there's galvanized all the way back to the main. Bumping you.",
+    "Kevin here at Henderson — we pulled the tub surround and there's galvanized all the way back to the main. Bumping you.",
     'progress_update',
   );
   assert.notDeepStrictEqual(facts, EMPTY_EXTRACTED_FACTS, 'extractor must populate facts for non-empty transcript');
