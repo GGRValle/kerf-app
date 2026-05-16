@@ -53,7 +53,7 @@
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
-import { appendFile, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -176,38 +176,13 @@ async function readEventTypes(persistenceDir: string): Promise<string[]> {
   return events.map((e) => e.type as string);
 }
 
-/**
- * Seed a relay_card.surfaced event directly into the JSONL log. Pattern
- * mirrors B.6's test setup; will be replaced by C.1 (surfacing play)
- * emitting the event automatically when drift fires.
- *
- * Returns the relay_card_id we seeded so the test can POST review against it.
- */
-async function seedRelayCardSurfaced(
-  persistenceDir: string,
-  capturedEntry: Record<string, unknown>,
-  driftEvent: Record<string, unknown>,
-): Promise<string> {
-  const relayCardId = `rcs_${(capturedEntry.entry_id as string).slice(-12)}_${Date.now()}`;
-  const surfacedEvent = {
-    event_id: `evt_surfaced_${Date.now().toString(36)}`,
-    type: 'relay_card.surfaced',
-    tenant_id: capturedEntry.tenant_id,
-    correlation_id: capturedEntry.correlation_id,
-    actor: capturedEntry.actor,
-    at: new Date().toISOString(),
-    source_refs: driftEvent.source_refs,
-    relay_card_id: relayCardId,
-    entry_id: capturedEntry.entry_id,
-    surfaced_to: (capturedEntry.actor as { id: string }).id,
-  };
-  await appendFile(
-    path.join(persistenceDir, 'events.jsonl'),
-    JSON.stringify(surfacedEvent) + '\n',
-    'utf8',
-  );
-  return relayCardId;
-}
+// Step C.1 NOTE: this file previously defined `seedRelayCardSurfaced` to
+// manually append `relay_card.surfaced` events before the surfacing play
+// existed. Step C.1 (`src/persistence/relayCardSurfacer.ts`) wires
+// automatic surfacing on drift fire — the helper is no longer needed.
+// Tests now read `captureBody.surfaced_event.relay_card_id` directly from
+// the daily-log entries POST response. See the surfacer's unit tests in
+// `tests/persistence-relay-card-surfacer.test.ts` for the rule table.
 
 // ──────────────────────────────────────────────────────────────────────────
 // The Henderson HTTP demo loop
@@ -238,26 +213,35 @@ test('Henderson HTTP demo loop: capture → scheduler → relay-feed → review 
     assert.equal(captureRes.status, 201, `expected 201 on capture, got ${captureRes.status}: ${captureRes.body}`);
     const captureBody = JSON.parse(captureRes.body);
 
-    // ─── Step 2: Verify scheduler ran the full chain inline (PR #200)
+    // ─── Step 2: Verify scheduler ran the full chain inline including
+    //              C.1 surfacing — captured + facts + drift + surfaced
+    //              all emitted in one round-trip
     assert.equal(captureBody.event.type, 'daily_log.entry_captured');
     assert.ok(captureBody.facts_event, 'scheduler must emit facts_event');
     assert.equal(captureBody.facts_event.type, 'daily_log.facts_extracted');
     assert.ok(captureBody.drift_event, 'scheduler must emit drift_event on Henderson');
     assert.equal(captureBody.drift_event.type, 'daily_log.drift_detected');
     assert.equal(captureBody.drift_event.severity, 'block');
+    // Step C.1: severity 'block' surfaces a relay card AUTOMATICALLY
+    assert.ok(captureBody.surfaced_event, 'C.1: scheduler must emit surfaced_event on block-severity drift');
+    assert.equal(captureBody.surfaced_event.type, 'relay_card.surfaced');
+    assert.match(captureBody.surfaced_event.relay_card_id, /^rcs_/);
+    const relayCardId = captureBody.surfaced_event.relay_card_id;
 
-    // ─── Step 3: Verify event log has the 4-event chain
+    // ─── Step 3: Verify event log has the 5-event chain (now includes
+    //              automatic relay_card.surfaced — no manual seeding)
     const typesAfterCapture = await readEventTypes(proc.persistenceDir);
     assert.deepEqual(typesAfterCapture, [
       'project.created',
       'daily_log.entry_captured',
       'daily_log.facts_extracted',
       'daily_log.drift_detected',
+      'relay_card.surfaced',
     ]);
 
     // ─── Step 4: Office hits /relay-feed and sees the card
-    //              (until Step C.1 wires the surfacing play, the feed reads
-    //               facts_extracted as proxy with synthetic rc_proxy_* IDs)
+    //              (B.5's relay-feed still proxies from facts_extracted;
+    //              C.3 will switch it to read relay_card.surfaced directly)
     const feedRes = await httpJsonRequest(
       'GET',
       `http://127.0.0.1:${proc.port}/api/field-daily/relay-feed?tenant_id=tenant_ggr`,
@@ -267,21 +251,14 @@ test('Henderson HTTP demo loop: capture → scheduler → relay-feed → review 
     const feedBody = JSON.parse(feedRes.body);
     assert.ok(Array.isArray(feedBody.items), 'relay-feed returns items array');
     assert.ok(feedBody.items.length >= 1, 'at least one card surfaces on Henderson capture');
-    // The card's entry_id matches the capture
     const henderson_card = feedBody.items.find(
       (it: { entry_id: string }) => it.entry_id === captureBody.event.entry_id,
     );
     assert.ok(henderson_card, 'Henderson card present in feed');
 
-    // ─── Step 5: Seed relay_card.surfaced for B.6's lookup
-    //              (Step C.1 will emit this automatically; until then the
-    //               proxy IDs in /relay-feed don't pass the lookup)
-    const events = await readEvents(proc.persistenceDir);
-    const captured = events.find((e) => e.type === 'daily_log.entry_captured')!;
-    const drift = events.find((e) => e.type === 'daily_log.drift_detected')!;
-    const relayCardId = await seedRelayCardSurfaced(proc.persistenceDir, captured, drift);
-
-    // ─── Step 6: Office POSTs review with outcome=actioned via B.6
+    // ─── Step 5: Office POSTs review with outcome=actioned via B.6.
+    //              Uses the REAL relay_card_id from C.1's auto-surfaced
+    //              event — no manual seeding needed any more.
     const reviewRes = await httpJsonRequest(
       'POST',
       `http://127.0.0.1:${proc.port}/api/relay-cards/${encodeURIComponent(relayCardId)}/review`,
@@ -296,7 +273,8 @@ test('Henderson HTTP demo loop: capture → scheduler → relay-feed → review 
     assert.equal(reviewBody.type, 'relay_card.reviewed');
     assert.equal(reviewBody.outcome, 'actioned');
 
-    // ─── Step 7: Verify the FULL 6-event closed loop in the log
+    // ─── Step 6: Verify the FULL 6-event closed loop in the log
+    //              (fully automatic — no test harness seeding required)
     const typesFinal = await readEventTypes(proc.persistenceDir);
     assert.deepEqual(typesFinal, [
       'project.created',
@@ -333,11 +311,9 @@ test('Henderson HTTP loop: tenant/correlation/actor thread through ALL 6 events'
       },
     );
     assert.equal(captureRes.status, 201);
-
-    const events = await readEvents(proc.persistenceDir);
-    const captured = events.find((e) => e.type === 'daily_log.entry_captured')!;
-    const drift = events.find((e) => e.type === 'daily_log.drift_detected')!;
-    const relayCardId = await seedRelayCardSurfaced(proc.persistenceDir, captured, drift);
+    const captureBody = JSON.parse(captureRes.body);
+    // C.1: surfacing happens automatically — use the real relay_card_id
+    const relayCardId = captureBody.surfaced_event.relay_card_id;
 
     await httpJsonRequest(
       'POST',
@@ -386,11 +362,8 @@ test('Henderson HTTP loop: source_refs non-empty across the entire 5-event chain
       },
     );
     assert.equal(captureRes.status, 201);
-
-    const events = await readEvents(proc.persistenceDir);
-    const captured = events.find((e) => e.type === 'daily_log.entry_captured')!;
-    const drift = events.find((e) => e.type === 'daily_log.drift_detected')!;
-    const relayCardId = await seedRelayCardSurfaced(proc.persistenceDir, captured, drift);
+    const captureBody = JSON.parse(captureRes.body);
+    const relayCardId = captureBody.surfaced_event.relay_card_id;
 
     await httpJsonRequest(
       'POST',
@@ -436,11 +409,8 @@ test('Henderson HTTP loop: review with wrong tenant returns 404 (cross-tenant gu
       },
     );
     assert.equal(captureRes.status, 201);
-
-    const events = await readEvents(proc.persistenceDir);
-    const captured = events.find((e) => e.type === 'daily_log.entry_captured')!;
-    const drift = events.find((e) => e.type === 'daily_log.drift_detected')!;
-    const relayCardId = await seedRelayCardSurfaced(proc.persistenceDir, captured, drift);
+    const captureBody = JSON.parse(captureRes.body);
+    const relayCardId = captureBody.surfaced_event.relay_card_id;
 
     // POST review with WRONG tenant — should 404 since the relay card
     // was surfaced under tenant_ggr.
