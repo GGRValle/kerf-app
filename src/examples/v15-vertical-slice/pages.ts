@@ -36,6 +36,8 @@ import { detectDeckArchetype } from './v15-deck-archetype.js';
 import { instantiateDeckScaffold } from './v15-deck-scaffold.js';
 import { renderDeckScaffoldSection } from './v15-deck-scaffold-html.js';
 import { buildKbIngestionDetailHtml, buildKbIngestionListHtml } from './pages/kb-ingestion.js';
+import { buildRelayDetailShellHtml, buildRelayListPageHtml } from './pages/relay.js';
+import { createTranslator } from '../../i18n/index.js';
 
 function esc(s: string): string {
   return s
@@ -327,5 +329,23 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
         notice: 'Approve rows individually before they appear in clarification_range lookups.',
         bodyHtml: buildKbIngestionDetailHtml(route.ingestionId),
       };
+    case 'relay-list': {
+      const t = createTranslator('en');
+      return {
+        title: t.t('rh.relay.brand.title'),
+        subtitle: t.t('rh.relay.list.subtitle'),
+        notice: 'Facts are candidates — review before action.',
+        bodyHtml: buildRelayListPageHtml('en'),
+      };
+    }
+    case 'relay-detail': {
+      const t = createTranslator('en');
+      return {
+        title: t.t('rh.relay.brand.title'),
+        subtitle: `Entry <code>${esc(route.entryId)}</code>`,
+        notice: 'Facts are candidates — review before action.',
+        bodyHtml: buildRelayDetailShellHtml(route.entryId, 'en'),
+      };
+    }
   }
 }

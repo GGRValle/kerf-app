@@ -10,11 +10,14 @@ export type MatchedRoute =
   | { name: 'audit-detail'; packetId: string }
   | { name: 'blackboard' }
   | { name: 'kb-ingestion' }
-  | { name: 'kb-ingestion-detail'; ingestionId: string };
+  | { name: 'kb-ingestion-detail'; ingestionId: string }
+  | { name: 'relay-list' }
+  | { name: 'relay-detail'; entryId: string };
 
 const DECISION_DETAIL = /^\/decisions\/([^/]+)\/?$/;
 const AUDIT_DETAIL = /^\/audit\/([^/]+)\/?$/;
 const KB_ING_DETAIL = /^\/kb-ingestion\/([^/]+)\/?$/;
+const RELAY_DETAIL = /^\/relay\/([^/]+)\/?$/;
 
 export function matchRoute(pathname: string): MatchedRoute {
   const p = pathname.replace(/\/+$/, '') || '/';
@@ -50,6 +53,13 @@ export function matchRoute(pathname: string): MatchedRoute {
   const kbM = KB_ING_DETAIL.exec(p);
   if (kbM?.[1]) {
     return { name: 'kb-ingestion-detail', ingestionId: decodeURIComponent(kbM[1]) };
+  }
+  if (p === '/relay') {
+    return { name: 'relay-list' };
+  }
+  const relayM = RELAY_DETAIL.exec(p);
+  if (relayM?.[1]) {
+    return { name: 'relay-detail', entryId: decodeURIComponent(relayM[1]) };
   }
   return { name: 'dashboard' };
 }
