@@ -127,7 +127,7 @@ Per the routing/memory brief §10's hard-cap one-week MVP rules:
 |---|---|
 | **Field capture (mobile-first)** | Voice/text + photos via SourceRef with D-043 use labels (Estimate-safe / Verify-before-release / Manual required) |
 | **Field Capture play** | Extracts the 9 `DailyLogExtractedFacts` fields deterministically (regex + classifiers; no LLM scoring) |
-| **Schedule/Drift play** | Reuses Track A drift detection (`v1` already has this in `src/altitude/gate.ts`); produces a drift signal on the Blackboard |
+| **Schedule/Drift play** | Field-Daily-specific deterministic classifier in `src/persistence/driftAdapter.ts` (PR #195). Maps the 9-field `DailyLogExtractedFacts` to a `daily_log.drift_detected` event with severity `info`/`caution`/`warn`/`block` per precedence rules. **No LLM, no W3 reimplementation.** The original §8 plan to "call Track A's existing validator" did not pan out — `src/altitude/gate.ts` is generic policy gating (V1, V2, V4, V6, V7, V8…) not a `(facts) → (drift signal)` function; `src/workflows/drift-detection.ts` operates on LLM candidates with a different severity vocab. B.3 took the brief's "precursor fix" escape hatch and built the deterministic adapter; a future PR could lift the rule table into a unified Track A validator. [Amended 2026-05-16 by canon-drift audit.] |
 | **Blackboard write preview** | NOT auto-write; operator reviews on next office-side login |
 | **Right Hand relay card** | Office-side surface showing today's Field Daily entries grouped by project; click into per-entry detail |
 | **§13 disclosure** | Trust signal on the relay card (per `feedback_audit_deep_link_not_top_nav.md`); audit is one click deep |
@@ -237,9 +237,9 @@ All entries for a project, day-by-day. Scrollable history. Same content as `/rel
 
 ## 8. Boundary with Track A drift detection (critical)
 
-Track A Safety Spine already includes drift detection routed through Altitude Engine → Policy Gate → DecisionPacket → audit. Field Daily MUST NOT duplicate this. It **consumes** Track A drift detection.
+Track A Safety Spine already includes drift detection routed through Altitude Engine → Policy Gate → DecisionPacket → audit. Field Daily MUST NOT duplicate this. The original plan was that Field Daily would **consume** Track A drift detection via a thin adapter.
 
-Specifically:
+### Original plan (now AMENDED — see below)
 
 - Field Capture play populates `DailyLogExtractedFacts`
 - A small adapter (`fieldDailyToTrackADriftInput`) translates the extracted facts into the existing Track A drift validator's input shape
@@ -247,7 +247,21 @@ Specifically:
 - The drift signal lands on the Blackboard via the existing event log
 - The relay card surfaces the drift signal
 
-**No new drift logic in Field Daily.** The relay card is just a presentation layer on top of existing Track A primitives.
+### Amended approach (2026-05-16 canon-drift audit)
+
+When PR #195 (B.3) actually attempted to wire this up, the premise didn't hold:
+
+- `src/altitude/gate.ts` is the **W1 Policy Gate** (V1, V2, V4, V6, V7, V8, V17, V18 — generic policy validators). It does NOT expose a `(facts) → (drift signal)` function with a shape Field Daily can call.
+- `src/workflows/drift-detection.ts` is the **W3 LLM drift workflow.** It operates on `LlmDriftCandidate` shapes (LLM-emitted) and uses a different severity vocabulary (`low`/`medium`/`high`/`critical`) — incompatible with Field Daily's `daily_log.drift_detected` severity (`info`/`caution`/`warn`/`block`).
+
+Per the Step B brief's own escape hatch:
+> "If the Track A validator doesn't expose a clean input shape, that's a precursor fix (small PR against Track A), not a duplication."
+
+**What actually shipped (PR #195):** `src/persistence/driftAdapter.ts` — a Field-Daily-specific deterministic classifier that maps the 9-field facts shape directly to a `daily_log.drift_detected` event with explicit precedence rules. **The W3 LLM drift pipeline is NOT reimplemented.** The classifier is deliberately small + explicit so a future precursor PR can lift its rule table into a unified Track A validator trivially.
+
+The seam where Track A could plug in is documented in `src/persistence/driftAdapter.ts`'s header comment.
+
+**No new drift logic that duplicates Track A.** The relay card is still just a presentation layer on top of substrate primitives — those primitives are now (a) the W1 Policy Gate, (b) the W3 LLM drift workflow, and (c) the Field Daily deterministic classifier from PR #195.
 
 ---
 

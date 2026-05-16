@@ -72,7 +72,7 @@ One event kind, every layer. Proves the substrate carries before the shell ships
 | 5 Field Daily event types + clock_event enum | `src/persistence/events.ts` (PR #185) | ✅ Live |
 | `POST /api/projects/<id>/daily-log/entries` endpoint | `scripts/serve-v15-vertical-slice.ts` (PR #188) | ✅ Live, validated, source_refs synthesis wired |
 | Whisper transcribe path | `scripts/serve-v15-vertical-slice.ts:handleTranscribe` (PR #150) | ✅ Live |
-| Track A drift validator | `src/altitude/gate.ts` | ✅ Live; Step B CONSUMES, does NOT duplicate (Field Daily §8) |
+| Track A drift validator | `src/altitude/gate.ts` (W1 Policy Gate — generic validators) + `src/workflows/drift-detection.ts` (W3 LLM drift) | ⚠️ Partial — neither exposes a `(facts) → (drift signal)` callable; B.3 builds a Field-Daily-specific deterministic classifier per the brief's "precursor fix" escape hatch. See PR #195 doc comment for the seam where a future unified validator could plug in. **No W3 logic was reimplemented.** [Amended 2026-05-16 by canon-drift audit.] |
 | Proposal §7159 validator | `src/proposal/validation.ts` | ✅ Live |
 | Cost KB seed v0.6 (tier-1) + tier-2 ingestion (PR #186) | `src/persistence/kbIngestion.ts` + `data/cost-kb-seed.json` | ✅ Live |
 | Right Hand Home + Module Drawer canon | `docs/architecture/right_hand_home_module_drawer_2026-05-15.md` | ✅ Pinned (PR #180 + #187) |
@@ -249,7 +249,13 @@ Single test that exercises the full path:
 1. Create project via existing endpoint
 2. POST a `progress_update` entry with Henderson transcript
 3. Run Field Capture play → assert facts extracted
-4. Run drift adapter → assert drift fires (severity `warn`)
+4. Run drift adapter → assert drift fires (severity `block`)
+   [AMENDED 2026-05-16 by canon-drift audit: this brief originally
+    predicted severity `warn`. B.3's classifier (PR #195) emits `block`
+    on Henderson because behind + money_risk + scope_change fire
+    simultaneously — see PR #197's e2e test for the lock + rationale.
+    `block` is the correct stricter office-side stop for the Henderson
+    case; the original prediction was conservative.]
 5. Simulate relay-card surface via direct event emission
 6. POST review with outcome `actioned`
 7. Read events.jsonl + assert 5 events in correct order:
