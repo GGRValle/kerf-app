@@ -10,6 +10,7 @@
  *   POST /api/projects              — create project (emits project.created)
  *   POST /api/projects/<id>/captures — record a capture (emits capture.recorded)
  *   POST /api/projects/<id>/daily-log/entries — Field Daily entry (emits daily_log.entry_captured)
+ *   POST /api/relay-cards/<id>/review — relay card review (emits relay_card.reviewed)
  *   GET  /api/projects              — list projects (reads projection files)
  *   GET  /api/projects/<id>         — single project projection
  *   POST /api/kb/ingestions         — tier-2 Cost KB batch (emits kb.ingested)
@@ -38,6 +39,8 @@ import {
   type DailyLogFactsExtractedEvent,
   type PersistenceEvent,
   type PersistenceTenantId,
+  type RelayCardReviewOutcome,
+  type RelayCardSurfacedEvent,
 } from '../src/persistence/events.ts';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
 import { runFieldCapturePlay } from '../src/persistence/fieldCapture.ts';
@@ -883,6 +886,145 @@ async function handleRelayFeedGet(
   jsonResponse(res, 200, { items });
 }
 
+const VALID_RELAY_REVIEW_OUTCOMES: readonly RelayCardReviewOutcome[] = [
+  'acknowledged',
+  'actioned',
+  'dismissed',
+];
+
+function isRelayCardReviewOutcome(v: unknown): v is RelayCardReviewOutcome {
+  return typeof v === 'string' && (VALID_RELAY_REVIEW_OUTCOMES as readonly string[]).includes(v);
+}
+
+async function findRelayCardSurfaced(
+  relayCardId: string,
+  tenant: PersistenceTenantId,
+): Promise<RelayCardSurfacedEvent | null> {
+  const allEvents = await eventStore.readAll();
+  for (let i = allEvents.length - 1; i >= 0; i--) {
+    const e = allEvents[i]!;
+    if (
+      e.type === 'relay_card.surfaced' &&
+      e.tenant_id === tenant &&
+      e.relay_card_id === relayCardId
+    ) {
+      return e;
+    }
+  }
+  return null;
+}
+
+async function handleRelayCardReview(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  relayCardId: string,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  if (typeof body !== 'object' || body === null) {
+    jsonResponse(res, 400, { error: 'invalid_body', reason: 'body must be a JSON object' });
+    return;
+  }
+  const input = body as Record<string, unknown>;
+  if (!isPersistenceTenantId(input['tenant_id'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+    });
+    return;
+  }
+  const tenant = input['tenant_id'];
+
+  const reviewer = typeof input['reviewer'] === 'string' ? input['reviewer'].trim() : '';
+  if (reviewer.length === 0) {
+    jsonResponse(res, 400, {
+      error: 'invalid_reviewer',
+      reason: 'reviewer must be a non-empty string',
+    });
+    return;
+  }
+
+  if (!isRelayCardReviewOutcome(input['outcome'])) {
+    jsonResponse(res, 400, {
+      error: 'invalid_outcome',
+      reason: `outcome must be one of: ${VALID_RELAY_REVIEW_OUTCOMES.join(', ')}`,
+    });
+    return;
+  }
+  const outcome = input['outcome'];
+
+  const surfaced = await findRelayCardSurfaced(relayCardId, tenant);
+  if (surfaced === null) {
+    jsonResponse(res, 404, {
+      error: 'relay_card_not_found',
+      reason: `no relay_card.surfaced event for relay_card_id=${relayCardId} under tenant=${tenant}`,
+    });
+    return;
+  }
+
+  const reviewedAt = new Date().toISOString();
+  const event: PersistenceEvent = {
+    event_id: generateEventId('evt'),
+    type: 'relay_card.reviewed',
+    tenant_id: tenant,
+    correlation_id: surfaced.correlation_id,
+    actor: surfaced.actor,
+    at: reviewedAt,
+    source_refs: surfaced.source_refs,
+    relay_card_id: relayCardId,
+    reviewer,
+    reviewed_at: reviewedAt,
+    outcome,
+  };
+
+  const validation = validatePersistenceEvent(event);
+  if (!validation.ok) {
+    jsonResponse(res, 400, { error: 'invalid_event', errors: validation.errors });
+    return;
+  }
+
+  try {
+    await eventStore.append(validation.event);
+  } catch (err) {
+    jsonResponse(res, 500, {
+      error: 'append_failed',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+
+  const allEvents = await eventStore.readAll();
+  await rebuildAndPersistProjection({
+    events: allEvents,
+    tenant,
+    projectId: surfaced.correlation_id,
+    pathFor: projectionPathFor,
+  });
+
+  jsonResponse(res, 200, {
+    event_id: validation.event.event_id,
+    type: validation.event.type,
+    outcome: validation.event.outcome,
+    reviewed_at: validation.event.reviewed_at,
+  });
+}
+
 async function handleListProjects(
   res: http.ServerResponse,
   tenantFilter: PersistenceTenantId | null,
@@ -1178,6 +1320,17 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/field-daily/relay-feed') {
     if (req.method === 'GET') {
       await handleRelayFeedGet(res, url.searchParams.get('tenant_id'));
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  const relayReviewMatch = url.pathname.match(/^\/api\/relay-cards\/([^/]+)\/review\/?$/);
+  if (relayReviewMatch !== null) {
+    const relayCardId = decodeURIComponent(relayReviewMatch[1]!);
+    if (req.method === 'POST') {
+      await handleRelayCardReview(req, res, relayCardId);
       return;
     }
     res.writeHead(405).end();
