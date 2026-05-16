@@ -8,10 +8,13 @@ export type MatchedRoute =
   | { name: 'decisions-list' }
   | { name: 'decision-detail'; id: string }
   | { name: 'audit-detail'; packetId: string }
-  | { name: 'blackboard' };
+  | { name: 'blackboard' }
+  | { name: 'kb-ingestion' }
+  | { name: 'kb-ingestion-detail'; ingestionId: string };
 
 const DECISION_DETAIL = /^\/decisions\/([^/]+)\/?$/;
 const AUDIT_DETAIL = /^\/audit\/([^/]+)\/?$/;
+const KB_ING_DETAIL = /^\/kb-ingestion\/([^/]+)\/?$/;
 
 export function matchRoute(pathname: string): MatchedRoute {
   const p = pathname.replace(/\/+$/, '') || '/';
@@ -40,6 +43,13 @@ export function matchRoute(pathname: string): MatchedRoute {
   }
   if (p === '/blackboard') {
     return { name: 'blackboard' };
+  }
+  if (p === '/kb-ingestion') {
+    return { name: 'kb-ingestion' };
+  }
+  const kbM = KB_ING_DETAIL.exec(p);
+  if (kbM?.[1]) {
+    return { name: 'kb-ingestion-detail', ingestionId: decodeURIComponent(kbM[1]) };
   }
   return { name: 'dashboard' };
 }

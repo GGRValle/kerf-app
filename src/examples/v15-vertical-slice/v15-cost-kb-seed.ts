@@ -30,6 +30,8 @@ export interface KerfCostKbSeedRow {
   readonly row_version: string;
   readonly tenant_id: string;
   readonly source_layer: string;
+  /** Present on tier-2 ingested rows — ties a row back to a `kb.ingested` batch. */
+  readonly kerf_ingestion_id?: string;
   readonly authority_rank: number | null;
   readonly pricing_basis_state: string;
   readonly curator_review_status: string;
@@ -98,6 +100,9 @@ export interface KerfCostKbSeedManifest {
 
 const SEED_PATH = '/data/cost-kb-seed.json';
 
+/** Tier-2 tenant actuals JSONL rows (`src/persistence/kbIngestion.ts`). */
+const TIER2_TENANT_ACTUALS_LAYER = 'tenant_tier2_actuals';
+
 // Module-scope cache. Browser-side: populated by `loadV15CostKbSeed()` on boot.
 // Tests inject directly via `setV15CostKbSeedForTests` so they don't fetch.
 let CACHED: KerfCostKbSeedManifest | null = null;
@@ -110,6 +115,11 @@ export function setV15CostKbSeedForTests(manifest: KerfCostKbSeedManifest | null
   CACHED = manifest;
 }
 
+/** Clears the module cache so the next `loadV15CostKbSeed` refetches (e.g. after tier-2 POST). */
+export function invalidateV15CostKbSeedCache(): void {
+  CACHED = null;
+}
+
 /**
  * Fetch the seed JSON from the static asset and cache it module-scope.
  * Idempotent: safe to call multiple times; only fetches once.
@@ -117,8 +127,33 @@ export function setV15CostKbSeedForTests(manifest: KerfCostKbSeedManifest | null
  * Returns null if the fetch fails — F-34 prompts fall back to ungrounded
  * voice rather than blocking on the seed being available.
  */
+export interface LoadV15CostKbSeedOptions {
+  /**
+   * When set (e.g. `tenant_ggr`), best-effort merge of `GET /api/kb/tier2-rows`
+   * ahead of tier-1 seed rows. No-op when fetch fails (static file open).
+   */
+  readonly mergeTier2TenantId?: 'tenant_ggr' | 'tenant_valle';
+}
+
+/**
+ * Prepend tier-2 rows so `lookupCostKbSeed` sees lower `authority_rank` first
+ * (PROJECT_ACTUAL=1 beats TENANT_MEMORY=2 beats seed≈5).
+ */
+export function mergeTier2RowsIntoManifest(
+  manifest: KerfCostKbSeedManifest,
+  tier2Rows: readonly KerfCostKbSeedRow[],
+): KerfCostKbSeedManifest {
+  if (tier2Rows.length === 0) return manifest;
+  const sorted = [...tier2Rows].sort((a, b) => (a.authority_rank ?? 99) - (b.authority_rank ?? 99));
+  return {
+    ...manifest,
+    trade_rows: [...sorted, ...manifest.trade_rows],
+  };
+}
+
 export async function loadV15CostKbSeed(
   fetchImpl: typeof globalThis.fetch = globalThis.fetch,
+  options?: LoadV15CostKbSeedOptions,
 ): Promise<KerfCostKbSeedManifest | null> {
   if (CACHED !== null) {
     return CACHED;
@@ -132,7 +167,27 @@ export async function loadV15CostKbSeed(
     if (!isValidManifest(parsed)) {
       return null;
     }
-    CACHED = parsed;
+    let merged: KerfCostKbSeedManifest = parsed;
+    const tid = options?.mergeTier2TenantId;
+    if (tid !== undefined) {
+      try {
+        const t2 = await fetchImpl(`/api/kb/tier2-rows?tenant_id=${encodeURIComponent(tid)}`, {
+          cache: 'no-store',
+        });
+        if (t2.ok) {
+          const body = (await t2.json()) as { rows?: unknown };
+          const rows = Array.isArray(body.rows)
+            ? (body.rows as KerfCostKbSeedRow[]).filter(
+                (r) => typeof r === 'object' && r !== null && r['source_layer'] === TIER2_TENANT_ACTUALS_LAYER,
+              )
+            : [];
+          merged = mergeTier2RowsIntoManifest(parsed, rows);
+        }
+      } catch {
+        /* tier-2 optional */
+      }
+    }
+    CACHED = merged;
     return CACHED;
   } catch {
     return null;
@@ -314,6 +369,7 @@ export function lookupCostKbSeed(query: KerfCostKbLookupQuery): KerfCostKbLookup
     if (!allowedStates.has(row.pricing_basis_state)) continue;
     if (row.source_ref_id.length === 0) continue;
     if (row.range_low_cents === null && row.range_high_cents === null && row.default_cost_cents === null) continue;
+    if (!rowPassesTier2CuratorGate(row, query.use)) continue;
     matches.push(row);
   }
   if (matches.length === 0) {
@@ -369,6 +425,18 @@ export function lookupCostKbSeed(query: KerfCostKbLookupQuery): KerfCostKbLookup
     material_narrowed: materialNarrowed,
     narrowed_materials,
   };
+}
+
+function rowPassesTier2CuratorGate(row: KerfCostKbSeedRow, use: KerfCostKbLookupUse): boolean {
+  if (row.source_layer !== TIER2_TENANT_ACTUALS_LAYER) return true;
+  if (row.curator_review_status === 'REJECTED') return false;
+  if (use === 'clarification_range') {
+    return (
+      row.curator_review_status === 'APPROVED_DOGFOOD' ||
+      row.curator_review_status === 'APPROVED_CLIENT_VISIBLE'
+    );
+  }
+  return true;
 }
 
 function allowedPricingStatesFor(use: KerfCostKbLookupUse): ReadonlySet<string> {

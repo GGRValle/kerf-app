@@ -11,6 +11,10 @@
  *   POST /api/projects/<id>/captures — record a capture (emits capture.recorded)
  *   GET  /api/projects              — list projects (reads projection files)
  *   GET  /api/projects/<id>         — single project projection
+ *   POST /api/kb/ingestions         — tier-2 Cost KB batch (emits kb.ingested)
+ *   GET  /api/kb/ingestions         — list kb.ingested summaries (?tenant_id=)
+ *   GET  /api/kb/tier2-rows         — JSON rows for browser merge (?tenant_id=)
+ *   POST /api/kb/tier2/review       — row-level curator transition (rewrites JSONL)
  *   GET  /...                       — static + SPA fallback to index.html
  *
  * GROQ_API_KEY + GROQ_BASE_URL must be in .env.local (Node loads it
@@ -36,6 +40,15 @@ import {
   type ProjectProjection,
 } from '../src/persistence/projections.ts';
 import { buildMobileValidationHarnessHtml } from '../src/examples/v15-vertical-slice/m-validation-harness.ts';
+import {
+  applyTier2RowReview,
+  defaultKbActualsFilepath,
+  ingestKbRows,
+  listKbIngestionSummaries,
+  readTier2ActualsJsonl,
+  validateIngestionRequestBody,
+  validateTier2RowReviewBody,
+} from '../src/persistence/kbIngestion.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../src/examples/v15-vertical-slice');
@@ -635,6 +648,134 @@ async function handleGetProject(
   jsonResponse(res, 200, { projection });
 }
 
+function aggregateErrorMessages(err: unknown): string[] {
+  if (err instanceof AggregateError) {
+    return err.errors.map((e) => (e instanceof Error ? e.message : String(e)));
+  }
+  if (err instanceof Error) {
+    return [err.message];
+  }
+  return [String(err)];
+}
+
+async function handleKbIngestionsPost(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  let request;
+  try {
+    request = validateIngestionRequestBody(body);
+  } catch (err) {
+    jsonResponse(res, 400, { error: 'validation_failed', errors: aggregateErrorMessages(err) });
+    return;
+  }
+  try {
+    const result = await ingestKbRows(request, eventStore, {
+      kbFilepath: (t) => defaultKbActualsFilepath(PERSISTENCE_DIR, t),
+      generateEventId: () => generateEventId('evt'),
+      generateIngestionId: () => generateEventId('ing'),
+    });
+    jsonResponse(res, 201, {
+      ok: true,
+      ingestion_id: result.ingestion_id,
+      row_count: result.row_count,
+      written_to: result.written_to,
+      events_emitted: result.events_emitted,
+    });
+  } catch (err) {
+    jsonResponse(res, 400, { error: 'ingestion_failed', errors: aggregateErrorMessages(err) });
+  }
+}
+
+async function handleKbIngestionsGet(
+  res: http.ServerResponse,
+  tenantParam: string | null,
+): Promise<void> {
+  if (!isPersistenceTenantId(tenantParam)) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: 'tenant_id query must be "tenant_ggr" or "tenant_valle"',
+    });
+    return;
+  }
+  const summaries = await listKbIngestionSummaries(eventStore, tenantParam);
+  jsonResponse(res, 200, { ingestions: summaries });
+}
+
+async function handleTier2RowsGet(
+  res: http.ServerResponse,
+  tenantParam: string | null,
+): Promise<void> {
+  if (!isPersistenceTenantId(tenantParam)) {
+    jsonResponse(res, 400, {
+      error: 'invalid_tenant',
+      reason: 'tenant_id query must be "tenant_ggr" or "tenant_valle"',
+    });
+    return;
+  }
+  const filepath = defaultKbActualsFilepath(PERSISTENCE_DIR, tenantParam);
+  const rows = await readTier2ActualsJsonl(filepath);
+  jsonResponse(res, 200, { rows });
+}
+
+async function handleTier2ReviewPost(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  let review;
+  try {
+    review = validateTier2RowReviewBody(body);
+  } catch (err) {
+    jsonResponse(res, 400, { error: 'validation_failed', errors: aggregateErrorMessages(err) });
+    return;
+  }
+  try {
+    await applyTier2RowReview(review, (t) => defaultKbActualsFilepath(PERSISTENCE_DIR, t));
+    jsonResponse(res, 200, { ok: true });
+  } catch (err) {
+    jsonResponse(res, 404, {
+      error: 'row_not_found',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://127.0.0.1:${PORT}`);
 
@@ -676,6 +817,36 @@ const server = http.createServer(async (req, res) => {
       const tenantParam = url.searchParams.get('tenant');
       const tenantHint = isPersistenceTenantId(tenantParam) ? tenantParam : null;
       await handleGetProject(res, projectId, tenantHint);
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+
+  // ── /api/kb/* routes ────────────────────────────────────────────────
+  if (url.pathname === '/api/kb/ingestions') {
+    if (req.method === 'POST') {
+      await handleKbIngestionsPost(req, res);
+      return;
+    }
+    if (req.method === 'GET') {
+      await handleKbIngestionsGet(res, url.searchParams.get('tenant_id'));
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+  if (url.pathname === '/api/kb/tier2-rows') {
+    if (req.method === 'GET') {
+      await handleTier2RowsGet(res, url.searchParams.get('tenant_id'));
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
+  if (url.pathname === '/api/kb/tier2/review') {
+    if (req.method === 'POST') {
+      await handleTier2ReviewPost(req, res);
       return;
     }
     res.writeHead(405).end();
@@ -733,6 +904,6 @@ server.listen(PORT, () => {
   console.log(
     `\nKerf V1.5 vertical slice (port ${PORT}):\n  http://localhost:${PORT}/field-capture  — F·33 Field Capture\n  http://localhost:${PORT}/dashboard     — home\n  http://localhost:${PORT}/m/check       — mobile validation harness (dev)\n  POST /transcribe                       — ${
       transcribeReady ? 'READY (Groq Whisper)' : 'NOT CONFIGURED (set GROQ_API_KEY + GROQ_BASE_URL in .env.local)'
-    }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
+    }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
   );
 });
