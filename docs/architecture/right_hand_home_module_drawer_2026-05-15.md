@@ -111,12 +111,32 @@ This is by design: field crew are operating on **one job at a time**, not naviga
 
 The voice button is still persistent (left of the HOME tab), so field crew can tap-to-record from any tab.
 
-Per-tab contents (full spec in `kerf_wireframes_mobile_v2.html` FRAMEs 2–5):
+**HOME is a smart summary, not a folder.** Per the "business brain, not file cabinet" memory canon, HOME must lead with **what's the office waiting on me for / what changed since yesterday / what should I do next** — relay-awareness first. The other tabs (JOB, LOG, ME) are deliberate folders the user reaches into when they need to dig; HOME is the answer to "I just opened the app, what now?" without the user navigating.
 
-- **HOME** — Current job header · live clock status (see Field Daily clock-event spec) · today's task · this-week schedule · captures-today summary
-- **JOB** — Sub-tabs: Scope / Docs / Crew / Materials. Materials shows three-way state + one-tap actions
-- **LOG** — Auto-compiled timeline of the day; entries: clock_event / sms / task / photo / voice / blocker
-- **ME** — Personal: hours this week + pay period, L0→L3 career ladder, Coach (RH's field-facing voice) nudges
+Per-tab contents (full spec in `kerf_wireframes_mobile_v2.html` FRAMEs 2–5, sharpened by the 2026-05-16 canon-amendment review):
+
+- **HOME** — *Today's smart summary for the field user.* Leads with relay-awareness: any office-side action pending the field user's input (e.g., "office sent the Henderson CO draft to client; expect inbound questions"), any changes since yesterday's clock-out (e.g., "Mrs. Henderson confirmed she'll be out 'til 2pm"), then current task + live clock status (clock-event spec) + this-week schedule + captures-today summary. **NOT** a task list. **NOT** "here's your folder for jobs."
+- **JOB** — Sub-tabs: Scope / Docs / Crew / Materials. Materials shows **three-way state (delivered / pending / missing) one-tap actions** — see §4.2.1 below for the strict materials scope split (status only; cost flows through Cost KB; purchasing is out).
+- **LOG** — Auto-compiled timeline of the day; entries: clock_event / sms / task / photo / voice / blocker. Sub-tab **Issues** surfaces the field user's own captures' downstream relay status — "you flagged galvanized; office sent a CO draft" — so they know what got escalated. **NOT** a full Right Hand relay queue (that lives at `/relay`, operator-only).
+- **ME** — Personal: hours this week + pay period (computed from clock_events for the field user's own visibility only — NOT a payroll feed; see Field Daily §13), L0→L3 career ladder, Coach (RH's field-facing voice) nudges.
+
+### 5.1 Materials scope — strict three-way split
+
+Adjacent to three things explicitly out of V1.5 scope. Field Hand stays surgical:
+
+| Concern | In/Out | Where it lives |
+|---|---|---|
+| Materials **status** (delivered / pending / missing / wrong / damaged) | ✅ IN | Field Hand JOB → Materials |
+| Materials **cost** (unit price, vendor invoice, KB lookup) | Out of Field Hand | Cost KB layer; surfaces in proposal / decision card |
+| Materials **purchasing** (PO creation, vendor send, spend commit) | ❌ OUT | Operator-side, post-V1.5; never auto |
+
+"Order more" from Field Hand routes to office as a **draft/request** on Right Hand's relay queue. Field cannot autonomously create POs, commit spend, send vendor communication, or change project budget.
+
+---
+
+## 5.2 §13 disclosure pattern — applies to every new surface
+
+Per `feedback_audit_deep_link_not_top_nav.md`: every operator-facing surface carries a trust signal (where did this come from, which source-refs power it) reachable in **one click**, not via a top-nav Audit tab. Module drawer destinations + Field Hand tabs + Right Hand home all inherit this. Audit is deep-linked from the artifact, never a primary nav item.
 
 ---
 
