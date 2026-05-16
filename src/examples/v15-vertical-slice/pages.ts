@@ -35,6 +35,7 @@ import { renderOutdoorKitchenScaffoldSection } from './v15-outdoor-kitchen-scaff
 import { detectDeckArchetype } from './v15-deck-archetype.js';
 import { instantiateDeckScaffold } from './v15-deck-scaffold.js';
 import { renderDeckScaffoldSection } from './v15-deck-scaffold-html.js';
+import { buildKbIngestionDetailHtml, buildKbIngestionListHtml } from './pages/kb-ingestion.js';
 
 function esc(s: string): string {
   return s
@@ -190,6 +191,7 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
 <li><a href="/draft-review" data-kerf-v15-nav="true">Open F-35 Draft Review</a></li>
 <li><a href="/decisions/${esc(DEMO_DECISION_ID)}" data-kerf-v15-nav="true">Jump to approval card</a></li>
 <li><a href="/audit/${esc(DEMO_PACKET_ID)}" data-kerf-v15-nav="true">Open audit stream</a></li>
+<li><a href="/kb-ingestion" data-kerf-v15-nav="true">Tier-2 Cost KB ingestion</a> <span class="kerf-v15-card__meta">(module drawer destination)</span></li>
 </ul>`,
       };
     case 'field-capture':
@@ -310,6 +312,20 @@ export function buildPage(route: MatchedRoute): PageFrameContent {
         subtitle: 'System memory surface (read-only preview).',
         notice: 'Preview only — no graph queries or writes.',
         bodyHtml: buildBlackboardPreviewHtml(),
+      };
+    case 'kb-ingestion':
+      return {
+        title: 'Cost KB · Tier-2 ingestion',
+        subtitle: 'Right Hand module drawer destination — past estimates into tenant actuals JSONL.',
+        notice: 'Deterministic validation only. No LLM on this path.',
+        bodyHtml: buildKbIngestionListHtml(),
+      };
+    case 'kb-ingestion-detail':
+      return {
+        title: 'Cost KB · Ingestion review',
+        subtitle: `Batch <code>${esc(route.ingestionId)}</code>`,
+        notice: 'Approve rows individually before they appear in clarification_range lookups.',
+        bodyHtml: buildKbIngestionDetailHtml(route.ingestionId),
       };
   }
 }

@@ -638,3 +638,57 @@
     gap: 0.2rem;
   }
 }
+
+/* Tier-2 KB ingestion (module drawer destination) */
+.kerf-v15-kb-ing__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin: 1rem 0;
+}
+
+.kerf-v15-kb-ing__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.kerf-v15-kb-ing__select,
+.kerf-v15-kb-ing__input {
+  min-width: 12rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.kerf-v15-kb-ing__textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.kerf-v15-kb-ing__list {
+  margin-top: 0.75rem;
+}
+
+.kerf-v15-kb-ing__review {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.kerf-v15-kb-ing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.kerf-v15-card--nested {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 6px;
+}

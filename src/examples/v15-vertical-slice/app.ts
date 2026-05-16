@@ -13,7 +13,7 @@ import { matchRoute } from './router.js';
 import { renderShell } from './shell.js';
 import { buildV15FieldCaptureHandoff } from './v15-field-capture-html.js';
 import { initV15RecordButton, type V15TranscribeMeta } from './v15-record-button.js';
-import { loadV15CostKbSeed } from './v15-cost-kb-seed.js';
+import { loadV15CostKbSeed, invalidateV15CostKbSeedCache } from './v15-cost-kb-seed.js';
 import {
   v15FieldCaptureGetState,
   v15FieldCaptureReplaceState,
@@ -30,6 +30,7 @@ import {
   mountScaffoldEditInput,
 } from './v15-scaffold-edit-interaction.js';
 import { scheduleMobileDomProbeReport } from './m-dom-probe.js';
+import { initKbIngestionDetailPage, initKbIngestionListPage } from './v15-kb-ingestion-client.js';
 
 const ROOT_ID = 'kerf-v15-root';
 
@@ -63,6 +64,12 @@ function render(): void {
   syncNavToggle(false);
   wireFieldCaptureAfterRender(path);
   scheduleMobileDomProbeReport(window, path);
+  const route = matchRoute(path);
+  if (route.name === 'kb-ingestion') {
+    initKbIngestionListPage();
+  } else if (route.name === 'kb-ingestion-detail') {
+    initKbIngestionDetailPage(route.ingestionId);
+  }
 }
 
 function syncNavToggle(open: boolean): void {
@@ -413,13 +420,21 @@ function boot(): void {
   document.addEventListener('focusout', onScaffoldEditBlur);
   window.addEventListener('popstate', onPopState);
   normalizeBootUrl();
+  if (typeof window !== 'undefined') {
+    (window as unknown as { kerfReloadCostKbSeed?: () => Promise<void> }).kerfReloadCostKbSeed =
+      async (): Promise<void> => {
+        invalidateV15CostKbSeedCache();
+        await loadV15CostKbSeed(globalThis.fetch, { mergeTier2TenantId: 'tenant_ggr' });
+        render();
+      };
+  }
   // Render immediately so the shell paints, then load the cost-KB seed
   // and re-render so any open F-34 clarifications can consult tier 1
   // (operator-facing prompt augmented with range, debug overlay shown).
   // Seed load is best-effort — render() works fine even if the seed never
   // arrives; F-34 just falls back to ungrounded voice in that case.
   render();
-  void loadV15CostKbSeed().then((manifest) => {
+  void loadV15CostKbSeed(globalThis.fetch, { mergeTier2TenantId: 'tenant_ggr' }).then((manifest) => {
     if (manifest !== null) {
       render();
     }
