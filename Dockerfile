@@ -22,7 +22,11 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --no-audit --no-fund
+# --ignore-scripts: the package.json `prepare` hook runs `tsc`, which
+# needs tsconfig.json + source files (not present in this layer). The
+# build stage runs the real compile via esbuild; npm lifecycle scripts
+# aren't needed for dependency install.
+RUN npm ci --no-audit --no-fund --ignore-scripts
 
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -50,7 +54,6 @@ RUN mkdir -p /data/.kerf
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/src ./src
-COPY --from=build /app/data ./data
 COPY --from=build /app/package.json ./package.json
 
 EXPOSE 8080
