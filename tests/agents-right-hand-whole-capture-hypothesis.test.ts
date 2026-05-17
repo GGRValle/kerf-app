@@ -127,7 +127,7 @@ function stubLlmClient(stubResponse: object): RunWholeCaptureHypothesisInput['ll
     groqChat: async () => ({
       ok: true,
       content: JSON.stringify(stubResponse),
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       inputTokens: 100,
       outputTokens: 50,
       totalTokens: 150,
@@ -197,7 +197,7 @@ test('LLM malformed JSON: falls back to deterministic', async () => {
     groqChat: async () => ({
       ok: true,
       content: 'not valid json at all',
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       inputTokens: 100,
       outputTokens: 50,
       totalTokens: 150,
