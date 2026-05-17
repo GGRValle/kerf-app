@@ -145,7 +145,7 @@ const RIGHT_HAND_LLM_CLIENT = (() => {
 })();
 
 if (RIGHT_HAND_LLM_CLIENT !== null) {
-  console.log('[right_hand] LLM hypothesis path WIRED (Groq Llama 3.1 70B Versatile)');
+  console.log('[right_hand] LLM hypothesis path WIRED (Groq Llama 3.3 70B Versatile)');
 } else {
   console.log(
     '[right_hand] LLM hypothesis path NOT WIRED (GROQ_API_KEY or GROQ_BASE_URL missing) — orchestrator falls back to deterministic heuristics',

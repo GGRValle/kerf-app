@@ -127,7 +127,7 @@ function stubLlmClient(stubResponse: object): RunWholeCaptureHypothesisInput['ll
     groqChat: async () => ({
       ok: true,
       content: JSON.stringify(stubResponse),
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       inputTokens: 100,
       outputTokens: 50,
       totalTokens: 150,
@@ -176,7 +176,7 @@ test('LLM path: well-formed JSON response is parsed correctly', async () => {
   assert.equal(h.project_type_hypothesis, 'bath_remodel');
   assert.equal(h.project_type_confidence, 'high');
   assert.equal(h.operator_intent, 'scope_change');
-  assert.equal(h.model_used, 'groq-llama-3.3-70b');
+  assert.equal(h.model_used, 'groq-llama-3.3-70b-versatile');
 });
 
 test('LLM failure: falls back to deterministic cleanly', async () => {
@@ -197,7 +197,7 @@ test('LLM malformed JSON: falls back to deterministic', async () => {
     groqChat: async () => ({
       ok: true,
       content: 'not valid json at all',
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       inputTokens: 100,
       outputTokens: 50,
       totalTokens: 150,
@@ -290,6 +290,83 @@ test('regression: hypothesis (endpoint, model) pair MUST pass checkHostingRoute(
     result.allowed,
     true,
     `hypothesis endpoint="${HYPOTHESIS_LLM_ENDPOINT}" + model="${HYPOTHESIS_LLM_MODEL}" must pass checkHostingRoute. Got: ${JSON.stringify(result)}`,
+  );
+});
+
+test('regression: live adapter request uses the EXACT Groq API model literal', async () => {
+  // Companion to the route-pair regression above. That test proves the
+  // configured pair is registry-approved. THIS test proves the same pair
+  // is what the orchestrator actually puts on the wire — i.e., the model
+  // string handed to groqChat() at call time matches HYPOTHESIS_LLM_MODEL.
+  //
+  // Background: dogfood-smoke 2026-05-16 found Groq returning
+  // `{"code":"model_not_found"}` for `llama-3.3-70b`, because the registry
+  // had a typo'd SKU (`llama-3.3-70b` instead of Groq's actual API name
+  // `llama-3.3-70b-versatile`). The route check passed; Groq rejected.
+  //
+  // A captured-call stub verifies the on-the-wire model string equals the
+  // registry's approved model for the hypothesis endpoint. If anyone
+  // hard-codes a model literal in llmHypothesis() that drifts from the
+  // exported constant, OR the registry SKU drifts from what Groq accepts
+  // (we still need dogfood-smoke to catch the latter), this test fails.
+  const {
+    runWholeCaptureHypothesis,
+    HYPOTHESIS_LLM_ENDPOINT,
+    HYPOTHESIS_LLM_MODEL,
+  } = await import('../src/agents/right-hand/whole-capture-hypothesis.ts');
+  const { approvedHostingEndpoint } = await import('../src/hosting/routeCheck.ts');
+
+  // Capture the request groqChat receives.
+  let capturedEndpoint: string | undefined;
+  let capturedModel: string | undefined;
+  const capturingClient: RunWholeCaptureHypothesisInput['llmClient'] = {
+    tenantId: 'tenant_ggr',
+    groqChat: async (req) => {
+      capturedEndpoint = req.endpoint;
+      capturedModel = req.model;
+      return {
+        ok: true,
+        content: JSON.stringify({
+          project_type_hypothesis: 'bath_remodel',
+          project_type_confidence: 'high',
+          transcription_quality: 'clean',
+          garbled_segment_indices: [],
+          operator_intent: 'progress_update',
+          intent_confidence: 'high',
+          ambiguity_flags: [],
+        }),
+        model: req.model,
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+        latencyMs: 234,
+        costNanoUsd: 1_500 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: 'test_inv_wire_capture',
+        completedAt: '2026-05-16T18:00:00.000Z',
+      };
+    },
+  };
+
+  await runWholeCaptureHypothesis({
+    transcript: 'Pulled the tub surround.',
+    entry_kind: 'progress_update',
+    project_context: { project_id: 'proj_test' },
+    llmClient: capturingClient,
+  });
+
+  assert.equal(capturedEndpoint, HYPOTHESIS_LLM_ENDPOINT, 'on-wire endpoint matches constant');
+  assert.equal(capturedModel, HYPOTHESIS_LLM_MODEL, 'on-wire model matches constant');
+
+  // And the on-wire model matches the registry's approved SKU for this
+  // endpoint — i.e., what Groq's API will accept.
+  const approved = approvedHostingEndpoint(HYPOTHESIS_LLM_ENDPOINT);
+  assert.ok(approved, `endpoint ${HYPOTHESIS_LLM_ENDPOINT} must be in the approved registry`);
+  assert.equal(
+    capturedModel,
+    approved.model,
+    `on-wire model="${capturedModel}" must equal registry-approved model="${approved.model}" for endpoint ${HYPOTHESIS_LLM_ENDPOINT}`,
   );
 });
 

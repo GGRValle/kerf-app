@@ -156,9 +156,16 @@ async function seedProject(port: number, projectId: string): Promise<void> {
 // ──────────────────────────────────────────────────────────────────────────
 
 test('GROQ env absent: orchestrator response carries hypothesis_authority=deterministic_fallback', async () => {
+  // Pass empty strings rather than `undefined`. serve-v15 loads `.env.local`
+  // via process.loadEnvFile() at boot, which sets GROQ_API_KEY if and only
+  // if it isn't ALREADY in the env. Deleting the key in the test (undefined)
+  // therefore lets `.env.local` quietly fill it back in — masking the
+  // "env-absent" branch under test. Empty strings stay set, so loadEnvFile
+  // skips them; serve-v15's check is `apiKey.length === 0 → null`, so the
+  // LLM client stays unwired regardless of dev-machine `.env.local`.
   const proc = await startServe({
-    GROQ_API_KEY: undefined,
-    GROQ_BASE_URL: undefined,
+    GROQ_API_KEY: '',
+    GROQ_BASE_URL: '',
   });
   try {
     await seedProject(proc.port, 'proj_llm_off');
@@ -186,9 +193,16 @@ test('GROQ env absent: orchestrator response carries hypothesis_authority=determ
 });
 
 test('GROQ env absent: response shape is stable (no crash on missing LLM client)', async () => {
+  // Pass empty strings rather than `undefined`. serve-v15 loads `.env.local`
+  // via process.loadEnvFile() at boot, which sets GROQ_API_KEY if and only
+  // if it isn't ALREADY in the env. Deleting the key in the test (undefined)
+  // therefore lets `.env.local` quietly fill it back in — masking the
+  // "env-absent" branch under test. Empty strings stay set, so loadEnvFile
+  // skips them; serve-v15's check is `apiKey.length === 0 → null`, so the
+  // LLM client stays unwired regardless of dev-machine `.env.local`.
   const proc = await startServe({
-    GROQ_API_KEY: undefined,
-    GROQ_BASE_URL: undefined,
+    GROQ_API_KEY: '',
+    GROQ_BASE_URL: '',
   });
   try {
     await seedProject(proc.port, 'proj_llm_stable');
