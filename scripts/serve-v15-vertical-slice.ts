@@ -46,6 +46,11 @@ import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
 import { runRightHandOrchestrator } from '../src/agents/right-hand/orchestrator.ts';
 import { createDefaultToolRegistry } from '../src/agents/right-hand/tool-registry.ts';
 import {
+  defaultGroqClientDeps,
+  groqChat,
+  type GroqChatRequest,
+} from '../src/altitude/modelAdapter/index.ts';
+import {
   defaultProjectionPath,
   rebuildAndPersistProjection,
   readProjectProjection,
@@ -95,6 +100,57 @@ const eventStore = createPersistenceEventStore({
   filepath: EVENTS_PATH,
   onWarn: (m): void => console.warn(`[persistence] ${m}`),
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// Groq LLM client for the Right Hand orchestrator (Sprint E — LLM wiring)
+//
+// When GROQ_API_KEY + GROQ_BASE_URL are set in env, we construct a closed-over
+// groqChat function that the orchestrator's whole-capture-hypothesis pass
+// invokes for tier-1 LLM inference (Llama 3.1 70B Versatile per the W2 benchmark).
+//
+// When either env var is missing, `RIGHT_HAND_LLM_CLIENT` is null and the
+// orchestrator falls back to deterministic heuristics (current behavior pre-
+// wiring). The orchestrator's `right_hand_response.hypothesis.hypothesis_authority`
+// field surfaces 'llm_inferred' vs 'deterministic_fallback' — the operator
+// sees the difference via the honesty disclaimer in /field's render.
+//
+// This is the "operator-visible substrate change" that justifies a backend-
+// only PR under criterion 7 of the Right Hand acceptance contract:
+//   - Before: hypothesis_authority = 'deterministic_fallback' on every capture;
+//     honesty disclaimer visible on /field; project type / intent inferred
+//     from narrow keyword tables.
+//   - After:  hypothesis_authority = 'llm_inferred' when env is set;
+//     honesty disclaimer absent; project type / intent / ambiguity flags
+//     inferred from full-transcript LLM read.
+// ──────────────────────────────────────────────────────────────────────────
+
+const RIGHT_HAND_LLM_CLIENT = (() => {
+  const apiKey = process.env['GROQ_API_KEY'];
+  const baseUrl = process.env['GROQ_BASE_URL'];
+  if (
+    typeof apiKey !== 'string' ||
+    apiKey.length === 0 ||
+    typeof baseUrl !== 'string' ||
+    baseUrl.length === 0
+  ) {
+    return null;
+  }
+  const deps = defaultGroqClientDeps(apiKey, baseUrl);
+  return {
+    // tenantId is per-request (set from the captured event's tenant_id).
+    // Kept as a placeholder here; the per-request wrapper supplies the
+    // real tenant via the closure in the handler.
+    deps,
+  };
+})();
+
+if (RIGHT_HAND_LLM_CLIENT !== null) {
+  console.log('[right_hand] LLM hypothesis path WIRED (Groq Llama 3.1 70B Versatile)');
+} else {
+  console.log(
+    '[right_hand] LLM hypothesis path NOT WIRED (GROQ_API_KEY or GROQ_BASE_URL missing) — orchestrator falls back to deterministic heuristics',
+  );
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -857,14 +913,25 @@ async function handleCreateDailyLogEntry(
   let rightHandResponse: Awaited<ReturnType<typeof runRightHandOrchestrator>> | null = null;
   let playError: string | null = null;
 
+  // Build the per-request LLM client when the module-scope Groq deps are
+  // available. tenantId comes from the captured event so the hypothesis
+  // call is tenant-scoped on the audit trail.
+  const llmClient =
+    RIGHT_HAND_LLM_CLIENT !== null
+      ? {
+          tenantId: tenant,
+          groqChat: (request: GroqChatRequest) =>
+            groqChat(request, RIGHT_HAND_LLM_CLIENT.deps),
+        }
+      : undefined;
+
   try {
     rightHandResponse = await runRightHandOrchestrator({
       capturedEvent,
       projectContext,
       toolRegistry: createDefaultToolRegistry(),
       recentSurfaceHistory,
-      // No LLM client wired here yet — orchestrator uses deterministic
-      // fallback. After Sprint E.2 the Groq client wires in from env vars.
+      llmClient,
     });
   } catch (err) {
     playError = `orchestrator: ${err instanceof Error ? err.message : String(err)}`;
