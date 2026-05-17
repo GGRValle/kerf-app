@@ -176,7 +176,7 @@ test('LLM path: well-formed JSON response is parsed correctly', async () => {
   assert.equal(h.project_type_hypothesis, 'bath_remodel');
   assert.equal(h.project_type_confidence, 'high');
   assert.equal(h.operator_intent, 'scope_change');
-  assert.equal(h.model_used, 'groq-llama-3.1-70b-versatile');
+  assert.equal(h.model_used, 'groq-llama-3.3-70b');
 });
 
 test('LLM failure: falls back to deterministic cleanly', async () => {
@@ -248,6 +248,33 @@ test('deterministic fallback is deterministic across 50 runs on same input', asy
     const h = await runWholeCaptureHypothesis(input);
     assert.deepEqual(h, baseline);
   }
+});
+
+test('regression: hypothesis endpoint MUST be in the approved hosting route registry', async () => {
+  // This test prevents the silent-fallback bug we hit in production after
+  // PR #215: the wiring used `groq://llama-3.1-70b-versatile` which is
+  // NOT in src/hosting/routeCheck.ts APPROVED_HOSTING_ENDPOINTS, so every
+  // LLM call was rejected by checkHostingRoute() before reaching the
+  // network. The fix changed the endpoint to `groq://llama-70b`. This
+  // test makes sure a future refactor can't silently introduce another
+  // unapproved endpoint string.
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(
+    new URL('../src/agents/right-hand/whole-capture-hypothesis.ts', import.meta.url),
+    'utf8',
+  );
+  const endpointMatch = src.match(/endpoint:\s*['"]groq:\/\/([a-z0-9-]+)['"]/);
+  assert.ok(endpointMatch, 'hypothesis module must declare a groq:// endpoint');
+
+  // Import the registry to check membership at runtime
+  const { APPROVED_HOSTING_ENDPOINTS } = await import('../src/hosting/routeCheck.ts');
+  const used = `groq://${endpointMatch[1]!}`;
+  const approved = (APPROVED_HOSTING_ENDPOINTS as readonly { endpoint: string }[])
+    .map((e) => e.endpoint);
+  assert.ok(
+    approved.includes(used),
+    `hypothesis uses endpoint "${used}" — must be in APPROVED_HOSTING_ENDPOINTS. Approved: ${approved.join(', ')}`,
+  );
 });
 
 test('forbidden-surface invariant: module imports nothing LLM-network', async () => {

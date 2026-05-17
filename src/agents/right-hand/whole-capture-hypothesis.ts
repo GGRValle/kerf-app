@@ -263,9 +263,14 @@ async function llmHypothesis(
   ].join('\n');
 
   try {
+    // Endpoint MUST be in src/hosting/routeCheck.ts APPROVED_HOSTING_ENDPOINTS
+    // registry — groqChat() validates the (endpoint, model) pair via
+    // checkHostingRoute() and rejects unapproved pairs before any network call.
+    // Tier-1 canonical model per Christian's W2 2026-05-03 benchmark
+    // (memory: kerf_tier1_endpoint_lineup_patch003).
     const result = await llm.groqChat({
-      endpoint: 'groq://llama-3.1-70b-versatile',
-      model: 'llama-3.1-70b-versatile',
+      endpoint: 'groq://llama-70b',
+      model: 'llama-3.3-70b',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
@@ -279,8 +284,34 @@ async function llmHypothesis(
       requestedAt: new Date().toISOString(),
     });
 
-    if (!result.ok) return null;
-    const parsed = JSON.parse(result.content) as Partial<WholeCaptureHypothesis>;
+    if (!result.ok) {
+      // Surface the failure reason to logs so a deploy-smoke pass that
+      // sees `hypothesis_authority='deterministic_fallback'` despite env
+      // being set can immediately diagnose WHY. Silent eating of these
+      // errors is what allowed the bad endpoint name to ship in the
+      // first wiring PR and only get caught at user dogfood time.
+      console.warn(
+        `[right_hand] LLM hypothesis call failed (kind=${result.kind}, reason=${result.reason}) — falling back to deterministic heuristics`,
+      );
+      return null;
+    }
+
+    let parsed: Partial<WholeCaptureHypothesis>;
+    try {
+      // Llama models sometimes wrap JSON in markdown fences despite
+      // explicit "JSON only" prompt. Strip common wrappers before parsing.
+      const cleaned = result.content
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+      parsed = JSON.parse(cleaned) as Partial<WholeCaptureHypothesis>;
+    } catch (err) {
+      console.warn(
+        `[right_hand] LLM returned non-JSON content (${err instanceof Error ? err.message : String(err)}) — content preview: ${result.content.slice(0, 200)}`,
+      );
+      return null;
+    }
 
     // Validate shape — fall back if missing required fields
     if (
@@ -288,6 +319,9 @@ async function llmHypothesis(
       typeof parsed.transcription_quality !== 'string' ||
       typeof parsed.operator_intent !== 'string'
     ) {
+      console.warn(
+        `[right_hand] LLM returned JSON missing required fields — falling back. Got keys: ${Object.keys(parsed).join(', ')}`,
+      );
       return null;
     }
 
@@ -303,10 +337,13 @@ async function llmHypothesis(
       ambiguity_flags: Array.isArray(parsed.ambiguity_flags)
         ? (parsed.ambiguity_flags as unknown[]).filter((x): x is string => typeof x === 'string')
         : [],
-      model_used: 'groq-llama-3.1-70b-versatile',
+      model_used: 'groq-llama-3.3-70b',
       hypothesis_authority: 'llm_inferred',
     };
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[right_hand] LLM hypothesis call threw (${err instanceof Error ? err.message : String(err)}) — falling back`,
+    );
     return null;
   }
 }
