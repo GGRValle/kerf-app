@@ -1,68 +1,38 @@
-# Fly.io app config — V1.5 Field Daily internal-release demo.
+# fly.toml app configuration file generated for kerf-v15-internal on 2026-05-16T16:54:23-07:00
 #
-# Single-tenant + single-region demo deploy. Persistence (JSONL event log
-# + projection cache) lives on a mounted volume so events survive
-# container restarts.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# Deploy with:
-#   fly launch --no-deploy        (first time only — see runbook for the rest)
-#   fly volumes create kerf_data --region lax --size 1  (1 GB; bump later if needed)
-#   fly secrets set GROQ_API_KEY=... GROQ_BASE_URL=...
-#   fly secrets set BASIC_AUTH_USER=... BASIC_AUTH_PASS=...
-#   fly deploy
-#
-# Full runbook: docs/architecture/v15_internal_release_deploy_2026-05-16.md
 
-app = "kerf-v15-internal"
-primary_region = "lax"   # Los Angeles — closest Fly region to GGR San Diego
+app = 'kerf-v15-internal'
+primary_region = 'lax'
 
-# ──────────────────────────────────────────────────────────────────────────
-# Build
-# ──────────────────────────────────────────────────────────────────────────
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
-# ──────────────────────────────────────────────────────────────────────────
-# Runtime env (non-secret defaults; secrets via `fly secrets set`)
-# ──────────────────────────────────────────────────────────────────────────
 [env]
-  PORT = "8080"
-  PERSISTENCE_DIR = "/data/.kerf"
-  NODE_ENV = "production"
+  NODE_ENV = 'production'
+  PERSISTENCE_DIR = '/data/.kerf'
+  PORT = '8080'
 
-# ──────────────────────────────────────────────────────────────────────────
-# Persistent volume — events.jsonl + projections survive deploys
-#
-# `kerf_data` must be created before first deploy:
-#   fly volumes create kerf_data --region lax --size 1
-# ──────────────────────────────────────────────────────────────────────────
 [[mounts]]
-  source = "kerf_data"
-  destination = "/data"
+  source = 'kerf_data'
+  destination = '/data'
 
-# ──────────────────────────────────────────────────────────────────────────
-# HTTP service — single instance for V1.5 dogfood
-# ──────────────────────────────────────────────────────────────────────────
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"     # stop the VM when idle (saves $$$)
-  auto_start_machines = true      # restart on first request (cold start ~3-5s)
-  min_machines_running = 0        # OK for V1.5; bump to 1 if cold-start latency hurts
-  processes = ["app"]
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
-  # Health check — /health is the unauthenticated endpoint (basic auth
-  # middleware exempts /health so Fly's checker can verify the app is up)
   [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
-    method = "GET"
-    path = "/health"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
 
-# ──────────────────────────────────────────────────────────────────────────
-# VM sizing — shared-cpu-1x is enough for V1.5 single-tenant dogfood
-# ──────────────────────────────────────────────────────────────────────────
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
+  size = 'shared-cpu-1x'
+  memory = '512mb'
