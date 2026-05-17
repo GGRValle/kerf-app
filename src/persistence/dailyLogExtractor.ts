@@ -26,11 +26,11 @@
  *     never null in array fields)
  *   - `schedule_status` defaults to 'unknown' when no trigger fires
  *
- * STEP B.2 SCOPE:
- *   - `progress_update` entry kind is the canonical test case
- *   - Other entry kinds (`blocker`, `change_signal`, `safety_note`,
- *     `morning_brief`, `end_of_day`, `clock_event`) work but aren't
- *     explicitly tuned; Step C will expand coverage per kind
+ * STEP C.2 SCOPE:
+ *   - `progress_update` — Henderson golden (FRAME 7) lock unchanged
+ *   - `morning_brief`, `blocker`, `change_signal`, `safety_note`,
+ *     `end_of_day` — per-kind pattern bias inside the locked 9-field shape
+ *   - `clock_event` — empty transcript → EMPTY_EXTRACTED_FACTS (B.7 lock)
  *
  * MATERIALS_NEEDED LIMITATION (worth knowing):
  *   The extractor captures *quantity phrases* like "about 8 feet" but
@@ -91,6 +91,15 @@ export const EMPTY_EXTRACTED_FACTS: DailyLogExtractedFacts = {
  */
 const COMPLETED_WORK_PATTERN = /\b(?:we\s+)?(pulled|completed|finished|wrapped\s+up|knocked\s+out|installed|set|hung|laid|poured|demo'?d|demoed|got\s+(?:the|a)|done\s+with)\s+([a-z][^.,;!?]*?)(?=[.,;!?]|\s+and\b|\s+(?:but|so|then)\b|$)/gi;
 
+/** Morning-brief / end-of-day: "plan is to …" planned work (same 9-field bucket). */
+const COMPLETED_WORK_PLAN_PATTERN = /\bplan\s+is\s+to\s+([a-z][^.,;!?]*?)(?=\s+and\s+start\b|[.,;!?]|$)/gi;
+
+/** Morning-brief: chained plan item after "and start …". */
+const COMPLETED_WORK_AND_START_PATTERN = /\band\s+start\s+([a-z][^.,;!?]*?)(?=[.,;!?]|$)/gi;
+
+/** End-of-day: "Wrapped framing" style completions (not only "wrapped up"). */
+const COMPLETED_WORK_WRAPPED_PATTERN = /\bwrapped\s+([a-z][^.,;!?]*?)(?=[.,;!?]|$)/gi;
+
 /**
  * Blocked-work triggers with explicit cause.
  * "stuck on X because Y" / "can't do X due to Y"
@@ -103,12 +112,15 @@ const BLOCKED_WORK_WITH_CAUSE_PATTERN = /\b(?:stuck\s+on|cannot|can'?t|blocked\s
  */
 const BLOCKED_WORK_BARE_PATTERN = /\b(waiting\s+on|blocker\s+is|hung\s+up\s+on)\s+([a-z][^.,;!?]*?)(?=[.,;!?]|$)/gi;
 
+/** Morning-brief staffing: "Carlos out, Juan covering." */
+const STAFFING_OUT_PATTERN = /\b([A-Z][a-z]+)\s+out\b/g;
+
 /**
  * Schedule status triggers. Priority order: behind > ahead > on_track.
  * (Conservative: if both behind and ahead trigger, treat as behind —
  * mixed signals are still a signal that the operator should review.)
  */
-const SCHEDULE_BEHIND_TRIGGERS = /\b(bumping\s+you|running\s+late|delayed|going\s+to\s+slip|extra\s+(?:day|hour|days|hours)|couple\s+more\s+days|adds?\s+(?:about\s+)?\d+(?:\.\d+)?\s+(?:day|hour|days|hours)|set\s+us\s+back|had\s+to\s+push|going\s+to\s+take\s+longer|push(?:ing)?\s+(?:the\s+)?schedule)\b/i;
+const SCHEDULE_BEHIND_TRIGGERS = /\b(bumping\s+you|running\s+late|delayed|going\s+to\s+slip|extra\s+(?:day|hour|days|hours)|couple\s+more\s+days|adds?\s+(?:about\s+)?\d+(?:\.\d+)?\s+(?:day|hour|days|hours)|set\s+us\s+back|had\s+to\s+push|going\s+to\s+take\s+longer|push(?:ing)?\s+(?:the\s+)?schedule|three\s+days\s+now|hasn'?t\s+been\s+by\s+yet)\b/i;
 const SCHEDULE_AHEAD_TRIGGERS = /\b(ahead\s+of\s+(?:schedule|pace)|wrapped\s+up\s+early|got\s+it\s+done\s+quicker|finished\s+early|ahead\s+of\s+plan)\b/i;
 const SCHEDULE_ON_TRACK_TRIGGERS = /\b(on\s+track|on\s+schedule|going\s+as\s+planned|everything'?s\s+(?:good|fine)|no\s+issues|all\s+good)\b/i;
 
@@ -120,7 +132,7 @@ const NEW_TASK_PATTERN = /\b(?:we\s+(?:need|should)\s+to\s+also|also\s+need\s+to
 /**
  * Scope-change explicit triggers.
  */
-const SCOPE_CHANGE_EXPLICIT_PATTERN = /\b(?:owner\s+asked|they\s+want|they'?re\s+adding|change\s+order|extra\s+work\s+for|added?\s+scope)\s+(?:for\s+|to\s+|us\s+to\s+)?([a-z][^.,;!?]*?)(?=[.,;!?]|$)/gi;
+const SCOPE_CHANGE_EXPLICIT_PATTERN = /\b(?:owner\s+asked|owner\s+wants?\s+to\s+add|they\s+want|they'?re\s+adding|change\s+order|extra\s+work\s+for|added?\s+scope)\s+(?:for\s+|to\s+|us\s+to\s+)?([a-z][^.,;!?]*?)(?=[.,;!?]|$)/gi;
 
 /**
  * Scope-change implicit triggers — hidden-condition findings that
@@ -139,7 +151,7 @@ const MONEY_RISK_KEYWORDS = /\b(galvanized|asbestos|hidden|surprise|over\s+budge
 /**
  * Client-decision triggers.
  */
-const CLIENT_DECISION_PATTERN = /\b(owner\s+needs?\s+to\s+(?:pick|choose|decide|confirm)|client\s+(?:needs?\s+to\s+|to\s+)(?:decide|confirm|choose|pick)|homeowner\s+(?:has\s+to|needs\s+to)\s+(?:choose|pick|confirm|decide)|pending\s+owner\s+(?:sign-?off|approval|decision))\b([^.,;!?]*?)(?=[.,;!?]|$)/gi;
+const CLIENT_DECISION_PATTERN = /\b(owner\s+needs?\s+to\s+(?:pick|choose|decide|confirm)|client\s+(?:needs?\s+to\s+|to\s+)(?:decide|confirm|choose|pick)|homeowner\s+(?:has\s+to|needs\s+to)\s+(?:choose|pick|confirm|decide)|pending\s+owner\s+(?:sign-?off|approval|decision)|need\s+to\s+spec)\b([^.,;!?]*?)(?=[.,;!?]|$)/gi;
 
 /**
  * Materials-needed. Captures quantity phrases following action verbs.
@@ -150,7 +162,7 @@ const MATERIALS_NEEDED_PATTERN = /\b(?:need(?:s)?|bring|order|pickup|grab|gotta\
 /**
  * Inspection notes.
  */
-const INSPECTION_KEYWORDS = /\b(inspector(?:'?s)?\s+\w+|passed\s+inspection|failed\s+inspection|inspection\s+sign-?off|code\s+violation|to\s+code|not\s+to\s+code|red[\s-]?tagged|green[\s-]?tagged)\b/gi;
+const INSPECTION_KEYWORDS = /\b(passed\s+inspection|failed\s+inspection|inspection\s+(?:sign-?off|still\s+pending|pending)|pending\s+inspection|inspector(?:'?s)?\s+(?:visit|approval|scheduled)|code\s+violation|to\s+code|not\s+to\s+code|red[\s-]?tagged|green[\s-]?tagged)\b/gi;
 
 /**
  * Safety notes.
@@ -178,8 +190,22 @@ function extractMatches(pattern: RegExp, text: string, groupIdx = 1): string[] {
   return matches;
 }
 
+function dedupeStrings(items: readonly string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of items) {
+    const cleaned = item.trim().replace(/\s+/g, ' ');
+    if (cleaned.length === 0) continue;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(cleaned);
+  }
+  return out;
+}
+
 /** Extract blocked_work entries (description + blocker). */
-function extractBlockedWork(text: string): { description: string; blocker: string }[] {
+function extractBlockedWork(text: string, entryKind: string): { description: string; blocker: string }[] {
   const out: { description: string; blocker: string }[] = [];
   const seen = new Set<string>();
   for (const m of text.matchAll(BLOCKED_WORK_WITH_CAUSE_PATTERN)) {
@@ -199,7 +225,32 @@ function extractBlockedWork(text: string): { description: string; blocker: strin
     seen.add(key);
     out.push({ description: desc, blocker: desc });
   }
+  if (entryKind === 'morning_brief') {
+    for (const m of text.matchAll(STAFFING_OUT_PATTERN)) {
+      const name = m[1]?.trim() ?? '';
+      if (name.length === 0) continue;
+      const desc = `${name} out`;
+      const key = `${desc.toLowerCase()}|staffing`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ description: desc, blocker: 'staffing coverage' });
+    }
+  }
   return out;
+}
+
+function extractCompletedWork(text: string, entryKind: string): string[] {
+  const items = [
+    ...extractMatches(COMPLETED_WORK_PATTERN, text, 2),
+    ...extractMatches(COMPLETED_WORK_WRAPPED_PATTERN, text),
+  ];
+  if (entryKind === 'morning_brief' || entryKind === 'end_of_day') {
+    items.push(
+      ...extractMatches(COMPLETED_WORK_PLAN_PATTERN, text),
+      ...extractMatches(COMPLETED_WORK_AND_START_PATTERN, text),
+    );
+  }
+  return dedupeStrings(items);
 }
 
 /** Classify schedule status by trigger priority. Default unknown. */
@@ -225,13 +276,12 @@ function classifyScheduleStatus(
  *
  * @param transcript - The Whisper transcript (or operator-typed note) text.
  *                     Empty string returns EMPTY_EXTRACTED_FACTS.
- * @param entryKind  - Discriminator from the captured event. Currently
- *                     unused (B.2 ships extractor general to all kinds);
- *                     Step C may bias category emphasis per kind.
+ * @param entryKind  - Discriminator from the captured event. Step C.2
+ *                     biases pattern emphasis per kind inside the locked
+ *                     9-field shape (no new categories).
  */
 export function extractDailyLogFacts(
   transcript: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   entryKind: string,
 ): DailyLogExtractedFacts {
   const text = transcript.trim();
@@ -256,8 +306,8 @@ export function extractDailyLogFacts(
   const materialsNeeded = materialsRaw.map((s) => s.replace(/^\s+|\s+$/g, ''));
 
   return {
-    completed_work: extractMatches(COMPLETED_WORK_PATTERN, text, 2),
-    blocked_work: extractBlockedWork(text),
+    completed_work: extractCompletedWork(text, entryKind),
+    blocked_work: extractBlockedWork(text, entryKind),
     schedule_status: classifyScheduleStatus(text),
     new_task_candidates: extractMatches(NEW_TASK_PATTERN, text),
     scope_change_flags: scopeChangeFlags,
