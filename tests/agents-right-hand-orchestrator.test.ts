@@ -103,12 +103,13 @@ test('Henderson canonical: orchestrator emits full chain through surfacing', asy
   assert.match(out.the_one_thing, /Stop and review.*Henderson/i);
   assert.match(out.the_one_thing, /galvanized/i);
 
-  // Reasoning trail names the hypothesis + every tool decision
+  // Reasoning trail explains the hypothesis + every tool decision in
+  // operator-voiced English (not internal-state dumps).
   const trail = out.reasoning_trail.join(' ');
-  assert.match(trail, /Hypothesis pass/);
-  assert.match(trail, /Document Manager extracted/);
-  assert.match(trail, /Drift Watcher classified.*block/);
-  assert.match(trail, /Relay Surfacer.*emitted/);
+  assert.match(trail, /Read the whole capture/);
+  assert.match(trail, /Document Manager pulled/);
+  assert.match(trail, /Drift Watcher flagged block/);
+  assert.match(trail, /Surfacing this to/);
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -157,7 +158,7 @@ test('clean on_track transcript: facts extracted, no drift, no surfacing', async
   assert.ok(!types.includes('daily_log.drift_detected'));
   assert.ok(!types.includes('relay_card.surfaced'));
 
-  assert.match(out.the_one_thing, /no immediate action needed|on schedule|no actionable/i);
+  assert.match(out.the_one_thing, /needs you right now|capture logged/i);
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -219,9 +220,9 @@ test('reasoning trail always names hypothesis pass + every tool decision', async
     now: NOW,
   });
 
-  // First entry MUST be hypothesis pass (used for §13 audit deep-link)
-  assert.match(out.reasoning_trail[0]!, /Hypothesis pass/);
-  // Last entry is the_one_thing rendering
+  // First entry MUST be the hypothesis read (used for §13 audit deep-link)
+  assert.match(out.reasoning_trail[0]!, /Read the whole capture/);
+  // Last entry is the_one_thing reasoning
   assert.match(out.reasoning_trail[out.reasoning_trail.length - 1]!, /The One Thing/);
   // Every entry is non-empty
   for (const entry of out.reasoning_trail) {

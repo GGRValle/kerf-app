@@ -197,27 +197,40 @@ export async function runRightHandOrchestrator(
     },
     llmClient: input.llmClient,
   });
+  // Reasoning trail is operator-facing audit substrate, not a debug log.
+  // Each entry explains a decision in plain English; provenance (model
+  // used, confidence band) is included only where it shapes the decision.
   reasoning_trail.push(
-    `Hypothesis pass (${hypothesis.hypothesis_authority}, model=${hypothesis.model_used}): project=${hypothesis.project_type_hypothesis}/${hypothesis.project_type_confidence}, intent=${hypothesis.operator_intent}/${hypothesis.intent_confidence}, transcript=${hypothesis.transcription_quality}`,
+    `Read the whole capture: this looks like ${
+      hypothesis.project_type_hypothesis === 'unclear'
+        ? 'an unclear project type'
+        : `a ${hypothesis.project_type_hypothesis.replace('_', ' ')}`
+    } (${hypothesis.project_type_confidence} confidence), operator intent is ${
+      hypothesis.operator_intent === 'unclear' ? 'unclear' : hypothesis.operator_intent.replace('_', ' ')
+    } (${hypothesis.intent_confidence}), transcript quality is ${hypothesis.transcription_quality}.${
+      hypothesis.hypothesis_authority === 'deterministic_fallback'
+        ? ' (Heuristics only — LLM hypothesis not wired yet.)'
+        : ''
+    }`,
   );
 
   // ─── Step 2: If transcript mostly failed → clarification only, no specialists
   if (hypothesis.transcription_quality === 'mostly_failed') {
     reasoning_trail.push(
-      `Skipping specialist invocation: transcript quality "mostly_failed" — running specialists on this would just produce noise. Surfacing clarification instead.`,
+      `Skipping the specialists on this one — transcript is too degraded to extract useful signals; running them would just produce noise. Better to ask first.`,
     );
     clarification_prompts.push({
       prompt_id: generateId('clarify'),
       question: `The voice transcript came through mostly unreadable. ${
         hypothesis.project_type_hypothesis !== 'unclear'
-          ? `Based on recent captures I think this is a ${hypothesis.project_type_hypothesis.replace('_', ' ')} — am I right? `
+          ? `Sounds like this might be a ${hypothesis.project_type_hypothesis.replace('_', ' ')} — am I right? `
           : ''
       }Can you tell me what you wanted to capture?`,
       hypothesis_statement: `transcription_quality=mostly_failed, project_type_hypothesis=${hypothesis.project_type_hypothesis}`,
       options: [],
     });
     return {
-      the_one_thing: 'Voice capture came through mostly unreadable — need a quick clarification before Right Hand can act on it.',
+      the_one_thing: `${projectContext.project_name} — voice capture came through mostly unreadable. Quick clarification before I can do anything with it.`,
       reasoning_trail,
       tools_invoked,
       hypothesis,
@@ -233,7 +246,7 @@ export async function runRightHandOrchestrator(
     (capturedEvent.transcript_text ?? '').length > 20 // not a clock event or empty capture
   ) {
     reasoning_trail.push(
-      'Both project type AND operator intent unclear — surfacing clarification before specialist invocation.',
+      `Can't tell what project or what you were reporting — asking for confirmation before the specialists do anything with this.`,
     );
     clarification_prompts.push({
       prompt_id: generateId('clarify'),
@@ -256,8 +269,22 @@ export async function runRightHandOrchestrator(
     output_event_type: factsEvent.type,
   });
   const facts = factsEvent.facts as unknown as DailyLogExtractedFacts;
+  const signalCount =
+    facts.completed_work.length +
+    facts.blocked_work.length +
+    facts.money_risk_flags.length +
+    facts.scope_change_flags.length +
+    facts.client_decision_flags.length +
+    facts.materials_needed.length +
+    facts.inspection_notes.length +
+    facts.safety_notes.length +
+    facts.new_task_candidates.length;
   reasoning_trail.push(
-    `Document Manager extracted: completed=${facts.completed_work.length}, money_risk=${facts.money_risk_flags.length}, scope_change=${facts.scope_change_flags.length}, blocker=${facts.blocked_work.length}, schedule=${facts.schedule_status}`,
+    signalCount === 0
+      ? `Document Manager filed the capture but found no actionable signals to extract.`
+      : `Document Manager pulled ${signalCount} actionable signal${signalCount === 1 ? '' : 's'} out of the transcript${
+          facts.schedule_status !== 'unknown' ? `; schedule reads as ${facts.schedule_status}` : ''
+        }.`,
   );
 
   // ─── Step 5: Drift Watcher — runs when there are any signals to classify
@@ -279,7 +306,7 @@ export async function runRightHandOrchestrator(
       invoked: false,
       reason: 'Skipped: no extracted signals to classify',
     });
-    reasoning_trail.push('Drift Watcher skipped — extracted facts are entirely empty.');
+    reasoning_trail.push(`Nothing for Drift Watcher to look at — no extracted signals.`);
   } else {
     driftEvent = toolRegistry.driftWatcher.invoke(factsEvent);
     if (driftEvent !== null) {
@@ -290,8 +317,18 @@ export async function runRightHandOrchestrator(
         reason: 'Classified drift signals from extracted facts',
         output_event_type: driftEvent.type,
       });
+      // Explain WHY this severity — name the signals that pushed it there
+      const driftWhy = [
+        facts.schedule_status === 'behind' ? 'schedule slipping' : null,
+        facts.money_risk_flags.length > 0 ? `money risk on ${facts.money_risk_flags.join(', ')}` : null,
+        facts.scope_change_flags.length > 0 ? 'scope expanding past the bid' : null,
+        facts.blocked_work.length > 0 ? 'work blocked' : null,
+        facts.client_decision_flags.length > 0 ? 'client decision pending' : null,
+      ].filter((s): s is string => s !== null);
       reasoning_trail.push(
-        `Drift Watcher classified: severity=${driftEvent.severity}, description="${driftEvent.description.slice(0, 80)}${driftEvent.description.length > 80 ? '...' : ''}"`,
+        driftWhy.length > 0
+          ? `Drift Watcher flagged ${driftEvent.severity}-severity because ${driftWhy.join(' AND ')}.`
+          : `Drift Watcher flagged ${driftEvent.severity}-severity.`,
       );
     } else {
       tools_invoked.push({
@@ -299,7 +336,9 @@ export async function runRightHandOrchestrator(
         invoked: true,
         reason: 'Classified facts but no drift fired',
       });
-      reasoning_trail.push('Drift Watcher ran but no signals met drift thresholds.');
+      reasoning_trail.push(
+        `Drift Watcher looked but the signals don't rise to drift — schedule on track, no money/scope flags firing.`,
+      );
     }
   }
 
@@ -320,7 +359,13 @@ export async function runRightHandOrchestrator(
         output_event_type: surfacedEvent.type,
       });
       reasoning_trail.push(
-        `Relay Surfacer: emitted card ${surfacedEvent.relay_card_id} to ${surfacedEvent.surfaced_to}.`,
+        `Surfacing this to ${surfacedEvent.surfaced_to} — ${
+          driftEvent.severity === 'block'
+            ? 'block-severity always surfaces'
+            : driftEvent.severity === 'warn'
+              ? 'warn with no prior surface in last 24h'
+              : 'caution carries actionable flags (scope or client decision)'
+        }.`,
       );
     } else {
       tools_invoked.push({
@@ -328,6 +373,11 @@ export async function runRightHandOrchestrator(
         invoked: true,
         reason: 'Drift fired but surfacing rule said no (dedupe or below threshold)',
       });
+      reasoning_trail.push(
+        `Drift fired but holding off on surfacing — ${
+          driftEvent.severity === 'warn' ? 'similar signal already surfaced in last 24h' : 'severity below surfacing threshold'
+        }.`,
+      );
     }
   } else {
     tools_invoked.push({
@@ -357,7 +407,9 @@ export async function runRightHandOrchestrator(
         invoked: true,
         reason: 'Drift carries scope_change or money_risk flags; CO draft considered',
       });
-      reasoning_trail.push('Change Order Agent invoked (D.1.1 wired).');
+      reasoning_trail.push(
+        `Change Order Agent drafting a CO — scope/money signals justify it.`,
+      );
     } else {
       tools_invoked.push({
         tool_name: 'change_order_agent',
@@ -365,7 +417,7 @@ export async function runRightHandOrchestrator(
         reason: 'Tool not wired yet (D.1.1 PR #211 not merged) — skipping',
       });
       reasoning_trail.push(
-        'Change Order Agent NOT wired (D.1.1 pending) — CO draft skipped. After PR #211 merges, this would have fired.',
+        `Change Order Agent would draft a CO here — scope/money signals justify it — but the tool isn't wired yet (D.1.1 pending merge).`,
       );
     }
   } else if (driftEvent !== null) {
@@ -374,23 +426,33 @@ export async function runRightHandOrchestrator(
       invoked: false,
       reason: 'Drift fired but no scope_change or money_risk flags to anchor a CO draft',
     });
+    // Don't add to reasoning trail — silence is the right voice when there's
+    // simply nothing to flag the CO agent on.
   }
 
   // ─── Step 8: Compose the_one_thing from the highest-severity output that fired
   let the_one_thing: string;
+  let the_one_thing_reason: string;
   if (clarification_prompts.length > 0) {
     the_one_thing = clarification_prompts[0]!.question;
+    the_one_thing_reason = 'clarification needed before specialist invocation produces signal';
   } else if (driftEvent !== null && surfacedEvent !== null) {
     the_one_thing = `${severityIntroVerb(driftEvent.severity)} — ${projectContext.project_name}: ${formatFactsForHeadline(facts)}.`;
+    the_one_thing_reason = `${driftEvent.severity}-severity drift surfaced; led with the highest-impact signal`;
   } else if (driftEvent !== null) {
-    the_one_thing = `${projectContext.project_name}: ${driftEvent.description.slice(0, 120)}`;
+    // Drift fired but didn't surface (dedupe or severity floor). Voice
+    // this as a heads-up rather than dumping the drift description.
+    the_one_thing = `${projectContext.project_name} — ${formatFactsForHeadline(facts)}. Worth a look but no card surfaced yet.`;
+    the_one_thing_reason = 'drift fired below surface threshold or deduped against recent';
   } else if (!factsAreEmpty) {
-    the_one_thing = `${projectContext.project_name}: ${formatFactsForHeadline(facts)} — no immediate action needed.`;
+    the_one_thing = `${projectContext.project_name} — ${formatFactsForHeadline(facts)}. Nothing here needs you right now.`;
+    the_one_thing_reason = 'signals extracted but none rose to drift';
   } else {
-    the_one_thing = `${projectContext.project_name}: capture logged. Nothing actionable surfaced.`;
+    the_one_thing = `${projectContext.project_name} — capture logged. Nothing here needs you right now.`;
+    the_one_thing_reason = 'capture had no actionable signals';
   }
 
-  reasoning_trail.push(`The One Thing → "${the_one_thing}"`);
+  reasoning_trail.push(`The One Thing — ${the_one_thing_reason}.`);
 
   return {
     the_one_thing,
