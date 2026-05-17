@@ -245,6 +245,27 @@ Rules:
 
 Output JSON only.`;
 
+/**
+ * LLM endpoint + model used for the whole-capture hypothesis pass.
+ *
+ * EXPORTED so tests can verify the pair against the approved hosting route
+ * registry semantically — not by string-matching the source file. This is
+ * the contract: hypothesis pass speaks to this specific approved endpoint.
+ * A refactor that moves the strings around without changing the contract
+ * keeps the regression test passing; a change that swaps to an unapproved
+ * pair fails the test loudly.
+ *
+ * Per Christian's W2 2026-05-03 benchmark + the hosting registry:
+ *   - groq://llama-70b → model llama-3.3-70b (tier-1 canonical 70B)
+ *
+ * Tier-1 alternative (smaller, faster, cheaper): groq://llama-4-scout
+ * with model meta-llama/llama-4-scout-17b-16e-instruct. Could be the right
+ * choice if 70B latency becomes the bottleneck. For now, hypothesis pass
+ * is closer to semantic-routing judgment than cheap extraction — 70B wins.
+ */
+export const HYPOTHESIS_LLM_ENDPOINT = 'groq://llama-70b' as const;
+export const HYPOTHESIS_LLM_MODEL = 'llama-3.3-70b' as const;
+
 async function llmHypothesis(
   input: RunWholeCaptureHypothesisInput,
 ): Promise<WholeCaptureHypothesis | null> {
@@ -263,9 +284,14 @@ async function llmHypothesis(
   ].join('\n');
 
   try {
+    // Endpoint + model come from the exported constants above so the
+    // regression test can verify the SEMANTIC contract (the pair is
+    // approved) without string-matching this source file. groqChat()
+    // calls checkHostingRoute() internally — unapproved pairs return
+    // {ok: false, kind: 'forbidden_route'} before any network call.
     const result = await llm.groqChat({
-      endpoint: 'groq://llama-3.1-70b-versatile',
-      model: 'llama-3.1-70b-versatile',
+      endpoint: HYPOTHESIS_LLM_ENDPOINT,
+      model: HYPOTHESIS_LLM_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
@@ -279,8 +305,34 @@ async function llmHypothesis(
       requestedAt: new Date().toISOString(),
     });
 
-    if (!result.ok) return null;
-    const parsed = JSON.parse(result.content) as Partial<WholeCaptureHypothesis>;
+    if (!result.ok) {
+      // Surface the failure reason to logs so a deploy-smoke pass that
+      // sees `hypothesis_authority='deterministic_fallback'` despite env
+      // being set can immediately diagnose WHY. Silent eating of these
+      // errors is what allowed the bad endpoint name to ship in the
+      // first wiring PR and only get caught at user dogfood time.
+      console.warn(
+        `[right_hand] LLM hypothesis call failed (kind=${result.kind}, reason=${result.reason}) — falling back to deterministic heuristics`,
+      );
+      return null;
+    }
+
+    let parsed: Partial<WholeCaptureHypothesis>;
+    try {
+      // Llama models sometimes wrap JSON in markdown fences despite
+      // explicit "JSON only" prompt. Strip common wrappers before parsing.
+      const cleaned = result.content
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/```\s*$/i, '')
+        .trim();
+      parsed = JSON.parse(cleaned) as Partial<WholeCaptureHypothesis>;
+    } catch (err) {
+      console.warn(
+        `[right_hand] LLM returned non-JSON content (${err instanceof Error ? err.message : String(err)}) — content preview: ${result.content.slice(0, 200)}`,
+      );
+      return null;
+    }
 
     // Validate shape — fall back if missing required fields
     if (
@@ -288,6 +340,9 @@ async function llmHypothesis(
       typeof parsed.transcription_quality !== 'string' ||
       typeof parsed.operator_intent !== 'string'
     ) {
+      console.warn(
+        `[right_hand] LLM returned JSON missing required fields — falling back. Got keys: ${Object.keys(parsed).join(', ')}`,
+      );
       return null;
     }
 
@@ -303,10 +358,13 @@ async function llmHypothesis(
       ambiguity_flags: Array.isArray(parsed.ambiguity_flags)
         ? (parsed.ambiguity_flags as unknown[]).filter((x): x is string => typeof x === 'string')
         : [],
-      model_used: 'groq-llama-3.1-70b-versatile',
+      model_used: 'groq-llama-3.3-70b',
       hypothesis_authority: 'llm_inferred',
     };
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[right_hand] LLM hypothesis call threw (${err instanceof Error ? err.message : String(err)}) — falling back`,
+    );
     return null;
   }
 }

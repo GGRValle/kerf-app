@@ -176,7 +176,7 @@ test('LLM path: well-formed JSON response is parsed correctly', async () => {
   assert.equal(h.project_type_hypothesis, 'bath_remodel');
   assert.equal(h.project_type_confidence, 'high');
   assert.equal(h.operator_intent, 'scope_change');
-  assert.equal(h.model_used, 'groq-llama-3.1-70b-versatile');
+  assert.equal(h.model_used, 'groq-llama-3.3-70b');
 });
 
 test('LLM failure: falls back to deterministic cleanly', async () => {
@@ -248,6 +248,49 @@ test('deterministic fallback is deterministic across 50 runs on same input', asy
     const h = await runWholeCaptureHypothesis(input);
     assert.deepEqual(h, baseline);
   }
+});
+
+test('regression: hypothesis (endpoint, model) pair MUST pass checkHostingRoute()', async () => {
+  // Semantic test against the actual validator — NOT a string-match against
+  // the source file. The contract under test:
+  //   "the (endpoint, model) pair configured for hypothesis calls is
+  //    approved by the hosting route registry."
+  //
+  // A refactor that moves the constants around or renames identifiers
+  // doesn't break this test. A change that swaps to an unapproved pair
+  // does break it loudly. That's the right shape per Christian's
+  // 2026-05-17 review: "the goal is 'the configured pair is approved',
+  // not 'this literal string still appears in this file'."
+  //
+  // Background: PR #215 used `groq://llama-3.1-70b-versatile`, which is
+  // not in the registry. Every live LLM call was rejected by
+  // checkHostingRoute() before reaching the network, and the orchestrator
+  // silently fell back. PR #216 fixed the endpoint and made fallbacks
+  // log; this test prevents the class of bug from recurring.
+  const {
+    HYPOTHESIS_LLM_ENDPOINT,
+    HYPOTHESIS_LLM_MODEL,
+  } = await import('../src/agents/right-hand/whole-capture-hypothesis.ts');
+  const { checkHostingRoute } = await import('../src/hosting/routeCheck.ts');
+
+  // Required envelope fields are filled with synthetic-but-well-formed
+  // values; the assertion under test is on the (endpoint, source_model)
+  // pair, not on these. If the envelope shape changes upstream the
+  // test will fail loudly here — that's the correct coupling.
+  const result = checkHostingRoute({
+    invocation_id: 'test_inv_regression_endpoint_pair',
+    tenant_id: 'tenant_ggr',
+    endpoint: HYPOTHESIS_LLM_ENDPOINT,
+    source_model: HYPOTHESIS_LLM_MODEL,
+    purpose: 'whole_capture_hypothesis_regression_test',
+    requested_at: '2026-05-16T18:00:00.000Z',
+  });
+
+  assert.equal(
+    result.allowed,
+    true,
+    `hypothesis endpoint="${HYPOTHESIS_LLM_ENDPOINT}" + model="${HYPOTHESIS_LLM_MODEL}" must pass checkHostingRoute. Got: ${JSON.stringify(result)}`,
+  );
 });
 
 test('forbidden-surface invariant: module imports nothing LLM-network', async () => {
