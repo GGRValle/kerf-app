@@ -14,7 +14,7 @@ const BASE_REQUEST = {
   invocation_id: 'invocation_w1_001',
   tenant_id: 'tenant_ggr',
   endpoint: 'groq://llama-70b',
-  source_model: 'llama-3.3-70b',
+  source_model: 'llama-3.3-70b-versatile',
   purpose: 'chief_of_staff_draft',
   requested_at: '2026-05-02T16:00:00.000Z',
   workflow: 'invoice_followup',
@@ -25,7 +25,7 @@ test('approved hosting endpoint registry is seeded from D-023 (70b + Scout + Whi
     {
       endpoint: 'groq://llama-70b',
       provider: 'groq',
-      model: 'llama-3.3-70b',
+      model: 'llama-3.3-70b-versatile',
       tier: 'cheap_fast',
       approved_by_decision: 'D-023',
       approved_at: '2026-04-22T00:00:00.000Z',
@@ -64,7 +64,7 @@ test('checkHostingRoute allows approved hosted endpoints with adapter audit acti
   assert.equal(result.allowed, true);
   assert.equal(result.endpoint, 'groq://llama-70b');
   assert.equal(result.provider, 'groq');
-  assert.equal(result.model, 'llama-3.3-70b');
+  assert.equal(result.model, 'llama-3.3-70b-versatile');
   assert.equal(result.tier, 'cheap_fast');
   assert.equal(result.approved_by_decision, 'D-023');
   assert.equal(result.checked_at, '2026-05-02T16:00:01.000Z');
@@ -91,7 +91,7 @@ test('checkHostingRoute blocks retired endpoints even when they are in the regis
     {
       endpoint: 'groq://llama-70b',
       provider: 'groq',
-      model: 'llama-3.3-70b',
+      model: 'llama-3.3-70b-versatile',
       tier: 'cheap_fast',
       approved_by_decision: 'D-023',
       approved_at: '2026-04-22T00:00:00.000Z',

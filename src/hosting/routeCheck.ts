@@ -31,7 +31,18 @@ export const APPROVED_HOSTING_ENDPOINTS = [
   {
     endpoint: 'groq://llama-70b',
     provider: 'groq',
-    model: 'llama-3.3-70b',
+    // Groq's actual API SKU for Llama 3.3 70B is `llama-3.3-70b-versatile`.
+    // The registry previously held `llama-3.3-70b`, which Groq's API does
+    // NOT recognize ({"code":"model_not_found"}). The bug was latent — the
+    // hosting/route layer allowed the (endpoint, model) pair, but no caller
+    // exercised it against the live API until the Right Hand hypothesis
+    // pass wired up in Sprint E. Dogfood-smoke 2026-05-16 caught it.
+    //
+    // Correcting the SKU does NOT change D-023's intent (approve Llama 3.3
+    // 70B on Groq, tier-1 cheap_fast). It corrects the literal to match the
+    // Groq Models API. Any future caller of `groq://llama-70b` now reaches
+    // Groq with a recognized model name on the first try.
+    model: 'llama-3.3-70b-versatile',
     tier: 'cheap_fast',
     approved_by_decision: 'D-023',
     approved_at: '2026-04-22T00:00:00.000Z',

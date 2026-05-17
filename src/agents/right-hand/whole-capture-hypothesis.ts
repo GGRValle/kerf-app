@@ -256,7 +256,13 @@ Output JSON only.`;
  * pair fails the test loudly.
  *
  * Per Christian's W2 2026-05-03 benchmark + the hosting registry:
- *   - groq://llama-70b → model llama-3.3-70b (tier-1 canonical 70B)
+ *   - groq://llama-70b → model llama-3.3-70b-versatile (tier-1 canonical 70B)
+ *
+ * The model literal MUST match Groq's actual API SKU. Groq's Models API
+ * uses `llama-3.3-70b-versatile` — `llama-3.3-70b` (without the `-versatile`
+ * suffix) returns {"code":"model_not_found"}. The hosting registry was
+ * corrected to match on 2026-05-16 after dogfood-smoke caught the latent
+ * mismatch; see src/hosting/routeCheck.ts for the rationale.
  *
  * Tier-1 alternative (smaller, faster, cheaper): groq://llama-4-scout
  * with model meta-llama/llama-4-scout-17b-16e-instruct. Could be the right
@@ -264,7 +270,7 @@ Output JSON only.`;
  * is closer to semantic-routing judgment than cheap extraction — 70B wins.
  */
 export const HYPOTHESIS_LLM_ENDPOINT = 'groq://llama-70b' as const;
-export const HYPOTHESIS_LLM_MODEL = 'llama-3.3-70b' as const;
+export const HYPOTHESIS_LLM_MODEL = 'llama-3.3-70b-versatile' as const;
 
 async function llmHypothesis(
   input: RunWholeCaptureHypothesisInput,
@@ -358,7 +364,7 @@ async function llmHypothesis(
       ambiguity_flags: Array.isArray(parsed.ambiguity_flags)
         ? (parsed.ambiguity_flags as unknown[]).filter((x): x is string => typeof x === 'string')
         : [],
-      model_used: 'groq-llama-3.3-70b',
+      model_used: 'groq-llama-3.3-70b-versatile',
       hypothesis_authority: 'llm_inferred',
     };
   } catch (err) {
