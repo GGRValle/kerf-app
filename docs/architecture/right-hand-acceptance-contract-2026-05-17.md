@@ -88,17 +88,25 @@ This is not a soft guideline. It's a release gate. PR authors (Claude or Cursor)
 
 ### 5. Right Hand Home renders `right_hand_response` as the primary experience
 
-**The criterion:** The deployed UI's root route (`/` or `/home`) is **Right Hand Home**, not a flat dashboard. The page's primary panel is `the_one_thing`. Below it: reasoning trail (collapsible) + supporting cards (de-emphasized).
+**The criterion:** The deployed UI's root route (`/` or `/home`) is **Right Hand Home**, not a flat dashboard. The page's primary panel is `the_one_thing`. Below it: one suggested next action, then reasoning trail (collapsible) + supporting cards (de-emphasized). The page shows **one primary response, one next action, calm supporting detail underneath** — not "more information, better organized."
 
-**How to verify:** Hit `https://kerf-v15-internal.fly.dev/` after deploy. The first thing the operator sees must be `the_one_thing`, not a route stack. Voice-canon copy ("Right Hand says...") prefixes the synthesis text.
+**The feel test (acceptance line from Christian, 2026-05-17):**
+> *"When I open `/`, I should immediately understand what Right Hand thinks matters, without clicking into transcript, audit, or route navigation."*
+
+If a viewer's first reaction to the root route is "where do I look?" or "what's important here?" — the page fails this criterion regardless of how organized it is.
+
+**How to verify:** Hit `https://kerf-v15-internal.fly.dev/` after deploy. The first thing the operator sees must be `the_one_thing`, not a route stack. Voice-canon copy ("Right Hand says...") prefixes the synthesis text. The next action (single button or single link) is visible without scrolling. Reasoning trail is collapsed by default.
 
 **Failure modes to watch for:**
 - Root route still rendering the proposal-first dashboard
 - `the_one_thing` buried below other UI chrome
+- **Page overload — more information, better organized, instead of one primary response + one next action + calm supporting detail** (Christian's specific warning on E.3)
+- Multiple competing "this is important" panels (defeats the "one thing" rule)
 - Synthesis copy without voice-canon prefix where it should have one
 - "Right Hand says..." prefix on text the orchestrator didn't produce (false agency)
+- Reasoning trail rendered expanded by default (dumps state on first impression)
 
-**E.3 status:** ⏳ This is the criterion E.3 must demonstrably pass before merge.
+**E.3 status:** ⏳ This is the criterion E.3 must demonstrably pass before merge. **The feel test is the primary gate** — automated tests verify shape; the human reviewer verifies the feel test.
 
 ---
 
