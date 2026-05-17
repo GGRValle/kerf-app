@@ -8,10 +8,12 @@ import {
   buildConfirmationHtml,
   buildDailyLogSubmitBody,
   buildErrorHtml,
+  buildRightHandResponseHtml,
   buildSourceRefsFromTranscribeMeta,
   dailyLogEntriesUrl,
   FIELD_DAILY_DOM,
   FIELD_DAILY_TENANT_ID,
+  type RightHandResponseUI,
 } from './pages/field-daily-capture.js';
 
 let lastAudioUri: string | null = null;
@@ -83,6 +85,7 @@ export async function submitFieldDailyEntry(projectId: string): Promise<void> {
   });
   const j = (await r.json().catch(() => ({}))) as {
     event?: { event_id?: string };
+    right_hand_response?: RightHandResponseUI | null;
     error?: string;
     reason?: string;
     errors?: string[];
@@ -98,7 +101,14 @@ export async function submitFieldDailyEntry(projectId: string): Promise<void> {
     return;
   }
   const eventId = j.event?.event_id ?? 'unknown';
-  showFeedback(buildConfirmationHtml(t, eventId, transcript));
+  // Sprint E.2 — prefer Right Hand response rendering when present.
+  // Falls back to the bare confirmation if `right_hand_response` is null/absent
+  // (e.g., orchestrator-disabled path or back-compat clients).
+  if (j.right_hand_response !== undefined && j.right_hand_response !== null) {
+    showFeedback(buildRightHandResponseHtml(t, j.right_hand_response, eventId, transcript));
+  } else {
+    showFeedback(buildConfirmationHtml(t, eventId, transcript));
+  }
 }
 
 export function initFieldDailyCapturePage(): void {

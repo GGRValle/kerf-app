@@ -82,6 +82,101 @@ export function buildConfirmationHtml(
 </section>`;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Sprint E.2 — Right Hand response rendering.
+//
+// Renders the orchestrator's `right_hand_response` field on the /field
+// confirmation surface. This is the operator-facing place where the
+// Right Hand acceptance contract criteria 2, 3, 4, 6 must be visible.
+//
+// Criteria gated here:
+//   - Criterion 2: Garbled transcripts trigger semantic clarification,
+//     NOT fragment prompts. The clarification question is the orchestrator's
+//     hypothesis-shaped question — we render it verbatim, never re-parse.
+//   - Criterion 3: ONE `the_one_thing` rendered prominently.
+//   - Criterion 4: Tool invocation reasoning_trail visible (collapsible).
+//   - Criterion 6: Honest about hypothesis_authority — deterministic
+//     fallback gets an explicit "Heuristics only" disclaimer.
+//
+// See: docs/architecture/right-hand-acceptance-contract-2026-05-17.md
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Minimal shape of `right_hand_response` as the /field client consumes it. */
+export interface RightHandResponseUI {
+  readonly the_one_thing: string;
+  readonly reasoning_trail: readonly string[];
+  readonly hypothesis: {
+    readonly project_type_hypothesis: string;
+    readonly hypothesis_authority: 'llm_inferred' | 'deterministic_fallback';
+    readonly transcription_quality: string;
+  };
+  readonly clarification_prompts: readonly {
+    readonly question: string;
+    readonly hypothesis_statement: string;
+  }[];
+  readonly tools_invoked: readonly {
+    readonly tool_name: string;
+    readonly invoked: boolean;
+    readonly reason: string;
+  }[];
+}
+
+export function buildRightHandResponseHtml(
+  t: Translator,
+  response: RightHandResponseUI,
+  eventId: string,
+  transcript: string,
+): string {
+  const esc = (s: string): string =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const hasClarification = response.clarification_prompts.length > 0;
+  const isHeuristic = response.hypothesis.hypothesis_authority === 'deterministic_fallback';
+
+  // ─── PRIMARY PANEL — clarification OR the_one_thing
+  let primaryPanel: string;
+  if (hasClarification) {
+    const prompt = response.clarification_prompts[0]!;
+    primaryPanel = `<section class="kerf-rh-clarify" data-kerf-rh-clarify aria-labelledby="kerf-rh-clarify-h">
+  <h2 id="kerf-rh-clarify-h" class="kerf-rh-clarify__title">${esc(t.t('rh.clarify.title'))}</h2>
+  <p class="kerf-rh-clarify__question">${esc(prompt.question)}</p>
+  <p class="kerf-rh-clarify__hint">${esc(t.t('rh.clarify.hint'))}</p>
+</section>`;
+  } else {
+    primaryPanel = `<section class="kerf-rh-thething" data-kerf-rh-thething aria-labelledby="kerf-rh-thething-h">
+  <h2 id="kerf-rh-thething-h" class="kerf-rh-thething__title">${esc(t.t('rh.says.label'))}</h2>
+  <p class="kerf-rh-thething__line">${esc(response.the_one_thing)}</p>
+</section>`;
+  }
+
+  // ─── SUPPORTING — event id + transcript preview (small)
+  const supporting = `<dl class="kerf-rh-meta">
+  <div><dt>${esc(t.t('field.confirm.event_id'))}</dt><dd><code>${esc(eventId)}</code></dd></div>
+  <div><dt>${esc(t.t('field.confirm.transcript_preview'))}</dt><dd>${esc(formatTranscriptPreview(transcript))}</dd></div>
+</dl>`;
+
+  // ─── REASONING TRAIL — collapsible details element (criterion 4)
+  const reasoningItems = response.reasoning_trail
+    .map((line) => `<li>${esc(line)}</li>`)
+    .join('');
+  const reasoningTrail = `<details class="kerf-rh-reasoning" data-kerf-rh-reasoning>
+  <summary class="kerf-rh-reasoning__summary">${esc(t.t('rh.reasoning.toggle'))}</summary>
+  <ol class="kerf-rh-reasoning__list">${reasoningItems}</ol>
+</details>`;
+
+  // ─── HONESTY FOOTER — criterion 6: explicit when running on heuristics
+  const honestyFooter = isHeuristic
+    ? `<p class="kerf-rh-honesty" data-kerf-rh-honesty>${esc(t.t('rh.honesty.deterministic'))}</p>`
+    : '';
+
+  return `<section class="kerf-v15-card kerf-field-daily__confirm kerf-rh-response" id="${FIELD_DAILY_DOM.confirm}" aria-live="polite" data-kerf-rh-response>
+  ${primaryPanel}
+  ${supporting}
+  ${reasoningTrail}
+  ${honestyFooter}
+</section>`;
+}
+
 export function buildErrorHtml(t: Translator, error: string, reason: string): string {
   const esc = (s: string): string =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

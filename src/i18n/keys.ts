@@ -85,7 +85,14 @@ export type I18nKey =
   | 'field.confirm.event_id'
   | 'field.confirm.transcript_preview'
   | 'field.error.title'
-  | 'field.notice.entry_kind';
+  | 'field.notice.entry_kind'
+
+  // Right Hand response surface on /field (Sprint E.2)
+  | 'rh.says.label'
+  | 'rh.clarify.title'
+  | 'rh.clarify.hint'
+  | 'rh.reasoning.toggle'
+  | 'rh.honesty.deterministic';
 
 export type Locale = 'en' | 'es';
 
