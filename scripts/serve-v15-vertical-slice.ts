@@ -43,9 +43,8 @@ import {
   type RelayCardSurfacedEvent,
 } from '../src/persistence/events.ts';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
-import { runFieldCapturePlay } from '../src/persistence/fieldCapture.ts';
-import { adaptDailyLogFactsToDriftSignal } from '../src/persistence/driftAdapter.ts';
-import { runRelayCardSurfacingPlay } from '../src/persistence/relayCardSurfacer.ts';
+import { runRightHandOrchestrator } from '../src/agents/right-hand/orchestrator.ts';
+import { createDefaultToolRegistry } from '../src/agents/right-hand/tool-registry.ts';
 import {
   defaultProjectionPath,
   rebuildAndPersistProjection,
@@ -792,119 +791,122 @@ async function handleCreateDailyLogEntry(
   }
 
   // ────────────────────────────────────────────────────────────────────────
-  // Play scheduler — invoke the Field Capture chain inline.
+  // Right Hand orchestrator (Sprint E.1).
   //
-  // The captured event is durable (appended above). The play handler (B.1)
-  // and drift adapter (B.3) are pure, deterministic substrate modules; we
-  // invoke them here so the chain runs on every real capture, not just in
-  // tests. Without this, `/relay` would have no facts_extracted events to
-  // surface from real POSTs.
+  // REPLACES the mechanical scheduler-block pipeline that previously chained
+  // play → adapter → surfacer in a fixed sequence. The orchestrator:
   //
-  // Error policy: derived-event failures are LOGGED + reported as
-  // `play_error` in the response, but do NOT 5xx the request. The captured
-  // event has already been written and is the audit-anchor of record. A
-  // future scheduler retry (or manual re-run) could re-derive facts/drift
-  // from the captured event.
+  //   1. Runs the whole-capture hypothesis pass (LLM-driven if GROQ_API_KEY
+  //      is set; deterministic fallback if not). The hypothesis names the
+  //      project type, operator intent, transcription quality, and
+  //      ambiguity flags.
   //
-  // Originally scoped as "Step C+" wiring; pulled forward 2026-05-16 so the
-  // B.5 /relay surface has actual data on real captures (the closed-loop
-  // demo). See: docs/architecture/canon_drift_audit_2026-05-16_session.md
-  // for the substrate-vs-design-doc reconciliation that landed alongside.
+  //   2. Decides which specialist tools to invoke based on the hypothesis —
+  //      NOT a fixed pipeline. Mostly-failed transcripts skip specialist
+  //      invocation and surface clarification instead. Empty facts skip
+  //      Drift Watcher. Drift without scope/money skips Change Order Agent.
+  //
+  //   3. Composes specialist outputs into:
+  //      - `the_one_thing` (operator-facing headline)
+  //      - `reasoning_trail` (§13 audit deep-link substrate)
+  //      - `clarification_prompts` (when ambiguity warrants asking)
+  //      - `events_to_append` (the persistence events the caller writes)
+  //
+  // This is the architectural correction per Sprint E's brief. The
+  // pre-E build composed plays mechanically; the orchestrator composes
+  // them with judgment.
+  //
+  // Error policy unchanged from the scheduler block: derived-event failures
+  // log + populate `play_error`, but do NOT 5xx. The captured event is the
+  // audit-anchor of record; downstream synthesis is best-effort.
   // ────────────────────────────────────────────────────────────────────────
 
-  let factsEvent: DailyLogFactsExtractedEvent | null = null;
-  let driftEvent: DailyLogDriftDetectedEvent | null = null;
+  const capturedEvent = validation.event as DailyLogEntryCapturedEvent;
+
+  // Hydrate project context — V1.5 minimal: name + recent kinds from
+  // existing events. V2.0 will read richer project profile + actor map.
+  const allEventsForContext = await eventStore.readAll();
+  const projectCreatedEvent = allEventsForContext.find(
+    (e) => e.type === 'project.created' && e.correlation_id === projectId && e.tenant_id === tenant,
+  );
+  const recentDailyLogEntries = allEventsForContext
+    .filter(
+      (e): e is DailyLogEntryCapturedEvent =>
+        e.type === 'daily_log.entry_captured' &&
+        e.correlation_id === projectId &&
+        e.tenant_id === tenant,
+    )
+    .slice(-5)
+    .map((e) => e.entry_kind);
+
+  const projectContext = {
+    project_id: projectId,
+    project_name:
+      projectCreatedEvent && projectCreatedEvent.type === 'project.created'
+        ? projectCreatedEvent.project_name
+        : projectId,
+    recent_entry_kinds: recentDailyLogEntries,
+  };
+
+  // Recent surface history for the orchestrator's relay-surfacer tool
+  // (24h dedupe lookup).
+  const recentSurfaceHistory = allEventsForContext.filter(
+    (e): e is RelayCardSurfacedEvent => e.type === 'relay_card.surfaced',
+  );
+
+  let rightHandResponse: Awaited<ReturnType<typeof runRightHandOrchestrator>> | null = null;
   let playError: string | null = null;
 
-  const captured = validation.event as DailyLogEntryCapturedEvent;
-
-  // Step 1 — facts extraction (B.1 play handler + B.2 extractor).
   try {
-    const candidate = runFieldCapturePlay(captured);
-    const factsValidation = validatePersistenceEvent(candidate);
-    if (!factsValidation.ok) {
-      throw new Error(`facts_event validation: ${factsValidation.errors.join(', ')}`);
-    }
-    await eventStore.append(factsValidation.event);
-    factsEvent = candidate;
+    rightHandResponse = await runRightHandOrchestrator({
+      capturedEvent,
+      projectContext,
+      toolRegistry: createDefaultToolRegistry(),
+      recentSurfaceHistory,
+      // No LLM client wired here yet — orchestrator uses deterministic
+      // fallback. After Sprint E.2 the Groq client wires in from env vars.
+    });
   } catch (err) {
-    playError = `play_handler: ${err instanceof Error ? err.message : String(err)}`;
+    playError = `orchestrator: ${err instanceof Error ? err.message : String(err)}`;
     console.warn(
-      `[scheduler] facts derivation failed for entry_id=${entryId}: ${playError}`,
+      `[right_hand] orchestrator failed for entry_id=${entryId}: ${playError}`,
     );
   }
 
-  // Step 2 — drift classification (B.3 adapter). Only runs if facts succeeded;
-  // the adapter takes a fully-validated facts event as input.
-  if (factsEvent !== null) {
-    try {
-      const driftCandidate = adaptDailyLogFactsToDriftSignal(factsEvent);
-      if (driftCandidate !== null) {
-        const driftValidation = validatePersistenceEvent(driftCandidate);
-        if (!driftValidation.ok) {
-          throw new Error(`drift_event validation: ${driftValidation.errors.join(', ')}`);
+  // Append the orchestrator's events to the durable log.
+  if (rightHandResponse !== null) {
+    for (const ev of rightHandResponse.events_to_append) {
+      try {
+        const v = validatePersistenceEvent(ev);
+        if (!v.ok) {
+          throw new Error(`event validation: ${v.errors.join(', ')}`);
         }
-        await eventStore.append(driftValidation.event);
-        driftEvent = driftCandidate;
+        await eventStore.append(v.event);
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        playError = playError ?? `event_append: ${reason}`;
+        console.warn(
+          `[right_hand] event append failed for entry_id=${entryId}: ${reason}`,
+        );
       }
-    } catch (err) {
-      playError = `drift_adapter: ${err instanceof Error ? err.message : String(err)}`;
-      console.warn(
-        `[scheduler] drift derivation failed for entry_id=${entryId}: ${playError}`,
-      );
     }
   }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Step C.1 — relay-card surfacing play.
-  //
-  // Closes the last automation gap in the Step B vertical slice. Without
-  // this, B.5's /relay UI used `daily_log.facts_extracted` events as a
-  // proxy with `rc_proxy_*` synthetic IDs — and B.6's review endpoint
-  // returned 404 for those proxy IDs because no `relay_card.surfaced`
-  // event ever fired automatically.
-  //
-  // The surfacing play applies a deterministic rule table over
-  // (severity, facts, recent-surface-history) → surface event | null.
-  // Same error policy as the play handler: log warnings + report in
-  // `play_error`, don't 5xx the request. The captured + facts + drift
-  // events have already been appended and are durable.
-  //
-  // Recent-surface-history for the dedupe window (24h, warn-severity)
-  // comes from `eventStore.readAll()`. This is fine for V1.5 dogfood
-  // volume; V2.0 will move to a per-project index when volume grows.
-  // ────────────────────────────────────────────────────────────────────────
-
-  let surfacedEvent: RelayCardSurfacedEvent | null = null;
-
-  if (driftEvent !== null) {
-    try {
-      const allEventsForHistory = await eventStore.readAll();
-      const surfaceHistory = allEventsForHistory.filter(
-        (e): e is RelayCardSurfacedEvent => e.type === 'relay_card.surfaced',
-      );
-      const candidate = runRelayCardSurfacingPlay(
-        driftEvent,
-        factsEvent!, // factsEvent is non-null when driftEvent is non-null
-        surfaceHistory,
-      );
-      if (candidate !== null) {
-        const surfacedValidation = validatePersistenceEvent(candidate);
-        if (!surfacedValidation.ok) {
-          throw new Error(
-            `surfaced_event validation: ${surfacedValidation.errors.join(', ')}`,
-          );
-        }
-        await eventStore.append(surfacedValidation.event);
-        surfacedEvent = candidate;
-      }
-    } catch (err) {
-      playError = `relay_card_surfacer: ${err instanceof Error ? err.message : String(err)}`;
-      console.warn(
-        `[scheduler] relay-card surfacing failed for entry_id=${entryId}: ${playError}`,
-      );
-    }
-  }
+  // Extract back-compat fields from the orchestrator's events for clients
+  // (B.4 iPhone UI, B.5 /relay UI) that read facts_event / drift_event /
+  // surfaced_event directly.
+  const factsEvent =
+    rightHandResponse?.events_to_append.find(
+      (e): e is DailyLogFactsExtractedEvent => e.type === 'daily_log.facts_extracted',
+    ) ?? null;
+  const driftEvent =
+    rightHandResponse?.events_to_append.find(
+      (e): e is DailyLogDriftDetectedEvent => e.type === 'daily_log.drift_detected',
+    ) ?? null;
+  const surfacedEvent =
+    rightHandResponse?.events_to_append.find(
+      (e): e is RelayCardSurfacedEvent => e.type === 'relay_card.surfaced',
+    ) ?? null;
 
   const allEvents = await eventStore.readAll();
   const projection = await rebuildAndPersistProjection({
@@ -915,6 +917,10 @@ async function handleCreateDailyLogEntry(
   });
   jsonResponse(res, 201, {
     event: validation.event,
+    // Right Hand orchestrator's synthesized output — the new primary
+    // response payload for Right Hand Home (E.3) to render.
+    right_hand_response: rightHandResponse,
+    // Back-compat fields (clients reading these specifically):
     facts_event: factsEvent,
     drift_event: driftEvent,
     surfaced_event: surfacedEvent,
