@@ -1,0 +1,403 @@
+/**
+ * Right Hand orchestrator (Sprint E.1).
+ *
+ * The runtime composition layer above the deterministic plays. Replaces the
+ * mechanical scheduler-block pipeline that previously chained capture →
+ * facts → drift → surfacer.
+ *
+ * Charter v1.0 framing: Right Hand is the ORCHESTRATOR CLASS. It owns:
+ *   1. Reading captures, forming a whole-capture hypothesis
+ *   2. Deciding which specialists to invoke based on the hypothesis
+ *   3. Composing specialist outputs into a single "the one thing that matters"
+ *   4. Surfacing clarification prompts when ambiguity is too high
+ *
+ * The specialists (Document Manager, Drift Watcher, Change Order Agent,
+ * etc.) become SCOPED TOOLS the orchestrator invokes — not peers, not
+ * always-on pipeline stages.
+ *
+ * THIS IS THE FILE THE EXTERNAL REVIEW NAMED AS MISSING.
+ *
+ * SCOPE FOR E.1
+ *   - Sequential tool invocation per the decision tree below
+ *   - Compose `the_one_thing` + `reasoning_trail` from tool outputs
+ *   - Emit `clarification_prompts` when hypothesis flags ambiguity
+ *   - Return events_to_append so the scheduler-replacement wiring can
+ *     persist the chain durably
+ *
+ * NOT IN E.1
+ *   - Right Hand Home UI (E.3)
+ *   - F-34 clarification prompts UI integration (E.2)
+ *   - Photo / LiDAR / plan-upload orchestration (Sprint F — same pattern,
+ *     different tools, different decision tree)
+ *   - LLM-driven specialist invocation choice (deterministic decision tree
+ *     for now; LLM-driven routing is V2.0)
+ */
+
+import crypto from 'node:crypto';
+
+import type {
+  DailyLogDriftDetectedEvent,
+  DailyLogEntryCapturedEvent,
+  DailyLogFactsExtractedEvent,
+  PersistenceEvent,
+  RelayCardSurfacedEvent,
+} from '../../persistence/events.js';
+import type { DailyLogExtractedFacts } from '../../persistence/dailyLogExtractor.js';
+import type { ToolRegistry } from './tool-registry.js';
+import {
+  runWholeCaptureHypothesis,
+  type WholeCaptureHypothesis,
+  type OperatorIntent,
+} from './whole-capture-hypothesis.js';
+import type { RunWholeCaptureHypothesisInput } from './whole-capture-hypothesis.js';
+
+// ──────────────────────────────────────────────────────────────────────────
+// Output shape — what the orchestrator returns
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface ToolInvocation {
+  readonly tool_name: 'document_manager' | 'drift_watcher' | 'relay_surfacer' | 'change_order_agent';
+  readonly invoked: boolean;
+  /** Reason given for invoking (or skipping) the tool. Audit trail input. */
+  readonly reason: string;
+  /** Tool's output, if invoked + non-null. */
+  readonly output_event_type?: PersistenceEvent['type'];
+}
+
+export interface ClarificationPrompt {
+  readonly prompt_id: string;
+  /** Operator-facing question. Synthesized from the hypothesis, NOT from fragments. */
+  readonly question: string;
+  /** Right Hand's current hypothesis, surfaced to the operator. */
+  readonly hypothesis_statement: string;
+  /** Optional structured response options. Empty array = free-text answer expected. */
+  readonly options: readonly string[];
+}
+
+export interface RightHandResponse {
+  /** The operator-facing top-priority synthesized output. The headline. */
+  readonly the_one_thing: string;
+  /** Plain-English trail of the orchestrator's decisions for §13 audit deep-link. */
+  readonly reasoning_trail: readonly string[];
+  /** Each tool the orchestrator considered, whether it ran, why. */
+  readonly tools_invoked: readonly ToolInvocation[];
+  /** The hypothesis pass that drove the decisions. */
+  readonly hypothesis: WholeCaptureHypothesis;
+  /** Persistence events the caller should append to the event log. */
+  readonly events_to_append: readonly PersistenceEvent[];
+  /** Populated when the hypothesis flagged ambiguity. */
+  readonly clarification_prompts: readonly ClarificationPrompt[];
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Input shape
+// ──────────────────────────────────────────────────────────────────────────
+
+export interface ProjectContext {
+  readonly project_id: string;
+  readonly project_name: string;
+  readonly project_type?: string;
+  readonly recent_entry_kinds?: readonly DailyLogEntryCapturedEvent['entry_kind'][];
+}
+
+export interface RunRightHandOrchestratorInput {
+  readonly capturedEvent: DailyLogEntryCapturedEvent;
+  readonly projectContext: ProjectContext;
+  readonly toolRegistry: ToolRegistry;
+  /** Recent relay-surfaced events for the dedupe-aware Relay Surfacer tool. */
+  readonly recentSurfaceHistory?: readonly RelayCardSurfacedEvent[];
+  /** Optional LLM client for the hypothesis pass. */
+  readonly llmClient?: RunWholeCaptureHypothesisInput['llmClient'];
+  /** Clock injection for deterministic tests. */
+  readonly now?: Date;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────────────────
+
+function generateId(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`;
+}
+
+function formatFactsForHeadline(facts: DailyLogExtractedFacts): string {
+  // Picks the most operator-relevant non-empty category to feature.
+  if (facts.money_risk_flags.length > 0) {
+    return `Money risk: ${facts.money_risk_flags.slice(0, 2).join(', ')}`;
+  }
+  if (facts.scope_change_flags.length > 0) {
+    return `Scope change: ${facts.scope_change_flags[0]}`;
+  }
+  if (facts.blocked_work.length > 0) {
+    const b = facts.blocked_work[0]!;
+    return `Blocked: ${b.description} (${b.blocker})`;
+  }
+  if (facts.client_decision_flags.length > 0) {
+    return `Awaiting client: ${facts.client_decision_flags[0]}`;
+  }
+  if (facts.schedule_status === 'behind') {
+    return 'Schedule slipping';
+  }
+  if (facts.safety_notes.length > 0) {
+    return `Safety: ${facts.safety_notes[0]}`;
+  }
+  if (facts.completed_work.length > 0) {
+    return `Completed: ${facts.completed_work[0]}`;
+  }
+  return 'No actionable signals';
+}
+
+function severityIntroVerb(severity: DailyLogDriftDetectedEvent['severity']): string {
+  switch (severity) {
+    case 'block': return 'Stop and review';
+    case 'warn': return 'Heads up';
+    case 'caution': return 'Worth a look';
+    case 'info': return 'For the record';
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Main entry point
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Run the Right Hand orchestrator.
+ *
+ * Decision flow (per Sprint E.1 brief):
+ *   1. Hypothesis pass (LLM if available, deterministic fallback else)
+ *   2. If transcript is mostly_failed → skip specialists, emit clarification only
+ *   3. If project_type AND operator_intent both unclear → clarification first
+ *   4. Else → invoke Document Manager (fact extraction is always useful)
+ *   5. If facts produced → invoke Drift Watcher
+ *   6. If drift fires → invoke Relay Surfacer
+ *   7. If drift has scope_change or money_risk → invoke Change Order Agent
+ *      (skipped if tool not wired — see tool-registry.ts)
+ *   8. Compose the_one_thing from the highest-severity output that fired
+ */
+export async function runRightHandOrchestrator(
+  input: RunRightHandOrchestratorInput,
+): Promise<RightHandResponse> {
+  const { capturedEvent, projectContext, toolRegistry } = input;
+  const recentSurfaceHistory = input.recentSurfaceHistory ?? [];
+  const now = input.now ?? new Date();
+
+  const reasoning_trail: string[] = [];
+  const tools_invoked: ToolInvocation[] = [];
+  const events_to_append: PersistenceEvent[] = [];
+  const clarification_prompts: ClarificationPrompt[] = [];
+
+  // ─── Step 1: Hypothesis pass
+  const hypothesis = await runWholeCaptureHypothesis({
+    transcript: capturedEvent.transcript_text ?? '',
+    entry_kind: capturedEvent.entry_kind,
+    project_context: {
+      project_id: projectContext.project_id,
+      project_type: projectContext.project_type,
+      recent_entry_kinds: projectContext.recent_entry_kinds,
+    },
+    llmClient: input.llmClient,
+  });
+  reasoning_trail.push(
+    `Hypothesis pass (${hypothesis.hypothesis_authority}, model=${hypothesis.model_used}): project=${hypothesis.project_type_hypothesis}/${hypothesis.project_type_confidence}, intent=${hypothesis.operator_intent}/${hypothesis.intent_confidence}, transcript=${hypothesis.transcription_quality}`,
+  );
+
+  // ─── Step 2: If transcript mostly failed → clarification only, no specialists
+  if (hypothesis.transcription_quality === 'mostly_failed') {
+    reasoning_trail.push(
+      `Skipping specialist invocation: transcript quality "mostly_failed" — running specialists on this would just produce noise. Surfacing clarification instead.`,
+    );
+    clarification_prompts.push({
+      prompt_id: generateId('clarify'),
+      question: `The voice transcript came through mostly unreadable. ${
+        hypothesis.project_type_hypothesis !== 'unclear'
+          ? `Based on recent captures I think this is a ${hypothesis.project_type_hypothesis.replace('_', ' ')} — am I right? `
+          : ''
+      }Can you tell me what you wanted to capture?`,
+      hypothesis_statement: `transcription_quality=mostly_failed, project_type_hypothesis=${hypothesis.project_type_hypothesis}`,
+      options: [],
+    });
+    return {
+      the_one_thing: 'Voice capture came through mostly unreadable — need a quick clarification before Right Hand can act on it.',
+      reasoning_trail,
+      tools_invoked,
+      hypothesis,
+      events_to_append,
+      clarification_prompts,
+    };
+  }
+
+  // ─── Step 3: Both project and intent unclear → clarification first
+  if (
+    hypothesis.project_type_hypothesis === 'unclear' &&
+    hypothesis.operator_intent === 'unclear' &&
+    (capturedEvent.transcript_text ?? '').length > 20 // not a clock event or empty capture
+  ) {
+    reasoning_trail.push(
+      'Both project type AND operator intent unclear — surfacing clarification before specialist invocation.',
+    );
+    clarification_prompts.push({
+      prompt_id: generateId('clarify'),
+      question: `I read the capture but I can't tell what kind of work this is or what you're reporting. Can you confirm the project and what you wanted to flag?`,
+      hypothesis_statement: `project_type=unclear, intent=unclear, transcript_quality=${hypothesis.transcription_quality}`,
+      options: [],
+    });
+    // Still invoke Document Manager so the facts shape is on file
+    // (operator's clarification answer can then be merged with whatever
+    //  the deterministic extractor caught — never lose audit evidence).
+  }
+
+  // ─── Step 4: Document Manager (always invoke unless step 2 returned)
+  const factsEvent = toolRegistry.documentManager.invoke(capturedEvent);
+  events_to_append.push(factsEvent);
+  tools_invoked.push({
+    tool_name: 'document_manager',
+    invoked: true,
+    reason: 'Always invoke for filing + tagging; keeps facts_extracted event on the audit trail',
+    output_event_type: factsEvent.type,
+  });
+  const facts = factsEvent.facts as unknown as DailyLogExtractedFacts;
+  reasoning_trail.push(
+    `Document Manager extracted: completed=${facts.completed_work.length}, money_risk=${facts.money_risk_flags.length}, scope_change=${facts.scope_change_flags.length}, blocker=${facts.blocked_work.length}, schedule=${facts.schedule_status}`,
+  );
+
+  // ─── Step 5: Drift Watcher — runs when there are any signals to classify
+  const factsAreEmpty =
+    facts.completed_work.length === 0 &&
+    facts.blocked_work.length === 0 &&
+    facts.money_risk_flags.length === 0 &&
+    facts.scope_change_flags.length === 0 &&
+    facts.client_decision_flags.length === 0 &&
+    facts.new_task_candidates.length === 0 &&
+    facts.inspection_notes.length === 0 &&
+    facts.safety_notes.length === 0 &&
+    facts.schedule_status === 'unknown';
+
+  let driftEvent: DailyLogDriftDetectedEvent | null = null;
+  if (factsAreEmpty) {
+    tools_invoked.push({
+      tool_name: 'drift_watcher',
+      invoked: false,
+      reason: 'Skipped: no extracted signals to classify',
+    });
+    reasoning_trail.push('Drift Watcher skipped — extracted facts are entirely empty.');
+  } else {
+    driftEvent = toolRegistry.driftWatcher.invoke(factsEvent);
+    if (driftEvent !== null) {
+      events_to_append.push(driftEvent);
+      tools_invoked.push({
+        tool_name: 'drift_watcher',
+        invoked: true,
+        reason: 'Classified drift signals from extracted facts',
+        output_event_type: driftEvent.type,
+      });
+      reasoning_trail.push(
+        `Drift Watcher classified: severity=${driftEvent.severity}, description="${driftEvent.description.slice(0, 80)}${driftEvent.description.length > 80 ? '...' : ''}"`,
+      );
+    } else {
+      tools_invoked.push({
+        tool_name: 'drift_watcher',
+        invoked: true,
+        reason: 'Classified facts but no drift fired',
+      });
+      reasoning_trail.push('Drift Watcher ran but no signals met drift thresholds.');
+    }
+  }
+
+  // ─── Step 6: Relay Surfacer — runs when drift fires
+  let surfacedEvent: RelayCardSurfacedEvent | null = null;
+  if (driftEvent !== null) {
+    surfacedEvent = toolRegistry.relaySurfacer.invoke(
+      driftEvent,
+      factsEvent,
+      recentSurfaceHistory,
+    );
+    if (surfacedEvent !== null) {
+      events_to_append.push(surfacedEvent);
+      tools_invoked.push({
+        tool_name: 'relay_surfacer',
+        invoked: true,
+        reason: 'Drift severity + flags met surfacing rule',
+        output_event_type: surfacedEvent.type,
+      });
+      reasoning_trail.push(
+        `Relay Surfacer: emitted card ${surfacedEvent.relay_card_id} to ${surfacedEvent.surfaced_to}.`,
+      );
+    } else {
+      tools_invoked.push({
+        tool_name: 'relay_surfacer',
+        invoked: true,
+        reason: 'Drift fired but surfacing rule said no (dedupe or below threshold)',
+      });
+    }
+  } else {
+    tools_invoked.push({
+      tool_name: 'relay_surfacer',
+      invoked: false,
+      reason: 'Skipped: no drift event to evaluate',
+    });
+  }
+
+  // ─── Step 7: Change Order Agent — when drift includes scope/money signals
+  const shouldConsiderChangeOrder =
+    driftEvent !== null &&
+    (facts.scope_change_flags.length > 0 || facts.money_risk_flags.length > 0);
+
+  if (shouldConsiderChangeOrder) {
+    if (toolRegistry.changeOrderAgent.is_wired) {
+      // Will be wired in once D.1.1 (PR #211) merges. For now invoke
+      // returns null. Recorded in reasoning trail.
+      const _draft = toolRegistry.changeOrderAgent.invoke({
+        driftEvent: driftEvent!,
+        factsEvent,
+        projectContext,
+        costLookup: null,
+      });
+      tools_invoked.push({
+        tool_name: 'change_order_agent',
+        invoked: true,
+        reason: 'Drift carries scope_change or money_risk flags; CO draft considered',
+      });
+      reasoning_trail.push('Change Order Agent invoked (D.1.1 wired).');
+    } else {
+      tools_invoked.push({
+        tool_name: 'change_order_agent',
+        invoked: false,
+        reason: 'Tool not wired yet (D.1.1 PR #211 not merged) — skipping',
+      });
+      reasoning_trail.push(
+        'Change Order Agent NOT wired (D.1.1 pending) — CO draft skipped. After PR #211 merges, this would have fired.',
+      );
+    }
+  } else if (driftEvent !== null) {
+    tools_invoked.push({
+      tool_name: 'change_order_agent',
+      invoked: false,
+      reason: 'Drift fired but no scope_change or money_risk flags to anchor a CO draft',
+    });
+  }
+
+  // ─── Step 8: Compose the_one_thing from the highest-severity output that fired
+  let the_one_thing: string;
+  if (clarification_prompts.length > 0) {
+    the_one_thing = clarification_prompts[0]!.question;
+  } else if (driftEvent !== null && surfacedEvent !== null) {
+    the_one_thing = `${severityIntroVerb(driftEvent.severity)} — ${projectContext.project_name}: ${formatFactsForHeadline(facts)}.`;
+  } else if (driftEvent !== null) {
+    the_one_thing = `${projectContext.project_name}: ${driftEvent.description.slice(0, 120)}`;
+  } else if (!factsAreEmpty) {
+    the_one_thing = `${projectContext.project_name}: ${formatFactsForHeadline(facts)} — no immediate action needed.`;
+  } else {
+    the_one_thing = `${projectContext.project_name}: capture logged. Nothing actionable surfaced.`;
+  }
+
+  reasoning_trail.push(`The One Thing → "${the_one_thing}"`);
+
+  return {
+    the_one_thing,
+    reasoning_trail,
+    tools_invoked,
+    hypothesis,
+    events_to_append,
+    clarification_prompts,
+  };
+}
