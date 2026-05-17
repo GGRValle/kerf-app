@@ -250,30 +250,46 @@ test('deterministic fallback is deterministic across 50 runs on same input', asy
   }
 });
 
-test('regression: hypothesis endpoint MUST be in the approved hosting route registry', async () => {
-  // This test prevents the silent-fallback bug we hit in production after
-  // PR #215: the wiring used `groq://llama-3.1-70b-versatile` which is
-  // NOT in src/hosting/routeCheck.ts APPROVED_HOSTING_ENDPOINTS, so every
-  // LLM call was rejected by checkHostingRoute() before reaching the
-  // network. The fix changed the endpoint to `groq://llama-70b`. This
-  // test makes sure a future refactor can't silently introduce another
-  // unapproved endpoint string.
-  const { readFileSync } = await import('node:fs');
-  const src = readFileSync(
-    new URL('../src/agents/right-hand/whole-capture-hypothesis.ts', import.meta.url),
-    'utf8',
-  );
-  const endpointMatch = src.match(/endpoint:\s*['"]groq:\/\/([a-z0-9-]+)['"]/);
-  assert.ok(endpointMatch, 'hypothesis module must declare a groq:// endpoint');
+test('regression: hypothesis (endpoint, model) pair MUST pass checkHostingRoute()', async () => {
+  // Semantic test against the actual validator — NOT a string-match against
+  // the source file. The contract under test:
+  //   "the (endpoint, model) pair configured for hypothesis calls is
+  //    approved by the hosting route registry."
+  //
+  // A refactor that moves the constants around or renames identifiers
+  // doesn't break this test. A change that swaps to an unapproved pair
+  // does break it loudly. That's the right shape per Christian's
+  // 2026-05-17 review: "the goal is 'the configured pair is approved',
+  // not 'this literal string still appears in this file'."
+  //
+  // Background: PR #215 used `groq://llama-3.1-70b-versatile`, which is
+  // not in the registry. Every live LLM call was rejected by
+  // checkHostingRoute() before reaching the network, and the orchestrator
+  // silently fell back. PR #216 fixed the endpoint and made fallbacks
+  // log; this test prevents the class of bug from recurring.
+  const {
+    HYPOTHESIS_LLM_ENDPOINT,
+    HYPOTHESIS_LLM_MODEL,
+  } = await import('../src/agents/right-hand/whole-capture-hypothesis.ts');
+  const { checkHostingRoute } = await import('../src/hosting/routeCheck.ts');
 
-  // Import the registry to check membership at runtime
-  const { APPROVED_HOSTING_ENDPOINTS } = await import('../src/hosting/routeCheck.ts');
-  const used = `groq://${endpointMatch[1]!}`;
-  const approved = (APPROVED_HOSTING_ENDPOINTS as readonly { endpoint: string }[])
-    .map((e) => e.endpoint);
-  assert.ok(
-    approved.includes(used),
-    `hypothesis uses endpoint "${used}" — must be in APPROVED_HOSTING_ENDPOINTS. Approved: ${approved.join(', ')}`,
+  // Required envelope fields are filled with synthetic-but-well-formed
+  // values; the assertion under test is on the (endpoint, source_model)
+  // pair, not on these. If the envelope shape changes upstream the
+  // test will fail loudly here — that's the correct coupling.
+  const result = checkHostingRoute({
+    invocation_id: 'test_inv_regression_endpoint_pair',
+    tenant_id: 'tenant_ggr',
+    endpoint: HYPOTHESIS_LLM_ENDPOINT,
+    source_model: HYPOTHESIS_LLM_MODEL,
+    purpose: 'whole_capture_hypothesis_regression_test',
+    requested_at: '2026-05-16T18:00:00.000Z',
+  });
+
+  assert.equal(
+    result.allowed,
+    true,
+    `hypothesis endpoint="${HYPOTHESIS_LLM_ENDPOINT}" + model="${HYPOTHESIS_LLM_MODEL}" must pass checkHostingRoute. Got: ${JSON.stringify(result)}`,
   );
 });
 

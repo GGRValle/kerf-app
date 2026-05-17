@@ -245,6 +245,27 @@ Rules:
 
 Output JSON only.`;
 
+/**
+ * LLM endpoint + model used for the whole-capture hypothesis pass.
+ *
+ * EXPORTED so tests can verify the pair against the approved hosting route
+ * registry semantically — not by string-matching the source file. This is
+ * the contract: hypothesis pass speaks to this specific approved endpoint.
+ * A refactor that moves the strings around without changing the contract
+ * keeps the regression test passing; a change that swaps to an unapproved
+ * pair fails the test loudly.
+ *
+ * Per Christian's W2 2026-05-03 benchmark + the hosting registry:
+ *   - groq://llama-70b → model llama-3.3-70b (tier-1 canonical 70B)
+ *
+ * Tier-1 alternative (smaller, faster, cheaper): groq://llama-4-scout
+ * with model meta-llama/llama-4-scout-17b-16e-instruct. Could be the right
+ * choice if 70B latency becomes the bottleneck. For now, hypothesis pass
+ * is closer to semantic-routing judgment than cheap extraction — 70B wins.
+ */
+export const HYPOTHESIS_LLM_ENDPOINT = 'groq://llama-70b' as const;
+export const HYPOTHESIS_LLM_MODEL = 'llama-3.3-70b' as const;
+
 async function llmHypothesis(
   input: RunWholeCaptureHypothesisInput,
 ): Promise<WholeCaptureHypothesis | null> {
@@ -263,14 +284,14 @@ async function llmHypothesis(
   ].join('\n');
 
   try {
-    // Endpoint MUST be in src/hosting/routeCheck.ts APPROVED_HOSTING_ENDPOINTS
-    // registry — groqChat() validates the (endpoint, model) pair via
-    // checkHostingRoute() and rejects unapproved pairs before any network call.
-    // Tier-1 canonical model per Christian's W2 2026-05-03 benchmark
-    // (memory: kerf_tier1_endpoint_lineup_patch003).
+    // Endpoint + model come from the exported constants above so the
+    // regression test can verify the SEMANTIC contract (the pair is
+    // approved) without string-matching this source file. groqChat()
+    // calls checkHostingRoute() internally — unapproved pairs return
+    // {ok: false, kind: 'forbidden_route'} before any network call.
     const result = await llm.groqChat({
-      endpoint: 'groq://llama-70b',
-      model: 'llama-3.3-70b',
+      endpoint: HYPOTHESIS_LLM_ENDPOINT,
+      model: HYPOTHESIS_LLM_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
