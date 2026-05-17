@@ -188,6 +188,81 @@ test('clock_event with null transcript: emits empty facts, no drift', async () =
 });
 
 // ──────────────────────────────────────────────────────────────────────────
+// Unclear-project + unclear-intent branch
+//
+// Covers the case where the orchestrator hypothesis returns project='unclear'
+// AND intent='unclear'. Document Manager STILL invokes (filing baseline never
+// skipped — audit trail integrity), but a clarification prompt is surfaced.
+// Drift Watcher's behavior depends on whether the extracted facts are empty
+// (they typically will be on truly-ambiguous transcripts).
+//
+// The deterministic fallback rarely returns intent='unclear' (it falls back
+// to entry_kind), so this test injects an LLM stub returning both unclear —
+// the realistic case in production.
+// ──────────────────────────────────────────────────────────────────────────
+
+test('unclear/unclear branch: files for audit but surfaces clarification', async () => {
+  const llmReturnsBothUnclear = {
+    tenantId: 'tenant_ggr',
+    groqChat: async () => ({
+      ok: true as const,
+      content: JSON.stringify({
+        project_type_hypothesis: 'unclear',
+        project_type_confidence: 'low',
+        transcription_quality: 'clean',
+        garbled_segment_indices: [],
+        operator_intent: 'unclear',
+        intent_confidence: 'low',
+        ambiguity_flags: ['project_target_unknown', 'intent_unclear'],
+      }),
+      model: 'llama-3.1-70b-versatile',
+      inputTokens: 100,
+      outputTokens: 50,
+      totalTokens: 150,
+      latencyMs: 234,
+      costNanoUsd: 1_500 as never,
+      finishReason: 'stop',
+      route: {} as never,
+      invocationId: 'test_inv_unclear',
+      completedAt: '2026-05-16T18:00:00.000Z',
+    }),
+  };
+
+  const out = await runRightHandOrchestrator({
+    capturedEvent: makeCapturedEvent({
+      transcript_text: 'We talked about the thing for a while. They want to do stuff over there. Could be next week.',
+    }),
+    projectContext: hendersonProject,
+    toolRegistry: createDefaultToolRegistry(),
+    llmClient: llmReturnsBothUnclear,
+    now: NOW,
+  });
+
+  // Hypothesis came from LLM and returned both unclear
+  assert.equal(out.hypothesis.project_type_hypothesis, 'unclear');
+  assert.equal(out.hypothesis.operator_intent, 'unclear');
+  assert.equal(out.hypothesis.hypothesis_authority, 'llm_inferred');
+
+  // Clarification prompt MUST surface
+  assert.equal(out.clarification_prompts.length, 1);
+  assert.match(out.clarification_prompts[0]!.question, /can't tell|confirm/i);
+
+  // Document Manager STILL fired (filing baseline never skipped)
+  const docMgr = out.tools_invoked.find((t) => t.tool_name === 'document_manager');
+  assert.equal(docMgr?.invoked, true, 'Document Manager always runs — audit trail must not break');
+  const types = out.events_to_append.map((e) => e.type);
+  assert.ok(
+    types.includes('daily_log.facts_extracted'),
+    'facts_extracted event MUST land on the audit trail even when clarifying',
+  );
+
+  // Reasoning trail is honest about what happens: filing + asking, not skipping
+  const trail = out.reasoning_trail.join(' ');
+  assert.match(trail, /Filing the capture for audit/i);
+  assert.match(trail, /holding off on drift|surface decisions/i);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // Change Order Agent: tracked-but-not-wired path
 // ──────────────────────────────────────────────────────────────────────────
 

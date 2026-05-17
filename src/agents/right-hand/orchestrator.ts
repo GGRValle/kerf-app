@@ -245,8 +245,15 @@ export async function runRightHandOrchestrator(
     hypothesis.operator_intent === 'unclear' &&
     (capturedEvent.transcript_text ?? '').length > 20 // not a clock event or empty capture
   ) {
+    // IMPORTANT — what this branch actually does:
+    //   - Surfaces a clarification prompt (asks operator to confirm)
+    //   - STILL invokes Document Manager below (filing baseline never skipped)
+    //   - Drift Watcher and downstream specialists will respect the
+    //     same empty/sparse signal the deterministic extractor pulls
+    // We hold off on ACTIONABLE specialist work but never break the audit
+    // trail by skipping the filing step.
     reasoning_trail.push(
-      `Can't tell what project or what you were reporting — asking for confirmation before the specialists do anything with this.`,
+      `Can't tell what project or what you were reporting. Filing the capture for audit (Document Manager always runs), but holding off on drift/surface decisions until you confirm.`,
     );
     clarification_prompts.push({
       prompt_id: generateId('clarify'),
@@ -254,9 +261,6 @@ export async function runRightHandOrchestrator(
       hypothesis_statement: `project_type=unclear, intent=unclear, transcript_quality=${hypothesis.transcription_quality}`,
       options: [],
     });
-    // Still invoke Document Manager so the facts shape is on file
-    // (operator's clarification answer can then be merged with whatever
-    //  the deterministic extractor caught — never lose audit evidence).
   }
 
   // ─── Step 4: Document Manager (always invoke unless step 2 returned)
