@@ -119,16 +119,47 @@ This is not a soft guideline. It's a release gate. PR authors (Claude or Cursor)
 
 ---
 
+### 7. No backend-only PRs from this point forward
+
+**The criterion:** Every PR that modifies `src/persistence/*`, `src/agents/*`, `src/altitude/*`, or `scripts/serve-v15-vertical-slice.ts` MUST also modify an operator-facing surface (`src/examples/v15-vertical-slice/pages/*`, `src/i18n/*` strings the operator reads, or equivalent) — OR explicitly justify in the PR description why a backend-only change produces a visible operator-facing behavior change.
+
+This rule binds **from this point forward.** Not "after Sprint E closes." Not "once the orchestrator is mature." Now.
+
+**Why this exists:** The 2026-05-17 post-mortem named seven causes of architectural drift. The 7th was *"we didn't encode agentic behavior as a release gate."* This criterion IS that gate. The deeper failure mode it prevents: backend-heavy work that doesn't immediately project into an operator-facing wireframe surface compounds into smarter internals and dumber product behavior.
+
+**Permissible exceptions** (must be named explicitly in the PR description):
+- Substrate that changes what an existing surface renders (e.g., LLM wiring flips a disclaimer + improves hypothesis quality the operator sees)
+- Bug fixes to substrate where the surface is unchanged but produces correct output
+- Test-only or doc-only PRs
+
+**Any backend-only exception MUST show a visible before/after effect on an existing operator surface in the PR description.** Screenshots, transcript examples, or rendered HTML diffs. This prevents *"trust me, this helps later"* from sneaking back in.
+
+**Not permissible:** "lay the groundwork for a future surface." If the surface isn't built in this PR (or a tightly-stacked follow-up PR that lands within 24 hours), the groundwork doesn't ship.
+
+**How to verify:** PR reviewer audits the file diff. If only backend files changed and no exception is named with before/after evidence, the PR fails this criterion and does not merge.
+
+**Failure modes to watch for:**
+- Substrate PRs that promise UI in a "next PR" that never comes
+- Generator / lookup / adapter modules shipped without a surface that consumes them
+- "Refactor to enable future X" without X also landing
+- Backend tests that pass but no operator can see the effect
+
+**E.2 status (this PR):** ✅ Passes — modifies `pages/field-daily-capture.ts` (operator-facing render) + the i18n strings the operator reads.
+
+---
+
 ## Sprint E sub-step gate matrix
 
-| Sub-step | Criteria 1-6 required to pass |
+| Sub-step | Criteria required to pass |
 |---|---|
-| **E.1** (orchestrator skeleton) | 1, 2, 3, 4, 6 — all pass at PR #213 (commit `fa653b7`) |
-| **E.2** (clarification UI rebuild) | 2 (the central criterion for E.2), plus 3, 4, 6 preserved |
-| **E.3** (Right Hand Home) | 5 (the central criterion for E.3), plus 1, 2, 3, 4, 6 preserved |
-| **Live LLM wiring** | 6 in particular — the criterion this PR shifts from "honest about being thin" to "actually rich" |
+| **E.1** (orchestrator skeleton) | 1, 2, 3, 4, 6 — all pass at PR #213 (commit `fa653b7`). Criterion 7 not applicable (predates the rule.) |
+| **E.2** (clarification UI rebuild — PR #214) | 2 (central), plus 3, 4, 6 preserved, plus 7 |
+| **Live LLM wiring** | 6 (central — flips "honest about being thin" → "actually rich"), plus 7 (must show before/after) |
+| **E.3 Right Hand Home** (PR 1 of E.3 sprint) | 5 (central), plus 1, 2, 3, 4, 6 preserved, plus 7 |
+| **CO draft artifact surface** (PR 2 of E.3 sprint, stacked on E.3 Home) | 5, plus 7 (the visible artifact IS the surface change) |
+| **Sprint F (modality routers)** | 7 binds every PR; per-modality central criteria added when the sprint is scoped |
 
-A Sprint E sub-step PR that fails any of its required criteria does not merge. Period.
+A PR that fails any of its required criteria does not merge. Period.
 
 ---
 
@@ -136,7 +167,8 @@ A Sprint E sub-step PR that fails any of its required criteria does not merge. P
 
 - It does NOT replace code-level CI gates (typecheck, tests, forbidden-surface invariants). Those stay.
 - It does NOT automate the verification. The criteria are graded by a human (Christian, Codex review, or Claude self-audit). V2.0 may add LLM-graded evals against this contract.
-- It does NOT extend beyond Sprint E. After Sprint E closes, this contract is referenced by Step F (modality routers for photo/LiDAR/plans) but those will have their own modality-specific contracts.
+- Criteria 1-6 are Sprint-E-shaped (orchestrator behavior, clarification, the_one_thing, reasoning trail, Home surface, honesty about authority). Step F will add per-modality criteria.
+- **Criterion 7 is the universal rule and binds every PR going forward, not just Sprint E.** It's the meta-gate that prevents the bottom-up drift that triggered Sprint E in the first place.
 
 ---
 
