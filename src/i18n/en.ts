@@ -73,4 +73,11 @@ export const EN: TranslationMap = {
   'field.confirm.transcript_preview': 'Transcript preview',
   'field.error.title': 'Could not save entry',
   'field.notice.entry_kind': 'Progress update · tenant_ggr (V1.5 demo)',
+
+  // Right Hand response surface on /field (Sprint E.2)
+  'rh.says.label': 'Right Hand says',
+  'rh.clarify.title': 'Right Hand needs a quick clarification',
+  'rh.clarify.hint': 'Recapture or reply on the office side — your capture is filed either way.',
+  'rh.reasoning.toggle': 'Show Right Hand\'s reasoning',
+  'rh.honesty.deterministic': 'Right Hand is running on heuristics here — the LLM hypothesis path isn\'t wired into the live deploy yet, so confidence stays conservative.',
 };

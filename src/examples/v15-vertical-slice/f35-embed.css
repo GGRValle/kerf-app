@@ -834,3 +834,109 @@
 .kerf-field-daily__feedback {
   margin-top: 1rem;
 }
+
+/* Right Hand response surface (Sprint E.2) — clarification + the_one_thing */
+.kerf-rh-response {
+  padding: 1rem;
+}
+
+.kerf-rh-clarify {
+  background: #fef9e7;
+  border-left: 4px solid #c2410c;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 4px;
+}
+
+.kerf-rh-clarify__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.kerf-rh-clarify__question {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin: 0 0 0.4rem;
+}
+
+.kerf-rh-clarify__hint {
+  font-size: 0.85rem;
+  color: #6a7570;
+  margin: 0;
+}
+
+.kerf-rh-thething {
+  background: #f0fdf4;
+  border-left: 4px solid #15803d;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 4px;
+}
+
+.kerf-rh-thething__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #15803d;
+  margin: 0 0 0.4rem;
+}
+
+.kerf-rh-thething__line {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin: 0;
+  font-weight: 500;
+}
+
+.kerf-rh-meta {
+  font-size: 0.85rem;
+  margin: 0.75rem 0;
+  color: #475569;
+}
+
+.kerf-rh-meta dt {
+  display: inline;
+  font-weight: 600;
+  margin-right: 0.4rem;
+}
+
+.kerf-rh-meta dd {
+  display: inline;
+  margin: 0 1rem 0 0;
+}
+
+.kerf-rh-reasoning {
+  margin: 0.5rem 0;
+}
+
+.kerf-rh-reasoning__summary {
+  font-size: 0.85rem;
+  color: #475569;
+  cursor: pointer;
+  padding: 0.2rem 0;
+}
+
+.kerf-rh-reasoning__list {
+  margin: 0.5rem 0 0 1.2rem;
+  padding: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.kerf-rh-reasoning__list li {
+  margin-bottom: 0.25rem;
+}
+
+.kerf-rh-honesty {
+  font-size: 0.75rem;
+  color: #6a7570;
+  font-style: italic;
+  margin: 0.75rem 0 0;
+  padding: 0.4rem 0.6rem;
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 4px;
+}

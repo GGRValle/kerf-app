@@ -79,4 +79,11 @@ export const ES: TranslationMap = {
   'field.confirm.transcript_preview': 'Vista previa de transcripción',
   'field.error.title': 'No se pudo guardar la entrada',
   'field.notice.entry_kind': 'Actualización de avance · tenant_ggr (demo V1.5)',
+
+  // Right Hand response surface on /field (Sprint E.2)
+  'rh.says.label': 'Mano Derecha dice',
+  'rh.clarify.title': 'Mano Derecha necesita una aclaración rápida',
+  'rh.clarify.hint': 'Vuelva a grabar o responda desde la oficina — su captura queda registrada igual.',
+  'rh.reasoning.toggle': 'Mostrar el razonamiento de Mano Derecha',
+  'rh.honesty.deterministic': 'Mano Derecha está usando heurísticas aquí — la ruta LLM aún no está conectada al despliegue, así que la confianza se mantiene conservadora.',
 };
