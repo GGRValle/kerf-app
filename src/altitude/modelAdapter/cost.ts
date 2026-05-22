@@ -43,6 +43,17 @@ export const GROQ_LLAMA_4_SCOUT_PRICING: TokenPricingNanoUsdPerMillion = {
 };
 
 /**
+ * Claude Sonnet 4.6 pricing per Anthropic's public pricing as verified on
+ * 2026-05-21.
+ * Input  $3/M   → 3_000_000_000 nUSD/M
+ * Output $15/M  → 15_000_000_000 nUSD/M
+ */
+export const ANTHROPIC_CLAUDE_SONNET_4_6_PRICING: TokenPricingNanoUsdPerMillion = {
+  input: 3_000_000_000,
+  output: 15_000_000_000,
+};
+
+/**
  * Compute cost for a single completion in nano-USD.
  * Pure integer math: `(tokens * priceNanoUsdPerMillion) / 1_000_000`, with
  * Math.round to absorb the integer division remainder. Over a 15-case run

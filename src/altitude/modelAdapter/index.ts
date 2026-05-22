@@ -17,9 +17,23 @@ export {
 } from './groqClient.js';
 
 export {
+  anthropicChat,
+  defaultAnthropicClientDeps,
+  type AnthropicChatRole,
+  type AnthropicChatMessage,
+  type AnthropicChatRequest,
+  type AnthropicChatSuccess,
+  type AnthropicChatFailure,
+  type AnthropicChatFailureKind,
+  type AnthropicChatResult,
+  type AnthropicClientDeps,
+} from './anthropicClient.js';
+
+export {
   completionCostNanoUsd,
   nanoUsdToUsdString,
   GROQ_LLAMA_4_SCOUT_PRICING,
+  ANTHROPIC_CLAUDE_SONNET_4_6_PRICING,
   type NanoUsd,
   type TokenPricingNanoUsdPerMillion,
 } from './cost.js';

@@ -349,6 +349,66 @@ test('orchestrator is deterministic on content fields across runs', async () => 
   );
 });
 
+test('frontier synthesis path: orchestrator uses Sonnet output when available', async () => {
+  const out = await runRightHandOrchestrator({
+    capturedEvent: makeCapturedEvent(),
+    projectContext: hendersonProject,
+    toolRegistry: createDefaultToolRegistry(),
+    llmClient: {
+      tenantId: 'tenant_ggr',
+      anthropicChat: async () => ({
+        ok: true as const,
+        content: JSON.stringify({
+          facts: {
+            completed_work: ['pulled the tub surround'],
+            blocked_work: [],
+            schedule_status: 'behind',
+            new_task_candidates: [],
+            scope_change_flags: ['galvanized all the way back to the main'],
+            money_risk_flags: ['galvanized'],
+            client_decision_flags: [],
+            materials_needed: ['about 8 feet'],
+            inspection_notes: [],
+            safety_notes: [],
+            gap_flags: ['money_impact_unknown'],
+          },
+          drift: {
+            severity: 'block',
+            description: 'Schedule slipping and hidden condition expanding scope.',
+          },
+          surface: {
+            should_surface: true,
+            reason: 'Block-severity hidden condition should surface immediately.',
+          },
+          the_one_thing: 'Stop and review — Henderson bath remodel: hidden condition expanded the job.',
+          reasoning_summary: [
+            'Hidden-condition language indicates scope and money risk.',
+            'Schedule language suggests the job is slipping.',
+          ],
+        }),
+        model: 'claude-sonnet-4-6',
+        inputTokens: 100,
+        outputTokens: 120,
+        totalTokens: 220,
+        latencyMs: 300,
+        costNanoUsd: 1 as never,
+        finishReason: 'end_turn',
+        route: {} as never,
+        invocationId: 'inv_frontier_001',
+        completedAt: NOW.toISOString(),
+      }),
+    },
+    now: NOW,
+  });
+
+  assert.match(out.the_one_thing, /hidden condition expanded the job/i);
+  assert.deepEqual(
+    out.events_to_append.map((e) => e.type),
+    ['daily_log.facts_extracted', 'daily_log.drift_detected', 'relay_card.surfaced'],
+  );
+  assert.match(out.reasoning_trail.join(' '), /Claude Sonnet synthesized/i);
+});
+
 // ──────────────────────────────────────────────────────────────────────────
 // Forbidden-surface invariant
 // ──────────────────────────────────────────────────────────────────────────
