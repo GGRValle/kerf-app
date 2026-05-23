@@ -28,9 +28,10 @@
  */
 
 import type {
+  AnthropicChatRequest,
+  AnthropicChatResult,
   GroqChatRequest,
   GroqChatResult,
-  GroqClientDeps,
 } from '../../altitude/modelAdapter/index.js';
 import type { DailyLogEntryKind } from '../../persistence/events.js';
 
@@ -98,10 +99,12 @@ export interface RunWholeCaptureHypothesisInput {
    * Tests inject a stub; production wires up the real `groqChat` function.
    */
   readonly llmClient?: {
-    readonly groqChat: (
+    readonly groqChat?: (
       request: GroqChatRequest,
-      deps?: Partial<GroqClientDeps>,
     ) => Promise<GroqChatResult>;
+    readonly anthropicChat?: (
+      request: AnthropicChatRequest,
+    ) => Promise<AnthropicChatResult>;
     readonly tenantId: string;
   };
 }
@@ -276,7 +279,7 @@ async function llmHypothesis(
   input: RunWholeCaptureHypothesisInput,
 ): Promise<WholeCaptureHypothesis | null> {
   const llm = input.llmClient;
-  if (llm === undefined) return null;
+  if (llm === undefined || llm.groqChat === undefined) return null;
 
   const recentContext = (input.project_context.recent_entry_kinds ?? []).join(', ');
   const userPrompt = [

@@ -20,9 +20,10 @@
  *   GET  /api/field-daily/relay-feed — relay list DTOs (?tenant_id=) for /relay UI
  *   GET  /...                       — static + SPA fallback to index.html
  *
- * GROQ_API_KEY + GROQ_BASE_URL must be in .env.local (Node loads it
- * on startup; if missing, /transcribe returns 503 with a clear error
- * and the rest of the server keeps working).
+ * GROQ_API_KEY + GROQ_BASE_URL power the cheap-fast tier (Whisper +
+ * hypothesis pass). ANTHROPIC_API_KEY powers the frontier synthesis path.
+ * If any are missing, the relevant path degrades honestly and the rest of
+ * the server keeps working.
  */
 import http from 'node:http';
 import fs from 'node:fs/promises';
@@ -46,8 +47,11 @@ import { createPersistenceEventStore } from '../src/persistence/eventStore.ts';
 import { runRightHandOrchestrator } from '../src/agents/right-hand/orchestrator.ts';
 import { createDefaultToolRegistry } from '../src/agents/right-hand/tool-registry.ts';
 import {
+  anthropicChat,
+  defaultAnthropicClientDeps,
   defaultGroqClientDeps,
   groqChat,
+  type AnthropicChatRequest,
   type GroqChatRequest,
 } from '../src/altitude/modelAdapter/index.ts';
 import {
@@ -144,11 +148,29 @@ const RIGHT_HAND_LLM_CLIENT = (() => {
   };
 })();
 
+const RIGHT_HAND_FRONTIER_CLIENT = (() => {
+  const apiKey = process.env['ANTHROPIC_API_KEY'];
+  if (typeof apiKey !== 'string' || apiKey.length === 0) {
+    return null;
+  }
+  const baseUrl = process.env['ANTHROPIC_BASE_URL'] || 'https://api.anthropic.com';
+  const deps = defaultAnthropicClientDeps(apiKey, baseUrl);
+  return { deps };
+})();
+
 if (RIGHT_HAND_LLM_CLIENT !== null) {
   console.log('[right_hand] LLM hypothesis path WIRED (Groq Llama 3.3 70B Versatile)');
 } else {
   console.log(
     '[right_hand] LLM hypothesis path NOT WIRED (GROQ_API_KEY or GROQ_BASE_URL missing) — orchestrator falls back to deterministic heuristics',
+  );
+}
+
+if (RIGHT_HAND_FRONTIER_CLIENT !== null) {
+  console.log('[right_hand] frontier synthesis path WIRED (Claude Sonnet 4.6)');
+} else {
+  console.log(
+    '[right_hand] frontier synthesis path NOT WIRED (ANTHROPIC_API_KEY missing) — orchestrator falls back to deterministic downstream chain',
   );
 }
 
@@ -917,11 +939,21 @@ async function handleCreateDailyLogEntry(
   // available. tenantId comes from the captured event so the hypothesis
   // call is tenant-scoped on the audit trail.
   const llmClient =
-    RIGHT_HAND_LLM_CLIENT !== null
+    RIGHT_HAND_LLM_CLIENT !== null || RIGHT_HAND_FRONTIER_CLIENT !== null
       ? {
           tenantId: tenant,
-          groqChat: (request: GroqChatRequest) =>
-            groqChat(request, RIGHT_HAND_LLM_CLIENT.deps),
+          ...(RIGHT_HAND_LLM_CLIENT !== null
+            ? {
+                groqChat: (request: GroqChatRequest) =>
+                  groqChat(request, RIGHT_HAND_LLM_CLIENT.deps),
+              }
+            : {}),
+          ...(RIGHT_HAND_FRONTIER_CLIENT !== null
+            ? {
+                anthropicChat: (request: AnthropicChatRequest) =>
+                  anthropicChat(request, RIGHT_HAND_FRONTIER_CLIENT.deps),
+              }
+            : {}),
         }
       : undefined;
 

@@ -74,6 +74,15 @@ export const APPROVED_HOSTING_ENDPOINTS = [
     approved_at: '2026-05-08T00:00:00.000Z',
     status: 'approved',
   },
+  {
+    endpoint: 'anthropic://claude-sonnet-4-6',
+    provider: 'anthropic',
+    model: 'claude-sonnet-4-6',
+    tier: 'frontier',
+    approved_by_decision: 'D-047',
+    approved_at: '2026-05-21T00:00:00.000Z',
+    status: 'approved',
+  },
 ] as const satisfies readonly ApprovedHostingEndpoint[];
 
 export interface HostingRouteCheckRequest {

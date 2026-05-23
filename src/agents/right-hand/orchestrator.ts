@@ -44,10 +44,10 @@ import type {
 } from '../../persistence/events.js';
 import type { DailyLogExtractedFacts } from '../../persistence/dailyLogExtractor.js';
 import type { ToolRegistry } from './tool-registry.js';
+import { runRightHandFrontierSynthesis } from './frontier-synthesis.js';
 import {
   runWholeCaptureHypothesis,
   type WholeCaptureHypothesis,
-  type OperatorIntent,
 } from './whole-capture-hypothesis.js';
 import type { RunWholeCaptureHypothesisInput } from './whole-capture-hypothesis.js';
 
@@ -156,6 +156,202 @@ function severityIntroVerb(severity: DailyLogDriftDetectedEvent['severity']): st
   }
 }
 
+function countSignals(facts: DailyLogExtractedFacts): number {
+  return (
+    facts.completed_work.length +
+    facts.blocked_work.length +
+    facts.money_risk_flags.length +
+    facts.scope_change_flags.length +
+    facts.client_decision_flags.length +
+    facts.materials_needed.length +
+    facts.inspection_notes.length +
+    facts.safety_notes.length +
+    facts.new_task_candidates.length
+  );
+}
+
+function areFactsEmpty(facts: DailyLogExtractedFacts): boolean {
+  return (
+    facts.completed_work.length === 0 &&
+    facts.blocked_work.length === 0 &&
+    facts.money_risk_flags.length === 0 &&
+    facts.scope_change_flags.length === 0 &&
+    facts.client_decision_flags.length === 0 &&
+    facts.new_task_candidates.length === 0 &&
+    facts.inspection_notes.length === 0 &&
+    facts.safety_notes.length === 0 &&
+    facts.schedule_status === 'unknown'
+  );
+}
+
+function runLegacyDeterministicChain(args: {
+  readonly capturedEvent: DailyLogEntryCapturedEvent;
+  readonly projectContext: ProjectContext;
+  readonly toolRegistry: ToolRegistry;
+  readonly recentSurfaceHistory: readonly RelayCardSurfacedEvent[];
+  readonly reasoning_trail: string[];
+  readonly tools_invoked: ToolInvocation[];
+  readonly events_to_append: PersistenceEvent[];
+}): {
+  readonly factsEvent: DailyLogFactsExtractedEvent;
+  readonly driftEvent: DailyLogDriftDetectedEvent | null;
+  readonly surfacedEvent: RelayCardSurfacedEvent | null;
+} {
+  const {
+    capturedEvent,
+    projectContext,
+    toolRegistry,
+    recentSurfaceHistory,
+    reasoning_trail,
+    tools_invoked,
+    events_to_append,
+  } = args;
+
+  const factsEvent = toolRegistry.documentManager.invoke(capturedEvent);
+  events_to_append.push(factsEvent);
+  tools_invoked.push({
+    tool_name: 'document_manager',
+    invoked: true,
+    reason: 'Fallback deterministic filing + tagging path',
+    output_event_type: factsEvent.type,
+  });
+  const facts = factsEvent.facts as unknown as DailyLogExtractedFacts;
+  const signalCount = countSignals(facts);
+  reasoning_trail.push(
+    signalCount === 0
+      ? `Document Manager filed the capture but found no actionable signals to extract.`
+      : `Document Manager pulled ${signalCount} actionable signal${signalCount === 1 ? '' : 's'} out of the transcript${
+          facts.schedule_status !== 'unknown' ? `; schedule reads as ${facts.schedule_status}` : ''
+        }.`,
+  );
+
+  let driftEvent: DailyLogDriftDetectedEvent | null = null;
+  if (areFactsEmpty(facts)) {
+    tools_invoked.push({
+      tool_name: 'drift_watcher',
+      invoked: false,
+      reason: 'Skipped: no extracted signals to classify',
+    });
+    reasoning_trail.push(`Nothing for Drift Watcher to look at — no extracted signals.`);
+  } else {
+    driftEvent = toolRegistry.driftWatcher.invoke(factsEvent);
+    if (driftEvent !== null) {
+      events_to_append.push(driftEvent);
+      tools_invoked.push({
+        tool_name: 'drift_watcher',
+        invoked: true,
+        reason: 'Classified drift signals from extracted facts',
+        output_event_type: driftEvent.type,
+      });
+      const driftWhy = [
+        facts.schedule_status === 'behind' ? 'schedule slipping' : null,
+        facts.money_risk_flags.length > 0 ? `money risk on ${facts.money_risk_flags.join(', ')}` : null,
+        facts.scope_change_flags.length > 0 ? 'scope expanding past the bid' : null,
+        facts.blocked_work.length > 0 ? 'work blocked' : null,
+        facts.client_decision_flags.length > 0 ? 'client decision pending' : null,
+      ].filter((s): s is string => s !== null);
+      reasoning_trail.push(
+        driftWhy.length > 0
+          ? `Drift Watcher flagged ${driftEvent.severity}-severity because ${driftWhy.join(' AND ')}.`
+          : `Drift Watcher flagged ${driftEvent.severity}-severity.`,
+      );
+    } else {
+      tools_invoked.push({
+        tool_name: 'drift_watcher',
+        invoked: true,
+        reason: 'Classified facts but no drift fired',
+      });
+      reasoning_trail.push(
+        `Drift Watcher looked but the signals don't rise to drift — schedule on track, no money/scope flags firing.`,
+      );
+    }
+  }
+
+  let surfacedEvent: RelayCardSurfacedEvent | null = null;
+  if (driftEvent !== null) {
+    surfacedEvent = toolRegistry.relaySurfacer.invoke(
+      driftEvent,
+      factsEvent,
+      recentSurfaceHistory,
+    );
+    if (surfacedEvent !== null) {
+      events_to_append.push(surfacedEvent);
+      tools_invoked.push({
+        tool_name: 'relay_surfacer',
+        invoked: true,
+        reason: 'Drift severity + flags met surfacing rule',
+        output_event_type: surfacedEvent.type,
+      });
+      reasoning_trail.push(
+        `Surfacing this to ${surfacedEvent.surfaced_to} — ${
+          driftEvent.severity === 'block'
+            ? 'block-severity always surfaces'
+            : driftEvent.severity === 'warn'
+              ? 'warn with no prior surface in last 24h'
+              : 'caution carries actionable flags (scope or client decision)'
+        }.`,
+      );
+    } else {
+      tools_invoked.push({
+        tool_name: 'relay_surfacer',
+        invoked: true,
+        reason: 'Drift fired but surfacing rule said no (dedupe or below threshold)',
+      });
+      reasoning_trail.push(
+        `Drift fired but holding off on surfacing — ${
+          driftEvent.severity === 'warn' ? 'similar signal already surfaced in last 24h' : 'severity below surfacing threshold'
+        }.`,
+      );
+    }
+  } else {
+    tools_invoked.push({
+      tool_name: 'relay_surfacer',
+      invoked: false,
+      reason: 'Skipped: no drift event to evaluate',
+    });
+  }
+
+  const shouldConsiderChangeOrder =
+    driftEvent !== null &&
+    (facts.scope_change_flags.length > 0 || facts.money_risk_flags.length > 0);
+
+  if (shouldConsiderChangeOrder) {
+    if (toolRegistry.changeOrderAgent.is_wired) {
+      toolRegistry.changeOrderAgent.invoke({
+        driftEvent: driftEvent!,
+        factsEvent,
+        projectContext,
+        costLookup: null,
+      });
+      tools_invoked.push({
+        tool_name: 'change_order_agent',
+        invoked: true,
+        reason: 'Drift carries scope_change or money_risk flags; CO draft considered',
+      });
+      reasoning_trail.push(
+        `Change Order Agent drafting a CO — scope/money signals justify it.`,
+      );
+    } else {
+      tools_invoked.push({
+        tool_name: 'change_order_agent',
+        invoked: false,
+        reason: 'Tool not wired yet (D.1.1 PR #211 not merged) — skipping',
+      });
+      reasoning_trail.push(
+        `Change Order Agent would draft a CO here — scope/money signals justify it — but the tool isn't wired yet (D.1.1 pending merge).`,
+      );
+    }
+  } else if (driftEvent !== null) {
+    tools_invoked.push({
+      tool_name: 'change_order_agent',
+      invoked: false,
+      reason: 'Drift fired but no scope_change or money_risk flags to anchor a CO draft',
+    });
+  }
+
+  return { factsEvent, driftEvent, surfacedEvent };
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Main entry point
 // ──────────────────────────────────────────────────────────────────────────
@@ -179,7 +375,6 @@ export async function runRightHandOrchestrator(
 ): Promise<RightHandResponse> {
   const { capturedEvent, projectContext, toolRegistry } = input;
   const recentSurfaceHistory = input.recentSurfaceHistory ?? [];
-  const now = input.now ?? new Date();
 
   const reasoning_trail: string[] = [];
   const tools_invoked: ToolInvocation[] = [];
@@ -263,176 +458,110 @@ export async function runRightHandOrchestrator(
     });
   }
 
-  // ─── Step 4: Document Manager (always invoke unless step 2 returned)
-  const factsEvent = toolRegistry.documentManager.invoke(capturedEvent);
-  events_to_append.push(factsEvent);
-  tools_invoked.push({
-    tool_name: 'document_manager',
-    invoked: true,
-    reason: 'Always invoke for filing + tagging; keeps facts_extracted event on the audit trail',
-    output_event_type: factsEvent.type,
+  let factsEvent: DailyLogFactsExtractedEvent;
+  let driftEvent: DailyLogDriftDetectedEvent | null;
+  let surfacedEvent: RelayCardSurfacedEvent | null;
+  let frontierHeadline: string | null = null;
+  let frontierGapFlags: readonly string[] = [];
+
+  const frontier = await runRightHandFrontierSynthesis({
+    capturedEvent,
+    projectContext,
+    recentSurfaceHistory,
+    hypothesis,
+    llmClient: input.llmClient,
   });
-  const facts = factsEvent.facts as unknown as DailyLogExtractedFacts;
-  const signalCount =
-    facts.completed_work.length +
-    facts.blocked_work.length +
-    facts.money_risk_flags.length +
-    facts.scope_change_flags.length +
-    facts.client_decision_flags.length +
-    facts.materials_needed.length +
-    facts.inspection_notes.length +
-    facts.safety_notes.length +
-    facts.new_task_candidates.length;
-  reasoning_trail.push(
-    signalCount === 0
-      ? `Document Manager filed the capture but found no actionable signals to extract.`
-      : `Document Manager pulled ${signalCount} actionable signal${signalCount === 1 ? '' : 's'} out of the transcript${
-          facts.schedule_status !== 'unknown' ? `; schedule reads as ${facts.schedule_status}` : ''
-        }.`,
-  );
 
-  // ─── Step 5: Drift Watcher — runs when there are any signals to classify
-  const factsAreEmpty =
-    facts.completed_work.length === 0 &&
-    facts.blocked_work.length === 0 &&
-    facts.money_risk_flags.length === 0 &&
-    facts.scope_change_flags.length === 0 &&
-    facts.client_decision_flags.length === 0 &&
-    facts.new_task_candidates.length === 0 &&
-    facts.inspection_notes.length === 0 &&
-    facts.safety_notes.length === 0 &&
-    facts.schedule_status === 'unknown';
+  if (frontier !== null) {
+    factsEvent = frontier.factsEvent;
+    driftEvent = frontier.driftEvent;
+    surfacedEvent = frontier.surfacedEvent;
+    frontierHeadline = frontier.the_one_thing;
+    frontierGapFlags = frontier.gap_flags;
 
-  let driftEvent: DailyLogDriftDetectedEvent | null = null;
-  if (factsAreEmpty) {
+    events_to_append.push(factsEvent);
+    if (driftEvent !== null) events_to_append.push(driftEvent);
+    if (surfacedEvent !== null) events_to_append.push(surfacedEvent);
+
+    const facts = factsEvent.facts as unknown as DailyLogExtractedFacts;
+    const signalCount = countSignals(facts);
+    tools_invoked.push({
+      tool_name: 'document_manager',
+      invoked: true,
+      reason: 'Claude Sonnet synthesized filing output in one pass',
+      output_event_type: factsEvent.type,
+    });
     tools_invoked.push({
       tool_name: 'drift_watcher',
-      invoked: false,
-      reason: 'Skipped: no extracted signals to classify',
+      invoked: driftEvent !== null || !areFactsEmpty(facts),
+      reason:
+        driftEvent !== null
+          ? 'Claude Sonnet synthesized a drift decision in the same pass'
+          : areFactsEmpty(facts)
+            ? 'Skipped: synthesized facts were empty'
+            : 'Claude Sonnet synthesized facts but no drift fired',
+      ...(driftEvent !== null ? { output_event_type: driftEvent.type } : {}),
     });
-    reasoning_trail.push(`Nothing for Drift Watcher to look at — no extracted signals.`);
-  } else {
-    driftEvent = toolRegistry.driftWatcher.invoke(factsEvent);
-    if (driftEvent !== null) {
-      events_to_append.push(driftEvent);
-      tools_invoked.push({
-        tool_name: 'drift_watcher',
-        invoked: true,
-        reason: 'Classified drift signals from extracted facts',
-        output_event_type: driftEvent.type,
-      });
-      // Explain WHY this severity — name the signals that pushed it there
-      const driftWhy = [
-        facts.schedule_status === 'behind' ? 'schedule slipping' : null,
-        facts.money_risk_flags.length > 0 ? `money risk on ${facts.money_risk_flags.join(', ')}` : null,
-        facts.scope_change_flags.length > 0 ? 'scope expanding past the bid' : null,
-        facts.blocked_work.length > 0 ? 'work blocked' : null,
-        facts.client_decision_flags.length > 0 ? 'client decision pending' : null,
-      ].filter((s): s is string => s !== null);
-      reasoning_trail.push(
-        driftWhy.length > 0
-          ? `Drift Watcher flagged ${driftEvent.severity}-severity because ${driftWhy.join(' AND ')}.`
-          : `Drift Watcher flagged ${driftEvent.severity}-severity.`,
-      );
-    } else {
-      tools_invoked.push({
-        tool_name: 'drift_watcher',
-        invoked: true,
-        reason: 'Classified facts but no drift fired',
-      });
-      reasoning_trail.push(
-        `Drift Watcher looked but the signals don't rise to drift — schedule on track, no money/scope flags firing.`,
-      );
-    }
-  }
-
-  // ─── Step 6: Relay Surfacer — runs when drift fires
-  let surfacedEvent: RelayCardSurfacedEvent | null = null;
-  if (driftEvent !== null) {
-    surfacedEvent = toolRegistry.relaySurfacer.invoke(
-      driftEvent,
-      factsEvent,
-      recentSurfaceHistory,
-    );
-    if (surfacedEvent !== null) {
-      events_to_append.push(surfacedEvent);
-      tools_invoked.push({
-        tool_name: 'relay_surfacer',
-        invoked: true,
-        reason: 'Drift severity + flags met surfacing rule',
-        output_event_type: surfacedEvent.type,
-      });
-      reasoning_trail.push(
-        `Surfacing this to ${surfacedEvent.surfaced_to} — ${
-          driftEvent.severity === 'block'
-            ? 'block-severity always surfaces'
-            : driftEvent.severity === 'warn'
-              ? 'warn with no prior surface in last 24h'
-              : 'caution carries actionable flags (scope or client decision)'
-        }.`,
-      );
-    } else {
-      tools_invoked.push({
-        tool_name: 'relay_surfacer',
-        invoked: true,
-        reason: 'Drift fired but surfacing rule said no (dedupe or below threshold)',
-      });
-      reasoning_trail.push(
-        `Drift fired but holding off on surfacing — ${
-          driftEvent.severity === 'warn' ? 'similar signal already surfaced in last 24h' : 'severity below surfacing threshold'
-        }.`,
-      );
-    }
-  } else {
     tools_invoked.push({
       tool_name: 'relay_surfacer',
-      invoked: false,
-      reason: 'Skipped: no drift event to evaluate',
+      invoked: surfacedEvent !== null || driftEvent !== null,
+      reason:
+        surfacedEvent !== null
+          ? 'Claude Sonnet synthesized a surfacing decision in the same pass'
+          : driftEvent !== null
+            ? 'Claude Sonnet synthesized drift but held surfacing below threshold'
+            : 'Skipped: no synthesized drift event to evaluate',
+      ...(surfacedEvent !== null ? { output_event_type: surfacedEvent.type } : {}),
     });
-  }
-
-  // ─── Step 7: Change Order Agent — when drift includes scope/money signals
-  const shouldConsiderChangeOrder =
-    driftEvent !== null &&
-    (facts.scope_change_flags.length > 0 || facts.money_risk_flags.length > 0);
-
-  if (shouldConsiderChangeOrder) {
-    if (toolRegistry.changeOrderAgent.is_wired) {
-      // Will be wired in once D.1.1 (PR #211) merges. For now invoke
-      // returns null. Recorded in reasoning trail.
-      const _draft = toolRegistry.changeOrderAgent.invoke({
-        driftEvent: driftEvent!,
-        factsEvent,
-        projectContext,
-        costLookup: null,
-      });
-      tools_invoked.push({
-        tool_name: 'change_order_agent',
-        invoked: true,
-        reason: 'Drift carries scope_change or money_risk flags; CO draft considered',
-      });
-      reasoning_trail.push(
-        `Change Order Agent drafting a CO — scope/money signals justify it.`,
-      );
-    } else {
+    const shouldConsiderChangeOrder =
+      driftEvent !== null &&
+      (facts.scope_change_flags.length > 0 || facts.money_risk_flags.length > 0);
+    if (shouldConsiderChangeOrder) {
       tools_invoked.push({
         tool_name: 'change_order_agent',
         invoked: false,
-        reason: 'Tool not wired yet (D.1.1 PR #211 not merged) — skipping',
+        reason: toolRegistry.changeOrderAgent.is_wired
+          ? 'Frontier synthesis flagged scope/money risk; CO tool wiring remains separate'
+          : 'Frontier synthesis flagged scope/money risk; CO tool still not wired',
       });
-      reasoning_trail.push(
-        `Change Order Agent would draft a CO here — scope/money signals justify it — but the tool isn't wired yet (D.1.1 pending merge).`,
-      );
+    } else if (driftEvent !== null) {
+      tools_invoked.push({
+        tool_name: 'change_order_agent',
+        invoked: false,
+        reason: 'Drift fired but no scope_change or money_risk flags to anchor a CO draft',
+      });
     }
-  } else if (driftEvent !== null) {
-    tools_invoked.push({
-      tool_name: 'change_order_agent',
-      invoked: false,
-      reason: 'Drift fired but no scope_change or money_risk flags to anchor a CO draft',
+
+    reasoning_trail.push(
+      signalCount === 0
+        ? 'Claude Sonnet synthesized the capture and kept every fact bucket empty — no durable signals worth promoting from this transcript.'
+        : `Claude Sonnet synthesized ${signalCount} candidate signal${signalCount === 1 ? '' : 's'} across the Field Daily schema${
+            frontierGapFlags.length > 0 ? `, with ${frontierGapFlags.length} gap flag${frontierGapFlags.length === 1 ? '' : 's'}` : ''
+          }.`,
+    );
+    for (const line of frontier.reasoning_summary) {
+      reasoning_trail.push(`Frontier synthesis — ${line}`);
+    }
+    if (frontierGapFlags.length > 0) {
+      reasoning_trail.push(`Gap flags carried forward: ${frontierGapFlags.join(', ')}.`);
+    }
+  } else {
+    const legacy = runLegacyDeterministicChain({
+      capturedEvent,
+      projectContext,
+      toolRegistry,
+      recentSurfaceHistory,
+      reasoning_trail,
+      tools_invoked,
+      events_to_append,
     });
-    // Don't add to reasoning trail — silence is the right voice when there's
-    // simply nothing to flag the CO agent on.
+    factsEvent = legacy.factsEvent;
+    driftEvent = legacy.driftEvent;
+    surfacedEvent = legacy.surfacedEvent;
   }
+
+  const facts = factsEvent.facts as unknown as DailyLogExtractedFacts;
+  const factsAreEmpty = areFactsEmpty(facts);
 
   // ─── Step 8: Compose the_one_thing from the highest-severity output that fired
   let the_one_thing: string;
@@ -440,6 +569,12 @@ export async function runRightHandOrchestrator(
   if (clarification_prompts.length > 0) {
     the_one_thing = clarification_prompts[0]!.question;
     the_one_thing_reason = 'clarification needed before specialist invocation produces signal';
+  } else if (frontierHeadline !== null) {
+    the_one_thing = frontierHeadline;
+    the_one_thing_reason =
+      frontierGapFlags.length > 0
+        ? 'frontier synthesis returned a gap-flagged operator headline'
+        : 'frontier synthesis returned the operator headline directly';
   } else if (driftEvent !== null && surfacedEvent !== null) {
     the_one_thing = `${severityIntroVerb(driftEvent.severity)} — ${projectContext.project_name}: ${formatFactsForHeadline(facts)}.`;
     the_one_thing_reason = `${driftEvent.severity}-severity drift surfaced; led with the highest-impact signal`;
