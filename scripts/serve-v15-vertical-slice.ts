@@ -17,6 +17,7 @@
  *   GET  /api/kb/ingestions         — list kb.ingested summaries (?tenant_id=)
  *   GET  /api/kb/tier2-rows         — JSON rows for browser merge (?tenant_id=)
  *   POST /api/kb/tier2/review       — row-level curator transition (rewrites JSONL)
+ *   POST /api/kb/supplier-prices/review — supplier snapshot → Cost KB review packet
  *   GET  /api/field-daily/relay-feed — relay list DTOs (?tenant_id=) for /relay UI
  *   GET  /...                       — static + SPA fallback to index.html
  *
@@ -71,6 +72,10 @@ import {
   validateIngestionRequestBody,
   validateTier2RowReviewBody,
 } from '../src/persistence/kbIngestion.ts';
+import {
+  buildSupplierPriceReviewPacket,
+  validateSupplierPriceSnapshot,
+} from '../src/persistence/supplierPricing.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../src/examples/v15-vertical-slice');
@@ -1350,6 +1355,45 @@ async function handleTier2RowsGet(
   jsonResponse(res, 200, { rows });
 }
 
+async function handleSupplierPricesReviewPost(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): Promise<void> {
+  let body: unknown;
+  try {
+    body = await readJsonBody(req);
+  } catch (err) {
+    const code =
+      err && typeof err === 'object' && 'code' in err
+        ? (err as { code?: string }).code
+        : undefined;
+    if (code === 'PAYLOAD_TOO_LARGE') {
+      jsonResponse(res, 413, { error: 'payload_too_large', reason: `body exceeds ${JSON_BODY_MAX_BYTES} bytes` });
+      return;
+    }
+    jsonResponse(res, 400, {
+      error: 'invalid_json',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    return;
+  }
+  let snapshot;
+  try {
+    snapshot = validateSupplierPriceSnapshot(body);
+  } catch (err) {
+    jsonResponse(res, 400, { error: 'validation_failed', errors: aggregateErrorMessages(err) });
+    return;
+  }
+  try {
+    const filepath = defaultKbActualsFilepath(PERSISTENCE_DIR, snapshot.tenant_id);
+    const currentRows = await readTier2ActualsJsonl(filepath);
+    const packet = buildSupplierPriceReviewPacket(snapshot, currentRows);
+    jsonResponse(res, 200, { ok: true, review_packet: packet });
+  } catch (err) {
+    jsonResponse(res, 400, { error: 'supplier_price_review_failed', errors: aggregateErrorMessages(err) });
+  }
+}
+
 async function handleTier2ReviewPost(
   req: http.IncomingMessage,
   res: http.ServerResponse,
@@ -1536,6 +1580,14 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(405).end();
     return;
   }
+  if (url.pathname === '/api/kb/supplier-prices/review') {
+    if (req.method === 'POST') {
+      await handleSupplierPricesReviewPost(req, res);
+      return;
+    }
+    res.writeHead(405).end();
+    return;
+  }
   if (url.pathname === '/api/kb/tier2/review') {
     if (req.method === 'POST') {
       await handleTier2ReviewPost(req, res);
@@ -1616,6 +1668,6 @@ server.listen(PORT, () => {
   console.log(
     `\nKerf V1.5 vertical slice (port ${PORT}):\n  http://localhost:${PORT}/field-capture  — F·33 Field Capture\n  http://localhost:${PORT}/dashboard     — home\n  http://localhost:${PORT}/m/check       — mobile validation harness (dev)\n  POST /transcribe                       — ${
       transcribeReady ? 'READY (Groq Whisper)' : 'NOT CONFIGURED (set GROQ_API_KEY + GROQ_BASE_URL in .env.local)'
-    }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/projects/<id>/daily-log/entries — Field Daily entry (daily_log.entry_captured)\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
+    }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/projects/<id>/daily-log/entries — Field Daily entry (daily_log.entry_captured)\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  POST     /api/kb/supplier-prices/review — supplier snapshot → review packet\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
   );
 });
