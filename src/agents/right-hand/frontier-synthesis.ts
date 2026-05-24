@@ -36,9 +36,14 @@ export interface FrontierSynthesisLlmClient {
 //   - drift severity (Kerf's `driftAdapter.classify()` is the only source)
 //   - surfacing decisions (Kerf's `relayCardSurfacer` is the only source)
 //
-// The defensive parser enforces this: a response containing severity,
-// drift, surface, or should_surface keys is rejected entirely. Sonnet
-// never gets to clamp/influence severity even by accident.
+// The defensive parser enforces this at the top level of the synthesis
+// response shape — the only surface where a decision key would be
+// CONSUMED. A response with `severity`, `drift`, `surface`, or
+// `should_surface` at the top level is rejected entirely. Nested
+// occurrences inside fact text or reasoning summary are inert: nothing
+// reads them, and `driftWatcher` derives severity from the facts rather
+// than reading a field off them, so a stray word like "severity" inside
+// a description is just dead data. Top-level scope is the right scope.
 // ──────────────────────────────────────────────────────────────────────────
 
 export interface FrontierSynthesisResult {
@@ -75,9 +80,9 @@ You are responsible for FACTS, GAP FLAGS, the operator HEADLINE, and a brief REA
 You are NOT responsible for, and MUST NOT EMIT:
 - drift severity (Kerf computes this from your facts using deterministic rules)
 - surfacing decisions (Kerf computes these from drift)
-- any "severity", "drift", "surface", or "should_surface" key anywhere in the JSON
+- any "severity", "drift", "surface", or "should_surface" key at the top level of your JSON
 
-Kerf will reject the entire response if it contains any of those keys.
+Kerf will reject the entire response if those keys appear at the top level of the JSON.
 
 Rules:
 - Never invent prices, totals, margins, quotes, markups, or money math.
