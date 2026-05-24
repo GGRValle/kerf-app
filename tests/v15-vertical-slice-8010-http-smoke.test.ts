@@ -56,7 +56,12 @@ test('v15 vertical slice static server: index shell + app bundle (8010 stack)', 
   const port = 18_010 + Math.floor(Math.random() * 900);
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
-    env: { ...process.env, PORT: String(port) },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
+      KERF_DISABLE_LIVE_MODELS: '1',
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -94,7 +99,12 @@ test('v15 deep-link reload: HTML at nested routes contains root-relative asset p
   const port = 18_010 + Math.floor(Math.random() * 900);
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
-    env: { ...process.env, PORT: String(port) },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
+      KERF_DISABLE_LIVE_MODELS: '1',
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 

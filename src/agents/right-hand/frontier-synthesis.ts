@@ -6,11 +6,8 @@ import type {
 } from '../../altitude/modelAdapter/index.js';
 import type { DailyLogExtractedFacts } from '../../persistence/dailyLogExtractor.js';
 import type {
-  DailyLogDriftDetectedEvent,
   DailyLogEntryCapturedEvent,
   DailyLogFactsExtractedEvent,
-  DailyLogDriftSeverity,
-  RelayCardSurfacedEvent,
 } from '../../persistence/events.js';
 import type { ProjectContext } from './orchestrator.js';
 import type { WholeCaptureHypothesis } from './whole-capture-hypothesis.js';
@@ -25,10 +22,32 @@ export interface FrontierSynthesisLlmClient {
   ) => Promise<AnthropicChatResult>;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Frontier synthesis scope (Play 3 hardening · Fix 2 · 2026-05-23)
+//
+// Per architecture principle #1 ("LLM at the edges, deterministic core")
+// and D-047, the frontier synthesis call MAY produce:
+//   - structured fact candidates (the Field Daily schema)
+//   - gap flags
+//   - the operator headline
+//   - a reasoning summary
+//
+// The frontier synthesis call MUST NOT produce:
+//   - drift severity (Kerf's `driftAdapter.classify()` is the only source)
+//   - surfacing decisions (Kerf's `relayCardSurfacer` is the only source)
+//
+// The defensive parser enforces this at the top level of the synthesis
+// response shape — the only surface where a decision key would be
+// CONSUMED. A response with `severity`, `drift`, `surface`, or
+// `should_surface` at the top level is rejected entirely. Nested
+// occurrences inside fact text or reasoning summary are inert: nothing
+// reads them, and `driftWatcher` derives severity from the facts rather
+// than reading a field off them, so a stray word like "severity" inside
+// a description is just dead data. Top-level scope is the right scope.
+// ──────────────────────────────────────────────────────────────────────────
+
 export interface FrontierSynthesisResult {
   readonly factsEvent: DailyLogFactsExtractedEvent;
-  readonly driftEvent: DailyLogDriftDetectedEvent | null;
-  readonly surfacedEvent: RelayCardSurfacedEvent | null;
   readonly the_one_thing: string;
   readonly reasoning_summary: readonly string[];
   readonly gap_flags: readonly string[];
@@ -48,18 +67,6 @@ interface FrontierSynthesisSchema {
     readonly safety_notes: readonly string[];
     readonly gap_flags: readonly string[];
   };
-  readonly drift:
-    | null
-    | {
-        readonly severity: DailyLogDriftSeverity;
-        readonly description: string;
-      };
-  readonly surface:
-    | null
-    | {
-        readonly should_surface: boolean;
-        readonly reason: string;
-      };
   readonly the_one_thing: string;
   readonly reasoning_summary: readonly string[];
 }
@@ -67,6 +74,15 @@ interface FrontierSynthesisSchema {
 const SYSTEM_PROMPT = `You are Kerf Right Hand's frontier synthesis pass for contractor field capture.
 
 Your job is to read one field capture plus project context and return STRICT JSON only.
+
+You are responsible for FACTS, GAP FLAGS, the operator HEADLINE, and a brief REASONING SUMMARY.
+
+You are NOT responsible for, and MUST NOT EMIT:
+- drift severity (Kerf computes this from your facts using deterministic rules)
+- surfacing decisions (Kerf computes these from drift)
+- any "severity", "drift", "surface", or "should_surface" key at the top level of your JSON
+
+Kerf will reject the entire response if those keys appear at the top level of the JSON.
 
 Rules:
 - Never invent prices, totals, margins, quotes, markups, or money math.
@@ -91,14 +107,6 @@ Return exactly this shape:
     "safety_notes": ["..."],
     "gap_flags": ["..."]
   },
-  "drift": null | {
-    "severity": "info" | "caution" | "warn" | "block",
-    "description": "..."
-  },
-  "surface": null | {
-    "should_surface": true,
-    "reason": "..."
-  },
   "the_one_thing": "...",
   "reasoning_summary": ["...", "..."]
 }
@@ -118,12 +126,12 @@ const VALID_SCHEDULE_STATUSES = new Set<DailyLogExtractedFacts['schedule_status'
   'unknown',
 ]);
 
-const VALID_DRIFT_SEVERITIES = new Set<DailyLogDriftSeverity>([
-  'info',
-  'caution',
-  'warn',
-  'block',
-]);
+// Frontier synthesis MUST NOT emit drift severity or surfacing decisions —
+// those are owned by the deterministic core (driftAdapter + relayCardSurfacer)
+// per architecture principle #1 and D-047. If Sonnet ignores the system
+// prompt and emits any of these keys at the top level, the parser rejects
+// the whole response and the orchestrator drops to the deterministic chain.
+const FORBIDDEN_TOP_LEVEL_KEYS = ['severity', 'drift', 'surface', 'should_surface'] as const;
 
 const FORBIDDEN_TEXT_PATTERNS = [
   /ignore\s+previous/i,
@@ -143,10 +151,6 @@ const FORBIDDEN_MONEY_PATTERNS = [
 
 function generateEventId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`;
-}
-
-function generateRelayCardId(): string {
-  return `rcs_${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`;
 }
 
 function cleanJsonPayload(content: string): string {
@@ -231,6 +235,19 @@ function parseFrontierSynthesis(content: string): FrontierSynthesisSchema {
   }
 
   const record = parsed as Record<string, unknown>;
+
+  // Reject any response carrying drift severity or surfacing keys at the top
+  // level — Sonnet MUST NOT own those decisions (Play 3 hardening · Fix 2 ·
+  // architecture principle #1). Fail closed: the entire response is tossed
+  // and the orchestrator drops to the deterministic chain.
+  for (const key of FORBIDDEN_TOP_LEVEL_KEYS) {
+    if (key in record) {
+      throw new Error(
+        `synthesis response includes forbidden key "${key}" — drift severity and surfacing are deterministic-core decisions, not LLM output`,
+      );
+    }
+  }
+
   const facts = record.facts;
   if (typeof facts !== 'object' || facts === null || Array.isArray(facts)) {
     throw new Error('facts must be an object');
@@ -255,50 +272,6 @@ function parseFrontierSynthesis(content: string): FrontierSynthesisSchema {
     gap_flags: asStringArray(factsRecord.gap_flags, 'facts.gap_flags'),
   };
 
-  const drift = record.drift;
-  let schemaDrift: FrontierSynthesisSchema['drift'] = null;
-  if (drift !== null) {
-    if (typeof drift !== 'object' || Array.isArray(drift)) {
-      throw new Error('drift must be null or an object');
-    }
-    const driftRecord = drift as Record<string, unknown>;
-    if (
-      typeof driftRecord.severity !== 'string' ||
-      !VALID_DRIFT_SEVERITIES.has(driftRecord.severity as DailyLogDriftSeverity)
-    ) {
-      throw new Error('drift.severity must be one of info|caution|warn|block');
-    }
-    if (typeof driftRecord.description !== 'string' || driftRecord.description.trim().length === 0) {
-      throw new Error('drift.description must be a non-empty string');
-    }
-    schemaDrift = {
-      severity: driftRecord.severity as DailyLogDriftSeverity,
-      description: driftRecord.description.trim(),
-    };
-  }
-
-  const surface = record.surface;
-  let schemaSurface: FrontierSynthesisSchema['surface'] = null;
-  if (surface !== null) {
-    if (typeof surface !== 'object' || Array.isArray(surface)) {
-      throw new Error('surface must be null or an object');
-    }
-    const surfaceRecord = surface as Record<string, unknown>;
-    if (surfaceRecord.should_surface !== true) {
-      throw new Error('surface.should_surface must be true when surface is present');
-    }
-    if (typeof surfaceRecord.reason !== 'string' || surfaceRecord.reason.trim().length === 0) {
-      throw new Error('surface.reason must be a non-empty string');
-    }
-    schemaSurface = {
-      should_surface: true,
-      reason: surfaceRecord.reason.trim(),
-    };
-  }
-
-  if (schemaSurface !== null && schemaDrift === null) {
-    throw new Error('surface cannot fire without drift');
-  }
   if (typeof record.the_one_thing !== 'string' || record.the_one_thing.trim().length === 0) {
     throw new Error('the_one_thing must be a non-empty string');
   }
@@ -306,8 +279,6 @@ function parseFrontierSynthesis(content: string): FrontierSynthesisSchema {
 
   return {
     facts: schemaFacts,
-    drift: schemaDrift,
-    surface: schemaSurface,
     the_one_thing: record.the_one_thing.trim(),
     reasoning_summary: reasoningSummary,
   };
@@ -342,45 +313,9 @@ function buildFactsEvent(
   };
 }
 
-function buildDriftEvent(
-  factsEvent: DailyLogFactsExtractedEvent,
-  drift: NonNullable<FrontierSynthesisSchema['drift']>,
-): DailyLogDriftDetectedEvent {
-  return {
-    event_id: generateEventId('evt'),
-    type: 'daily_log.drift_detected',
-    tenant_id: factsEvent.tenant_id,
-    correlation_id: factsEvent.correlation_id,
-    actor: factsEvent.actor,
-    at: new Date().toISOString(),
-    source_refs: factsEvent.source_refs,
-    entry_id: factsEvent.entry_id,
-    severity: drift.severity,
-    description: drift.description,
-  };
-}
-
-function buildSurfacedEvent(
-  driftEvent: DailyLogDriftDetectedEvent,
-): RelayCardSurfacedEvent {
-  return {
-    event_id: generateEventId('evt'),
-    type: 'relay_card.surfaced',
-    tenant_id: driftEvent.tenant_id,
-    correlation_id: driftEvent.correlation_id,
-    actor: driftEvent.actor,
-    at: new Date().toISOString(),
-    source_refs: driftEvent.source_refs,
-    relay_card_id: generateRelayCardId(),
-    entry_id: driftEvent.entry_id,
-    surfaced_to: driftEvent.actor.id,
-  };
-}
-
 export async function runRightHandFrontierSynthesis(input: {
   readonly capturedEvent: DailyLogEntryCapturedEvent;
   readonly projectContext: ProjectContext;
-  readonly recentSurfaceHistory?: readonly RelayCardSurfacedEvent[];
   readonly hypothesis: WholeCaptureHypothesis;
   readonly llmClient?: FrontierSynthesisLlmClient;
 }): Promise<FrontierSynthesisResult | null> {
@@ -389,13 +324,11 @@ export async function runRightHandFrontierSynthesis(input: {
     return null;
   }
 
-  const recentSurfaceCount = (input.recentSurfaceHistory ?? []).length;
   const userPrompt = [
     `Project ID: ${input.projectContext.project_id}`,
     `Project name: ${input.projectContext.project_name}`,
     `Project type (known): ${input.projectContext.project_type ?? 'unknown'}`,
     `Recent entry kinds: ${(input.projectContext.recent_entry_kinds ?? []).join(', ') || '(none)'}`,
-    `Recent surfaced relay cards in history: ${recentSurfaceCount}`,
     `Hypothesis project type: ${input.hypothesis.project_type_hypothesis}`,
     `Hypothesis operator intent: ${input.hypothesis.operator_intent}`,
     `Hypothesis transcript quality: ${input.hypothesis.transcription_quality}`,
@@ -438,16 +371,9 @@ export async function runRightHandFrontierSynthesis(input: {
   }
 
   const factsEvent = buildFactsEvent(input.capturedEvent, parsed.facts);
-  const driftEvent = parsed.drift === null ? null : buildDriftEvent(factsEvent, parsed.drift);
-  const surfacedEvent =
-    driftEvent !== null && parsed.surface?.should_surface === true
-      ? buildSurfacedEvent(driftEvent)
-      : null;
 
   return {
     factsEvent,
-    driftEvent,
-    surfacedEvent,
     the_one_thing: parsed.the_one_thing,
     reasoning_summary: parsed.reasoning_summary,
     gap_flags: parsed.facts.gap_flags,

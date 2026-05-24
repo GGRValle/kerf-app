@@ -160,7 +160,16 @@ interface ServeProcess {
 async function startServe(env: NodeJS.ProcessEnv, port: number): Promise<ServeProcess> {
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
-    env: { ...process.env, ...env, PORT: String(port) },
+    env: {
+      ...process.env,
+      // Hermetic baseline: force deterministic LLM clients for the Right Hand
+      // orchestrator path (Play 3 hardening · Fix 1 · 2026-05-23). Transcribe
+      // itself is driven by GROQ_API_KEY+GROQ_BASE_URL from the per-test `env`
+      // spread (which points at a localhost stub) and is unaffected by this gate.
+      KERF_DISABLE_LIVE_MODELS: '1',
+      ...env,
+      PORT: String(port),
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   // Surface child stderr if a test hangs — helps diagnose CI failures.

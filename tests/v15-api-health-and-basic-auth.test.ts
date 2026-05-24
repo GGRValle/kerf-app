@@ -110,6 +110,10 @@ async function startServe(envOverrides: Record<string, string> = {}): Promise<Se
         ...process.env,
         PORT: String(port),
         PERSISTENCE_DIR: persistenceDir,
+        // Hermetic: ignore any inherited GROQ_/ANTHROPIC_ keys, force
+        // deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
+        // Put before ...envOverrides so callers can opt out if needed.
+        KERF_DISABLE_LIVE_MODELS: '1',
         ...envOverrides,
       },
       stdio: ['ignore', 'pipe', 'pipe'],

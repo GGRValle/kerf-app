@@ -137,6 +137,9 @@ async function startServe(): Promise<ServeProcess> {
         ...process.env,
         PORT: String(port),
         PERSISTENCE_DIR: persistenceDir,
+        // Hermetic: ignore any inherited GROQ_/ANTHROPIC_ keys, force
+        // deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
+        KERF_DISABLE_LIVE_MODELS: '1',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     },

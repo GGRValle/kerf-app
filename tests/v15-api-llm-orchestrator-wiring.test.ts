@@ -107,6 +107,19 @@ async function startServe(envOverrides: Record<string, string | undefined> = {})
   for (const [k, v] of Object.entries(process.env)) {
     if (typeof v === 'string') env[k] = v;
   }
+  // Hermetic baseline (Play 3 hardening · Fix 1 · 2026-05-23):
+  //   - Strip any inherited live-model keys so .env.local / shell-env state
+  //     can't leak into this test's wireup decisions.
+  //   - Force KERF_DISABLE_LIVE_MODELS=1 so the spawned server's RIGHT_HAND_*
+  //     client wireup short-circuits to null by default.
+  // Individual tests OPT OUT of hermetic mode by passing
+  //   { KERF_DISABLE_LIVE_MODELS: undefined, GROQ_API_KEY: '...', ... }
+  // in envOverrides (see the "GROQ env present but unreachable" test below).
+  delete env['GROQ_API_KEY'];
+  delete env['GROQ_BASE_URL'];
+  delete env['ANTHROPIC_API_KEY'];
+  delete env['ANTHROPIC_BASE_URL'];
+  env['KERF_DISABLE_LIVE_MODELS'] = '1';
   env['PORT'] = String(port);
   env['PERSISTENCE_DIR'] = persistenceDir;
   for (const [k, v] of Object.entries(envOverrides)) {
@@ -240,6 +253,10 @@ test('GROQ env absent: response shape is stable (no crash on missing LLM client)
 
 test('GROQ env present but unreachable: orchestrator falls back to deterministic gracefully', async () => {
   const proc = await startServe({
+    // Opt out of the hermetic baseline (Play 3 hardening · Fix 1) — this
+    // test's purpose is the wireup-then-network-fail path, so the gate
+    // must be off and the live keys must be set to garbage.
+    KERF_DISABLE_LIVE_MODELS: undefined,
     GROQ_API_KEY: 'gsk_fake_test_key_will_fail_network_call',
     GROQ_BASE_URL: 'https://invalid-host-does-not-resolve.test',
   });

@@ -133,7 +133,13 @@ async function startServeWithEvents(events: readonly PersistenceEvent[]): Promis
   await writeEventsJsonl(persistenceDir, events);
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
-    env: { ...process.env, PORT: String(port), PERSISTENCE_DIR: persistenceDir },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      PERSISTENCE_DIR: persistenceDir,
+      // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
+      KERF_DISABLE_LIVE_MODELS: '1',
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   await waitForReady(port);

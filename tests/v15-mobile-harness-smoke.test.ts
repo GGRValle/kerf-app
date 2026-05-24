@@ -56,7 +56,12 @@ test('v15 mobile harness: /m/check + probe-enabled V1.5 routes return 200', asyn
   const port = 18_110 + Math.floor(Math.random() * 900);
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
-    env: { ...process.env, PORT: String(port) },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
+      KERF_DISABLE_LIVE_MODELS: '1',
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 

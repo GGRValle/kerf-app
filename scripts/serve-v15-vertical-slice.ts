@@ -77,19 +77,42 @@ const ROOT = path.resolve(__dirname, '../src/examples/v15-vertical-slice');
 const PORT = Number(process.env.PORT) || 8010;
 const ENV_FILE = path.resolve(__dirname, '../.env.local');
 
+// ──────────────────────────────────────────────────────────────────────────
+// Hermetic-test gate · added 2026-05-23 (Play 3 hardening · Fix 1)
+//
+// `KERF_DISABLE_LIVE_MODELS=1` makes the server hermetic from local secret
+// state. Every HTTP integration test sets it. Live-model smoke runs opt in
+// by NOT setting it (or setting it to anything other than '1').
+//
+// When set, the server:
+//   (a) skips `process.loadEnvFile(.env.local)` — no leak from local file
+//   (b) forces `RIGHT_HAND_LLM_CLIENT` to null — Groq hypothesis pass
+//       runs deterministic fallback even if GROQ_API_KEY is inherited
+//   (c) forces `RIGHT_HAND_FRONTIER_CLIENT` to null — Anthropic synthesis
+//       falls back to the deterministic downstream chain
+//
+// The /transcribe path stays driven by GROQ_API_KEY+GROQ_BASE_URL in env;
+// the transcribe stub test passes its own stub URL and is unaffected. The
+// belt-and-suspenders shape means tests stay hermetic even if a developer
+// accidentally exports live API keys in their shell.
+// ──────────────────────────────────────────────────────────────────────────
+const KERF_DISABLE_LIVE_MODELS = process.env['KERF_DISABLE_LIVE_MODELS'] === '1';
+
 // Load .env.local if present; missing file is non-fatal — /transcribe will
 // return a clear error if GROQ_* vars aren't set when it's called.
-try {
-  process.loadEnvFile(ENV_FILE);
-} catch (err) {
-  // process.loadEnvFile throws ENOENT if the file is missing; that's fine.
-  if (
-    err &&
-    typeof err === 'object' &&
-    'code' in err &&
-    (err as { code: string }).code !== 'ENOENT'
-  ) {
-    console.warn(`[serve-v15] loadEnvFile error: ${err instanceof Error ? err.message : String(err)}`);
+if (!KERF_DISABLE_LIVE_MODELS) {
+  try {
+    process.loadEnvFile(ENV_FILE);
+  } catch (err) {
+    // process.loadEnvFile throws ENOENT if the file is missing; that's fine.
+    if (
+      err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      (err as { code: string }).code !== 'ENOENT'
+    ) {
+      console.warn(`[serve-v15] loadEnvFile error: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 }
 
@@ -129,6 +152,9 @@ const eventStore = createPersistenceEventStore({
 // ──────────────────────────────────────────────────────────────────────────
 
 const RIGHT_HAND_LLM_CLIENT = (() => {
+  if (KERF_DISABLE_LIVE_MODELS) {
+    return null;
+  }
   const apiKey = process.env['GROQ_API_KEY'];
   const baseUrl = process.env['GROQ_BASE_URL'];
   if (
@@ -149,6 +175,9 @@ const RIGHT_HAND_LLM_CLIENT = (() => {
 })();
 
 const RIGHT_HAND_FRONTIER_CLIENT = (() => {
+  if (KERF_DISABLE_LIVE_MODELS) {
+    return null;
+  }
   const apiKey = process.env['ANTHROPIC_API_KEY'];
   if (typeof apiKey !== 'string' || apiKey.length === 0) {
     return null;
@@ -160,6 +189,10 @@ const RIGHT_HAND_FRONTIER_CLIENT = (() => {
 
 if (RIGHT_HAND_LLM_CLIENT !== null) {
   console.log('[right_hand] LLM hypothesis path WIRED (Groq Llama 3.3 70B Versatile)');
+} else if (KERF_DISABLE_LIVE_MODELS) {
+  console.log(
+    '[right_hand] LLM hypothesis path NOT WIRED (KERF_DISABLE_LIVE_MODELS=1 · hermetic mode) — orchestrator falls back to deterministic heuristics',
+  );
 } else {
   console.log(
     '[right_hand] LLM hypothesis path NOT WIRED (GROQ_API_KEY or GROQ_BASE_URL missing) — orchestrator falls back to deterministic heuristics',
@@ -168,6 +201,10 @@ if (RIGHT_HAND_LLM_CLIENT !== null) {
 
 if (RIGHT_HAND_FRONTIER_CLIENT !== null) {
   console.log('[right_hand] frontier synthesis path WIRED (Claude Sonnet 4.6)');
+} else if (KERF_DISABLE_LIVE_MODELS) {
+  console.log(
+    '[right_hand] frontier synthesis path NOT WIRED (KERF_DISABLE_LIVE_MODELS=1 · hermetic mode) — orchestrator falls back to deterministic downstream chain',
+  );
 } else {
   console.log(
     '[right_hand] frontier synthesis path NOT WIRED (ANTHROPIC_API_KEY missing) — orchestrator falls back to deterministic downstream chain',
