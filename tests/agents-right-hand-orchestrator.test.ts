@@ -484,6 +484,54 @@ test('frontier synthesis path: orchestrator rejects Sonnet response carrying sev
   );
 });
 
+test('frontier synthesis path: hung Sonnet call fails closed to deterministic fallback (adversarial · Fix 3)', async () => {
+  // Adversarial mock: anthropicChat resolves (eventually) with a network_error
+  // result — simulating what happens when the real adapter's AbortSignal.timeout
+  // fires on a hung model call. The orchestrator must drop to the deterministic
+  // chain, NOT propagate an error, NOT hang. Operator's capture always completes;
+  // the LLM degrades to deterministic output. Fail closed, never fail-the-capture.
+  const t0 = Date.now();
+  const out = await runRightHandOrchestrator({
+    capturedEvent: makeCapturedEvent(),
+    projectContext: hendersonProject,
+    toolRegistry: createDefaultToolRegistry(),
+    llmClient: {
+      tenantId: 'tenant_ggr',
+      anthropicChat: async () => ({
+        ok: false as const,
+        kind: 'network_error' as const,
+        reason: 'Anthropic call timed out after 30000ms',
+        latencyMs: 30_000,
+        route: {} as never,
+        invocationId: 'inv_frontier_timeout',
+        completedAt: NOW.toISOString(),
+      }),
+    },
+    now: NOW,
+  });
+  const elapsedMs = Date.now() - t0;
+
+  // Orchestrator returns a valid response — no throw, no hang.
+  assert.ok(out.the_one_thing.length > 0, 'orchestrator must return a usable response');
+  // Returns quickly — the test's mock returned the network_error immediately,
+  // and the orchestrator must not re-block on anything else.
+  assert.ok(elapsedMs < 5_000, `orchestrator must not hang when the LLM fails (got ${elapsedMs}ms)`);
+  // The deterministic chain must have fired — Henderson facts → 'block'.
+  const driftEvt = out.events_to_append.find((e) => e.type === 'daily_log.drift_detected');
+  assert.ok(driftEvt, 'deterministic chain must produce a drift event when frontier fails');
+  assert.equal(
+    (driftEvt as { severity: string }).severity,
+    'block',
+    "fallback path's deterministic classifier must still produce 'block' from Henderson regex-extracted facts",
+  );
+  // Reasoning trail records the fallback path firing.
+  assert.match(
+    out.reasoning_trail.join(' '),
+    /Document Manager pulled|Fallback deterministic/i,
+    'reasoning trail records the deterministic fallback firing',
+  );
+});
+
 // ──────────────────────────────────────────────────────────────────────────
 // Forbidden-surface invariant
 // ──────────────────────────────────────────────────────────────────────────

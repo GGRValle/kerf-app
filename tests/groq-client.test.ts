@@ -183,6 +183,49 @@ test('groqChat surfaces network_error when fetch throws', async () => {
   assert.match(String(result.reason), /ECONNRESET/);
 });
 
+test('groqChat times out a hung model call via AbortSignal (Play 3 hardening · Fix 3 · adversarial)', async () => {
+  // Adversarial mock: fetch never resolves. AbortSignal.timeout(50) must
+  // cancel the request and surface kind: 'network_error' with a reason
+  // mentioning the timeout. Orchestrator's existing fallback then drops
+  // to the deterministic chain — fail closed, never an operator-visible
+  // infinite spinner.
+  const calls: Array<{ url: string; signal?: AbortSignal }> = [];
+  const hungFetch: typeof globalThis.fetch = (input, init) => {
+    calls.push({ url: String(input), signal: init?.signal ?? undefined });
+    return new Promise<Response>((_resolve, reject) => {
+      const signal = init?.signal;
+      if (signal !== undefined && signal !== null) {
+        signal.addEventListener('abort', () => {
+          reject(new DOMException('The operation timed out.', 'TimeoutError'));
+        });
+      }
+    });
+  };
+  const deps: GroqClientDeps = {
+    fetch: hungFetch,
+    now: () => 0,
+    nowIso: () => '2026-05-23T00:00:00.000Z' as ISO8601,
+    apiKey: 'gsk_test',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    timeoutMs: 50,
+  };
+
+  const t0 = Date.now();
+  const result = await groqChat(SCOUT_REQUEST, deps);
+  const elapsedMs = Date.now() - t0;
+
+  assert.equal(result.ok, false, 'hung call must resolve to a failure result');
+  if (result.ok) return;
+  assert.equal(result.kind, 'network_error', 'timeout surfaces as network_error');
+  assert.match(String(result.reason), /timed out after 50ms/i, 'reason names the timeout bound');
+  assert.ok(
+    elapsedMs < 2000,
+    `adapter must resolve well within a generous bound (got ${elapsedMs}ms); a hung adapter would never resolve`,
+  );
+  assert.equal(calls.length, 1, 'fetch invoked exactly once');
+  assert.ok(calls[0]!.signal !== undefined, 'fetch received an AbortSignal');
+});
+
 test('groqChat trims trailing slash from baseUrl when building request URL', async () => {
   const { fetch, calls } = makeFakeFetch({
     body: {

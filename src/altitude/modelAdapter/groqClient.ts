@@ -109,7 +109,16 @@ export interface GroqClientDeps {
   readonly baseUrl: string;
   readonly pricing?: TokenPricingNanoUsdPerMillion;
   readonly registry?: readonly ApprovedHostingEndpoint[];
+  /**
+   * Per-request timeout in milliseconds (Play 3 hardening · Fix 3 · 2026-05-23).
+   * The fetch is aborted via AbortSignal.timeout when this elapses, surfaced as
+   * a `network_error` failure. Orchestrator drops to the deterministic chain
+   * on network_error — fail closed, not fail-the-capture. Default 30s.
+   */
+  readonly timeoutMs?: number;
 }
+
+export const DEFAULT_GROQ_TIMEOUT_MS = 30_000;
 
 /** Default deps for production: real fetch, system clock. Caller still supplies key + baseUrl. */
 export function defaultGroqClientDeps(
@@ -124,6 +133,7 @@ export function defaultGroqClientDeps(
     apiKey,
     baseUrl,
     pricing,
+    timeoutMs: DEFAULT_GROQ_TIMEOUT_MS,
   };
 }
 
@@ -171,6 +181,7 @@ export async function groqChat(
     ...(request.maxTokens !== undefined ? { max_tokens: request.maxTokens } : {}),
   });
 
+  const timeoutMs = deps.timeoutMs ?? DEFAULT_GROQ_TIMEOUT_MS;
   let httpResponse: Response;
   try {
     httpResponse = await deps.fetch(url, {
@@ -180,12 +191,25 @@ export async function groqChat(
         'Content-Type': 'application/json',
       },
       body,
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
+    // AbortSignal.timeout fires a DOMException with name 'TimeoutError'.
+    // Other fetch failures (DNS, connection-reset, etc.) show up here too.
+    // Both surface as `network_error` so the orchestrator drops to the
+    // deterministic chain via the existing fallback path — fail closed,
+    // never let the operator's capture hang on a slow/dead LLM.
+    const isTimeout =
+      (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) ||
+      String(err).toLowerCase().includes('timeout');
     return {
       ok: false,
       kind: 'network_error',
-      reason: err instanceof Error ? err.message : String(err),
+      reason: isTimeout
+        ? `Groq call timed out after ${timeoutMs}ms`
+        : err instanceof Error
+          ? err.message
+          : String(err),
       latencyMs: deps.now() - startMs,
       route,
       invocationId: request.invocationId,
