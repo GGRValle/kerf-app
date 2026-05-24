@@ -467,52 +467,101 @@ export async function runRightHandOrchestrator(
   const frontier = await runRightHandFrontierSynthesis({
     capturedEvent,
     projectContext,
-    recentSurfaceHistory,
     hypothesis,
     llmClient: input.llmClient,
   });
 
   if (frontier !== null) {
+    // ────────────────────────────────────────────────────────────────────
+    // Frontier branch · Play 3 hardening · Fix 2 · 2026-05-23
+    //
+    // Frontier synthesis (Claude Sonnet) produced FACTS + gap flags +
+    // operator headline + reasoning summary. It DID NOT produce drift
+    // severity or surfacing decisions — those are owned by the
+    // deterministic core (driftAdapter via driftWatcher; relayCardSurfacer)
+    // per architecture principle #1 and D-047.
+    //
+    // We invoke the same deterministic drift + surface tools the legacy
+    // chain uses, just with Sonnet-synthesized facts instead of regex-
+    // extracted facts. Severity flows from `driftAdapter.classify()` only.
+    // ────────────────────────────────────────────────────────────────────
     factsEvent = frontier.factsEvent;
-    driftEvent = frontier.driftEvent;
-    surfacedEvent = frontier.surfacedEvent;
     frontierHeadline = frontier.the_one_thing;
     frontierGapFlags = frontier.gap_flags;
 
     events_to_append.push(factsEvent);
-    if (driftEvent !== null) events_to_append.push(driftEvent);
-    if (surfacedEvent !== null) events_to_append.push(surfacedEvent);
 
     const facts = factsEvent.facts as unknown as DailyLogExtractedFacts;
     const signalCount = countSignals(facts);
+
     tools_invoked.push({
       tool_name: 'document_manager',
       invoked: true,
-      reason: 'Claude Sonnet synthesized filing output in one pass',
+      reason: 'Claude Sonnet synthesized facts (drift severity + surfacing computed deterministically downstream)',
       output_event_type: factsEvent.type,
     });
-    tools_invoked.push({
-      tool_name: 'drift_watcher',
-      invoked: driftEvent !== null || !areFactsEmpty(facts),
-      reason:
-        driftEvent !== null
-          ? 'Claude Sonnet synthesized a drift decision in the same pass'
-          : areFactsEmpty(facts)
-            ? 'Skipped: synthesized facts were empty'
-            : 'Claude Sonnet synthesized facts but no drift fired',
-      ...(driftEvent !== null ? { output_event_type: driftEvent.type } : {}),
-    });
-    tools_invoked.push({
-      tool_name: 'relay_surfacer',
-      invoked: surfacedEvent !== null || driftEvent !== null,
-      reason:
-        surfacedEvent !== null
-          ? 'Claude Sonnet synthesized a surfacing decision in the same pass'
-          : driftEvent !== null
-            ? 'Claude Sonnet synthesized drift but held surfacing below threshold'
-            : 'Skipped: no synthesized drift event to evaluate',
-      ...(surfacedEvent !== null ? { output_event_type: surfacedEvent.type } : {}),
-    });
+
+    // Drift Watcher — deterministic classification from synthesized facts.
+    driftEvent = null;
+    if (areFactsEmpty(facts)) {
+      tools_invoked.push({
+        tool_name: 'drift_watcher',
+        invoked: false,
+        reason: 'Synthesized facts were empty; deterministic drift classification skipped',
+      });
+    } else {
+      const classified = toolRegistry.driftWatcher.invoke(factsEvent);
+      if (classified !== null) {
+        driftEvent = classified;
+        events_to_append.push(driftEvent);
+        tools_invoked.push({
+          tool_name: 'drift_watcher',
+          invoked: true,
+          reason: `Deterministic drift classifier returned severity '${driftEvent.severity}' from synthesized facts`,
+          output_event_type: driftEvent.type,
+        });
+      } else {
+        tools_invoked.push({
+          tool_name: 'drift_watcher',
+          invoked: true,
+          reason: 'Deterministic drift classifier produced no drift from synthesized facts',
+        });
+      }
+    }
+
+    // Relay Surfacer — deterministic surfacing decision (only when drift fires).
+    surfacedEvent = null;
+    if (driftEvent !== null) {
+      const surfaced = toolRegistry.relaySurfacer.invoke(
+        driftEvent,
+        factsEvent,
+        recentSurfaceHistory,
+      );
+      if (surfaced !== null) {
+        surfacedEvent = surfaced;
+        events_to_append.push(surfacedEvent);
+        tools_invoked.push({
+          tool_name: 'relay_surfacer',
+          invoked: true,
+          reason: 'Deterministic relay surfacer surfaced drift to operator',
+          output_event_type: surfacedEvent.type,
+        });
+      } else {
+        tools_invoked.push({
+          tool_name: 'relay_surfacer',
+          invoked: true,
+          reason: 'Deterministic relay surfacer held drift below threshold or deduped against recent',
+        });
+      }
+    } else {
+      tools_invoked.push({
+        tool_name: 'relay_surfacer',
+        invoked: false,
+        reason: 'No drift event to surface',
+      });
+    }
+
+    // Change Order Agent — same scope/money trigger as the legacy chain.
     const shouldConsiderChangeOrder =
       driftEvent !== null &&
       (facts.scope_change_flags.length > 0 || facts.money_risk_flags.length > 0);
@@ -521,8 +570,8 @@ export async function runRightHandOrchestrator(
         tool_name: 'change_order_agent',
         invoked: false,
         reason: toolRegistry.changeOrderAgent.is_wired
-          ? 'Frontier synthesis flagged scope/money risk; CO tool wiring remains separate'
-          : 'Frontier synthesis flagged scope/money risk; CO tool still not wired',
+          ? 'Frontier synthesis surfaced scope/money risk; CO tool wiring remains separate'
+          : 'Frontier synthesis surfaced scope/money risk; CO tool still not wired',
       });
     } else if (driftEvent !== null) {
       tools_invoked.push({
@@ -544,6 +593,11 @@ export async function runRightHandOrchestrator(
     }
     if (frontierGapFlags.length > 0) {
       reasoning_trail.push(`Gap flags carried forward: ${frontierGapFlags.join(', ')}.`);
+    }
+    if (driftEvent !== null) {
+      reasoning_trail.push(
+        `Deterministic drift classifier returned severity '${driftEvent.severity}' from the synthesized facts (architecture principle #1: severity is code, not LLM).`,
+      );
     }
   } else {
     const legacy = runLegacyDeterministicChain({

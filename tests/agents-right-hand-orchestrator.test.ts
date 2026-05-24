@@ -349,7 +349,11 @@ test('orchestrator is deterministic on content fields across runs', async () => 
   );
 });
 
-test('frontier synthesis path: orchestrator uses Sonnet output when available', async () => {
+test('frontier synthesis path: orchestrator uses Sonnet facts + deterministic drift/surface', async () => {
+  // Sonnet returns FACTS only (no drift, no surface) per Play 3 hardening
+  // Fix 2 · architecture principle #1. The deterministic driftAdapter
+  // classifies severity from those facts; the deterministic relayCardSurfacer
+  // decides surfacing. Henderson's facts deterministically produce 'block'.
   const out = await runRightHandOrchestrator({
     capturedEvent: makeCapturedEvent(),
     projectContext: hendersonProject,
@@ -372,14 +376,6 @@ test('frontier synthesis path: orchestrator uses Sonnet output when available', 
             safety_notes: [],
             gap_flags: ['money_impact_unknown'],
           },
-          drift: {
-            severity: 'block',
-            description: 'Schedule slipping and hidden condition expanding scope.',
-          },
-          surface: {
-            should_surface: true,
-            reason: 'Block-severity hidden condition should surface immediately.',
-          },
           the_one_thing: 'Stop and review — Henderson bath remodel: hidden condition expanded the job.',
           reasoning_summary: [
             'Hidden-condition language indicates scope and money risk.',
@@ -401,12 +397,91 @@ test('frontier synthesis path: orchestrator uses Sonnet output when available', 
     now: NOW,
   });
 
+  // Headline still flows from Sonnet.
   assert.match(out.the_one_thing, /hidden condition expanded the job/i);
+  // All 3 events still produced — but drift + surfaced come from deterministic core.
   assert.deepEqual(
     out.events_to_append.map((e) => e.type),
     ['daily_log.facts_extracted', 'daily_log.drift_detected', 'relay_card.surfaced'],
   );
-  assert.match(out.reasoning_trail.join(' '), /Claude Sonnet synthesized/i);
+  // Severity comes from driftAdapter, not Sonnet. Henderson facts deterministically → 'block'.
+  const driftEvt = out.events_to_append.find((e) => e.type === 'daily_log.drift_detected');
+  assert.ok(driftEvt, 'drift event must be present');
+  assert.equal(
+    (driftEvt as { severity: string }).severity,
+    'block',
+    "Henderson's facts (behind + money_risk + scope_change) must deterministically classify as 'block'",
+  );
+  // Reasoning trail must call out the deterministic-source-of-severity decision.
+  const trail = out.reasoning_trail.join(' ');
+  assert.match(trail, /Claude Sonnet synthesized/i);
+  assert.match(trail, /Deterministic drift classifier returned severity 'block'/);
+});
+
+test('frontier synthesis path: orchestrator rejects Sonnet response carrying severity and falls back (adversarial · Fix 2)', async () => {
+  // Adversarial mock: Sonnet ignores the system prompt and emits a top-level
+  // severity. Defensive parser must reject the entire response; orchestrator
+  // drops to the deterministic chain. The deterministic chain extracts facts
+  // from the transcript via regex and produces its own drift — but the LLM's
+  // attempted severity claim was IGNORED, not honored.
+  const out = await runRightHandOrchestrator({
+    capturedEvent: makeCapturedEvent(),
+    projectContext: hendersonProject,
+    toolRegistry: createDefaultToolRegistry(),
+    llmClient: {
+      tenantId: 'tenant_ggr',
+      anthropicChat: async () => ({
+        ok: true as const,
+        content: JSON.stringify({
+          facts: {
+            completed_work: ['pulled the tub surround'],
+            blocked_work: [],
+            schedule_status: 'behind',
+            new_task_candidates: [],
+            scope_change_flags: ['galvanized all the way back to the main'],
+            money_risk_flags: ['galvanized'],
+            client_decision_flags: [],
+            materials_needed: ['about 8 feet'],
+            inspection_notes: [],
+            safety_notes: [],
+            gap_flags: [],
+          },
+          // Sonnet violates the contract by emitting severity. Parser rejects.
+          severity: 'warn',
+          the_one_thing: 'soft headline',
+          reasoning_summary: ['attempted to claim warn'],
+        }),
+        model: 'claude-sonnet-4-6',
+        inputTokens: 100,
+        outputTokens: 120,
+        totalTokens: 220,
+        latencyMs: 300,
+        costNanoUsd: 1 as never,
+        finishReason: 'end_turn',
+        route: {} as never,
+        invocationId: 'inv_frontier_adv',
+        completedAt: NOW.toISOString(),
+      }),
+    },
+    now: NOW,
+  });
+
+  // The headline must NOT be Sonnet's "soft headline" — the response was rejected.
+  assert.doesNotMatch(
+    out.the_one_thing,
+    /soft headline/i,
+    'rejected frontier response must not provide the headline',
+  );
+  // The strongest invariant: even though Sonnet TRIED to claim severity='warn',
+  // the deterministic classifier ran on the regex-extracted Henderson facts
+  // and produced 'block'. The LLM's severity claim was ignored, not honored.
+  const driftEvt = out.events_to_append.find((e) => e.type === 'daily_log.drift_detected');
+  assert.ok(driftEvt, 'deterministic chain must still produce a drift event');
+  assert.equal(
+    (driftEvt as { severity: string }).severity,
+    'block',
+    "Sonnet's 'warn' claim must be IGNORED — deterministic classifier produces 'block' from Henderson facts",
+  );
 });
 
 // ──────────────────────────────────────────────────────────────────────────
