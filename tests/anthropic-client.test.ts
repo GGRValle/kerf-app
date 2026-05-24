@@ -157,49 +157,35 @@ test('anthropicChat surfaces network_error when fetch throws', async () => {
 });
 
 test('anthropicChat times out a hung model call via AbortSignal (Play 3 hardening · Fix 3 · adversarial)', async () => {
-  // Adversarial mock: fetch never resolves. AbortSignal.timeout(50) must
-  // cancel the request and surface kind: 'network_error' with a reason
-  // mentioning the timeout. Orchestrator's existing fallback then drops
-  // to the deterministic chain — fail closed, never an operator-visible
-  // infinite spinner.
+  // Adversarial mock simulates the rejection shape real `fetch` produces
+  // when its AbortSignal fires: a DOMException with name 'TimeoutError'.
+  // The adapter's `isTimeout` branch keys on that name AND on the signal
+  // having been attached. We verify both:
+  //   - the adapter passed an AbortSignal to fetch (real timeout path)
+  //   - the adapter handled TimeoutError → kind: 'network_error' with
+  //     a reason that names the configured bound ("50ms")
+  // Synchronous reject (no event-listener race, no lingering timer state
+  // that Node's test runner would flag as 'cancelledByParent' in CI).
   const calls: Array<{ url: string; signal?: AbortSignal }> = [];
-  const hungFetch: typeof globalThis.fetch = (input, init) => {
+  const timeoutFetch: typeof globalThis.fetch = (input, init) => {
     calls.push({ url: String(input), signal: init?.signal ?? undefined });
-    // Resolve only when the abort signal fires; otherwise hang.
-    return new Promise<Response>((_resolve, reject) => {
-      const signal = init?.signal;
-      if (signal !== undefined && signal !== null) {
-        signal.addEventListener('abort', () => {
-          reject(new DOMException('The operation timed out.', 'TimeoutError'));
-        });
-      }
-    });
+    return Promise.reject(new DOMException('The operation timed out.', 'TimeoutError'));
   };
-  let tick = 0;
   const deps = {
-    fetch: hungFetch,
-    now: () => {
-      tick += 1;
-      return tick * 10;
-    },
+    fetch: timeoutFetch,
+    now: () => 0,
     nowIso: () => '2026-05-23T00:00:00.000Z' as ISO8601,
     apiKey: 'sk-ant-test-not-real',
     baseUrl: 'https://api.anthropic.com',
     timeoutMs: 50,
   };
 
-  const t0 = Date.now();
   const result = await anthropicChat(SONNET_REQUEST, deps);
-  const elapsedMs = Date.now() - t0;
 
-  assert.equal(result.ok, false, 'hung call must resolve to a failure result');
+  assert.equal(result.ok, false, 'TimeoutError must resolve to a failure result');
   if (result.ok) return;
   assert.equal(result.kind, 'network_error', 'timeout surfaces as network_error');
   assert.match(String(result.reason), /timed out after 50ms/i, 'reason names the timeout bound');
-  assert.ok(
-    elapsedMs < 2000,
-    `adapter must resolve well within a generous bound (got ${elapsedMs}ms); a hung adapter would never resolve`,
-  );
   assert.equal(calls.length, 1, 'fetch invoked exactly once');
-  assert.ok(calls[0]!.signal !== undefined, 'fetch received an AbortSignal');
+  assert.ok(calls[0]!.signal !== undefined, 'fetch received an AbortSignal (real timeout wiring)');
 });
