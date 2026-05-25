@@ -89,9 +89,15 @@ export function caDownpaymentCapCents(totalCents: number): number {
 const ISO8601_REGEX =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
 
+// L0.6 guard note: this Set duplicates the canonical VALID_TENANT_IDS
+// in src/persistence/events.ts. A future cleanup should import the
+// canonical one rather than maintain a local copy. Kept in sync with
+// the persistence layer's three-tenant V1 set (tenant_ggr · tenant_valle
+// · tenant_hpg). Allowlisted in persistence-tenant-isolation-guard test.
 const VALID_TENANT_IDS: ReadonlySet<ProposalTenantId> = new Set([
   'tenant_ggr',
   'tenant_valle',
+  'tenant_hpg',
 ]);
 
 const VALID_ACTOR_ROLES: ReadonlySet<ProposalActor['role']> = new Set([

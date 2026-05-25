@@ -57,25 +57,47 @@ export interface PersistenceEventStore {
    *
    * Atomic at the OS level via O_APPEND. The file is created (with
    * parent directories) on first append.
+   *
+   * Write path is tenant-scoped by construction — the validated event
+   * carries `tenant_id`, and the per-tenant projection layer routes
+   * to `<PERSISTENCE_DIR>/projects/<tenant>/<projectId>/`. No tenant
+   * parameter is needed here because the event itself is the scope.
    */
   append(event: PersistenceEvent): Promise<PersistenceEvent>;
 
   /**
-   * Read all events in chronological (append) order. Malformed JSONL
-   * lines are skipped with a stderr warning; the rest of the file is
-   * preserved. Returns [] if the file doesn't exist yet.
+   * **CROSS-TENANT PRIMITIVE.** Reads all events across all tenants in
+   * chronological (append) order. Malformed JSONL lines are skipped
+   * with a stderr warning; the rest of the file is preserved. Returns
+   * [] if the file doesn't exist yet.
+   *
+   * Lane 0.6 tenant-isolation guard: NON-TEST CALLERS MUST NOT INVOKE
+   * THIS DIRECTLY. Per D-048 architectural constraint, every
+   * non-test data-access must go through `tenantScopedReads.ts` ·
+   * either a tenant-scoped wrapper or `readEventsAcrossTenants` with
+   * an explicit `CrossTenantRationale`. The companion test
+   * `persistence-tenant-isolation-guard.test.ts` scans non-test source
+   * for direct callers and flags them as guard violations.
    */
   readAll(): Promise<readonly PersistenceEvent[]>;
 
   /**
-   * Read all events whose `correlation_id` matches. Linear scan; fine
-   * for the single-tenant operational scale (events file expected to
-   * stay under ~50MB for the GGR/Valle phase).
+   * **CROSS-TENANT PRIMITIVE.** Reads all events whose `correlation_id`
+   * matches, across all tenants. Linear scan; fine for the single-tenant
+   * operational scale (events file expected to stay under ~50MB for
+   * the GGR/Valle/HPG phase).
+   *
+   * Lane 0.6 tenant-isolation guard: as above. Non-test callers MUST
+   * use `tenantScopedReads.ts` · `readEventsForProject(tenant, id)`.
    */
   readByCorrelation(correlationId: string): Promise<readonly PersistenceEvent[]>;
 
   /**
-   * Read all events of a given type.
+   * **CROSS-TENANT PRIMITIVE.** Reads all events of a given type,
+   * across all tenants.
+   *
+   * Lane 0.6 tenant-isolation guard: as above. Non-test callers MUST
+   * use `tenantScopedReads.ts` · `readEventsByTypeForTenant(tenant, type)`.
    */
   readByType(type: PersistenceEventType): Promise<readonly PersistenceEvent[]>;
 
