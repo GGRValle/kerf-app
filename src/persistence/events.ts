@@ -64,7 +64,21 @@ export type PersistenceEventType =
   | 'daily_log.facts_extracted'
   | 'daily_log.drift_detected'
   | 'relay_card.surfaced'
-  | 'relay_card.reviewed';
+  | 'relay_card.reviewed'
+  // ─── Lane 0.3 event-type contract additions (D-048 + Lane 7B + Lane 5) ───
+  | 'suggestion.overridden'
+  | 'correction.classified'
+  | 'send_gate.evaluated'
+  | 'export.requested'
+  | 'calibration.answered'
+  | 'invoice.created'
+  | 'invoice.sent'
+  | 'ap_invoice.scheduled'
+  | 'ap_invoice.approved'
+  | 'payment.recorded'
+  | 'payment.received'
+  | 'allowance.exception.opened'
+  | 'allowance.exception.resolved';
 
 /**
  * Daily Log entry kinds — what kind of field capture this is. Per
@@ -109,6 +123,66 @@ export type DailyLogDriftSeverity = 'info' | 'caution' | 'warn' | 'block';
  * nothing to do"; `dismissed` is explicit non-action with audit trail.
  */
 export type RelayCardReviewOutcome = 'acknowledged' | 'actioned' | 'dismissed';
+
+// ──────────────────────────────────────────────────────────────────────────
+// D-048 classification enums (Lane 0.3 enum reconciliation)
+//
+// One canonical snake_case enum set reconciled across:
+//   - D-048 doctrine doc (hyphenated values there are research prose only)
+//   - The two operating-gradient JSON fixtures
+//     (KERF Canon v1/_research/Kerf_Construction_Operating_Gradient_v1_2026-05-25.json
+//      and src/operating-gradient/construction-operating-gradient.v1.json)
+//   - The event contract (this file)
+//
+// Code and events use snake_case. Hyphenated values are research prose only.
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Axis A · Correction scope. How widely a correction or rejection should
+ * apply if the system learns from it. The doctrine commitment: a "no" is
+ * never assumed binary or universal. Inference up front; one follow-up
+ * question only when the cost of being wrong is high.
+ */
+export type CorrectionScope =
+  | 'universal'
+  | 'situational'
+  | 'tenant_wide'
+  | 'project_specific'
+  | 'role_specific'
+  | 'one_off';
+
+/**
+ * Axis B · Memory locality. "Where can this learning artifact live?" Per
+ * D-048: dogfood transfers only through classification. Until promoted,
+ * every learning object stays tenant-private. Cross-tenant transfer
+ * mechanism is V2+ — the locality field may be set as forward
+ * instrumentation, but no cross-tenant transfer path exists in V1.
+ *
+ * Multi-locality permitted on a single event (mirrors replay-case schema
+ * in the operating-gradient JSON · a correction can both seed a tenant
+ * default AND become a platform-canon candidate).
+ */
+export type MemoryLocality =
+  | 'tenant_private'
+  | 'archetype_default_candidate'
+  | 'platform_canon_candidate'
+  | 'eval_replay_case'
+  | 'no_learn';
+
+/**
+ * Evidence source class. Which stream produced the signal. Used by the
+ * learning loop to weigh different signals appropriately (dogfood
+ * carries operational truth; synthetic eval carries coverage; external
+ * research carries breadth).
+ */
+export type EvidenceSourceClass =
+  | 'dogfood_ggr'
+  | 'dogfood_valle'
+  | 'dogfood_hpg'
+  | 'paid_tenant'
+  | 'external_research'
+  | 'synthetic_eval'
+  | 'support_observation';
 
 /**
  * Tenant id. Three single-tenant instances in V1 — GGR Design + Remodeling,
@@ -420,6 +494,270 @@ export interface RelayCardReviewedEvent extends BasePersistenceEvent {
   readonly outcome: RelayCardReviewOutcome;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Lane 0.3 event-type contract — D-048 learning-governance + Lane 7B export
+// + Lane 5 money-write substrate
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Operator rejected what Right Hand proposed. The decision-time proxy
+ * signal D-048 names: not outcome-level reinforcement (months out), but
+ * the moment-of-override signal the harness learns from.
+ *
+ * Per the doctrine: the rejection is never assumed binary. A
+ * `correction.classified` event typically follows, with the operator's
+ * (or inferred) scope + locality classification.
+ */
+export interface SuggestionOverriddenEvent extends BasePersistenceEvent {
+  readonly type: 'suggestion.overridden';
+  /** Right Hand's suggestion id (opaque to this layer; RH owns the shape). */
+  readonly suggestion_id: string;
+  /** Surface that surfaced the suggestion (e.g., 'transcript.review', 'draft.review', 'right_hand_home'). */
+  readonly surface: string;
+  /** Snapshot of the suggestion payload at override (JSON-serializable). */
+  readonly suggestion_payload: unknown;
+  /** The operator's chosen alternative (JSON-serializable; may be null = "do nothing instead"). */
+  readonly chosen_alternative: unknown;
+  /** Optional plain-text reason — operator-spoken/typed. null when not provided. */
+  readonly reason_text: string | null;
+}
+
+/**
+ * The D-048 rejection-classification doctrine made eventful. One event
+ * per meaningful correction; classifies along Axis A (scope) + Axis B
+ * (locality) + evidence_source_class. Multi-locality permitted (mirrors
+ * the operating-gradient replay-case schema).
+ *
+ * Per D-048: inference may be aggressive; nothing inferred becomes a
+ * hardened default until the Calibration Review confirms it.
+ * `classification_method` distinguishes inference from confirmation.
+ */
+export interface CorrectionClassifiedEvent extends BasePersistenceEvent {
+  readonly type: 'correction.classified';
+  /** Event_id of the source correction (suggestion.overridden, proposal.edited, scaffold.refined, etc.). */
+  readonly correction_event_id: string;
+  /** Axis A — how widely this correction should apply. */
+  readonly correction_scope: CorrectionScope;
+  /** Axis B — where the learning artifact can live. Multi-value allowed. */
+  readonly memory_locality: readonly MemoryLocality[];
+  /** Evidence source class — which stream produced this signal. */
+  readonly evidence_source_class: EvidenceSourceClass;
+  /** How the classification was reached. */
+  readonly classification_method: 'inferred' | 'operator_confirmed' | 'operator_overridden';
+  /** Inference confidence in [0, 1]. 1.0 for operator_confirmed; reflective of model certainty for inferred. */
+  readonly confidence: number;
+  /** Optional rule refs into the operating-gradient OperatorRule set (e.g., 'R10_data_continuity_operational_continuity'). */
+  readonly operator_rule_refs: readonly string[];
+}
+
+/**
+ * F-PV2 send-gate triad result. The 6-check pre-send validation per
+ * D-048 (source-chain complete · margin within policy · validity window
+ * · client-facing disclosure rule · signature block present · no-CO-leak).
+ * NEVER-auto-sends — operator action required to proceed even when all
+ * checks pass.
+ */
+export interface SendGateEvaluatedEvent extends BasePersistenceEvent {
+  readonly type: 'send_gate.evaluated';
+  /** Artifact under evaluation (proposal_id, co_packet_id, etc.). */
+  readonly artifact_id: string;
+  /** Surface that asked the gate (e.g., 'proposal.preview'). */
+  readonly surface: string;
+  /** Per-check outcomes. Each: name + pass + optional reason on fail. */
+  readonly checks: readonly {
+    readonly name: string;
+    readonly pass: boolean;
+    readonly reason: string | null;
+  }[];
+  /** Aggregate result; derived but stored for fast read. */
+  readonly all_passed: boolean;
+  /** Operator action after evaluation. null = inspected but no decisive action yet. */
+  readonly operator_action: 'send' | 'back_to_draft' | 'export_pdf' | 'inspected' | null;
+}
+
+/**
+ * Lane 7B export/print affordance backing. Every export = data egress;
+ * audit entry per egress is non-negotiable.
+ *
+ * `owner_private = true` for margin-bearing exports (F-MN3/MN4 owner-
+ * private surfaces); the format is restricted to PDF on those per
+ * Lane 7B canon (CSV/XLSX data-egress-restricted on margin posture).
+ */
+export interface ExportRequestedEvent extends BasePersistenceEvent {
+  readonly type: 'export.requested';
+  /** Surface that initiated the export (e.g., 'money.ar_aging', 'proposal.preview'). */
+  readonly surface: string;
+  /** Export format. 'print' is a special-cased export-to-printer egress. */
+  readonly format: 'pdf' | 'csv' | 'xlsx' | 'iif' | 'print';
+  /** Optional scope description — date range, filter state, job selector (free-form). */
+  readonly scope_descriptor: string | null;
+  /** Whether the exported view contains owner-private content (margin posture, etc.). */
+  readonly owner_private: boolean;
+  /** Optional row/item count in the export payload. */
+  readonly item_count: number | null;
+}
+
+/**
+ * D-048 Calibration Review · forward instrumentation. Records the
+ * operator's answer to a calibration question (or that they skipped it,
+ * since skip-first is first-class behavior per D-048).
+ *
+ * `intended_scope` is the operator's stated scope for this answer — used
+ * by the confirm-first review loop to decide whether to harden the
+ * answer into a tenant default. null when not applicable (e.g.,
+ * informational calibration that doesn't set a default).
+ */
+export interface CalibrationAnsweredEvent extends BasePersistenceEvent {
+  readonly type: 'calibration.answered';
+  readonly question_id: string;
+  /** Snapshot of the prompt at the moment of asking (prompts may evolve; audit needs the original). */
+  readonly prompt: string;
+  /** Operator's answer (free-form text or selected enum value). null when skipped. */
+  readonly answer: string | null;
+  /** Whether the operator skipped (skip-first defaults per D-048). */
+  readonly skipped: boolean;
+  /** Surface that surfaced the question. */
+  readonly surface: string;
+  /** What scope the answer applies at, if accepted. null when not scope-relevant. */
+  readonly intended_scope: CorrectionScope | null;
+}
+
+// Money-write events (Lane 5 substrate; non-bypassable validator wall
+// applies on every write; integer cents only; no money-write from UI
+// per the six guardrails).
+
+/**
+ * Operator-emitted AR invoice creation. Drives F-MN6 (AR aging) and
+ * the proposal→invoice handoff. `total_cents` is the canonical amount;
+ * line-item detail lives in projections, not on the event header.
+ */
+export interface InvoiceCreatedEvent extends BasePersistenceEvent {
+  readonly type: 'invoice.created';
+  readonly invoice_id: string;
+  /** GGR/V/HPG-prefixed invoice number per src/proposal/numbering.ts pattern. */
+  readonly invoice_number: string;
+  readonly project_id: string;
+  readonly client_id: string;
+  /** Integer cents. */
+  readonly total_cents: number;
+  /** ISO8601 date string for due date. */
+  readonly due_date: string;
+}
+
+/**
+ * Invoice transition to "sent" state. Audit-bearing — every send is a
+ * data-egress moment. NEVER-auto-sends per D-048: operator action
+ * required upstream.
+ */
+export interface InvoiceSentEvent extends BasePersistenceEvent {
+  readonly type: 'invoice.sent';
+  readonly invoice_id: string;
+  /** Recipient identifier (client email, portal id, etc.). */
+  readonly sent_to: string;
+  /** ISO8601 timestamp the send was operator-initiated. */
+  readonly sent_at: string;
+  readonly send_channel: 'email' | 'paper' | 'portal';
+}
+
+/**
+ * AP invoice scheduled for payment. Schedule = intent; approval +
+ * payment.recorded happen separately (NEVER-AUTO-PAYS guardrail).
+ */
+export interface ApInvoiceScheduledEvent extends BasePersistenceEvent {
+  readonly type: 'ap_invoice.scheduled';
+  readonly ap_invoice_id: string;
+  readonly vendor_id: string;
+  readonly project_id: string;
+  /** Integer cents. */
+  readonly total_cents: number;
+  /** ISO8601 date string for scheduled pay date. */
+  readonly scheduled_pay_date: string;
+}
+
+/**
+ * AP invoice approved for payment. NEVER-AUTO-PAYS lock: this event
+ * requires an explicit operator approval action upstream. The approver
+ * id is stored on the event for audit.
+ */
+export interface ApInvoiceApprovedEvent extends BasePersistenceEvent {
+  readonly type: 'ap_invoice.approved';
+  readonly ap_invoice_id: string;
+  /** Operator id who approved. */
+  readonly approver: string;
+  /** ISO8601 timestamp of approval. */
+  readonly approved_at: string;
+  /** Integer cents — snapshot at approval time. */
+  readonly total_cents: number;
+}
+
+/**
+ * Operator records a payment received (e.g., from a check, wire, or
+ * ACH). `invoice_id` is nullable for unmatched receipts (the
+ * bookkeeping recon flow surfaces unmatched payments to be classified
+ * later via F-BK1a/b).
+ */
+export interface PaymentRecordedEvent extends BasePersistenceEvent {
+  readonly type: 'payment.recorded';
+  readonly payment_id: string;
+  /** Matched invoice, or null when unmatched at recording time. */
+  readonly invoice_id: string | null;
+  /** Integer cents. */
+  readonly amount_cents: number;
+  /** ISO8601 timestamp of receipt. */
+  readonly received_at: string;
+  readonly payment_method: 'ach' | 'check' | 'wire' | 'card' | 'cash' | 'other';
+}
+
+/**
+ * Payment reconciled (bank-feed match or operator-confirmed). Distinct
+ * from `payment.recorded` — `recorded` is the operator entry;
+ * `received` is the cleared-funds confirmation.
+ */
+export interface PaymentReceivedEvent extends BasePersistenceEvent {
+  readonly type: 'payment.received';
+  readonly payment_id: string;
+  readonly reconciliation_method: 'bank_feed' | 'manual_reconcile' | 'operator_confirmed';
+  /** ISO8601 timestamp of clear / confirmation. */
+  readonly cleared_at: string;
+  /** Bank reference / transaction id. null when manually reconciled without a bank reference. */
+  readonly bank_reference: string | null;
+}
+
+/**
+ * Allowance line drift exceeded threshold. Drives F-MN5 (Allowance
+ * exceptions). Direction = over (operator-managed overspend) or under
+ * (margin-recovery). delta_cents is signed in the direction's intent
+ * field but stored as a non-negative magnitude here; the `direction`
+ * field carries the sign.
+ */
+export interface AllowanceExceptionOpenedEvent extends BasePersistenceEvent {
+  readonly type: 'allowance.exception.opened';
+  readonly exception_id: string;
+  readonly project_id: string;
+  readonly allowance_line_id: string;
+  readonly direction: 'over' | 'under';
+  /** Magnitude in integer cents (non-negative). Sign comes from `direction`. */
+  readonly delta_cents: number;
+  /** Threshold the line crossed, in integer cents. */
+  readonly threshold_cents: number;
+}
+
+/**
+ * Allowance exception resolved. Operator-driven; the four resolution
+ * types map to F-MN5 's action set: absorbed (margin hit / margin
+ * recovery), change_order (CO created), client_billed (extras line on
+ * invoice), reversed (false alarm / recategorized).
+ */
+export interface AllowanceExceptionResolvedEvent extends BasePersistenceEvent {
+  readonly type: 'allowance.exception.resolved';
+  readonly exception_id: string;
+  readonly resolved_by: string;
+  readonly resolved_at: string;
+  readonly resolution: 'absorbed' | 'change_order' | 'client_billed' | 'reversed';
+  /** Operator note explaining the resolution. */
+  readonly resolution_notes: string;
+}
+
 export type PersistenceEvent =
   | ProjectCreatedEvent
   | CaptureRecordedEvent
@@ -437,7 +775,21 @@ export type PersistenceEvent =
   | DailyLogFactsExtractedEvent
   | DailyLogDriftDetectedEvent
   | RelayCardSurfacedEvent
-  | RelayCardReviewedEvent;
+  | RelayCardReviewedEvent
+  // ─── Lane 0.3 event-type contract additions ───
+  | SuggestionOverriddenEvent
+  | CorrectionClassifiedEvent
+  | SendGateEvaluatedEvent
+  | ExportRequestedEvent
+  | CalibrationAnsweredEvent
+  | InvoiceCreatedEvent
+  | InvoiceSentEvent
+  | ApInvoiceScheduledEvent
+  | ApInvoiceApprovedEvent
+  | PaymentRecordedEvent
+  | PaymentReceivedEvent
+  | AllowanceExceptionOpenedEvent
+  | AllowanceExceptionResolvedEvent;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Validation
@@ -489,6 +841,105 @@ const VALID_EVENT_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'daily_log.drift_detected',
   'relay_card.surfaced',
   'relay_card.reviewed',
+  // ─── Lane 0.3 additions ───
+  'suggestion.overridden',
+  'correction.classified',
+  'send_gate.evaluated',
+  'export.requested',
+  'calibration.answered',
+  'invoice.created',
+  'invoice.sent',
+  'ap_invoice.scheduled',
+  'ap_invoice.approved',
+  'payment.recorded',
+  'payment.received',
+  'allowance.exception.opened',
+  'allowance.exception.resolved',
+]);
+
+// ──────────────────────────────────────────────────────────────────────────
+// D-048 classification enum value sets — runtime guards
+// ──────────────────────────────────────────────────────────────────────────
+
+const VALID_CORRECTION_SCOPES: ReadonlySet<CorrectionScope> = new Set([
+  'universal',
+  'situational',
+  'tenant_wide',
+  'project_specific',
+  'role_specific',
+  'one_off',
+]);
+
+const VALID_MEMORY_LOCALITIES: ReadonlySet<MemoryLocality> = new Set([
+  'tenant_private',
+  'archetype_default_candidate',
+  'platform_canon_candidate',
+  'eval_replay_case',
+  'no_learn',
+]);
+
+const VALID_EVIDENCE_SOURCE_CLASSES: ReadonlySet<EvidenceSourceClass> = new Set([
+  'dogfood_ggr',
+  'dogfood_valle',
+  'dogfood_hpg',
+  'paid_tenant',
+  'external_research',
+  'synthetic_eval',
+  'support_observation',
+]);
+
+const VALID_CLASSIFICATION_METHODS: ReadonlySet<CorrectionClassifiedEvent['classification_method']> = new Set([
+  'inferred',
+  'operator_confirmed',
+  'operator_overridden',
+]);
+
+const VALID_EXPORT_FORMATS: ReadonlySet<ExportRequestedEvent['format']> = new Set([
+  'pdf',
+  'csv',
+  'xlsx',
+  'iif',
+  'print',
+]);
+
+const VALID_SEND_GATE_ACTIONS: ReadonlySet<NonNullable<SendGateEvaluatedEvent['operator_action']>> = new Set([
+  'send',
+  'back_to_draft',
+  'export_pdf',
+  'inspected',
+]);
+
+const VALID_INVOICE_SEND_CHANNELS: ReadonlySet<InvoiceSentEvent['send_channel']> = new Set([
+  'email',
+  'paper',
+  'portal',
+]);
+
+const VALID_PAYMENT_METHODS: ReadonlySet<PaymentRecordedEvent['payment_method']> = new Set([
+  'ach',
+  'check',
+  'wire',
+  'card',
+  'cash',
+  'other',
+]);
+
+const VALID_RECONCILIATION_METHODS: ReadonlySet<PaymentReceivedEvent['reconciliation_method']> = new Set([
+  'bank_feed',
+  'manual_reconcile',
+  'operator_confirmed',
+]);
+
+const VALID_ALLOWANCE_DIRECTIONS: ReadonlySet<AllowanceExceptionOpenedEvent['direction']> = new Set([
+  'over',
+  'under',
+]);
+
+const VALID_ALLOWANCE_RESOLUTIONS: ReadonlySet<AllowanceExceptionResolvedEvent['resolution']> = new Set([
+  'absorbed',
+  'change_order',
+  'client_billed',
+  'reversed',
 ]);
 
 const VALID_DAILY_LOG_ENTRY_KINDS: ReadonlySet<DailyLogEntryKind> = new Set([
@@ -535,6 +986,9 @@ const VALID_SOURCE_REF_KINDS: ReadonlySet<SourceRef['kind']> = new Set([
 const SOURCE_REFS_OPTIONAL_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'project.created',
   'kb.ingested',
+  // Lane 0.3: operator-initiated · no upstream evidence to cite
+  'calibration.answered',
+  'export.requested',
 ]);
 
 function nonEmptyString(v: unknown): v is string {
@@ -877,6 +1331,300 @@ function validateRelayCardReviewed(input: Record<string, unknown>): readonly str
   return errors;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Lane 0.3 validator functions — D-048 events + Lane 7B export + Lane 5 money
+// ──────────────────────────────────────────────────────────────────────────
+
+function validateSuggestionOverridden(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['suggestion_id'])) errors.push('suggestion_id must be a non-empty string');
+  if (!nonEmptyString(input['surface'])) errors.push('surface must be a non-empty string');
+  // suggestion_payload + chosen_alternative are typed as unknown — no shape check here
+  if (!('suggestion_payload' in input)) errors.push('suggestion_payload must be present (any JSON-serializable value)');
+  if (!('chosen_alternative' in input)) errors.push('chosen_alternative must be present (any JSON-serializable value, may be null)');
+  if (input['reason_text'] !== null && !nonEmptyString(input['reason_text'])) {
+    errors.push('reason_text must be a non-empty string or null');
+  }
+  return errors;
+}
+
+function validateCorrectionClassified(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['correction_event_id'])) errors.push('correction_event_id must be a non-empty string');
+  if (!nonEmptyString(input['correction_scope'])) {
+    errors.push('correction_scope must be a non-empty string');
+  } else if (!VALID_CORRECTION_SCOPES.has(input['correction_scope'] as CorrectionScope)) {
+    errors.push(
+      `correction_scope "${input['correction_scope']}" is not a recognized CorrectionScope (expected universal|situational|tenant_wide|project_specific|role_specific|one_off)`,
+    );
+  }
+  if (!Array.isArray(input['memory_locality'])) {
+    errors.push('memory_locality must be an array (multi-locality permitted)');
+  } else {
+    if (input['memory_locality'].length === 0) {
+      errors.push('memory_locality must contain at least one value');
+    }
+    for (let i = 0; i < input['memory_locality'].length; i++) {
+      const v = input['memory_locality'][i];
+      if (typeof v !== 'string' || !VALID_MEMORY_LOCALITIES.has(v as MemoryLocality)) {
+        errors.push(
+          `memory_locality[${i}] "${String(v)}" is not a recognized MemoryLocality (expected tenant_private|archetype_default_candidate|platform_canon_candidate|eval_replay_case|no_learn)`,
+        );
+      }
+    }
+  }
+  if (!nonEmptyString(input['evidence_source_class'])) {
+    errors.push('evidence_source_class must be a non-empty string');
+  } else if (!VALID_EVIDENCE_SOURCE_CLASSES.has(input['evidence_source_class'] as EvidenceSourceClass)) {
+    errors.push(
+      `evidence_source_class "${input['evidence_source_class']}" is not a recognized EvidenceSourceClass (expected dogfood_ggr|dogfood_valle|dogfood_hpg|paid_tenant|external_research|synthetic_eval|support_observation)`,
+    );
+  }
+  if (!nonEmptyString(input['classification_method'])) {
+    errors.push('classification_method must be a non-empty string');
+  } else if (!VALID_CLASSIFICATION_METHODS.has(input['classification_method'] as CorrectionClassifiedEvent['classification_method'])) {
+    errors.push(
+      `classification_method "${input['classification_method']}" is not recognized (expected inferred|operator_confirmed|operator_overridden)`,
+    );
+  }
+  if (
+    typeof input['confidence'] !== 'number' ||
+    !Number.isFinite(input['confidence']) ||
+    input['confidence'] < 0 ||
+    input['confidence'] > 1
+  ) {
+    errors.push('confidence must be a finite number in [0, 1]');
+  }
+  if (!Array.isArray(input['operator_rule_refs'])) {
+    errors.push('operator_rule_refs must be an array (may be empty)');
+  } else {
+    for (let i = 0; i < input['operator_rule_refs'].length; i++) {
+      if (typeof input['operator_rule_refs'][i] !== 'string') {
+        errors.push(`operator_rule_refs[${i}] must be a string`);
+      }
+    }
+  }
+  return errors;
+}
+
+function validateSendGateEvaluated(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['artifact_id'])) errors.push('artifact_id must be a non-empty string');
+  if (!nonEmptyString(input['surface'])) errors.push('surface must be a non-empty string');
+  if (!Array.isArray(input['checks'])) {
+    errors.push('checks must be an array');
+  } else {
+    if (input['checks'].length === 0) errors.push('checks must contain at least one entry');
+    for (let i = 0; i < input['checks'].length; i++) {
+      const c = input['checks'][i];
+      if (typeof c !== 'object' || c === null) {
+        errors.push(`checks[${i}] must be an object`);
+        continue;
+      }
+      const check = c as Record<string, unknown>;
+      if (!nonEmptyString(check['name'])) errors.push(`checks[${i}].name must be a non-empty string`);
+      if (typeof check['pass'] !== 'boolean') errors.push(`checks[${i}].pass must be a boolean`);
+      if (check['reason'] !== null && !nonEmptyString(check['reason'])) {
+        errors.push(`checks[${i}].reason must be a non-empty string or null`);
+      }
+    }
+  }
+  if (typeof input['all_passed'] !== 'boolean') errors.push('all_passed must be a boolean');
+  if (input['operator_action'] !== null) {
+    if (!nonEmptyString(input['operator_action'])) {
+      errors.push('operator_action must be null or a recognized action string');
+    } else if (!VALID_SEND_GATE_ACTIONS.has(input['operator_action'] as NonNullable<SendGateEvaluatedEvent['operator_action']>)) {
+      errors.push(
+        `operator_action "${input['operator_action']}" is not recognized (expected send|back_to_draft|export_pdf|inspected, or null)`,
+      );
+    }
+  }
+  return errors;
+}
+
+function validateExportRequested(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['surface'])) errors.push('surface must be a non-empty string');
+  if (!nonEmptyString(input['format'])) {
+    errors.push('format must be a non-empty string');
+  } else if (!VALID_EXPORT_FORMATS.has(input['format'] as ExportRequestedEvent['format'])) {
+    errors.push(
+      `format "${input['format']}" is not recognized (expected pdf|csv|xlsx|iif|print)`,
+    );
+  }
+  if (input['scope_descriptor'] !== null && !nonEmptyString(input['scope_descriptor'])) {
+    errors.push('scope_descriptor must be a non-empty string or null');
+  }
+  if (typeof input['owner_private'] !== 'boolean') errors.push('owner_private must be a boolean');
+  if (input['item_count'] !== null) {
+    if (
+      typeof input['item_count'] !== 'number' ||
+      !Number.isInteger(input['item_count']) ||
+      input['item_count'] < 0
+    ) {
+      errors.push('item_count must be a non-negative integer or null');
+    }
+  }
+  // Lane 7B canon: owner_private exports of margin posture must be PDF-only.
+  if (input['owner_private'] === true && input['format'] !== 'pdf' && input['format'] !== 'print') {
+    errors.push(
+      'owner_private exports must use format=pdf or format=print (CSV/XLSX/IIF data-egress-restricted on owner-private surfaces per Lane 7B canon)',
+    );
+  }
+  return errors;
+}
+
+function validateCalibrationAnswered(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['question_id'])) errors.push('question_id must be a non-empty string');
+  if (!nonEmptyString(input['prompt'])) errors.push('prompt must be a non-empty string');
+  if (typeof input['skipped'] !== 'boolean') errors.push('skipped must be a boolean');
+  // Cross-field rule: answer must be a string iff skipped=false; null iff skipped=true.
+  if (input['skipped'] === true) {
+    if (input['answer'] !== null) errors.push('answer must be null when skipped=true');
+  } else if (input['skipped'] === false) {
+    if (!nonEmptyString(input['answer'])) errors.push('answer must be a non-empty string when skipped=false');
+  }
+  if (!nonEmptyString(input['surface'])) errors.push('surface must be a non-empty string');
+  if (input['intended_scope'] !== null) {
+    if (!nonEmptyString(input['intended_scope'])) {
+      errors.push('intended_scope must be null or a recognized CorrectionScope');
+    } else if (!VALID_CORRECTION_SCOPES.has(input['intended_scope'] as CorrectionScope)) {
+      errors.push(
+        `intended_scope "${input['intended_scope']}" is not a recognized CorrectionScope`,
+      );
+    }
+  }
+  return errors;
+}
+
+function validateInvoiceCreated(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['invoice_id'])) errors.push('invoice_id must be a non-empty string');
+  if (!nonEmptyString(input['invoice_number'])) errors.push('invoice_number must be a non-empty string');
+  if (!nonEmptyString(input['project_id'])) errors.push('project_id must be a non-empty string');
+  if (!nonEmptyString(input['client_id'])) errors.push('client_id must be a non-empty string');
+  if (!isIntegerCents(input['total_cents'])) {
+    errors.push('total_cents must be a non-negative integer (cents — no floats, no formatting)');
+  }
+  if (!nonEmptyString(input['due_date'])) errors.push('due_date must be a non-empty string (ISO8601 date)');
+  return errors;
+}
+
+function validateInvoiceSent(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['invoice_id'])) errors.push('invoice_id must be a non-empty string');
+  if (!nonEmptyString(input['sent_to'])) errors.push('sent_to must be a non-empty string');
+  if (!isIso8601(input['sent_at'])) errors.push('sent_at must be an ISO8601 timestamp');
+  if (!nonEmptyString(input['send_channel'])) {
+    errors.push('send_channel must be a non-empty string');
+  } else if (!VALID_INVOICE_SEND_CHANNELS.has(input['send_channel'] as InvoiceSentEvent['send_channel'])) {
+    errors.push(
+      `send_channel "${input['send_channel']}" is not recognized (expected email|paper|portal)`,
+    );
+  }
+  return errors;
+}
+
+function validateApInvoiceScheduled(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['ap_invoice_id'])) errors.push('ap_invoice_id must be a non-empty string');
+  if (!nonEmptyString(input['vendor_id'])) errors.push('vendor_id must be a non-empty string');
+  if (!nonEmptyString(input['project_id'])) errors.push('project_id must be a non-empty string');
+  if (!isIntegerCents(input['total_cents'])) {
+    errors.push('total_cents must be a non-negative integer (cents — no floats, no formatting)');
+  }
+  if (!nonEmptyString(input['scheduled_pay_date'])) {
+    errors.push('scheduled_pay_date must be a non-empty string (ISO8601 date)');
+  }
+  return errors;
+}
+
+function validateApInvoiceApproved(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['ap_invoice_id'])) errors.push('ap_invoice_id must be a non-empty string');
+  if (!nonEmptyString(input['approver'])) errors.push('approver must be a non-empty string');
+  if (!isIso8601(input['approved_at'])) errors.push('approved_at must be an ISO8601 timestamp');
+  if (!isIntegerCents(input['total_cents'])) {
+    errors.push('total_cents must be a non-negative integer (cents — no floats, no formatting)');
+  }
+  return errors;
+}
+
+function validatePaymentRecorded(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['payment_id'])) errors.push('payment_id must be a non-empty string');
+  if (input['invoice_id'] !== null && !nonEmptyString(input['invoice_id'])) {
+    errors.push('invoice_id must be a non-empty string or null');
+  }
+  if (!isIntegerCents(input['amount_cents'])) {
+    errors.push('amount_cents must be a non-negative integer (cents — no floats, no formatting)');
+  }
+  if (!isIso8601(input['received_at'])) errors.push('received_at must be an ISO8601 timestamp');
+  if (!nonEmptyString(input['payment_method'])) {
+    errors.push('payment_method must be a non-empty string');
+  } else if (!VALID_PAYMENT_METHODS.has(input['payment_method'] as PaymentRecordedEvent['payment_method'])) {
+    errors.push(
+      `payment_method "${input['payment_method']}" is not recognized (expected ach|check|wire|card|cash|other)`,
+    );
+  }
+  return errors;
+}
+
+function validatePaymentReceived(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['payment_id'])) errors.push('payment_id must be a non-empty string');
+  if (!nonEmptyString(input['reconciliation_method'])) {
+    errors.push('reconciliation_method must be a non-empty string');
+  } else if (!VALID_RECONCILIATION_METHODS.has(input['reconciliation_method'] as PaymentReceivedEvent['reconciliation_method'])) {
+    errors.push(
+      `reconciliation_method "${input['reconciliation_method']}" is not recognized (expected bank_feed|manual_reconcile|operator_confirmed)`,
+    );
+  }
+  if (!isIso8601(input['cleared_at'])) errors.push('cleared_at must be an ISO8601 timestamp');
+  if (input['bank_reference'] !== null && !nonEmptyString(input['bank_reference'])) {
+    errors.push('bank_reference must be a non-empty string or null');
+  }
+  return errors;
+}
+
+function validateAllowanceExceptionOpened(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['exception_id'])) errors.push('exception_id must be a non-empty string');
+  if (!nonEmptyString(input['project_id'])) errors.push('project_id must be a non-empty string');
+  if (!nonEmptyString(input['allowance_line_id'])) errors.push('allowance_line_id must be a non-empty string');
+  if (!nonEmptyString(input['direction'])) {
+    errors.push('direction must be a non-empty string');
+  } else if (!VALID_ALLOWANCE_DIRECTIONS.has(input['direction'] as AllowanceExceptionOpenedEvent['direction'])) {
+    errors.push(`direction "${input['direction']}" is not recognized (expected over|under)`);
+  }
+  if (!isIntegerCents(input['delta_cents'])) {
+    errors.push('delta_cents must be a non-negative integer magnitude (sign carried by direction)');
+  }
+  if (!isIntegerCents(input['threshold_cents'])) {
+    errors.push('threshold_cents must be a non-negative integer');
+  }
+  return errors;
+}
+
+function validateAllowanceExceptionResolved(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['exception_id'])) errors.push('exception_id must be a non-empty string');
+  if (!nonEmptyString(input['resolved_by'])) errors.push('resolved_by must be a non-empty string');
+  if (!isIso8601(input['resolved_at'])) errors.push('resolved_at must be an ISO8601 timestamp');
+  if (!nonEmptyString(input['resolution'])) {
+    errors.push('resolution must be a non-empty string');
+  } else if (!VALID_ALLOWANCE_RESOLUTIONS.has(input['resolution'] as AllowanceExceptionResolvedEvent['resolution'])) {
+    errors.push(
+      `resolution "${input['resolution']}" is not recognized (expected absorbed|change_order|client_billed|reversed)`,
+    );
+  }
+  if (typeof input['resolution_notes'] !== 'string') {
+    errors.push('resolution_notes must be a string (may be empty)');
+  }
+  return errors;
+}
+
 /**
  * Validate an arbitrary input as a PersistenceEvent. Returns a discriminated
  * result. Never throws.
@@ -945,6 +1693,46 @@ export function validatePersistenceEvent(input: unknown): ValidationResult<Persi
       break;
     case 'relay_card.reviewed':
       typeErrors = validateRelayCardReviewed(record);
+      break;
+    // ─── Lane 0.3 dispatch additions ───
+    case 'suggestion.overridden':
+      typeErrors = validateSuggestionOverridden(record);
+      break;
+    case 'correction.classified':
+      typeErrors = validateCorrectionClassified(record);
+      break;
+    case 'send_gate.evaluated':
+      typeErrors = validateSendGateEvaluated(record);
+      break;
+    case 'export.requested':
+      typeErrors = validateExportRequested(record);
+      break;
+    case 'calibration.answered':
+      typeErrors = validateCalibrationAnswered(record);
+      break;
+    case 'invoice.created':
+      typeErrors = validateInvoiceCreated(record);
+      break;
+    case 'invoice.sent':
+      typeErrors = validateInvoiceSent(record);
+      break;
+    case 'ap_invoice.scheduled':
+      typeErrors = validateApInvoiceScheduled(record);
+      break;
+    case 'ap_invoice.approved':
+      typeErrors = validateApInvoiceApproved(record);
+      break;
+    case 'payment.recorded':
+      typeErrors = validatePaymentRecorded(record);
+      break;
+    case 'payment.received':
+      typeErrors = validatePaymentReceived(record);
+      break;
+    case 'allowance.exception.opened':
+      typeErrors = validateAllowanceExceptionOpened(record);
+      break;
+    case 'allowance.exception.resolved':
+      typeErrors = validateAllowanceExceptionResolved(record);
       break;
   }
   const allErrors = [...baseErrors, ...typeErrors];
