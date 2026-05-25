@@ -1,0 +1,65 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { DEFAULT_BUSINESS_GRAPH_SLICE, projectForRole, ROLE_HOME_WIREFRAMES, ROLE_ROOTS, type RoleRoot } from '../lib/roleRootProjection.js';
+import type { I18nKey } from '../../i18n/keys.js';
+import { DEFAULT_ROLE_ROOT_CONTEXT } from '../lib/layout-props.js';
+
+const { context, t } = createLayoutContext({ locale: DEFAULT_ROLE_ROOT_CONTEXT.locale });
+const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
+  owner: 'roleRoot.owner', pm: 'roleRoot.pm', admin_ops: 'roleRoot.admin_ops', field_hand: 'roleRoot.field_hand', sub: 'roleRoot.sub',
+};
+const HIDDEN_NOTE_KEYS: Record<RoleRoot, I18nKey> = {
+  owner: 'rr1.hidden.none', pm: 'rr1.hidden.pm', admin_ops: 'rr1.hidden.admin_ops', field_hand: 'rr1.hidden.field_hand', sub: 'rr1.hidden.sub',
+};
+const matrix = ROLE_ROOTS.map((roleRoot) => ({ roleRoot, projected: projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, { ...context, roleRoot }, null) }));
+const capLabel = (on: boolean) => (on ? t('rr1.yes') : t('rr1.no'));
+---
+
+<Layout context={context} titleKey="rr1.title" activeHref="/role-routing">
+  <header class="rr1-header">
+    <p class="rr1-crumb">{t('rr1.crumb')}</p>
+    <h1>{t('rr1.title')}</h1>
+    <p>{t('rr1.subtitle')}</p>
+  </header>
+  <p class="rr1-frame-label">{t('rr1.frame_label')}</p>
+  <div class="rr1-matrix">
+    {matrix.map(({ roleRoot, projected }) => (
+      <section class="rr1-col" data-role-root={roleRoot}>
+        <header class="rr1-col-head">
+          <h2>{t(ROLE_LABEL_KEYS[roleRoot])}</h2>
+          <p class="rr1-home">{t('rr1.section.home_wireframe')}: {ROLE_HOME_WIREFRAMES[roleRoot]}</p>
+        </header>
+        <div class="rr1-sec"><h3>{t('rr1.section.visible')}</h3><ul class="rr1-pills">{projected.visibleDomains.map((d) => <li class="rr1-pill">{d}</li>)}</ul></div>
+        <div class="rr1-sec"><h3>{t('rr1.section.hidden')}</h3><p class="rr1-note">{t(HIDDEN_NOTE_KEYS[roleRoot])}</p><ul class="rr1-pills muted">{projected.hiddenDomains.map((d) => <li class="rr1-pill">{d}</li>)}</ul></div>
+        <div class="rr1-sec"><h3>{t('rr1.section.capabilities')}</h3><dl class="rr1-caps">
+          <div><dt>{t('rr1.cap.money_write')}</dt><dd>{capLabel(projected.capabilities.moneyWrite)}</dd></div>
+          <div><dt>{t('rr1.cap.money_read')}</dt><dd>{capLabel(projected.capabilities.moneyRead)}</dd></div>
+          <div><dt>{t('rr1.cap.margin')}</dt><dd>{capLabel(projected.capabilities.marginVisible)}</dd></div>
+          <div><dt>{t('rr1.cap.portfolio')}</dt><dd>{capLabel(projected.capabilities.portfolioProjects)}</dd></div>
+        </dl></div>
+      </section>
+    ))}
+  </div>
+</Layout>
+
+<style>
+  .rr1-header { border-bottom: 1px solid #2a3140; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .rr1-crumb { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: #6a7282; margin: 0 0 0.5rem; }
+  .rr1-header h1 { margin: 0 0 0.35rem; font-size: 1.2rem; }
+  .rr1-header p { margin: 0; color: #98a1b3; }
+  .rr1-frame-label { color: #f5b544; font-weight: 600; }
+  .rr1-matrix { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .rr1-col { border: 1px solid #2a3140; border-radius: 12px; padding: 1rem; background: #14181f; }
+  .rr1-col-head h2 { margin: 0; font-size: 1rem; }
+  .rr1-home { margin: 0.25rem 0 0; font-size: 0.75rem; color: #98a1b3; }
+  .rr1-sec { margin-top: 0.85rem; }
+  .rr1-sec h3 { margin: 0 0 0.35rem; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: #6a7282; }
+  .rr1-pills { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; padding: 0; margin: 0; }
+  .rr1-pill { font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: #1a1f28; color: #98a1b3; }
+  .rr1-note { font-size: 0.75rem; color: #6a7282; }
+  .rr1-caps { margin: 0; font-size: 0.75rem; }
+  .rr1-caps div { display: flex; justify-content: space-between; }
+  .rr1-caps dt { color: #98a1b3; }
+  .rr1-caps dd { margin: 0; }
+</style>
