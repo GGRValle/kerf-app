@@ -1,0 +1,86 @@
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --text: #1a2332;
+  --text-muted: #5c6670;
+  --border: #d8dee6;
+  --accent: #0f766e;
+  --chip-red: #b42318;
+  --chip-amber: #b54708;
+  --chip-green: #027a48;
+  --chip-cyan: #026aa2;
+  --chip-neutral: #667085;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.kerf-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.kerf-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.kerf-brand {
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.kerf-nav {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.kerf-nav-link {
+  white-space: nowrap;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.kerf-nav-link.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, white);
+}
+
+.kerf-main {
+  flex: 1;
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+@media (min-width: 900px) {
+  .kerf-topbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}

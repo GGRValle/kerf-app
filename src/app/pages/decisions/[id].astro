@@ -1,0 +1,9 @@
+---
+import RouteShellPage from '../../components/RouteShellPage.astro';
+
+const { id } = Astro.params;
+---
+
+<RouteShellPage title={`Decision ${id}`} routeName="decision-detail" phase="approve">
+  <p>Packet <code>{id}</code></p>
+</RouteShellPage>

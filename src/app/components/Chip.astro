@@ -1,0 +1,43 @@
+---
+export interface Props {
+  label: string;
+  tone?: 'red' | 'amber' | 'green' | 'cyan' | 'neutral';
+  variant?: 'solid' | 'outlined';
+}
+
+const { label, tone = 'neutral', variant = 'solid' } = Astro.props;
+---
+
+<span class:list={['chip', `chip-${tone}`, variant === 'outlined' && 'chip-outlined']}>{label}</span>
+
+<style>
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid transparent;
+  }
+  .chip-solid,
+  .chip:not(.chip-outlined) {
+    color: #fff;
+  }
+  .chip-red { background: var(--chip-red, #b42318); }
+  .chip-amber { background: var(--chip-amber, #b54708); }
+  .chip-green { background: var(--chip-green, #027a48); }
+  .chip-cyan { background: var(--chip-cyan, #026aa2); }
+  .chip-neutral { background: var(--chip-neutral, #667085); }
+  .chip-outlined {
+    background: transparent;
+    color: var(--text, #1a2332);
+    border-color: currentColor;
+  }
+  .chip-outlined.chip-red { color: var(--chip-red, #b42318); }
+  .chip-outlined.chip-amber { color: var(--chip-amber, #b54708); }
+  .chip-outlined.chip-green { color: var(--chip-green, #027a48); }
+  .chip-outlined.chip-cyan { color: var(--chip-cyan, #026aa2); }
+  .chip-outlined.chip-neutral { color: var(--chip-neutral, #667085); }
+</style>

@@ -1,0 +1,15 @@
+---
+import RouteShellPage from '../../components/RouteShellPage.astro';
+
+const { packetId } = Astro.params;
+---
+
+<RouteShellPage
+  title={`Audit ${packetId}`}
+  routeName="audit-detail"
+  phase="audit"
+  irreversibility
+  actionContext={`audit packet ${packetId}`}
+>
+  <p>F-37 audit packet shell for <code>{packetId}</code>.</p>
+</RouteShellPage>

@@ -1,0 +1,9 @@
+---
+import RouteShellPage from '../../components/RouteShellPage.astro';
+
+const { id } = Astro.params;
+---
+
+<RouteShellPage title={`KB Ingestion ${id}`} routeName="kb-ingestion-detail" phase="none">
+  <p>Ingestion detail for <code>{id}</code>.</p>
+</RouteShellPage>

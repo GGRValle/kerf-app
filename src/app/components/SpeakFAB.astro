@@ -1,0 +1,33 @@
+---
+---
+
+<button type="button" class="speak-fab" aria-label="Speak intent" title="Voice capture">
+  <span aria-hidden="true">🎙</span>
+</button>
+
+<style>
+  .speak-fab {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent, #0f766e);
+    color: #fff;
+    font-size: 1.25rem;
+    box-shadow: 0 8px 24px rgba(15, 118, 110, 0.35);
+    cursor: pointer;
+    z-index: 20;
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.speak-fab').forEach((fab) => {
+    fab.addEventListener('click', () => {
+      // Stub in L0.1 — spine lanes open capture sheet.
+      console.info('[SpeakFAB] stub handler');
+    });
+  });
+</script>
