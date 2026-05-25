@@ -29,11 +29,13 @@ import type { ProposalTenantId } from './types.js';
 const PROPOSAL_NUMBER_REGEX = /^([A-Z]{1,4})-(\d{4})-(\d+)$/;
 
 /**
- * Tenant → number prefix mapping. Matches real GGR practice.
+ * Tenant → number prefix mapping. Matches real GGR / Valle / HPG practice.
+ * HPG = Heat Pump Guys (third internal tenant per Lane 0.7 · V1 launch).
  */
 export const TENANT_NUMBER_PREFIX: Readonly<Record<ProposalTenantId, string>> = {
   tenant_ggr: 'GGR',
   tenant_valle: 'V',
+  tenant_hpg: 'HPG',
 };
 
 /**

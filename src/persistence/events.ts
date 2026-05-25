@@ -21,7 +21,8 @@
  *   - All event content schema-validated before any side effect
  *   - Money fields are integer cents (no floats, no string formatting)
  *   - tenant_id always present (forward-compatible with multi-tenant
- *     migration in 2027 — see D-025; for now, 'tenant_ggr' or 'tenant_valle')
+ *     migration in 2027 — see D-025; for now, 'tenant_ggr', 'tenant_valle',
+ *     or 'tenant_hpg' — three V1 internal tenants)
  *   - source_refs preserved per event (audit continuity)
  *   - No autonomous writes — every event requires an explicit operator
  *     action upstream of the validator
@@ -110,10 +111,14 @@ export type DailyLogDriftSeverity = 'info' | 'caution' | 'warn' | 'block';
 export type RelayCardReviewOutcome = 'acknowledged' | 'actioned' | 'dismissed';
 
 /**
- * Tenant id. Single-tenant in this phase — 'tenant_ggr' or 'tenant_valle'.
- * Multi-tenant work is post-Engineer-#1-hire per D-025 (Feb–Mar 2027).
+ * Tenant id. Three single-tenant instances in V1 — GGR Design + Remodeling,
+ * Valle Custom Cabinetry, and Heat Pump Guys (HPG). Internal V1 launch
+ * targets 15-20 users across these three tenants. Cross-tenant transfer
+ * mechanism is V2+ per D-048 (tenant-private is an architectural constraint
+ * in V1, not a policy — no cross-tenant query can cross the boundary by
+ * design).
  */
-export type PersistenceTenantId = 'tenant_ggr' | 'tenant_valle';
+export type PersistenceTenantId = 'tenant_ggr' | 'tenant_valle' | 'tenant_hpg';
 
 /** Operator actor metadata. Always present on operator-driven events. */
 export interface PersistenceActor {
@@ -448,6 +453,7 @@ const ISO8601_REGEX =
 const VALID_TENANT_IDS: ReadonlySet<PersistenceTenantId> = new Set([
   'tenant_ggr',
   'tenant_valle',
+  'tenant_hpg',
 ]);
 
 const VALID_ACTOR_ROLES: ReadonlySet<PersistenceActor['role']> = new Set([
@@ -602,7 +608,7 @@ function validateBase(input: Record<string, unknown>): readonly string[] {
   if (!nonEmptyString(input['tenant_id'])) {
     errors.push('tenant_id must be a non-empty string');
   } else if (!VALID_TENANT_IDS.has(input['tenant_id'] as PersistenceTenantId)) {
-    errors.push(`tenant_id "${input['tenant_id']}" is not a recognized tenant (expected tenant_ggr or tenant_valle)`);
+    errors.push(`tenant_id "${input['tenant_id']}" is not a recognized tenant (expected tenant_ggr, tenant_valle, or tenant_hpg)`);
   }
   if (!nonEmptyString(input['correlation_id'])) errors.push('correlation_id must be a non-empty string');
   if (typeof input['actor'] !== 'object' || input['actor'] === null) {

@@ -448,7 +448,7 @@ async function handleTranscribe(req: http.IncomingMessage, res: http.ServerRespo
 // ──────────────────────────────────────────────────────────────────────────
 
 const JSON_BODY_MAX_BYTES = 1 * 1024 * 1024;
-const VALID_TENANT_IDS: readonly PersistenceTenantId[] = ['tenant_ggr', 'tenant_valle'];
+const VALID_TENANT_IDS: readonly PersistenceTenantId[] = ['tenant_ggr', 'tenant_valle', 'tenant_hpg'];
 
 async function readJsonBody(req: http.IncomingMessage): Promise<unknown> {
   const buf = await readRequestBody(req, JSON_BODY_MAX_BYTES);
@@ -496,7 +496,7 @@ async function handleCreateProject(
   if (!isPersistenceTenantId(input['tenant_id'])) {
     jsonResponse(res, 400, {
       error: 'invalid_tenant',
-      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+      reason: 'tenant_id must be "tenant_ggr", "tenant_valle", or "tenant_hpg"',
     });
     return;
   }
@@ -585,7 +585,7 @@ async function handleRecordCapture(
   if (!isPersistenceTenantId(input['tenant_id'])) {
     jsonResponse(res, 400, {
       error: 'invalid_tenant',
-      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+      reason: 'tenant_id must be "tenant_ggr", "tenant_valle", or "tenant_hpg"',
     });
     return;
   }
@@ -769,7 +769,7 @@ async function handleCreateDailyLogEntry(
   if (!isPersistenceTenantId(input['tenant_id'])) {
     jsonResponse(res, 400, {
       error: 'invalid_tenant',
-      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+      reason: 'tenant_id must be "tenant_ggr", "tenant_valle", or "tenant_hpg"',
     });
     return;
   }
@@ -1140,7 +1140,7 @@ async function handleRelayCardReview(
   if (!isPersistenceTenantId(input['tenant_id'])) {
     jsonResponse(res, 400, {
       error: 'invalid_tenant',
-      reason: 'tenant_id must be "tenant_ggr" or "tenant_valle"',
+      reason: 'tenant_id must be "tenant_ggr", "tenant_valle", or "tenant_hpg"',
     });
     return;
   }
@@ -1363,7 +1363,7 @@ async function handleKbIngestionsGet(
   if (!isPersistenceTenantId(tenantParam)) {
     jsonResponse(res, 400, {
       error: 'invalid_tenant',
-      reason: 'tenant_id query must be "tenant_ggr" or "tenant_valle"',
+      reason: 'tenant_id query must be "tenant_ggr", "tenant_valle", or "tenant_hpg"',
     });
     return;
   }
@@ -1378,7 +1378,7 @@ async function handleTier2RowsGet(
   if (!isPersistenceTenantId(tenantParam)) {
     jsonResponse(res, 400, {
       error: 'invalid_tenant',
-      reason: 'tenant_id query must be "tenant_ggr" or "tenant_valle"',
+      reason: 'tenant_id query must be "tenant_ggr", "tenant_valle", or "tenant_hpg"',
     });
     return;
   }
