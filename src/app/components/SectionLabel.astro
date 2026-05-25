@@ -1,0 +1,32 @@
+---
+export interface Props {
+  label: string;
+  count?: number | string;
+  total?: string;
+}
+
+const { label, count, total } = Astro.props;
+---
+
+<div class="section-label">
+  <span class="sl-text">{label}</span>
+  {count !== undefined ? <span class="sl-count">{count}</span> : null}
+  {total ? <span class="sl-total">{total}</span> : null}
+</div>
+
+<style>
+  .section-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 1rem 0 0.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted, #5c6670);
+  }
+  .sl-count, .sl-total {
+    font-weight: 700;
+    color: var(--text, #1a2332);
+  }
+</style>

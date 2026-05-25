@@ -1,0 +1,13 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PhaseStrip from '../../components/PhaseStrip.astro';
+---
+
+<Layout title="Kit · PhaseStrip">
+  <h1>PhaseStrip</h1>
+  <PhaseStrip phases={[
+    { id: 'overview', label: 'Overview', active: true },
+    { id: 'schedule', label: 'Schedule' },
+    { id: 'money', label: 'Money' },
+  ]} />
+</Layout>

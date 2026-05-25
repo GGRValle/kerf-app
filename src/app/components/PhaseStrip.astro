@@ -1,0 +1,43 @@
+---
+export interface PhaseItem {
+  id: string;
+  label: string;
+  active?: boolean;
+}
+
+export interface Props {
+  phases: PhaseItem[];
+}
+
+const { phases } = Astro.props;
+---
+
+<div class="phase-strip" role="tablist" aria-label="Phase">
+  {phases.map((phase) => (
+    <span class:list={['phase-item', phase.active && 'active']} data-phase={phase.id}>
+      {phase.label}
+    </span>
+  ))}
+</div>
+
+<style>
+  .phase-strip {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.25rem 0 0.75rem;
+  }
+  .phase-item {
+    white-space: nowrap;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border, #d8dee6);
+    font-size: 0.8rem;
+    color: var(--text-muted, #5c6670);
+  }
+  .phase-item.active {
+    border-color: var(--accent, #0f766e);
+    color: var(--accent, #0f766e);
+    background: color-mix(in srgb, var(--accent, #0f766e) 8%, white);
+  }
+</style>

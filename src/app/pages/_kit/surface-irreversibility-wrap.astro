@@ -1,0 +1,20 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../components/Card.astro';
+---
+
+<Layout title="Kit · SurfaceIrreversibilityWrap">
+  <h1>SurfaceIrreversibilityWrap</h1>
+  <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+    <Card title="Daily-simple surface">
+      <p>Content-class copy is uncapped.</p>
+      <p class="safety-copy">One safety line.</p>
+    </Card>
+  </SurfaceIrreversibilityWrap>
+  <SurfaceIrreversibilityWrap kind="irreversibility" actionContext="EST-020 proposal send">
+    <Card title="Irreversibility surface">
+      <p class="safety-copy">Sending EST-020 proposal is irreversible after client open.</p>
+    </Card>
+  </SurfaceIrreversibilityWrap>
+</Layout>

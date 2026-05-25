@@ -1,0 +1,9 @@
+---
+import RouteShellPage from '../../components/RouteShellPage.astro';
+
+const { id } = Astro.params;
+---
+
+<RouteShellPage title={`Relay ${id}`} routeName="relay-detail" phase="capture">
+  <p>Relay card detail for <code>{id}</code>.</p>
+</RouteShellPage>

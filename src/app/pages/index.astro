@@ -1,0 +1,14 @@
+---
+import RouteShellPage from '../components/RouteShellPage.astro';
+import ActionsStrip from '../components/ActionsStrip.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Row from '../components/Row.astro';
+import Chip from '../components/Chip.astro';
+---
+
+<RouteShellPage title="Dashboard" routeName="dashboard" phase="none">
+  <ActionsStrip />
+  <SectionLabel label="Projects" count={0} total="$0" />
+  <Row title="Placeholder project list" meta="GET /api/v1/projects?tenant_id=…" showArrow />
+  <Chip label="Lane 0.1 shell" tone="cyan" />
+</RouteShellPage>

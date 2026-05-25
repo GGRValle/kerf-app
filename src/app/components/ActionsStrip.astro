@@ -1,0 +1,47 @@
+---
+export interface ActionItem {
+  label: string;
+  title?: string;
+}
+
+export interface Props {
+  actions?: ActionItem[];
+}
+
+const { actions = [{ label: 'Print', title: 'Print queue' }, { label: 'Export ▾', title: 'Export · audit-logged · role-gated' }] } = Astro.props;
+---
+
+<div class="actions-strip">
+  {actions.map((action) => (
+    <button type="button" class="as-action" title={action.title ?? action.label}>
+      {action.label}
+    </button>
+  ))}
+  <slot />
+</div>
+
+<style>
+  .actions-strip {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin: 0.5rem 0 0.75rem;
+  }
+  .as-action {
+    border: 1px solid var(--border, #d8dee6);
+    background: var(--surface, #fff);
+    border-radius: 8px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.actions-strip .as-action').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      // Stub in L0.1 — spine lanes wire export.requested events.
+      console.info('[SpeakFAB/actions] stub handler');
+    });
+  });
+</script>

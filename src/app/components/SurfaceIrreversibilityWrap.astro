@@ -1,0 +1,30 @@
+---
+import type { SurfaceIrreversibilityKind } from '../lib/surfaceIrreversibility.js';
+
+export interface Props {
+  kind: SurfaceIrreversibilityKind;
+  safetyLineBudget?: number;
+  actionContext?: string | null;
+}
+
+const { kind, safetyLineBudget = 3, actionContext = null } = Astro.props;
+---
+
+<div
+  class="surface-irreversibility-wrap"
+  data-surface-kind={kind}
+  data-safety-line-budget={kind === 'daily' ? String(safetyLineBudget) : undefined}
+  data-action-context={kind === 'irreversibility' ? actionContext ?? '' : undefined}
+>
+  <slot />
+</div>
+
+<style>
+  .surface-irreversibility-wrap {
+    display: block;
+  }
+  .surface-irreversibility-wrap[data-surface-kind='irreversibility'] {
+    border-left: 3px solid var(--chip-amber, #b54708);
+    padding-left: 0.75rem;
+  }
+</style>

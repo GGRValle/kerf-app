@@ -1,0 +1,57 @@
+---
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { navForContext } from '../lib/nav.js';
+import { DEFAULT_ROLE_ROOT_CONTEXT, type LayoutProps } from '../lib/layout-props.js';
+import type { I18nKey } from '../../i18n/keys.js';
+
+export interface Props extends Partial<LayoutProps> {
+  titleKey?: I18nKey;
+  activeHref?: string;
+}
+
+const { context = DEFAULT_ROLE_ROOT_CONTEXT, username, titleKey, activeHref = '/' } = Astro.props as Props;
+const { t } = createLayoutContext({ username, locale: context.locale });
+const navItems = navForContext(context);
+const pageTitle = titleKey ? t(titleKey) : t('layout.brand');
+---
+
+<!doctype html>
+<html lang={context.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <div class="kerf-shell" data-role-root={context.roleRoot} data-locale={context.locale} data-tenant={context.tenantId}>
+      <header class="kerf-topbar">
+        <a class="kerf-brand" href="/">{t('layout.brand')}</a>
+        <nav class="kerf-nav" aria-label={t('layout.nav.primary')}>
+          {navItems.map((item) => (
+            <a
+              href={item.href}
+              class:list={['kerf-nav-link', { active: activeHref === item.href || activeHref.startsWith(item.href + '/') }]}
+              data-domain={item.domain}
+            >
+              {t(item.labelKey)}
+            </a>
+          ))}
+        </nav>
+      </header>
+      <main class="kerf-main">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<style>
+  :root { color-scheme: dark; --kerf-bg: #0a0d11; --kerf-text: #e8ecf1; --kerf-dim: #98a1b3; --kerf-border: #2a3140; --kerf-amber: #f5b544; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); }
+  .kerf-topbar { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--kerf-border); }
+  .kerf-brand { color: var(--kerf-amber); text-decoration: none; font-weight: 600; }
+  .kerf-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .kerf-nav-link { color: var(--kerf-dim); text-decoration: none; font-size: 0.85rem; }
+  .kerf-nav-link.active { color: var(--kerf-text); }
+  .kerf-main { padding: 1.5rem; }
+</style>

@@ -1,0 +1,12 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ActionsStrip from '../../components/ActionsStrip.astro';
+---
+
+<Layout title="Kit · ActionsStrip">
+  <h1>ActionsStrip</h1>
+  <ActionsStrip actions={[
+    { label: 'Print', title: 'Print queue' },
+    { label: 'Export ▾', title: 'Export · owner-private · PDF-only · audit-logged · role-gated' },
+  ]} />
+</Layout>

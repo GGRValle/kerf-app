@@ -1,0 +1,12 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Row from '../../components/Row.astro';
+import Chip from '../../components/Chip.astro';
+---
+
+<Layout title="Kit · Row">
+  <h1>Row</h1>
+  <Row title="Wegrzyn kitchen" meta="PM · 3d idle" amount="$12,400" state="AR 14d">
+    <span slot="trailing"><Chip label="Due" tone="amber" /></span>
+  </Row>
+</Layout>

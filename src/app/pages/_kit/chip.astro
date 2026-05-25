@@ -1,0 +1,16 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Chip from '../../components/Chip.astro';
+---
+
+<Layout title="Kit · Chip">
+  <h1>Chip</h1>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <Chip label="Escalated" tone="red" />
+    <Chip label="Caution" tone="amber" />
+    <Chip label="On track" tone="green" />
+    <Chip label="Info" tone="cyan" />
+    <Chip label="Neutral" tone="neutral" />
+    <Chip label="Outlined" tone="red" variant="outlined" />
+  </div>
+</Layout>

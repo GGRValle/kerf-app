@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
+import RhSummary from '../components/RhSummary.astro';
+import Card from '../components/Card.astro';
+
+export interface Props {
+  title: string;
+  routeName: string;
+  phase?: string;
+  irreversibility?: boolean;
+  actionContext?: string;
+}
+
+const {
+  title,
+  routeName,
+  phase = 'none',
+  irreversibility = false,
+  actionContext,
+} = Astro.props;
+
+const kind = irreversibility ? 'irreversibility' : 'daily';
+---
+
+<Layout title={title} activeHref={Astro.url.pathname}>
+  <SurfaceIrreversibilityWrap kind={kind} actionContext={actionContext ?? null}>
+    <RhSummary headline={`${title} · shell port`} detail={`Route ${routeName} · phase ${phase}`} />
+    <Card eyebrow="Lane 0.1" title={title}>
+      <p class="route-placeholder">
+        Minimal Astro render for <code>{routeName}</code>. Spine lanes replace this with wireframe-accurate UI.
+      </p>
+      {irreversibility && actionContext ? (
+        <p class="safety-copy">Confirming action: {actionContext}</p>
+      ) : null}
+      <slot />
+    </Card>
+  </SurfaceIrreversibilityWrap>
+</Layout>
+
+<style>
+  .route-placeholder {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9em;
+  }
+</style>

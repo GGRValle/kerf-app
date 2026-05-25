@@ -1,4 +1,4 @@
-node_modules/
+.astro/
 dist/
 .DS_Store
 src/examples/w1-decision-queue-demo.bundle.js

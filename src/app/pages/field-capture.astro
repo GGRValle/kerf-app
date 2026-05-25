@@ -1,0 +1,13 @@
+---
+import RouteShellPage from '../components/RouteShellPage.astro';
+import PhaseStrip from '../components/PhaseStrip.astro';
+---
+
+<RouteShellPage title="Field Capture" routeName="field-capture" phase="capture">
+  <PhaseStrip phases={[
+    { id: 'capture', label: 'Capture', active: true },
+    { id: 'review', label: 'Review' },
+    { id: 'draft', label: 'Draft' },
+  ]} />
+  <p>Voice + transcribe wiring lands in Lane 1 spine.</p>
+</RouteShellPage>
