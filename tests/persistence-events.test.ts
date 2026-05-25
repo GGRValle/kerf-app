@@ -28,6 +28,20 @@ import {
   type DailyLogDriftDetectedEvent,
   type RelayCardSurfacedEvent,
   type RelayCardReviewedEvent,
+  // Lane 0.3 additions
+  type SuggestionOverriddenEvent,
+  type CorrectionClassifiedEvent,
+  type SendGateEvaluatedEvent,
+  type ExportRequestedEvent,
+  type CalibrationAnsweredEvent,
+  type InvoiceCreatedEvent,
+  type InvoiceSentEvent,
+  type ApInvoiceScheduledEvent,
+  type ApInvoiceApprovedEvent,
+  type PaymentRecordedEvent,
+  type PaymentReceivedEvent,
+  type AllowanceExceptionOpenedEvent,
+  type AllowanceExceptionResolvedEvent,
 } from '../src/persistence/events.ts';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -927,4 +941,457 @@ test('persistence events module imports no LLM / network / external services', a
   assert.doesNotMatch(src, /\bfetch\s*\(/, 'no fetch in the persistence write path');
   assert.doesNotMatch(src, /process\.env\.(SECRET|API_KEY|TOKEN|PASSWORD)/,
     'no secret reads in the persistence events module');
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Lane 0.3 — D-048 + Lane 7B + Lane 5 event-type contract
+// ──────────────────────────────────────────────────────────────────────────
+
+function suggestionOverridden(over: Partial<SuggestionOverriddenEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'suggestion.overridden',
+    suggestion_id: 'sug_rh_001',
+    surface: 'transcript.review',
+    suggestion_payload: { hypothesis: 'install_complete' },
+    chosen_alternative: { hypothesis: 'still_needs_install' },
+    reason_text: 'walked the site Tuesday — install is not done',
+    ...over,
+  };
+}
+
+function correctionClassified(over: Partial<CorrectionClassifiedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'correction.classified',
+    correction_event_id: 'evt_test_001',
+    correction_scope: 'one_off' as const,
+    memory_locality: ['eval_replay_case', 'platform_canon_candidate'] as const,
+    evidence_source_class: 'dogfood_ggr' as const,
+    classification_method: 'inferred' as const,
+    confidence: 0.82,
+    operator_rule_refs: ['R10_data_continuity_operational_continuity'],
+    ...over,
+  };
+}
+
+function sendGateEvaluated(over: Partial<SendGateEvaluatedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'send_gate.evaluated',
+    artifact_id: 'prop_EST-020',
+    surface: 'proposal.preview',
+    checks: [
+      { name: 'source_chain_complete', pass: true, reason: null },
+      { name: 'margin_within_policy', pass: true, reason: null },
+      { name: 'validity_window_present', pass: true, reason: null },
+      { name: 'client_facing_disclosure', pass: true, reason: null },
+      { name: 'signature_block_present', pass: true, reason: null },
+      { name: 'no_co_leak', pass: true, reason: null },
+    ],
+    all_passed: true,
+    operator_action: 'send' as const,
+    ...over,
+  };
+}
+
+function exportRequested(over: Partial<ExportRequestedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'export.requested',
+    surface: 'money.ar_aging',
+    format: 'csv' as const,
+    scope_descriptor: 'aging_buckets · this week',
+    owner_private: false,
+    item_count: 17,
+    source_refs: [],
+    ...over,
+  };
+}
+
+function calibrationAnswered(over: Partial<CalibrationAnsweredEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'calibration.answered',
+    question_id: 'cal_q_proposal_detail_depth',
+    prompt: 'How much detail before you send a proposal?',
+    answer: 'line-item with allowance bands',
+    skipped: false,
+    surface: 'calibration_review',
+    intended_scope: 'tenant_wide' as const,
+    source_refs: [],
+    ...over,
+  };
+}
+
+function invoiceCreated(over: Partial<InvoiceCreatedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'invoice.created',
+    invoice_id: 'inv_001',
+    invoice_number: 'GGR-2026-014',
+    project_id: 'proj_test_001',
+    client_id: 'client_hernandez',
+    total_cents: 2_180_000,
+    due_date: '2026-06-15',
+    ...over,
+  };
+}
+
+function invoiceSent(over: Partial<InvoiceSentEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'invoice.sent',
+    invoice_id: 'inv_001',
+    sent_to: 'hernandez@example.com',
+    sent_at: ISO_AT,
+    send_channel: 'email' as const,
+    ...over,
+  };
+}
+
+function apInvoiceScheduled(over: Partial<ApInvoiceScheduledEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'ap_invoice.scheduled',
+    ap_invoice_id: 'ap_inv_001',
+    vendor_id: 'vendor_kraftmaid',
+    project_id: 'proj_test_001',
+    total_cents: 1_120_000,
+    scheduled_pay_date: '2026-06-01',
+    ...over,
+  };
+}
+
+function apInvoiceApproved(over: Partial<ApInvoiceApprovedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'ap_invoice.approved',
+    ap_invoice_id: 'ap_inv_001',
+    approver: 'christian',
+    approved_at: ISO_AT,
+    total_cents: 1_120_000,
+    ...over,
+  };
+}
+
+function paymentRecorded(over: Partial<PaymentRecordedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'payment.recorded',
+    payment_id: 'pay_001',
+    invoice_id: 'inv_001',
+    amount_cents: 2_180_000,
+    received_at: ISO_AT,
+    payment_method: 'ach' as const,
+    ...over,
+  };
+}
+
+function paymentReceived(over: Partial<PaymentReceivedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'payment.received',
+    payment_id: 'pay_001',
+    reconciliation_method: 'bank_feed' as const,
+    cleared_at: ISO_AT,
+    bank_reference: 'ACH-20260516-0421',
+    ...over,
+  };
+}
+
+function allowanceExceptionOpened(over: Partial<AllowanceExceptionOpenedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'allowance.exception.opened',
+    exception_id: 'aex_001',
+    project_id: 'proj_test_001',
+    allowance_line_id: 'allow_cabinetry',
+    direction: 'over' as const,
+    delta_cents: 184_000,
+    threshold_cents: 50_000,
+    ...over,
+  };
+}
+
+function allowanceExceptionResolved(over: Partial<AllowanceExceptionResolvedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'allowance.exception.resolved',
+    exception_id: 'aex_001',
+    resolved_by: 'christian',
+    resolved_at: ISO_AT,
+    resolution: 'change_order' as const,
+    resolution_notes: 'CO-002 created for upgraded cabinets',
+    ...over,
+  };
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Happy-path validations · all 13 new event types
+// ──────────────────────────────────────────────────────────────────────────
+
+test('suggestion.overridden happy path validates', () => {
+  const r = validatePersistenceEvent(suggestionOverridden());
+  assert.equal(r.ok, true);
+});
+
+test('correction.classified happy path validates (D-048 axes)', () => {
+  const r = validatePersistenceEvent(correctionClassified());
+  assert.equal(r.ok, true);
+  if (r.ok && r.event.type === 'correction.classified') {
+    assert.equal(r.event.correction_scope, 'one_off');
+    assert.deepEqual([...r.event.memory_locality], ['eval_replay_case', 'platform_canon_candidate']);
+    assert.equal(r.event.evidence_source_class, 'dogfood_ggr');
+    assert.equal(r.event.confidence, 0.82);
+  }
+});
+
+test('send_gate.evaluated happy path validates (all 6 checks pass)', () => {
+  const r = validatePersistenceEvent(sendGateEvaluated());
+  assert.equal(r.ok, true);
+});
+
+test('export.requested happy path validates (CSV · not owner-private)', () => {
+  const r = validatePersistenceEvent(exportRequested());
+  assert.equal(r.ok, true);
+});
+
+test('calibration.answered happy path validates (answered, not skipped)', () => {
+  const r = validatePersistenceEvent(calibrationAnswered());
+  assert.equal(r.ok, true);
+});
+
+test('invoice.created happy path validates (integer cents)', () => {
+  const r = validatePersistenceEvent(invoiceCreated());
+  assert.equal(r.ok, true);
+});
+
+test('invoice.sent happy path validates', () => {
+  const r = validatePersistenceEvent(invoiceSent());
+  assert.equal(r.ok, true);
+});
+
+test('ap_invoice.scheduled happy path validates', () => {
+  const r = validatePersistenceEvent(apInvoiceScheduled());
+  assert.equal(r.ok, true);
+});
+
+test('ap_invoice.approved happy path validates', () => {
+  const r = validatePersistenceEvent(apInvoiceApproved());
+  assert.equal(r.ok, true);
+});
+
+test('payment.recorded happy path validates', () => {
+  const r = validatePersistenceEvent(paymentRecorded());
+  assert.equal(r.ok, true);
+});
+
+test('payment.received happy path validates', () => {
+  const r = validatePersistenceEvent(paymentReceived());
+  assert.equal(r.ok, true);
+});
+
+test('allowance.exception.opened happy path validates (over direction)', () => {
+  const r = validatePersistenceEvent(allowanceExceptionOpened());
+  assert.equal(r.ok, true);
+});
+
+test('allowance.exception.resolved happy path validates (change_order resolution)', () => {
+  const r = validatePersistenceEvent(allowanceExceptionResolved());
+  assert.equal(r.ok, true);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Classification enum rejections (Lane 0.3 reconciled canon)
+// ──────────────────────────────────────────────────────────────────────────
+
+test('correction.classified rejects unknown correction_scope', () => {
+  const r = validatePersistenceEvent(correctionClassified({ correction_scope: 'tenant-wide' as never }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('correction_scope')));
+});
+
+test('correction.classified rejects empty memory_locality array', () => {
+  const r = validatePersistenceEvent(correctionClassified({ memory_locality: [] as never }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('memory_locality')));
+});
+
+test('correction.classified rejects unknown memory_locality value', () => {
+  const r = validatePersistenceEvent(
+    correctionClassified({ memory_locality: ['platform-canon-candidate'] as never }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('memory_locality')));
+});
+
+test('correction.classified rejects unknown evidence_source_class', () => {
+  const r = validatePersistenceEvent(
+    correctionClassified({ evidence_source_class: 'dogfood-ggr' as never }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('evidence_source_class')));
+});
+
+test('correction.classified rejects confidence outside [0, 1]', () => {
+  const r = validatePersistenceEvent(correctionClassified({ confidence: 1.2 }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('confidence')));
+});
+
+test('correction.classified ACCEPTS multi-locality (mirrors operating-gradient replay-case schema)', () => {
+  const r = validatePersistenceEvent(
+    correctionClassified({
+      memory_locality: ['tenant_private', 'archetype_default_candidate'] as readonly ('tenant_private' | 'archetype_default_candidate')[],
+    }),
+  );
+  assert.equal(r.ok, true);
+});
+
+test('correction.classified ACCEPTS each canonical evidence_source_class', () => {
+  const sources = [
+    'dogfood_ggr',
+    'dogfood_valle',
+    'dogfood_hpg',
+    'paid_tenant',
+    'external_research',
+    'synthetic_eval',
+    'support_observation',
+  ] as const;
+  for (const src of sources) {
+    const r = validatePersistenceEvent(correctionClassified({ evidence_source_class: src }));
+    assert.equal(r.ok, true, `evidence_source_class ${src} must validate`);
+  }
+});
+
+test('correction.classified ACCEPTS each canonical correction_scope', () => {
+  const scopes = [
+    'universal',
+    'situational',
+    'tenant_wide',
+    'project_specific',
+    'role_specific',
+    'one_off',
+  ] as const;
+  for (const s of scopes) {
+    const r = validatePersistenceEvent(correctionClassified({ correction_scope: s }));
+    assert.equal(r.ok, true, `correction_scope ${s} must validate`);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Cross-field rules · D-048 + Lane 7B
+// ──────────────────────────────────────────────────────────────────────────
+
+test('calibration.answered rejects answer present when skipped=true', () => {
+  const r = validatePersistenceEvent(
+    calibrationAnswered({ skipped: true, answer: 'should be null' }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('answer')));
+});
+
+test('calibration.answered rejects empty answer when skipped=false', () => {
+  const r = validatePersistenceEvent(
+    calibrationAnswered({ skipped: false, answer: null as never }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('answer')));
+});
+
+test('calibration.answered ACCEPTS skipped=true with answer=null (skip-first per D-048)', () => {
+  const r = validatePersistenceEvent(
+    calibrationAnswered({ skipped: true, answer: null }),
+  );
+  assert.equal(r.ok, true);
+});
+
+test('export.requested rejects CSV when owner_private=true (Lane 7B PDF-only canon)', () => {
+  const r = validatePersistenceEvent(
+    exportRequested({ owner_private: true, format: 'csv' }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('owner_private')));
+});
+
+test('export.requested ACCEPTS PDF when owner_private=true', () => {
+  const r = validatePersistenceEvent(
+    exportRequested({ owner_private: true, format: 'pdf' }),
+  );
+  assert.equal(r.ok, true);
+});
+
+test('send_gate.evaluated rejects empty checks array', () => {
+  const r = validatePersistenceEvent(sendGateEvaluated({ checks: [] as never }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('checks')));
+});
+
+test('send_gate.evaluated ACCEPTS null operator_action (inspected without decisive action)', () => {
+  const r = validatePersistenceEvent(sendGateEvaluated({ operator_action: null }));
+  assert.equal(r.ok, true);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Money guardrails · integer cents enforcement
+// ──────────────────────────────────────────────────────────────────────────
+
+test('invoice.created REJECTS float total_cents', () => {
+  const r = validatePersistenceEvent(invoiceCreated({ total_cents: 21_800.5 as never }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('total_cents')));
+});
+
+test('ap_invoice.scheduled REJECTS negative total_cents', () => {
+  const r = validatePersistenceEvent(apInvoiceScheduled({ total_cents: -100 as never }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('total_cents')));
+});
+
+test('payment.recorded ACCEPTS null invoice_id (unmatched at recording time)', () => {
+  const r = validatePersistenceEvent(paymentRecorded({ invoice_id: null }));
+  assert.equal(r.ok, true);
+});
+
+test('allowance.exception.opened REJECTS unknown direction', () => {
+  const r = validatePersistenceEvent(
+    allowanceExceptionOpened({ direction: 'sideways' as never }),
+  );
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.includes('direction')));
+});
+
+test('allowance.exception.resolved ACCEPTS each canonical resolution', () => {
+  const resolutions = ['absorbed', 'change_order', 'client_billed', 'reversed'] as const;
+  for (const res of resolutions) {
+    const r = validatePersistenceEvent(allowanceExceptionResolved({ resolution: res }));
+    assert.equal(r.ok, true, `resolution ${res} must validate`);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// source_refs policy · Lane 0.3 additions
+// ──────────────────────────────────────────────────────────────────────────
+
+test('export.requested ACCEPTS empty source_refs (operator-initiated query)', () => {
+  const r = validatePersistenceEvent(exportRequested({ source_refs: [] }));
+  assert.equal(r.ok, true);
+});
+
+test('calibration.answered ACCEPTS empty source_refs (operator-driven answer)', () => {
+  const r = validatePersistenceEvent(calibrationAnswered({ source_refs: [] }));
+  assert.equal(r.ok, true);
+});
+
+test('correction.classified REQUIRES non-empty source_refs (audit lineage to source correction)', () => {
+  const r = validatePersistenceEvent(correctionClassified({ source_refs: [] }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.toLowerCase().includes('source_refs')));
+});
+
+test('invoice.created REQUIRES non-empty source_refs (audit lineage)', () => {
+  const r = validatePersistenceEvent(invoiceCreated({ source_refs: [] }));
+  assert.equal(r.ok, false);
+  assert.ok(!r.ok && r.errors.some((e) => e.toLowerCase().includes('source_refs')));
 });
