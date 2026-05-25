@@ -68,7 +68,7 @@ export interface Tier2RowReviewRequest {
 }
 
 function isPersistenceTenantId(v: unknown): v is PersistenceTenantId {
-  return v === 'tenant_ggr' || v === 'tenant_valle';
+  return v === 'tenant_ggr' || v === 'tenant_valle' || v === 'tenant_hpg';
 }
 
 function nonEmptyString(v: unknown): v is string {
@@ -121,7 +121,7 @@ export function validateIngestionRequestBody(body: unknown): IngestionRequest {
   }
   const o = body as Record<string, unknown>;
   if (!isPersistenceTenantId(o['tenant_id'])) {
-    errors.push('tenant_id must be "tenant_ggr" or "tenant_valle"');
+    errors.push('tenant_id must be "tenant_ggr", "tenant_valle", or "tenant_hpg"');
   }
   const ar = o['authority_rank'];
   if (typeof ar !== 'number' || !Number.isInteger(ar) || ar < 1 || ar > 7) {
@@ -423,7 +423,7 @@ export function validateTier2RowReviewBody(body: unknown): Tier2RowReviewRequest
   const o = body as Record<string, unknown>;
   const errors: string[] = [];
   if (!isPersistenceTenantId(o['tenant_id'])) {
-    errors.push('tenant_id must be "tenant_ggr" or "tenant_valle"');
+    errors.push('tenant_id must be "tenant_ggr", "tenant_valle", or "tenant_hpg"');
   }
   if (!nonEmptyString(o['ingestion_id'])) errors.push('ingestion_id must be a non-empty string');
   if (!nonEmptyString(o['cost_row_id'])) errors.push('cost_row_id must be a non-empty string');

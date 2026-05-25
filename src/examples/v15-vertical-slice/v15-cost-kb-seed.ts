@@ -132,7 +132,7 @@ export interface LoadV15CostKbSeedOptions {
    * When set (e.g. `tenant_ggr`), best-effort merge of `GET /api/kb/tier2-rows`
    * ahead of tier-1 seed rows. No-op when fetch fails (static file open).
    */
-  readonly mergeTier2TenantId?: 'tenant_ggr' | 'tenant_valle';
+  readonly mergeTier2TenantId?: 'tenant_ggr' | 'tenant_valle' | 'tenant_hpg';
 }
 
 /**

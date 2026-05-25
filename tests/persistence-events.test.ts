@@ -382,10 +382,22 @@ test('rejects missing tenant_id', () => {
   );
 });
 
-test('rejects unrecognized tenant_id (not tenant_ggr / tenant_valle)', () => {
+test('rejects unrecognized tenant_id (not tenant_ggr / tenant_valle / tenant_hpg)', () => {
   const r = validatePersistenceEvent(projectCreated({ tenant_id: 'tenant_acme' as never }));
   assert.equal(r.ok, false);
   assert.ok(!r.ok && r.errors.some((e) => e.includes('tenant_id')));
+});
+
+test('accepts tenant_hpg (Lane 0.7 — third V1 internal tenant)', () => {
+  const r = validatePersistenceEvent(projectCreated({ tenant_id: 'tenant_hpg' }));
+  assert.equal(r.ok, true);
+  assert.ok(r.ok && r.event.tenant_id === 'tenant_hpg');
+});
+
+test('accepts tenant_valle (parity check alongside tenant_hpg addition)', () => {
+  const r = validatePersistenceEvent(projectCreated({ tenant_id: 'tenant_valle' }));
+  assert.equal(r.ok, true);
+  assert.ok(r.ok && r.event.tenant_id === 'tenant_valle');
 });
 
 test('rejects non-ISO8601 at field', () => {

@@ -1,7 +1,7 @@
 /// <reference lib="DOM" />
 import { parseTier2CsvPaste, csvPasteRowsToIngestionInputs } from './pages/kb-ingestion.js';
 
-type PersistenceTenantId = 'tenant_ggr' | 'tenant_valle';
+type PersistenceTenantId = 'tenant_ggr' | 'tenant_valle' | 'tenant_hpg';
 
 declare global {
   interface Window {
@@ -11,7 +11,10 @@ declare global {
 
 function tenantSelect(id: string): PersistenceTenantId {
   const el = document.getElementById(id);
-  if (el instanceof HTMLSelectElement && (el.value === 'tenant_ggr' || el.value === 'tenant_valle')) {
+  if (
+    el instanceof HTMLSelectElement &&
+    (el.value === 'tenant_ggr' || el.value === 'tenant_valle' || el.value === 'tenant_hpg')
+  ) {
     return el.value;
   }
   return 'tenant_ggr';
