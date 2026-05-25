@@ -1,0 +1,620 @@
+{
+  "id": "kerf_construction_operating_gradient_v1",
+  "date": "2026-05-25",
+  "status": "research_prior",
+  "companion_doctrine": "_docs/decisions/D-048-adoption-layer-and-learning-classification.md",
+  "scale": {
+    "min": 1,
+    "max": 5,
+    "meaning": "Higher values indicate stronger operational pressure or product relevance on the named axis."
+  },
+  "axes": [
+    "work_item_volume",
+    "outcome_latency",
+    "cash_pressure",
+    "proof_burden",
+    "field_office_gap",
+    "schedule_volatility",
+    "material_volatility",
+    "customer_comm_load",
+    "adoption_friction",
+    "voice_first_need",
+    "operator_bottleneck",
+    "learning_ambiguity"
+  ],
+  "blend_rules": {
+    "ui_density_compression": {
+      "rule": "max",
+      "axes": ["work_item_volume", "schedule_volatility", "voice_first_need"],
+      "product_meaning": "Home/list compression, queue defaults, rollup tolerance for 3–50+ active items"
+    },
+    "proof_irreversibility_weight": {
+      "rule": "max",
+      "axes": ["proof_burden", "customer_comm_load", "outcome_latency"],
+      "product_meaning": "Send-gate weight, audit emphasis, DecisionPacket depth, irreversibility copy"
+    },
+    "onboarding_tone_friction": {
+      "rule": "max",
+      "axes": ["adoption_friction", "operator_bottleneck"],
+      "product_meaning": "Onboarding length, plain language, skip-first calibration density"
+    },
+    "right_hand_interrupt_posture": {
+      "rule": "weighted_average",
+      "axes": ["operator_bottleneck", "learning_ambiguity", "schedule_volatility"],
+      "product_meaning": "Clarification and interrupt posture; always capped by D-048 ask-budget"
+    },
+    "cash_money_surface": {
+      "rule": "max",
+      "axes": ["cash_pressure", "material_volatility"],
+      "product_meaning": "Money queue prominence, allowance/AP/AR warnings"
+    },
+    "field_capture_posture": {
+      "rule": "max",
+      "axes": ["field_office_gap", "voice_first_need", "proof_burden"],
+      "product_meaning": "Capture/review synthesis emphasis, bilingual confirmation, ambiguity handling"
+    }
+  },
+  "surface_consumer_order": [
+    {
+      "order": 1,
+      "surface": "capture_review",
+      "rationale": "Already eventful in kerf-app; shapes synthesis and correction follow-ups without requiring Home rollup"
+    },
+    {
+      "order": 2,
+      "surface": "home_density",
+      "rationale": "List compression once Project Detail exists and enough items accumulate"
+    },
+    {
+      "order": 3,
+      "surface": "project_detail_defaults",
+      "rationale": "Tab emphasis and default density after spine anchors land"
+    }
+  ],
+  "calibration_review_provenance": {
+    "tenant_learned_copy_frame": "Kerf noticed you usually…",
+    "archetype_prior_copy_frame": "Starting assumption for {archetype_label}…",
+    "platform_canon_visibility": "audit_and_settings_only",
+    "daily_surface_rule": "Never show provenance on daily surfaces; backstage Calibration Review only"
+  },
+  "outcome_tracking_schema_min_v1": {
+    "implementation_phase": "v1_5_deferred",
+    "v1_note": "V1 may store proxy event ids and replay-case tags, but delayed outcome close-loop fields are not wired into Lane 0.3",
+    "predicted_risk": "string — e.g. margin_erosion, dispute, callback",
+    "expected_outcome": "string — what bad looks like when the loop closes",
+    "expected_timeframe": "ISO-8601 duration — e.g. P30D, P90D",
+    "attribution_hypothesis": "ref — decision event id or DecisionPacket id",
+    "attribution_confidence": "number 0.0–1.0",
+    "close_loop_event": "nullable ref — filled when outcome known",
+    "proxy_events": "event_id[] — decision-time signals that opened the loop"
+  },
+  "dogfood_tenants": [
+    {
+      "tenant_id": "tenant_ggr",
+      "label": "GGR design + remodeling",
+      "primary_archetype": "gc_remodeler",
+      "archetype_mix": [
+        { "archetype_id": "gc_remodeler", "weight": 0.7 },
+        { "archetype_id": "design_build_bespoke_residential", "weight": 0.3 }
+      ],
+      "notes": "High proof burden, allowance/CO sensitivity, client communication load; Henderson dogfood anchor"
+    },
+    {
+      "tenant_id": "tenant_valle",
+      "label": "VALLE cabinetry + millwork",
+      "primary_archetype": "cabinet_shop_millwork",
+      "archetype_mix": [
+        { "archetype_id": "cabinet_shop_millwork", "weight": 0.75 },
+        { "archetype_id": "gc_remodeler", "weight": 0.25 }
+      ],
+      "notes": "Finish/spec approval treated as higher risk than schedule drift"
+    },
+    {
+      "tenant_id": "tenant_hpg",
+      "label": "Heat Pump Guys (HPG)",
+      "primary_archetype": "hvac_plumbing_electrical_service",
+      "archetype_mix": [
+        { "archetype_id": "hvac_plumbing_electrical_service", "weight": 0.85 },
+        { "archetype_id": "gc_remodeler", "weight": 0.15 }
+      ],
+      "notes": "Heat pump, panel, mini-split service trades; cross-brand work on GGR remodel jobs"
+    }
+  ],
+  "replay_cases": [
+    {
+      "id": "replay_henderson_capture_inversion",
+      "title": "Henderson capture inversion — still needs install read as completed",
+      "tenant_id": "tenant_ggr",
+      "spine_surface": "capture_review",
+      "correction_scope": "one_off",
+      "memory_locality": ["eval_replay_case", "platform_canon_candidate"],
+      "evidence_source_class": "dogfood_ggr",
+      "operator_rule_refs": ["R10_data_continuity_operational_continuity"],
+      "action": "Add replay case; harden parser/synthesis path; do not create tenant preference",
+      "related_proxy_signals": ["scope_summary_edits"],
+      "related_events": ["daily_log.entry_captured", "daily_log.facts_extracted", "relay_card.reviewed"]
+    },
+    {
+      "id": "replay_daily_surface_safety_copy_rejection",
+      "title": "Operator rejects safety-heavy copy on daily surfaces",
+      "tenant_id": "tenant_ggr",
+      "spine_surface": "home",
+      "correction_scope": "universal",
+      "memory_locality": ["platform_canon_candidate"],
+      "evidence_source_class": "dogfood_ggr",
+      "operator_rule_refs": ["R10_data_continuity_operational_continuity"],
+      "action": "Canonize as trust-by-behavior; enforce via D-048 Q2 gate",
+      "related_proxy_signals": [],
+      "related_events": []
+    },
+    {
+      "id": "replay_ggr_allowance_explanation_depth",
+      "title": "Detailed allowance explanation before proposal send",
+      "tenant_id": "tenant_ggr",
+      "spine_surface": "approval_send_gate",
+      "correction_scope": "tenant_wide",
+      "memory_locality": ["tenant_private", "archetype_default_candidate"],
+      "evidence_source_class": "dogfood_ggr",
+      "operator_rule_refs": ["R1_price_to_recover_overhead_profit", "R8_proof_cheaper_than_memory"],
+      "action": "Apply to GGR; review after more GC-remodeler tenants",
+      "related_proxy_signals": ["allowance_warning_edits", "client_send_hesitation"],
+      "related_events": ["proposal.edited", "decision.approved"]
+    },
+    {
+      "id": "replay_valle_finish_spec_approval_risk",
+      "title": "Finish/spec approval higher risk than schedule drift",
+      "tenant_id": "tenant_valle",
+      "spine_surface": "approval_send_gate",
+      "correction_scope": "tenant_wide",
+      "memory_locality": ["tenant_private", "archetype_default_candidate"],
+      "evidence_source_class": "dogfood_valle",
+      "operator_rule_refs": ["R8_proof_cheaper_than_memory", "R14_material_vendor_drift_expiration"],
+      "action": "Apply to Valle; test cabinet-shop archetype default later",
+      "related_proxy_signals": ["drawing_revision_acceptance", "finish_substitution"],
+      "related_events": ["decision.drafted", "decision.approved"]
+    },
+    {
+      "id": "replay_verbal_approval_co_hesitation",
+      "title": "Verbal approval in capture → CO/proposal path hesitation",
+      "tenant_id": "tenant_ggr",
+      "spine_surface": "draft_estimate",
+      "correction_scope": "situational",
+      "memory_locality": ["eval_replay_case", "archetype_default_candidate"],
+      "evidence_source_class": "dogfood_ggr",
+      "operator_rule_refs": ["R3_change_orders_before_work", "R8_proof_cheaper_than_memory"],
+      "action": "Replay send-gate and CO classification follow-up",
+      "related_proxy_signals": ["client_send_hesitation", "change_order_reclassifications"],
+      "related_events": ["capture.recorded", "transcript.reviewed", "decision.drafted"]
+    },
+    {
+      "id": "replay_scope_gap_dismissed_late_co",
+      "title": "Scope gap flagged, operator dismisses, late CO follows",
+      "tenant_id": "tenant_ggr",
+      "spine_surface": "review",
+      "correction_scope": "situational",
+      "memory_locality": ["eval_replay_case"],
+      "evidence_source_class": "dogfood_ggr",
+      "operator_rule_refs": ["R3_change_orders_before_work", "R6_lead_measures_before_lag_outcomes"],
+      "action": "Outcome-latency loop; open proxy at dismiss, close at CO",
+      "related_proxy_signals": ["scope_summary_edits", "change_order_reclassifications"],
+      "related_events": ["daily_log.drift_detected", "relay_card.reviewed", "decision.drafted"]
+    },
+    {
+      "id": "replay_bilingual_field_office_drift",
+      "title": "Spanish/English field note → office summary drift",
+      "tenant_id": "tenant_ggr",
+      "spine_surface": "capture_review",
+      "correction_scope": "universal",
+      "memory_locality": ["platform_canon_candidate", "eval_replay_case"],
+      "evidence_source_class": "external_research",
+      "operator_rule_refs": ["R8_proof_cheaper_than_memory", "R10_data_continuity_operational_continuity"],
+      "action": "Stress bilingual capture/review confirmation path",
+      "related_proxy_signals": ["scope_summary_edits"],
+      "related_events": ["capture.recorded", "daily_log.entry_captured", "transcript.reviewed"]
+    },
+    {
+      "id": "replay_hpg_dispatch_reschedule_churn",
+      "title": "High-volume dispatch/reschedule churn day",
+      "tenant_id": "tenant_hpg",
+      "spine_surface": "home",
+      "correction_scope": "situational",
+      "memory_locality": ["eval_replay_case", "archetype_default_candidate"],
+      "evidence_source_class": "dogfood_hpg",
+      "operator_rule_refs": ["R9_labor_productivity_margin_control", "R16_growth_without_systems_risk"],
+      "action": "Stress dense queue compression and schedule volatility alerts",
+      "related_proxy_signals": ["dispatch_reschedule", "callback_flag"],
+      "related_events": ["daily_log.entry_captured"]
+    },
+    {
+      "id": "replay_send_gate_validator_override",
+      "title": "Send-gate pass after operator override of validator warning",
+      "tenant_id": "tenant_ggr",
+      "spine_surface": "approval_send_gate",
+      "correction_scope": "situational",
+      "memory_locality": ["eval_replay_case"],
+      "evidence_source_class": "dogfood_ggr",
+      "operator_rule_refs": ["R8_proof_cheaper_than_memory", "R10_data_continuity_operational_continuity"],
+      "action": "Lock irreversibility surface + override event chain",
+      "related_proxy_signals": ["client_send_hesitation"],
+      "related_events": ["decision.approved", "proposal.accepted"]
+    },
+    {
+      "id": "replay_solo_skipped_calibration_repeated_edit",
+      "title": "Skipped calibration + repeated manual edit on same field",
+      "tenant_id": null,
+      "spine_surface": "capture_review",
+      "correction_scope": "role_specific",
+      "memory_locality": ["archetype_default_candidate", "eval_replay_case"],
+      "evidence_source_class": "external_research",
+      "operator_rule_refs": ["R4_owner_bottleneck_risk", "R5_standardize_repeats_customize_margin"],
+      "action": "Solo-operator adoption friction; skip-first defaults must not block",
+      "related_proxy_signals": ["skipped_calibration", "repeated_manual_edit"],
+      "related_events": ["scaffold.refined", "transcript.reviewed"]
+    }
+  ],
+  "proxy_signal_event_map": {
+    "scope_summary_edits": {
+      "existing_events": ["daily_log.facts_extracted", "transcript.reviewed"],
+      "future_events": ["scope_summary.edited"]
+    },
+    "allowance_warning_edits": {
+      "existing_events": ["proposal.edited"],
+      "future_events": ["allowance.warning_edited"]
+    },
+    "change_order_reclassifications": {
+      "existing_events": ["decision.drafted"],
+      "future_events": ["change_order.reclassified"]
+    },
+    "client_send_hesitation": {
+      "existing_events": ["decision.drafted"],
+      "future_events": ["send_gate.hesitation_recorded"]
+    },
+    "drawing_revision_acceptance": {
+      "existing_events": ["scaffold.refined"],
+      "future_events": ["drawing_revision.accepted"]
+    },
+    "dispatch_reschedule": {
+      "existing_events": ["daily_log.entry_captured"],
+      "future_events": ["dispatch.rescheduled"]
+    },
+    "skipped_calibration": {
+      "existing_events": [],
+      "future_events": ["calibration.question_skipped"]
+    },
+    "repeated_manual_edit": {
+      "existing_events": ["scaffold.refined", "proposal.edited"],
+      "future_events": ["operator.manual_edit_repeated"]
+    }
+  },
+  "route_wiring_stress_cases": [
+    {
+      "id": "stress_gc_remodeler_capture_review",
+      "spine_surface": "capture_review",
+      "primary_archetype": "gc_remodeler",
+      "blend_rule_ids": ["field_capture_posture", "proof_irreversibility_weight"],
+      "min_blend_scores": { "field_capture_posture": 4, "proof_irreversibility_weight": 5 },
+      "replay_case_ids": ["replay_henderson_capture_inversion", "replay_bilingual_field_office_drift"]
+    },
+    {
+      "id": "stress_service_trade_home_density",
+      "spine_surface": "home",
+      "primary_archetype": "hvac_plumbing_electrical_service",
+      "blend_rule_ids": ["ui_density_compression", "right_hand_interrupt_posture"],
+      "min_blend_scores": { "ui_density_compression": 5 },
+      "replay_case_ids": ["replay_hpg_dispatch_reschedule_churn"]
+    },
+    {
+      "id": "stress_cabinet_shop_approval",
+      "spine_surface": "approval_send_gate",
+      "primary_archetype": "cabinet_shop_millwork",
+      "blend_rule_ids": ["proof_irreversibility_weight"],
+      "min_blend_scores": { "proof_irreversibility_weight": 4 },
+      "replay_case_ids": ["replay_valle_finish_spec_approval_risk"]
+    },
+    {
+      "id": "stress_solo_onboarding_friction",
+      "spine_surface": "capture_review",
+      "primary_archetype": "solo_owner_operator_mixed_trade",
+      "blend_rule_ids": ["onboarding_tone_friction", "field_capture_posture"],
+      "min_blend_scores": { "onboarding_tone_friction": 5, "field_capture_posture": 4 },
+      "replay_case_ids": ["replay_solo_skipped_calibration_repeated_edit"]
+    },
+    {
+      "id": "stress_gc_send_gate_irreversibility",
+      "spine_surface": "approval_send_gate",
+      "primary_archetype": "gc_remodeler",
+      "blend_rule_ids": ["proof_irreversibility_weight", "cash_money_surface"],
+      "min_blend_scores": { "proof_irreversibility_weight": 5 },
+      "replay_case_ids": ["replay_ggr_allowance_explanation_depth", "replay_send_gate_validator_override"]
+    }
+  ],
+  "archetypes": [
+    {
+      "id": "gc_remodeler",
+      "label": "GC remodeler",
+      "confidence": "medium_high",
+      "axes": {
+        "work_item_volume": 3,
+        "outcome_latency": 5,
+        "cash_pressure": 4,
+        "proof_burden": 5,
+        "field_office_gap": 4,
+        "schedule_volatility": 4,
+        "material_volatility": 4,
+        "customer_comm_load": 5,
+        "adoption_friction": 3,
+        "voice_first_need": 4,
+        "operator_bottleneck": 5,
+        "learning_ambiguity": 5
+      },
+      "default_product_emphasis": [
+        "project_detail",
+        "capture_review",
+        "draft_estimate",
+        "change_order_review",
+        "approval_send_gate"
+      ],
+      "learning_proxy_signals": [
+        "scope_summary_edits",
+        "allowance_warning_edits",
+        "change_order_reclassifications",
+        "proposal_variance_band_edits",
+        "client_send_hesitation",
+        "post_job_margin_delta"
+      ]
+    },
+    {
+      "id": "design_build_bespoke_residential",
+      "label": "Design-build / bespoke residential",
+      "confidence": "medium",
+      "axes": {
+        "work_item_volume": 2,
+        "outcome_latency": 5,
+        "cash_pressure": 3,
+        "proof_burden": 5,
+        "field_office_gap": 4,
+        "schedule_volatility": 3,
+        "material_volatility": 4,
+        "customer_comm_load": 5,
+        "adoption_friction": 3,
+        "voice_first_need": 3,
+        "operator_bottleneck": 5,
+        "learning_ambiguity": 5
+      },
+      "default_product_emphasis": [
+        "proposal_language",
+        "design_decision_memory",
+        "client_preference_tracking",
+        "media_library",
+        "change_narrative"
+      ],
+      "learning_proxy_signals": [
+        "client_language_edits",
+        "design_option_rejections",
+        "scope_clarification_loops",
+        "proposal_revision_count",
+        "client_confusion_notes"
+      ]
+    },
+    {
+      "id": "cabinet_shop_millwork",
+      "label": "Cabinet shop / millwork",
+      "confidence": "medium",
+      "axes": {
+        "work_item_volume": 3,
+        "outcome_latency": 4,
+        "cash_pressure": 3,
+        "proof_burden": 4,
+        "field_office_gap": 3,
+        "schedule_volatility": 3,
+        "material_volatility": 4,
+        "customer_comm_load": 4,
+        "adoption_friction": 3,
+        "voice_first_need": 3,
+        "operator_bottleneck": 4,
+        "learning_ambiguity": 4
+      },
+      "default_product_emphasis": [
+        "files_drawings",
+        "approval_history",
+        "production_schedule",
+        "procurement",
+        "punch_closeout"
+      ],
+      "learning_proxy_signals": [
+        "drawing_revision_acceptance",
+        "finish_substitution",
+        "install_reschedule",
+        "punch_item",
+        "field_dimension_correction",
+        "supplier_lead_time_edit"
+      ]
+    },
+    {
+      "id": "hvac_plumbing_electrical_service",
+      "label": "HVAC / plumbing / electrical service",
+      "confidence": "medium_high",
+      "axes": {
+        "work_item_volume": 5,
+        "outcome_latency": 2,
+        "cash_pressure": 4,
+        "proof_burden": 3,
+        "field_office_gap": 5,
+        "schedule_volatility": 5,
+        "material_volatility": 4,
+        "customer_comm_load": 4,
+        "adoption_friction": 4,
+        "voice_first_need": 5,
+        "operator_bottleneck": 4,
+        "learning_ambiguity": 4
+      },
+      "default_product_emphasis": [
+        "dense_ticket_queues",
+        "dispatch_schedule",
+        "voice_capture",
+        "quick_estimate_invoice",
+        "maintenance_history"
+      ],
+      "learning_proxy_signals": [
+        "ticket_close_note",
+        "callback_flag",
+        "dispatch_reschedule",
+        "parts_not_available",
+        "invoice_edit",
+        "technician_recommendation_accept_reject"
+      ]
+    },
+    {
+      "id": "maintenance_heavy_operator",
+      "label": "Maintenance-heavy operator",
+      "confidence": "medium",
+      "axes": {
+        "work_item_volume": 5,
+        "outcome_latency": 3,
+        "cash_pressure": 4,
+        "proof_burden": 3,
+        "field_office_gap": 5,
+        "schedule_volatility": 5,
+        "material_volatility": 3,
+        "customer_comm_load": 3,
+        "adoption_friction": 4,
+        "voice_first_need": 5,
+        "operator_bottleneck": 4,
+        "learning_ambiguity": 4
+      },
+      "default_product_emphasis": [
+        "property_history",
+        "media_library",
+        "recurring_schedule",
+        "task_queues",
+        "voice_retrieval"
+      ],
+      "learning_proxy_signals": [
+        "repeat_issue_frequency",
+        "media_retrieval",
+        "task_recurrence",
+        "vendor_assignment_outcome",
+        "callback_note",
+        "same_issue_again_tag"
+      ]
+    },
+    {
+      "id": "commercial_specialty_trade",
+      "label": "Commercial specialty trade",
+      "confidence": "low_medium",
+      "axes": {
+        "work_item_volume": 4,
+        "outcome_latency": 5,
+        "cash_pressure": 5,
+        "proof_burden": 5,
+        "field_office_gap": 4,
+        "schedule_volatility": 4,
+        "material_volatility": 5,
+        "customer_comm_load": 3,
+        "adoption_friction": 3,
+        "voice_first_need": 4,
+        "operator_bottleneck": 4,
+        "learning_ambiguity": 5
+      },
+      "default_product_emphasis": [
+        "ar_ap",
+        "schedule_dependencies",
+        "submittals_files",
+        "change_orders",
+        "job_cost_reporting"
+      ],
+      "learning_proxy_signals": [
+        "change_order_approval_time",
+        "pay_app_aging",
+        "rfi_submittal_delay",
+        "material_escalation",
+        "vendor_quote_drift",
+        "retainage_friction"
+      ]
+    },
+    {
+      "id": "roofing_exterior_restoration",
+      "label": "Roofing / exterior restoration",
+      "confidence": "medium",
+      "axes": {
+        "work_item_volume": 4,
+        "outcome_latency": 3,
+        "cash_pressure": 4,
+        "proof_burden": 5,
+        "field_office_gap": 5,
+        "schedule_volatility": 5,
+        "material_volatility": 4,
+        "customer_comm_load": 5,
+        "adoption_friction": 4,
+        "voice_first_need": 5,
+        "operator_bottleneck": 4,
+        "learning_ambiguity": 4
+      },
+      "default_product_emphasis": [
+        "media_capture",
+        "estimate_proposal_artifacts",
+        "insurance_adjuster_notes",
+        "weather_schedule_changes",
+        "supplement_tracking"
+      ],
+      "learning_proxy_signals": [
+        "photo_set_completeness",
+        "customer_update_edit",
+        "supplement_accept_reject",
+        "weather_reschedule",
+        "scope_photo_mismatch",
+        "insurance_documentation_loop"
+      ]
+    },
+    {
+      "id": "solo_owner_operator_mixed_trade",
+      "label": "Solo / owner-operator mixed trade",
+      "confidence": "medium_high",
+      "axes": {
+        "work_item_volume": 3,
+        "outcome_latency": 3,
+        "cash_pressure": 5,
+        "proof_burden": 3,
+        "field_office_gap": 4,
+        "schedule_volatility": 4,
+        "material_volatility": 3,
+        "customer_comm_load": 4,
+        "adoption_friction": 5,
+        "voice_first_need": 5,
+        "operator_bottleneck": 5,
+        "learning_ambiguity": 5
+      },
+      "default_product_emphasis": [
+        "capture_first",
+        "right_hand_home",
+        "minimal_setup",
+        "plain_language",
+        "print_export"
+      ],
+      "learning_proxy_signals": [
+        "skipped_calibration",
+        "voice_correction",
+        "repeated_manual_edit",
+        "proposal_send",
+        "invoice_follow_up",
+        "remind_me_task"
+      ]
+    }
+  ],
+  "source_refs": [
+    "nahb_remodeler_profile_2025",
+    "nahb_remodeling_sector_2026",
+    "agc_nccer_workforce_2025",
+    "rabbet_payments_2025",
+    "autodesk_fmi_data_advantage",
+    "servicetitan_ai_trades_2025",
+    "servicetitan_residential_services_2025",
+    "jobber_home_service_trends_2026",
+    "houzz_ai_construction_design_2025",
+    "jchs_lira_2026",
+    "census_susb",
+    "cpwr_chart_book_2025",
+    "nhca_hispanics_construction_2025"
+  ],
+  "guardrail": "Use as prior only. TenantMemoryProfile overrides after enough tenant evidence exists. No cross-tenant transfer path exists in V1."
+}
