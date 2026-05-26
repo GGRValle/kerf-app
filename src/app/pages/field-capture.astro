@@ -167,17 +167,16 @@ const assignment = {
               Submit
             </button>
           </div>
-          <p class="submit-status" id="f-e1-submit-status" role="status" aria-live="polite"></p>
           <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay</a>
         </section>
       </SurfaceIrreversibilityWrap>
 
+      <p class="submit-status" id="f-e1-submit-status" role="status" aria-live="polite"></p>
       <input id="f-e1-camera-input" type="file" accept="image/*" capture="environment" hidden />
     </section>
   </main>
-</Layout>
 
-<script>
+  <script>
   const shell = document.querySelector('.field-shell');
   const recordButton = document.querySelector('#f-e1-record');
   const stopButton = document.querySelector('#f-e1-stop');
@@ -402,8 +401,14 @@ const assignment = {
   cameraInput?.addEventListener('change', handlePhotoPick);
   doneButton?.addEventListener('click', () => {
     stopRecording();
+    const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
+    if (transcript.length === 0 && photos.length === 0 && audioUri === null) {
+      setStatus('Add a voice memo, typed note, or photo, then tap Done capturing again.', 'error');
+      return;
+    }
     renderPreflight();
     setState('preflight');
+    setStatus('');
   });
   backButton?.addEventListener('click', () => setState('active'));
   editNoteButton?.addEventListener('click', () => setState('active'));
@@ -747,6 +752,9 @@ const assignment = {
     margin: 12px 0 0;
     color: var(--kerf-muted);
     line-height: 1.4;
+    text-align: center;
+    max-width: min(100%, 430px);
+    margin-inline: auto;
   }
 
   .submit-status[data-tone='success'] {
@@ -769,3 +777,4 @@ const assignment = {
     }
   }
 </style>
+</Layout>

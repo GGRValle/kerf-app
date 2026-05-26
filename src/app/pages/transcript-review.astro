@@ -80,9 +80,8 @@ function formatMs(ms: number): string {
       </div>
     </div>
   </SurfaceIrreversibilityWrap>
-</Layout>
 
-<script define:vars={{ capture, tenantId: context.tenantId, savedKey: 'review.transcript.saved', errorKey: 'review.transcript.error' }}>
+  <script define:vars={{ capture, tenantId: context.tenantId, savedKey: 'review.transcript.saved', errorKey: 'review.transcript.error' }}>
   const statusEl = document.getElementById('lane23-transcript-status');
   const followupEl = document.getElementById('lane23-transcript-followup');
   let pending = null;
@@ -143,3 +142,4 @@ function formatMs(ms: number): string {
     });
   });
 </script>
+</Layout>
