@@ -40,6 +40,8 @@ const assignment = {
   client: 'Wegrzyn, Mark & Grace',
   project: 'Kitchen + Primary bath',
   location: 'Kitchen',
+  tenant_id: 'tenant_ggr',
+  project_id: 'proj_wegrzyn_kitchen_bath',
 };
 
 // Kerf's suggested draft intent (inferred from voice content in Phase 1D).
@@ -256,16 +258,77 @@ const kerfSuggestedIntent: 'change_order' | 'estimate_update' | 'daily_log_only'
 
           <div slot="footer" class="state3-footer">
             <button type="button" class="ar-btn">{t('f_e1.action.back')}</button>
-            <button type="button" class="ar-btn primary">
+            <button
+              type="button"
+              class="ar-btn primary"
+              id="f-e1-submit"
+              data-tenant-id={assignment.tenant_id}
+              data-project-id={assignment.project_id}
+            >
               {t('f_e1.state3.submit')} · <em>{t('f_e1.state3.submit_sub')}</em>
             </button>
           </div>
+          <p class="submit-status" id="f-e1-submit-status" role="status" aria-live="polite"></p>
         </Card>
       </section>
     </SurfaceIrreversibilityWrap>
 
   </article>
 </Layout>
+
+<script>
+  const submitButton = document.querySelector('#f-e1-submit');
+  const statusNode = document.querySelector('#f-e1-submit-status');
+  const transcriptNodes = [...document.querySelectorAll('.ft-text')];
+
+  function setStatus(message, tone = 'neutral') {
+    if (!(statusNode instanceof HTMLElement)) return;
+    statusNode.textContent = message;
+    statusNode.dataset.tone = tone;
+  }
+
+  async function submitDailyLogEntry() {
+    if (!(submitButton instanceof HTMLElement)) return;
+    const tenantId = submitButton.dataset.tenantId;
+    const projectId = submitButton.dataset.projectId;
+    if (!tenantId || !projectId) {
+      setStatus('Missing project assignment. Pick the project before submit.', 'error');
+      return;
+    }
+    const transcript = transcriptNodes
+      .map((node) => node.textContent?.trim() ?? '')
+      .filter(Boolean)
+      .join('\n\n');
+    submitButton.setAttribute('aria-busy', 'true');
+    setStatus('Saving to Daily Log...', 'neutral');
+    try {
+      const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          entry_kind: 'progress_update',
+          transcript_text: transcript,
+          photo_uris: ['kerf://field-capture/wegrzyn/island-plumbing'],
+          actor: { id: 'browser_operator', role: 'field_super' },
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error ?? `submit_failed_${res.status}`);
+      }
+      setStatus(`Saved to Daily Log. Event ${body.event_id}.`, 'success');
+    } catch (err) {
+      setStatus(`Could not save: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    } finally {
+      submitButton.removeAttribute('aria-busy');
+    }
+  }
+
+  submitButton?.addEventListener('click', () => {
+    void submitDailyLogEntry();
+  });
+</script>
 
 <style>
   .f-e1 {
@@ -448,6 +511,15 @@ const kerfSuggestedIntent: 'change_order' | 'estimate_update' | 'daily_log_only'
     padding: 0.4rem 0.65rem; margin-bottom: 0.75rem;
     font-size: 0.75rem; color: var(--text-muted, #6a7282); line-height: 1.45;
   }
+
+  .submit-status {
+    margin: 0.7rem 0 0;
+    min-height: 1.2rem;
+    font-size: 0.82rem;
+    color: var(--text-muted, #6a7282);
+  }
+  .submit-status[data-tone="success"] { color: var(--field-green, #38c977); }
+  .submit-status[data-tone="error"] { color: var(--red, #f87171); }
 
   .link {
     background: none; border: none; padding: 0; cursor: pointer;
