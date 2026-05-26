@@ -1,0 +1,317 @@
+---
+// F-RC1 · Mobile Room Capture · Phase 1C net-new (Lane 1 Capture spine)
+// Canon: KERF Canon v1/_docs/wireframes/F-RC1_mobile_room_capture.html
+// Doctrine: kerf_lidar_precision_limits_and_apple_wrap.md +
+//           kerf_lidar_day_one_substrate.md (D-043) +
+//           D-048 adoption-layer + classify-before-harden
+//
+// Apple-wrap discipline: Kerf does NOT reskin the scan UI. Apple's
+// RoomCaptureView handles the iOS-native scan. F-RC1 renders the
+// POST-SCAN surface only — the surface where Kerf's value lands.
+//
+// Use-label discipline (three tones per LiDAR precision canon):
+//   estimate-safe (green) — OK to use immediately for estimating, schematic
+//   verify (amber)        — cabinetry/stone/glass/millwork · tape-verify
+//                           required before fab release · BLOCKS downstream
+//   manual (red)          — scan unreliable here · take a hand measurement
+//
+// D-048 eventfulness hooks (typed event shapes ready · emission wires in 1D):
+//   Operator overrides a use-label (e.g. verify → estimate-safe before
+//   tape-verify) → suggestion.overridden + correction.classified.
+//   The override path includes a free-text reason capturing what the
+//   operator measured by tape, plus the scope-classify follow-up
+//   ("General rule for similar rooms, or just this one?").
+//
+//   Release-for-fab is the irreversibility moment — wraps with
+//   kind="irreversibility" + explicit actionContext.
+//
+// Cross-scope substrate (D-043): one scan produces 5 takeoffs (HVAC, tile,
+// cabinetry, electrical, plumbing). Tenant Room Memory anchor saves the
+// scan to the tenant library for future similar-room comparables.
+
+import Layout from '../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../components/Card.astro';
+import Row from '../components/Row.astro';
+import Chip from '../components/Chip.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import { createTranslator } from '../../i18n/index.js';
+
+const { t } = createTranslator('en');
+
+// Fixture data · Phase 1D loads from tenant-scoped scan store.
+// Each measurement carries a use_label per kerf_lidar_precision_limits canon.
+type UseLabel = 'estimate_safe' | 'verify' | 'manual';
+
+interface Measurement {
+  readonly id: string;
+  readonly title: string;
+  readonly value: string;
+  readonly use_label: UseLabel;
+  readonly note?: string;
+}
+
+const measurements: readonly Measurement[] = [
+  { id: 'long_wall_shelving', title: 'Long wall · shelving line', value: '11\'8"', use_label: 'verify', note: 'CO-002 shelving line · tape-verify before fab' },
+  { id: 'short_wall', title: 'Short wall · door side', value: '7\'2"', use_label: 'estimate_safe' },
+  { id: 'ceiling_height', title: 'Ceiling height', value: '9\'0"', use_label: 'estimate_safe' },
+  { id: 'floor_area', title: 'Floor area', value: '84 sqft', use_label: 'estimate_safe' },
+  { id: 'door_opening', title: 'Door opening', value: '30" × 80"', use_label: 'estimate_safe' },
+  { id: 'wall_volume', title: 'Room volume (Manual J)', value: '756 cuft', use_label: 'estimate_safe' },
+];
+
+function useLabelToChipProps(label: UseLabel): { labelKey: 'f_rc1.use_label.estimate_safe' | 'f_rc1.use_label.verify' | 'f_rc1.use_label.manual'; tone: 'green' | 'amber' | 'red' } {
+  switch (label) {
+    case 'estimate_safe': return { labelKey: 'f_rc1.use_label.estimate_safe', tone: 'green' };
+    case 'verify':        return { labelKey: 'f_rc1.use_label.verify',        tone: 'amber' };
+    case 'manual':        return { labelKey: 'f_rc1.use_label.manual',        tone: 'red' };
+  }
+}
+
+const hasVerifyOrManual = measurements.some((m) => m.use_label !== 'estimate_safe');
+---
+
+<Layout title="F-RC1 · Room Capture" activeHref={Astro.url.pathname}>
+  <article class="f-rc1">
+
+    <header class="f-rc1-header">
+      <div class="crumb">{t('f_rc1.crumb')}</div>
+      <h1>{t('f_rc1.title')}</h1>
+      <p class="subtitle">{t('f_rc1.subtitle')}</p>
+    </header>
+
+    <!-- ============= Daily wrap · post-scan results ============= -->
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+
+      <!-- Room summary -->
+      <Card>
+        <div class="room-summary">
+          <div class="rs-eyebrow"><span class="rs-dot" aria-hidden="true"></span> {t('f_rc1.captured_eyebrow')}</div>
+          <div class="rs-title">{t('f_rc1.room_title')}</div>
+          <div class="rs-meta">{t('f_rc1.room_meta')}</div>
+        </div>
+
+        <!-- Apple disclosure · canon-explicit per kerf_lidar_precision_limits_and_apple_wrap.md -->
+        <aside class="apple-disclosure" role="note">
+          <strong>{t('f_rc1.apple_disclosure.title')}</strong>
+          <span class="ad-detail">{t('f_rc1.apple_disclosure.detail')}</span>
+        </aside>
+      </Card>
+
+      <!-- Right Hand synthesis -->
+      <Card eyebrow={t('f_rc1.rh_synthesis.eyebrow')}>
+        <p class="rh-body">{t('f_rc1.rh_synthesis.body')}</p>
+      </Card>
+
+      <!-- Measurements list with use-labels -->
+      <SectionLabel label={t('f_rc1.measurements.eyebrow')} count={measurements.length} />
+      <div class="measurements-list">
+        {measurements.map((m) => {
+          const chip = useLabelToChipProps(m.use_label);
+          return (
+            <div class="measurement-row" data-use-label={m.use_label}>
+              <div class="m-leading">
+                <div class="m-title">{m.title}</div>
+                {m.note ? <div class="m-note">{m.note}</div> : null}
+              </div>
+              <div class="m-value">{m.value}</div>
+              <div class="m-chip">
+                <Chip label={t(chip.labelKey)} tone={chip.tone} variant="solid" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <!-- Don't-release-before-verify banner ·
+           Renders only when at least one measurement carries a verify/manual
+           label. Blocks downstream fab release until tape-verified. -->
+      {hasVerifyOrManual && (
+        <aside class="dont-release-banner" role="alert">
+          <strong>{t('f_rc1.dont_release.title')}</strong>
+          <span>{t('f_rc1.dont_release.detail')}</span>
+        </aside>
+      )}
+
+      <!-- Cross-scope takeoffs (D-043 substrate · one scan, five estimates) -->
+      <Card eyebrow={t('f_rc1.cross_scope.eyebrow')}>
+        <ul class="cross-scope-list">
+          <li>{t('f_rc1.cross_scope.hvac')}</li>
+          <li>{t('f_rc1.cross_scope.tile')}</li>
+          <li>{t('f_rc1.cross_scope.cabinetry')}</li>
+          <li>{t('f_rc1.cross_scope.electrical')}</li>
+          <li>{t('f_rc1.cross_scope.plumbing')}</li>
+        </ul>
+      </Card>
+
+      <!-- Tenant Room Memory anchor (D-043 §9 · second substrate layer) -->
+      <Card eyebrow={t('f_rc1.tenant_memory.eyebrow')}>
+        <div class="tenant-memory">
+          <strong>{t('f_rc1.tenant_memory.title')}</strong>
+          <p>{t('f_rc1.tenant_memory.detail')}</p>
+        </div>
+      </Card>
+
+      <!-- Action ribbon (non-irreversibility · these are routine ops) -->
+      <div class="action-ribbon">
+        <button type="button" class="ar-btn">{t('f_rc1.action.rescan')}</button>
+        <button type="button" class="ar-btn primary">{t('f_rc1.action.add_to_project')}</button>
+        <button type="button" class="ar-btn">{t('f_rc1.action.save_to_memory')}</button>
+      </div>
+
+    </SurfaceIrreversibilityWrap>
+
+    <!-- ============= Irreversibility wrap · release-for-fab gate =============
+         This block renders the "promote a verify-tagged measurement to
+         tape-verified + release-for-fab" action. It's the load-bearing
+         irreversibility moment: releasing for fab triggers cabinetry orders.
+         Wrap kind="irreversibility" with explicit actionContext.
+
+         D-048 hooks: when operator overrides Kerf's verify label without
+         supplying a tape-measured value, emit suggestion.overridden +
+         correction.classified per L0.3 axes. -->
+    {hasVerifyOrManual && (
+      <SurfaceIrreversibilityWrap kind="irreversibility" actionContext={t('f_rc1.release.action_context')}>
+        <Card eyebrow="Release for fab" title="Override use-label">
+          <p class="safety-copy">{t('f_rc1.release.action_context')}</p>
+
+          <div class="override-block">
+            <label class="override-label" for="release_reason">{t('f_rc1.override.reason_label')}</label>
+            <textarea
+              id="release_reason"
+              name="release_reason"
+              rows="2"
+              placeholder={t('f_rc1.override.reason_placeholder')}
+            ></textarea>
+            <div class="classify-prompt">{t('f_rc1.override.classify_prompt')}</div>
+            <!-- Emission shape (Phase 1D wires):
+                 { type: 'suggestion.overridden',
+                   surface: 'room_capture.use_label',
+                   measurement_id: '<id>',
+                   override_reason: '<free-text>',
+                   tape_verified_value: '<typed value or null>' }
+                 PLUS { type: 'correction.classified',
+                   correction_scope: 'this_job' | 'general_rule',
+                   memory_locality: 'project_only' | 'tenant_room_library',
+                   evidence_source_class: 'operator_tape_verification' } -->
+          </div>
+        </Card>
+      </SurfaceIrreversibilityWrap>
+    )}
+
+  </article>
+</Layout>
+
+<style>
+  .f-rc1 {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+    color: var(--text, #0a0d11);
+  }
+
+  .f-rc1-header { margin-bottom: 1.25rem; }
+  .crumb {
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted, #6a7282); margin-bottom: 0.5rem;
+  }
+  .f-rc1-header h1 { font-size: 1.4rem; margin: 0 0 0.4rem; font-weight: 600; }
+  .subtitle { color: var(--text-muted, #4a5462); font-size: 0.95rem; line-height: 1.55; margin: 0; }
+
+  .room-summary { margin-bottom: 0.75rem; }
+  .rs-eyebrow {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--blue, #7ba8ff); font-weight: 700;
+  }
+  .rs-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue, #7ba8ff); box-shadow: 0 0 0 3px rgba(123, 168, 255, 0.2); }
+  .rs-title { font-size: 1.1rem; font-weight: 700; margin-top: 0.3rem; }
+  .rs-meta { font-size: 0.8rem; color: var(--text-muted, #6a7282); margin-top: 0.15rem; }
+
+  .apple-disclosure {
+    background: rgba(123, 168, 255, 0.05);
+    border-left: 2px solid var(--blue, #7ba8ff);
+    border-radius: 3px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.78rem; color: var(--text-muted, #6a7282); line-height: 1.45;
+    margin-top: 0.75rem;
+  }
+  .apple-disclosure strong { color: var(--blue, #7ba8ff); display: block; margin-bottom: 0.1rem; }
+  .apple-disclosure .ad-detail { color: var(--text-muted, #6a7282); }
+
+  .rh-body { margin: 0; font-size: 0.85rem; line-height: 1.55; }
+
+  .measurements-list {
+    display: flex; flex-direction: column; gap: 0.25rem;
+    margin: 0.5rem 0;
+  }
+  .measurement-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface, #1a1f28);
+    border: 1px solid var(--border-soft, #2a3140);
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+  .measurement-row[data-use-label="verify"]  { border-left: 3px solid var(--amber, #f5b544); }
+  .measurement-row[data-use-label="manual"]  { border-left: 3px solid var(--red, #f87171); }
+  .measurement-row[data-use-label="estimate_safe"] { border-left: 3px solid var(--field-green, #38c977); }
+  .m-title { font-weight: 600; }
+  .m-note { font-size: 0.72rem; color: var(--text-muted, #6a7282); margin-top: 0.15rem; }
+  .m-value { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .dont-release-banner {
+    background: rgba(245, 181, 68, 0.08);
+    border: 1px solid rgba(245, 181, 68, 0.4);
+    border-left: 4px solid var(--amber, #f5b544);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    margin: 0.75rem 0;
+    font-size: 0.82rem; line-height: 1.5;
+  }
+  .dont-release-banner strong { color: var(--amber, #f5b544); display: block; margin-bottom: 0.2rem; }
+
+  .cross-scope-list {
+    margin: 0; padding-left: 1.1rem;
+    font-size: 0.85rem; line-height: 1.65;
+    color: var(--text-muted, #4a5462);
+  }
+
+  .tenant-memory { font-size: 0.85rem; line-height: 1.55; }
+  .tenant-memory strong { display: block; margin-bottom: 0.25rem; }
+  .tenant-memory p { margin: 0; color: var(--text-muted, #6a7282); }
+
+  .action-ribbon {
+    display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .ar-btn {
+    padding: 0.7rem 0.5rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+    background: var(--surface, #1a1f28); border: 1px solid var(--border-soft, #2a3140);
+    color: inherit; cursor: pointer;
+  }
+  .ar-btn.primary { background: var(--blue, #7ba8ff); color: #0a1428; border-color: var(--blue, #7ba8ff); }
+
+  .safety-copy {
+    margin: 0 0 0.5rem;
+    font-size: 0.82rem; line-height: 1.55;
+    color: var(--text, #0a0d11);
+  }
+
+  .override-block {
+    background: rgba(245, 181, 68, 0.04);
+    border-left: 3px solid var(--amber, #f5b544);
+    border-radius: 6px; padding: 0.55rem 0.75rem; margin-top: 0.5rem;
+  }
+  .override-label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem; }
+  .override-block textarea {
+    width: 100%; font: inherit; padding: 0.45rem 0.55rem;
+    background: var(--bg, transparent); color: inherit;
+    border: 1px solid var(--border-soft, #2a3140); border-radius: 6px;
+    resize: vertical;
+  }
+  .classify-prompt { font-size: 0.78rem; color: var(--text-muted, #6a7282); margin-top: 0.35rem; font-style: italic; }
+</style>
