@@ -44,7 +44,7 @@ const checkLabelKeys: Record<string, I18nKey> = {
     <SurfaceIrreversibilityWrap
       kind="irreversibility"
       safetyLineBudget={3}
-      actionContext={'Sending locks this proposal version · the client sees it · downstream invoices reference this draft.'}
+      actionContext={t('f_pv2.irreversibility.context')}
     >
       <Card eyebrow={t('f_pv2.gate.title')} title={proposal.project_name}>
         <SectionLabel label={gate.all_passed ? t('f_pv2.gate.pass') : t('f_pv2.gate.fail')} />
