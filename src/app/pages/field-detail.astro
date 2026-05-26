@@ -1,0 +1,281 @@
+---
+// F-FD1 + F-FD2 · Field Detail · Phase 1C net-new (Lane 1 Capture spine)
+// Canon: KERF Canon v1/_docs/wireframes/F-FD1_mobile_field_detail.html
+//        KERF Canon v1/_docs/wireframes/F-FD2_desktop_field_detail.html
+// Doctrine: D-048 adoption-layer + classify-before-harden
+//
+// Single Astro route renders BOTH mobile (F-FD1) and desktop (F-FD2)
+// variants via media queries · per Phase 1B foundation pattern (role-root
+// + Astro breakpoints, no duplicate pages). Mobile stacks all four blocks
+// (capture · entities · routing · deep-links); desktop ≥1024px renders
+// capture+entities left, routing+deep-links right.
+//
+// Cognitive job (4-question rule from canon):
+//   • Macro/comparison/detail? — Detail (single capture event)
+//   • List/grid/both? — List rows only · Grid view: NO
+//   • Cognitive job? — what was captured, who captured it, what was
+//     extracted, what got routed
+//   • Hidden until drill? — full transcript (F-F1) · full audit (F-H1)
+//
+// Wrap discipline: kind="daily" — this is a routine review surface
+// where the operator inspects a single capture event after the fact.
+// No irreversibility moments here; routing already happened upstream
+// and is shown as audit context.
+//
+// D-048 eventfulness hooks:
+//   The "Scope flag · needs review" chip is a Right-Hand-inferred
+//   classification. If the operator disagrees and overrides the
+//   extraction, that's a learning moment per classify-before-harden:
+//     suggestion.overridden + correction.classified per L0.3 axes
+//     (correction_scope · memory_locality · evidence_source_class).
+
+import Layout from '../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../components/Card.astro';
+import Chip from '../components/Chip.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import { createTranslator } from '../../i18n/index.js';
+
+const { t } = createTranslator('en');
+---
+
+<Layout title="F-FD · Field Detail" activeHref={Astro.url.pathname}>
+  <article class="f-fd">
+
+    <header class="f-fd-header">
+      <a href="/field" class="back-link">{t('f_fd.back_to_field')}</a>
+      <div class="crumb">{t('f_fd.crumb')}</div>
+      <h1>{t('f_fd.title')}</h1>
+      <p class="subtitle">{t('f_fd.subtitle')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+
+      <!-- Hero · who captured what, when -->
+      <Card>
+        <div class="hero">
+          <div class="hero-type">{t('f_fd.hero.type')}</div>
+          <div class="hero-title">{t('f_fd.hero.title')}</div>
+          <div class="hero-meta">{t('f_fd.hero.meta')}</div>
+        </div>
+      </Card>
+
+      <!-- Two-column on desktop · stacked on mobile -->
+      <div class="fd-grid">
+
+        <!-- LEFT column on desktop · stacked on top on mobile -->
+        <div class="fd-left">
+
+          <Card eyebrow={t('f_fd.capture.eyebrow')}>
+            <blockquote class="transcript-quote">{t('f_fd.capture.transcript')}</blockquote>
+          </Card>
+
+          <Card eyebrow={t('f_fd.entities.eyebrow')}>
+            <div class="entity-list">
+
+              <div class="entity-row" data-entity="scope_flag">
+                <div class="e-leading">
+                  <div class="e-title">{t('f_fd.entities.scope_flag.title')}</div>
+                  <div class="e-detail">{t('f_fd.entities.scope_flag.detail')}</div>
+                </div>
+                <div class="e-chip">
+                  <!-- Red chip per F-FD canon · ONLY on scope_flag entity.
+                       Per F-FD callout: "Red chip on scope flag only." -->
+                  <Chip label={t('f_fd.entities.scope_flag.chip')} tone="red" variant="solid" />
+                </div>
+              </div>
+
+              <div class="entity-row" data-entity="cost_hint">
+                <div class="e-leading">
+                  <div class="e-title">{t('f_fd.entities.cost_hint.title')}</div>
+                  <div class="e-detail">{t('f_fd.entities.cost_hint.detail')}</div>
+                </div>
+              </div>
+
+              <div class="entity-row" data-entity="decision">
+                <div class="e-leading">
+                  <div class="e-title">{t('f_fd.entities.decision.title')}</div>
+                  <div class="e-detail">{t('f_fd.entities.decision.detail')}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- D-048 override surface · always-visible in Phase 1C; Phase 1D
+                 reveals on operator disagree-tap. Free-text + scope classify.
+                 Emission shape (Phase 1D wires):
+                   { type: 'suggestion.overridden',
+                     surface: 'field_detail.entity_extraction',
+                     entity_id: 'scope_flag' | 'cost_hint' | 'decision',
+                     override_reason: '<free-text>' }
+                   PLUS { type: 'correction.classified',
+                     correction_scope: 'this_job' | 'general_rule',
+                     memory_locality: 'project_only' | 'tenant_wide',
+                     evidence_source_class: 'operator_review_correction' } -->
+            <details class="override-details">
+              <summary>{t('f_fd.override.disagree_label')}</summary>
+              <div class="override-block">
+                <label class="override-label" for="fd_override_reason">{t('f_fd.override.reason_label')}</label>
+                <textarea
+                  id="fd_override_reason"
+                  name="fd_override_reason"
+                  rows="2"
+                  placeholder={t('f_fd.override.reason_placeholder')}
+                ></textarea>
+                <div class="classify-prompt">{t('f_fd.override.classify_prompt')}</div>
+              </div>
+            </details>
+          </Card>
+
+        </div>
+
+        <!-- RIGHT column on desktop · stacked below on mobile -->
+        <div class="fd-right">
+
+          <Card eyebrow={t('f_fd.routing.eyebrow')}>
+            <div class="routing-list">
+              <div class="routing-row">
+                <div class="r-title">{t('f_fd.routing.project_notes.title')}</div>
+                <div class="r-detail">{t('f_fd.routing.project_notes.detail')}</div>
+              </div>
+              <div class="routing-row">
+                <div class="r-title">{t('f_fd.routing.foreman.title')}</div>
+                <div class="r-detail">{t('f_fd.routing.foreman.detail')}</div>
+              </div>
+              <div class="routing-row">
+                <div class="r-title">{t('f_fd.routing.schedule.title')}</div>
+                <div class="r-detail">{t('f_fd.routing.schedule.detail')}</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card eyebrow={t('f_fd.deeplinks.eyebrow')}>
+            <nav class="deeplinks">
+              <a class="deeplink" href="/transcript-review">{t('f_fd.deeplinks.transcript_review')}</a>
+              <a class="deeplink" href="/audit">{t('f_fd.deeplinks.audit_detail')}</a>
+            </nav>
+          </Card>
+
+        </div>
+
+      </div>
+
+    </SurfaceIrreversibilityWrap>
+
+  </article>
+</Layout>
+
+<style>
+  .f-fd {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+    color: var(--text, #0a0d11);
+  }
+
+  .f-fd-header { margin-bottom: 1.25rem; }
+  .back-link {
+    display: inline-block; font-size: 0.85rem; font-weight: 600;
+    color: var(--blue, #7ba8ff); text-decoration: none; margin-bottom: 0.4rem;
+  }
+  .crumb {
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted, #6a7282); margin-bottom: 0.5rem;
+  }
+  .f-fd-header h1 { font-size: 1.4rem; margin: 0 0 0.4rem; font-weight: 600; }
+  .subtitle { color: var(--text-muted, #4a5462); font-size: 0.95rem; line-height: 1.55; margin: 0; }
+
+  .hero { padding: 0; }
+  .hero-type {
+    font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--field-green, #38c977); font-weight: 700;
+  }
+  .hero-title { font-size: 1.05rem; font-weight: 700; margin-top: 0.25rem; }
+  .hero-meta { font-size: 0.78rem; color: var(--text-muted, #6a7282); margin-top: 0.15rem; }
+
+  /* Mobile · stacked single column · F-FD1 */
+  .fd-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .fd-left, .fd-right {
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+
+  /* Desktop · two-column · F-FD2 */
+  @media (min-width: 1024px) {
+    .fd-grid {
+      grid-template-columns: 1.4fr 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .transcript-quote {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-2, #14181f);
+    border-left: 3px solid var(--blue, #7ba8ff);
+    border-radius: 4px;
+    font-size: 0.88rem; line-height: 1.55;
+    color: var(--text, #0a0d11);
+    font-style: normal;
+  }
+
+  .entity-list { display: flex; flex-direction: column; gap: 0.35rem; }
+  .entity-row {
+    display: grid; grid-template-columns: 1fr auto; gap: 0.6rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface, #1a1f28);
+    border: 1px solid var(--border-soft, #2a3140);
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+  .e-title { font-weight: 600; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted, #6a7282); }
+  .e-detail { margin-top: 0.15rem; }
+
+  .override-details {
+    margin-top: 0.5rem;
+    background: rgba(245, 181, 68, 0.04);
+    border-left: 3px solid var(--amber, #f5b544);
+    border-radius: 6px; padding: 0.45rem 0.6rem;
+  }
+  .override-details summary {
+    cursor: pointer; font-size: 0.82rem; font-weight: 600;
+    color: var(--amber, #f5b544);
+  }
+  .override-block { margin-top: 0.4rem; }
+  .override-label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem; }
+  .override-block textarea {
+    width: 100%; font: inherit; padding: 0.45rem 0.55rem;
+    background: var(--bg, transparent); color: inherit;
+    border: 1px solid var(--border-soft, #2a3140); border-radius: 6px;
+    resize: vertical;
+  }
+  .classify-prompt { font-size: 0.78rem; color: var(--text-muted, #6a7282); margin-top: 0.35rem; font-style: italic; }
+
+  .routing-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .routing-row {
+    padding: 0.5rem 0.75rem;
+    background: var(--surface, #1a1f28);
+    border: 1px solid var(--border-soft, #2a3140);
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+  .r-title { font-weight: 600; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted, #6a7282); }
+  .r-detail { margin-top: 0.15rem; }
+
+  .deeplinks { display: flex; flex-direction: column; gap: 0.35rem; }
+  .deeplink {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-2, #14181f);
+    border: 1px solid var(--border-soft, #2a3140);
+    border-radius: 6px;
+    font-size: 0.85rem; font-weight: 500;
+    color: var(--blue, #7ba8ff);
+    text-decoration: none;
+  }
+  .deeplink:hover { background: rgba(123, 168, 255, 0.05); }
+</style>
