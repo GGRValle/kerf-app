@@ -15,6 +15,16 @@ import { apiRouter } from '../src/api/router.ts';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env['PORT'] ?? 8020);
 const ASTRO_ENTRY = path.resolve(__dirname, '../dist/astro/server/entry.mjs');
+const BASIC_AUTH_USER = process.env['BASIC_AUTH_USER'];
+const BASIC_AUTH_PASS = process.env['BASIC_AUTH_PASS'];
+const BASIC_AUTH_ENABLED =
+  typeof BASIC_AUTH_USER === 'string' &&
+  BASIC_AUTH_USER.length > 0 &&
+  typeof BASIC_AUTH_PASS === 'string' &&
+  BASIC_AUTH_PASS.length > 0;
+const BASIC_AUTH_EXPECTED = BASIC_AUTH_ENABLED
+  ? `Basic ${Buffer.from(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`).toString('base64')}`
+  : null;
 
 type AstroMiddleware = (
   req: http.IncomingMessage,
@@ -50,6 +60,16 @@ async function main(): Promise<void> {
 
   const server = http.createServer((req, res) => {
     const pathname = (req.url ?? '/').split('?')[0] ?? '/';
+    if (BASIC_AUTH_ENABLED && pathname !== '/health') {
+      const header = req.headers.authorization;
+      if (header !== BASIC_AUTH_EXPECTED) {
+        res.statusCode = 401;
+        res.setHeader('WWW-Authenticate', 'Basic realm="Kerf"');
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.end('Unauthorized');
+        return;
+      }
+    }
     if (pathname === '/health' || pathname.startsWith('/api/v1')) {
       honoListener(req, res);
       return;
