@@ -3,6 +3,7 @@
  * Serves SSR pages from Astro middleware adapter and typed API at /api/v1/.
  * Legacy v15-vertical-slice SPA remains on demo:v15-vertical-slice:serve (untouched).
  */
+import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -25,6 +26,29 @@ const BASIC_AUTH_ENABLED =
 const BASIC_AUTH_EXPECTED = BASIC_AUTH_ENABLED
   ? `Basic ${Buffer.from(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`).toString('base64')}`
   : null;
+
+const ASTRO_CLIENT_ROOT = path.resolve(__dirname, '../dist/astro/client');
+
+const ASTRO_CLIENT_MIME: Record<string, string> = {
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.woff2': 'font/woff2',
+};
+
+function tryServeAstroClientAsset(pathname: string, res: http.ServerResponse): boolean {
+  if (!pathname.startsWith('/_astro/')) return false;
+  const filePath = path.join(ASTRO_CLIENT_ROOT, pathname);
+  const normalizedRoot = `${ASTRO_CLIENT_ROOT}${path.sep}`;
+  if (!filePath.startsWith(normalizedRoot) && filePath !== ASTRO_CLIENT_ROOT) return false;
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return false;
+  const ext = path.extname(filePath);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', ASTRO_CLIENT_MIME[ext] ?? 'application/octet-stream');
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  fs.createReadStream(filePath).pipe(res);
+  return true;
+}
 
 type AstroMiddleware = (
   req: http.IncomingMessage,
@@ -58,9 +82,20 @@ async function main(): Promise<void> {
 
   const honoListener = getRequestListener(edge.fetch);
 
+  function isAuthExemptPath(pathname: string): boolean {
+    // iOS Safari often omits Authorization on module script requests; keep
+    // HTML/API gated but allow hashed Astro client bundles through.
+    return (
+      pathname === '/health' ||
+      pathname.startsWith('/_astro/') ||
+      pathname === '/favicon.ico' ||
+      pathname === '/favicon.svg'
+    );
+  }
+
   const server = http.createServer((req, res) => {
     const pathname = (req.url ?? '/').split('?')[0] ?? '/';
-    if (BASIC_AUTH_ENABLED && pathname !== '/health') {
+    if (BASIC_AUTH_ENABLED && !isAuthExemptPath(pathname)) {
       const header = req.headers.authorization;
       if (header !== BASIC_AUTH_EXPECTED) {
         res.statusCode = 401;
@@ -72,6 +107,9 @@ async function main(): Promise<void> {
     }
     if (pathname === '/health' || pathname.startsWith('/api/v1')) {
       honoListener(req, res);
+      return;
+    }
+    if (tryServeAstroClientAsset(pathname, res)) {
       return;
     }
     void astroHandler(req, res, () => {
