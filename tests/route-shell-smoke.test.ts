@@ -27,6 +27,11 @@ const LEGACY_ROUTES = [
   '/kb-ingestion/ing-001',
   '/relay',
   '/relay/relay-001',
+  '/clients',
+  '/clients/client_wegrzyn',
+  '/clients/new',
+  '/proposals/prop_lane6_pass/preview',
+  '/proposals/prop_lane6_pass/send',
 ] as const;
 
 async function waitForHealth(baseUrl: string, attempts = 60): Promise<void> {

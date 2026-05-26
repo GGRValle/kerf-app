@@ -1,0 +1,39 @@
+---
+// F-CL2/F-CL4 · Client detail · /clients/:id
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../components/Card.astro';
+import Row from '../../components/Row.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
+import { createTranslator } from '../../../i18n/index.js';
+import { getLane6Client } from '../../lib/lane6Fixtures.js';
+import '../../styles/lane6.css';
+
+const { id } = Astro.params;
+const client = id ? getLane6Client(id) : null;
+const { t } = createTranslator('en');
+
+if (client === null) {
+  return Astro.redirect('/clients');
+}
+---
+
+<Layout titleKey="f_cl.detail.title" activeHref="/clients">
+  <article class="lane6-page f-cl-detail">
+    <header>
+      <div class="lane6-crumb"><a href="/clients">{t('f_cl.crumb')}</a> · {client.display_name}</div>
+      <h1 class="lane6-title">{client.display_name}</h1>
+      <p class="lane6-subtitle">{t('f_cl.detail.read_only')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <Card title={t('f_cl.detail.title')}>
+        <Row title={t('f_cl.form.email')} meta={client.email ?? '—'} />
+        <Row title={t('f_cl.form.phone')} meta={client.phone ?? '—'} />
+        <Row title={t('f_cl.form.address')} meta={client.address_line} />
+        <SectionLabel label={t('f_cl.detail.projects')} />
+        <p class="lane6-subtitle">{t('f_cl.detail.no_projects')}</p>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>

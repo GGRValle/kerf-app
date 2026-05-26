@@ -60,6 +60,8 @@ export type PersistenceEventType =
   | 'proposal.drafted'
   | 'proposal.edited'
   | 'proposal.accepted'
+  | 'proposal.sent'
+  | 'client.created'
   | 'daily_log.entry_captured'
   | 'daily_log.facts_extracted'
   | 'daily_log.drift_detected'
@@ -403,6 +405,35 @@ export interface ProposalAcceptedEvent extends BasePersistenceEvent {
   readonly accepted_at: string;
   /** Integer cents — final locked total at acceptance. */
   readonly total_cents: number;
+}
+
+/**
+ * Operator-initiated proposal send (F-PV2). Explicit tap required — no
+ * autonomous send. Emitted after send-gate pass or operator override.
+ */
+export interface ProposalSentEvent extends BasePersistenceEvent {
+  readonly type: 'proposal.sent';
+  readonly proposal_id: string;
+  readonly proposal_number: string;
+  /** Recipient identifier (client email). */
+  readonly sent_to: string;
+  /** ISO8601 timestamp the send was operator-initiated. */
+  readonly sent_at: string;
+  readonly send_channel: 'email' | 'paper' | 'portal';
+  /** send_gate.evaluated event_id that preceded this send (audit chain). */
+  readonly send_gate_event_id: string;
+}
+
+/**
+ * Operator creates a client record (F-CL5/F-CL6). Validators run before append.
+ */
+export interface ClientCreatedEvent extends BasePersistenceEvent {
+  readonly type: 'client.created';
+  readonly client_id: string;
+  readonly display_name: string;
+  readonly contact_email: string | null;
+  readonly contact_phone: string | null;
+  readonly address_lines: readonly string[];
 }
 
 /**
@@ -771,6 +802,8 @@ export type PersistenceEvent =
   | ProposalDraftedEvent
   | ProposalEditedEvent
   | ProposalAcceptedEvent
+  | ProposalSentEvent
+  | ClientCreatedEvent
   | DailyLogEntryCapturedEvent
   | DailyLogFactsExtractedEvent
   | DailyLogDriftDetectedEvent
@@ -836,6 +869,8 @@ const VALID_EVENT_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'proposal.drafted',
   'proposal.edited',
   'proposal.accepted',
+  'proposal.sent',
+  'client.created',
   'daily_log.entry_captured',
   'daily_log.facts_extracted',
   'daily_log.drift_detected',
@@ -1242,6 +1277,48 @@ function validateProposalAccepted(input: Record<string, unknown>): readonly stri
   if (!isIso8601(input['accepted_at'])) errors.push('accepted_at must be an ISO8601 timestamp');
   if (!isIntegerCents(input['total_cents'])) {
     errors.push('total_cents must be a non-negative integer (cents — no floats, no formatting)');
+  }
+  return errors;
+}
+
+function validateProposalSent(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['proposal_id'])) errors.push('proposal_id must be a non-empty string');
+  if (!nonEmptyString(input['proposal_number'])) errors.push('proposal_number must be a non-empty string');
+  if (!nonEmptyString(input['sent_to'])) errors.push('sent_to must be a non-empty string');
+  if (!isIso8601(input['sent_at'])) errors.push('sent_at must be an ISO8601 timestamp');
+  if (!nonEmptyString(input['send_gate_event_id'])) {
+    errors.push('send_gate_event_id must be a non-empty string');
+  }
+  if (!nonEmptyString(input['send_channel'])) {
+    errors.push('send_channel must be a non-empty string');
+  } else if (!VALID_INVOICE_SEND_CHANNELS.has(input['send_channel'] as ProposalSentEvent['send_channel'])) {
+    errors.push(
+      `send_channel "${input['send_channel']}" is not recognized (expected email|paper|portal)`,
+    );
+  }
+  return errors;
+}
+
+function validateClientCreated(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['client_id'])) errors.push('client_id must be a non-empty string');
+  if (!nonEmptyString(input['display_name'])) errors.push('display_name must be a non-empty string');
+  if (input['contact_email'] !== null && typeof input['contact_email'] !== 'string') {
+    errors.push('contact_email must be a string or null');
+  }
+  if (input['contact_phone'] !== null && typeof input['contact_phone'] !== 'string') {
+    errors.push('contact_phone must be a string or null');
+  }
+  if (!Array.isArray(input['address_lines'])) {
+    errors.push('address_lines must be an array');
+  } else {
+    for (const line of input['address_lines']) {
+      if (typeof line !== 'string') {
+        errors.push('address_lines entries must be strings');
+        break;
+      }
+    }
   }
   return errors;
 }
@@ -1678,6 +1755,12 @@ export function validatePersistenceEvent(input: unknown): ValidationResult<Persi
       break;
     case 'proposal.accepted':
       typeErrors = validateProposalAccepted(record);
+      break;
+    case 'proposal.sent':
+      typeErrors = validateProposalSent(record);
+      break;
+    case 'client.created':
+      typeErrors = validateClientCreated(record);
       break;
     case 'daily_log.entry_captured':
       typeErrors = validateDailyLogEntryCaptured(record);

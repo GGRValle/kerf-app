@@ -1,0 +1,138 @@
+---
+// F-PV2 · Desktop proposal preview + send-gate · /proposals/:id/send
+import Layout from '../../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../../components/Card.astro';
+import SectionLabel from '../../../components/SectionLabel.astro';
+import { createTranslator } from '../../../../i18n/index.js';
+import { getLane6Proposal } from '../../../lib/lane6Fixtures.js';
+import { evaluateSendGate } from '../../../../proposal/sendGate.js';
+import { renderProposalHtml } from '../../../../proposal/render.js';
+import type { I18nKey } from '../../../../i18n/keys.js';
+import '../../../styles/lane6.css';
+
+const { id } = Astro.params;
+const proposal = id ? getLane6Proposal(id) : null;
+const { t } = createTranslator('en');
+
+if (proposal === null) {
+  return Astro.redirect('/');
+}
+
+const gate = evaluateSendGate(proposal);
+const paperHtml = renderProposalHtml(proposal);
+const tenantId = proposal.tenant_id;
+
+const checkLabelKeys: Record<string, I18nKey> = {
+  client_pii: 'f_pv2.check.client_pii',
+  proposal_total: 'f_pv2.check.proposal_total',
+  evidence_source: 'f_pv2.check.evidence_source',
+  validity_window: 'f_pv2.check.validity_window',
+  signature_block: 'f_pv2.check.signature_block',
+  margin_within_policy: 'f_pv2.check.margin_policy',
+};
+---
+
+<Layout titleKey="f_pv2.title" activeHref="/draft-review">
+  <article class="lane6-page f-pv2" data-proposal-id={proposal.proposal_id} data-tenant-id={tenantId}>
+    <header>
+      <div class="lane6-crumb">{t('f_pv2.crumb')}</div>
+      <h1 class="lane6-title">{t('f_pv2.title')}</h1>
+      <p class="lane6-subtitle">{t('f_pv2.subtitle')} · {proposal.proposal_number}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap
+      kind="irreversibility"
+      safetyLineBudget={3}
+      actionContext={'Sending locks this proposal version · the client sees it · downstream invoices reference this draft.'}
+    >
+      <Card eyebrow={t('f_pv2.gate.title')} title={proposal.project_name}>
+        <SectionLabel label={gate.all_passed ? t('f_pv2.gate.pass') : t('f_pv2.gate.fail')} />
+        {!gate.all_passed && gate.recoverable && (
+          <p class="lane6-subtitle">{t('f_pv2.gate.recoverable')}</p>
+        )}
+        {!gate.all_passed && gate.override_eligible && (
+          <p class="lane6-subtitle">{t('f_pv2.gate.override_eligible')}</p>
+        )}
+
+        <ul class="lane6-gate-list" id="gate-checks">
+          {gate.checks.map((check) => (
+            <li class:list={[check.pass ? 'pass' : 'fail']} data-check={check.name}>
+              <span>{t(checkLabelKeys[check.name] ?? 'f_pv2.gate.title')}</span>
+              <span>{check.pass ? '✓' : (check.reason ?? '—')}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div class="lane6-paper-wrap lane6-desktop-only">
+          <div class="lane6-paper-html" set:html={paperHtml} />
+        </div>
+
+        {!gate.all_passed && gate.override_eligible && (
+          <div class="lane6-override" id="override-panel">
+            <label for="override-reason">{t('f_pv2.override.prompt')}</label>
+            <textarea id="override-reason" name="override_reason" required></textarea>
+            <p class="lane6-subtitle">{t('f_pv2.override.followup')}</p>
+          </div>
+        )}
+
+        <div slot="footer" class="lane6-actions">
+          <a class="lane6-btn ghost" href="/draft-review">{t('f_pv2.back_fix')}</a>
+          {gate.all_passed ? (
+            <button type="button" class="lane6-btn primary" id="send-proposal" data-ready="true">
+              {t('f_pv2.send.action')}
+            </button>
+          ) : gate.override_eligible ? (
+            <button type="button" class="lane6-btn primary" id="send-proposal" data-ready="false">
+              {t('f_pv2.send.action')} · override
+            </button>
+          ) : (
+            <button type="button" class="lane6-btn" disabled aria-disabled="true">
+              {t('f_pv2.send.ready')} · blocked
+            </button>
+          )}
+        </div>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+
+  <script>
+    const root = document.querySelector('.f-pv2');
+    const proposalId = root?.getAttribute('data-proposal-id');
+    const tenantId = root?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
+    let sendGateEventId: string | null = null;
+
+    async function evaluateOnLoad() {
+      const res = await fetch(`/api/v1/proposals/${proposalId}/send-gate?tenant_id=${tenantId}`, {
+        method: 'POST',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      sendGateEventId = data.event_id;
+    }
+
+    evaluateOnLoad();
+
+    document.getElementById('send-proposal')?.addEventListener('click', async () => {
+      const btn = document.getElementById('send-proposal');
+      const ready = btn?.getAttribute('data-ready') === 'true';
+      const overrideReason = (document.getElementById('override-reason') as HTMLTextAreaElement | null)?.value ?? '';
+      if (!ready && overrideReason.trim().length === 0) {
+        alert('Override reason required.');
+        return;
+      }
+      const res = await fetch(`/api/v1/proposals/${proposalId}/send?tenant_id=${tenantId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          send_gate_event_id: sendGateEventId,
+          override_reason: ready ? undefined : overrideReason,
+        }),
+      });
+      if (res.ok) {
+        btn?.setAttribute('disabled', 'true');
+        btn!.textContent = 'Sent · audit logged';
+      }
+    });
+  </script>
+</Layout>
