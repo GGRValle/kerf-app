@@ -183,7 +183,41 @@ export type I18nKey =
   | 'f_e1.state3.submit_sub'
   | 'f_e1.state3.irreversibility.action_context'
   | 'f_e1.action.cancel'
-  | 'f_e1.action.back';
+  | 'f_e1.action.back'
+
+  // Lane 1 · F-RC1 · Mobile Room Capture (Phase 1C net-new)
+  | 'f_rc1.crumb'
+  | 'f_rc1.title'
+  | 'f_rc1.subtitle'
+  | 'f_rc1.captured_eyebrow'
+  | 'f_rc1.room_title'
+  | 'f_rc1.room_meta'
+  | 'f_rc1.apple_disclosure.title'
+  | 'f_rc1.apple_disclosure.detail'
+  | 'f_rc1.rh_synthesis.eyebrow'
+  | 'f_rc1.rh_synthesis.body'
+  | 'f_rc1.measurements.eyebrow'
+  | 'f_rc1.use_label.estimate_safe'
+  | 'f_rc1.use_label.verify'
+  | 'f_rc1.use_label.manual'
+  | 'f_rc1.dont_release.title'
+  | 'f_rc1.dont_release.detail'
+  | 'f_rc1.cross_scope.eyebrow'
+  | 'f_rc1.cross_scope.hvac'
+  | 'f_rc1.cross_scope.tile'
+  | 'f_rc1.cross_scope.cabinetry'
+  | 'f_rc1.cross_scope.electrical'
+  | 'f_rc1.cross_scope.plumbing'
+  | 'f_rc1.tenant_memory.eyebrow'
+  | 'f_rc1.tenant_memory.title'
+  | 'f_rc1.tenant_memory.detail'
+  | 'f_rc1.action.rescan'
+  | 'f_rc1.action.add_to_project'
+  | 'f_rc1.action.save_to_memory'
+  | 'f_rc1.release.action_context'
+  | 'f_rc1.override.reason_label'
+  | 'f_rc1.override.reason_placeholder'
+  | 'f_rc1.override.classify_prompt';
 
 export type Locale = 'en' | 'es';
 
