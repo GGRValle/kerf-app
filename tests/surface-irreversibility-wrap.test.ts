@@ -87,9 +87,15 @@ test('astro irreversibility pages declare actionContext on wrap + safety-copy re
     if (!src.includes('kind="irreversibility"') && !src.includes("kind='irreversibility'")) {
       continue;
     }
+    // actionContext must be supplied via:
+    //   string literal:  actionContext="..."  / actionContext='...'  / actionContext={"..."}
+    //   i18n call:       actionContext={t('...')}
+    //   identifier:      actionContext={someVar}
+    // Rejected: actionContext omitted, actionContext={}, actionContext={null}.
+    // Empty / null shapes are caught at runtime by the SurfaceIrreversibilityWrap contract.
     assert.match(
       src,
-      /actionContext=\{?[`'"]/,
+      /actionContext=(?:[`'"]|\{(?!\s*(?:\}|null\s*\})|null\b)[^}\s])/,
       `${path.relative(APP_PAGES_ROOT, page)} missing actionContext on irreversibility wrap`,
     );
     if (src.includes('class="safety-copy"')) {
