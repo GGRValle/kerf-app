@@ -143,6 +143,16 @@ const PROPOSAL_FIXTURES: Record<string, ProposalArtifact> = {
       },
     ],
   }),
+  'prop_lane6_no_capture': makeProposalBase({
+    proposal_id: 'prop_lane6_no_capture',
+    project_id: 'proj_desk_only',
+    proposal_number: 'GGR-2026-900',
+  }),
+  'prop_lane6_multi_capture': makeProposalBase({
+    proposal_id: 'prop_lane6_multi_capture',
+    project_id: 'proj_multi_capture',
+    proposal_number: 'GGR-2026-901',
+  }),
 };
 
 export function getLane6Proposal(proposalId: string): ProposalArtifact | null {

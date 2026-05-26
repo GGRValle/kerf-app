@@ -286,6 +286,13 @@ export type I18nKey =
   | 'f_pv2.check.signature_block'
   | 'f_pv2.check.margin_policy'
 
+  // Lane 6 · F-PV capture-origin affordance (Phase 1D)
+  | 'f_pv.capture_origin.heading'
+  | 'f_pv.capture_origin.summary'
+  | 'f_pv.capture_origin.empty'
+  | 'f_pv.capture_origin.session_link'
+  | 'f_pv.capture_origin.session_counts'
+
   // Lane 6 · F-CL clients spine
   | 'f_cl.crumb'
   | 'f_cl.list.title'

@@ -1,0 +1,68 @@
+---
+import SectionLabel from './SectionLabel.astro';
+import { createTranslator } from '../../i18n/index.js';
+import type { ProposalCaptureOrigin } from '../../proposal/captureOrigin.js';
+
+export interface Props {
+  origin: ProposalCaptureOrigin;
+  locale?: 'en' | 'es';
+}
+
+const { origin, locale = 'en' } = Astro.props;
+const { t } = createTranslator(locale);
+const hasCaptures = origin.sessions.length > 0;
+
+function formatSummary(): string {
+  return t('f_pv.capture_origin.summary')
+    .replace('{date}', origin.earliest_at?.slice(0, 10) ?? '—')
+    .replace('{voice}', String(origin.voice_clip_count))
+    .replace('{photos}', String(origin.photo_count))
+    .replace('{transcripts}', String(origin.transcript_count));
+}
+
+function formatSessionLink(sessionId: string, date: string): string {
+  return t('f_pv.capture_origin.session_link')
+    .replace('{id}', sessionId)
+    .replace('{date}', date);
+}
+
+function formatSessionCounts(voice: number, photos: number, transcripts: number): string {
+  return t('f_pv.capture_origin.session_counts')
+    .replace('{voice}', String(voice))
+    .replace('{photos}', String(photos))
+    .replace('{transcripts}', String(transcripts));
+}
+---
+
+<section class="capture-origin" aria-label={t('f_pv.capture_origin.heading')}>
+  <SectionLabel label={t('f_pv.capture_origin.heading')} />
+  {!hasCaptures ? (
+    <p class="lane6-subtitle">{t('f_pv.capture_origin.empty')}</p>
+  ) : (
+    <>
+      <p class="capture-origin-summary">{formatSummary()}</p>
+      <ul class="capture-origin-sessions">
+        {origin.sessions.map((session) => (
+          <li>
+            <a href={session.detail_href} class="capture-origin-link">
+              {formatSessionLink(session.session_id, session.captured_at.slice(0, 10))}
+            </a>
+            <span class="capture-origin-counts">
+              {formatSessionCounts(session.voice_clips, session.photos, session.transcripts)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
+</section>
+
+<style>
+  .capture-origin { margin: 1rem 0; padding: 0.75rem 0; border-top: 1px solid var(--border, #d8dee6); }
+  .capture-origin-summary { font-size: 0.85rem; color: var(--text-muted, #5c6670); margin: 0 0 0.5rem; }
+  .capture-origin-sessions { list-style: none; padding: 0; margin: 0; }
+  .capture-origin-sessions li { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.35rem 0; font-size: 0.85rem; }
+  .capture-origin-link { color: var(--accent, #0f766e); font-weight: 600; text-decoration: none; }
+  .capture-origin-link:hover { text-decoration: underline; }
+  .capture-origin-counts { color: var(--text-muted, #5c6670); }
+</style>

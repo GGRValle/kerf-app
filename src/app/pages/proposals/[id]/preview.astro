@@ -5,6 +5,8 @@ import SurfaceIrreversibilityWrap from '../../../components/SurfaceIrreversibili
 import Card from '../../../components/Card.astro';
 import { createTranslator } from '../../../../i18n/index.js';
 import { getLane6Proposal } from '../../../lib/lane6Fixtures.js';
+import { loadProposalCaptureOrigin } from '../../../lib/loadProposalCaptureOrigin.js';
+import CaptureOriginPanel from '../../../components/CaptureOriginPanel.astro';
 import { renderProposalHtml } from '../../../../proposal/render.js';
 import '../../../styles/lane6.css';
 
@@ -17,6 +19,7 @@ if (proposal === null) {
 }
 
 const paperHtml = renderProposalHtml(proposal);
+const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, proposal.project_id);
 ---
 
 <Layout titleKey="f_pv1.title" activeHref="/draft-review">
@@ -38,6 +41,7 @@ const paperHtml = renderProposalHtml(proposal);
 
       <Card eyebrow={t('f_pv1.preview_label')} title={proposal.project_name}>
         <p class="lane6-subtitle">{t('f_pv1.read_only_note')}</p>
+        <CaptureOriginPanel origin={captureOrigin} />
         <div class="lane6-paper-wrap">
           <div class="lane6-paper-html" set:html={paperHtml} />
         </div>

@@ -154,6 +154,13 @@ export const EN: TranslationMap = {
   'f_pv2.check.signature_block': 'Signature block present',
   'f_pv2.check.margin_policy': 'Margin within policy',
 
+  'f_pv.capture_origin.heading': 'Capture origin',
+  'f_pv.capture_origin.summary':
+    'Field captures from {date} · {voice} voice clips · {photos} photos · {transcripts} transcripts',
+  'f_pv.capture_origin.empty': 'No field captures referenced',
+  'f_pv.capture_origin.session_link': '{id} · {date}',
+  'f_pv.capture_origin.session_counts': '{voice} voice · {photos} photos · {transcripts} transcripts',
+
   'f_cl.crumb': 'Clients',
   'f_cl.list.title': 'Clients',
   'f_cl.list.subtitle': 'Client relationships · read-only detail this phase',

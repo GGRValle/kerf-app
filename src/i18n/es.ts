@@ -160,6 +160,13 @@ export const ES: TranslationMap = {
   'f_pv2.check.signature_block': 'Bloque de firma presente',
   'f_pv2.check.margin_policy': 'Margen dentro de política',
 
+  'f_pv.capture_origin.heading': 'Origen de captura',
+  'f_pv.capture_origin.summary':
+    'Capturas de campo desde {date} · {voice} clips de voz · {photos} fotos · {transcripts} transcripciones',
+  'f_pv.capture_origin.empty': 'No hay capturas de campo referenciadas',
+  'f_pv.capture_origin.session_link': '{id} · {date}',
+  'f_pv.capture_origin.session_counts': '{voice} voz · {photos} fotos · {transcripts} transcripciones',
+
   'f_cl.crumb': 'Clientes',
   'f_cl.list.title': 'Clientes',
   'f_cl.list.subtitle': 'Relaciones con clientes · detalle de solo lectura esta fase',
