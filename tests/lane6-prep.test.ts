@@ -9,8 +9,48 @@ import { tmpdir } from 'node:os';
 
 import { createApiRouter } from '../src/api/router.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
-import { evaluateSendGate } from '../src/proposal/sendGate.js';
+import { createPersistenceEventStore } from '../src/persistence/eventStore.js';
+import { createTenantScopedEventReader } from '../src/persistence/tenantScopedReads.js';
+import type { PersistenceTenantId } from '../src/persistence/events.js';
+import { evaluateSendGate, tenantEvidenceClassForOverride } from '../src/proposal/sendGate.js';
 import { getLane6Proposal } from '../src/app/lib/lane6Fixtures.js';
+
+async function runOverrideClassification(
+  tenant: PersistenceTenantId,
+): Promise<string | undefined> {
+  const dir = await mkdtemp(path.join(tmpdir(), `lane6-override-${tenant}-`));
+  process.env['PERSISTENCE_DIR'] = dir;
+  resetApiDepsForTests();
+  const app = createApiRouter();
+  try {
+    const gateRes = await app.request(
+      `/proposals/prop_lane6_override/send-gate?tenant_id=${tenant}`,
+      { method: 'POST' },
+    );
+    const gateBody = await gateRes.json();
+    const sendRes = await app.request(
+      `/proposals/prop_lane6_override/send?tenant_id=${tenant}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          send_gate_event_id: gateBody.event_id,
+          override_reason: 'Tenant-scoped override classification test.',
+        }),
+      },
+    );
+    assert.equal(sendRes.status, 200);
+    const store = createPersistenceEventStore({ filepath: path.join(dir, 'events.jsonl') });
+    const reader = createTenantScopedEventReader(store);
+    const classified = await reader.readEventsByTypeForTenant(tenant, 'correction.classified');
+    const event = classified.find((e) => e.type === 'correction.classified');
+    return event?.type === 'correction.classified' ? event.evidence_source_class : undefined;
+  } finally {
+    resetApiDepsForTests();
+    delete process.env['PERSISTENCE_DIR'];
+    await rm(dir, { recursive: true, force: true });
+  }
+}
 
 test('evaluateSendGate · pass fixture returns gate_pass', () => {
   const proposal = getLane6Proposal('prop_lane6_pass');
@@ -109,4 +149,25 @@ test('override send chain emits suggestion.overridden + correction.classified + 
     delete process.env['PERSISTENCE_DIR'];
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('proposal override emits correction.classified with tenant-derived evidence_source_class (GGR)', async () => {
+  const evidence = await runOverrideClassification('tenant_ggr');
+  assert.equal(evidence, 'dogfood_ggr');
+});
+
+test('proposal override on Valle tenant tags evidence_source_class: dogfood_valle', async () => {
+  const evidence = await runOverrideClassification('tenant_valle');
+  assert.equal(evidence, 'dogfood_valle');
+});
+
+test('proposal override on HPG tenant tags evidence_source_class: dogfood_hpg', async () => {
+  const evidence = await runOverrideClassification('tenant_hpg');
+  assert.equal(evidence, 'dogfood_hpg');
+});
+
+test('tenantEvidenceClassForOverride exhaustively covers known tenants', () => {
+  assert.equal(tenantEvidenceClassForOverride('tenant_ggr'), 'dogfood_ggr');
+  assert.equal(tenantEvidenceClassForOverride('tenant_valle'), 'dogfood_valle');
+  assert.equal(tenantEvidenceClassForOverride('tenant_hpg'), 'dogfood_hpg');
 });
