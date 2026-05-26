@@ -1,0 +1,53 @@
+---
+// F-PV1 · Mobile/desktop proposal preview · /proposals/:id/preview
+import Layout from '../../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../../components/Card.astro';
+import { createTranslator } from '../../../../i18n/index.js';
+import { getLane6Proposal } from '../../../lib/lane6Fixtures.js';
+import { renderProposalHtml } from '../../../../proposal/render.js';
+import '../../../styles/lane6.css';
+
+const { id } = Astro.params;
+const proposal = id ? getLane6Proposal(id) : null;
+const { t } = createTranslator('en');
+
+if (proposal === null) {
+  return Astro.redirect('/');
+}
+
+const paperHtml = renderProposalHtml(proposal);
+---
+
+<Layout titleKey="f_pv1.title" activeHref="/draft-review">
+  <article class="lane6-page f-pv1">
+    <header>
+      <div class="lane6-crumb">{t('f_pv1.crumb')}</div>
+      <h1 class="lane6-title">{t('f_pv1.title')}</h1>
+      <p class="lane6-subtitle">{t('f_pv1.subtitle')} · {proposal.proposal_number}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <div class="lane6-operator-bar">
+        <div class="eyebrow">{t('f_pv1.operator_eyebrow')}</div>
+        <div class="lane6-seg">
+          <span class="active">{t('f_pv1.view_mobile')}</span>
+          <span>{t('f_pv1.view_desktop')}</span>
+        </div>
+      </div>
+
+      <Card eyebrow={t('f_pv1.preview_label')} title={proposal.project_name}>
+        <p class="lane6-subtitle">{t('f_pv1.read_only_note')}</p>
+        <div class="lane6-paper-wrap">
+          <div class="lane6-paper-html" set:html={paperHtml} />
+        </div>
+        <div slot="footer" class="lane6-actions">
+          <a class="lane6-btn ghost" href="/draft-review">{t('f_pv1.back_draft')}</a>
+          <a class="lane6-btn primary" href={`/proposals/${proposal.proposal_id}/send`}>
+            {t('f_pv1.send_cta')}
+          </a>
+        </div>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>

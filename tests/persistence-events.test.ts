@@ -42,6 +42,8 @@ import {
   type PaymentReceivedEvent,
   type AllowanceExceptionOpenedEvent,
   type AllowanceExceptionResolvedEvent,
+  type ClientCreatedEvent,
+  type ProposalSentEvent,
 } from '../src/persistence/events.ts';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1050,6 +1052,35 @@ function invoiceSent(over: Partial<InvoiceSentEvent> = {}): unknown {
   };
 }
 
+function proposalSent(over: Partial<ProposalSentEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'proposal.sent',
+    proposal_id: 'prop_lane6_pass',
+    proposal_number: 'GGR-2026-514',
+    sent_to: 'client@example.com',
+    sent_at: ISO_AT,
+    send_channel: 'email' as const,
+    send_gate_event_id: 'evt_gate_001',
+    source_refs: [wellFormedSourceRef],
+    ...over,
+  };
+}
+
+function clientCreated(over: Partial<ClientCreatedEvent> = {}): unknown {
+  return {
+    ...baseHeader,
+    type: 'client.created',
+    client_id: 'client_lane6_test',
+    display_name: 'Lane6 Test Client',
+    contact_email: 'lane6@test.example',
+    contact_phone: null,
+    address_lines: ['123 Test St'],
+    source_refs: [wellFormedSourceRef],
+    ...over,
+  };
+}
+
 function apInvoiceScheduled(over: Partial<ApInvoiceScheduledEvent> = {}): unknown {
   return {
     ...baseHeader,
@@ -1169,6 +1200,16 @@ test('invoice.created happy path validates (integer cents)', () => {
 
 test('invoice.sent happy path validates', () => {
   const r = validatePersistenceEvent(invoiceSent());
+  assert.equal(r.ok, true);
+});
+
+test('proposal.sent happy path validates', () => {
+  const r = validatePersistenceEvent(proposalSent());
+  assert.equal(r.ok, true);
+});
+
+test('client.created happy path validates', () => {
+  const r = validatePersistenceEvent(clientCreated());
   assert.equal(r.ok, true);
 });
 

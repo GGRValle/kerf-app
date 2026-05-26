@@ -1,0 +1,230 @@
+/* Lane 6 · Proposal preview + Clients spine · wireframe-accurate chrome */
+.lane6-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 3rem;
+}
+
+.lane6-crumb {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.lane6-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+
+.lane6-subtitle {
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+  max-width: 52rem;
+  line-height: 1.55;
+}
+
+.lane6-operator-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  background: #14181f;
+  color: #e8ecf1;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.lane6-operator-bar .eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c9a961;
+  font-weight: 700;
+  width: 100%;
+}
+
+.lane6-seg {
+  display: inline-flex;
+  gap: 2px;
+  background: #1a1f28;
+  border: 1px solid #2a3140;
+  border-radius: 7px;
+  padding: 2px;
+}
+
+.lane6-seg span {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+  border-radius: 5px;
+  color: #6a7282;
+  font-weight: 600;
+}
+
+.lane6-seg span.active {
+  background: #f5b544;
+  color: #1a1300;
+}
+
+.lane6-paper-wrap {
+  background: linear-gradient(180deg, #1f2024 0%, #14181f 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.lane6-paper-wrap iframe,
+.lane6-paper-html {
+  width: 100%;
+  min-height: 520px;
+  border: none;
+  border-radius: 4px;
+  background: #fcfcfa;
+}
+
+.lane6-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.lane6-btn {
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lane6-btn.primary {
+  background: #f5b544;
+  border-color: #f5b544;
+  color: #1a1300;
+}
+
+.lane6-btn.ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.lane6-gate-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.lane6-gate-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px dotted var(--border);
+  font-size: 0.85rem;
+}
+
+.lane6-gate-list li.pass { color: #027a48; }
+.lane6-gate-list li.fail { color: #b42318; }
+
+.lane6-override {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #f5b544;
+  border-radius: 8px;
+  background: rgba(245, 181, 68, 0.08);
+}
+
+.lane6-override label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.lane6-override textarea {
+  width: 100%;
+  min-height: 72px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.lane6-clients-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lane6-client-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.lane6-client-row:hover {
+  border-color: #0f766e;
+}
+
+.lane6-client-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.lane6-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 28rem;
+}
+
+.lane6-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.lane6-form input {
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font: inherit;
+}
+
+.lane6-desktop-only { display: none; }
+.lane6-mobile-only { display: block; }
+
+@media (min-width: 900px) {
+  .lane6-desktop-only { display: block; }
+  .lane6-mobile-only { display: none; }
+  .lane6-clients-grid.desktop-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+[data-role-root='owner'] .lane6-desktop-only,
+[data-role-root='pm'] .lane6-desktop-only,
+[data-role-root='admin_ops'] .lane6-desktop-only {
+  display: block;
+}
+
+@media (max-width: 899px) {
+  [data-role-root='owner'] .lane6-desktop-only,
+  [data-role-root='pm'] .lane6-desktop-only,
+  [data-role-root='admin_ops'] .lane6-desktop-only {
+    display: none;
+  }
+}

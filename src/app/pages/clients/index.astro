@@ -1,0 +1,65 @@
+---
+// F-CL1/F-CL3 · Clients list · /clients
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../components/Card.astro';
+import Chip from '../../components/Chip.astro';
+import { createTranslator } from '../../../i18n/index.js';
+import { LANE6_CLIENTS } from '../../lib/lane6Fixtures.js';
+import '../../styles/lane6.css';
+
+const { t } = createTranslator('en');
+const clients = LANE6_CLIENTS;
+
+function statusKey(status: 'active' | 'prospect' | 'archived') {
+  if (status === 'prospect') return 'f_cl.status.prospect' as const;
+  if (status === 'archived') return 'f_cl.status.archived' as const;
+  return 'f_cl.status.active' as const;
+}
+---
+
+<Layout titleKey="f_cl.list.title" activeHref="/clients">
+  <article class="lane6-page f-cl-list">
+    <header>
+      <div class="lane6-crumb">{t('f_cl.crumb')}</div>
+      <h1 class="lane6-title">{t('f_cl.list.title')}</h1>
+      <p class="lane6-subtitle">{t('f_cl.list.subtitle')}</p>
+      <div class="lane6-actions">
+        <a class="lane6-btn primary" href="/clients/new">{t('f_cl.list.new_client')}</a>
+      </div>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <Card title={t('f_cl.list.title')}>
+        <input type="search" placeholder={t('f_cl.list.search_placeholder')} aria-label={t('f_cl.list.search_placeholder')} />
+        {clients.length === 0 ? (
+          <p>{t('f_cl.list.empty')}</p>
+        ) : (
+          <div class="lane6-clients-grid lane6-desktop-only desktop-cols">
+            {clients.map((client) => (
+              <a class="lane6-client-row" href={`/clients/${client.client_id}`}>
+                <div>
+                  <strong>{client.display_name}</strong>
+                  <div class="lane6-client-meta">{client.email ?? client.phone ?? client.address_line}</div>
+                </div>
+                <Chip label={t(statusKey(client.status))} tone={client.status === 'active' ? 'green' : 'amber'} />
+                <span class="lane6-client-meta">{client.project_count} projects</span>
+              </a>
+            ))}
+          </div>
+        )}
+        <div class="lane6-clients-grid lane6-mobile-only">
+          {clients.map((client) => (
+            <a class="lane6-client-row" href={`/clients/${client.client_id}`}>
+              <div>
+                <strong>{client.display_name}</strong>
+                <div class="lane6-client-meta">{client.address_line}</div>
+              </div>
+              <Chip label={t(statusKey(client.status))} tone="neutral" />
+            </a>
+          ))}
+        </div>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>

@@ -1,0 +1,69 @@
+---
+// F-CL5/F-CL6 · New client form · /clients/new
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../components/Card.astro';
+import { createTranslator } from '../../../i18n/index.js';
+import '../../styles/lane6.css';
+
+const { t } = createTranslator('en');
+---
+
+<Layout titleKey="f_cl.form.title" activeHref="/clients">
+  <article class="lane6-page f-cl-new">
+    <header>
+      <div class="lane6-crumb"><a href="/clients">{t('f_cl.crumb')}</a> · {t('f_cl.form.title')}</div>
+      <h1 class="lane6-title">{t('f_cl.form.title')}</h1>
+      <p class="lane6-subtitle">{t('f_cl.form.subtitle')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <Card title={t('f_cl.form.title')}>
+        <form class="lane6-form" id="new-client-form">
+          <label>
+            {t('f_cl.form.name')}
+            <input name="display_name" required />
+          </label>
+          <label>
+            {t('f_cl.form.email')}
+            <input name="contact_email" type="email" />
+          </label>
+          <label>
+            {t('f_cl.form.phone')}
+            <input name="contact_phone" type="tel" />
+          </label>
+          <label>
+            {t('f_cl.form.address')}
+            <input name="address_line" />
+          </label>
+          <div class="lane6-actions">
+            <a class="lane6-btn ghost" href="/clients">{t('f_cl.form.cancel')}</a>
+            <button type="submit" class="lane6-btn primary">{t('f_cl.form.submit')}</button>
+          </div>
+        </form>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+
+  <script>
+    document.getElementById('new-client-form')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const form = ev.target as HTMLFormElement;
+      const fd = new FormData(form);
+      const res = await fetch('/api/v1/clients?tenant_id=tenant_ggr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: fd.get('display_name'),
+          contact_email: fd.get('contact_email') || null,
+          contact_phone: fd.get('contact_phone') || null,
+          address_lines: [String(fd.get('address_line') ?? '')].filter(Boolean),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = `/clients/${data.client_id}`;
+      }
+    });
+  </script>
+</Layout>
