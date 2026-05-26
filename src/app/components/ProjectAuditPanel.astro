@@ -1,0 +1,116 @@
+---
+import Chip from './Chip.astro';
+import SectionLabel from './SectionLabel.astro';
+import type { ProjectAuditEntry } from '../../project/projectAuditProjection.js';
+import type { I18nKey } from '../../i18n/keys.js';
+
+export interface Props {
+  entries: readonly ProjectAuditEntry[];
+  labelFor: (key: I18nKey) => string;
+}
+
+const { entries, labelFor: t } = Astro.props;
+
+const verdictTone: Record<string, 'green' | 'amber' | 'red'> = {
+  gate_pass: 'green',
+  recoverable: 'amber',
+  override_eligible: 'red',
+};
+---
+
+<div class="project-audit-panel">
+  <SectionLabel label={t('project.audit.chronology')} count={entries.length} />
+
+  {entries.length === 0 ? (
+    <p class="lane23-notice">{t('project.audit.empty')}</p>
+  ) : (
+    <ol class="project-audit-list">
+      {entries.map((entry) => (
+        <li class="project-audit-entry" data-event-id={entry.event_id} data-kind={entry.kind}>
+          <div class="project-audit-entry__head">
+            <time datetime={entry.at}>{entry.at}</time>
+            <Chip
+              label={t(`project.audit.event.${entry.kind}` as I18nKey)}
+              tone="cyan"
+              variant="outlined"
+            />
+          </div>
+
+          {entry.kind === 'send_gate.evaluated' && (
+            <div class="project-audit-entry__body">
+              <p>
+                <strong>{t('project.audit.send_gate.verdict')}:</strong>{' '}
+                <Chip
+                  label={t(`project.audit.send_gate.${entry.verdict}` as I18nKey)}
+                  tone={verdictTone[entry.verdict] ?? 'amber'}
+                  variant="solid"
+                />
+              </p>
+              {entry.primary_reason && (
+                <p class="lane23-notice">
+                  {t('project.audit.send_gate.primary_reason')}: {entry.primary_reason}
+                </p>
+              )}
+              <p class="lane23-notice">
+                {t('project.audit.send_gate.checks')}: {entry.checks_summary}
+              </p>
+              {entry.operator_action && (
+                <p class="lane23-notice">
+                  {t('project.audit.send_gate.operator_action')}: {entry.operator_action}
+                </p>
+              )}
+            </div>
+          )}
+
+          {entry.kind === 'proposal.sent' && (
+            <div class="project-audit-entry__body">
+              <p>{entry.proposal_number} → {entry.sent_to}</p>
+              <p class="lane23-notice">
+                {t('project.audit.proposal_sent.channel')}: {entry.send_channel} · {entry.sent_at}
+              </p>
+            </div>
+          )}
+
+          {entry.kind === 'suggestion.overridden' && (
+            <div class="project-audit-entry__body">
+              <p><strong>{t('project.audit.override.reason')}:</strong> {entry.override_reason}</p>
+              {entry.linked_classification && (
+                <p class="lane23-notice">
+                  {t('project.audit.override.classification')}:{' '}
+                  {entry.linked_classification.correction_scope} ·{' '}
+                  {entry.linked_classification.evidence_source_class} ·{' '}
+                  {entry.linked_classification.classification_method} ·{' '}
+                  {entry.linked_classification.confidence}
+                </p>
+              )}
+            </div>
+          )}
+
+          {entry.kind === 'correction.classified' && (
+            <div class="project-audit-entry__body">
+              <p>
+                {entry.correction_scope} · {entry.evidence_source_class} ·{' '}
+                {entry.classification_method} · {entry.confidence}
+              </p>
+              <p class="lane23-notice">
+                {t('project.audit.classification.locality')}: {entry.memory_locality.join(', ')}
+              </p>
+            </div>
+          )}
+
+          {entry.kind === 'export.requested' && (
+            <div class="project-audit-entry__body">
+              <p>
+                <Chip label={entry.format.toUpperCase()} tone="green" variant="outlined" />
+                {entry.scope_descriptor ? ` · ${entry.scope_descriptor}` : ''}
+              </p>
+              <p class="lane23-notice">
+                {t('project.audit.export.requested_by')}: {entry.requested_by}
+              </p>
+            </div>
+          )}
+        </li>
+      ))}
+    </ol>
+  )}
+</div>

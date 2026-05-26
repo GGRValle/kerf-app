@@ -4,6 +4,7 @@ import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import { getLane23Project, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { PersistenceTenantId } from '../../persistence/events.js';
+import { loadProjectAuditTrail } from '../../project/projectAuditProjection.js';
 
 export const projectDetailRoutes = new Hono();
 
@@ -60,4 +61,21 @@ projectDetailRoutes.post('/projects/:id/export', async (c) => {
   );
 
   return c.json({ ok: true, export_event_id: event.event_id, format });
+});
+
+/** F-PR2 Audit tab · tenant-scoped chronological audit trail (Phase 1D). */
+projectDetailRoutes.get('/projects/:id/audit-events', async (c) => {
+  const projectId = c.req.param('id');
+  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
+  if (tenant === null) {
+    return c.json({ error: 'tenant_required' }, 400);
+  }
+  const project = getLane23Project(projectId);
+  if (project === null) {
+    return c.json({ error: 'project_not_found', project_id: projectId }, 404);
+  }
+
+  const { tenantReader } = getApiDeps();
+  const entries = await loadProjectAuditTrail(tenantReader, tenant, projectId);
+  return c.json({ project_id: projectId, entries });
 });
