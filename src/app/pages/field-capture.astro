@@ -167,11 +167,14 @@ const assignment = {
               Submit
             </button>
           </div>
-          <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay</a>
         </section>
       </SurfaceIrreversibilityWrap>
 
-      <p class="submit-status" id="f-e1-submit-status" role="status" aria-live="polite"></p>
+      <section class="submit-outcome" id="f-e1-submit-outcome" aria-live="polite" hidden>
+        <p class="submit-status" id="f-e1-submit-status" role="status"></p>
+        <p class="submit-play-error" id="f-e1-play-error" role="alert" hidden></p>
+        <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay →</a>
+      </section>
       <input id="f-e1-camera-input" type="file" accept="image/*" capture="environment" hidden />
     </section>
   </main>
@@ -196,6 +199,8 @@ const assignment = {
   const photoCount = document.querySelector('#f-e1-photo-count');
   const photoGrid = document.querySelector('#f-e1-photo-grid');
   const statusNode = document.querySelector('#f-e1-submit-status');
+  const playErrorNode = document.querySelector('#f-e1-play-error');
+  const outcomeNode = document.querySelector('#f-e1-submit-outcome');
   const relayLink = document.querySelector('#f-e1-relay-link');
 
   let mediaRecorder = null;
@@ -220,6 +225,80 @@ const assignment = {
     if (!(statusNode instanceof HTMLElement)) return;
     statusNode.textContent = message;
     statusNode.dataset.tone = tone;
+    if (outcomeNode instanceof HTMLElement) {
+      outcomeNode.hidden = message.length === 0 && (playErrorNode instanceof HTMLElement ? playErrorNode.hidden : true);
+    }
+  }
+
+  function setPlayError(message) {
+    if (!(playErrorNode instanceof HTMLElement)) return;
+    if (message.length === 0) {
+      playErrorNode.hidden = true;
+      playErrorNode.textContent = '';
+      return;
+    }
+    playErrorNode.hidden = false;
+    playErrorNode.textContent = message;
+    if (outcomeNode instanceof HTMLElement) outcomeNode.hidden = false;
+  }
+
+  function setRelayLinkVisible(visible) {
+    if (!(relayLink instanceof HTMLElement)) return;
+    relayLink.hidden = !visible;
+    if (visible && outcomeNode instanceof HTMLElement) outcomeNode.hidden = false;
+  }
+
+  function resetSubmitOutcome() {
+    setPlayError('');
+    setRelayLinkVisible(false);
+    setStatus('');
+    if (outcomeNode instanceof HTMLElement) outcomeNode.hidden = true;
+  }
+
+  function applySubmitOutcome(body, transcriptLength) {
+    const playError = typeof body.play_error === 'string' ? body.play_error.trim() : '';
+    const surfaced = body.surfaced_event ?? null;
+    const driftSeverity = body.drift_event?.severity ?? null;
+    const hasVoiceOrPhotoOnly = transcriptLength === 0 && (audioUri !== null || photos.length > 0);
+
+    if (playError.length > 0) {
+      setStatus('Captured to Daily Log, but Right Hand hit a problem while reviewing.', 'error');
+      setPlayError(`Right Hand error: ${playError}`);
+      setRelayLinkVisible(Boolean(surfaced));
+      return;
+    }
+
+    setPlayError('');
+
+    if (surfaced) {
+      setStatus('Captured ✓ — Right Hand flagged this for office review.', 'success');
+      setRelayLinkVisible(true);
+      return;
+    }
+
+    if (driftSeverity) {
+      setStatus(
+        'Captured ✓ — Right Hand saw drift but did not open a Relay card for this entry (dedupe or surfacing rule).',
+        'success',
+      );
+      setRelayLinkVisible(false);
+      return;
+    }
+
+    if (hasVoiceOrPhotoOnly) {
+      setStatus(
+        'Captured ✓ — Saved with photo or voice only. Add a typed note next time so Right Hand can extract facts and flag drift.',
+        'success',
+      );
+      setRelayLinkVisible(false);
+      return;
+    }
+
+    setStatus(
+      'Captured ✓ — Right Hand reviewing. We will surface this in Relay only if something needs your attention.',
+      'success',
+    );
+    setRelayLinkVisible(false);
   }
 
   function tickTimer() {
@@ -361,6 +440,7 @@ const assignment = {
     const checked = document.querySelector('input[name="entry_kind"]:checked');
     const entryKind = checked instanceof HTMLInputElement ? checked.value : 'progress_update';
     submitButton.setAttribute('aria-busy', 'true');
+    resetSubmitOutcome();
     setStatus('Saving to Daily Log and running Right Hand...', 'neutral');
     try {
       const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
@@ -377,15 +457,18 @@ const assignment = {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(body.error ?? `submit_failed_${res.status}`);
+        const detail =
+          typeof body.error === 'string'
+            ? body.error
+            : Array.isArray(body.errors)
+              ? body.errors.join('; ')
+              : `submit_failed_${res.status}`;
+        throw new Error(detail);
       }
-      const drift = body.drift_event?.severity ? ` · drift ${body.drift_event.severity}` : '';
-      const surfaced = body.surfaced_event ? ' · relay card ready' : '';
-      setStatus(`Saved to Daily Log${drift}${surfaced}.`, 'success');
-      if (relayLink instanceof HTMLElement && body.surfaced_event) {
-        relayLink.hidden = false;
-      }
+      applySubmitOutcome(body, transcript.length);
     } catch (err) {
+      setPlayError('');
+      setRelayLinkVisible(false);
       setStatus(`Could not save: ${err instanceof Error ? err.message : String(err)}`, 'error');
     } finally {
       submitButton.removeAttribute('aria-busy');
@@ -747,14 +830,40 @@ const assignment = {
     margin: 0;
   }
 
+  .submit-outcome {
+    max-width: min(100%, 430px);
+    margin: 14px auto 0;
+    padding: 12px;
+    border: 1px solid var(--kerf-line);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .submit-outcome[hidden] {
+    display: none;
+  }
+
   .submit-status {
     min-height: 1.25rem;
-    margin: 12px 0 0;
+    margin: 0;
     color: var(--kerf-muted);
-    line-height: 1.4;
+    line-height: 1.45;
     text-align: center;
-    max-width: min(100%, 430px);
-    margin-inline: auto;
+  }
+
+  .submit-play-error {
+    margin: 10px 0 0;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 143, 143, 0.45);
+    background: rgba(255, 80, 80, 0.12);
+    color: #ffb4b4;
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+
+  .submit-play-error[hidden] {
+    display: none;
   }
 
   .submit-status[data-tone='success'] {
@@ -767,8 +876,9 @@ const assignment = {
 
   .relay-link {
     display: block;
-    margin-top: 10px;
+    margin-top: 12px;
     text-align: center;
+    font-weight: 800;
   }
 
   @media (min-width: 760px) {
