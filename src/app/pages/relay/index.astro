@@ -1,7 +1,177 @@
 ---
-import RouteShellPage from '../../components/RouteShellPage.astro';
+import Layout from '../../layouts/Layout.astro';
 ---
 
-<RouteShellPage title="Relay Feed" routeName="relay-list" phase="capture">
-  <p>Field daily relay list shell.</p>
-</RouteShellPage>
+<Layout title="Relay" activeHref={Astro.url.pathname}>
+  <main class="relay-page">
+    <header class="relay-header">
+      <p class="eyebrow">Relay</p>
+      <h1>Office cards from the field</h1>
+      <p>Field captures that Right Hand thinks need review land here.</p>
+    </header>
+
+    <section class="relay-list" id="relay-list" aria-live="polite">
+      <article class="relay-empty">
+        <p>Loading relay cards...</p>
+      </article>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  const list = document.querySelector('#relay-list');
+
+  function severityLabel(severity) {
+    if (severity === 'block') return 'Block';
+    if (severity === 'warn') return 'Watch';
+    if (severity === 'info') return 'Info';
+    return 'Review';
+  }
+
+  function renderEmpty(message) {
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '';
+    const card = document.createElement('article');
+    card.className = 'relay-empty';
+    const p = document.createElement('p');
+    p.textContent = message;
+    card.append(p);
+    list.append(card);
+  }
+
+  function renderItems(items) {
+    if (!(list instanceof HTMLElement)) return;
+    if (!items.length) {
+      renderEmpty('No relay cards yet. Submit a field capture to create one.');
+      return;
+    }
+    list.innerHTML = '';
+    for (const item of items) {
+      const card = document.createElement('article');
+      card.className = 'relay-card';
+      card.dataset.severity = item.severity ?? 'review';
+      const top = document.createElement('div');
+      top.className = 'relay-card-top';
+      const severity = document.createElement('span');
+      severity.textContent = severityLabel(item.severity);
+      const surfacedAt = document.createElement('time');
+      surfacedAt.textContent = new Date(item.surfaced_at).toLocaleString();
+      top.append(severity, surfacedAt);
+      const title = document.createElement('h2');
+      title.textContent = item.summary;
+      const description = document.createElement('p');
+      description.textContent = item.description ?? 'Right Hand surfaced this field update for office review.';
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      summary.textContent = 'Transcript';
+      const transcript = document.createElement('p');
+      transcript.textContent = item.transcript_text ?? 'No transcript text captured.';
+      details.append(summary, transcript);
+      card.append(top, title, description, details);
+      list.append(card);
+    }
+  }
+
+  async function loadRelay() {
+    try {
+      const res = await fetch('/api/v1/field-daily/relay-feed?tenant_id=tenant_ggr');
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? `relay_failed_${res.status}`);
+      renderItems(Array.isArray(body.items) ? body.items : []);
+    } catch (err) {
+      renderEmpty(`Could not load relay cards: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  void loadRelay();
+</script>
+
+<style>
+  .relay-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+  }
+
+  .relay-header {
+    margin-bottom: 1rem;
+  }
+
+  .eyebrow {
+    margin: 0 0 0.35rem;
+    color: var(--field-green, #38c977);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .relay-header h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.55rem;
+    letter-spacing: 0;
+  }
+
+  .relay-header p {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+  }
+
+  .relay-list {
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .relay-card,
+  .relay-empty {
+    border: 1px solid var(--border-soft, #d7dde6);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    padding: 1rem;
+  }
+
+  .relay-card[data-severity='block'] {
+    border-left: 4px solid #d92d20;
+  }
+
+  .relay-card[data-severity='warn'] {
+    border-left: 4px solid #f5b544;
+  }
+
+  .relay-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--text-muted, #5c6670);
+    font-size: 0.78rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .relay-card-top span {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .relay-card h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    letter-spacing: 0;
+  }
+
+  .relay-card p {
+    margin: 0 0 0.65rem;
+    color: var(--text-muted, #4f5966);
+    line-height: 1.45;
+  }
+
+  details {
+    color: var(--text-muted, #4f5966);
+  }
+
+  summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--text, #0a0d11);
+  }
+</style>

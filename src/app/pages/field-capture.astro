@@ -1,41 +1,14 @@
 ---
-// F-E1 · Mobile Field Capture · Phase 1C reconcile (Lane 1 Capture spine)
-// Canon: KERF Canon v1/_docs/wireframes/F-E1_mobile_field_capture.html
-// Doctrine: D-048 adoption-layer + classify-before-harden learning governance
+// F-E1 · Mobile Field Capture · Phase 1F real surface
+// Canon target: KERF Canon v1/_docs/wireframes/F-E1_mobile_field_capture.html
 //
-// Three states (rendered as labeled sections; client-side interactivity ships
-// with Phase 1D capture-mutation API):
-//   State 1 · Pre-capture · assign client/project/location + Daily Log anchor
-//   State 2 · Active capture · live transcript + accumulating items
-//   State 3 · Pre-flight · review + draft-intent picker + override path + submit
-//
-// D-048 eventfulness hooks (typed event shapes ready · emission wires in 1D):
-//   Operator picks an intent that differs from Kerf's suggestion →
-//     `suggestion.overridden` event with `override_reason` (free-text) PLUS
-//     `correction.classified` (scope + locality + evidence_source_class)
-//   Operator edits the transcript (edits overlay original per transcript canon) →
-//     `correction.classified` event tracking which axis the operator corrected
-//   Submit → existing `capture.recorded` + `daily_log.entry_captured` chain
-//
-// Wrap discipline: kind="daily" through State 1+2 (routine capture) ·
-//   kind="irreversibility" on State 3 because Submit writes immutably to
-//   Daily Log and may launch a draft workflow (CO/estimate) the operator
-//   sees on F-G1. Action context is explicit per D-048.
+// This page is intentionally phone-first. The operator gets one working
+// capture flow at a time: pre-capture -> active capture -> pre-flight submit.
+// Submit writes daily_log.entry_captured and now runs the Right Hand chain.
 
 import Layout from '../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
-import Card from '../components/Card.astro';
-import Row from '../components/Row.astro';
-import Chip from '../components/Chip.astro';
-import SectionLabel from '../components/SectionLabel.astro';
-import PhaseStrip from '../components/PhaseStrip.astro';
-import { createTranslator } from '../../i18n/index.js';
 
-// Translator pulled from layout context in Phase 1D · default to EN for now.
-const { t } = createTranslator('en');
-
-// Fixture context for the wireframe-accurate render. Real assignment lands
-// via tenant-scoped read of the operator's active project in Phase 1D.
 const assignment = {
   client: 'Wegrzyn, Mark & Grace',
   project: 'Kitchen + Primary bath',
@@ -43,243 +16,206 @@ const assignment = {
   tenant_id: 'tenant_ggr',
   project_id: 'proj_wegrzyn_kitchen_bath',
 };
-
-// Kerf's suggested draft intent (inferred from voice content in Phase 1D).
-// When the operator picks something different, the override path lights up.
-const kerfSuggestedIntent: 'change_order' | 'estimate_update' | 'daily_log_only' = 'change_order';
 ---
 
-<Layout title="F-E1 · Field Capture" activeHref={Astro.url.pathname}>
-  <article class="f-e1">
+<Layout title="Field Capture" activeHref={Astro.url.pathname}>
+  <main
+    class="field-shell"
+    data-view-state="pre"
+    data-tenant-id={assignment.tenant_id}
+    data-project-id={assignment.project_id}
+  >
+    <section class="phone-frame" aria-label="Mobile field capture">
+      <div class="phone-status" aria-hidden="true">
+        <span>10:42</span>
+        <span>LTE · 84%</span>
+      </div>
 
-    <!-- ============= Header ============= -->
-    <header class="f-e1-header">
-      <div class="crumb">{t('f_e1.crumb')}</div>
-      <h1>{t('f_e1.title')}</h1>
-      <p class="subtitle">{t('f_e1.subtitle')}</p>
-      <PhaseStrip phases={[
-        { id: 'capture', label: 'Capture', active: true },
-        { id: 'review', label: 'Review' },
-        { id: 'draft', label: 'Draft' },
-      ]} />
-    </header>
+      <header class="topbar">
+        <a class="back-link" href="/">Back</a>
+        <div>
+          <p class="eyebrow">Field Capture</p>
+          <h1>Capture the job truth</h1>
+        </div>
+      </header>
 
-    <!-- ============= STATE 1 · Pre-capture · daily wrap ============= -->
-    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-      <section class="state-block" data-state="1" aria-label={t('f_e1.state1.label')}>
-        <SectionLabel label={t('f_e1.state1.label')} />
-
-        <Card eyebrow={t('f_e1.state1.eyebrow')} title={t('f_e1.state1.title')}>
-          <!-- Assignment card · canon-explicit "where this goes" -->
-          <div class="assign-block">
-            <div class="assign-eyebrow">{t('f_e1.state1.assign.eyebrow')}</div>
-            <dl class="assign-list">
-              <div class="assign-row">
-                <dt>{t('f_e1.state1.assign.client')}</dt>
-                <dd>{assignment.client} · <button class="link" type="button">{t('f_e1.state1.assign.change')}</button></dd>
+      <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={2}>
+        <section class="capture-state state-pre" aria-label="Start field capture">
+          <div class="assignment-card">
+            <p class="label">Assigned to</p>
+            <h2>{assignment.client}</h2>
+            <dl>
+              <div>
+                <dt>Project</dt>
+                <dd>{assignment.project}</dd>
               </div>
-              <div class="assign-row">
-                <dt>{t('f_e1.state1.assign.project')}</dt>
-                <dd>{assignment.project} · <button class="link" type="button">{t('f_e1.state1.assign.change')}</button></dd>
-              </div>
-              <div class="assign-row">
-                <dt>{t('f_e1.state1.assign.location')}</dt>
-                <dd>{assignment.location} · <button class="link" type="button">{t('f_e1.state1.assign.change')}</button></dd>
+              <div>
+                <dt>Location</dt>
+                <dd>{assignment.location}</dd>
               </div>
             </dl>
           </div>
 
-          <!-- Daily Log anchor · canon-explicit per kerf_daily_log_canon.md -->
-          <aside class="daily-log-anchor" role="note">
-            <strong>{t('f_e1.state1.daily_log.anchor_title')}</strong>
-            <span class="dl-detail">{t('f_e1.state1.daily_log.anchor_detail')}</span>
+          <aside class="daily-anchor" aria-label="Daily Log destination">
+            <strong>Writes to today's Daily Log</strong>
+            <span>Right Hand will pull out facts, drift, and relay cards after submit.</span>
           </aside>
 
-          <!-- Record affordances -->
-          <div class="record-area">
-            <button class="record-button" type="button" aria-label={t('f_e1.state1.record.label')}>
-              <span class="rb-dot" aria-hidden="true"></span>
+          <div class="record-zone">
+            <button class="record-button" id="f-e1-record" type="button" aria-label="Start voice capture">
+              <span></span>
             </button>
-            <div class="record-label">{t('f_e1.state1.record.label')}</div>
-            <div class="record-sub">{t('f_e1.state1.record.sub')}</div>
+            <p class="record-title">Hold the job update</p>
+            <p class="record-help">Voice first. Add photos or type if the site is too loud.</p>
           </div>
 
-          <div class="secondary-actions">
-            <button type="button" class="secondary-action">{t('f_e1.state1.add_photo')}</button>
-            <button type="button" class="secondary-action">{t('f_e1.state1.type_note')}</button>
+          <div class="quick-actions">
+            <button type="button" class="utility-button" id="f-e1-photo">Camera</button>
+            <button type="button" class="utility-button" id="f-e1-type-note">Type note</button>
           </div>
+        </section>
 
-          <div slot="footer" class="state1-footer">
-            <button type="button" class="ar-btn cancel">{t('f_e1.action.cancel')}</button>
-            <button type="button" class="ar-btn primary" disabled aria-disabled="true">
-              {t('f_e1.state3.submit')} · <em>{t('f_e1.state1.submit.disabled_hint')}</em>
-            </button>
-          </div>
-        </Card>
-      </section>
-
-      <!-- ============= STATE 2 · Active capture · daily wrap ============= -->
-      <section class="state-block" data-state="2" aria-label={t('f_e1.state2.label')}>
-        <SectionLabel label={t('f_e1.state2.label')} />
-
-        <Card eyebrow={t('f_e1.state2.eyebrow')} title={t('f_e1.state2.title')}>
-          <div class="live-record">
-            <span class="live-dot" aria-hidden="true"></span>
-            <div class="live-body">
-              <div class="live-eyebrow">{t('f_e1.state2.recording_label')}</div>
-              <div class="live-time" aria-live="polite">0:48</div>
+        <section class="capture-state state-active" aria-label="Active capture">
+          <div class="live-card">
+            <span class="pulse" aria-hidden="true"></span>
+            <div>
+              <p class="label">Recording</p>
+              <strong id="f-e1-timer">0:00</strong>
             </div>
-            <button type="button" class="live-stop">{t('f_e1.state2.stop')}</button>
+            <button type="button" id="f-e1-stop">Stop</button>
           </div>
 
-          <div class="live-transcript">
-            <div class="lt-eyebrow">{t('f_e1.state2.live_transcript_label')}</div>
-            <p class="lt-text">
-              "Standing in the kitchen at Wegrzyn. The plumbing rough-in for the island is in.
-              Coastal Mech finished the gas line yesterday — supply lines came up through the
-              floor instead of the wall, <em>better for the way the cabinet runs are going to land</em>."
-            </p>
+          <label class="note-card" for="f-e1-note">
+            <span class="label">Live note</span>
+            <textarea
+              id="f-e1-note"
+              rows="7"
+              placeholder="Say or type what happened. Example: Plumbing rough-in is complete, but tile changed to Carrara and needs CO pricing."
+            ></textarea>
+          </label>
+
+          <section class="captured-panel">
+            <div class="panel-head">
+              <p class="label">Captured</p>
+              <span id="f-e1-captured-count">0 items</span>
+            </div>
+            <ul id="f-e1-captured-list" class="captured-list">
+              <li class="empty">Voice memos and photos will show here.</li>
+            </ul>
+          </section>
+
+          <div class="bottom-actions">
+            <button type="button" class="utility-button" id="f-e1-photo-active">Camera</button>
+            <button type="button" class="primary-button" id="f-e1-done">Done capturing</button>
+          </div>
+        </section>
+      </SurfaceIrreversibilityWrap>
+
+      <SurfaceIrreversibilityWrap
+        kind="irreversibility"
+        actionContext="Submit field capture to Daily Log and run Right Hand review."
+      >
+        <section class="capture-state state-preflight" aria-label="Review and submit field capture">
+          <div class="preflight-card">
+            <p class="label">Ready to submit</p>
+            <h2>{assignment.location} update</h2>
+            <p id="f-e1-preflight-meta">Daily Log · 0 items</p>
           </div>
 
-          <SectionLabel label={t('f_e1.state2.captured_label')} count="2 voice · 1 photo" />
-          <div class="captured-list">
-            <Row title="Voice memo · 0:32" meta='"Heather wants to upgrade the tile spec…"' state="10:42" />
-            <Row title="Photo · island plumbing" meta="Tap to add caption" state="10:42" />
-            <Row title="Photo · gas line stub" meta="Coastal Mech work · 2026-05-08" state="10:42" />
-          </div>
-
-          <div slot="footer" class="state2-footer">
-            <button type="button" class="ar-btn">{t('f_e1.state1.add_photo')}</button>
-            <button type="button" class="ar-btn primary">{t('f_e1.state2.done_capturing')}</button>
-            <button type="button" class="ar-btn cancel">{t('f_e1.action.cancel')}</button>
-          </div>
-        </Card>
-      </section>
-    </SurfaceIrreversibilityWrap>
-
-    <!-- ============= STATE 3 · Pre-flight · irreversibility wrap ============= -->
-    <SurfaceIrreversibilityWrap kind="irreversibility" actionContext={t('f_e1.state3.irreversibility.action_context')}>
-      <section class="state-block" data-state="3" aria-label={t('f_e1.state3.label')}>
-        <SectionLabel label={t('f_e1.state3.label')} />
-
-        <Card eyebrow={t('f_e1.state3.eyebrow')} title={t('f_e1.state3.title')}>
-          <div class="preflight-summary">
-            <div class="pf-eyebrow">{t('f_e1.state3.summary_eyebrow')}</div>
-            <div class="pf-title">Wegrzyn · kitchen plumbing rough done</div>
-            <div class="pf-meta">Daniel · 2:14 total · 2 voice + 3 photos · writes to Wegrzyn / today's Daily Log</div>
-          </div>
-
-          <!-- Draft-intent picker · the override gate.
-               D-048: when the operator's pick != kerfSuggestedIntent, emit
-               suggestion.overridden + correction.classified per L0.3 axes.
-               The free-text reason captures real reasoning for memory; the
-               one-question follow-up disambiguates scope (correction_scope:
-               this_job vs general_rule). NEVER thumbs-up/down. -->
-          <fieldset class="intent-picker" data-suggested={kerfSuggestedIntent}>
-            <legend>{t('f_e1.state3.intent.eyebrow')}</legend>
-
-            <label class="intent-option" data-intent="change_order">
-              <input type="radio" name="draft_intent" value="change_order" checked={kerfSuggestedIntent === 'change_order'} />
-              <span class="intent-title">
-                {t('f_e1.state3.intent.co.title')}
-                {kerfSuggestedIntent === 'change_order' && (
-                  <Chip label={t('f_e1.state3.intent.suggested_hint')} tone="amber" variant="outlined" />
-                )}
-              </span>
-              <span class="intent-detail">{t('f_e1.state3.intent.co.detail')}</span>
+          <fieldset class="intent-card">
+            <legend>What should Right Hand do with this?</legend>
+            <label>
+              <input type="radio" name="entry_kind" value="change_signal" checked />
+              <span>Watch for change-order or scope drift</span>
             </label>
-
-            <label class="intent-option" data-intent="estimate_update">
-              <input type="radio" name="draft_intent" value="estimate_update" checked={kerfSuggestedIntent === 'estimate_update'} />
-              <span class="intent-title">
-                {t('f_e1.state3.intent.estimate.title')}
-                {kerfSuggestedIntent === 'estimate_update' && (
-                  <Chip label={t('f_e1.state3.intent.suggested_hint')} tone="amber" variant="outlined" />
-                )}
-              </span>
-              <span class="intent-detail">{t('f_e1.state3.intent.estimate.detail')}</span>
+            <label>
+              <input type="radio" name="entry_kind" value="progress_update" />
+              <span>Just log progress</span>
             </label>
-
-            <label class="intent-option" data-intent="daily_log_only">
-              <input type="radio" name="draft_intent" value="daily_log_only" checked={kerfSuggestedIntent === 'daily_log_only'} />
-              <span class="intent-title">
-                {t('f_e1.state3.intent.daily_log.title')}
-                {kerfSuggestedIntent === 'daily_log_only' && (
-                  <Chip label={t('f_e1.state3.intent.suggested_hint')} tone="amber" variant="outlined" />
-                )}
-              </span>
-              <span class="intent-detail">{t('f_e1.state3.intent.daily_log.detail')}</span>
+            <label>
+              <input type="radio" name="entry_kind" value="blocker" />
+              <span>Flag a blocker</span>
             </label>
           </fieldset>
 
-          <!-- Override reason · visible only when operator picks a different intent.
-               In Phase 1C this is rendered always-visible (no client JS yet);
-               Phase 1D toggles visibility based on radio selection state. -->
-          <div class="override-block" data-override-active="false">
-            <label class="override-label" for="override_reason">{t('f_e1.state3.override.reason_label')}</label>
-            <textarea
-              id="override_reason"
-              name="override_reason"
-              rows="2"
-              placeholder={t('f_e1.state3.override.reason_placeholder')}
-            ></textarea>
-            <div class="classify-prompt">{t('f_e1.state3.override.classify_prompt')}</div>
-            <!-- correction.classified emission shape (Phase 1D wires):
-                 { type: 'correction.classified',
-                   correction_scope: 'this_job' | 'general_rule',
-                   memory_locality: 'project_only' | 'tenant_wide',
-                   evidence_source_class: 'operator_field_correction' } -->
-          </div>
-
-          <!-- Transcript review · edit affordance opens edits-overlay per
-               kerf_transcript_canon.md. Each edit emits correction.classified
-               classified by which axis the operator corrected (typo vs scope
-               vs fact). Original stays immutable. -->
-          <div class="final-transcript">
-            <div class="ft-eyebrow">
-              <span>{t('f_e1.state3.transcript.eyebrow')}</span>
-              <button type="button" class="link">{t('f_e1.state3.transcript.edit')}</button>
+          <section class="review-card">
+            <div class="panel-head">
+              <p class="label">Transcript / note</p>
+              <button type="button" id="f-e1-edit-note">Edit</button>
             </div>
-            <div class="ft-block">
-              <div class="ft-meta">0:32 · 10:42</div>
-              <p class="ft-text">"Heather wants to upgrade the tile spec to the Carrara herringbone — I told her we'd need a change order for that since it's about double the per-square-foot cost."</p>
-            </div>
-            <div class="ft-block">
-              <div class="ft-meta">0:48 · 10:43</div>
-              <p class="ft-text">"Standing in the kitchen at Wegrzyn. Plumbing rough-in for the island is in. Coastal Mech finished the gas line yesterday — supply lines came up through the floor instead of the wall, better for the cabinet runs."</p>
-            </div>
-            <aside class="transcript-canon-hint">
-              <strong>{t('f_e1.state3.transcript.edit')}.</strong> {t('f_e1.state3.transcript.canon_hint')}
-            </aside>
-          </div>
+            <p class="ft-text" id="f-e1-review-text">No note yet.</p>
+            <p class="review-hint">Original capture stays intact. Edits are part of the review trail.</p>
+          </section>
 
-          <!-- AI disclosure §13 -->
-          <aside class="ai-disclosure" role="note">{t('f_e1.state3.ai_disclosure')}</aside>
+          <section class="review-card">
+            <div class="panel-head">
+              <p class="label">Photos</p>
+              <span id="f-e1-photo-count">0</span>
+            </div>
+            <div class="photo-grid" id="f-e1-photo-grid"></div>
+          </section>
 
-          <div slot="footer" class="state3-footer">
-            <button type="button" class="ar-btn">{t('f_e1.action.back')}</button>
+          <div class="bottom-actions">
+            <button type="button" class="utility-button" id="f-e1-back-active">Back</button>
             <button
               type="button"
-              class="ar-btn primary"
+              class="primary-button"
               id="f-e1-submit"
               data-tenant-id={assignment.tenant_id}
               data-project-id={assignment.project_id}
             >
-              {t('f_e1.state3.submit')} · <em>{t('f_e1.state3.submit_sub')}</em>
+              Submit
             </button>
           </div>
           <p class="submit-status" id="f-e1-submit-status" role="status" aria-live="polite"></p>
-        </Card>
-      </section>
-    </SurfaceIrreversibilityWrap>
+          <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay</a>
+        </section>
+      </SurfaceIrreversibilityWrap>
 
-  </article>
+      <input id="f-e1-camera-input" type="file" accept="image/*" capture="environment" hidden />
+    </section>
+  </main>
 </Layout>
 
 <script>
+  const shell = document.querySelector('.field-shell');
+  const recordButton = document.querySelector('#f-e1-record');
+  const stopButton = document.querySelector('#f-e1-stop');
+  const photoButtons = [document.querySelector('#f-e1-photo'), document.querySelector('#f-e1-photo-active')];
+  const cameraInput = document.querySelector('#f-e1-camera-input');
+  const typeNoteButton = document.querySelector('#f-e1-type-note');
+  const doneButton = document.querySelector('#f-e1-done');
+  const backButton = document.querySelector('#f-e1-back-active');
+  const editNoteButton = document.querySelector('#f-e1-edit-note');
   const submitButton = document.querySelector('#f-e1-submit');
+  const note = document.querySelector('#f-e1-note');
+  const timer = document.querySelector('#f-e1-timer');
+  const list = document.querySelector('#f-e1-captured-list');
+  const count = document.querySelector('#f-e1-captured-count');
+  const reviewText = document.querySelector('#f-e1-review-text');
+  const preflightMeta = document.querySelector('#f-e1-preflight-meta');
+  const photoCount = document.querySelector('#f-e1-photo-count');
+  const photoGrid = document.querySelector('#f-e1-photo-grid');
   const statusNode = document.querySelector('#f-e1-submit-status');
-  const transcriptNodes = [...document.querySelectorAll('.ft-text')];
+  const relayLink = document.querySelector('#f-e1-relay-link');
+
+  let mediaRecorder = null;
+  let mediaStream = null;
+  let chunks = [];
+  let startedAt = 0;
+  let timerHandle = 0;
+  let audioUri = null;
+  const photos = [];
+  const captured = [];
+
+  function setState(state) {
+    if (shell instanceof HTMLElement) {
+      shell.dataset.viewState = state;
+    }
+    if (state === 'active' && note instanceof HTMLTextAreaElement) {
+      window.setTimeout(() => note.focus(), 100);
+    }
+  }
 
   function setStatus(message, tone = 'neutral') {
     if (!(statusNode instanceof HTMLElement)) return;
@@ -287,29 +223,156 @@ const kerfSuggestedIntent: 'change_order' | 'estimate_update' | 'daily_log_only'
     statusNode.dataset.tone = tone;
   }
 
+  function tickTimer() {
+    if (!(timer instanceof HTMLElement) || startedAt === 0) return;
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = String(elapsed % 60).padStart(2, '0');
+    timer.textContent = `${minutes}:${seconds}`;
+  }
+
+  function renderCaptured() {
+    if (!(list instanceof HTMLElement) || !(count instanceof HTMLElement)) return;
+    list.innerHTML = '';
+    if (captured.length === 0) {
+      const empty = document.createElement('li');
+      empty.className = 'empty';
+      empty.textContent = 'Voice memos and photos will show here.';
+      list.append(empty);
+    } else {
+      for (const item of captured) {
+        const li = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = item.title;
+        const detail = document.createElement('span');
+        detail.textContent = item.detail;
+        li.append(title, detail);
+        list.append(li);
+      }
+    }
+    count.textContent = `${captured.length} item${captured.length === 1 ? '' : 's'}`;
+  }
+
+  function renderPreflight() {
+    const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
+    if (reviewText instanceof HTMLElement) {
+      reviewText.textContent = transcript || 'No typed note yet. Add one before submit so Right Hand has context.';
+    }
+    if (preflightMeta instanceof HTMLElement) {
+      preflightMeta.textContent = `Daily Log · ${captured.length} item${captured.length === 1 ? '' : 's'}`;
+    }
+    if (photoCount instanceof HTMLElement) {
+      photoCount.textContent = String(photos.length);
+    }
+    if (photoGrid instanceof HTMLElement) {
+      photoGrid.innerHTML = '';
+      for (const photo of photos) {
+        const img = document.createElement('img');
+        img.src = photo.url;
+        img.alt = photo.name;
+        photoGrid.append(img);
+      }
+      if (photos.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'empty-photo';
+        empty.textContent = 'No photos captured.';
+        photoGrid.append(empty);
+      }
+    }
+  }
+
+  function chooseMimeType() {
+    if (!('MediaRecorder' in window)) return '';
+    const options = ['audio/mp4', 'audio/aac', 'audio/webm;codecs=opus', 'audio/webm'];
+    return options.find((option) => MediaRecorder.isTypeSupported(option)) ?? '';
+  }
+
+  async function startRecording() {
+    setState('active');
+    setStatus('');
+    if (!navigator.mediaDevices?.getUserMedia || !('MediaRecorder' in window)) {
+      setStatus('Voice recording is not available here. Type the update and add photos.', 'neutral');
+      return;
+    }
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks = [];
+      const mimeType = chooseMimeType();
+      mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : undefined);
+      mediaRecorder.addEventListener('dataavailable', (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      });
+      mediaRecorder.addEventListener('stop', () => {
+        const type = mediaRecorder?.mimeType || 'audio/webm';
+        const blob = new Blob(chunks, { type });
+        audioUri = `kerf://field-capture/audio-${Date.now()}`;
+        captured.push({ title: 'Voice memo', detail: `${Math.max(1, Math.round(blob.size / 1024))} KB · saved locally for this review` });
+        renderCaptured();
+      });
+      mediaRecorder.start();
+      startedAt = Date.now();
+      tickTimer();
+      timerHandle = window.setInterval(tickTimer, 500);
+    } catch (err) {
+      setStatus(`Could not start microphone: ${err instanceof Error ? err.message : String(err)}. Type the note instead.`, 'error');
+    }
+  }
+
+  function stopRecording() {
+    if (timerHandle) window.clearInterval(timerHandle);
+    timerHandle = 0;
+    startedAt = 0;
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if (mediaStream) {
+      for (const track of mediaStream.getTracks()) track.stop();
+    }
+    mediaRecorder = null;
+    mediaStream = null;
+  }
+
+  function openCamera() {
+    if (cameraInput instanceof HTMLInputElement) cameraInput.click();
+  }
+
+  function handlePhotoPick() {
+    if (!(cameraInput instanceof HTMLInputElement) || !cameraInput.files?.length) return;
+    const file = cameraInput.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    photos.push({ name: file.name || 'Field photo', url });
+    captured.push({ title: 'Photo', detail: file.name || 'Camera capture' });
+    renderCaptured();
+    cameraInput.value = '';
+    setState('active');
+  }
+
   async function submitDailyLogEntry() {
     if (!(submitButton instanceof HTMLElement)) return;
     const tenantId = submitButton.dataset.tenantId;
     const projectId = submitButton.dataset.projectId;
+    const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
     if (!tenantId || !projectId) {
       setStatus('Missing project assignment. Pick the project before submit.', 'error');
       return;
     }
-    const transcript = transcriptNodes
-      .map((node) => node.textContent?.trim() ?? '')
-      .filter(Boolean)
-      .join('\n\n');
+    if (transcript.length === 0 && photos.length === 0 && audioUri === null) {
+      setStatus('Add a voice memo, note, or photo before submit.', 'error');
+      return;
+    }
+    const checked = document.querySelector('input[name="entry_kind"]:checked');
+    const entryKind = checked instanceof HTMLInputElement ? checked.value : 'progress_update';
     submitButton.setAttribute('aria-busy', 'true');
-    setStatus('Saving to Daily Log...', 'neutral');
+    setStatus('Saving to Daily Log and running Right Hand...', 'neutral');
     try {
       const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tenant_id: tenantId,
-          entry_kind: 'progress_update',
+          entry_kind: entryKind,
           transcript_text: transcript,
-          photo_uris: ['kerf://field-capture/wegrzyn/island-plumbing'],
+          audio_uri: audioUri,
+          photo_uris: photos.map((_, index) => `kerf://field-capture/photo-${Date.now()}-${index + 1}`),
           actor: { id: 'browser_operator', role: 'field_super' },
         }),
       });
@@ -317,7 +380,12 @@ const kerfSuggestedIntent: 'change_order' | 'estimate_update' | 'daily_log_only'
       if (!res.ok) {
         throw new Error(body.error ?? `submit_failed_${res.status}`);
       }
-      setStatus(`Saved to Daily Log. Event ${body.event_id}.`, 'success');
+      const drift = body.drift_event?.severity ? ` · drift ${body.drift_event.severity}` : '';
+      const surfaced = body.surfaced_event ? ' · relay card ready' : '';
+      setStatus(`Saved to Daily Log${drift}${surfaced}.`, 'success');
+      if (relayLink instanceof HTMLElement && body.surfaced_event) {
+        relayLink.hidden = false;
+      }
     } catch (err) {
       setStatus(`Could not save: ${err instanceof Error ? err.message : String(err)}`, 'error');
     } finally {
@@ -325,205 +393,379 @@ const kerfSuggestedIntent: 'change_order' | 'estimate_update' | 'daily_log_only'
     }
   }
 
+  recordButton?.addEventListener('click', () => {
+    void startRecording();
+  });
+  stopButton?.addEventListener('click', stopRecording);
+  typeNoteButton?.addEventListener('click', () => setState('active'));
+  photoButtons.forEach((button) => button?.addEventListener('click', openCamera));
+  cameraInput?.addEventListener('change', handlePhotoPick);
+  doneButton?.addEventListener('click', () => {
+    stopRecording();
+    renderPreflight();
+    setState('preflight');
+  });
+  backButton?.addEventListener('click', () => setState('active'));
+  editNoteButton?.addEventListener('click', () => setState('active'));
   submitButton?.addEventListener('click', () => {
     void submitDailyLogEntry();
   });
+  renderCaptured();
 </script>
 
 <style>
-  .f-e1 {
-    max-width: 920px;
-    margin: 0 auto;
-    padding: 1.5rem 1rem 4rem;
-    color: var(--text, #0a0d11);
+  :root {
+    --kerf-bg: #070b0f;
+    --kerf-bg-2: #101722;
+    --kerf-surface: #151d28;
+    --kerf-surface-2: #1b2633;
+    --kerf-line: rgba(255, 255, 255, 0.12);
+    --kerf-text: #f5f7fb;
+    --kerf-muted: #a7b0bf;
+    --field-green: #38c977;
+    --kerf-amber: #f5b544;
+    --right-hand: #c9a961;
   }
 
-  .f-e1-header { margin-bottom: 1.5rem; }
-  .f-e1-header .crumb {
-    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-muted, #6a7282); margin-bottom: 0.5rem;
+  .field-shell {
+    min-height: 100vh;
+    margin: -2rem;
+    padding: 18px 12px 34px;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(56, 201, 119, 0.16), transparent 34%),
+      linear-gradient(180deg, #060a0e, #0b1118 55%, #080c11);
+    color: var(--kerf-text);
+    display: flex;
+    justify-content: center;
   }
-  .f-e1-header h1 { font-size: 1.4rem; margin: 0 0 0.4rem; font-weight: 600; }
-  .f-e1-header .subtitle { color: var(--text-muted, #4a5462); font-size: 0.95rem; line-height: 1.55; margin: 0 0 1rem; }
 
-  .state-block { margin-top: 1.5rem; }
+  .phone-frame {
+    width: min(100%, 430px);
+    min-height: calc(100vh - 36px);
+    background: var(--kerf-bg);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 28px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    padding: 14px;
+  }
 
-  .assign-block { margin-bottom: 0.85rem; }
-  .assign-eyebrow {
-    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--field-green, #38c977); font-weight: 700; margin-bottom: 0.4rem;
+  .phone-status,
+  .topbar,
+  .panel-head,
+  .bottom-actions,
+  .quick-actions {
+    display: flex;
+    align-items: center;
   }
-  .assign-list { margin: 0; padding: 0; }
-  .assign-row {
-    display: flex; justify-content: space-between; padding: 0.35rem 0;
-    border-bottom: 1px solid var(--border-soft, #1f2530);
-    font-size: 0.85rem;
-  }
-  .assign-row:last-child { border-bottom: none; }
-  .assign-row dt {
-    font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--text-muted, #6a7282); font-weight: 600; margin: 0;
-  }
-  .assign-row dd { margin: 0; font-weight: 600; }
 
-  .daily-log-anchor {
-    background: rgba(56, 201, 119, 0.04);
-    border-left: 3px solid var(--field-green, #38c977);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    margin: 0.75rem 0;
+  .phone-status {
+    justify-content: space-between;
+    color: var(--kerf-muted);
+    font-size: 0.74rem;
+    padding: 3px 5px 14px;
   }
-  .daily-log-anchor strong { color: var(--field-green, #38c977); display: block; margin-bottom: 0.15rem; }
-  .daily-log-anchor .dl-detail { color: var(--text-muted, #6a7282); }
 
-  .record-area {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 0.4rem; margin: 1.25rem 0 0.75rem;
+  .topbar {
+    gap: 14px;
+    margin-bottom: 14px;
   }
+
+  .back-link,
+  .relay-link {
+    color: var(--field-green);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .topbar h1,
+  .assignment-card h2,
+  .preflight-card h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    letter-spacing: 0;
+  }
+
+  .eyebrow,
+  .label {
+    margin: 0 0 4px;
+    color: var(--field-green);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .capture-state {
+    display: none;
+  }
+
+  .field-shell[data-view-state='pre'] .state-pre,
+  .field-shell[data-view-state='active'] .state-active,
+  .field-shell[data-view-state='preflight'] .state-preflight {
+    display: block;
+  }
+
+  .assignment-card,
+  .daily-anchor,
+  .live-card,
+  .note-card,
+  .captured-panel,
+  .preflight-card,
+  .intent-card,
+  .review-card {
+    background: linear-gradient(180deg, var(--kerf-surface), #101720);
+    border: 1px solid var(--kerf-line);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .assignment-card dl {
+    margin: 12px 0 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .assignment-card dt {
+    color: var(--kerf-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+  }
+
+  .assignment-card dd {
+    margin: 3px 0 0;
+    font-weight: 700;
+  }
+
+  .daily-anchor {
+    border-left: 3px solid var(--field-green);
+    color: var(--kerf-muted);
+    line-height: 1.35;
+  }
+
+  .daily-anchor strong {
+    display: block;
+    color: var(--kerf-text);
+    margin-bottom: 4px;
+  }
+
+  .record-zone {
+    text-align: center;
+    padding: 28px 8px 18px;
+  }
+
   .record-button {
-    width: 80px; height: 80px; border-radius: 50%;
-    background: var(--field-green, #38c977); border: none;
-    box-shadow: 0 6px 18px rgba(56, 201, 119, 0.25);
-    display: flex; align-items: center; justify-content: center;
+    width: 118px;
+    height: 118px;
+    border: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, #69e69e 0%, var(--field-green) 62%, #1f7d49 100%);
+    box-shadow: 0 0 0 12px rgba(56, 201, 119, 0.1), 0 18px 42px rgba(56, 201, 119, 0.28);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
   }
-  .record-button .rb-dot { width: 24px; height: 24px; border-radius: 50%; background: #0a1a0f; }
-  .record-label { font-weight: 600; font-size: 0.9rem; }
-  .record-sub { color: var(--text-muted, #6a7282); font-size: 0.78rem; text-align: center; max-width: 360px; line-height: 1.4; }
 
-  .secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.75rem; }
-  .secondary-action {
-    background: var(--surface, #1a1f28); border: 1px solid var(--border-soft, #2a3140);
-    color: inherit; border-radius: 8px; padding: 0.55rem 0.5rem; font-size: 0.85rem; cursor: pointer;
+  .record-button span {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #0b1710;
   }
 
-  .state1-footer, .state2-footer, .state3-footer {
-    display: grid; gap: 0.5rem; margin-top: 0.75rem;
+  .record-title {
+    margin: 18px 0 4px;
+    font-size: 1rem;
+    font-weight: 800;
   }
-  .state1-footer { grid-template-columns: 1fr 2fr; }
-  .state2-footer { grid-template-columns: 1fr 2fr 1fr; }
-  .state3-footer { grid-template-columns: 1fr 2fr; }
 
-  .ar-btn {
-    padding: 0.7rem 0.5rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
-    background: var(--surface, #1a1f28); border: 1px solid var(--border-soft, #2a3140);
-    color: inherit; cursor: pointer;
+  .record-help,
+  .review-hint,
+  .preflight-card p,
+  .empty,
+  .empty-photo {
+    color: var(--kerf-muted);
+    line-height: 1.42;
   }
-  .ar-btn em { color: var(--text-muted, #6a7282); font-style: normal; font-weight: 400; font-size: 0.75rem; }
-  .ar-btn.primary { background: var(--field-green, #38c977); color: #0a1a0f; border-color: var(--field-green, #38c977); }
-  .ar-btn.primary em { color: rgba(10, 26, 15, 0.65); }
-  .ar-btn.cancel { color: var(--red, #f87171); }
-  .ar-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 
-  .live-record {
-    display: flex; align-items: center; gap: 0.6rem;
-    background: rgba(56, 201, 119, 0.06);
-    border: 1px solid rgba(56, 201, 119, 0.4);
-    border-radius: 10px; padding: 0.6rem 0.75rem;
-    margin-bottom: 0.6rem;
+  .quick-actions,
+  .bottom-actions {
+    gap: 10px;
   }
-  .live-dot {
-    width: 11px; height: 11px; border-radius: 50%;
-    background: var(--field-green, #38c977);
-    box-shadow: 0 0 0 4px rgba(56, 201, 119, 0.2);
-  }
-  .live-body { flex: 1; }
-  .live-eyebrow { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--field-green, #38c977); font-weight: 700; }
-  .live-time { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .live-stop { background: var(--field-green, #38c977); color: #0a1a0f; border: none; padding: 0.4rem 0.8rem; border-radius: 7px; font-weight: 700; cursor: pointer; }
 
-  .live-transcript {
-    background: var(--bg-2, #14181f); border: 1px solid var(--border-soft, #1f2530);
-    border-radius: 8px; padding: 0.55rem 0.75rem; margin-bottom: 0.6rem;
+  .quick-actions > *,
+  .bottom-actions > * {
+    flex: 1;
   }
-  .lt-eyebrow { font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted, #6a7282); font-weight: 700; margin-bottom: 0.25rem; }
-  .lt-text { margin: 0; font-size: 0.85rem; line-height: 1.5; }
-  .lt-text em { color: var(--field-green, #38c977); font-style: normal; font-weight: 500; }
 
-  .captured-list { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.5rem; }
+  button {
+    font: inherit;
+  }
 
-  .preflight-summary {
-    background: linear-gradient(135deg, rgba(56, 201, 119, 0.07), rgba(123, 168, 255, 0.04));
-    border: 1px solid rgba(56, 201, 119, 0.3);
-    border-radius: 10px; padding: 0.7rem 0.85rem; margin-bottom: 0.75rem;
+  .utility-button,
+  .primary-button,
+  .live-card button,
+  .panel-head button {
+    border: 1px solid var(--kerf-line);
+    border-radius: 10px;
+    padding: 12px 10px;
+    background: var(--kerf-surface-2);
+    color: var(--kerf-text);
+    font-weight: 800;
+    cursor: pointer;
   }
-  .pf-eyebrow { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--field-green, #38c977); font-weight: 700; margin-bottom: 0.25rem; }
-  .pf-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; }
-  .pf-meta { font-size: 0.78rem; color: var(--text-muted, #6a7282); }
 
-  .intent-picker {
-    border: 1px solid var(--border-soft, #2a3140); border-radius: 10px;
-    padding: 0.6rem 0.75rem 0.4rem; margin-bottom: 0.75rem;
+  .primary-button,
+  .live-card button {
+    background: var(--field-green);
+    border-color: var(--field-green);
+    color: #06120a;
   }
-  .intent-picker legend { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--field-green, #38c977); font-weight: 700; padding: 0 0.25rem; }
-  .intent-option {
-    display: grid; grid-template-columns: 18px 1fr; gap: 0.5rem;
-    padding: 0.5rem; border-radius: 6px; cursor: pointer;
-    border: 1px solid transparent;
-  }
-  .intent-option:hover { background: rgba(123, 168, 255, 0.04); }
-  .intent-option input[type="radio"]:checked + .intent-title { font-weight: 700; }
-  .intent-title { font-size: 0.9rem; display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
-  .intent-detail { grid-column: 2; font-size: 0.78rem; color: var(--text-muted, #6a7282); margin-top: 0.15rem; }
 
-  .override-block {
-    background: rgba(245, 181, 68, 0.04);
-    border-left: 3px solid var(--amber, #f5b544);
-    border-radius: 6px; padding: 0.55rem 0.75rem; margin-bottom: 0.75rem;
+  .live-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
-  .override-label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem; }
-  .override-block textarea {
-    width: 100%; font: inherit; padding: 0.45rem 0.55rem;
-    background: var(--bg, transparent); color: inherit;
-    border: 1px solid var(--border-soft, #2a3140); border-radius: 6px;
+
+  .live-card div {
+    flex: 1;
+  }
+
+  .live-card strong {
+    font-size: 1.35rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pulse {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--field-green);
+    box-shadow: 0 0 0 7px rgba(56, 201, 119, 0.16);
+  }
+
+  .note-card {
+    display: block;
+  }
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 8px;
+    border: 1px solid var(--kerf-line);
+    border-radius: 12px;
+    background: #090f15;
+    color: var(--kerf-text);
+    padding: 12px;
     resize: vertical;
   }
-  .classify-prompt { font-size: 0.78rem; color: var(--text-muted, #6a7282); margin-top: 0.35rem; font-style: italic; }
 
-  .final-transcript {
-    background: var(--bg-2, #14181f); border: 1px solid var(--border-soft, #1f2530);
-    border-radius: 8px; padding: 0.55rem 0.75rem; margin-bottom: 0.6rem;
+  .panel-head {
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
   }
-  .ft-eyebrow {
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-muted, #6a7282); font-weight: 700; margin-bottom: 0.4rem;
-  }
-  .ft-block { padding: 0.3rem 0; border-bottom: 1px solid var(--border-soft, #1f2530); }
-  .ft-block:last-of-type { border-bottom: none; }
-  .ft-meta { font-size: 0.7rem; color: var(--text-muted, #6a7282); margin-bottom: 0.15rem; }
-  .ft-text { margin: 0; font-size: 0.82rem; line-height: 1.5; }
 
-  .transcript-canon-hint {
-    background: rgba(123, 168, 255, 0.05);
-    border-left: 2px solid var(--blue, #7ba8ff);
-    border-radius: 3px;
-    padding: 0.35rem 0.6rem; margin-top: 0.4rem;
-    font-size: 0.72rem; color: var(--text-muted, #6a7282); line-height: 1.4;
+  .captured-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
   }
-  .transcript-canon-hint strong { color: var(--blue, #7ba8ff); }
 
-  .ai-disclosure {
-    background: rgba(201, 169, 97, 0.04);
-    border-left: 2px solid var(--right-hand, #c9a961);
-    border-radius: 3px;
-    padding: 0.4rem 0.65rem; margin-bottom: 0.75rem;
-    font-size: 0.75rem; color: var(--text-muted, #6a7282); line-height: 1.45;
+  .captured-list li {
+    border: 1px solid var(--kerf-line);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .captured-list strong,
+  .captured-list span {
+    display: block;
+  }
+
+  .captured-list span {
+    color: var(--kerf-muted);
+    font-size: 0.84rem;
+    margin-top: 2px;
+  }
+
+  .intent-card {
+    display: grid;
+    gap: 8px;
+  }
+
+  .intent-card legend {
+    color: var(--field-green);
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .intent-card label {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    padding: 9px;
+    border: 1px solid var(--kerf-line);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .ft-text {
+    white-space: pre-wrap;
+    margin: 0;
+    line-height: 1.48;
+  }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .photo-grid img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--kerf-line);
+  }
+
+  .empty-photo {
+    grid-column: 1 / -1;
+    margin: 0;
   }
 
   .submit-status {
-    margin: 0.7rem 0 0;
-    min-height: 1.2rem;
-    font-size: 0.82rem;
-    color: var(--text-muted, #6a7282);
+    min-height: 1.25rem;
+    margin: 12px 0 0;
+    color: var(--kerf-muted);
+    line-height: 1.4;
   }
-  .submit-status[data-tone="success"] { color: var(--field-green, #38c977); }
-  .submit-status[data-tone="error"] { color: var(--red, #f87171); }
 
-  .link {
-    background: none; border: none; padding: 0; cursor: pointer;
-    color: var(--blue, #7ba8ff); font: inherit; font-size: inherit;
-    font-weight: 500;
+  .submit-status[data-tone='success'] {
+    color: var(--field-green);
+  }
+
+  .submit-status[data-tone='error'] {
+    color: #ff8f8f;
+  }
+
+  .relay-link {
+    display: block;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  @media (min-width: 760px) {
+    .field-shell {
+      padding-top: 28px;
+    }
   }
 </style>
