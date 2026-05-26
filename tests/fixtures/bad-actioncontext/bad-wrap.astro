@@ -1,0 +1,24 @@
+---
+// Deliberately-bad fixture for the L0.4 actionContextResolver test.
+// This file lives OUTSIDE src/app/pages/ so the Astro build doesn't index it.
+// The AST walker's bad-fixture test points at tests/fixtures/bad-actioncontext/
+// specifically and asserts the resolver + validator rejects this surface.
+//
+// Three flavors of bad actionContext are deliberately exercised below to give
+// the validator multiple rejection paths to confirm.
+---
+
+<!-- Flavor 1: boilerplate copy (the original Codex-shape catch) -->
+<SurfaceIrreversibilityWrap kind="irreversibility" actionContext="Are you sure?">
+  <p>boilerplate fixture · should fail validation</p>
+</SurfaceIrreversibilityWrap>
+
+<!-- Flavor 2: too short (passes the boilerplate list but is too short to be substantive) -->
+<SurfaceIrreversibilityWrap kind="irreversibility" actionContext="Send now.">
+  <p>too-short fixture · should fail validation</p>
+</SurfaceIrreversibilityWrap>
+
+<!-- Flavor 3: empty braces (resolves as 'missing') -->
+<SurfaceIrreversibilityWrap kind="irreversibility" actionContext={}>
+  <p>empty-braces fixture · should resolve as missing</p>
+</SurfaceIrreversibilityWrap>
