@@ -4,7 +4,7 @@ import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import { getLane6Proposal } from '../../app/lib/lane6Fixtures.js';
 import type { PersistenceTenantId } from '../../persistence/events.js';
-import { evaluateSendGate } from '../../proposal/sendGate.js';
+import { evaluateSendGate, tenantEvidenceClassForOverride } from '../../proposal/sendGate.js';
 import { renderProposalHtml } from '../../proposal/render.js';
 
 export const proposalRoutes = new Hono();
@@ -112,7 +112,7 @@ proposalRoutes.post('/proposals/:id/send', async (c) => {
         correction_event_id: overridden.event_id,
         correction_scope: 'one_off',
         memory_locality: ['tenant_private'],
-        evidence_source_class: 'dogfood_ggr',
+        evidence_source_class: tenantEvidenceClassForOverride(tenant),
         classification_method: 'operator_confirmed',
         confidence: 1,
         operator_rule_refs: [],

@@ -2,7 +2,26 @@
  * F-PV2 send-gate evaluator — deterministic validator wall per D-048.
  * Maps brief SendGateReason codes to per-check outcomes; no LLM, no auto-send.
  */
+import type { EvidenceSourceClass, PersistenceTenantId } from '../persistence/events.js';
 import type { ProposalArtifact } from './types.js';
+
+/**
+ * Maps tenant → evidence_source_class for proposal-override classification.
+ *
+ * Phase 1D consolidation marker: duplicates `tenantEvidenceClass` in
+ * `src/review/classifyCorrection.ts` (Lane 2+3). Phase 1D L0.3 harden
+ * consolidates both into a shared helper in `src/persistence/events.ts`.
+ */
+export function tenantEvidenceClassForOverride(tenant_id: PersistenceTenantId): EvidenceSourceClass {
+  switch (tenant_id) {
+    case 'tenant_valle':
+      return 'dogfood_valle';
+    case 'tenant_hpg':
+      return 'dogfood_hpg';
+    default:
+      return 'dogfood_ggr';
+  }
+}
 
 /** Verdict reason codes from Phase 1C dispatch (Lane 6 prep). */
 export type SendGateReason =
