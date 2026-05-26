@@ -27,6 +27,19 @@ import Layout from '../../layouts/Layout.astro';
     return 'Review';
   }
 
+  function cardHeadline(item) {
+    const summary = typeof item.summary === 'string' ? item.summary.trim() : '';
+    const description = typeof item.description === 'string' ? item.description.trim() : '';
+    const transcript = typeof item.transcript_text === 'string' ? item.transcript_text.trim() : '';
+    if (description.length > 0 && summary.length < 16) return description;
+    if (summary.length > 0) return summary;
+    if (transcript.length > 0) {
+      const sentence = transcript.split(/[.!?]/)[0]?.trim() ?? transcript;
+      return sentence.length > 72 ? `${sentence.slice(0, 69)}…` : sentence;
+    }
+    return 'Field update needs review';
+  }
+
   function renderEmpty(message) {
     if (!(list instanceof HTMLElement)) return;
     list.innerHTML = '';
@@ -52,12 +65,18 @@ import Layout from '../../layouts/Layout.astro';
       const top = document.createElement('div');
       top.className = 'relay-card-top';
       const severity = document.createElement('span');
+      severity.className = 'relay-card-severity';
       severity.textContent = severityLabel(item.severity);
+      const separator = document.createElement('span');
+      separator.className = 'relay-card-sep';
+      separator.setAttribute('aria-hidden', 'true');
+      separator.textContent = '·';
       const surfacedAt = document.createElement('time');
+      surfacedAt.dateTime = item.surfaced_at ?? '';
       surfacedAt.textContent = new Date(item.surfaced_at).toLocaleString();
-      top.append(severity, surfacedAt);
+      top.append(severity, separator, surfacedAt);
       const title = document.createElement('h2');
-      title.textContent = item.summary;
+      title.textContent = cardHeadline(item);
       const description = document.createElement('p');
       description.textContent = item.description ?? 'Right Hand surfaced this field update for office review.';
       const details = document.createElement('details');
@@ -83,95 +102,112 @@ import Layout from '../../layouts/Layout.astro';
   }
 
   void loadRelay();
-</script>
+  </script>
 
-<style>
-  .relay-page {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 1.5rem 1rem 4rem;
-  }
+  <style>
+    .relay-page {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 4rem;
+    }
 
-  .relay-header {
-    margin-bottom: 1rem;
-  }
+    .relay-header {
+      margin-bottom: 1rem;
+    }
 
-  .eyebrow {
-    margin: 0 0 0.35rem;
-    color: var(--field-green, #38c977);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+    .eyebrow {
+      margin: 0 0 0.35rem;
+      color: var(--field-green, #38c977);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
 
-  .relay-header h1 {
-    margin: 0 0 0.4rem;
-    font-size: 1.55rem;
-    letter-spacing: 0;
-  }
+    .relay-header h1 {
+      margin: 0 0 0.4rem;
+      font-size: 1.55rem;
+      letter-spacing: 0;
+    }
 
-  .relay-header p {
-    margin: 0;
-    color: var(--text-muted, #5c6670);
-  }
+    .relay-header p {
+      margin: 0;
+      color: var(--text-muted, #5c6670);
+    }
 
-  .relay-list {
-    display: grid;
-    gap: 0.8rem;
-  }
+    .relay-list {
+      display: grid;
+      gap: 0.8rem;
+    }
 
-  .relay-card,
-  .relay-empty {
-    border: 1px solid var(--border-soft, #d7dde6);
-    border-radius: 8px;
-    background: var(--surface, #fff);
-    padding: 1rem;
-  }
+    /* Client-rendered cards lack Astro scope attrs — promote card chrome to global. */
+    :global(.relay-card),
+    :global(.relay-empty) {
+      border: 1px solid var(--border-soft, #d7dde6);
+      border-radius: 8px;
+      background: var(--surface, #fff);
+      padding: 1rem;
+    }
 
-  .relay-card[data-severity='block'] {
-    border-left: 4px solid #d92d20;
-  }
+    :global(.relay-card[data-severity='block']) {
+      border-left: 4px solid #d92d20;
+    }
 
-  .relay-card[data-severity='warn'] {
-    border-left: 4px solid #f5b544;
-  }
+    :global(.relay-card[data-severity='warn']) {
+      border-left: 4px solid #f5b544;
+    }
 
-  .relay-card-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    color: var(--text-muted, #5c6670);
-    font-size: 0.78rem;
-    margin-bottom: 0.45rem;
-  }
+    :global(.relay-card[data-severity='info']) {
+      border-left: 4px solid #026aa2;
+    }
 
-  .relay-card-top span {
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
+    :global(.relay-card-top) {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.5rem;
+      color: var(--text-muted, #5c6670);
+      font-size: 0.78rem;
+      margin-bottom: 0.45rem;
+    }
 
-  .relay-card h2 {
-    margin: 0 0 0.4rem;
-    font-size: 1rem;
-    letter-spacing: 0;
-  }
+    :global(.relay-card-severity) {
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
 
-  .relay-card p {
-    margin: 0 0 0.65rem;
-    color: var(--text-muted, #4f5966);
-    line-height: 1.45;
-  }
+    :global(.relay-card-sep) {
+      color: var(--text-muted, #5c6670);
+      font-weight: 700;
+    }
 
-  details {
-    color: var(--text-muted, #4f5966);
-  }
+    :global(.relay-card-top time) {
+      margin-left: auto;
+      text-align: right;
+    }
 
-  summary {
-    cursor: pointer;
-    font-weight: 700;
-    color: var(--text, #0a0d11);
-  }
-</style>
+    :global(.relay-card h2) {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      letter-spacing: 0;
+      line-height: 1.35;
+    }
+
+    :global(.relay-card p) {
+      margin: 0 0 0.65rem;
+      color: var(--text-muted, #4f5966);
+      line-height: 1.45;
+    }
+
+    :global(.relay-card details) {
+      color: var(--text-muted, #4f5966);
+    }
+
+    :global(.relay-card summary) {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text, #0a0d11);
+    }
+  </style>
 </Layout>
