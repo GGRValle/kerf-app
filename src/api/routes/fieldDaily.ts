@@ -2,11 +2,18 @@ import { Hono } from 'hono';
 
 import type {
   ClockEventSubKind,
+  DailyLogDriftDetectedEvent,
+  DailyLogEntryCapturedEvent,
   DailyLogEntryKind,
+  DailyLogFactsExtractedEvent,
   PersistenceActor,
   PersistenceEvent,
   PersistenceTenantId,
+  RelayCardSurfacedEvent,
 } from '../../persistence/events.js';
+import { validatePersistenceEvent } from '../../persistence/events.js';
+import { runRightHandOrchestrator } from '../../agents/right-hand/orchestrator.js';
+import { createDefaultToolRegistry } from '../../agents/right-hand/tool-registry.js';
 import { appendValidatedEvent, generateEventId } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 
@@ -110,7 +117,7 @@ fieldDailyRoutes.post('/projects/:id/daily-log/entries', async (c) => {
     ? (body['source_refs'] as PersistenceEvent['source_refs'])
     : sourceRefsFor({ entry_id: entryId, transcript_text: transcriptText, audio_uri: audioUri, photo_uris: photoUris });
 
-  const { eventStore } = getApiDeps();
+  const { eventStore, tenantReader } = getApiDeps();
   try {
     const event = await appendValidatedEvent(
       {
@@ -130,7 +137,80 @@ fieldDailyRoutes.post('/projects/:id/daily-log/entries', async (c) => {
         source_refs: sourceRefs,
       },
     );
-    return c.json({ ok: true, event, event_id: event.event_id }, 201);
+
+    const capturedEvent = event as DailyLogEntryCapturedEvent;
+    const tenantEvents = await tenantReader.readEventsForTenant(tenant);
+    const projectCreatedEvent = tenantEvents.find(
+      (e) => e.type === 'project.created' && e.correlation_id === projectId,
+    );
+    const recentDailyLogEntries = tenantEvents
+      .filter(
+        (e): e is DailyLogEntryCapturedEvent =>
+          e.type === 'daily_log.entry_captured' && e.correlation_id === projectId,
+      )
+      .slice(-5)
+      .map((e) => e.entry_kind);
+    const recentSurfaceHistory = tenantEvents.filter(
+      (e): e is RelayCardSurfacedEvent => e.type === 'relay_card.surfaced',
+    );
+
+    let rightHandResponse: Awaited<ReturnType<typeof runRightHandOrchestrator>> | null = null;
+    let playError: string | null = null;
+    try {
+      rightHandResponse = await runRightHandOrchestrator({
+        capturedEvent,
+        projectContext: {
+          project_id: projectId,
+          project_name:
+            projectCreatedEvent && projectCreatedEvent.type === 'project.created'
+              ? projectCreatedEvent.project_name
+              : projectId,
+          recent_entry_kinds: recentDailyLogEntries,
+        },
+        toolRegistry: createDefaultToolRegistry(),
+        recentSurfaceHistory,
+      });
+    } catch (err) {
+      playError = `orchestrator: ${err instanceof Error ? err.message : String(err)}`;
+    }
+
+    if (rightHandResponse !== null) {
+      for (const nextEvent of rightHandResponse.events_to_append) {
+        try {
+          const validation = validatePersistenceEvent(nextEvent);
+          if (!validation.ok) {
+            throw new Error(validation.errors.join('; '));
+          }
+          await eventStore.append(validation.event);
+        } catch (err) {
+          playError = playError ?? `event_append: ${err instanceof Error ? err.message : String(err)}`;
+        }
+      }
+    }
+
+    const factsEvent =
+      rightHandResponse?.events_to_append.find(
+        (e): e is DailyLogFactsExtractedEvent => e.type === 'daily_log.facts_extracted',
+      ) ?? null;
+    const driftEvent =
+      rightHandResponse?.events_to_append.find(
+        (e): e is DailyLogDriftDetectedEvent => e.type === 'daily_log.drift_detected',
+      ) ?? null;
+    const surfacedEvent =
+      rightHandResponse?.events_to_append.find(
+        (e): e is RelayCardSurfacedEvent => e.type === 'relay_card.surfaced',
+      ) ?? null;
+
+    return c.json({
+      ok: true,
+      event,
+      event_id: event.event_id,
+      right_hand_response: rightHandResponse,
+      facts_event: factsEvent,
+      drift_event: driftEvent,
+      surfaced_event: surfacedEvent,
+      ...(playError !== null ? { play_error: playError } : {}),
+    }, 201);
   } catch (err) {
     if (err instanceof AggregateError) {
       return c.json({ error: 'invalid_event', errors: err.errors.map((e) => String(e)) }, 400);
