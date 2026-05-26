@@ -2,9 +2,12 @@
 import Layout from '../../../layouts/Layout.astro';
 import ActionsStrip from '../../../components/ActionsStrip.astro';
 import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
+import ProjectAuditPanel from '../../../components/ProjectAuditPanel.astro';
 import Card from '../../../components/Card.astro';
+import { getApiDeps } from '../../../../api/lib/deps.js';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getLane23Project, isProjectTabId } from '../../../lib/lane23Fixtures.js';
+import { loadProjectAuditTrail } from '../../../../project/projectAuditProjection.js';
 import type { I18nKey } from '../../../../i18n/keys.js';
 import '../../../styles/lane23.css';
 
@@ -12,6 +15,11 @@ const { t, context } = createLayoutContext();
 const { id, tab } = Astro.params;
 const project = id ? getLane23Project(id) : null;
 const activeTab = tab && isProjectTabId(tab) ? tab : null;
+
+const auditEntries =
+  project !== null && activeTab === 'audit'
+    ? await loadProjectAuditTrail(getApiDeps().tenantReader, context.tenantId, project.project_id)
+    : [];
 
 const PANEL_KEYS: Record<string, I18nKey> = {
   scope: 'project.panel.scope',
@@ -48,9 +56,13 @@ const PANEL_KEYS: Record<string, I18nKey> = {
       <ProjectTabStrip projectId={project.project_id} activeTab={activeTab} labelFor={t} />
 
       <div class="lane23-tab-panel">
-        <Card title={t(`project.tab.${activeTab}`)}>
-          <p>{t(PANEL_KEYS[activeTab])}</p>
-        </Card>
+        {activeTab === 'audit' ? (
+          <ProjectAuditPanel entries={auditEntries} labelFor={t} />
+        ) : (
+          <Card title={t(`project.tab.${activeTab}`)}>
+            <p>{t(PANEL_KEYS[activeTab])}</p>
+          </Card>
+        )}
       </div>
       <p id="lane23-export-status" class="lane23-notice" role="status"></p>
     </div>

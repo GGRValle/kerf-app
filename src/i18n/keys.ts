@@ -380,7 +380,26 @@ export type I18nKey =
   | 'project.closeout.final_invoice'
   | 'project.export.success'
   | 'project.export.error'
-  | 'project.not_found';
+  | 'project.not_found'
+  | 'project.audit.chronology'
+  | 'project.audit.empty'
+  | 'project.audit.event.send_gate.evaluated'
+  | 'project.audit.event.proposal.sent'
+  | 'project.audit.event.suggestion.overridden'
+  | 'project.audit.event.correction.classified'
+  | 'project.audit.event.export.requested'
+  | 'project.audit.send_gate.verdict'
+  | 'project.audit.send_gate.gate_pass'
+  | 'project.audit.send_gate.recoverable'
+  | 'project.audit.send_gate.override_eligible'
+  | 'project.audit.send_gate.primary_reason'
+  | 'project.audit.send_gate.checks'
+  | 'project.audit.send_gate.operator_action'
+  | 'project.audit.proposal_sent.channel'
+  | 'project.audit.override.reason'
+  | 'project.audit.override.classification'
+  | 'project.audit.classification.locality'
+  | 'project.audit.export.requested_by';
 
 export type Locale = 'en' | 'es';
 
