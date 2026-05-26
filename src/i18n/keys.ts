@@ -217,7 +217,41 @@ export type I18nKey =
   | 'f_rc1.release.action_context'
   | 'f_rc1.override.reason_label'
   | 'f_rc1.override.reason_placeholder'
-  | 'f_rc1.override.classify_prompt';
+  | 'f_rc1.override.classify_prompt'
+
+  // Lane 1 · F-FD1 + F-FD2 · Field Detail (Phase 1C net-new ·
+  // single route · mobile stacks, desktop two-column)
+  | 'f_fd.crumb'
+  | 'f_fd.title'
+  | 'f_fd.subtitle'
+  | 'f_fd.back_to_field'
+  | 'f_fd.hero.type'
+  | 'f_fd.hero.title'
+  | 'f_fd.hero.meta'
+  | 'f_fd.capture.eyebrow'
+  | 'f_fd.capture.transcript'
+  | 'f_fd.entities.eyebrow'
+  | 'f_fd.entities.scope_flag.title'
+  | 'f_fd.entities.scope_flag.detail'
+  | 'f_fd.entities.scope_flag.chip'
+  | 'f_fd.entities.cost_hint.title'
+  | 'f_fd.entities.cost_hint.detail'
+  | 'f_fd.entities.decision.title'
+  | 'f_fd.entities.decision.detail'
+  | 'f_fd.routing.eyebrow'
+  | 'f_fd.routing.project_notes.title'
+  | 'f_fd.routing.project_notes.detail'
+  | 'f_fd.routing.foreman.title'
+  | 'f_fd.routing.foreman.detail'
+  | 'f_fd.routing.schedule.title'
+  | 'f_fd.routing.schedule.detail'
+  | 'f_fd.deeplinks.eyebrow'
+  | 'f_fd.deeplinks.transcript_review'
+  | 'f_fd.deeplinks.audit_detail'
+  | 'f_fd.override.disagree_label'
+  | 'f_fd.override.reason_label'
+  | 'f_fd.override.reason_placeholder'
+  | 'f_fd.override.classify_prompt';
 
 export type Locale = 'en' | 'es';
 
