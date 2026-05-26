@@ -1,0 +1,76 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import ActionsStrip from '../../../components/ActionsStrip.astro';
+import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
+import Card from '../../../components/Card.astro';
+import Chip from '../../../components/Chip.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { formatCentsDisplay, getLane23Project } from '../../../lib/lane23Fixtures.js';
+import '../../../styles/lane23.css';
+
+const { t, context } = createLayoutContext();
+const { id } = Astro.params;
+const project = id ? getLane23Project(id) : null;
+---
+
+<Layout titleKey="project.list.title" activeHref="/projects">
+  {project === null ? (
+    <p>{t('project.not_found')}</p>
+  ) : (
+    <div class="lane23-page" data-project-id={project.project_id} data-tenant={context.tenantId}>
+      <div class="lane23-bc">
+        <div class="lane23-bc-bar">
+          <p class="lane23-crumb"><a href="/projects">{t('project.detail.back')}</a></p>
+          <div class="lane23-project-header">
+            <h1>{project.project_name}</h1>
+            <p class="lane23-project-meta">{project.client_name} · {project.address_line}</p>
+          </div>
+        </div>
+        <ActionsStrip actions={[
+          { label: t('action.print'), title: t('action.print') },
+          { label: t('action.export.menu'), title: t('action.export.menu') },
+        ]} />
+      </div>
+
+      <ProjectTabStrip projectId={project.project_id} activeTab="scope" labelFor={t} />
+
+      <div class="lane23-tab-panel">
+        <Card title={t('project.tab.scope')}>
+          <p>{t('project.panel.scope')}</p>
+          <div>
+            {project.scope_tags.map((tag) => (
+              <Chip label={tag} tone="cyan" variant="outlined" />
+            ))}
+          </div>
+          <p class="lane23-notice">{t('project.detail.budget')}: {formatCentsDisplay(project.budget_cents)}</p>
+          <p class="lane23-notice">{t('project.detail.phase')}: {project.phase}</p>
+        </Card>
+      </div>
+      <p id="lane23-export-status" class="lane23-notice" role="status"></p>
+    </div>
+  )}
+</Layout>
+
+<script define:vars={{ projectId: project?.project_id, tenantId: context.tenantId, successKey: 'project.export.success', errorKey: 'project.export.error' }}>
+  if (!projectId) {
+    // no-op
+  } else {
+    const statusEl = document.getElementById('lane23-export-status');
+    document.querySelectorAll('.actions-strip .as-action').forEach((btn, idx) => {
+      btn.addEventListener('click', async () => {
+        const format = idx === 0 ? 'print' : 'pdf';
+        try {
+          const res = await fetch(`/api/v1/projects/${projectId}/export?tenant_id=${tenantId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ format }),
+          });
+          if (!res.ok) throw new Error('export_failed');
+          statusEl.textContent = successKey;
+        } catch {
+          statusEl.textContent = errorKey;
+        }
+      });
+    });
+  }
+</script>

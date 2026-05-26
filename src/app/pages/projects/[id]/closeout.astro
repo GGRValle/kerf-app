@@ -1,0 +1,34 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
+import Card from '../../../components/Card.astro';
+import Chip from '../../../components/Chip.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getLane23Project } from '../../../lib/lane23Fixtures.js';
+import type { I18nKey } from '../../../../i18n/keys.js';
+import '../../../styles/lane23.css';
+
+const { t, context } = createLayoutContext();
+const { id } = Astro.params;
+const project = id ? getLane23Project(id) : null;
+---
+
+<Layout titleKey="project.closeout.title" activeHref="/projects">
+  {project === null ? (
+    <p>{t('project.not_found')}</p>
+  ) : (
+    <div class="lane23-page">
+      <p class="lane23-crumb"><a href={`/projects/${project.project_id}`}>{t('project.detail.back')}</a></p>
+      <ProjectTabStrip projectId={project.project_id} activeTab="audit" labelFor={t} />
+      <Card title={t('project.closeout.title')}>
+        <p class="lane23-notice">{t('project.closeout.subtitle')}</p>
+        {project.closeout_steps.map((step) => (
+          <div class="lane23-closeout-step">
+            <span>{t(step.label_key as I18nKey)}</span>
+            <Chip label={step.done ? 'done' : 'open'} tone={step.done ? 'green' : 'amber'} />
+          </div>
+        ))}
+      </Card>
+    </div>
+  )}
+</Layout>

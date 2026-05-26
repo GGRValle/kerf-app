@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
+import Row from '../../components/Row.astro';
+import Chip from '../../components/Chip.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { formatCentsDisplay, listLane23Projects } from '../../lib/lane23Fixtures.js';
+import '../../styles/lane23.css';
+
+const { t, context } = createLayoutContext();
+const projects = listLane23Projects(context.tenantId);
+---
+
+<Layout titleKey="project.list.title" activeHref="/projects">
+  <div class="lane23-page">
+    <div class="lane23-bc">
+      <div>
+        <h1>{t('project.list.title')}</h1>
+        <p class="lane23-notice lane23-desktop-only">{t('project.list.subtitle')}</p>
+        <p class="lane23-notice lane23-mobile-only">{t('project.list.subtitle')}</p>
+      </div>
+    </div>
+
+    <SectionLabel label={t('project.list.title')} count={projects.length} />
+    {projects.length === 0 ? (
+      <p>{t('project.list.empty')}</p>
+    ) : (
+      projects.map((project) => (
+        <a href={`/projects/${project.project_id}`} class="lane23-project-link">
+          <Row
+            title={project.project_name}
+            meta={`${project.client_name} · ${project.address_line}`}
+            amount={formatCentsDisplay(project.budget_cents)}
+            showArrow
+          >
+            <span slot="trailing">
+              <Chip label={project.phase} tone={project.phase === 'active' ? 'green' : 'amber'} />
+            </span>
+          </Row>
+        </a>
+      ))
+    )}
+  </div>
+</Layout>
+
+<style>
+  .lane23-project-link {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+  }
+</style>

@@ -1,7 +1,145 @@
 ---
-import RouteShellPage from '../components/RouteShellPage.astro';
+import Layout from '../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
+import PhaseStrip from '../components/PhaseStrip.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Card from '../components/Card.astro';
+import Chip from '../components/Chip.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { LANE23_TRANSCRIPT_CAPTURE } from '../lib/lane23Fixtures.js';
+import '../styles/lane23.css';
+
+const { t, context } = createLayoutContext();
+const capture = LANE23_TRANSCRIPT_CAPTURE;
+
+function formatMs(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 ---
 
-<RouteShellPage title="Transcript Review" routeName="transcript-review" phase="review">
-  <p>F1 review surface shell.</p>
-</RouteShellPage>
+<Layout titleKey="review.transcript.title" activeHref="/transcript-review">
+  <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+    <div class="lane23-page" data-tenant={context.tenantId}>
+      <PhaseStrip phases={[
+        { id: 'capture', label: 'Capture' },
+        { id: 'review', label: 'Review', active: true },
+        { id: 'draft', label: 'Draft' },
+      ]} />
+      <div class="lane23-bc">
+        <div>
+          <h1>{t('review.transcript.title')}</h1>
+          <p class="lane23-notice">{t('review.transcript.subtitle')}</p>
+        </div>
+      </div>
+      <p class="lane23-notice">{t('review.transcript.notice')}</p>
+
+      <div class="lane23-grid-2">
+        <Card eyebrow={capture.project_label} title={capture.client_label}>
+          <SectionLabel label={t('review.transcript.segments')} />
+          {capture.segments.map((seg) => (
+            <article class="lane23-segment" data-segment-id={seg.id}>
+              <div class="lane23-segment__head">
+                <span class="lane23-segment__time">{formatMs(seg.start_ms)}–{formatMs(seg.end_ms)}</span>
+                <Chip
+                  label={`${Math.round(seg.confidence * 100)}%`}
+                  tone={seg.confidence >= 0.85 ? 'green' : seg.confidence >= 0.65 ? 'amber' : 'red'}
+                  variant="outlined"
+                />
+              </div>
+              <p class:list={['lane23-segment__body', seg.confidence < 0.8 && 'lane23-lowconf']}>{seg.text}</p>
+            </article>
+          ))}
+        </Card>
+
+        <Card title={t('review.transcript.scope')}>
+          {capture.scope_lines.map((line) => (
+            <div class="lane23-edit-row" data-scope-id={line.id}>
+              <label>
+                <span>{line.label}</span>
+                <textarea rows={2} data-field="transcript_segment" data-before={line.label}>{line.label}</textarea>
+              </label>
+              <button type="button" class="lane23-btn primary lane23-save-transcript" data-field="transcript_segment">
+                {t('review.transcript.save')}
+              </button>
+            </div>
+          ))}
+          <div id="lane23-transcript-followup" class="lane23-followup" hidden>
+            <p><strong>{t('review.classify.scope_question')}</strong></p>
+            <p class="lane23-notice">{t('review.classify.warn_earlier')}</p>
+            <div class="lane23-followup-actions">
+              <button type="button" class="lane23-btn" data-scope="project_specific">{t('review.classify.just_job')}</button>
+              <button type="button" class="lane23-btn" data-scope="universal">{t('review.classify.general_rule')}</button>
+              <button type="button" class="lane23-btn" data-scope="tenant_wide">{t('review.classify.tenant_wide')}</button>
+            </div>
+          </div>
+          <p id="lane23-transcript-status" class="lane23-notice" role="status"></p>
+        </Card>
+      </div>
+    </div>
+  </SurfaceIrreversibilityWrap>
+</Layout>
+
+<script define:vars={{ capture, tenantId: context.tenantId, savedKey: 'review.transcript.saved', errorKey: 'review.transcript.error' }}>
+  const statusEl = document.getElementById('lane23-transcript-status');
+  const followupEl = document.getElementById('lane23-transcript-followup');
+  let pending = null;
+
+  async function postCorrection(scopeAnswer) {
+    const body = {
+      tenant_id: tenantId,
+      capture_id: capture.capture_id,
+      project_id: capture.project_id,
+      field: pending.field,
+      before: pending.before,
+      after: pending.after,
+      clarification_answers: { [pending.field]: pending.after },
+      source_quotes: { [pending.field]: pending.before },
+    };
+    if (scopeAnswer) body.scope_answer = scopeAnswer;
+    const res = await fetch('/api/v1/review/transcript/correct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.status === 409 && data.needs_follow_up) {
+      followupEl.hidden = false;
+      return;
+    }
+    if (!res.ok) throw new Error(data.error ?? 'request_failed');
+    followupEl.hidden = true;
+    statusEl.textContent = savedKey;
+    pending = null;
+  }
+
+  document.querySelectorAll('.lane23-save-transcript').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      const row = ev.currentTarget.closest('.lane23-edit-row');
+      const textarea = row.querySelector('textarea');
+      pending = {
+        field: textarea.dataset.field,
+        before: textarea.dataset.before,
+        after: textarea.value,
+      };
+      try {
+        await postCorrection(undefined);
+      } catch {
+        statusEl.textContent = errorKey;
+      }
+    });
+  });
+
+  followupEl?.querySelectorAll('[data-scope]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!pending) return;
+      try {
+        await postCorrection(btn.dataset.scope);
+      } catch {
+        statusEl.textContent = errorKey;
+      }
+    });
+  });
+</script>

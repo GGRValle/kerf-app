@@ -1,7 +1,128 @@
 ---
-import RouteShellPage from '../components/RouteShellPage.astro';
+import Layout from '../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
+import PhaseStrip from '../components/PhaseStrip.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import Card from '../components/Card.astro';
+import Chip from '../components/Chip.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { formatCentsDisplay, LANE23_DRAFT_REVIEW } from '../lib/lane23Fixtures.js';
+import '../styles/lane23.css';
+
+const { t, context } = createLayoutContext();
+const draft = LANE23_DRAFT_REVIEW;
 ---
 
-<RouteShellPage title="Draft Review" routeName="draft-review" phase="draft">
-  <p>G1 draft review shell.</p>
-</RouteShellPage>
+<Layout titleKey="review.draft.title" activeHref="/draft-review">
+  <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+    <div class="lane23-page" data-tenant={context.tenantId}>
+      <PhaseStrip phases={[
+        { id: 'capture', label: 'Capture' },
+        { id: 'review', label: 'Review' },
+        { id: 'draft', label: 'Draft', active: true },
+      ]} />
+      <div class="lane23-bc">
+        <div>
+          <h1>{t('review.draft.title')}</h1>
+          <p class="lane23-notice">{t('review.draft.subtitle')}</p>
+        </div>
+      </div>
+      <p class="lane23-notice">{t('review.draft.notice')}</p>
+
+      <Card eyebrow={draft.project_label} title={draft.title}>
+        <p class="lane23-notice">{draft.scope_summary}</p>
+        <SectionLabel label={t('review.draft.lines')} />
+        {draft.lines.map((line) => (
+          <div class="lane23-edit-row" data-line-id={line.line_id}>
+            <label>
+              <span>{line.description}</span>
+              <input
+                type="text"
+                value={line.description}
+                data-field={`line_description_${line.line_id}`}
+                data-before={line.description}
+              />
+              <span class="lane23-notice">{formatCentsDisplay(line.amount_cents)} · {line.quantity} {line.unit}</span>
+            </label>
+            <div>
+              <Chip
+                label={line.pricing_confidence}
+                tone={line.pricing_confidence === 'high' ? 'green' : line.pricing_confidence === 'medium' ? 'amber' : 'red'}
+              />
+              <button type="button" class="lane23-btn primary lane23-save-draft">{t('review.draft.save')}</button>
+            </div>
+          </div>
+        ))}
+        <div id="lane23-draft-followup" class="lane23-followup" hidden>
+          <p><strong>{t('review.classify.scope_question')}</strong></p>
+          <p class="lane23-notice">{t('review.classify.owner_only')}</p>
+          <div class="lane23-followup-actions">
+            <button type="button" class="lane23-btn" data-scope="project_specific">{t('review.classify.just_job')}</button>
+            <button type="button" class="lane23-btn" data-scope="universal">{t('review.classify.general_rule')}</button>
+          </div>
+        </div>
+        <p id="lane23-draft-status" class="lane23-notice" role="status"></p>
+      </Card>
+    </div>
+  </SurfaceIrreversibilityWrap>
+</Layout>
+
+<script define:vars={{ draft, tenantId: context.tenantId, savedKey: 'review.draft.saved', errorKey: 'review.draft.error' }}>
+  const statusEl = document.getElementById('lane23-draft-status');
+  const followupEl = document.getElementById('lane23-draft-followup');
+  let pending = null;
+
+  async function postCorrection(scopeAnswer) {
+    const body = {
+      tenant_id: tenantId,
+      proposal_id: draft.proposal_id,
+      project_id: draft.project_id,
+      field: pending.field,
+      before: pending.before,
+      after: pending.after,
+    };
+    if (scopeAnswer) body.scope_answer = scopeAnswer;
+    const res = await fetch('/api/v1/review/draft/correct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.status === 409 && data.needs_follow_up) {
+      followupEl.hidden = false;
+      return;
+    }
+    if (!res.ok) throw new Error(data.error ?? 'request_failed');
+    followupEl.hidden = true;
+    statusEl.textContent = savedKey;
+    pending = null;
+  }
+
+  document.querySelectorAll('.lane23-save-draft').forEach((btn) => {
+    btn.addEventListener('click', async (ev) => {
+      const row = ev.currentTarget.closest('.lane23-edit-row');
+      const input = row.querySelector('input');
+      pending = {
+        field: input.dataset.field,
+        before: input.dataset.before,
+        after: input.value,
+      };
+      try {
+        await postCorrection(undefined);
+      } catch {
+        statusEl.textContent = errorKey;
+      }
+    });
+  });
+
+  followupEl?.querySelectorAll('[data-scope]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!pending) return;
+      try {
+        await postCorrection(btn.dataset.scope);
+      } catch {
+        statusEl.textContent = errorKey;
+      }
+    });
+  });
+</script>

@@ -1,0 +1,58 @@
+---
+import type { I18nKey } from '../../i18n/keys.js';
+import {
+  PROJECT_TAB_IDS,
+  projectTabHref,
+  type ProjectTabId,
+} from '../lib/lane23Fixtures.js';
+
+export interface Props {
+  projectId: string;
+  activeTab: ProjectTabId;
+  labelFor: (key: I18nKey) => string;
+}
+
+const { projectId, activeTab, labelFor } = Astro.props;
+---
+
+<nav class="project-tab-strip" aria-label={labelFor('project.tabs.aria')}>
+  {PROJECT_TAB_IDS.map((tab) => {
+    const href = projectTabHref(projectId, tab);
+    const isActive = tab === activeTab;
+    return (
+      <a
+        href={href}
+        class:list={['project-tab', isActive && 'active']}
+        aria-current={isActive ? 'page' : undefined}
+        data-tab={tab}
+      >
+        {labelFor(`project.tab.${tab}`)}
+      </a>
+    );
+  })}
+</nav>
+
+<style>
+  .project-tab-strip {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.25rem 0 0.75rem;
+    border-bottom: 1px solid var(--border, #d8dee6);
+    margin-bottom: 0.75rem;
+  }
+  .project-tab {
+    white-space: nowrap;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border, #d8dee6);
+    font-size: 0.8rem;
+    color: var(--text-muted, #5c6670);
+    text-decoration: none;
+  }
+  .project-tab.active {
+    border-color: var(--accent, #0f766e);
+    color: var(--accent, #0f766e);
+    background: color-mix(in srgb, var(--accent, #0f766e) 8%, white);
+  }
+</style>
