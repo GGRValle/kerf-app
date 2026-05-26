@@ -1,0 +1,30 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import ProjectTabStrip from '../../../../components/ProjectTabStrip.astro';
+import Card from '../../../../components/Card.astro';
+import Chip from '../../../../components/Chip.astro';
+import { createLayoutContext } from '../../../../lib/createLayoutContext.js';
+import { getLane23Project } from '../../../../lib/lane23Fixtures.js';
+import '../../../../styles/lane23.css';
+
+const { t, context } = createLayoutContext();
+const { id, wid } = Astro.params;
+const project = id ? getLane23Project(id) : null;
+const workOrder = project?.work_orders.find((wo) => wo.work_order_id === wid) ?? null;
+---
+
+<Layout titleKey="project.work_order.title" activeHref="/projects">
+  {project === null || workOrder === null ? (
+    <p>{t('project.not_found')}</p>
+  ) : (
+    <div class="lane23-page">
+      <p class="lane23-crumb"><a href={`/projects/${project.project_id}`}>{t('project.work_order.back')}</a></p>
+      <ProjectTabStrip projectId={project.project_id} activeTab="field" labelFor={t} />
+      <Card title={workOrder.title}>
+        <p>{t('project.work_order.trade')}: {workOrder.trade}</p>
+        <p>{t('project.work_order.scheduled')}: {workOrder.scheduled_date}</p>
+        <Chip label={workOrder.status} tone={workOrder.status === 'complete' ? 'green' : 'cyan'} />
+      </Card>
+    </div>
+  )}
+</Layout>

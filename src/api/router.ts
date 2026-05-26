@@ -2,8 +2,10 @@ import { Hono } from 'hono';
 
 import { authMiddleware } from './middleware/auth.js';
 import { clientRoutes } from './routes/clients.js';
+import { projectDetailRoutes } from './routes/projectDetail.js';
 import { healthRoutes, projectRoutes } from './routes/projects.js';
 import { proposalRoutes } from './routes/proposals.js';
+import { reviewRoutes } from './routes/review.js';
 
 export function createApiRouter(): Hono {
   const app = new Hono();
@@ -12,6 +14,8 @@ export function createApiRouter(): Hono {
   app.route('/', projectRoutes);
   app.route('/', proposalRoutes);
   app.route('/', clientRoutes);
+  app.route('/', projectDetailRoutes);
+  app.route('/', reviewRoutes);
   return app;
 }
 
