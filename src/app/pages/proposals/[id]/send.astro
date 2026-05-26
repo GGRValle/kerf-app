@@ -6,6 +6,8 @@ import Card from '../../../components/Card.astro';
 import SectionLabel from '../../../components/SectionLabel.astro';
 import { createTranslator } from '../../../../i18n/index.js';
 import { getLane6Proposal } from '../../../lib/lane6Fixtures.js';
+import { loadProposalCaptureOrigin } from '../../../lib/loadProposalCaptureOrigin.js';
+import CaptureOriginPanel from '../../../components/CaptureOriginPanel.astro';
 import { evaluateSendGate } from '../../../../proposal/sendGate.js';
 import { renderProposalHtml } from '../../../../proposal/render.js';
 import type { I18nKey } from '../../../../i18n/keys.js';
@@ -22,6 +24,7 @@ if (proposal === null) {
 const gate = evaluateSendGate(proposal);
 const paperHtml = renderProposalHtml(proposal);
 const tenantId = proposal.tenant_id;
+const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, proposal.project_id);
 
 const checkLabelKeys: Record<string, I18nKey> = {
   client_pii: 'f_pv2.check.client_pii',
@@ -44,7 +47,7 @@ const checkLabelKeys: Record<string, I18nKey> = {
     <SurfaceIrreversibilityWrap
       kind="irreversibility"
       safetyLineBudget={3}
-      actionContext={'Sending locks this proposal version · the client sees it · downstream invoices reference this draft.'}
+      actionContext={t('f_pv2.irreversibility.context')}
     >
       <Card eyebrow={t('f_pv2.gate.title')} title={proposal.project_name}>
         <SectionLabel label={gate.all_passed ? t('f_pv2.gate.pass') : t('f_pv2.gate.fail')} />
@@ -75,6 +78,8 @@ const checkLabelKeys: Record<string, I18nKey> = {
             <p class="lane6-subtitle">{t('f_pv2.override.followup')}</p>
           </div>
         )}
+
+        <CaptureOriginPanel origin={captureOrigin} />
 
         <div slot="footer" class="lane6-actions">
           <a class="lane6-btn ghost" href="/draft-review">{t('f_pv2.back_fix')}</a>
