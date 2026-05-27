@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
 import { createApiRouter } from '../src/api/router.js';
@@ -17,6 +17,11 @@ import {
 } from '../src/project/projectAuditProjection.js';
 
 const PROJECT_ID = 'proj_wegrzyn_kitchen';
+
+const HENDERSON_TRANSCRIPT =
+  'Kevin here at Henderson - we pulled the tub surround and there is ' +
+  'galvanized all the way back to the main. Gotta replace about 8 feet. ' +
+  'Bumping you on the CO.';
 
 async function withIsolatedApp<T>(fn: (dir: string, app: ReturnType<typeof createApiRouter>) => Promise<T>): Promise<T> {
   resetApiDepsForTests();
@@ -123,6 +128,81 @@ test('GET /projects/:id/audit-events returns tenant-scoped audit payload', async
     assert.ok(Array.isArray(body.entries));
     assert.ok(body.entries.some((e: { kind: string }) => e.kind === 'export.requested'));
   });
+});
+
+test('loadProjectAuditTrail · F-E1 Henderson submit projects capture chain on audit tab', async () => {
+  await withIsolatedApp(async (dir, app) => {
+    const submitRes = await app.request(`/projects/${PROJECT_ID}/daily-log/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: 'tenant_ggr',
+        entry_kind: 'progress_update',
+        transcript_text: HENDERSON_TRANSCRIPT,
+        photo_uris: ['kerf://field-capture/wegrzyn/smoke-audit'],
+        actor: { id: 'browser_operator', role: 'field_super' },
+      }),
+    });
+    assert.equal(submitRes.status, 201);
+
+    const store = createPersistenceEventStore({ filepath: path.join(dir, 'events.jsonl') });
+    const reader = createTenantScopedEventReader(store);
+    const entries = await loadProjectAuditTrail(reader, 'tenant_ggr', PROJECT_ID);
+
+    const kinds = entries.map((entry) => entry.kind);
+    assert.ok(kinds.includes('daily_log.entry_captured'));
+    assert.ok(kinds.includes('daily_log.facts_extracted'));
+    assert.ok(kinds.includes('daily_log.drift_detected'));
+    assert.ok(kinds.includes('relay_card.surfaced'));
+
+    const capture = entries.find((e) => e.kind === 'daily_log.entry_captured');
+    assert.ok(capture && capture.kind === 'daily_log.entry_captured');
+    assert.equal(capture.entry_kind, 'progress_update');
+    assert.match(capture.transcript_excerpt ?? '', /Henderson/);
+
+    const drift = entries.find((e) => e.kind === 'daily_log.drift_detected');
+    assert.ok(drift && drift.kind === 'daily_log.drift_detected');
+    assert.equal(drift.severity, 'block');
+    assert.match(drift.description, /galvanized|tub surround/i);
+  });
+});
+
+test('GET /projects/:id/audit-events includes F-E1 capture chain after submit', async () => {
+  await withIsolatedApp(async (_dir, app) => {
+    const submitRes = await app.request(`/projects/${PROJECT_ID}/daily-log/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id: 'tenant_ggr',
+        entry_kind: 'progress_update',
+        transcript_text: HENDERSON_TRANSCRIPT,
+        actor: { id: 'browser_operator', role: 'field_super' },
+      }),
+    });
+    assert.equal(submitRes.status, 201);
+
+    const res = await app.request(`/projects/${PROJECT_ID}/audit-events?tenant_id=tenant_ggr`);
+    assert.equal(res.status, 200);
+    const body = await res.json() as {
+      project_id: string;
+      entries: readonly { kind: string }[];
+    };
+    assert.equal(body.project_id, PROJECT_ID);
+    const kinds = body.entries.map((entry) => entry.kind);
+    assert.ok(kinds.includes('daily_log.entry_captured'));
+    assert.ok(kinds.includes('daily_log.facts_extracted'));
+    assert.ok(kinds.includes('daily_log.drift_detected'));
+    assert.ok(kinds.includes('relay_card.surfaced'));
+  });
+});
+
+test('project audit primary labels are plain English, not raw event enum names', async () => {
+  const enSource = await readFile(path.join(process.cwd(), 'src/i18n/en.ts'), 'utf8');
+  assert.match(enSource, /'project\.audit\.event\.daily_log\.entry_captured': 'Field capture saved'/);
+  assert.match(enSource, /'project\.audit\.event\.daily_log\.facts_extracted': 'Right Hand extracted job facts'/);
+  assert.match(enSource, /'project\.audit\.event\.daily_log\.drift_detected': 'Drift flagged'/);
+  assert.match(enSource, /'project\.audit\.event\.relay_card\.surfaced': 'Relay card surfaced'/);
+  assert.doesNotMatch(enSource, /'project\.audit\.event\.daily_log\.entry_captured': 'daily_log\.entry_captured'/);
 });
 
 test('deriveSendGateVerdict · gate_pass when all checks pass', () => {

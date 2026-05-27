@@ -109,6 +109,55 @@ const verdictTone: Record<string, 'green' | 'amber' | 'red'> = {
               </p>
             </div>
           )}
+
+          {entry.kind === 'daily_log.entry_captured' && (
+            <div class="project-audit-entry__body">
+              <p class="lane23-notice">
+                {t('project.audit.capture.entry')}: {entry.entry_id}
+              </p>
+              {entry.transcript_excerpt && <p>{entry.transcript_excerpt}</p>}
+              {entry.photo_count > 0 && (
+                <p class="lane23-notice">
+                  {t('project.audit.capture.photos')}: {entry.photo_count}
+                </p>
+              )}
+              {entry.has_audio && !entry.transcript_excerpt && (
+                <p class="lane23-notice">{t('project.audit.capture.voice_only')}</p>
+              )}
+            </div>
+          )}
+
+          {entry.kind === 'daily_log.facts_extracted' && (
+            <div class="project-audit-entry__body">
+              <p class="lane23-notice">
+                {t('project.audit.facts.entry')}: {entry.entry_id}
+              </p>
+            </div>
+          )}
+
+          {entry.kind === 'daily_log.drift_detected' && (
+            <div class="project-audit-entry__body">
+              <p>
+                <Chip
+                  label={t(`project.audit.drift.severity.${entry.severity}` as I18nKey)}
+                  tone={entry.severity === 'block' ? 'red' : entry.severity === 'warn' ? 'amber' : 'cyan'}
+                  variant="solid"
+                />
+              </p>
+              <p>{entry.description}</p>
+            </div>
+          )}
+
+          {entry.kind === 'relay_card.surfaced' && (
+            <div class="project-audit-entry__body">
+              <p class="lane23-notice">
+                {t('project.audit.relay.card')}: {entry.relay_card_id}
+              </p>
+              <p class="lane23-notice">
+                {t('project.audit.relay.surfaced_to')}: {entry.surfaced_to}
+              </p>
+            </div>
+          )}
         </li>
       ))}
     </ol>
