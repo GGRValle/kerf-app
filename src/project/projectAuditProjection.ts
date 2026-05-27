@@ -3,6 +3,8 @@
  */
 import type {
   CorrectionClassifiedEvent,
+  DailyLogDriftSeverity,
+  DailyLogEntryKind,
   ExportRequestedEvent,
   PersistenceEvent,
   PersistenceTenantId,
@@ -74,6 +76,42 @@ export type ProjectAuditEntry =
       readonly format: ExportRequestedEvent['format'];
       readonly requested_by: string;
       readonly scope_descriptor: string | null;
+    }
+  | {
+      readonly kind: 'daily_log.entry_captured';
+      readonly event_id: string;
+      readonly at: string;
+      readonly actor_id: string;
+      readonly entry_id: string;
+      readonly entry_kind: DailyLogEntryKind;
+      readonly transcript_excerpt: string | null;
+      readonly photo_count: number;
+      readonly has_audio: boolean;
+    }
+  | {
+      readonly kind: 'daily_log.facts_extracted';
+      readonly event_id: string;
+      readonly at: string;
+      readonly actor_id: string;
+      readonly entry_id: string;
+    }
+  | {
+      readonly kind: 'daily_log.drift_detected';
+      readonly event_id: string;
+      readonly at: string;
+      readonly actor_id: string;
+      readonly entry_id: string;
+      readonly severity: DailyLogDriftSeverity;
+      readonly description: string;
+    }
+  | {
+      readonly kind: 'relay_card.surfaced';
+      readonly event_id: string;
+      readonly at: string;
+      readonly actor_id: string;
+      readonly relay_card_id: string;
+      readonly entry_id: string;
+      readonly surfaced_to: string;
     };
 
 const AUDIT_EVENT_TYPES = new Set<PersistenceEvent['type']>([
@@ -82,7 +120,19 @@ const AUDIT_EVENT_TYPES = new Set<PersistenceEvent['type']>([
   'suggestion.overridden',
   'correction.classified',
   'export.requested',
+  'daily_log.entry_captured',
+  'daily_log.facts_extracted',
+  'daily_log.drift_detected',
+  'relay_card.surfaced',
 ]);
+
+function transcriptExcerpt(text: string | null, maxLen = 140): string | null {
+  if (text === null) return null;
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length <= maxLen) return trimmed;
+  return `${trimmed.slice(0, maxLen - 1)}…`;
+}
 
 function isAuditEvent(event: PersistenceEvent): boolean {
   return AUDIT_EVENT_TYPES.has(event.type);
@@ -182,6 +232,46 @@ function projectAuditEntry(
         format: event.format,
         requested_by: event.actor.id,
         scope_descriptor: event.scope_descriptor,
+      };
+    case 'daily_log.entry_captured':
+      return {
+        kind: 'daily_log.entry_captured',
+        event_id: event.event_id,
+        at: event.at,
+        actor_id: event.actor.id,
+        entry_id: event.entry_id,
+        entry_kind: event.entry_kind,
+        transcript_excerpt: transcriptExcerpt(event.transcript_text),
+        photo_count: event.photo_uris.length,
+        has_audio: event.audio_uri !== null,
+      };
+    case 'daily_log.facts_extracted':
+      return {
+        kind: 'daily_log.facts_extracted',
+        event_id: event.event_id,
+        at: event.at,
+        actor_id: event.actor.id,
+        entry_id: event.entry_id,
+      };
+    case 'daily_log.drift_detected':
+      return {
+        kind: 'daily_log.drift_detected',
+        event_id: event.event_id,
+        at: event.at,
+        actor_id: event.actor.id,
+        entry_id: event.entry_id,
+        severity: event.severity,
+        description: event.description,
+      };
+    case 'relay_card.surfaced':
+      return {
+        kind: 'relay_card.surfaced',
+        event_id: event.event_id,
+        at: event.at,
+        actor_id: event.actor.id,
+        relay_card_id: event.relay_card_id,
+        entry_id: event.entry_id,
+        surfaced_to: event.surfaced_to,
       };
     default:
       return null;
