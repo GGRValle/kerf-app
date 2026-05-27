@@ -95,7 +95,10 @@ test('Phase 1E F-E1 page contains submit wiring to the shell API', async () => {
   assert.match(source, /applySubmitOutcome/);
   assert.match(source, /play_error/);
   assert.match(source, /Right Hand flagged this for office review/);
-  assert.match(source, /Right Hand reviewing/);
+  assert.match(source, /Saved to Daily Log as media-only/);
+  assert.doesNotMatch(source, /Live note/);
+  assert.match(source, /not transcribed yet/);
+  assert.match(source, /Typed summary/);
 });
 
 test('Phase 1G-a photo-only capture persists without surfacing a relay card', async () => {
