@@ -482,12 +482,20 @@ const assignment = {
         if (startedAt > 0) {
           voiceDurationSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
         }
+        // Phase 1G-A · the audio_uri is a stable in-browser handle for the
+        // submit payload. Durable cloud upload of the audio blob is NOT
+        // implemented in this lane — the blob lives in browser memory only
+        // until submit. The capture still emits daily_log.entry_captured
+        // with this URI so the event chain is intact; future media-library
+        // lane (Phase 1H-?) wires real audio persistence.
         audioUri = `kerf://field-capture/audio-${Date.now()}`;
+        const capturedIndex = captured.length;
         captured.push({
           title: 'Voice memo',
-          detail: `${formatVoiceDuration(voiceDurationSec)} · ${voiceBlobKb} KB · not transcribed yet`,
+          detail: `${formatVoiceDuration(voiceDurationSec)} · ${voiceBlobKb} KB · transcribing…`,
         });
         renderCaptured();
+        void transcribeBlob(blob, capturedIndex);
       });
       mediaRecorder.start();
       startedAt = Date.now();
@@ -511,6 +519,104 @@ const assignment = {
     }
     mediaRecorder = null;
     mediaStream = null;
+  }
+
+  /**
+   * Phase 1G-A · upload the recorded audio blob to /api/v1/transcribe and
+   * insert the transcript into the typed-note textarea on success. On any
+   * failure (unavailable, route-rejected, upstream error) the voice memo
+   * stays captured and the operator is prompted to type the note instead.
+   *
+   * Honest contract:
+   *   - No fake transcript. Failure paths show real status, not silent insert.
+   *   - Successful transcript appends to existing note text (so the operator
+   *     can record multiple clips that combine).
+   *   - The "transcribing…" detail in the captured list flips to either the
+   *     transcript word count or a "transcription unavailable" note.
+   */
+  async function transcribeBlob(blob, capturedIndex) {
+    const contentType = blob.type || 'audio/webm';
+    let res;
+    try {
+      res = await fetch('/api/v1/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': contentType },
+        body: blob,
+      });
+    } catch (err) {
+      updateCapturedTranscribeStatus(capturedIndex, 'unavailable');
+      setStatus(
+        `Voice memo saved (${formatVoiceDuration(voiceDurationSec)}). Could not transcribe — type the note instead.`,
+        'neutral',
+      );
+      return;
+    }
+
+    if (res.status === 503) {
+      updateCapturedTranscribeStatus(capturedIndex, 'unavailable');
+      setStatus(
+        'Transcription is not configured on this deploy. Voice memo saved — type the note.',
+        'neutral',
+      );
+      return;
+    }
+
+    if (!res.ok) {
+      updateCapturedTranscribeStatus(capturedIndex, 'failed');
+      setStatus(
+        `Voice memo saved (${formatVoiceDuration(voiceDurationSec)}). Transcription failed — type the note instead.`,
+        'neutral',
+      );
+      return;
+    }
+
+    let body;
+    try {
+      body = await res.json();
+    } catch {
+      body = {};
+    }
+    const transcript = typeof body?.transcript === 'string' ? body.transcript.trim() : '';
+    if (transcript.length === 0) {
+      updateCapturedTranscribeStatus(capturedIndex, 'empty');
+      setStatus(
+        `Voice memo saved (${formatVoiceDuration(voiceDurationSec)}). No speech detected — type the note if needed.`,
+        'neutral',
+      );
+      return;
+    }
+
+    if (note instanceof HTMLTextAreaElement) {
+      const existing = note.value.trim();
+      note.value = existing.length === 0 ? transcript : `${existing}\n\n${transcript}`;
+    }
+    const wordCount = transcript.split(/\s+/).filter(Boolean).length;
+    updateCapturedTranscribeStatus(capturedIndex, 'ok', wordCount);
+    setStatus(`Transcribed ${wordCount} word${wordCount === 1 ? '' : 's'} into the note.`, 'success');
+  }
+
+  function updateCapturedTranscribeStatus(index, outcome, wordCount) {
+    if (typeof index !== 'number' || index < 0 || index >= captured.length) return;
+    const item = captured[index];
+    if (!item) return;
+    const base = `${formatVoiceDuration(voiceDurationSec)} · ${voiceBlobKb} KB`;
+    switch (outcome) {
+      case 'ok':
+        item.detail = `${base} · transcribed (${wordCount} words)`;
+        break;
+      case 'unavailable':
+        item.detail = `${base} · transcription not available — type the note`;
+        break;
+      case 'failed':
+        item.detail = `${base} · transcription failed — type the note`;
+        break;
+      case 'empty':
+        item.detail = `${base} · no speech detected`;
+        break;
+      default:
+        item.detail = base;
+    }
+    renderCaptured();
   }
 
   function openCamera() {
@@ -548,6 +654,15 @@ const assignment = {
     resetSubmitOutcome();
     setStatus('Saving to Daily Log and running Right Hand...', 'neutral');
     try {
+      // Phase 1G-A · photo_uris are synthetic in-browser refs · the photo
+      // blobs are NOT durably uploaded by this lane (preview only via
+      // URL.createObjectURL). The event chain still persists these URIs
+      // so the daily_log.entry_captured source_refs are non-empty when
+      // a photo-only capture happens. A future media-library lane wires
+      // durable photo upload; until then these refs point at nothing.
+      const synthesizedPhotoUris = photos.map(
+        (_, index) => `kerf://field-capture/photo-${Date.now()}-${index + 1}`,
+      );
       const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -556,7 +671,7 @@ const assignment = {
           entry_kind: entryKind,
           transcript_text: transcript,
           audio_uri: audioUri,
-          photo_uris: photos.map((_, index) => `kerf://field-capture/photo-${Date.now()}-${index + 1}`),
+          photo_uris: synthesizedPhotoUris,
           actor: { id: 'browser_operator', role: 'field_super' },
         }),
       });
