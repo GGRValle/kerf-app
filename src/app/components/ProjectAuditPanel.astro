@@ -3,6 +3,7 @@ import Chip from './Chip.astro';
 import SectionLabel from './SectionLabel.astro';
 import type { ProjectAuditEntry } from '../../project/projectAuditProjection.js';
 import type { I18nKey } from '../../i18n/keys.js';
+import { formatAuditFieldValue } from '../lib/formatOperatorLabel.js';
 
 export interface Props {
   entries: readonly ProjectAuditEntry[];
@@ -77,9 +78,9 @@ const verdictTone: Record<string, 'green' | 'amber' | 'red'> = {
               {entry.linked_classification && (
                 <p class="lane23-notice">
                   {t('project.audit.override.classification')}:{' '}
-                  {entry.linked_classification.correction_scope} ·{' '}
-                  {entry.linked_classification.evidence_source_class} ·{' '}
-                  {entry.linked_classification.classification_method} ·{' '}
+                  {formatAuditFieldValue(entry.linked_classification.correction_scope)} ·{' '}
+                  {formatAuditFieldValue(entry.linked_classification.evidence_source_class)} ·{' '}
+                  {formatAuditFieldValue(entry.linked_classification.classification_method)} ·{' '}
                   {entry.linked_classification.confidence}
                 </p>
               )}
@@ -89,11 +90,13 @@ const verdictTone: Record<string, 'green' | 'amber' | 'red'> = {
           {entry.kind === 'correction.classified' && (
             <div class="project-audit-entry__body">
               <p>
-                {entry.correction_scope} · {entry.evidence_source_class} ·{' '}
-                {entry.classification_method} · {entry.confidence}
+                {formatAuditFieldValue(entry.correction_scope)} ·{' '}
+                {formatAuditFieldValue(entry.evidence_source_class)} ·{' '}
+                {formatAuditFieldValue(entry.classification_method)} · {entry.confidence}
               </p>
               <p class="lane23-notice">
-                {t('project.audit.classification.locality')}: {entry.memory_locality.join(', ')}
+                {t('project.audit.classification.locality')}:{' '}
+                {entry.memory_locality.map((loc) => formatAuditFieldValue(loc)).join(', ')}
               </p>
             </div>
           )}

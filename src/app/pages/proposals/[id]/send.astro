@@ -89,11 +89,11 @@ const checkLabelKeys: Record<string, I18nKey> = {
             </button>
           ) : gate.override_eligible ? (
             <button type="button" class="lane6-btn primary" id="send-proposal" data-ready="false">
-              {t('f_pv2.send.action')} · override
+              {t('f_pv2.send.action')}
             </button>
           ) : (
             <button type="button" class="lane6-btn" disabled aria-disabled="true">
-              {t('f_pv2.send.ready')} · blocked
+              {t('f_pv2.send.blocked')}
             </button>
           )}
         </div>
@@ -101,7 +101,7 @@ const checkLabelKeys: Record<string, I18nKey> = {
     </SurfaceIrreversibilityWrap>
   </article>
 
-  <script>
+  <script define:vars={{ overrideRequired: t('f_pv2.send.override_required'), confirmSent: t('f_pv2.send.confirm_sent') }}>
     const root = document.querySelector('.f-pv2');
     const proposalId = root?.getAttribute('data-proposal-id');
     const tenantId = root?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
@@ -123,7 +123,7 @@ const checkLabelKeys: Record<string, I18nKey> = {
       const ready = btn?.getAttribute('data-ready') === 'true';
       const overrideReason = (document.getElementById('override-reason') as HTMLTextAreaElement | null)?.value ?? '';
       if (!ready && overrideReason.trim().length === 0) {
-        alert('Override reason required.');
+        alert(overrideRequired);
         return;
       }
       const res = await fetch(`/api/v1/proposals/${proposalId}/send?tenant_id=${tenantId}`, {
@@ -136,7 +136,7 @@ const checkLabelKeys: Record<string, I18nKey> = {
       });
       if (res.ok) {
         btn?.setAttribute('disabled', 'true');
-        btn!.textContent = 'Sent · audit logged';
+        btn!.textContent = confirmSent;
       }
     });
   </script>

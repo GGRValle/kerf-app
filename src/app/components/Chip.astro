@@ -3,12 +3,13 @@ export interface Props {
   label: string;
   tone?: 'red' | 'amber' | 'green' | 'cyan' | 'neutral';
   variant?: 'solid' | 'outlined';
+  title?: string;
 }
 
-const { label, tone = 'neutral', variant = 'solid' } = Astro.props;
+const { label, tone = 'neutral', variant = 'solid', title } = Astro.props;
 ---
 
-<span class:list={['chip', `chip-${tone}`, variant === 'outlined' && 'chip-outlined']}>{label}</span>
+<span class:list={['chip', `chip-${tone}`, variant === 'outlined' && 'chip-outlined']} title={title}>{label}</span>
 
 <style>
   .chip {

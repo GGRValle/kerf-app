@@ -1,30 +1,48 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+
+const { t } = createLayoutContext();
+const relayCopy = {
+  title: t('rh.relay.list.title'),
+  lead: t('rh.relay.list.lead'),
+  loading: t('rh.relay.list.loading'),
+  emptySubmit: t('rh.relay.list.empty_submit'),
+  errorPrefix: t('rh.relay.list.error_prefix'),
+  fallbackHeadline: t('rh.relay.card.fallback_headline'),
+  fallbackBody: t('rh.relay.card.fallback_body'),
+  transcript: t('rh.relay.card.transcript'),
+  severity: {
+    block: t('rh.relay.severity.block'),
+    warn: t('rh.relay.severity.watch'),
+    info: t('rh.relay.severity.info'),
+    review: t('rh.relay.severity.review'),
+  },
+};
 ---
 
-<Layout title="Relay" activeHref={Astro.url.pathname}>
+<Layout titleKey="rh.relay.list.title" activeHref={Astro.url.pathname}>
   <main class="relay-page">
     <header class="relay-header">
-      <p class="eyebrow">Relay</p>
-      <h1>Office cards from the field</h1>
-      <p>Field captures that Right Hand thinks need review land here.</p>
+      <h1>{relayCopy.title}</h1>
+      <p>{relayCopy.lead}</p>
     </header>
 
     <section class="relay-list" id="relay-list" aria-live="polite">
       <article class="relay-empty">
-        <p>Loading relay cards...</p>
+        <p>{relayCopy.loading}</p>
       </article>
     </section>
   </main>
 
-  <script>
+  <script define:vars={{ relayCopy }}>
   const list = document.querySelector('#relay-list');
 
   function severityLabel(severity) {
-    if (severity === 'block') return 'Block';
-    if (severity === 'warn') return 'Watch';
-    if (severity === 'info') return 'Info';
-    return 'Review';
+    if (severity === 'block') return relayCopy.severity.block;
+    if (severity === 'warn') return relayCopy.severity.warn;
+    if (severity === 'info') return relayCopy.severity.info;
+    return relayCopy.severity.review;
   }
 
   function cardHeadline(item) {
@@ -37,7 +55,13 @@ import Layout from '../../layouts/Layout.astro';
       const sentence = transcript.split(/[.!?]/)[0]?.trim() ?? transcript;
       return sentence.length > 72 ? `${sentence.slice(0, 69)}…` : sentence;
     }
-    return 'Field update needs review';
+    return relayCopy.fallbackHeadline;
+  }
+
+  function cardBody(item, headline) {
+    const description = typeof item.description === 'string' ? item.description.trim() : '';
+    if (description.length > 0 && description !== headline) return description;
+    return relayCopy.fallbackBody;
   }
 
   function renderEmpty(message) {
@@ -54,7 +78,7 @@ import Layout from '../../layouts/Layout.astro';
   function renderItems(items) {
     if (!(list instanceof HTMLElement)) return;
     if (!items.length) {
-      renderEmpty('No relay cards yet. Submit a field capture to create one.');
+      renderEmpty(relayCopy.emptySubmit);
       return;
     }
     list.innerHTML = '';
@@ -75,15 +99,16 @@ import Layout from '../../layouts/Layout.astro';
       surfacedAt.dateTime = item.surfaced_at ?? '';
       surfacedAt.textContent = new Date(item.surfaced_at).toLocaleString();
       top.append(severity, separator, surfacedAt);
+      const headline = cardHeadline(item);
       const title = document.createElement('h2');
-      title.textContent = cardHeadline(item);
+      title.textContent = headline;
       const description = document.createElement('p');
-      description.textContent = item.description ?? 'Right Hand surfaced this field update for office review.';
+      description.textContent = cardBody(item, headline);
       const details = document.createElement('details');
       const summary = document.createElement('summary');
-      summary.textContent = 'Transcript';
+      summary.textContent = relayCopy.transcript;
       const transcript = document.createElement('p');
-      transcript.textContent = item.transcript_text ?? 'No transcript text captured.';
+      transcript.textContent = item.transcript_text ?? '—';
       details.append(summary, transcript);
       card.append(top, title, description, details);
       list.append(card);
@@ -97,7 +122,8 @@ import Layout from '../../layouts/Layout.astro';
       if (!res.ok) throw new Error(body.error ?? `relay_failed_${res.status}`);
       renderItems(Array.isArray(body.items) ? body.items : []);
     } catch (err) {
-      renderEmpty(`Could not load relay cards: ${err instanceof Error ? err.message : String(err)}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      renderEmpty(`${relayCopy.errorPrefix}: ${msg}`);
     }
   }
 
@@ -115,15 +141,6 @@ import Layout from '../../layouts/Layout.astro';
       margin-bottom: 1rem;
     }
 
-    .eyebrow {
-      margin: 0 0 0.35rem;
-      color: var(--field-green, #38c977);
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
     .relay-header h1 {
       margin: 0 0 0.4rem;
       font-size: 1.55rem;
@@ -133,6 +150,7 @@ import Layout from '../../layouts/Layout.astro';
     .relay-header p {
       margin: 0;
       color: var(--text-muted, #5c6670);
+      line-height: 1.45;
     }
 
     .relay-list {
@@ -140,7 +158,6 @@ import Layout from '../../layouts/Layout.astro';
       gap: 0.8rem;
     }
 
-    /* Client-rendered cards lack Astro scope attrs — promote card chrome to global. */
     :global(.relay-card),
     :global(.relay-empty) {
       border: 1px solid var(--border-soft, #d7dde6);

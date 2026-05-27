@@ -4,6 +4,7 @@ import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { DEFAULT_BUSINESS_GRAPH_SLICE, projectForRole, ROLE_HOME_WIREFRAMES, ROLE_ROOTS, type RoleRoot } from '../lib/roleRootProjection.js';
 import type { I18nKey } from '../../i18n/keys.js';
 import { DEFAULT_ROLE_ROOT_CONTEXT } from '../lib/layout-props.js';
+import { formatDomainLabel } from '../lib/formatOperatorLabel.js';
 
 const { context, t } = createLayoutContext({ locale: DEFAULT_ROLE_ROOT_CONTEXT.locale });
 const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
@@ -30,8 +31,8 @@ const capLabel = (on: boolean) => (on ? t('rr1.yes') : t('rr1.no'));
           <h2>{t(ROLE_LABEL_KEYS[roleRoot])}</h2>
           <p class="rr1-home">{t('rr1.section.home_wireframe')}: {ROLE_HOME_WIREFRAMES[roleRoot]}</p>
         </header>
-        <div class="rr1-sec"><h3>{t('rr1.section.visible')}</h3><ul class="rr1-pills">{projected.visibleDomains.map((d) => <li class="rr1-pill">{d}</li>)}</ul></div>
-        <div class="rr1-sec"><h3>{t('rr1.section.hidden')}</h3><p class="rr1-note">{t(HIDDEN_NOTE_KEYS[roleRoot])}</p><ul class="rr1-pills muted">{projected.hiddenDomains.map((d) => <li class="rr1-pill">{d}</li>)}</ul></div>
+        <div class="rr1-sec"><h3>{t('rr1.section.visible')}</h3><ul class="rr1-pills">{projected.visibleDomains.map((d) => <li class="rr1-pill" title={d}>{formatDomainLabel(d)}</li>)}</ul></div>
+        <div class="rr1-sec"><h3>{t('rr1.section.hidden')}</h3><p class="rr1-note">{t(HIDDEN_NOTE_KEYS[roleRoot])}</p><ul class="rr1-pills muted">{projected.hiddenDomains.map((d) => <li class="rr1-pill" title={d}>{formatDomainLabel(d)}</li>)}</ul></div>
         <div class="rr1-sec"><h3>{t('rr1.section.capabilities')}</h3><dl class="rr1-caps">
           <div><dt>{t('rr1.cap.money_write')}</dt><dd>{capLabel(projected.capabilities.moneyWrite)}</dd></div>
           <div><dt>{t('rr1.cap.money_read')}</dt><dd>{capLabel(projected.capabilities.moneyRead)}</dd></div>
