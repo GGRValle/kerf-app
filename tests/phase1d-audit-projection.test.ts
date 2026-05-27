@@ -201,7 +201,7 @@ test('project audit primary labels are plain English, not raw event enum names',
   assert.match(enSource, /'project\.audit\.event\.daily_log\.entry_captured': 'Field capture saved'/);
   assert.match(enSource, /'project\.audit\.event\.daily_log\.facts_extracted': 'Right Hand extracted job facts'/);
   assert.match(enSource, /'project\.audit\.event\.daily_log\.drift_detected': 'Drift flagged'/);
-  assert.match(enSource, /'project\.audit\.event\.relay_card\.surfaced': 'Relay card surfaced'/);
+  assert.match(enSource, /'project\.audit\.event\.relay_card\.surfaced': 'Office card surfaced'/);
   assert.doesNotMatch(enSource, /'project\.audit\.event\.daily_log\.entry_captured': 'daily_log\.entry_captured'/);
 });
 

@@ -36,16 +36,22 @@ const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
     <div class="kerf-shell" data-role-root={context.roleRoot} data-locale={context.locale} data-tenant={context.tenantId}>
       <header class="kerf-topbar">
         <a class="kerf-brand" href="/">{t('layout.brand')}</a>
-        <nav class="kerf-nav" aria-label={t('layout.nav.primary')}>
-          {navItems.map((item) => (
-            <a
-              href={item.href}
-              class:list={['kerf-nav-link', { active: activeHref === item.href || activeHref.startsWith(item.href + '/') }]}
-              data-domain={item.domain}
-            >
-              {t(item.labelKey)}
-            </a>
-          ))}
+        <nav class="kerf-nav" aria-label={t('layout.nav.primary')} id="kerf-primary-nav">
+          {navItems.map((item) => {
+            const isActive =
+              activeHref === item.href ||
+              (item.href !== '/' && activeHref.startsWith(item.href + '/'));
+            return (
+              <a
+                href={item.href}
+                class:list={['kerf-nav-link', { active: isActive }]}
+                aria-current={isActive ? 'page' : undefined}
+                data-domain={item.domain}
+              >
+                {t(item.labelKey)}
+              </a>
+            );
+          })}
         </nav>
       </header>
       <main class="kerf-main">
@@ -53,5 +59,9 @@ const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
       </main>
       <SpeakFAB />
     </div>
+    <script>
+      const activeNav = document.querySelector('.kerf-nav-link.active');
+      activeNav?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' });
+    </script>
   </body>
 </html>
