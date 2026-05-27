@@ -3,7 +3,7 @@
 **Branch:** `phase-1g-c-mobile-chrome-language`  
 **Repo:** `GGRValle/kerf-app`  
 **Base:** `origin/main` @ `af80203` (post-PR #235 F-E1 capture clarity hotfix)  
-**Head:** `15f31a1`  
+**Head:** `540a2af` (code `15f31a1` + report)  
 **Date:** 2026-05-27  
 **Agent:** Cursor Composer 2.5 (Lane C)  
 **PR:** Not opened (awaiting Christian)
