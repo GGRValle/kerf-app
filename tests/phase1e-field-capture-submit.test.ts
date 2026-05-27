@@ -17,7 +17,7 @@ test('Phase 1F F-E1 submit endpoint emits the full Right Hand chain', async () =
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
   try {
-    const res = await apiRouter.request('/projects/proj_wegrzyn_kitchen_bath/daily-log/entries', {
+    const res = await apiRouter.request('/projects/proj_wegrzyn_kitchen/daily-log/entries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -48,7 +48,7 @@ test('Phase 1F F-E1 submit endpoint emits the full Right Hand chain', async () =
     assert.match(body.event_id, /^evt_/);
     assert.equal(body.event.type, 'daily_log.entry_captured');
     assert.equal(body.event.tenant_id, 'tenant_ggr');
-    assert.equal(body.event.correlation_id, 'proj_wegrzyn_kitchen_bath');
+    assert.equal(body.event.correlation_id, 'proj_wegrzyn_kitchen');
     assert.equal(body.event.entry_kind, 'progress_update');
     assert.equal(body.event.source_refs[0]?.kind, 'transcript');
     assert.equal(body.facts_event?.type, 'daily_log.facts_extracted');
@@ -87,6 +87,8 @@ test('Phase 1E F-E1 page contains submit wiring to the shell API', async () => {
   const source = await readFile(path.join(process.cwd(), 'src/app/pages/field-capture.astro'), 'utf8');
   assert.match(source, /id="f-e1-submit"/);
   assert.match(source, /data-project-id=\{assignment\.project_id\}/);
+  assert.match(source, /project_id: 'proj_wegrzyn_kitchen'/);
+  assert.doesNotMatch(source, /proj_wegrzyn_kitchen_bath/);
   assert.match(source, /\/api\/v1\/projects\/\$\{encodeURIComponent\(projectId\)\}\/daily-log\/entries/);
   assert.match(source, /id="f-e1-submit-status"/);
   assert.match(source, /id="f-e1-play-error"/);
@@ -101,7 +103,7 @@ test('Phase 1G-a photo-only capture persists without surfacing a relay card', as
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
   try {
-    const res = await apiRouter.request('/projects/proj_wegrzyn_kitchen_bath/daily-log/entries', {
+    const res = await apiRouter.request('/projects/proj_wegrzyn_kitchen/daily-log/entries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
