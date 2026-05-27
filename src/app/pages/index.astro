@@ -4,11 +4,14 @@ import ActionsStrip from '../components/ActionsStrip.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import Row from '../components/Row.astro';
 import Chip from '../components/Chip.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+
+const { t } = createLayoutContext();
 ---
 
 <RouteShellPage title="Dashboard" routeName="dashboard" phase="none">
   <ActionsStrip />
   <SectionLabel label="Projects" count={0} total="$0" />
-  <Row title="Placeholder project list" meta="GET /api/v1/projects?tenant_id=…" showArrow />
-  <Chip label="Lane 0.1 shell" tone="cyan" />
+  <Row title="Projects" meta={t('dashboard.placeholder.projects_meta')} showArrow />
+  <Chip label={t('dashboard.placeholder.chip')} tone="cyan" />
 </RouteShellPage>

@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
 import RhSummary from '../components/RhSummary.astro';
 import Card from '../components/Card.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
 
 export interface Props {
   title: string;
@@ -14,24 +15,21 @@ export interface Props {
 
 const {
   title,
-  routeName,
-  phase = 'none',
   irreversibility = false,
   actionContext,
 } = Astro.props;
 
+const { t } = createLayoutContext();
 const kind = irreversibility ? 'irreversibility' : 'daily';
 ---
 
 <Layout title={title} activeHref={Astro.url.pathname}>
   <SurfaceIrreversibilityWrap kind={kind} actionContext={actionContext ?? null}>
-    <RhSummary headline={`${title} · shell port`} detail={`Route ${routeName} · phase ${phase}`} />
-    <Card eyebrow="Lane 0.1" title={title}>
-      <p class="route-placeholder">
-        Minimal Astro render for <code>{routeName}</code>. Spine lanes replace this with wireframe-accurate UI.
-      </p>
+    <RhSummary headline={title} detail={t('route_shell.detail')} />
+    <Card eyebrow={t('route_shell.card_eyebrow')} title={title}>
+      <p class="route-placeholder">{t('route_shell.body')}</p>
       {irreversibility && actionContext ? (
-        <p class="safety-copy">Confirming action: {actionContext}</p>
+        <p class="safety-copy">{actionContext}</p>
       ) : null}
       <slot />
     </Card>
@@ -45,8 +43,10 @@ const kind = irreversibility ? 'irreversibility' : 'daily';
     font-size: 0.95rem;
     line-height: 1.5;
   }
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.9em;
+  .safety-copy {
+    margin: 0.75rem 0 0;
+    color: var(--text-muted, #5c6670);
+    font-size: 0.9rem;
+    line-height: 1.45;
   }
 </style>
