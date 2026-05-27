@@ -86,11 +86,17 @@ const assignment = {
           </div>
 
           <label class="note-card" for="f-e1-note">
-            <span class="label">Live note</span>
+            <span class="label">Typed summary</span>
+            <p class="note-helper">
+              Voice is saved for this capture. Until transcription is wired, type a short summary before submit.
+            </p>
             <textarea
               id="f-e1-note"
               rows="7"
-              placeholder="Say or type what happened. Example: Plumbing rough-in is complete, but tile changed to Carrara and needs CO pricing."
+              enterkeyhint="done"
+              autocomplete="off"
+              autocapitalize="sentences"
+              placeholder="Type what Right Hand should read. Example: Plumbing rough-in is complete, but tile changed to Carrara and needs CO pricing."
             ></textarea>
           </label>
 
@@ -116,11 +122,21 @@ const assignment = {
         actionContext="Submit field capture to Daily Log and run Right Hand review."
       >
         <section class="capture-state state-preflight" aria-label="Review and submit field capture">
+          <p class="preflight-status" id="f-e1-preflight-status" role="status"></p>
+
           <div class="preflight-card">
             <p class="label">Ready to submit</p>
             <h2>{assignment.location} update</h2>
-            <p id="f-e1-preflight-meta">Daily Log · 0 items</p>
+            <p id="f-e1-preflight-meta">Daily Log · review what you captured below</p>
           </div>
+
+          <section class="capture-readout" aria-label="Captured items readout">
+            <div class="panel-head">
+              <p class="label">What you captured</p>
+            </div>
+            <ul class="readout-list" id="f-e1-readout-list"></ul>
+            <p class="readout-warning" id="f-e1-transcript-warning" hidden></p>
+          </section>
 
           <fieldset class="intent-card">
             <legend>What should Right Hand do with this?</legend>
@@ -140,11 +156,11 @@ const assignment = {
 
           <section class="review-card">
             <div class="panel-head">
-              <p class="label">Transcript / note</p>
+              <p class="label">Typed summary</p>
               <button type="button" id="f-e1-edit-note">Edit</button>
             </div>
-            <p class="ft-text" id="f-e1-review-text">No note yet.</p>
-            <p class="review-hint">Original capture stays intact. Edits are part of the review trail.</p>
+            <p class="ft-text" id="f-e1-review-text">No typed summary yet.</p>
+            <p class="review-hint">This is not a live transcript. Voice is stored separately until transcription ships.</p>
           </section>
 
           <section class="review-card">
@@ -164,7 +180,7 @@ const assignment = {
               data-tenant-id={assignment.tenant_id}
               data-project-id={assignment.project_id}
             >
-              Submit
+              Submit to Daily Log
             </button>
           </div>
         </section>
@@ -196,6 +212,9 @@ const assignment = {
   const count = document.querySelector('#f-e1-captured-count');
   const reviewText = document.querySelector('#f-e1-review-text');
   const preflightMeta = document.querySelector('#f-e1-preflight-meta');
+  const preflightStatus = document.querySelector('#f-e1-preflight-status');
+  const readoutList = document.querySelector('#f-e1-readout-list');
+  const transcriptWarning = document.querySelector('#f-e1-transcript-warning');
   const photoCount = document.querySelector('#f-e1-photo-count');
   const photoGrid = document.querySelector('#f-e1-photo-grid');
   const statusNode = document.querySelector('#f-e1-submit-status');
@@ -209,6 +228,8 @@ const assignment = {
   let startedAt = 0;
   let timerHandle = 0;
   let audioUri = null;
+  let voiceDurationSec = 0;
+  let voiceBlobKb = 0;
   const photos = [];
   const captured = [];
 
@@ -271,14 +292,14 @@ const assignment = {
     setPlayError('');
 
     if (surfaced) {
-      setStatus('Captured ✓ — Right Hand flagged this for office review.', 'success');
+      setStatus('Saved to Daily Log. Right Hand flagged this for office review. Open Relay.', 'success');
       setRelayLinkVisible(true);
       return;
     }
 
     if (driftSeverity) {
       setStatus(
-        'Captured ✓ — Right Hand noted something to watch but did not open a new Relay card for this entry.',
+        'Saved to Daily Log. Right Hand noted something to watch but did not open a new Relay card for this entry.',
         'success',
       );
       setRelayLinkVisible(false);
@@ -287,7 +308,7 @@ const assignment = {
 
     if (hasVoiceOrPhotoOnly) {
       setStatus(
-        'Captured ✓ — Saved with photo or voice only. Add a typed note next time so Right Hand can extract facts and flag drift.',
+        'Saved to Daily Log as media-only. Add a typed summary next time for Right Hand review.',
         'success',
       );
       setRelayLinkVisible(false);
@@ -295,7 +316,7 @@ const assignment = {
     }
 
     setStatus(
-      'Captured ✓ — Right Hand reviewing. We will surface this in Relay only if something needs your attention.',
+      'Saved to Daily Log. Right Hand is reviewing — open Relay only if something needs your attention.',
       'success',
     );
     setRelayLinkVisible(false);
@@ -331,13 +352,87 @@ const assignment = {
     count.textContent = `${captured.length} item${captured.length === 1 ? '' : 's'}`;
   }
 
+  function formatVoiceDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = String(seconds % 60).padStart(2, '0');
+    return `${mins}:${secs}`;
+  }
+
+  function renderCaptureReadout(transcript) {
+    if (!(readoutList instanceof HTMLElement)) return;
+    readoutList.innerHTML = '';
+    const rows = [];
+    if (audioUri !== null) {
+      const durationLabel = voiceDurationSec > 0 ? formatVoiceDuration(voiceDurationSec) : 'saved';
+      const sizeLabel = voiceBlobKb > 0 ? `${voiceBlobKb} KB` : 'audio on device';
+      rows.push({
+        title: 'Voice memo',
+        detail: `${durationLabel} · ${sizeLabel} · not transcribed yet`,
+      });
+    }
+    if (photos.length > 0) {
+      rows.push({
+        title: `${photos.length} photo${photos.length === 1 ? '' : 's'}`,
+        detail: 'Attached to this Daily Log entry',
+      });
+    }
+    if (transcript.length > 0) {
+      rows.push({
+        title: 'Typed summary',
+        detail: `${transcript.length} characters ready for Right Hand`,
+      });
+    }
+    if (rows.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'Nothing captured yet.';
+      readoutList.append(li);
+    } else {
+      for (const row of rows) {
+        const li = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = row.title;
+        const detail = document.createElement('span');
+        detail.textContent = row.detail;
+        li.append(title, detail);
+        readoutList.append(li);
+      }
+    }
+
+    const needsSummary = transcript.length === 0 && (audioUri !== null || photos.length > 0);
+    if (transcriptWarning instanceof HTMLElement) {
+      if (needsSummary) {
+        transcriptWarning.hidden = false;
+        transcriptWarning.textContent =
+          'Voice captured, but not transcribed yet. Type a short summary so Right Hand can extract facts.';
+      } else {
+        transcriptWarning.hidden = true;
+        transcriptWarning.textContent = '';
+      }
+    }
+
+    if (submitButton instanceof HTMLElement) {
+      submitButton.textContent = needsSummary ? 'Submit media only' : 'Submit to Daily Log';
+    }
+  }
+
   function renderPreflight() {
     const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
+    renderCaptureReadout(transcript);
     if (reviewText instanceof HTMLElement) {
-      reviewText.textContent = transcript || 'No typed note yet. Add one before submit so Right Hand has context.';
+      reviewText.textContent =
+        transcript ||
+        'No typed summary yet. Voice is not transcribed yet — type a short summary before submit.';
     }
     if (preflightMeta instanceof HTMLElement) {
-      preflightMeta.textContent = `Daily Log · ${captured.length} item${captured.length === 1 ? '' : 's'}`;
+      const parts = [];
+      if (audioUri !== null) parts.push('voice');
+      if (photos.length > 0) parts.push(`${photos.length} photo${photos.length === 1 ? '' : 's'}`);
+      if (transcript.length > 0) parts.push('typed summary');
+      preflightMeta.textContent =
+        parts.length > 0
+          ? `Daily Log · ${parts.join(' · ')}`
+          : 'Daily Log · nothing captured yet';
     }
     if (photoCount instanceof HTMLElement) {
       photoCount.textContent = String(photos.length);
@@ -383,8 +478,15 @@ const assignment = {
       mediaRecorder.addEventListener('stop', () => {
         const type = mediaRecorder?.mimeType || 'audio/webm';
         const blob = new Blob(chunks, { type });
+        voiceBlobKb = Math.max(1, Math.round(blob.size / 1024));
+        if (startedAt > 0) {
+          voiceDurationSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+        }
         audioUri = `kerf://field-capture/audio-${Date.now()}`;
-        captured.push({ title: 'Voice memo', detail: `${Math.max(1, Math.round(blob.size / 1024))} KB · saved locally for this review` });
+        captured.push({
+          title: 'Voice memo',
+          detail: `${formatVoiceDuration(voiceDurationSec)} · ${voiceBlobKb} KB · not transcribed yet`,
+        });
         renderCaptured();
       });
       mediaRecorder.start();
@@ -399,6 +501,9 @@ const assignment = {
   function stopRecording() {
     if (timerHandle) window.clearInterval(timerHandle);
     timerHandle = 0;
+    if (startedAt > 0 && voiceDurationSec === 0) {
+      voiceDurationSec = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+    }
     startedAt = 0;
     if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
     if (mediaStream) {
@@ -491,7 +596,18 @@ const assignment = {
     }
     renderPreflight();
     setState('preflight');
-    setStatus('');
+    if (preflightStatus instanceof HTMLElement) {
+      preflightStatus.textContent =
+        'Captured items moved here for review. Check voice, photos, and typed summary before submit.';
+    }
+    if (transcript.length === 0 && (audioUri !== null || photos.length > 0)) {
+      setStatus(
+        'Ready to submit — voice is saved but not transcribed yet. Add a typed summary if you want Right Hand review.',
+        'neutral',
+      );
+    } else {
+      setStatus('');
+    }
   });
   backButton?.addEventListener('click', () => setState('active'));
   editNoteButton?.addEventListener('click', () => setState('active'));
@@ -740,6 +856,68 @@ const assignment = {
     display: block;
   }
 
+  .note-helper {
+    margin: 6px 0 0;
+    color: var(--kerf-muted);
+    font-size: 0.86rem;
+    line-height: 1.4;
+  }
+
+  .preflight-status {
+    margin: 0 0 10px;
+    color: var(--field-green);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .capture-readout {
+    border: 1px solid var(--kerf-line);
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .readout-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+
+  .readout-list li {
+    border: 1px solid var(--kerf-line);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .readout-list strong,
+  .readout-list span {
+    display: block;
+  }
+
+  .readout-list span {
+    color: var(--kerf-muted);
+    font-size: 0.84rem;
+    margin-top: 2px;
+  }
+
+  .readout-warning {
+    margin: 10px 0 0;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(245, 181, 68, 0.45);
+    background: rgba(245, 181, 68, 0.12);
+    color: #f8e6b5;
+    font-size: 0.88rem;
+    line-height: 1.42;
+  }
+
+  .readout-warning[hidden] {
+    display: none;
+  }
+
   textarea {
     width: 100%;
     box-sizing: border-box;
@@ -750,6 +928,7 @@ const assignment = {
     color: var(--kerf-text);
     padding: 12px;
     resize: vertical;
+    font-size: 16px;
   }
 
   .panel-head {
