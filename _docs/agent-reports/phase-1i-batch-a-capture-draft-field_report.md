@@ -13,7 +13,7 @@
 |-------|-------|
 | **Branch type** | **Stacked** on `origin/phase-1i-batch-d-schedule-reports-settings-shell` |
 | **Stack base SHA** | `578769cec5ffc854aebf5c366af73a724aa7cc61` |
-| **Head SHA** | `16e7630c2e26ee86e329c77b1cc3e33601f96b54f` |
+| **Head SHA** | `5e05ac4c0af56232e14ab2053473ab84838c49cf` |
 | **Original main base** | `d06815a1263eb21dddcb50d6a61c7500520af0d4` |
 
 Rebased with `git rebase --onto 578769c d06815a`. i18n conflicts resolved **union-both**: all Batch D/B shell/project/relay keys + all Batch A capture/draft/review keys (506 total · 506 en · 506 es).
@@ -92,7 +92,7 @@ node --import tsx --test tests/phase1i-capture-draft-loop.test.ts  # 9/9 PASS
 
 | Check | Result |
 |-------|--------|
-| Verified SHA | `16e7630c2e26ee86e329c77b1cc3e33601f96b54f` |
+| Verified SHA | `5e05ac4c0af56232e14ab2053473ab84838c49cf` |
 | Stack base | `578769c` (Batch D) |
 | `npm run typecheck` | **PASS** |
 | `npm run build:astro` | **PASS** |
