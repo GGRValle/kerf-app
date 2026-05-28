@@ -831,19 +831,9 @@ const assignment = {
 </script>
 
 <style>
-  :root {
-    --kerf-bg: #070b0f;
-    --kerf-bg-2: #101722;
-    --kerf-surface: #151d28;
-    --kerf-surface-2: #1b2633;
-    --kerf-line: rgba(255, 255, 255, 0.12);
-    --kerf-text: #f5f7fb;
-    --kerf-muted: #a7b0bf;
-    --field-green: #38c977;
-    --kerf-amber: #f5b544;
-    --right-hand: #c9a961;
-  }
-
+  /* Canon --kerf-* tokens now live in the shared skin (styles/shell.css).
+     This page inherits them; the prior hand-rolled :root (wrong --kerf-bg
+     #070b0f + undefined --kerf-surface-2) was removed in Phase 1J. */
   .field-shell {
     min-height: 100vh;
     margin: -2rem;
