@@ -1,15 +1,90 @@
+/*
+ * Shared canon skin · Phase 1J Agent 0 (tokens + phone-shell foundation).
+ * Tokens lifted verbatim from docs/wireframes/canon/F-E1_mobile_field_capture.html :root.
+ * Generic shell vocabulary (--bg/--surface/--text/--border/--accent/--chip-*) is
+ * remapped onto the canon --kerf-* tokens, so every consuming component inherits
+ * the canon skin without per-page repaint.
+ */
 :root {
-  --bg: #f4f6f8;
-  --surface: #ffffff;
-  --text: #1a2332;
-  --text-muted: #5c6670;
-  --border: #d8dee6;
-  --accent: #0f766e;
-  --chip-red: #b42318;
-  --chip-amber: #b54708;
-  --chip-green: #027a48;
-  --chip-cyan: #026aa2;
-  --chip-neutral: #667085;
+  /* ===== Canon tokens (dark base · verbatim from F-E1) ===== */
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+
+  /* Compatibility aliases for legacy --kerf-* names used by field-capture. */
+  --kerf-line: var(--kerf-border-soft);
+  --kerf-muted: var(--kerf-text-mute);
+
+  /* ===== Generic shell vocabulary remapped onto canon ===== */
+  --bg: var(--kerf-bg);
+  --surface: var(--kerf-surface);
+  --text: var(--kerf-text);
+  --text-muted: var(--kerf-text-dim);
+  --border: var(--kerf-border);
+  --accent: var(--kerf-amber);
+  --chip-red: var(--kerf-red);
+  --chip-amber: var(--kerf-amber);
+  --chip-green: var(--kerf-green);
+  --chip-cyan: var(--kerf-blue);
+  --chip-neutral: var(--kerf-text-mute);
+}
+
+/*
+ * Theme cascade (LOCKED — Christian 2026-05-28, docs/wireframes/CATALOG.md):
+ * default follows the OS; the only manual switch lives in user Settings and
+ * writes data-theme to <html>. Accents stay constant across themes — only
+ * bg/surface/border/text flip. Light values are verbatim from F-E1 body.light-mode.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #C9D0D8;
+    --kerf-border-soft: #DFE3E8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #7B8492;
+  }
+}
+
+:root[data-theme='light'] {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+
+:root[data-theme='dark'] {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
 }
 
 * {
@@ -78,8 +153,7 @@ body {
   color: var(--accent);
   font-weight: 600;
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-  background: color-mix(in srgb, var(--accent) 12%, white);
-  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.12);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .kerf-main {
