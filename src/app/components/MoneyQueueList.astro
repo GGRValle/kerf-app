@@ -1,0 +1,45 @@
+---
+import Chip from './Chip.astro';
+import { formatMoneyUsd, type MoneyQueueRow } from '../lib/moneyFixtures.js';
+
+export interface Props {
+  rows: readonly MoneyQueueRow[];
+  emptyLabel: string;
+}
+
+const { rows, emptyLabel } = Astro.props;
+
+function chipTone(tone: MoneyQueueRow['chip_tone']): 'red' | 'amber' | 'green' | 'neutral' {
+  return tone;
+}
+---
+
+{rows.length === 0 ? (
+  <p class="money-empty">{emptyLabel}</p>
+) : (
+  <ul class="money-queue">
+    {rows.map((row) => (
+      <li class:list={['money-row', row.attention && 'attention']}>
+        {row.href ? (
+          <a class="money-row-link" href={row.href}>
+            <div class="money-row-main">
+              <Chip label={row.chip} tone={chipTone(row.chip_tone)} />
+              <strong>{row.label}</strong>
+              <span class="money-row-detail">{row.detail}</span>
+            </div>
+            <span class="money-row-amount">{formatMoneyUsd(row.amount_cents)}</span>
+          </a>
+        ) : (
+          <div class="money-row-body">
+            <div class="money-row-main">
+              <Chip label={row.chip} tone={chipTone(row.chip_tone)} />
+              <strong>{row.label}</strong>
+              <span class="money-row-detail">{row.detail}</span>
+            </div>
+            <span class="money-row-amount">{formatMoneyUsd(row.amount_cents)}</span>
+          </div>
+        )}
+      </li>
+    ))}
+  </ul>
+)}

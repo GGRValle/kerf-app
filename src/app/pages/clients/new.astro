@@ -3,10 +3,10 @@
 import Layout from '../../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
 import Card from '../../components/Card.astro';
-import { createTranslator } from '../../../i18n/index.js';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import '../../styles/lane6.css';
 
-const { t } = createTranslator('en');
+const { t, context } = createLayoutContext();
 ---
 
 <Layout titleKey="f_cl.form.title" activeHref="/clients">
@@ -14,7 +14,7 @@ const { t } = createTranslator('en');
     <header>
       <div class="lane6-crumb"><a href="/clients">{t('f_cl.crumb')}</a> · {t('f_cl.form.title')}</div>
       <h1 class="lane6-title">{t('f_cl.form.title')}</h1>
-      <p class="lane6-subtitle">{t('f_cl.form.subtitle')}</p>
+      <p class="lane6-subtitle">{t('f_cl.form.subtitle_active')}</p>
     </header>
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
@@ -45,12 +45,12 @@ const { t } = createTranslator('en');
     </SurfaceIrreversibilityWrap>
   </article>
 
-  <script>
+  <script define:vars={{ tenantId: context.tenantId, errorMsg: 'Could not create client.' }}>
     document.getElementById('new-client-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      const form = ev.target as HTMLFormElement;
+      const form = ev.target;
       const fd = new FormData(form);
-      const res = await fetch('/api/v1/clients?tenant_id=tenant_ggr', {
+      const res = await fetch(`/api/v1/clients?tenant_id=${tenantId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -63,7 +63,9 @@ const { t } = createTranslator('en');
       if (res.ok) {
         const data = await res.json();
         window.location.href = `/clients/${data.client_id}`;
+        return;
       }
+      alert(errorMsg);
     });
   </script>
 </Layout>

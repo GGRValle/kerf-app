@@ -1,0 +1,56 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import RhSummary from '../../components/RhSummary.astro';
+import Card from '../../components/Card.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
+import ExportActions from '../../components/ExportActions.astro';
+import MoneyQueueList from '../../components/MoneyQueueList.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { projectForRole, DEFAULT_BUSINESS_GRAPH_SLICE } from '../../lib/roleRootProjection.js';
+import { BOOKKEEPING_AUTO_ROWS, BOOKKEEPING_HAND_ROWS } from '../../lib/moneyFixtures.js';
+import '../../styles/money.css';
+
+const { t, context } = createLayoutContext();
+const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
+if (!projected.capabilities.moneyRead) {
+  return Astro.redirect('/');
+}
+---
+
+<Layout titleKey="f_bk.recon.title" activeHref="/money">
+  <article class="money-page">
+    <header>
+      <div class="money-crumb"><a href="/money">{t('f_mn.crumb')}</a> · {t('f_bk.recon.title')}</div>
+      <h1 class="money-title">{t('f_bk.recon.title')}</h1>
+      <p class="money-subtitle">{t('f_bk.recon.subtitle')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <ExportActions
+        surface="money.bookkeeping_recon"
+        scopeDescriptor="Bookkeeping reconciliation queue"
+        itemCount={BOOKKEEPING_HAND_ROWS.length + BOOKKEEPING_AUTO_ROWS.length}
+        actions={[
+          { label: t('action.print'), format: 'print' },
+          { label: t('f_mn.export.csv'), format: 'csv' },
+        ]}
+      />
+      <RhSummary headline={t('f_bk.recon.rh_headline')} detail={t('f_bk.recon.rh_detail')} />
+      <Card title={t('f_bk.recon.hand_title')}>
+        <SectionLabel label={t('f_bk.recon.hand_label')} />
+        <MoneyQueueList rows={BOOKKEEPING_HAND_ROWS} emptyLabel={t('f_mn.empty')} />
+        <div class="money-actions">
+          <button type="button" class="money-btn" disabled aria-disabled="true">
+            {t('f_bk.recon.confirm_match')} · {t('action.preview.badge')}
+          </button>
+        </div>
+      </Card>
+      <Card title={t('f_bk.recon.auto_title')}>
+        <SectionLabel label={t('f_bk.recon.auto_label')} />
+        <MoneyQueueList rows={BOOKKEEPING_AUTO_ROWS} emptyLabel={t('f_mn.empty')} />
+        <p class="money-notice">{t('f_bk.recon.no_auto_confirm')}</p>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>

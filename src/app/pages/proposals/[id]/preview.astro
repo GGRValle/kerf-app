@@ -7,6 +7,7 @@ import { createTranslator } from '../../../../i18n/index.js';
 import { getLane6Proposal } from '../../../lib/lane6Fixtures.js';
 import { loadProposalCaptureOrigin } from '../../../lib/loadProposalCaptureOrigin.js';
 import CaptureOriginPanel from '../../../components/CaptureOriginPanel.astro';
+import ExportActions from '../../../components/ExportActions.astro';
 import { renderProposalHtml } from '../../../../proposal/render.js';
 import '../../../styles/lane6.css';
 
@@ -31,11 +32,20 @@ const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, propos
     </header>
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <ExportActions
+        surface="proposal.preview"
+        scopeDescriptor={`Proposal ${proposal.proposal_number}`}
+        itemCount={proposal.divisions.length}
+        actions={[
+          { label: t('action.print'), format: 'print' },
+          { label: t('f_mn.export.pdf'), format: 'pdf' },
+        ]}
+      />
       <div class="lane6-operator-bar">
         <div class="eyebrow">{t('f_pv1.operator_eyebrow')}</div>
-        <div class="lane6-seg" aria-label={t('f_pv1.operator_eyebrow')}>
-          <span class="active">{t('f_pv1.view_mobile')}</span>
-          <span>{t('f_pv1.view_desktop')}</span>
+        <div class="lane6-seg" role="group" aria-label={t('f_pv1.operator_eyebrow')}>
+          <span class="active" title={t('f_pv1.view_preview_note')}>{t('f_pv1.view_mobile')}</span>
+          <span title={t('f_pv1.view_preview_note')}>{t('f_pv1.view_desktop')}</span>
           <span class="lane6-preview-chip">{t('route_shell.card_eyebrow')}</span>
         </div>
         <p class="lane6-subtitle">{t('f_pv1.view_preview_note')}</p>
