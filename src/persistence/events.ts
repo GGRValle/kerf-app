@@ -80,7 +80,15 @@ export type PersistenceEventType =
   | 'payment.recorded'
   | 'payment.received'
   | 'allowance.exception.opened'
-  | 'allowance.exception.resolved';
+  | 'allowance.exception.resolved'
+  // ─── Phase 1H · D-049 Draft Layer / Execution Layer · learning-loop events ───
+  | 'draft.synthesized'
+  | 'draft.corrected'
+  | 'draft.accepted'
+  | 'draft.rejected'
+  | 'learning_signal.captured'
+  | 'memory_update.proposed'
+  | 'memory_update.confirmed';
 
 /**
  * Daily Log entry kinds — what kind of field capture this is. Per
@@ -789,6 +797,266 @@ export interface AllowanceExceptionResolvedEvent extends BasePersistenceEvent {
   readonly resolution_notes: string;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Phase 1H · D-049 Draft Layer / Execution Layer · learning-loop events
+//
+// D-049 locks the canon line:
+//
+//   Let Kerf be wrong where correction teaches it.
+//   Never let Kerf be wrong where consequence escapes review.
+//
+// The Draft Layer is allowed to be wrong because every wrong-and-corrected
+// draft is structured training signal for the next attempt. The seven
+// events below are the operational form of that doctrine — they capture
+// the full learning loop from heavy-model synthesis through operator
+// correction, accept/reject, and tenant memory hardening.
+//
+// The deterministic 9-fact chain (daily_log.facts_extracted +
+// daily_log.drift_detected + relay_card.surfaced) becomes the fallback
+// path when synthesis is unavailable. These new events represent the
+// primary product path.
+//
+// D-048 refinement: the classify-before-harden axes (correction_scope,
+// memory_locality, evidence_source_class) attach to draft.corrected and
+// draft.rejected events directly here, rather than emitting separately
+// via correction.classified. The existing correction.classified event
+// type stays in the contract for V1.5/legacy paths.
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Discriminated union: what kind of artifact the model thinks this capture
+ * is most likely to produce. Determines the shape of `proposed_fields` the
+ * operator reviews. Null is allowed: the model may decide there's no
+ * actionable candidate (just a progress note).
+ */
+export type DraftCandidateType =
+  | 'change_order'
+  | 'invoice'
+  | 'proposal'
+  | 'progress_note'
+  | 'blocker'
+  | 'safety_note';
+
+export type DraftConfidence = 'high' | 'medium' | 'low';
+
+/**
+ * Source-ref attachment. Every claim in the draft must trace back to one
+ * of these. The source-ref validator (Phase 1H synthesis endpoint) rejects
+ * drafts that have claims without a backing ref.
+ */
+export interface DraftSourceRef {
+  readonly kind: 'transcript' | 'photo' | 'note' | 'project_context';
+  readonly uri: string;
+  readonly excerpt?: string;
+}
+
+/**
+ * The candidate block carries what kind of artifact + proposed fields the
+ * operator can review/edit. Proposed fields are constrained: NO monetary
+ * values. The Phase 1H money guard rejects any monetary-shaped field at
+ * the validator wall (operator-only money write per the six guardrails).
+ */
+export interface DraftCandidate {
+  readonly type: DraftCandidateType | null;
+  readonly confidence: DraftConfidence;
+  readonly reason: string;
+  readonly proposed_fields: Readonly<Record<string, string | number | boolean | null>>;
+}
+
+export interface DraftGapFlag {
+  readonly field: string;
+  readonly why: string;
+}
+
+export interface DraftModelAttribution {
+  /**
+   * Logical hosting URI used. Format follows the D-023 hosting registry
+   * convention: `<provider>://<model>`. The persistence layer stays
+   * provider-agnostic — provider names live in the routing layer, not here.
+   */
+  readonly endpoint: string;
+  readonly invocation_id: string;
+  readonly token_cost_in: number;
+  readonly token_cost_out: number;
+  readonly latency_ms: number;
+}
+
+/**
+ * The full payload the heavy model produced. Validator-wall-passed shape;
+ * any deviation triggers fallback to the deterministic 9-fact chain.
+ */
+export interface DraftSynthesizedPayload {
+  readonly daily_log_summary: string;
+  readonly candidate: DraftCandidate | null;
+  readonly gap_flags: readonly DraftGapFlag[];
+  readonly source_refs: readonly DraftSourceRef[];
+  readonly model: DraftModelAttribution;
+}
+
+/**
+ * Event 1 · the heavy model produced a draft for operator review.
+ * Linked back to the daily_log.entry_captured event via capture_id.
+ */
+export interface DraftSynthesizedEvent extends BasePersistenceEvent {
+  readonly type: 'draft.synthesized';
+  readonly draft_id: string;
+  /** Links back to the daily_log.entry_captured event that triggered synthesis. */
+  readonly capture_id: string;
+  readonly payload: DraftSynthesizedPayload;
+}
+
+/**
+ * Event 2 · operator edited a field in the draft.
+ *
+ * D-049 refinement: the classify-before-harden axes attach here directly.
+ * `field_path` is a dotted-path identifier into the draft payload (e.g.,
+ * 'candidate.proposed_fields.scope_summary'). Validator just requires
+ * non-empty string; the path encoding itself is convention-driven.
+ *
+ * `before_value` and `after_value` are typed `unknown` at the contract
+ * layer because field types vary (string / number / boolean / null);
+ * the validator allows any of those. Operator's free-text rationale
+ * captures the WHY for training-signal purposes.
+ */
+export interface DraftCorrectedEvent extends BasePersistenceEvent {
+  readonly type: 'draft.corrected';
+  readonly draft_id: string;
+  readonly field_path: string;
+  readonly before_value: string | number | boolean | null;
+  readonly after_value: string | number | boolean | null;
+  /** Free-text operator rationale. Captured for the learning loop. */
+  readonly correction_reason: string;
+  /** D-048 axes attach here directly per D-049 refinement. */
+  readonly correction_scope: CorrectionScope;
+  readonly memory_locality: readonly MemoryLocality[];
+  readonly evidence_source_class: EvidenceSourceClass;
+}
+
+/**
+ * Event 3 · operator accepted the draft (with or without edits).
+ *
+ * Moves the draft INTO the Execution Layer's queue. NEVER triggers a
+ * send/pay/approve action autonomously — those require a separate
+ * explicit operator step on the appropriate surface (F-PV2 send-gate
+ * for proposals, etc.). This is the D-049 line.
+ */
+export interface DraftAcceptedEvent extends BasePersistenceEvent {
+  readonly type: 'draft.accepted';
+  readonly draft_id: string;
+  /** Post-edit state of the payload. May equal the synthesized payload if no edits. */
+  readonly final_payload: DraftSynthesizedPayload;
+  /** Optional free-text rationale (operator may accept without explanation). */
+  readonly accept_rationale: string | null;
+  /**
+   * True if the operator wants the candidate (CO / invoice / proposal)
+   * drafted into its execution surface. False = accept as Daily Log only.
+   */
+  readonly proceed_to_execution: boolean;
+}
+
+/**
+ * Event 4 · operator rejected the draft entirely.
+ *
+ * D-049 refinement: axes attach here directly. The free-text rejection
+ * reason is the most valuable signal in the learning loop — the model
+ * was wrong in a way that the operator can articulate.
+ */
+export interface DraftRejectedEvent extends BasePersistenceEvent {
+  readonly type: 'draft.rejected';
+  readonly draft_id: string;
+  /** Free-text operator rationale. The "what did it miss" of the loop. */
+  readonly rejection_reason: string;
+  readonly correction_scope: CorrectionScope;
+  readonly memory_locality: readonly MemoryLocality[];
+  readonly evidence_source_class: EvidenceSourceClass;
+}
+
+/**
+ * Event 5 · the loop closed · bundle the full trace for future training.
+ *
+ * The `bundle` captures everything the next synthesis call OR a future
+ * fine-tune phase needs: what the model used (inputs hash + context
+ * summary), what it produced, what the operator did, why. Privacy-safe:
+ * inputs are hashed at this layer, raw content lives in upstream events
+ * keyed by IDs that this event references.
+ */
+export interface LearningSignalCapturedEvent extends BasePersistenceEvent {
+  readonly type: 'learning_signal.captured';
+  readonly draft_id: string;
+  readonly loop_outcome: 'accepted' | 'accepted_with_edits' | 'rejected';
+  readonly bundle: {
+    /** Stable hash of synthesis inputs · privacy-safe identifier. */
+    readonly inputs_hash: string;
+    /** Plain-language summary of the context the model saw. */
+    readonly context_summary: string;
+    /** The original model output (pre-correction). */
+    readonly model_output: DraftSynthesizedPayload;
+    /** Ordered list of operator actions that drove this outcome. */
+    readonly operator_actions: readonly LearningSignalOperatorAction[];
+    /** Free-text summary of what the operator taught (the WHY). */
+    readonly operator_rationale_summary: string;
+  };
+}
+
+export type LearningSignalOperatorAction =
+  | {
+      readonly kind: 'corrected';
+      readonly field_path: string;
+      readonly before: string | number | boolean | null;
+      readonly after: string | number | boolean | null;
+      readonly reason: string;
+    }
+  | {
+      readonly kind: 'accepted';
+      readonly rationale: string | null;
+    }
+  | {
+      readonly kind: 'rejected';
+      readonly reason: string;
+    };
+
+/**
+ * Event 6 · the system proposed a memory update based on a correction.
+ *
+ * Auto-emitted when a draft.corrected or draft.rejected event lands with
+ * `correction_scope: 'universal'` or `'tenant_wide'`. The operator confirms
+ * via the next surface (or inline) to harden the lesson into tenant memory.
+ *
+ * Proposed != confirmed. The operator's confirm step is what makes the
+ * memory durable. Without confirmation, the lesson sits in proposed state
+ * and surfaces for review.
+ */
+export interface MemoryUpdateProposedEvent extends BasePersistenceEvent {
+  readonly type: 'memory_update.proposed';
+  readonly proposal_id: string;
+  readonly proposed_entry: {
+    /** Dotted-key identifier · e.g., 'tenant.preference.kitchen_scope_default'. */
+    readonly key: string;
+    readonly value: string | number | boolean;
+    readonly scope: CorrectionScope;
+    readonly locality: MemoryLocality;
+  };
+  /** Links back to the learning_signal.captured event that surfaced this. */
+  readonly triggering_learning_signal_id: string;
+  /** Plain-language summary of why the system is proposing this memory entry. */
+  readonly evidence_summary: string;
+}
+
+/**
+ * Event 7 · operator confirmed the proposed memory update should harden.
+ *
+ * Once confirmed, the memory entry becomes retrievable on the next
+ * synthesis call's context window (Phase 1J RAG-over-learning-signals
+ * consumes confirmed entries). The operator can also "dismiss" a proposal,
+ * but dismissal does not emit this event — the proposal simply expires.
+ */
+export interface MemoryUpdateConfirmedEvent extends BasePersistenceEvent {
+  readonly type: 'memory_update.confirmed';
+  readonly proposal_id: string;
+  readonly confirmed_by: PersistenceActor;
+  readonly confirmation_rationale: string | null;
+}
+
 export type PersistenceEvent =
   | ProjectCreatedEvent
   | CaptureRecordedEvent
@@ -822,7 +1090,15 @@ export type PersistenceEvent =
   | PaymentRecordedEvent
   | PaymentReceivedEvent
   | AllowanceExceptionOpenedEvent
-  | AllowanceExceptionResolvedEvent;
+  | AllowanceExceptionResolvedEvent
+  // ─── Phase 1H · D-049 learning-loop events ───
+  | DraftSynthesizedEvent
+  | DraftCorrectedEvent
+  | DraftAcceptedEvent
+  | DraftRejectedEvent
+  | LearningSignalCapturedEvent
+  | MemoryUpdateProposedEvent
+  | MemoryUpdateConfirmedEvent;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Validation
@@ -890,6 +1166,14 @@ const VALID_EVENT_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'payment.received',
   'allowance.exception.opened',
   'allowance.exception.resolved',
+  // ─── Phase 1H · D-049 learning-loop events ───
+  'draft.synthesized',
+  'draft.corrected',
+  'draft.accepted',
+  'draft.rejected',
+  'learning_signal.captured',
+  'memory_update.proposed',
+  'memory_update.confirmed',
 ]);
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1702,6 +1986,425 @@ function validateAllowanceExceptionResolved(input: Record<string, unknown>): rea
   return errors;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Phase 1H · D-049 learning-loop validators
+// ──────────────────────────────────────────────────────────────────────────
+
+const VALID_DRAFT_CANDIDATE_TYPES: ReadonlySet<DraftCandidateType> = new Set([
+  'change_order',
+  'invoice',
+  'proposal',
+  'progress_note',
+  'blocker',
+  'safety_note',
+]);
+
+const VALID_DRAFT_CONFIDENCES: ReadonlySet<DraftConfidence> = new Set([
+  'high',
+  'medium',
+  'low',
+]);
+
+const VALID_DRAFT_SOURCE_REF_KINDS: ReadonlySet<DraftSourceRef['kind']> = new Set([
+  'transcript',
+  'photo',
+  'note',
+  'project_context',
+]);
+
+const VALID_LOOP_OUTCOMES: ReadonlySet<LearningSignalCapturedEvent['loop_outcome']> = new Set([
+  'accepted',
+  'accepted_with_edits',
+  'rejected',
+]);
+
+const VALID_LEARNING_OP_KINDS: ReadonlySet<LearningSignalOperatorAction['kind']> = new Set([
+  'corrected',
+  'accepted',
+  'rejected',
+]);
+
+/**
+ * Helper · validate the DraftSynthesizedPayload shape. Used by both the
+ * draft.synthesized event validator AND the learning_signal.captured event
+ * validator (which embeds the same payload as bundle.model_output).
+ *
+ * Returns array of error strings prefixed with the parent path for clarity
+ * (e.g., 'payload.candidate.confidence is invalid').
+ */
+function validateDraftSynthesizedPayload(
+  payload: unknown,
+  prefix: string,
+): readonly string[] {
+  const errors: string[] = [];
+  if (typeof payload !== 'object' || payload === null) {
+    return [`${prefix} must be an object`];
+  }
+  const p = payload as Record<string, unknown>;
+
+  if (!nonEmptyString(p['daily_log_summary'])) {
+    errors.push(`${prefix}.daily_log_summary must be a non-empty string`);
+  }
+
+  // candidate may be null OR a valid DraftCandidate
+  if (p['candidate'] !== null) {
+    if (typeof p['candidate'] !== 'object' || p['candidate'] === undefined) {
+      errors.push(`${prefix}.candidate must be null or an object`);
+    } else {
+      const c = p['candidate'] as Record<string, unknown>;
+      // candidate.type is nullable
+      if (c['type'] !== null) {
+        if (typeof c['type'] !== 'string') {
+          errors.push(`${prefix}.candidate.type must be a string or null`);
+        } else if (!VALID_DRAFT_CANDIDATE_TYPES.has(c['type'] as DraftCandidateType)) {
+          errors.push(
+            `${prefix}.candidate.type "${c['type']}" is not a recognized DraftCandidateType (expected change_order|invoice|proposal|progress_note|blocker|safety_note)`,
+          );
+        }
+      }
+      if (!nonEmptyString(c['confidence'])) {
+        errors.push(`${prefix}.candidate.confidence must be a non-empty string`);
+      } else if (!VALID_DRAFT_CONFIDENCES.has(c['confidence'] as DraftConfidence)) {
+        errors.push(
+          `${prefix}.candidate.confidence "${c['confidence']}" is not recognized (expected high|medium|low)`,
+        );
+      }
+      if (!nonEmptyString(c['reason'])) {
+        errors.push(`${prefix}.candidate.reason must be a non-empty string`);
+      }
+      if (typeof c['proposed_fields'] !== 'object' || c['proposed_fields'] === null) {
+        errors.push(`${prefix}.candidate.proposed_fields must be an object (may be empty)`);
+      } else {
+        // proposed_fields values must be string/number/boolean/null
+        const fields = c['proposed_fields'] as Record<string, unknown>;
+        for (const [k, v] of Object.entries(fields)) {
+          if (
+            v !== null &&
+            typeof v !== 'string' &&
+            typeof v !== 'number' &&
+            typeof v !== 'boolean'
+          ) {
+            errors.push(
+              `${prefix}.candidate.proposed_fields.${k} must be string|number|boolean|null`,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  if (!Array.isArray(p['gap_flags'])) {
+    errors.push(`${prefix}.gap_flags must be an array (may be empty)`);
+  } else {
+    for (let i = 0; i < p['gap_flags'].length; i++) {
+      const gf = p['gap_flags'][i];
+      if (typeof gf !== 'object' || gf === null) {
+        errors.push(`${prefix}.gap_flags[${i}] must be an object`);
+        continue;
+      }
+      const g = gf as Record<string, unknown>;
+      if (!nonEmptyString(g['field'])) {
+        errors.push(`${prefix}.gap_flags[${i}].field must be a non-empty string`);
+      }
+      if (!nonEmptyString(g['why'])) {
+        errors.push(`${prefix}.gap_flags[${i}].why must be a non-empty string`);
+      }
+    }
+  }
+
+  if (!Array.isArray(p['source_refs'])) {
+    errors.push(`${prefix}.source_refs must be an array (may be empty)`);
+  } else {
+    for (let i = 0; i < p['source_refs'].length; i++) {
+      const sr = p['source_refs'][i];
+      if (typeof sr !== 'object' || sr === null) {
+        errors.push(`${prefix}.source_refs[${i}] must be an object`);
+        continue;
+      }
+      const s = sr as Record<string, unknown>;
+      if (!nonEmptyString(s['kind'])) {
+        errors.push(`${prefix}.source_refs[${i}].kind must be a non-empty string`);
+      } else if (!VALID_DRAFT_SOURCE_REF_KINDS.has(s['kind'] as DraftSourceRef['kind'])) {
+        errors.push(
+          `${prefix}.source_refs[${i}].kind "${s['kind']}" is not recognized (expected transcript|photo|note|project_context)`,
+        );
+      }
+      if (!nonEmptyString(s['uri'])) {
+        errors.push(`${prefix}.source_refs[${i}].uri must be a non-empty string`);
+      }
+      // excerpt is optional · only check type when present
+      if (s['excerpt'] !== undefined && typeof s['excerpt'] !== 'string') {
+        errors.push(`${prefix}.source_refs[${i}].excerpt must be a string when present`);
+      }
+    }
+  }
+
+  if (typeof p['model'] !== 'object' || p['model'] === null) {
+    errors.push(`${prefix}.model must be an object`);
+  } else {
+    const m = p['model'] as Record<string, unknown>;
+    if (!nonEmptyString(m['endpoint'])) {
+      errors.push(`${prefix}.model.endpoint must be a non-empty string`);
+    }
+    if (!nonEmptyString(m['invocation_id'])) {
+      errors.push(`${prefix}.model.invocation_id must be a non-empty string`);
+    }
+    if (typeof m['token_cost_in'] !== 'number' || !Number.isFinite(m['token_cost_in']) || m['token_cost_in'] < 0) {
+      errors.push(`${prefix}.model.token_cost_in must be a non-negative finite number`);
+    }
+    if (typeof m['token_cost_out'] !== 'number' || !Number.isFinite(m['token_cost_out']) || m['token_cost_out'] < 0) {
+      errors.push(`${prefix}.model.token_cost_out must be a non-negative finite number`);
+    }
+    if (typeof m['latency_ms'] !== 'number' || !Number.isFinite(m['latency_ms']) || m['latency_ms'] < 0) {
+      errors.push(`${prefix}.model.latency_ms must be a non-negative finite number`);
+    }
+  }
+
+  return errors;
+}
+
+function validateDraftSynthesized(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['draft_id'])) errors.push('draft_id must be a non-empty string');
+  if (!nonEmptyString(input['capture_id'])) errors.push('capture_id must be a non-empty string');
+  errors.push(...validateDraftSynthesizedPayload(input['payload'], 'payload'));
+  return errors;
+}
+
+/** Allowed scalar value type for draft.corrected before/after fields. */
+function isAllowedScalarOrNull(v: unknown): boolean {
+  return v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
+}
+
+function validateDraftCorrected(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['draft_id'])) errors.push('draft_id must be a non-empty string');
+  if (!nonEmptyString(input['field_path'])) errors.push('field_path must be a non-empty string');
+  if (!isAllowedScalarOrNull(input['before_value'])) {
+    errors.push('before_value must be string|number|boolean|null');
+  }
+  if (!isAllowedScalarOrNull(input['after_value'])) {
+    errors.push('after_value must be string|number|boolean|null');
+  }
+  if (!nonEmptyString(input['correction_reason'])) {
+    errors.push('correction_reason must be a non-empty string');
+  }
+  // D-048 axes — same enum checks as correction.classified
+  if (!nonEmptyString(input['correction_scope'])) {
+    errors.push('correction_scope must be a non-empty string');
+  } else if (!VALID_CORRECTION_SCOPES.has(input['correction_scope'] as CorrectionScope)) {
+    errors.push(
+      `correction_scope "${input['correction_scope']}" is not a recognized CorrectionScope (expected universal|situational|tenant_wide|project_specific|role_specific|one_off)`,
+    );
+  }
+  if (!Array.isArray(input['memory_locality'])) {
+    errors.push('memory_locality must be an array (multi-locality permitted)');
+  } else {
+    if (input['memory_locality'].length === 0) {
+      errors.push('memory_locality must contain at least one value');
+    }
+    for (let i = 0; i < input['memory_locality'].length; i++) {
+      const v = input['memory_locality'][i];
+      if (typeof v !== 'string' || !VALID_MEMORY_LOCALITIES.has(v as MemoryLocality)) {
+        errors.push(
+          `memory_locality[${i}] "${String(v)}" is not a recognized MemoryLocality`,
+        );
+      }
+    }
+  }
+  if (!nonEmptyString(input['evidence_source_class'])) {
+    errors.push('evidence_source_class must be a non-empty string');
+  } else if (!VALID_EVIDENCE_SOURCE_CLASSES.has(input['evidence_source_class'] as EvidenceSourceClass)) {
+    errors.push(
+      `evidence_source_class "${input['evidence_source_class']}" is not a recognized EvidenceSourceClass`,
+    );
+  }
+  return errors;
+}
+
+function validateDraftAccepted(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['draft_id'])) errors.push('draft_id must be a non-empty string');
+  errors.push(...validateDraftSynthesizedPayload(input['final_payload'], 'final_payload'));
+  if (input['accept_rationale'] !== null && !nonEmptyString(input['accept_rationale'])) {
+    errors.push('accept_rationale must be a non-empty string or null');
+  }
+  if (typeof input['proceed_to_execution'] !== 'boolean') {
+    errors.push('proceed_to_execution must be a boolean');
+  }
+  return errors;
+}
+
+function validateDraftRejected(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['draft_id'])) errors.push('draft_id must be a non-empty string');
+  if (!nonEmptyString(input['rejection_reason'])) {
+    errors.push('rejection_reason must be a non-empty string');
+  }
+  if (!nonEmptyString(input['correction_scope'])) {
+    errors.push('correction_scope must be a non-empty string');
+  } else if (!VALID_CORRECTION_SCOPES.has(input['correction_scope'] as CorrectionScope)) {
+    errors.push(
+      `correction_scope "${input['correction_scope']}" is not a recognized CorrectionScope`,
+    );
+  }
+  if (!Array.isArray(input['memory_locality'])) {
+    errors.push('memory_locality must be an array');
+  } else {
+    if (input['memory_locality'].length === 0) {
+      errors.push('memory_locality must contain at least one value');
+    }
+    for (let i = 0; i < input['memory_locality'].length; i++) {
+      const v = input['memory_locality'][i];
+      if (typeof v !== 'string' || !VALID_MEMORY_LOCALITIES.has(v as MemoryLocality)) {
+        errors.push(`memory_locality[${i}] "${String(v)}" is not a recognized MemoryLocality`);
+      }
+    }
+  }
+  if (!nonEmptyString(input['evidence_source_class'])) {
+    errors.push('evidence_source_class must be a non-empty string');
+  } else if (!VALID_EVIDENCE_SOURCE_CLASSES.has(input['evidence_source_class'] as EvidenceSourceClass)) {
+    errors.push(
+      `evidence_source_class "${input['evidence_source_class']}" is not a recognized EvidenceSourceClass`,
+    );
+  }
+  return errors;
+}
+
+function validateLearningSignalCaptured(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['draft_id'])) errors.push('draft_id must be a non-empty string');
+  if (!nonEmptyString(input['loop_outcome'])) {
+    errors.push('loop_outcome must be a non-empty string');
+  } else if (!VALID_LOOP_OUTCOMES.has(input['loop_outcome'] as LearningSignalCapturedEvent['loop_outcome'])) {
+    errors.push(
+      `loop_outcome "${input['loop_outcome']}" is not recognized (expected accepted|accepted_with_edits|rejected)`,
+    );
+  }
+  if (typeof input['bundle'] !== 'object' || input['bundle'] === null) {
+    errors.push('bundle must be an object');
+    return errors;
+  }
+  const bundle = input['bundle'] as Record<string, unknown>;
+  if (!nonEmptyString(bundle['inputs_hash'])) {
+    errors.push('bundle.inputs_hash must be a non-empty string');
+  }
+  if (!nonEmptyString(bundle['context_summary'])) {
+    errors.push('bundle.context_summary must be a non-empty string');
+  }
+  errors.push(...validateDraftSynthesizedPayload(bundle['model_output'], 'bundle.model_output'));
+  if (!Array.isArray(bundle['operator_actions'])) {
+    errors.push('bundle.operator_actions must be an array');
+  } else {
+    for (let i = 0; i < bundle['operator_actions'].length; i++) {
+      const a = bundle['operator_actions'][i];
+      if (typeof a !== 'object' || a === null) {
+        errors.push(`bundle.operator_actions[${i}] must be an object`);
+        continue;
+      }
+      const aa = a as Record<string, unknown>;
+      if (!nonEmptyString(aa['kind'])) {
+        errors.push(`bundle.operator_actions[${i}].kind must be a non-empty string`);
+        continue;
+      }
+      if (!VALID_LEARNING_OP_KINDS.has(aa['kind'] as LearningSignalOperatorAction['kind'])) {
+        errors.push(
+          `bundle.operator_actions[${i}].kind "${aa['kind']}" is not recognized (expected corrected|accepted|rejected)`,
+        );
+        continue;
+      }
+      if (aa['kind'] === 'corrected') {
+        if (!nonEmptyString(aa['field_path'])) {
+          errors.push(`bundle.operator_actions[${i}].field_path must be a non-empty string`);
+        }
+        if (!isAllowedScalarOrNull(aa['before'])) {
+          errors.push(`bundle.operator_actions[${i}].before must be string|number|boolean|null`);
+        }
+        if (!isAllowedScalarOrNull(aa['after'])) {
+          errors.push(`bundle.operator_actions[${i}].after must be string|number|boolean|null`);
+        }
+        if (!nonEmptyString(aa['reason'])) {
+          errors.push(`bundle.operator_actions[${i}].reason must be a non-empty string`);
+        }
+      } else if (aa['kind'] === 'accepted') {
+        if (aa['rationale'] !== null && !nonEmptyString(aa['rationale'])) {
+          errors.push(`bundle.operator_actions[${i}].rationale must be a non-empty string or null`);
+        }
+      } else if (aa['kind'] === 'rejected') {
+        if (!nonEmptyString(aa['reason'])) {
+          errors.push(`bundle.operator_actions[${i}].reason must be a non-empty string`);
+        }
+      }
+    }
+  }
+  if (!nonEmptyString(bundle['operator_rationale_summary'])) {
+    errors.push('bundle.operator_rationale_summary must be a non-empty string');
+  }
+  return errors;
+}
+
+function validateMemoryUpdateProposed(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['proposal_id'])) errors.push('proposal_id must be a non-empty string');
+  if (typeof input['proposed_entry'] !== 'object' || input['proposed_entry'] === null) {
+    errors.push('proposed_entry must be an object');
+  } else {
+    const e = input['proposed_entry'] as Record<string, unknown>;
+    if (!nonEmptyString(e['key'])) {
+      errors.push('proposed_entry.key must be a non-empty string');
+    }
+    if (
+      e['value'] !== null &&
+      typeof e['value'] !== 'string' &&
+      typeof e['value'] !== 'number' &&
+      typeof e['value'] !== 'boolean'
+    ) {
+      errors.push('proposed_entry.value must be string|number|boolean');
+    }
+    if (!nonEmptyString(e['scope'])) {
+      errors.push('proposed_entry.scope must be a non-empty string');
+    } else if (!VALID_CORRECTION_SCOPES.has(e['scope'] as CorrectionScope)) {
+      errors.push(`proposed_entry.scope "${e['scope']}" is not a recognized CorrectionScope`);
+    }
+    if (!nonEmptyString(e['locality'])) {
+      errors.push('proposed_entry.locality must be a non-empty string');
+    } else if (!VALID_MEMORY_LOCALITIES.has(e['locality'] as MemoryLocality)) {
+      errors.push(`proposed_entry.locality "${e['locality']}" is not a recognized MemoryLocality`);
+    }
+  }
+  if (!nonEmptyString(input['triggering_learning_signal_id'])) {
+    errors.push('triggering_learning_signal_id must be a non-empty string');
+  }
+  if (!nonEmptyString(input['evidence_summary'])) {
+    errors.push('evidence_summary must be a non-empty string');
+  }
+  return errors;
+}
+
+function validateMemoryUpdateConfirmed(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['proposal_id'])) errors.push('proposal_id must be a non-empty string');
+  if (typeof input['confirmed_by'] !== 'object' || input['confirmed_by'] === null) {
+    errors.push('confirmed_by must be a PersistenceActor object');
+  } else {
+    const a = input['confirmed_by'] as Record<string, unknown>;
+    if (!nonEmptyString(a['id'])) {
+      errors.push('confirmed_by.id must be a non-empty string');
+    }
+    if (!nonEmptyString(a['role'])) {
+      errors.push('confirmed_by.role must be a non-empty string');
+    } else if (!VALID_ACTOR_ROLES.has(a['role'] as PersistenceActor['role'])) {
+      errors.push(
+        `confirmed_by.role "${a['role']}" is not a recognized actor role`,
+      );
+    }
+  }
+  if (input['confirmation_rationale'] !== null && !nonEmptyString(input['confirmation_rationale'])) {
+    errors.push('confirmation_rationale must be a non-empty string or null');
+  }
+  return errors;
+}
+
 /**
  * Validate an arbitrary input as a PersistenceEvent. Returns a discriminated
  * result. Never throws.
@@ -1816,6 +2519,28 @@ export function validatePersistenceEvent(input: unknown): ValidationResult<Persi
       break;
     case 'allowance.exception.resolved':
       typeErrors = validateAllowanceExceptionResolved(record);
+      break;
+    // ─── Phase 1H · D-049 learning-loop events ───
+    case 'draft.synthesized':
+      typeErrors = validateDraftSynthesized(record);
+      break;
+    case 'draft.corrected':
+      typeErrors = validateDraftCorrected(record);
+      break;
+    case 'draft.accepted':
+      typeErrors = validateDraftAccepted(record);
+      break;
+    case 'draft.rejected':
+      typeErrors = validateDraftRejected(record);
+      break;
+    case 'learning_signal.captured':
+      typeErrors = validateLearningSignalCaptured(record);
+      break;
+    case 'memory_update.proposed':
+      typeErrors = validateMemoryUpdateProposed(record);
+      break;
+    case 'memory_update.confirmed':
+      typeErrors = validateMemoryUpdateConfirmed(record);
       break;
   }
   const allErrors = [...baseErrors, ...typeErrors];
