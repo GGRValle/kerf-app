@@ -111,6 +111,24 @@
   color: #fff;
 }
 
+.lane23-loop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+a.lane23-btn {
+  display: inline-block;
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
+}
+
+a.lane23-btn.primary {
+  color: #fff;
+}
+
 .lane23-notice {
   font-size: 0.85rem;
   color: var(--text-muted, #5c6670);

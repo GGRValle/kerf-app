@@ -190,6 +190,11 @@ const assignment = {
         <p class="submit-status" id="f-e1-submit-status" role="status"></p>
         <p class="submit-play-error" id="f-e1-play-error" role="alert" hidden></p>
         <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay →</a>
+        <nav class="loop-links" id="f-e1-loop-links" aria-label="Capture review loop" hidden>
+          <a class="loop-link" href="/transcript-review?capture_id=cap_lane23_wegrzyn_001">Transcript review →</a>
+          <a class="loop-link" href="/draft-review">Draft review →</a>
+          <a class="loop-link" id="f-e1-field-detail-link" href="/field-detail">Field detail →</a>
+        </nav>
       </section>
       <input id="f-e1-camera-input" type="file" accept="image/*" capture="environment" hidden />
     </section>
@@ -221,6 +226,8 @@ const assignment = {
   const playErrorNode = document.querySelector('#f-e1-play-error');
   const outcomeNode = document.querySelector('#f-e1-submit-outcome');
   const relayLink = document.querySelector('#f-e1-relay-link');
+  const loopLinks = document.querySelector('#f-e1-loop-links');
+  const fieldDetailLink = document.querySelector('#f-e1-field-detail-link');
 
   let mediaRecorder = null;
   let mediaStream = null;
@@ -269,11 +276,34 @@ const assignment = {
     if (visible && outcomeNode instanceof HTMLElement) outcomeNode.hidden = false;
   }
 
+  function showLoopLinks(entryId) {
+    if (!(loopLinks instanceof HTMLElement)) return;
+    loopLinks.hidden = false;
+    if (outcomeNode instanceof HTMLElement) outcomeNode.hidden = false;
+    if (fieldDetailLink instanceof HTMLAnchorElement && typeof entryId === 'string' && entryId.length > 0) {
+      fieldDetailLink.href = `/field-detail?entry_id=${encodeURIComponent(entryId)}`;
+    }
+  }
+
   function resetSubmitOutcome() {
     setPlayError('');
     setRelayLinkVisible(false);
+    if (loopLinks instanceof HTMLElement) loopLinks.hidden = true;
     setStatus('');
     if (outcomeNode instanceof HTMLElement) outcomeNode.hidden = true;
+  }
+
+  function finalizeSubmitOutcome(body, transcriptLength) {
+    applySubmitOutcome(body, transcriptLength);
+    const entryId =
+      typeof body?.event?.entry_id === 'string'
+        ? body.event.entry_id
+        : typeof body?.entry_id === 'string'
+          ? body.entry_id
+          : null;
+    if (entryId) {
+      showLoopLinks(entryId);
+    }
   }
 
   function applySubmitOutcome(body, transcriptLength) {
@@ -685,7 +715,7 @@ const assignment = {
               : `submit_failed_${res.status}`;
         throw new Error(detail);
       }
-      applySubmitOutcome(body, transcript.length);
+      finalizeSubmitOutcome(body, transcript.length);
     } catch (err) {
       setPlayError('');
       setRelayLinkVisible(false);
@@ -1173,6 +1203,26 @@ const assignment = {
     margin-top: 12px;
     text-align: center;
     font-weight: 800;
+  }
+
+  .loop-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .loop-links[hidden] {
+    display: none;
+  }
+
+  .loop-link {
+    display: block;
+    text-align: center;
+    color: var(--field-green);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
   }
 
   @media (min-width: 760px) {

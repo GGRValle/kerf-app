@@ -11,22 +11,25 @@ import '../styles/lane23.css';
 
 const { t, context } = createLayoutContext();
 const draft = LANE23_DRAFT_REVIEW;
+const loopPhases = [
+  { id: 'capture', label: 'Capture', href: '/field-capture' },
+  { id: 'review', label: 'Review', href: '/transcript-review' },
+  { id: 'draft', label: 'Draft', active: true, href: '/draft-review' },
+];
+const previewHref = `/proposals/${draft.proposal_id}/preview`;
 ---
 
 <Layout titleKey="review.draft.title" activeHref="/draft-review">
   <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
     <div class="lane23-page" data-tenant={context.tenantId}>
-      <PhaseStrip phases={[
-        { id: 'capture', label: 'Capture' },
-        { id: 'review', label: 'Review' },
-        { id: 'draft', label: 'Draft', active: true },
-      ]} />
+      <PhaseStrip phases={loopPhases} />
       <div class="lane23-bc">
         <div>
           <h1>{t('review.draft.title')}</h1>
           <p class="lane23-notice">{t('review.draft.subtitle')}</p>
         </div>
       </div>
+      <p class="lane23-notice">{t('review.draft.fixture_notice')}</p>
       <p class="lane23-notice">{t('review.draft.notice')}</p>
 
       <Card eyebrow={draft.project_label} title={draft.title}>
@@ -62,12 +65,27 @@ const draft = LANE23_DRAFT_REVIEW;
           </div>
         </div>
         <p id="lane23-draft-status" class="lane23-notice" role="status"></p>
+        <div class="lane23-loop-actions">
+          <a class="lane23-btn" href="/transcript-review">{t('review.transcript.title')}</a>
+          <a class="lane23-btn primary" href={previewHref}>{t('review.draft.preview_cta')}</a>
+          <button type="button" class="lane23-btn primary" id="lane23-draft-accept">{t('review.draft.accept')}</button>
+          <button type="button" class="lane23-btn" id="lane23-draft-reject">{t('review.draft.reject')}</button>
+        </div>
       </Card>
     </div>
   </SurfaceIrreversibilityWrap>
 </Layout>
 
-<script define:vars={{ draft, tenantId: context.tenantId, savedKey: 'review.draft.saved', errorKey: 'review.draft.error' }}>
+<script define:vars={{
+  draft,
+  tenantId: context.tenantId,
+  savedKey: 'review.draft.saved',
+  errorKey: 'review.draft.error',
+  acceptedKey: 'review.draft.accepted',
+  rejectedKey: 'review.draft.rejected',
+  acceptErrorKey: 'review.draft.accept_error',
+  rejectErrorKey: 'review.draft.reject_error',
+}}>
   const statusEl = document.getElementById('lane23-draft-status');
   const followupEl = document.getElementById('lane23-draft-followup');
   let pending = null;
@@ -124,5 +142,49 @@ const draft = LANE23_DRAFT_REVIEW;
         statusEl.textContent = errorKey;
       }
     });
+  });
+
+  document.getElementById('lane23-draft-accept')?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/v1/review/draft/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          proposal_id: draft.proposal_id,
+          project_id: draft.project_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'accept_failed');
+      statusEl.textContent = acceptedKey;
+      if (data.preview_url) {
+        window.setTimeout(() => { window.location.href = data.preview_url; }, 600);
+      }
+    } catch {
+      statusEl.textContent = acceptErrorKey;
+    }
+  });
+
+  document.getElementById('lane23-draft-reject')?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/v1/review/draft/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          proposal_id: draft.proposal_id,
+          project_id: draft.project_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'reject_failed');
+      statusEl.textContent = rejectedKey;
+      if (data.return_to) {
+        window.setTimeout(() => { window.location.href = data.return_to; }, 800);
+      }
+    } catch {
+      statusEl.textContent = rejectErrorKey;
+    }
   });
 </script>
