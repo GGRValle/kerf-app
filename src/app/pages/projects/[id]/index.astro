@@ -27,12 +27,7 @@ const project = id ? getLane23Project(id) : null;
             <p class="lane23-project-meta">{project.client_name} · {project.address_line}</p>
           </div>
         </div>
-        <ActionsStrip
-          actions={[
-            { label: t('action.print'), title: t('action.print') },
-            { label: t('action.export.menu'), title: t('action.export.menu') },
-          ]}
-        />
+        <ActionsStrip surface="project_detail" projectId={project.project_id} tenantId={context.tenantId} wired />
       </div>
 
       <ProjectTabStrip projectId={project.project_id} activeTab="scope" labelFor={t} />

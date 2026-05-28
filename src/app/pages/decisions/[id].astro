@@ -1,9 +1,4 @@
 ---
-import RouteShellPage from '../../components/RouteShellPage.astro';
-
-const { id } = Astro.params;
+import Layout from '../../layouts/Layout.astro';import Card from '../../components/Card.astro';import { createLayoutContext } from '../../lib/createLayoutContext.js';const { id } = Astro.params;const { t } = createLayoutContext();
 ---
-
-<RouteShellPage title={`Decision ${id}`} routeName="decision-detail" phase="approve">
-  <p>Packet <code>{id}</code></p>
-</RouteShellPage>
+<Layout titleKey="decisions.detail.title" activeHref="/decisions"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('decisions.detail.title')}><p>{t('decisions.preview.detail_body')}</p></Card></Layout>

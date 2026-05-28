@@ -1,10 +1,4 @@
 ---
-import RouteShellPage from '../components/RouteShellPage.astro';
-import Card from '../components/Card.astro';
+import Layout from '../layouts/Layout.astro';import Card from '../components/Card.astro';import { createLayoutContext } from '../lib/createLayoutContext.js';const { t } = createLayoutContext();
 ---
-
-<RouteShellPage title="Blackboard" routeName="blackboard" phase="none">
-  <Card title="Blackboard view" eyebrow="Layer A">
-    <p>Persistent memory surface · spine lane wires projection reads.</p>
-  </Card>
-</RouteShellPage>
+<Layout titleKey="blackboard.title" activeHref="/blackboard"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('blackboard.title')}><p>{t('blackboard.preview.body')}</p></Card></Layout>

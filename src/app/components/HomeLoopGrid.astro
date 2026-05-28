@@ -1,0 +1,6 @@
+---
+import { HOME_OPERATOR_LOOPS } from '../lib/shellRoutes.js';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+const { t } = createLayoutContext();
+---
+<section aria-label={t('home.loops.aria')}><h2>{t('home.loops.heading')}</h2><ul>{HOME_OPERATOR_LOOPS.map((loop) => (<li><a href={loop.href}>{t(loop.titleKey)} — {t(loop.detailKey)}</a></li>))}</ul></section>

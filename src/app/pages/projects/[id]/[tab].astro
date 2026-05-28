@@ -37,12 +37,7 @@ const auditEntries =
             <p class="lane23-project-meta">{project.client_name}</p>
           </div>
         </div>
-        <ActionsStrip
-          actions={[
-            { label: t('action.print'), title: t('action.print') },
-            { label: t('action.export.menu'), title: t('action.export.menu') },
-          ]}
-        />
+        <ActionsStrip surface="project_detail" projectId={project.project_id} tenantId={context.tenantId} wired />
       </div>
 
       <ProjectTabStrip projectId={project.project_id} activeTab={activeTab} labelFor={t} />
@@ -59,28 +54,3 @@ const auditEntries =
   )}
 </Layout>
 
-<script define:vars={{
-  projectId: project?.project_id,
-  tenantId: context.tenantId,
-  successMsg: t('project.export.success'),
-  errorMsg: t('project.export.error'),
-}}>
-  if (projectId) {
-    document.querySelectorAll('.lane23-page .actions-strip .as-action').forEach((btn, idx) => {
-      btn.addEventListener('click', async () => {
-        const format = idx === 0 ? 'print' : 'pdf';
-        try {
-          const res = await fetch(`/api/v1/projects/${projectId}/export?tenant_id=${tenantId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ format }),
-          });
-          if (!res.ok) throw new Error('export_failed');
-          if (statusEl) statusEl.textContent = successMsg;
-        } catch {
-          if (statusEl) statusEl.textContent = errorMsg;
-        }
-      });
-    });
-  }
-</script>

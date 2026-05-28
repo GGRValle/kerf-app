@@ -1,0 +1,22 @@
+---
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+export interface Props { surface?: string; projectId?: string; tenantId?: string; wired?: boolean }
+const { projectId, tenantId, wired = false } = Astro.props;
+const { t } = createLayoutContext();
+const canWire = wired && projectId && tenantId;
+---
+<div class="export-print-bar">{canWire ? (<><button type="button" class="epb-btn" data-format="print">{t('action.print')}</button><button type="button" class="epb-btn" data-format="pdf">{t('action.export.menu')}</button><p id="export-print-status" role="status"></p></>) : <p>{t('shell.export.preview_notice')}</p>}</div>
+{canWire ? (<script define:vars={{ projectId, tenantId, successMsg: t('project.export.success'), errorMsg: t('project.export.error') }}>
+document.querySelectorAll('.epb-btn').forEach((btn) => btn.addEventListener('click', async () => {
+  const status = document.getElementById('export-print-status');
+  const format = btn.getAttribute('data-format') || 'pdf';
+  const url = '/api/v1/projects/' + projectId + '/export?tenant_id=' + tenantId;
+  try {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format }) });
+    if (!res.ok) throw new Error('fail');
+    if (status) status.textContent = successMsg;
+  } catch (e) {
+    if (status) status.textContent = errorMsg;
+  }
+}));
+</script>) : null}

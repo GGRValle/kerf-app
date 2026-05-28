@@ -1,35 +1,6 @@
 ---
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-
 const { t } = createLayoutContext();
 ---
-
-<button type="button" class="speak-fab" aria-label={t('layout.speak_fab.label')} title={t('layout.speak_fab.title')}>
-  <span aria-hidden="true">🎙</span>
-</button>
-
-<style>
-  .speak-fab {
-    position: fixed;
-    right: max(1rem, env(safe-area-inset-right));
-    bottom: max(1rem, env(safe-area-inset-bottom));
-    width: 3.25rem;
-    height: 3.25rem;
-    border-radius: 999px;
-    border: none;
-    background: var(--accent, #0f766e);
-    color: #fff;
-    font-size: 1.25rem;
-    box-shadow: 0 8px 24px rgba(15, 118, 110, 0.35);
-    cursor: pointer;
-    z-index: 20;
-  }
-</style>
-
-<script>
-  document.querySelectorAll('.speak-fab').forEach((fab) => {
-    fab.addEventListener('click', () => {
-      console.info('[SpeakFAB] stub handler');
-    });
-  });
-</script>
+<a href="/field-capture" class="speak-fab" aria-label={t('layout.speak_fab.label')} title={t('layout.speak_fab.title')}><span aria-hidden="true">🎙</span></a>
+<style>.speak-fab{position:fixed;right:max(1rem,env(safe-area-inset-right));bottom:max(5.5rem,calc(1rem + env(safe-area-inset-bottom,0px)));width:3.25rem;height:3.25rem;border-radius:999px;background:var(--accent,#0f766e);color:#fff;z-index:20;display:flex;align-items:center;justify-content:center;text-decoration:none}@media(min-width:900px){.speak-fab{bottom:max(1rem,env(safe-area-inset-bottom))}}</style>
