@@ -266,3 +266,151 @@ test('Phase 1G-A · transcribe · success transcript flows back compatible with 
   assert.equal(typeof body.transcript, 'string');
   assert.ok(body.transcript.length > 0, 'transcript must be a non-empty string for note insertion');
 });
+
+test('Phase 1G-A · transcribe · 413 payload_too_large rejects body over 25 MiB', async () => {
+  // Whisper file-size cap is 25 MiB. The endpoint reads the body via
+  // c.req.arrayBuffer() and checks byteLength before calling Whisper.
+  // We deliberately send 25 MiB + 1 byte to land just over the cap.
+  __setTranscribeDepsForTests(makeDeps());
+
+  const oversized = new ArrayBuffer(25 * 1024 * 1024 + 1);
+
+  const res = await apiRouter.request('/transcribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'audio/webm', authorization: authHeader() },
+    body: oversized,
+  });
+
+  assert.equal(res.status, 413);
+  const body = (await res.json()) as { error: string; reason: string };
+  assert.equal(body.error, 'payload_too_large');
+  assert.match(body.reason, /25 \* 1024 \* 1024|26214400|Whisper file cap/i);
+});
+
+// ============================================================================
+// F-E1 source/behavior assertions · prove mic stop wires to /api/v1/transcribe
+// and the fallback copy stays truthful (no fake transcript).
+// ============================================================================
+
+test('Phase 1G-A · F-E1 source wires mic stop to /api/v1/transcribe', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const path = await import('node:path');
+  const source = await readFile(
+    path.resolve(process.cwd(), 'src/app/pages/field-capture.astro'),
+    'utf8',
+  );
+
+  // The transcribe endpoint is referenced from F-E1's client-side script.
+  assert.match(
+    source,
+    /\/api\/v1\/transcribe/,
+    'F-E1 must reference /api/v1/transcribe so mic stop uploads audio',
+  );
+
+  // The transcribe call must be invoked from the MediaRecorder stop path.
+  // We don't assert on the exact function name; we assert that the same
+  // file references both the MediaRecorder stop handler and the transcribe
+  // endpoint, so the wire exists in source.
+  assert.match(
+    source,
+    /mediaRecorder\.addEventListener\(['"]stop['"]/,
+    'F-E1 must wire a MediaRecorder stop handler',
+  );
+});
+
+test('Phase 1G-A · F-E1 source carries truthful unavailable + failure fallback copy', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const path = await import('node:path');
+  const source = await readFile(
+    path.resolve(process.cwd(), 'src/app/pages/field-capture.astro'),
+    'utf8',
+  );
+
+  // Unavailable copy (503 path) — the operator must learn the deploy lacks
+  // transcription and that the voice memo is saved + typing is the path.
+  assert.match(
+    source,
+    /Transcription is not configured/i,
+    'F-E1 must carry the 503 unavailable fallback copy',
+  );
+
+  // Failure copy (other non-200 path) — operator must learn transcription
+  // failed and typing is the path. Either "Transcription failed" or an
+  // equivalent typed-fallback shape passes.
+  const hasFailureCopy =
+    /Transcription failed/i.test(source) ||
+    /Could not transcribe/i.test(source) ||
+    /transcription failed — type the note/i.test(source);
+  assert.ok(
+    hasFailureCopy,
+    'F-E1 must carry a non-200 transcription failure fallback that nudges typing',
+  );
+
+  // Voice memo must remain captured across the fallback paths — the operator
+  // shouldn't lose the recording just because transcription was unavailable.
+  // We assert the source mentions saving the voice memo on the fallback.
+  assert.match(
+    source,
+    /Voice memo saved/i,
+    'F-E1 fallback copy must confirm the voice memo is saved on failure paths',
+  );
+});
+
+test('Phase 1G-A · F-E1 source has no fake transcript fallback', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const path = await import('node:path');
+  const source = await readFile(
+    path.resolve(process.cwd(), 'src/app/pages/field-capture.astro'),
+    'utf8',
+  );
+
+  // The transcript insertion must be gated by an empty-transcript check —
+  // the server's transcript is the only string that ever lands in the note.
+  assert.match(
+    source,
+    /transcript\.length\s*===\s*0/,
+    'F-E1 must guard transcript insertion with an empty-transcript check',
+  );
+
+  // Strip JS line comments (//.*) and block comments (/* ... */) before
+  // anti-pattern scanning. The phrase "no fake transcript" appears in our
+  // discipline-stating JSDoc comments and should NOT be flagged. We're
+  // hunting for fake-transcript code/identifiers/string-literals, not for
+  // prose that names the discipline being enforced.
+  const codeOnly = source
+    .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
+    .replace(/^\s*\/\/.*$/gm, '');     // line comments
+
+  // No identifier-shape or string-literal-shape fake-transcript fallbacks.
+  // (Patterns target code-level synthesis, not English prose like
+  // "no fake transcript" which is the rule itself.)
+  const fakePatterns = [
+    /\bfakeTranscript\b/,
+    /\bsyntheticTranscript\b/,
+    /\bdummyTranscript\b/,
+    /\bplaceholderTranscript\b/,
+    /\bfake_transcript\b/,
+    /\bsynthetic_transcript\b/,
+    /\bdummy_transcript\b/,
+    /\bplaceholder_transcript\b/,
+    /\bTRANSCRIPT_PLACEHOLDER\b/,
+    /lorem ipsum/i,
+    /\[transcript unavailable\]/i,
+  ];
+  for (const pattern of fakePatterns) {
+    assert.doesNotMatch(
+      codeOnly,
+      pattern,
+      `F-E1 source must not contain fake-transcript pattern ${pattern.source}`,
+    );
+  }
+
+  // Belt-and-suspenders: the transcript insertion must be preceded by an
+  // empty-transcript early return, so we never write an empty string into
+  // the textarea on a 200-with-empty-transcript path.
+  assert.match(
+    source,
+    /transcript\.length\s*===\s*0[\s\S]{0,200}return/,
+    'F-E1 must return early when the server transcript is empty (no insertion of empty string)',
+  );
+});
