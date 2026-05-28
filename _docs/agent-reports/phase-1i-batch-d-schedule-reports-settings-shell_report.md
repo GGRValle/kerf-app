@@ -1,7 +1,9 @@
 # Phase 1I · Agent D — Schedule, Reports, Settings & Shell
 
+**Stacked on:** `phase-1i-batch-b-projects-audit-relay` @ `d5d9f13` (imports `ProjectTabContent.astro`)
+
 **Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
-**Head commit:** `a16fdb61991158b27c218ae99c46cbe59ff133c0`  
+**Head commit:** `5bd28b41bacab686cf042835b635c7d159e257f1`  
 **Agent:** D (Batch D)  
 **Date:** 2026-05-28  
 **Merge:** Do not merge (gate branch only)
@@ -74,9 +76,8 @@ Make the operator shell coherent: home loops, mobile nav, schedule/reports/setti
 ---
 *Gate: branch pushed when Christian adds to Phase 1I merge set. Do not merge to main without 1I sign-off.*
 
-## Commits on branch
+## Commits on branch (after rebase onto Batch B)
 
-- `ca5a479` — shell, components, pages, tests
-- `57de6fc` — agent report, more.astro copy
-- `cd7a54e` — nav role-root alignment
-- `a16fdb61991158b27c218ae99c46cbe59ff133c0` — i18n keys + preview route copy
+- `3c7063b` — Batch B: relay, audit links, `ProjectTabContent.astro`
+- `6171e44` … `cd925ae` — Batch D shell, nav, i18n, report
+- `0914f65` — i18n parity (Batch B project strings, no preview duplicates)
