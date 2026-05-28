@@ -539,6 +539,11 @@ export type I18nKey =
   | 'settings.preview.link_role_routing'
   | 'shell.more.body'
   | 'shell.more.nav_aria'
+  | 'f_e1.loop.draft_preview'
+  | 'f_fd.override.reason_required'
+  | 'review.draft.fixture_preview_link'
+  | 'review.draft.not_found_body'
+  | 'review.draft.not_found_title'
 
 
 export type Locale = 'en' | 'es';

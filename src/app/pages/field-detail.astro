@@ -41,6 +41,12 @@ const entryId = Astro.url.searchParams.get('entry_id');
 const transcriptCaptureId = 'cap_lane23_wegrzyn_001';
 const projectId = 'proj_wegrzyn_kitchen';
 const transcriptHref = `/transcript-review?capture_id=${encodeURIComponent(transcriptCaptureId)}`;
+
+const copy = {
+  saved: t('f_fd.override.saved'),
+  error: t('f_fd.override.error'),
+  reasonRequired: t('f_fd.override.reason_required'),
+};
 ---
 
 <Layout titleKey="f_fd.title" activeHref="/relay">
@@ -184,8 +190,7 @@ const transcriptHref = `/transcript-review?capture_id=${encodeURIComponent(trans
   tenantId: context.tenantId,
   projectId,
   entryId,
-  savedKey: 'f_fd.override.saved',
-  errorKey: 'f_fd.override.error',
+  copy,
 }}>
   const submitBtn = document.getElementById('fd-override-submit');
   const followupEl = document.getElementById('fd-override-followup');
@@ -215,20 +220,20 @@ const transcriptHref = `/transcript-review?capture_id=${encodeURIComponent(trans
     }
     if (!res.ok) throw new Error(data.error ?? 'request_failed');
     followupEl.hidden = true;
-    statusEl.textContent = savedKey;
+    statusEl.textContent = copy.saved;
   }
 
   submitBtn?.addEventListener('click', async () => {
     const reason = reasonEl instanceof HTMLTextAreaElement ? reasonEl.value.trim() : '';
     if (reason.length === 0) {
-      statusEl.textContent = errorKey;
+      statusEl.textContent = copy.reasonRequired;
       return;
     }
     pendingReason = reason;
     try {
       await postOverride(undefined);
     } catch {
-      statusEl.textContent = errorKey;
+      statusEl.textContent = copy.error;
     }
   });
 
@@ -238,7 +243,7 @@ const transcriptHref = `/transcript-review?capture_id=${encodeURIComponent(trans
       try {
         await postOverride(btn.dataset.scope);
       } catch {
-        statusEl.textContent = errorKey;
+        statusEl.textContent = copy.error;
       }
     });
   });

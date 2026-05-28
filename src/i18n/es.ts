@@ -167,6 +167,7 @@ export const ES: TranslationMap = {
   'f_pv2.irreversibility.context':
     'Está a punto de enviar esta propuesta al cliente. Verán esta versión y las facturas posteriores pueden referenciarla.',
     'Está a punto de enviar esta propuesta al cliente. Verán esta versión y las facturas posteriores pueden referenciarla.',
+    'Está a punto de enviar esta propuesta al cliente. Verán esta versión y las facturas posteriores pueden referenciarla.',
   'f_pv2.gate.title': 'Antes de enviar',
   'f_pv2.gate.pass': 'Todas las verificaciones pasaron',
   'f_pv2.gate.fail': 'Envío bloqueado',
@@ -189,6 +190,7 @@ export const ES: TranslationMap = {
 
   'f_pv.capture_origin.heading': 'Origen de captura',
   'f_pv.capture_origin.summary':
+    'Capturas de campo desde {date} · {voice} clips de voz · {photos} fotos · {transcripts} transcripciones',
     'Capturas de campo desde {date} · {voice} clips de voz · {photos} fotos · {transcripts} transcripciones',
     'Capturas de campo desde {date} · {voice} clips de voz · {photos} fotos · {transcripts} transcripciones',
   'f_pv.capture_origin.empty': 'No hay capturas de campo referenciadas',
@@ -536,4 +538,9 @@ export const ES: TranslationMap = {
   'settings.preview.link_role_routing': 'Role routing preview',
   'shell.more.body': 'Schedule, reports, settings, and memory surfaces.',
   'shell.more.nav_aria': 'More destinations',
+  'f_e1.loop.draft_preview': 'Revisión de borrador (Vista previa) →',
+  'f_fd.override.reason_required': 'Agregue un motivo antes de guardar la anulación.',
+  'review.draft.fixture_preview_link': 'Abrir borrador fixture (Vista previa) →',
+  'review.draft.not_found_body': 'Ningún borrador coincide con este id. Abra la Vista previa fixture para recorrer el bucle de captura.',
+  'review.draft.not_found_title': 'Borrador no encontrado',
 };

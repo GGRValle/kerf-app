@@ -8,6 +8,11 @@
 
 import Layout from '../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { LANE23_FIXTURE_DRAFT_ID } from '../lib/lane23Fixtures.js';
+
+const { t } = createLayoutContext();
+const fixtureDraftHref = `/draft-review/${LANE23_FIXTURE_DRAFT_ID}`;
 
 const assignment = {
   client: 'Wegrzyn, Mark & Grace',
@@ -192,7 +197,7 @@ const assignment = {
         <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay →</a>
         <nav class="loop-links" id="f-e1-loop-links" aria-label="Capture review loop" hidden>
           <a class="loop-link" href="/transcript-review?capture_id=cap_lane23_wegrzyn_001">Transcript review →</a>
-          <a class="loop-link" href="/draft-review">Draft review →</a>
+          <a class="loop-link" href={fixtureDraftHref}>{t('f_e1.loop.draft_preview')}</a>
           <a class="loop-link" id="f-e1-field-detail-link" href="/field-detail">Field detail →</a>
         </nav>
       </section>
