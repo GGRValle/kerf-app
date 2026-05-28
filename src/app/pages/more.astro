@@ -1,4 +1,4 @@
 ---
 import Layout from '../layouts/Layout.astro';import Card from '../components/Card.astro';import { MORE_NAV_LINKS } from '../lib/shellRoutes.js';import { createLayoutContext } from '../lib/createLayoutContext.js';const { t } = createLayoutContext();
 ---
-<Layout titleKey="shell.more.title" activeHref="/more"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('shell.more.title')}><p>{t('shell.more.body')}</p></Card><ul>{MORE_NAV_LINKS.map(l=><li><a href={l.href}>{t(l.labelKey)}</a></li>)}</ul></Layout>
+<Layout titleKey="shell.more.title" activeHref="/more"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('shell.more.title')}><p>{t('route_shell.body')}</p></Card><ul>{MORE_NAV_LINKS.map(l=><li><a href={l.href}>{t(l.labelKey)}</a></li>)}</ul></Layout>
