@@ -8,6 +8,7 @@ import { healthRoutes, projectRoutes } from './routes/projects.js';
 import { proposalRoutes } from './routes/proposals.js';
 import { relayRoutes } from './routes/relay.js';
 import { reviewRoutes } from './routes/review.js';
+import { synthesizeDraftRoutes } from './routes/synthesizeDraft.js';
 import { transcribeRoutes } from './routes/transcribe.js';
 
 export function createApiRouter(): Hono {
@@ -21,6 +22,7 @@ export function createApiRouter(): Hono {
   app.route('/', projectDetailRoutes);
   app.route('/', relayRoutes);
   app.route('/', reviewRoutes);
+  app.route('/', synthesizeDraftRoutes);
   app.route('/', transcribeRoutes);
   return app;
 }

@@ -176,6 +176,15 @@ const assignment = {
             <button
               type="button"
               class="primary-button"
+              id="f-e1-build-draft"
+              data-tenant-id={assignment.tenant_id}
+              data-project-id={assignment.project_id}
+            >
+              Build Draft
+            </button>
+            <button
+              type="button"
+              class="utility-button"
               id="f-e1-submit"
               data-tenant-id={assignment.tenant_id}
               data-project-id={assignment.project_id}
@@ -190,6 +199,7 @@ const assignment = {
         <p class="submit-status" id="f-e1-submit-status" role="status"></p>
         <p class="submit-play-error" id="f-e1-play-error" role="alert" hidden></p>
         <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay →</a>
+        <a class="relay-link" id="f-e1-draft-link" href="/draft-review" hidden>Open Draft Review →</a>
       </section>
       <input id="f-e1-camera-input" type="file" accept="image/*" capture="environment" hidden />
     </section>
@@ -729,6 +739,155 @@ const assignment = {
   submitButton?.addEventListener('click', () => {
     void submitDailyLogEntry();
   });
+
+  // Phase 1H Lane 1 · Build Draft button
+  // Two-step chain:
+  //   1. POST /api/v1/projects/:id/daily-log/entries (captures the entry · returns event_id)
+  //   2. POST /api/v1/projects/:id/synthesize-draft (heavy model · returns draft_id)
+  // On synthesis failure (503/422 with fallback_recommended), the capture from
+  // step 1 is already persisted — the operator sees "Draft synthesis unavailable;
+  // capture saved to Daily Log" with a link to relay.
+  const buildDraftButton = document.querySelector('#f-e1-build-draft');
+  const draftLink = document.querySelector('#f-e1-draft-link');
+
+  function setDraftLink(href, visible) {
+    if (!(draftLink instanceof HTMLAnchorElement)) return;
+    if (visible && typeof href === 'string') {
+      draftLink.href = href;
+      draftLink.hidden = false;
+      if (outcomeNode instanceof HTMLElement) outcomeNode.hidden = false;
+    } else {
+      draftLink.hidden = true;
+    }
+  }
+
+  async function buildDraft() {
+    if (!(buildDraftButton instanceof HTMLElement)) return;
+    const tenantId = buildDraftButton.dataset.tenantId;
+    const projectId = buildDraftButton.dataset.projectId;
+    const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
+    if (!tenantId || !projectId) {
+      setStatus('Missing project assignment. Pick the project before Build Draft.', 'error');
+      return;
+    }
+    if (transcript.length === 0 && photos.length === 0 && audioUri === null) {
+      setStatus('Add a voice memo, note, or photo before Build Draft.', 'error');
+      return;
+    }
+    const checked = document.querySelector('input[name="entry_kind"]:checked');
+    const entryKind = checked instanceof HTMLInputElement ? checked.value : 'progress_update';
+    buildDraftButton.setAttribute('aria-busy', 'true');
+    resetSubmitOutcome();
+    setDraftLink(null, false);
+    setStatus('Saving capture and asking Kerf to draft...', 'neutral');
+
+    const synthesizedPhotoUris = photos.map(
+      (_, index) => `kerf://field-capture/photo-${Date.now()}-${index + 1}`,
+    );
+
+    let captureEventId = null;
+    try {
+      // Step 1 · capture the daily-log entry
+      const captureRes = await fetch(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            entry_kind: entryKind,
+            transcript_text: transcript,
+            audio_uri: audioUri,
+            photo_uris: synthesizedPhotoUris,
+            actor: { id: 'browser_operator', role: 'field_super' },
+          }),
+        },
+      );
+      const captureBody = await captureRes.json().catch(() => ({}));
+      if (!captureRes.ok) {
+        const detail =
+          typeof captureBody.error === 'string'
+            ? captureBody.error
+            : Array.isArray(captureBody.errors)
+              ? captureBody.errors.join('; ')
+              : `capture_failed_${captureRes.status}`;
+        throw new Error(detail);
+      }
+      captureEventId =
+        typeof captureBody.event_id === 'string' ? captureBody.event_id : null;
+      if (captureEventId === null) {
+        throw new Error('capture event missing event_id');
+      }
+    } catch (err) {
+      setStatus(
+        `Could not save capture: ${err instanceof Error ? err.message : String(err)}`,
+        'error',
+      );
+      buildDraftButton.removeAttribute('aria-busy');
+      return;
+    }
+
+    // Step 2 · synthesize the draft
+    setStatus('Capture saved. Asking Kerf to read it and draft...', 'neutral');
+    try {
+      const synthRes = await fetch(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/synthesize-draft`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            capture_id: captureEventId,
+            typed_summary: transcript,
+            transcript: transcript,
+            audio_source_ref: audioUri,
+            photo_refs: synthesizedPhotoUris.map((uri) => ({ uri, gap_flag: true })),
+          }),
+        },
+      );
+      const synthBody = await synthRes.json().catch(() => ({}));
+      if (synthRes.ok && typeof synthBody.redirect_to === 'string') {
+        setStatus('Draft ready. Opening Draft Review…', 'success');
+        setDraftLink(synthBody.redirect_to, true);
+        // Brief delay so the operator sees the success state before navigation.
+        window.setTimeout(() => {
+          window.location.href = synthBody.redirect_to;
+        }, 600);
+        return;
+      }
+
+      // Fallback path · synthesis unavailable but capture already persisted.
+      const fallbackKind =
+        typeof synthBody.kind === 'string' ? synthBody.kind : `error_${synthRes.status}`;
+      const fallbackReason =
+        typeof synthBody.reason === 'string'
+          ? synthBody.reason
+          : 'synthesis path returned an unexpected response';
+      setStatus(
+        `Draft synthesis unavailable (${fallbackKind}). Capture saved to Daily Log — open Relay for the deterministic chain.`,
+        'neutral',
+      );
+      setRelayLinkVisible(true);
+      if (playErrorNode instanceof HTMLElement) {
+        playErrorNode.hidden = false;
+        playErrorNode.textContent = `Synthesis: ${fallbackReason}`;
+        if (outcomeNode instanceof HTMLElement) outcomeNode.hidden = false;
+      }
+    } catch (err) {
+      setStatus(
+        `Capture saved, but draft request failed: ${err instanceof Error ? err.message : String(err)}. Open Relay for the deterministic chain.`,
+        'neutral',
+      );
+      setRelayLinkVisible(true);
+    } finally {
+      buildDraftButton.removeAttribute('aria-busy');
+    }
+  }
+
+  buildDraftButton?.addEventListener('click', () => {
+    void buildDraft();
+  });
+
   renderCaptured();
 </script>
 
