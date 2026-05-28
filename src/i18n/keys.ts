@@ -507,14 +507,16 @@ export type I18nKey =
   | 'decisions.preview.packet_id'
   | 'decisions.preview.sample_meta'
   | 'decisions.preview.sample_row'
+  | 'f_e1.loop.draft_preview'
   | 'f_fd.entry_context'
   | 'f_fd.override.error'
+  | 'f_fd.override.reason_required'
   | 'f_fd.override.saved'
   | 'f_fd.override.submit'
   | 'f_pv1.continue_send_gate'
   | 'f_pv1.view_preview_note'
   | 'f_rc1.action.preview_status'
-  | 'kb.ingestion.preview.link_projects';
+  | 'kb.ingestion.preview.link_projects'
   | 'project.field.work_orders_heading'
   | 'reports.preview.body'
   | 'reports.preview.link_audit'
@@ -523,6 +525,9 @@ export type I18nKey =
   | 'review.draft.accept_error'
   | 'review.draft.accepted'
   | 'review.draft.fixture_notice'
+  | 'review.draft.fixture_preview_link'
+  | 'review.draft.not_found_body'
+  | 'review.draft.not_found_title'
   | 'review.draft.preview_cta'
   | 'review.draft.reject'
   | 'review.draft.reject_error'
@@ -538,12 +543,7 @@ export type I18nKey =
   | 'settings.preview.body'
   | 'settings.preview.link_role_routing'
   | 'shell.more.body'
-  | 'shell.more.nav_aria'
-  | 'f_e1.loop.draft_preview'
-  | 'f_fd.override.reason_required'
-  | 'review.draft.fixture_preview_link'
-  | 'review.draft.not_found_body'
-  | 'review.draft.not_found_title'
+  | 'shell.more.nav_aria';
 
 
 export type Locale = 'en' | 'es';
