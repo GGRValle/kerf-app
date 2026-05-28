@@ -1,0 +1,66 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../components/Card.astro';
+import ExportActions from '../../components/ExportActions.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { projectForRole, DEFAULT_BUSINESS_GRAPH_SLICE } from '../../lib/roleRootProjection.js';
+import { MARGIN_TARGETS } from '../../lib/moneyFixtures.js';
+import '../../styles/money.css';
+
+const { t, context } = createLayoutContext();
+const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
+if (!projected.capabilities.marginVisible) {
+  return Astro.redirect('/money');
+}
+---
+
+<Layout titleKey="f_mn.margin.title" activeHref="/money">
+  <article class="money-page">
+    <header>
+      <div class="money-crumb"><a href="/money">{t('f_mn.crumb')}</a> · {t('f_mn.margin.title')}</div>
+      <h1 class="money-title">{t('f_mn.margin.title')}</h1>
+      <p class="money-subtitle">{t('f_mn.margin.subtitle')}</p>
+      <p class="money-owner-banner">{t('f_mn.margin.owner_only')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap
+      kind="irreversibility"
+      safetyLineBudget={3}
+      actionContext={t('f_mn.margin.irreversibility')}
+    >
+      <ExportActions
+        surface="money.margin_posture"
+        ownerPrivate={true}
+        scopeDescriptor="Margin posture · owner-private"
+        itemCount={MARGIN_TARGETS.length}
+        actions={[
+          { label: t('action.print'), format: 'print' },
+          { label: t('f_mn.export.pdf'), format: 'pdf' },
+        ]}
+      />
+      <Card title={t('f_mn.margin.table_title')}>
+        <table class="money-margin-table">
+          <thead>
+            <tr>
+              <th>{t('f_mn.margin.col.archetype')}</th>
+              <th>{t('f_mn.margin.col.target')}</th>
+              <th>{t('f_mn.margin.col.actual')}</th>
+              <th>{t('f_mn.margin.col.project')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MARGIN_TARGETS.map((row) => (
+              <tr>
+                <td>{row.archetype}</td>
+                <td>{row.target_pct}%</td>
+                <td>{row.actual_pct}%</td>
+                <td>{row.project}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>

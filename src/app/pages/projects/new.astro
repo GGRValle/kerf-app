@@ -1,0 +1,87 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../components/Card.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { getLane6Client } from '../../lib/lane6Fixtures.js';
+import '../../styles/money.css';
+
+const { t, context } = createLayoutContext();
+const clientId = Astro.url.searchParams.get('client_id');
+const presetClient = clientId ? getLane6Client(clientId) : null;
+---
+
+<Layout titleKey="f_pr.new.title" activeHref="/projects">
+  <article class="money-page f-pr-new">
+    <header>
+      <div class="money-crumb">
+        <a href="/projects">{t('project.list.title')}</a>
+        {presetClient ? <> · {presetClient.display_name}</> : null}
+      </div>
+      <h1 class="money-title">{t('f_pr.new.title')}</h1>
+      <p class="money-subtitle">{t('f_pr.new.subtitle')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <Card title={t('f_pr.new.title')}>
+        <form class="money-form" id="new-project-form">
+          <label>
+            {t('f_pr.new.project_name')}
+            <input name="project_name" required />
+          </label>
+          <label>
+            {t('f_pr.new.client_name')}
+            <input
+              name="client_name"
+              required
+              value={presetClient?.display_name ?? ''}
+            />
+          </label>
+          <input type="hidden" name="client_id" value={clientId ?? ''} />
+          <label>
+            {t('f_pr.new.archetype')}
+            <select name="archetype_hint">
+              <option value="">{t('f_pr.new.archetype_none')}</option>
+              <option value="kitchen_remodel">Kitchen remodel</option>
+              <option value="adu">ADU addition</option>
+              <option value="bath_refresh">Bath refresh</option>
+            </select>
+          </label>
+          <div class="money-actions">
+            <a class="money-btn ghost" href={presetClient ? `/clients/${presetClient.client_id}` : '/projects'}>
+              {t('f_cl.form.cancel')}
+            </a>
+            <button type="submit" class="money-btn primary">{t('f_pr.new.submit')}</button>
+          </div>
+        </form>
+        <p class="money-notice" id="new-project-status" role="status"></p>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+
+  <script define:vars={{ tenantId: context.tenantId, successMsg: 'Project created — opens in Projects.', errorMsg: 'Could not create project.' }}>
+    document.getElementById('new-project-form')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const form = ev.target;
+      const fd = new FormData(form);
+      const status = document.getElementById('new-project-status');
+      const res = await fetch(`/api/v1/projects?tenant_id=${tenantId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_name: fd.get('project_name'),
+          client_name: fd.get('client_name'),
+          client_id: String(fd.get('client_id') || '') || null,
+          archetype_hint: fd.get('archetype_hint') || null,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        status.textContent = successMsg;
+        window.location.href = `/projects/${data.project_id}`;
+        return;
+      }
+      status.textContent = errorMsg;
+    });
+  </script>
+</Layout>

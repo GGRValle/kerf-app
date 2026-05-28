@@ -1,0 +1,42 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import RhSummary from '../../components/RhSummary.astro';
+import Card from '../../components/Card.astro';
+import ExportActions from '../../components/ExportActions.astro';
+import MoneyQueueList from '../../components/MoneyQueueList.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { projectForRole, DEFAULT_BUSINESS_GRAPH_SLICE } from '../../lib/roleRootProjection.js';
+import { MONEY_AR_ROWS } from '../../lib/moneyFixtures.js';
+import '../../styles/money.css';
+
+const { t, context } = createLayoutContext();
+const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
+if (!projected.capabilities.moneyRead) {
+  return Astro.redirect('/');
+}
+---
+
+<Layout titleKey="f_mn.ar.title" activeHref="/money">
+  <article class="money-page">
+    <header>
+      <div class="money-crumb"><a href="/money">{t('f_mn.crumb')}</a> · {t('f_mn.ar.title')}</div>
+      <h1 class="money-title">{t('f_mn.ar.title')}</h1>
+      <p class="money-subtitle">{t('f_mn.ar.subtitle')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <ExportActions surface="money.ar_aging" scopeDescriptor="AR aging" itemCount={MONEY_AR_ROWS.length} />
+      <RhSummary headline={t('f_mn.ar.rh_headline')} detail={t('f_mn.ar.rh_detail')} />
+      <Card title={t('f_mn.ar.queue')}>
+        <MoneyQueueList rows={MONEY_AR_ROWS} emptyLabel={t('f_mn.empty')} />
+        <div class="money-actions">
+          <button type="button" class="money-btn" disabled aria-disabled="true">
+            {t('f_mn.record_payment')} · {t('action.preview.badge')}
+          </button>
+        </div>
+        <p class="money-notice">{t('f_mn.no_payment_notice')}</p>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>

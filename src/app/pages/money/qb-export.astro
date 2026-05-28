@@ -1,0 +1,46 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import Card from '../../components/Card.astro';
+import ExportActions from '../../components/ExportActions.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { projectForRole, DEFAULT_BUSINESS_GRAPH_SLICE } from '../../lib/roleRootProjection.js';
+import '../../styles/money.css';
+
+const { t, context } = createLayoutContext();
+const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
+if (!projected.capabilities.moneyRead) {
+  return Astro.redirect('/');
+}
+---
+
+<Layout titleKey="f_bk.qb.title" activeHref="/money">
+  <article class="money-page">
+    <header>
+      <div class="money-crumb"><a href="/money">{t('f_mn.crumb')}</a> · {t('f_bk.qb.title')}</div>
+      <h1 class="money-title">{t('f_bk.qb.title')}</h1>
+      <p class="money-subtitle">{t('f_bk.qb.subtitle')}</p>
+    </header>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <Card title={t('f_bk.qb.panel_title')}>
+        <p>{t('f_bk.qb.lede')}</p>
+        <div class="money-qb-panel">
+          <p><strong>{t('f_bk.qb.last_export')}</strong> — May 24, 2026 · 142 rows · validated</p>
+          <p class="money-notice">{t('f_bk.qb.desktop_note')}</p>
+        </div>
+        <ExportActions
+          surface="money.qb_iif_export"
+          scopeDescriptor="QuickBooks Desktop IIF · operating money"
+          itemCount={142}
+          actions={[
+            { label: t('f_bk.qb.export_iif'), format: 'iif' },
+            { label: t('f_mn.export.csv'), format: 'csv' },
+            { label: t('action.print'), format: 'print' },
+          ]}
+        />
+        <p class="money-notice">{t('f_bk.qb.no_write_notice')}</p>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>

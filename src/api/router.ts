@@ -7,6 +7,7 @@ import { projectDetailRoutes } from './routes/projectDetail.js';
 import { healthRoutes, projectRoutes } from './routes/projects.js';
 import { proposalRoutes } from './routes/proposals.js';
 import { relayRoutes } from './routes/relay.js';
+import { moneyRoutes } from './routes/money.js';
 import { reviewRoutes } from './routes/review.js';
 import { transcribeRoutes } from './routes/transcribe.js';
 
@@ -17,6 +18,7 @@ export function createApiRouter(): Hono {
   app.route('/', projectRoutes);
   app.route('/', proposalRoutes);
   app.route('/', clientRoutes);
+  app.route('/', moneyRoutes);
   app.route('/', fieldDailyRoutes);
   app.route('/', projectDetailRoutes);
   app.route('/', relayRoutes);

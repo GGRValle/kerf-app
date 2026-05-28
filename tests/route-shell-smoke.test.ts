@@ -30,6 +30,14 @@ const LEGACY_ROUTES = [
   '/clients',
   '/clients/client_wegrzyn',
   '/clients/new',
+  '/projects/new',
+  '/money',
+  '/money/ar',
+  '/money/ap',
+  '/money/allowances',
+  '/money/margin',
+  '/money/bookkeeping',
+  '/money/qb-export',
   '/proposals/prop_lane6_pass/preview',
   '/proposals/prop_lane6_pass/send',
 ] as const;
@@ -87,7 +95,7 @@ test('route shell serves all 13 legacy paths without 5xx', { timeout: 180_000, c
       assert.ok(res.status >= 200 && res.status < 500, `${route} returned ${res.status}`);
       const body = await res.text();
       assert.ok(body.length > 0, `${route} returned empty body`);
-      assert.match(body, /Kerf|Dashboard|Field|Decisions|Blackboard|Relay|Audit|KB|Transcript|Draft/i, route);
+      assert.match(body, /Kerf|Dashboard|Field|Decisions|Blackboard|Relay|Audit|KB|Transcript|Draft|Money|Clients|Project/i, route);
     }
     const api = await fetch(`${baseUrl}/api/v1/health`);
     assert.equal(api.status, 200);

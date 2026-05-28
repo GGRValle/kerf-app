@@ -5,35 +5,89 @@ import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityW
 import Card from '../../components/Card.astro';
 import Row from '../../components/Row.astro';
 import SectionLabel from '../../components/SectionLabel.astro';
-import { createTranslator } from '../../../i18n/index.js';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import { getLane6Client } from '../../lib/lane6Fixtures.js';
 import '../../styles/lane6.css';
 
 const { id } = Astro.params;
-const client = id ? getLane6Client(id) : null;
-const { t } = createTranslator('en');
+const { t, context } = createLayoutContext();
 
-if (client === null) {
+if (!id) {
   return Astro.redirect('/clients');
 }
+
+const fixture = getLane6Client(id);
 ---
 
 <Layout titleKey="f_cl.detail.title" activeHref="/clients">
-  <article class="lane6-page f-cl-detail">
-    <header>
-      <div class="lane6-crumb"><a href="/clients">{t('f_cl.crumb')}</a> · {client.display_name}</div>
-      <h1 class="lane6-title">{client.display_name}</h1>
-      <p class="lane6-subtitle">{t('f_cl.detail.read_only')}</p>
-    </header>
+  <article
+    class="lane6-page f-cl-detail"
+    data-client-id={id}
+    data-tenant-id={context.tenantId}
+    data-fixture-name={fixture?.display_name ?? ''}
+  >
+        <header>
+          <div class="lane6-crumb">
+            <a href="/clients">{t('f_cl.crumb')}</a>
+            · <span id="client-display-name">{fixture?.display_name ?? id}</span>
+          </div>
+          <h1 class="lane6-title" id="client-title">{fixture?.display_name ?? id}</h1>
+          <p class="lane6-subtitle">{t('f_cl.detail.subtitle_active')}</p>
+          <div class="lane6-actions">
+            <a class="lane6-btn primary" id="new-project-link" href={`/projects/new?client_id=${id}`}>
+              {t('f_cl.detail.new_project')}
+            </a>
+          </div>
+        </header>
 
-    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-      <Card title={t('f_cl.detail.title')}>
-        <Row title={t('f_cl.form.email')} meta={client.email ?? '—'} />
-        <Row title={t('f_cl.form.phone')} meta={client.phone ?? '—'} />
-        <Row title={t('f_cl.form.address')} meta={client.address_line} />
-        <SectionLabel label={t('f_cl.detail.projects')} />
-        <p class="lane6-subtitle">{t('f_cl.detail.no_projects')}</p>
-      </Card>
-    </SurfaceIrreversibilityWrap>
+        <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+          <Card title={t('f_cl.detail.title')}>
+            <Row title={t('f_cl.form.email')} meta={fixture?.email ?? '—'} />
+            <Row title={t('f_cl.form.phone')} meta={fixture?.phone ?? '—'} />
+            <Row title={t('f_cl.form.address')} meta={fixture?.address_line ?? '—'} />
+            <SectionLabel label={t('f_cl.detail.projects')} />
+            <ul class="lane6-list" id="client-projects-list">
+              <li class="lane6-subtitle">{t('f_cl.detail.loading_projects')}</li>
+            </ul>
+          </Card>
+        </SurfaceIrreversibilityWrap>
   </article>
+
+  <script define:vars={{ emptyProjects: 'No linked projects yet.', loadError: 'Could not load client detail.' }}>
+    const root = document.querySelector('.f-cl-detail');
+    const clientId = root?.getAttribute('data-client-id');
+    const tenantId = root?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
+    if (!clientId) {
+      // no-op
+    } else {
+      fetch(`/api/v1/clients/${clientId}?tenant_id=${tenantId}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error('load_failed'))))
+        .then((data) => {
+          const client = data.client;
+          if (client?.display_name) {
+            const nameEl = document.getElementById('client-display-name');
+            const titleEl = document.getElementById('client-title');
+            if (nameEl) nameEl.textContent = client.display_name;
+            if (titleEl) titleEl.textContent = client.display_name;
+          }
+          const list = document.getElementById('client-projects-list');
+          if (!list) return;
+          const projects = data.linked_projects ?? [];
+          if (projects.length === 0) {
+            list.innerHTML = `<li class="lane6-subtitle">${emptyProjects}</li>`;
+            return;
+          }
+          list.innerHTML = projects
+            .map(
+              (p) =>
+                `<li><a class="lane6-client-row" href="/projects/${p.project_id}"><strong>${p.project_name}</strong></a></li>`,
+            )
+            .join('');
+        })
+        .catch(() => {
+          const list = document.getElementById('client-projects-list');
+          if (list) list.innerHTML = `<li class="lane6-subtitle">${loadError}</li>`;
+        });
+    }
+  </script>
 </Layout>

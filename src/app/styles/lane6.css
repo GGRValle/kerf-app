@@ -157,6 +157,15 @@
   font: inherit;
 }
 
+.lane6-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .lane6-clients-grid {
   display: grid;
   gap: 0.75rem;

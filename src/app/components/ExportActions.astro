@@ -1,0 +1,126 @@
+---
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+
+export interface ExportAction {
+  readonly label: string;
+  readonly format: 'print' | 'pdf' | 'csv' | 'xlsx' | 'iif';
+  readonly preview?: boolean;
+}
+
+export interface Props {
+  surface: string;
+  ownerPrivate?: boolean;
+  scopeDescriptor?: string | null;
+  itemCount?: number | null;
+  actions?: ExportAction[];
+  apiPath?: string;
+}
+
+const {
+  surface,
+  ownerPrivate = false,
+  scopeDescriptor = null,
+  itemCount = null,
+  actions = [
+    { label: 'Print', format: 'print' },
+    { label: 'Export PDF', format: 'pdf' },
+  ],
+  apiPath = '/api/v1/money/export',
+} = Astro.props;
+
+const { context, t } = createLayoutContext();
+---
+
+<div
+  class="export-actions"
+  data-export-surface={surface}
+  data-tenant-id={context.tenantId}
+  data-api-path={apiPath}
+  data-owner-private={ownerPrivate ? 'true' : 'false'}
+  data-scope={scopeDescriptor ?? ''}
+  data-item-count={itemCount === null ? '' : String(itemCount)}
+>
+  {actions.map((action) => (
+    <button
+      type="button"
+      class:list={['export-btn', action.preview && 'export-btn--preview']}
+      data-format={action.format}
+      data-preview={action.preview ? 'true' : 'false'}
+      title={action.preview ? t('action.preview.title') : action.label}
+    >
+      {action.preview ? `${action.label} · ${t('action.preview.badge')}` : action.label}
+    </button>
+  ))}
+  <p class="export-status" role="status" aria-live="polite"></p>
+</div>
+
+<style>
+  .export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0.5rem 0 0.75rem;
+  }
+  .export-btn {
+    border: 1px solid var(--border, #2a3140);
+    background: var(--surface, #1a1f26);
+    color: var(--text, #e8ecf1);
+    border-radius: 8px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .export-btn--preview {
+    opacity: 0.85;
+    border-style: dashed;
+  }
+  .export-status {
+    width: 100%;
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-muted, #98a1b3);
+  }
+</style>
+
+<script define:vars={{ successMsg: 'Export recorded in audit — no money moved.', previewMsg: 'Preview only — this action is not wired yet.', errorMsg: 'Could not record export.' }}>
+  document.querySelectorAll('.export-actions').forEach((root) => {
+    const statusEl = root.querySelector('.export-status');
+    const tenantId = root.getAttribute('data-tenant-id') ?? 'tenant_ggr';
+    const apiPath = root.getAttribute('data-api-path') ?? '/api/v1/money/export';
+    const surface = root.getAttribute('data-export-surface') ?? 'unknown';
+    const ownerPrivate = root.getAttribute('data-owner-private') === 'true';
+    const scope = root.getAttribute('data-scope') || null;
+    const itemCountRaw = root.getAttribute('data-item-count');
+    const itemCount = itemCountRaw ? Number(itemCountRaw) : null;
+
+    root.querySelectorAll('.export-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (btn.getAttribute('data-preview') === 'true') {
+          if (statusEl) statusEl.textContent = previewMsg;
+          return;
+        }
+        const format = btn.getAttribute('data-format');
+        try {
+          const res = await fetch(`${apiPath}?tenant_id=${tenantId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              surface,
+              format,
+              scope_descriptor: scope,
+              owner_private: ownerPrivate,
+              item_count: itemCount,
+            }),
+          });
+          if (!res.ok) throw new Error('export_failed');
+          if (statusEl) statusEl.textContent = successMsg;
+          if (format === 'print') window.print();
+        } catch {
+          if (statusEl) statusEl.textContent = errorMsg;
+        }
+      });
+    });
+  });
+</script>

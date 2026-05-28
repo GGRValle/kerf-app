@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
 import type { PersistenceTenantId } from '../../persistence/events.js';
+import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 
 export const healthRoutes = new Hono();
@@ -95,4 +96,45 @@ projectRoutes.get('/projects/:id', async (c) => {
   const tenant =
     projectEvents.find((e) => e.type === 'project.created')?.tenant_id ?? projectEvents[0]?.tenant_id;
   return c.json({ project_id: projectId, tenant_id: tenant, event_count: projectEvents.length });
+});
+
+/** Phase 1I · create project route — emits project.created only (no money fields). */
+projectRoutes.post('/projects', async (c) => {
+  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
+  if (tenant === null) {
+    return c.json({ error: 'tenant_required' }, 400);
+  }
+  const body = await c.req.json<{
+    project_name?: string;
+    client_name?: string;
+    client_id?: string | null;
+    archetype_hint?: string | null;
+  }>();
+  const projectName = body.project_name?.trim();
+  const clientName = body.client_name?.trim();
+  if (!projectName || !clientName) {
+    return c.json({ error: 'project_name_and_client_name_required' }, 400);
+  }
+  const projectId = `proj_${Date.now().toString(36)}`;
+  const { eventStore } = getApiDeps();
+  const event = await appendValidatedEvent(
+    { store: eventStore, tenant_id: tenant, correlation_id: projectId },
+    {
+      type: 'project.created',
+      project_id: projectId,
+      project_name: projectName,
+      client_name: clientName,
+      archetype_hint: body.archetype_hint?.trim() || undefined,
+      source_refs: [],
+    },
+  );
+  return c.json(
+    {
+      ok: true,
+      project_id: projectId,
+      client_id: body.client_id ?? null,
+      event_id: event.event_id,
+    },
+    201,
+  );
 });

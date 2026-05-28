@@ -16,7 +16,12 @@ const { phases } = Astro.props;
 <div class="phase-strip" role="tablist" aria-label="Phase">
   {phases.map((phase) => (
     phase.href ? (
-      <a class:list={['phase-item', phase.active && 'active']} href={phase.href} data-phase={phase.id}>
+      <a
+        class:list={['phase-item', phase.active && 'active']}
+        href={phase.href}
+        data-phase={phase.id}
+        aria-current={phase.active ? 'step' : undefined}
+      >
         {phase.label}
       </a>
     ) : (
@@ -41,6 +46,8 @@ const { phases } = Astro.props;
     border: 1px solid var(--border, #d8dee6);
     font-size: 0.8rem;
     color: var(--text-muted, #5c6670);
+    text-decoration: none;
+    display: inline-block;
   }
   a.phase-item {
     text-decoration: none;
