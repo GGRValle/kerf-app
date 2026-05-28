@@ -2,7 +2,7 @@
 
 **Agent:** D (Batch D)  
 **Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
-**Head commit:** `72390331b213804f196033065f6fd22dd88054b2`  
+**Head commit:** `eb3b09f1b213804f196033065f6fd22dd88054b2`  
 **Date:** 2026-05-28  
 **Merge:** Do not merge (gate branch only)
 
