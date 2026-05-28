@@ -1,0 +1,15 @@
+---
+import Chip from '../Chip.astro';
+
+export interface Props {
+  badgeLabel: string;
+  message: string;
+}
+
+const { badgeLabel, message } = Astro.props;
+---
+
+<p class="lane23-preview">
+  <Chip label={badgeLabel} tone="amber" variant="outlined" />
+  <span>{message}</span>
+</p>

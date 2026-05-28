@@ -24,7 +24,30 @@ const project = id ? getLane23Project(id) : null;
           <p>{t('project.status.phase')}: <Chip label={project.phase} tone="green" /></p>
           <p>{t('project.status.last_activity')}: {new Date(project.last_activity_at).toLocaleString()}</p>
         </div>
+        <div class="lane23-quick-links">
+          <a class="lane23-btn-link" href={`/projects/${project.project_id}`}>{t('project.status.link_scope')}</a>
+          <a class="lane23-btn-link" href={`/projects/${project.project_id}/audit`}>{t('project.status.link_audit')}</a>
+          <a class="lane23-btn-link" href="/relay">{t('project.status.link_relay')}</a>
+        </div>
       </Card>
     </div>
   )}
 </Layout>
+
+<style>
+  .lane23-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .lane23-btn-link {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #d8dee6);
+    color: var(--accent, #0f766e);
+    font-weight: 600;
+    text-decoration: none;
+  }
+</style>
