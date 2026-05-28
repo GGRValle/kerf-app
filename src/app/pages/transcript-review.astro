@@ -11,6 +11,11 @@ import '../styles/lane23.css';
 
 const { t, context } = createLayoutContext();
 const capture = LANE23_TRANSCRIPT_CAPTURE;
+const loopPhases = [
+  { id: 'capture', label: 'Capture', href: '/field-capture' },
+  { id: 'review', label: 'Review', active: true, href: '/transcript-review' },
+  { id: 'draft', label: 'Draft', href: '/draft-review' },
+];
 
 function formatMs(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -23,17 +28,14 @@ function formatMs(ms: number): string {
 <Layout titleKey="review.transcript.title" activeHref="/transcript-review">
   <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
     <div class="lane23-page" data-tenant={context.tenantId}>
-      <PhaseStrip phases={[
-        { id: 'capture', label: 'Capture' },
-        { id: 'review', label: 'Review', active: true },
-        { id: 'draft', label: 'Draft' },
-      ]} />
+      <PhaseStrip phases={loopPhases} />
       <div class="lane23-bc">
         <div>
           <h1>{t('review.transcript.title')}</h1>
           <p class="lane23-notice">{t('review.transcript.subtitle')}</p>
         </div>
       </div>
+      <p class="lane23-notice">{t('review.transcript.capture_context')} · {capture.capture_id}</p>
       <p class="lane23-notice">{t('review.transcript.notice')}</p>
 
       <div class="lane23-grid-2">
@@ -78,6 +80,12 @@ function formatMs(ms: number): string {
           <p id="lane23-transcript-status" class="lane23-notice" role="status"></p>
         </Card>
       </div>
+
+      <div class="lane23-loop-actions">
+        <a class="lane23-btn" href="/field-capture">{t('nav.field_capture')}</a>
+        <a class="lane23-btn primary" href="/draft-review">{t('review.transcript.continue_draft')}</a>
+      </div>
+      <p class="lane23-notice">{t('review.transcript.build_draft_preview')}</p>
     </div>
   </SurfaceIrreversibilityWrap>
 

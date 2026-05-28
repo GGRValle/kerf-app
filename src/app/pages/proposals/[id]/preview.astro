@@ -33,10 +33,12 @@ const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, propos
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
       <div class="lane6-operator-bar">
         <div class="eyebrow">{t('f_pv1.operator_eyebrow')}</div>
-        <div class="lane6-seg">
+        <div class="lane6-seg" aria-label={t('f_pv1.operator_eyebrow')}>
           <span class="active">{t('f_pv1.view_mobile')}</span>
           <span>{t('f_pv1.view_desktop')}</span>
+          <span class="lane6-preview-chip">{t('route_shell.card_eyebrow')}</span>
         </div>
+        <p class="lane6-subtitle">{t('f_pv1.view_preview_note')}</p>
       </div>
 
       <Card eyebrow={t('f_pv1.preview_label')} title={proposal.project_name}>
@@ -48,7 +50,7 @@ const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, propos
         <div slot="footer" class="lane6-actions">
           <a class="lane6-btn ghost" href="/draft-review">{t('f_pv1.back_draft')}</a>
           <a class="lane6-btn primary" href={`/proposals/${proposal.proposal_id}/send`}>
-            {t('f_pv1.send_cta')}
+            {t('f_pv1.continue_send_gate')}
           </a>
         </div>
       </Card>

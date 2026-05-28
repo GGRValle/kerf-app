@@ -154,9 +154,15 @@ const hasVerifyOrManual = measurements.some((m) => m.use_label !== 'estimate_saf
 
       <!-- Action ribbon (non-irreversibility · these are routine ops) -->
       <div class="action-ribbon">
-        <button type="button" class="ar-btn">{t('f_rc1.action.rescan')}</button>
-        <button type="button" class="ar-btn primary">{t('f_rc1.action.add_to_project')}</button>
-        <button type="button" class="ar-btn">{t('f_rc1.action.save_to_memory')}</button>
+        <button type="button" class="ar-btn">
+          {t('f_rc1.action.rescan')}
+          <span class="ar-preview">{t('f_rc1.action.preview_status')}</span>
+        </button>
+        <a class="ar-btn primary" href="/projects/proj_wegrzyn_kitchen">{t('f_rc1.action.add_to_project')}</a>
+        <button type="button" class="ar-btn">
+          {t('f_rc1.action.save_to_memory')}
+          <span class="ar-preview">{t('f_rc1.action.preview_status')}</span>
+        </button>
       </div>
 
     </SurfaceIrreversibilityWrap>
@@ -292,8 +298,23 @@ const hasVerifyOrManual = measurements.some((m) => m.use_label !== 'estimate_saf
     padding: 0.7rem 0.5rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
     background: var(--surface, #1a1f28); border: 1px solid var(--border-soft, #2a3140);
     color: inherit; cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
   }
   .ar-btn.primary { background: var(--blue, #7ba8ff); color: #0a1428; border-color: var(--blue, #7ba8ff); }
+  .ar-preview {
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted, #6a7282);
+    font-weight: 700;
+  }
+  .ar-btn.primary .ar-preview { color: rgba(10, 20, 40, 0.65); }
 
   .safety-copy {
     margin: 0 0 0.5rem;

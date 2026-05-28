@@ -34,9 +34,13 @@ import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap
 import Card from '../components/Card.astro';
 import Chip from '../components/Chip.astro';
 import SectionLabel from '../components/SectionLabel.astro';
-import { createTranslator } from '../../i18n/index.js';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
 
-const { t } = createTranslator('en');
+const { t, context } = createLayoutContext();
+const entryId = Astro.url.searchParams.get('entry_id');
+const transcriptCaptureId = 'cap_lane23_wegrzyn_001';
+const projectId = 'proj_wegrzyn_kitchen';
+const transcriptHref = `/transcript-review?capture_id=${encodeURIComponent(transcriptCaptureId)}`;
 ---
 
 <Layout titleKey="f_fd.title" activeHref="/relay">
@@ -47,6 +51,9 @@ const { t } = createTranslator('en');
       <div class="crumb">{t('f_fd.crumb')}</div>
       <h1>{t('f_fd.title')}</h1>
       <p class="subtitle">{t('f_fd.subtitle')}</p>
+      {entryId ? (
+        <p class="entry-context">{t('f_fd.entry_context')} · {entryId}</p>
+      ) : null}
     </header>
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
@@ -122,6 +129,15 @@ const { t } = createTranslator('en');
                   placeholder={t('f_fd.override.reason_placeholder')}
                 ></textarea>
                 <div class="classify-prompt">{t('f_fd.override.classify_prompt')}</div>
+                <button type="button" class="override-submit" id="fd-override-submit">{t('f_fd.override.submit')}</button>
+                <div id="fd-override-followup" class="override-followup" hidden>
+                  <p><strong>{t('review.classify.scope_question')}</strong></p>
+                  <div class="override-followup-actions">
+                    <button type="button" class="override-scope-btn" data-scope="project_specific">{t('review.classify.just_job')}</button>
+                    <button type="button" class="override-scope-btn" data-scope="universal">{t('review.classify.general_rule')}</button>
+                  </div>
+                </div>
+                <p id="fd-override-status" class="override-status" role="status"></p>
               </div>
             </details>
           </Card>
@@ -150,7 +166,7 @@ const { t } = createTranslator('en');
 
           <Card eyebrow={t('f_fd.deeplinks.eyebrow')}>
             <nav class="deeplinks">
-              <a class="deeplink" href="/transcript-review">{t('f_fd.deeplinks.transcript_review')}</a>
+              <a class="deeplink" href={transcriptHref}>{t('f_fd.deeplinks.transcript_review')}</a>
               <a class="deeplink" href="/audit">{t('f_fd.deeplinks.audit_detail')}</a>
             </nav>
           </Card>
@@ -163,6 +179,70 @@ const { t } = createTranslator('en');
 
   </article>
 </Layout>
+
+<script define:vars={{
+  tenantId: context.tenantId,
+  projectId,
+  entryId,
+  savedKey: 'f_fd.override.saved',
+  errorKey: 'f_fd.override.error',
+}}>
+  const submitBtn = document.getElementById('fd-override-submit');
+  const followupEl = document.getElementById('fd-override-followup');
+  const statusEl = document.getElementById('fd-override-status');
+  const reasonEl = document.getElementById('fd_override_reason');
+  let pendingReason = '';
+
+  async function postOverride(scopeAnswer) {
+    const body = {
+      tenant_id: tenantId,
+      project_id: projectId,
+      entity_id: 'scope_flag',
+      reason_text: pendingReason,
+    };
+    if (entryId) body.entry_id = entryId;
+    if (scopeAnswer) body.scope_answer = scopeAnswer;
+
+    const res = await fetch('/api/v1/review/field-detail/override', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.status === 409 && data.needs_follow_up) {
+      followupEl.hidden = false;
+      return;
+    }
+    if (!res.ok) throw new Error(data.error ?? 'request_failed');
+    followupEl.hidden = true;
+    statusEl.textContent = savedKey;
+  }
+
+  submitBtn?.addEventListener('click', async () => {
+    const reason = reasonEl instanceof HTMLTextAreaElement ? reasonEl.value.trim() : '';
+    if (reason.length === 0) {
+      statusEl.textContent = errorKey;
+      return;
+    }
+    pendingReason = reason;
+    try {
+      await postOverride(undefined);
+    } catch {
+      statusEl.textContent = errorKey;
+    }
+  });
+
+  followupEl?.querySelectorAll('[data-scope]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!pendingReason) return;
+      try {
+        await postOverride(btn.dataset.scope);
+      } catch {
+        statusEl.textContent = errorKey;
+      }
+    });
+  });
+</script>
 
 <style>
   .f-fd {
@@ -183,6 +263,7 @@ const { t } = createTranslator('en');
   }
   .f-fd-header h1 { font-size: 1.4rem; margin: 0 0 0.4rem; font-weight: 600; }
   .subtitle { color: var(--text-muted, #4a5462); font-size: 0.95rem; line-height: 1.55; margin: 0; }
+  .entry-context { font-size: 0.82rem; color: var(--text-muted, #6a7282); margin: 0.35rem 0 0; }
 
   .hero { padding: 0; }
   .hero-type {
@@ -254,6 +335,28 @@ const { t } = createTranslator('en');
     resize: vertical;
   }
   .classify-prompt { font-size: 0.78rem; color: var(--text-muted, #6a7282); margin-top: 0.35rem; font-style: italic; }
+  .override-submit {
+    margin-top: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--amber, #f5b544);
+    background: rgba(245, 181, 68, 0.12);
+    color: var(--amber, #f5b544);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .override-followup { margin-top: 0.5rem; }
+  .override-followup-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+  .override-scope-btn {
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-soft, #2a3140);
+    background: var(--surface, #1a1f28);
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.82rem;
+  }
+  .override-status { font-size: 0.8rem; color: var(--text-muted, #6a7282); margin: 0.35rem 0 0; min-height: 1rem; }
 
   .routing-list { display: flex; flex-direction: column; gap: 0.4rem; }
   .routing-row {
