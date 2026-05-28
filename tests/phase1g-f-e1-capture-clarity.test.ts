@@ -16,3 +16,17 @@ test('Phase 1G hotfix · F-E1 uses truthful capture copy', async () => {
   assert.match(source, /Saved to Daily Log as media-only/);
   assert.match(source, /id="f-e1-capture-readout"|id="f-e1-readout-list"/);
 });
+
+test('Phase 1G hotfix · F-E1 keeps capture controls available through preflight', async () => {
+  const source = await readFile(
+    path.join(process.cwd(), 'src/app/pages/field-capture.astro'),
+    'utf8',
+  );
+  assert.match(source, /id="f-e1-record-more"/);
+  assert.match(source, /id="f-e1-record-active"/);
+  assert.match(source, /id="f-e1-photo-preflight"/);
+  assert.match(source, /accept="image\/\*,video\/\*"/);
+  assert.match(source, /Photo \/ Video/);
+  assert.match(source, /videos\.push/);
+  assert.match(source, /kerf:\/\/field-capture\/video-/);
+});

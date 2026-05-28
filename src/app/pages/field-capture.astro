@@ -71,11 +71,11 @@ const assignment = {
               <span></span>
             </button>
             <p class="record-title">Hold the job update</p>
-            <p class="record-help">Voice first. Add photos or type if the site is too loud.</p>
+            <p class="record-help">Voice first. Add photos, video, or type if the site is too loud.</p>
           </div>
 
           <div class="quick-actions">
-            <button type="button" class="utility-button" id="f-e1-photo">Camera</button>
+            <button type="button" class="utility-button" id="f-e1-photo">Photo / Video</button>
             <button type="button" class="utility-button" id="f-e1-type-note">Type note</button>
           </div>
         </section>
@@ -111,12 +111,13 @@ const assignment = {
               <span id="f-e1-captured-count">0 items</span>
             </div>
             <ul id="f-e1-captured-list" class="captured-list">
-              <li class="empty">Voice memos and photos will show here.</li>
+              <li class="empty">Voice memos, photos, and videos will show here.</li>
             </ul>
           </section>
 
           <div class="bottom-actions">
-            <button type="button" class="utility-button" id="f-e1-photo-active">Camera</button>
+            <button type="button" class="utility-button" id="f-e1-record-active">Record more</button>
+            <button type="button" class="utility-button" id="f-e1-photo-active">Photo / Video</button>
             <button type="button" class="primary-button" id="f-e1-done">Done capturing</button>
           </div>
         </section>
@@ -170,10 +171,31 @@ const assignment = {
 
           <section class="review-card">
             <div class="panel-head">
-              <p class="label">Photos</p>
+              <p class="label">Media</p>
               <span id="f-e1-photo-count">0</span>
             </div>
             <div class="photo-grid" id="f-e1-photo-grid"></div>
+          </section>
+
+          <section class="continue-capture" aria-label="Add more capture before submit">
+            <div class="record-zone compact-record-zone">
+              <button
+                class="record-button compact-record-button"
+                id="f-e1-record-more"
+                type="button"
+                aria-label="Record more voice"
+              >
+                <span></span>
+              </button>
+              <div>
+                <p class="record-title">Add more before submit</p>
+                <p class="record-help">Record another note, add photo/video, or edit the summary.</p>
+              </div>
+            </div>
+            <div class="quick-actions">
+              <button type="button" class="utility-button" id="f-e1-photo-preflight">Photo / Video</button>
+              <button type="button" class="utility-button" id="f-e1-edit-note-inline">Edit summary</button>
+            </div>
           </section>
 
           <div class="bottom-actions">
@@ -201,20 +223,27 @@ const assignment = {
           <a class="loop-link" id="f-e1-field-detail-link" href="/field-detail">Field detail →</a>
         </nav>
       </section>
-      <input id="f-e1-camera-input" type="file" accept="image/*" capture="environment" hidden />
+      <input id="f-e1-camera-input" type="file" accept="image/*,video/*" capture="environment" hidden />
     </section>
   </main>
 
   <script>
   const shell = document.querySelector('.field-shell');
   const recordButton = document.querySelector('#f-e1-record');
+  const recordMoreButton = document.querySelector('#f-e1-record-more');
+  const recordActiveButton = document.querySelector('#f-e1-record-active');
   const stopButton = document.querySelector('#f-e1-stop');
-  const photoButtons = [document.querySelector('#f-e1-photo'), document.querySelector('#f-e1-photo-active')];
+  const photoButtons = [
+    document.querySelector('#f-e1-photo'),
+    document.querySelector('#f-e1-photo-active'),
+    document.querySelector('#f-e1-photo-preflight'),
+  ];
   const cameraInput = document.querySelector('#f-e1-camera-input');
   const typeNoteButton = document.querySelector('#f-e1-type-note');
   const doneButton = document.querySelector('#f-e1-done');
   const backButton = document.querySelector('#f-e1-back-active');
   const editNoteButton = document.querySelector('#f-e1-edit-note');
+  const editNoteInlineButton = document.querySelector('#f-e1-edit-note-inline');
   const submitButton = document.querySelector('#f-e1-submit');
   const note = document.querySelector('#f-e1-note');
   const timer = document.querySelector('#f-e1-timer');
@@ -243,6 +272,7 @@ const assignment = {
   let voiceDurationSec = 0;
   let voiceBlobKb = 0;
   const photos = [];
+  const videos = [];
   const captured = [];
 
   function setState(state) {
@@ -315,7 +345,7 @@ const assignment = {
     const playError = typeof body.play_error === 'string' ? body.play_error.trim() : '';
     const surfaced = body.surfaced_event ?? null;
     const driftSeverity = body.drift_event?.severity ?? null;
-    const hasVoiceOrPhotoOnly = transcriptLength === 0 && (audioUri !== null || photos.length > 0);
+    const hasVoiceOrPhotoOnly = transcriptLength === 0 && (audioUri !== null || photos.length > 0 || videos.length > 0);
 
     if (playError.length > 0) {
       setStatus('Captured to Daily Log, but Right Hand hit a problem while reviewing.', 'error');
@@ -371,7 +401,7 @@ const assignment = {
     if (captured.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'empty';
-      empty.textContent = 'Voice memos and photos will show here.';
+      empty.textContent = 'Voice memos, photos, and videos will show here.';
       list.append(empty);
     } else {
       for (const item of captured) {
@@ -411,6 +441,12 @@ const assignment = {
         detail: 'Attached to this Daily Log entry',
       });
     }
+    if (videos.length > 0) {
+      rows.push({
+        title: `${videos.length} video${videos.length === 1 ? '' : 's'}`,
+        detail: 'Attached to this capture session · durable upload ships with media library',
+      });
+    }
     if (transcript.length > 0) {
       rows.push({
         title: 'Typed summary',
@@ -434,7 +470,7 @@ const assignment = {
       }
     }
 
-    const needsSummary = transcript.length === 0 && (audioUri !== null || photos.length > 0);
+    const needsSummary = transcript.length === 0 && (audioUri !== null || photos.length > 0 || videos.length > 0);
     if (transcriptWarning instanceof HTMLElement) {
       if (needsSummary) {
         transcriptWarning.hidden = false;
@@ -463,6 +499,7 @@ const assignment = {
       const parts = [];
       if (audioUri !== null) parts.push('voice');
       if (photos.length > 0) parts.push(`${photos.length} photo${photos.length === 1 ? '' : 's'}`);
+      if (videos.length > 0) parts.push(`${videos.length} video${videos.length === 1 ? '' : 's'}`);
       if (transcript.length > 0) parts.push('typed summary');
       preflightMeta.textContent =
         parts.length > 0
@@ -470,7 +507,8 @@ const assignment = {
           : 'Daily Log · nothing captured yet';
     }
     if (photoCount instanceof HTMLElement) {
-      photoCount.textContent = String(photos.length);
+      const mediaCount = photos.length + videos.length;
+      photoCount.textContent = String(mediaCount);
     }
     if (photoGrid instanceof HTMLElement) {
       photoGrid.innerHTML = '';
@@ -480,10 +518,16 @@ const assignment = {
         img.alt = photo.name;
         photoGrid.append(img);
       }
-      if (photos.length === 0) {
+      for (const video of videos) {
+        const tile = document.createElement('div');
+        tile.className = 'video-tile';
+        tile.textContent = video.name;
+        photoGrid.append(tile);
+      }
+      if (photos.length === 0 && videos.length === 0) {
         const empty = document.createElement('p');
         empty.className = 'empty-photo';
-        empty.textContent = 'No photos captured.';
+        empty.textContent = 'No media captured.';
         photoGrid.append(empty);
       }
     }
@@ -498,6 +542,10 @@ const assignment = {
   async function startRecording() {
     setState('active');
     setStatus('');
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      setStatus('Recording is already running. Tap Stop before starting another voice memo.', 'neutral');
+      return;
+    }
     if (!navigator.mediaDevices?.getUserMedia || !('MediaRecorder' in window)) {
       setStatus('Voice recording is not available here. Type the update and add photos.', 'neutral');
       return;
@@ -663,8 +711,13 @@ const assignment = {
     const file = cameraInput.files[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    photos.push({ name: file.name || 'Field photo', url });
-    captured.push({ title: 'Photo', detail: file.name || 'Camera capture' });
+    if (file.type.startsWith('video/')) {
+      videos.push({ name: file.name || 'Field video', url });
+      captured.push({ title: 'Video', detail: file.name || 'Video walkthrough' });
+    } else {
+      photos.push({ name: file.name || 'Field photo', url });
+      captured.push({ title: 'Photo', detail: file.name || 'Camera capture' });
+    }
     renderCaptured();
     cameraInput.value = '';
     setState('active');
@@ -679,8 +732,8 @@ const assignment = {
       setStatus('Missing project assignment. Pick the project before submit.', 'error');
       return;
     }
-    if (transcript.length === 0 && photos.length === 0 && audioUri === null) {
-      setStatus('Add a voice memo, note, or photo before submit.', 'error');
+    if (transcript.length === 0 && photos.length === 0 && videos.length === 0 && audioUri === null) {
+      setStatus('Add a voice memo, note, photo, or video before submit.', 'error');
       return;
     }
     const checked = document.querySelector('input[name="entry_kind"]:checked');
@@ -689,14 +742,17 @@ const assignment = {
     resetSubmitOutcome();
     setStatus('Saving to Daily Log and running Right Hand...', 'neutral');
     try {
-      // Phase 1G-A · photo_uris are synthetic in-browser refs · the photo
+      // Phase 1G-A · media URIs are synthetic in-browser refs · photo/video
       // blobs are NOT durably uploaded by this lane (preview only via
       // URL.createObjectURL). The event chain still persists these URIs
       // so the daily_log.entry_captured source_refs are non-empty when
-      // a photo-only capture happens. A future media-library lane wires
-      // durable photo upload; until then these refs point at nothing.
+      // a media-only capture happens. A future media-library lane wires
+      // durable media upload; until then these refs point at nothing.
       const synthesizedPhotoUris = photos.map(
         (_, index) => `kerf://field-capture/photo-${Date.now()}-${index + 1}`,
+      );
+      const synthesizedVideoUris = videos.map(
+        (_, index) => `kerf://field-capture/video-${Date.now()}-${index + 1}`,
       );
       const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
         method: 'POST',
@@ -706,7 +762,7 @@ const assignment = {
           entry_kind: entryKind,
           transcript_text: transcript,
           audio_uri: audioUri,
-          photo_uris: synthesizedPhotoUris,
+          photo_uris: [...synthesizedPhotoUris, ...synthesizedVideoUris],
           actor: { id: 'browser_operator', role: 'field_super' },
         }),
       });
@@ -733,6 +789,12 @@ const assignment = {
   recordButton?.addEventListener('click', () => {
     void startRecording();
   });
+  recordMoreButton?.addEventListener('click', () => {
+    void startRecording();
+  });
+  recordActiveButton?.addEventListener('click', () => {
+    void startRecording();
+  });
   stopButton?.addEventListener('click', stopRecording);
   typeNoteButton?.addEventListener('click', () => setState('active'));
   photoButtons.forEach((button) => button?.addEventListener('click', openCamera));
@@ -740,17 +802,17 @@ const assignment = {
   doneButton?.addEventListener('click', () => {
     stopRecording();
     const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
-    if (transcript.length === 0 && photos.length === 0 && audioUri === null) {
-      setStatus('Add a voice memo, typed note, or photo, then tap Done capturing again.', 'error');
+    if (transcript.length === 0 && photos.length === 0 && videos.length === 0 && audioUri === null) {
+      setStatus('Add a voice memo, typed note, photo, or video, then tap Done capturing again.', 'error');
       return;
     }
     renderPreflight();
     setState('preflight');
     if (preflightStatus instanceof HTMLElement) {
       preflightStatus.textContent =
-        'Captured items moved here for review. Check voice, photos, and typed summary before submit.';
+        'Captured items moved here for review. Check voice, media, and typed summary before submit.';
     }
-    if (transcript.length === 0 && (audioUri !== null || photos.length > 0)) {
+    if (transcript.length === 0 && (audioUri !== null || photos.length > 0 || videos.length > 0)) {
       setStatus(
         'Ready to submit — voice is saved but not transcribed yet. Add a typed summary if you want Right Hand review.',
         'neutral',
@@ -761,6 +823,7 @@ const assignment = {
   });
   backButton?.addEventListener('click', () => setState('active'));
   editNoteButton?.addEventListener('click', () => setState('active'));
+  editNoteInlineButton?.addEventListener('click', () => setState('active'));
   submitButton?.addEventListener('click', () => {
     void submitDailyLogEntry();
   });
@@ -867,7 +930,8 @@ const assignment = {
   .captured-panel,
   .preflight-card,
   .intent-card,
-  .review-card {
+  .review-card,
+  .continue-capture {
     background: linear-gradient(180deg, var(--kerf-surface), #101720);
     border: 1px solid var(--kerf-line);
     border-radius: 14px;
@@ -910,6 +974,18 @@ const assignment = {
     padding: 28px 8px 18px;
   }
 
+  .continue-capture {
+    border-color: rgba(56, 201, 119, 0.28);
+  }
+
+  .compact-record-zone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 0 12px;
+    text-align: left;
+  }
+
   .record-button {
     width: 118px;
     height: 118px;
@@ -921,6 +997,18 @@ const assignment = {
     align-items: center;
     justify-content: center;
     cursor: pointer;
+  }
+
+  .compact-record-button {
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    box-shadow: 0 0 0 8px rgba(56, 201, 119, 0.08), 0 12px 28px rgba(56, 201, 119, 0.2);
+  }
+
+  .compact-record-button span {
+    width: 22px;
+    height: 22px;
   }
 
   .record-button span {
@@ -1152,6 +1240,22 @@ const assignment = {
     object-fit: cover;
     border-radius: 10px;
     border: 1px solid var(--kerf-line);
+  }
+
+  .video-tile {
+    aspect-ratio: 1;
+    border: 1px solid rgba(56, 201, 119, 0.36);
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(56, 201, 119, 0.16), rgba(255, 255, 255, 0.04));
+    color: var(--kerf-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    text-align: center;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    word-break: break-word;
   }
 
   .empty-photo {
