@@ -3,7 +3,7 @@
 **Stacked on:** `phase-1i-batch-b-projects-audit-relay` @ `d5d9f13` (imports `ProjectTabContent.astro`)
 
 **Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
-**Head commit:** `5bd28b41bacab686cf042835b635c7d159e257f1`  
+**Head commit:** `5b75d4aca8c010c298ab3e6870ba6fe8d077e057`  
 **Agent:** D (Batch D)  
 **Date:** 2026-05-28  
 **Merge:** Do not merge (gate branch only)
