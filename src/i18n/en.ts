@@ -591,4 +591,4 @@ export const EN: TranslationMap = {
   'f_pr.new.archetype': 'Job type (optional)',
   'f_pr.new.archetype_none': 'No hint',
   'f_pr.new.submit': 'Create project',
-;
+};

@@ -597,4 +597,4 @@ export const ES: TranslationMap = {
   'f_pr.new.archetype': 'Tipo de obra (opcional)',
   'f_pr.new.archetype_none': 'Sin indicio',
   'f_pr.new.submit': 'Crear proyecto',
-;
+};
