@@ -15,7 +15,21 @@ Regenerate any render: `"/Applications/Google Chrome.app/Contents/MacOS/Google C
 - `--kerf-text #E8ECF1` · `--kerf-text-dim #98A1B3` · `--kerf-text-mute #6A7282`
 - `--kerf-amber #F5B544` · `--kerf-green #4ADE80` · `--kerf-red #F87171` · `--kerf-blue #7BA8FF` · `--kerf-violet #A78BFA` · `--kerf-magenta #E879A8`
 - `--field-green #38C977` · `--right-hand #C9A961`
-- Light mode: `body.light-mode` overrides bg/surface/border/text only (accents constant).
+- Light mode overrides bg/surface/border/text ONLY (all accents constant across themes).
+
+### Theme behavior (LOCKED — Christian, 2026-05-28)
+- **Default follows the OS** via `prefers-color-scheme` — app opens dark on a dark system, light on a light system. No hardcoded default theme.
+- **The ONLY manual switch lives in user Settings** (F-SP1a account editor, beside UI language). It overrides the system default; nothing else flips the theme. "System" state = no override.
+- Implementation = three-tier cascade in the SHARED canon layer (not per-page):
+  ```css
+  :root { /* canon DARK tokens — base */ }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) { /* light bg/surface/border/text — only when user hasn't chosen */ }
+  }
+  :root[data-theme="light"] { /* light overrides — explicit choice wins over system */ }
+  :root[data-theme="dark"]  { /* dark overrides — explicit choice wins over system */ }
+  ```
+- Settings toggle writes `data-theme="light|dark"` to `<html>` (persisted to user prefs); selecting "System" removes the attribute. Accents never change with theme.
 
 ### Role theming (CRITICAL — confirmed from A1 vs C1)
 - **Owner / Right Hand surfaces → AMBER** (`--kerf-amber` / `--right-hand`). Approval, consequence, "the one thing."
@@ -198,7 +212,7 @@ Regenerate any render: `"/Applications/Google Chrome.app/Contents/MacOS/Google C
 - **The built app uses a generic design system, not canon.** `src/app/styles/shell.css :root` defines `--bg #f4f6f8` (LIGHT), `--surface #ffffff`, `--text #1a2332`, `--accent #0f766e` (**teal**), `--chip-red/amber/green/cyan/neutral`. The shared `_kit/` components (card, chip, rh-summary, speak-fab, phase-strip) all consume THIS vocabulary.
 - **Canon `--kerf-*` tokens appear in only ONE file**: `field-capture.astro` (25 `--kerf-*` + 11 `--field-green`/`--right-hand` uses) — and even there `--kerf-bg` is wrong (`#070b0f` vs canon `#0A0D11`) and the set is incomplete (`--kerf-surface-2` used but undefined).
 - **Therefore the fidelity delta is uniform**: structure/primitives are close (kit matches canon: card, chip, rh-summary, Speak FAB), but the **skin is wrong everywhere** — generic light/teal instead of canon dark `#0A0D11` + persona accents (amber/green/violet/magenta/gold).
-- **Phase 1J fix shape**: (1) put the full 17-token canon `:root` (dark) + `body.light-mode` override into the SHARED layer (shell.css / Layout.astro), remapping `--bg/--surface/--text/--border/--accent/--chip-*` onto `--kerf-*`; (2) add persona-accent theming; (3) delete the wrong hand-rolled `:root` from field-capture.astro so it inherits the shared canon.
+- **Phase 1J fix shape**: (1) put the full 17-token canon `:root` (dark base) + the three-tier theme cascade (see "Theme behavior" in Design System) into the SHARED layer (shell.css / Layout.astro), remapping `--bg/--surface/--text/--border/--accent/--chip-*` onto `--kerf-*`; (2) add persona-accent theming; (3) delete the wrong hand-rolled `:root` from field-capture.astro so it inherits the shared canon; (4) wire the Settings light/dark/System toggle to write `data-theme` on `<html>` — default follows OS `prefers-color-scheme`, the Settings toggle is the sole override (per Christian 2026-05-28).
 
 ### Route → canon mapping
 | Live route | Canon surface | Notes |
