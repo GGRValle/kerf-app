@@ -1,8 +1,8 @@
-# Phase 1J · Agent 0 · Shared Token + Phone-Shell Foundation
+# Phase 1J · Agent A · Shared Token + Phone-Shell Foundation
 
-**Branch:** `phase-1j-tokens-phone-shell`
+**Branch:** `phase-1j-a-tokens-phone-shell`
 **Base:** `origin/main @ cbba6cf` (`docs(wireframes): lock theme behavior — system default + Settings-only toggle`)
-**Head:** `61d1bd3`
+**Head:** PR head after Agent-A naming normalization; original build commit `61d1bd3`, original report commit `01f0e2d`
 **Scope:** Shared skin only — tokens + phone-shell chrome. **No per-page repaint.**
 
 ---
@@ -92,7 +92,7 @@ Verified from a **fresh `git worktree` at the pushed commit** (`61d1bd3`), not t
 local workspace, with a clean `npm ci`.
 
 ```
-worktree HEAD: 61d1bd3f48c0ff4bfd84a3f53eed228bfe847082
+worktree HEAD: verified at original build commit `61d1bd3f48c0ff4bfd84a3f53eed228bfe847082`; Codex re-verified the Agent-A-normalized branch before PR
 
 npm run typecheck   → tsc --noEmit, no errors
 npm run build:astro → ✓ server + client built, prerender complete
@@ -121,7 +121,7 @@ CSS token remap and were not caused by these changes.
 - **Persona-accent theming** (CATALOG step 2 — Owner/RH amber, Field green,
   etc.) is intentionally **not** done here; the foundation maps the single generic
   `--accent` to amber. Per-role accent assignment is a follow-up.
-- **Settings toggle wiring** (CATALOG step 4) is out of scope for Agent 0. The
+- **Settings toggle wiring** (CATALOG step 4) is out of scope for Agent A. The
   `data-theme` cascade it must drive is now live; the Settings page only needs to
   write `data-theme="light|dark"` to `<html>` (and remove it for "System").
 - Pages should keep consuming the shared tokens; **do not reintroduce local
@@ -129,4 +129,4 @@ CSS token remap and were not caused by these changes.
 
 ---
 
-*Agent 0 · Phase 1J · shared skin established. Not merged — pushed for review.*
+*Agent A · Phase 1J · shared skin established. Not merged — pushed for review.*
