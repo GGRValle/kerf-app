@@ -1,6 +1,6 @@
 # Phase 1I Batch B — Projects, Audit, Relay
 
-**Branch:** `phase-1i-batch-b-projects-audit-relay`  
+**Branch:** `phase-1i-batch-b-projects-audit-relay` @ `3c7063b`  
 **Agent:** B  
 **Scope:** Project operating surfaces and after-capture work queue  
 **Do not merge** (dispatch instruction)
