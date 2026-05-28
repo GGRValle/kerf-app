@@ -2,7 +2,7 @@
 
 **Agent:** D (Batch D)  
 **Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
-**Head commit:** `eb3b09f1b213804f196033065f6fd22dd88054b2`  
+**Head commit:** `9594febdba29cdd1a12e88ed9563c373c9a966ea`  
 **Date:** 2026-05-28  
 **Merge:** Do not merge (gate branch only)
 
@@ -58,14 +58,29 @@ Shell feels like an app, not a sitemap: global actions route cleanly or Preview 
 
 ---
 
-## Clean-worktree proof
+## Clean-worktree proof (required — fresh checkout)
 
-**Worktree:** clean except untracked `node_modules/` (not committed).  
-**Branch tip:** `72390331b213804f196033065f6fd22dd88054b2` on `phase-1i-batch-d-schedule-reports-settings-shell`.
+Verification was **not** taken from the agent’s dirty workspace. A **fresh git worktree** was created at the pushed remote tip:
+
+```bash
+git fetch origin phase-1i-batch-d-schedule-reports-settings-shell
+git worktree add /private/tmp/kerf-1i-d-clean-verify \
+  origin/phase-1i-batch-d-schedule-reports-settings-shell
+cd /private/tmp/kerf-1i-d-clean-verify
+npm ci --ignore-scripts
+```
+
+| Field | Value |
+|-------|--------|
+| Worktree path | `/private/tmp/kerf-1i-d-clean-verify` |
+| `HEAD` | `9594febdba29cdd1a12e88ed9563c373c9a966ea` |
+| Matches `origin/phase-1i-batch-d-schedule-reports-settings-shell` | Yes |
+| Proof UTC | `2026-05-28T16:09:16Z` |
 
 ```text
 $ git status --porcelain
 ?? node_modules/
+(exit 0)
 
 $ npm run typecheck
 > tsc --noEmit
@@ -82,7 +97,9 @@ $ node --import tsx --test tests/phase-1i-batch-d-shell.test.ts
 (exit 0)
 ```
 
-Proof run: 2026-05-28 (local gate).
+Full log: `/private/tmp/kerf-1i-d-clean-proof.txt` on gate machine.
+
+**Batch B dependency check (clean tree):** `src/app/components/project/ProjectTabContent.astro` present at `9594feb`.
 
 ---
 
@@ -122,6 +139,8 @@ Proof run: 2026-05-28 (local gate).
 
 | SHA | Summary |
 |-----|---------|
+| `9594feb` | docs: report head SHA (gate tip at clean verify) |
+| `eb3b09f` | docs: stacked posture, deps, proof |
 | `7239033` | docs: report head SHA |
 | `5b75d4a` | docs: stacked-on-B note |
 | `0914f65` | fix: i18n parity after rebase |
