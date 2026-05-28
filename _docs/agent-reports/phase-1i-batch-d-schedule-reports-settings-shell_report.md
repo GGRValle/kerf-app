@@ -1,7 +1,7 @@
 # Phase 1I · Agent D — Schedule, Reports, Settings & Shell
 
 **Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
-**Head commits:** `ca5a479` (shell) + fix on branch  
+**Head commit:** `a16fdb61991158b27c218ae99c46cbe59ff133c0`  
 **Agent:** D (Batch D)  
 **Date:** 2026-05-28  
 **Merge:** Do not merge (gate branch only)
@@ -17,7 +17,7 @@ Make the operator shell coherent: home loops, mobile nav, schedule/reports/setti
 | `npm run typecheck` | Pass |
 | `npm run build:astro` | Pass |
 | `node --import tsx --test tests/phase-1i-batch-d-shell.test.ts` | **10/10** pass |
-| `npm test` (full) | **1466/1466** pass |
+| `npm test` (full) | **1463/1463** pass |
 
 ## Surface status
 
@@ -73,3 +73,10 @@ Make the operator shell coherent: home loops, mobile nav, schedule/reports/setti
 
 ---
 *Gate: branch pushed when Christian adds to Phase 1I merge set. Do not merge to main without 1I sign-off.*
+
+## Commits on branch
+
+- `ca5a479` — shell, components, pages, tests
+- `57de6fc` — agent report, more.astro copy
+- `cd7a54e` — nav role-root alignment
+- `a16fdb61991158b27c218ae99c46cbe59ff133c0` — i18n keys + preview route copy
