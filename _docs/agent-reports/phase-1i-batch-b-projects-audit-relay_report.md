@@ -1,6 +1,6 @@
 # Phase 1I Batch B — Projects, Audit, Relay
 
-**Branch:** `phase-1i-batch-b-projects-audit-relay` @ `b0fe2c1`  
+**Branch:** `phase-1i-batch-b-projects-audit-relay` @ `7f0d129`  
 **Base:** `origin/main` @ `d06815a`  
 **Agent:** B  
 **Scope:** Relay, Project List/Detail, project tabs, Status, Closeout, Work Orders, audit deep links  
@@ -48,7 +48,7 @@ Verified from a **fresh checkout**, not the agent’s dirty workspace:
 git fetch origin phase-1i-batch-b-projects-audit-relay
 git worktree add /tmp/kerf-1i-b-verify origin/phase-1i-batch-b-projects-audit-relay
 cd /tmp/kerf-1i-b-verify
-git rev-parse --short HEAD   # b0fe2c1
+git rev-parse --short HEAD   # 7f0d129
 npm ci
 npm run typecheck
 npm run build:astro
@@ -57,7 +57,7 @@ node --import tsx --test tests/phase1i-batch-b-projects-audit-relay.test.ts test
 
 | Step | Result |
 |------|--------|
-| `git worktree` @ `origin/phase-1i-batch-b-projects-audit-relay` | `b0fe2c1` (detached HEAD, empty tree) |
+| `git worktree` @ `origin/phase-1i-batch-b-projects-audit-relay` | `7f0d129` (detached HEAD, empty tree; re-verified after doc push) |
 | `npm ci` | Pass |
 | `npm run typecheck` | Pass |
 | `npm run build:astro` | Pass (`Server built` / `Complete!`) |
