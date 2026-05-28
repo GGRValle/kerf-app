@@ -1,7 +1,7 @@
 # Phase 1I · Agent D — Schedule, Reports, Settings & Shell
 
 **Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
-**Base commit:** `ca5a4791eface044e6b4b326212c2c30bec70ecd`  
+**Head commits:** `ca5a479` (shell) + fix on branch  
 **Agent:** D (Batch D)  
 **Date:** 2026-05-28  
 **Merge:** Do not merge (gate branch only)
