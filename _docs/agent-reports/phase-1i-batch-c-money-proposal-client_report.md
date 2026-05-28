@@ -57,7 +57,14 @@ npm run typecheck && npm run build:astro
 node --import tsx --test tests/phase1i-batch-c-money-proposal-client.test.ts tests/route-shell-smoke.test.ts
 ```
 
-Recorded after stack @ HEAD (see gate output below).
+**2026-05-28 fresh worktree @ `696b3cd`:**
+
+```text
+npm run typecheck → exit 0
+npm run build:astro → exit 0
+phase1i-batch-c + route-shell-smoke → 5/5 pass
+merge-base with D @ 578769c ✓
+```
 
 ---
 
