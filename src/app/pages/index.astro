@@ -1,17 +1,8 @@
 ---
-import RouteShellPage from '../components/RouteShellPage.astro';
-import ActionsStrip from '../components/ActionsStrip.astro';
-import SectionLabel from '../components/SectionLabel.astro';
-import Row from '../components/Row.astro';
-import Chip from '../components/Chip.astro';
+import Layout from '../layouts/Layout.astro';
+import HomeLoopGrid from '../components/HomeLoopGrid.astro';
+import RhSummary from '../components/RhSummary.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-
 const { t } = createLayoutContext();
 ---
-
-<RouteShellPage title="Dashboard" routeName="dashboard" phase="none">
-  <ActionsStrip />
-  <SectionLabel label="Projects" count={0} total="$0" />
-  <Row title="Projects" meta={t('dashboard.placeholder.projects_meta')} showArrow />
-  <Chip label={t('dashboard.placeholder.chip')} tone="cyan" />
-</RouteShellPage>
+<Layout titleKey="home.title" activeHref="/"><RhSummary headline={t('home.title')} detail={t('home.subtitle')} /><HomeLoopGrid /></Layout>

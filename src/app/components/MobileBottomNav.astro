@@ -1,0 +1,10 @@
+---
+import { MOBILE_BOTTOM_NAV } from '../lib/shellRoutes.js';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+export interface Props { activeHref?: string }
+const { activeHref = '/' } = Astro.props;
+const { t } = createLayoutContext();
+const isActive = (href) => href === '/' ? activeHref === '/' : activeHref === href || activeHref.startsWith(href + '/');
+---
+<nav class="mobile-bottom-nav" aria-label={t('shell.mobile_nav.aria')}>{MOBILE_BOTTOM_NAV.map((item) => (<a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{t(item.labelKey)}</a>))}</nav>
+<style>.mobile-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;background:#fff;border-top:1px solid #ddd}@media(min-width:900px){.mobile-bottom-nav{display:none}}</style>

@@ -1,0 +1,7 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/Card.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+const { t } = createLayoutContext();
+---
+<Layout titleKey="settings.title" activeHref="/settings"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('settings.title')}><p>{t('route_shell.body')}</p></Card></Layout>

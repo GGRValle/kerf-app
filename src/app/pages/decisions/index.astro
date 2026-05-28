@@ -1,8 +1,4 @@
 ---
-import RouteShellPage from '../../components/RouteShellPage.astro';
-import Row from '../../components/Row.astro';
+import Layout from '../../layouts/Layout.astro';import Card from '../../components/Card.astro';import { createLayoutContext } from '../../lib/createLayoutContext.js';const { t } = createLayoutContext();
 ---
-
-<RouteShellPage title="Decisions" routeName="decisions-list" phase="approve">
-  <Row title="Decision queue placeholder" meta="Approve spine wires DecisionCard primitives" showArrow />
-</RouteShellPage>
+<Layout titleKey="decisions.title" activeHref="/decisions"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('decisions.title')}><p>{t('decisions.preview.body')}</p></Card></Layout>

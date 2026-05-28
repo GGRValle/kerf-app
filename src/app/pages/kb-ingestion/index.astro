@@ -1,7 +1,4 @@
 ---
-import RouteShellPage from '../../components/RouteShellPage.astro';
+import Layout from '../../layouts/Layout.astro';import Card from '../../components/Card.astro';import { createLayoutContext } from '../../lib/createLayoutContext.js';const { t } = createLayoutContext();
 ---
-
-<RouteShellPage title="Cost KB Ingestion" routeName="kb-ingestion" phase="none">
-  <p>Tier-2 ingestion list shell.</p>
-</RouteShellPage>
+<Layout titleKey="kb.ingestion.title" activeHref="/kb-ingestion"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('kb.ingestion.title')}><p>{t('kb.ingestion.preview.body')}</p></Card></Layout>
