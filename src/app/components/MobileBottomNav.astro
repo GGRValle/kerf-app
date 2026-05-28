@@ -4,7 +4,74 @@ import { createLayoutContext } from '../lib/createLayoutContext.js';
 export interface Props { activeHref?: string }
 const { activeHref = '/' } = Astro.props;
 const { t } = createLayoutContext();
-const isActive = (href) => href === '/' ? activeHref === '/' : activeHref === href || activeHref.startsWith(href + '/');
+const isActive = (href: string) =>
+  href === '/' ? activeHref === '/' : activeHref === href || activeHref.startsWith(href + '/');
+
+// Monochrome silhouette icons (canon F-A1 system). `more` is the intentional
+// 4-color exception. Keyed by route href so the shared nav contract is untouched.
+const ICONS: Record<string, string> = {
+  '/': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg>',
+  '/field-capture':
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>',
+  '/relay':
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v9h-5l-1.5 2h-5L8 14H3z"/><path d="M3 16v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3h-4.2l-1.5 2H8.7L7.2 16z" opacity="0.55"/></svg>',
+  '/projects':
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg>',
+  '/more':
+    '<svg viewBox="0 0 24 24" class="icon-more" aria-hidden="true"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg>',
+};
 ---
-<nav class="mobile-bottom-nav" aria-label={t('shell.mobile_nav.aria')}>{MOBILE_BOTTOM_NAV.map((item) => (<a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{t(item.labelKey)}</a>))}</nav>
-<style>.mobile-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;background:var(--kerf-bg-2);border-top:1px solid var(--kerf-border)}.mobile-bottom-nav a{flex:1;text-align:center;padding:0.6rem 0.25rem;font-size:0.72rem;font-weight:600;color:var(--kerf-text-mute);text-decoration:none}.mobile-bottom-nav a[aria-current=page]{color:var(--kerf-amber)}@media(min-width:900px){.mobile-bottom-nav{display:none}}</style>
+<nav class="mobile-bottom-nav" aria-label={t('shell.mobile_nav.aria')}>
+  {MOBILE_BOTTOM_NAV.map((item) => (
+    <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+      <span class="mbn-icon" set:html={ICONS[item.href] ?? ICONS['/more']} />
+      <span class="mbn-label">{t(item.labelKey)}</span>
+    </a>
+  ))}
+</nav>
+<style>
+  .mobile-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 15;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: var(--kerf-bg-2);
+    border-top: 1px solid var(--kerf-border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mobile-bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 0.5rem 0.25rem 0.55rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: var(--kerf-text-mute);
+    text-decoration: none;
+  }
+  .mbn-icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+  }
+  .mbn-icon :global(svg) {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+  .mbn-icon :global(svg.icon-more) {
+    fill: none;
+  }
+  .mobile-bottom-nav a[aria-current='page'] {
+    color: var(--kerf-amber);
+  }
+  @media (min-width: 900px) {
+    .mobile-bottom-nav {
+      display: none;
+    }
+  }
+</style>

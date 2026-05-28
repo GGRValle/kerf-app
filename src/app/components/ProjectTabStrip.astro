@@ -51,8 +51,8 @@ const { projectId, activeTab, labelFor } = Astro.props;
     text-decoration: none;
   }
   .project-tab.active {
-    border-color: var(--accent, #0f766e);
+    border-color: color-mix(in srgb, var(--accent, #0f766e) 40%, transparent);
     color: var(--accent, #0f766e);
-    background: color-mix(in srgb, var(--accent, #0f766e) 8%, white);
+    background: color-mix(in srgb, var(--accent, #0f766e) 14%, transparent);
   }
 </style>
