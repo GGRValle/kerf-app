@@ -126,11 +126,38 @@ test('POST /review/field-detail/override requires scope_answer then records even
 });
 
 test('draft-review page wires phase strip links and accept/reject controls', () => {
-  const src = readFileSync(path.join(ROOT, 'src/app/pages/draft-review.astro'), 'utf8');
+  const redirectSrc = readFileSync(path.join(ROOT, 'src/app/pages/draft-review.astro'), 'utf8');
+  assert.match(redirectSrc, /LANE23_FIXTURE_DRAFT_ID/);
+  assert.match(redirectSrc, /Astro\.redirect/);
+
+  const src = readFileSync(path.join(ROOT, 'src/app/pages/draft-review/[draft_id].astro'), 'utf8');
   assert.match(src, /href: '\/field-capture'/);
   assert.match(src, /href: '\/transcript-review'/);
   assert.match(src, /id="lane23-draft-accept"/);
   assert.match(src, /\/api\/v1\/review\/draft\/accept/);
+  assert.match(src, /define:vars=\{\{ draft, tenantId: context\.tenantId, copy \}\}/);
+  assert.doesNotMatch(src, /savedKey:/);
+});
+
+test('review surfaces resolve status copy via t() + define:vars copy object', () => {
+  for (const rel of [
+    'src/app/pages/transcript-review.astro',
+    'src/app/pages/field-detail.astro',
+    'src/app/pages/draft-review/[draft_id].astro',
+  ]) {
+    const src = readFileSync(path.join(ROOT, rel), 'utf8');
+    assert.match(src, /const copy = \{/);
+    assert.match(src, /define:vars=\{\{[^}]*copy/);
+    assert.doesNotMatch(src, /savedKey:/);
+    assert.doesNotMatch(src, /errorKey:/);
+  }
+});
+
+test('field-capture draft loop link targets Phase 1H draft-review/:draft_id', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
+  assert.match(src, /LANE23_FIXTURE_DRAFT_ID/);
+  assert.match(src, /f_e1\.loop\.draft_preview/);
+  assert.match(src, /\/draft-review\/\$\{LANE23_FIXTURE_DRAFT_ID\}/);
 });
 
 test('field-capture submit outcome exposes loop navigation links', () => {

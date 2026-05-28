@@ -6,16 +6,22 @@ import SectionLabel from '../components/SectionLabel.astro';
 import Card from '../components/Card.astro';
 import Chip from '../components/Chip.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-import { LANE23_TRANSCRIPT_CAPTURE } from '../lib/lane23Fixtures.js';
+import { LANE23_TRANSCRIPT_CAPTURE, LANE23_FIXTURE_DRAFT_ID } from '../lib/lane23Fixtures.js';
 import '../styles/lane23.css';
 
 const { t, context } = createLayoutContext();
 const capture = LANE23_TRANSCRIPT_CAPTURE;
+const fixtureDraftHref = `/draft-review/${LANE23_FIXTURE_DRAFT_ID}`;
 const loopPhases = [
   { id: 'capture', label: 'Capture', href: '/field-capture' },
   { id: 'review', label: 'Review', active: true, href: '/transcript-review' },
-  { id: 'draft', label: 'Draft', href: '/draft-review' },
+  { id: 'draft', label: 'Draft', href: fixtureDraftHref },
 ];
+
+const copy = {
+  saved: t('review.transcript.saved'),
+  error: t('review.transcript.error'),
+};
 
 function formatMs(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -83,13 +89,13 @@ function formatMs(ms: number): string {
 
       <div class="lane23-loop-actions">
         <a class="lane23-btn" href="/field-capture">{t('nav.field_capture')}</a>
-        <a class="lane23-btn primary" href="/draft-review">{t('review.transcript.continue_draft')}</a>
+        <a class="lane23-btn primary" href={fixtureDraftHref}>{t('review.transcript.continue_draft')}</a>
       </div>
       <p class="lane23-notice">{t('review.transcript.build_draft_preview')}</p>
     </div>
   </SurfaceIrreversibilityWrap>
 
-  <script define:vars={{ capture, tenantId: context.tenantId, savedKey: 'review.transcript.saved', errorKey: 'review.transcript.error' }}>
+  <script define:vars={{ capture, tenantId: context.tenantId, copy }}>
   const statusEl = document.getElementById('lane23-transcript-status');
   const followupEl = document.getElementById('lane23-transcript-followup');
   let pending = null;
@@ -118,7 +124,7 @@ function formatMs(ms: number): string {
     }
     if (!res.ok) throw new Error(data.error ?? 'request_failed');
     followupEl.hidden = true;
-    statusEl.textContent = savedKey;
+    statusEl.textContent = copy.saved;
     pending = null;
   }
 
@@ -134,7 +140,7 @@ function formatMs(ms: number): string {
       try {
         await postCorrection(undefined);
       } catch {
-        statusEl.textContent = errorKey;
+        statusEl.textContent = copy.error;
       }
     });
   });
@@ -145,7 +151,7 @@ function formatMs(ms: number): string {
       try {
         await postCorrection(btn.dataset.scope);
       } catch {
-        statusEl.textContent = errorKey;
+        statusEl.textContent = copy.error;
       }
     });
   });

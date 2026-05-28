@@ -126,8 +126,11 @@ export const LANE23_TRANSCRIPT_CAPTURE: Lane23TranscriptCapture = {
   clarification_ids: ['cl_pendant_centering'],
 };
 
+/** Fixture draft id for Phase 1H synthesize redirect and demo loop Preview. */
+export const LANE23_FIXTURE_DRAFT_ID = 'prop_lane23_wegrzyn';
+
 export const LANE23_DRAFT_REVIEW: Lane23DraftReview = {
-  proposal_id: 'prop_lane23_wegrzyn',
+  proposal_id: LANE23_FIXTURE_DRAFT_ID,
   project_id: 'proj_wegrzyn_kitchen',
   tenant_id: 'tenant_ggr',
   project_label: 'Wegrzyn · Kitchen + Primary bath',

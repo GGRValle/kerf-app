@@ -161,6 +161,7 @@ export const EN: TranslationMap = {
   'f_pv2.irreversibility.context':
     'You are about to send this proposal to the client. They will see this version, and later invoices may reference it.',
     'You are about to send this proposal to the client. They will see this version, and later invoices may reference it.',
+    'You are about to send this proposal to the client. They will see this version, and later invoices may reference it.',
   'f_pv2.gate.title': 'Before you send',
   'f_pv2.gate.pass': 'All checks passed',
   'f_pv2.gate.fail': 'Send blocked',
@@ -183,6 +184,7 @@ export const EN: TranslationMap = {
 
   'f_pv.capture_origin.heading': 'Capture origin',
   'f_pv.capture_origin.summary':
+    'Field captures from {date} · {voice} voice clips · {photos} photos · {transcripts} transcripts',
     'Field captures from {date} · {voice} voice clips · {photos} photos · {transcripts} transcripts',
     'Field captures from {date} · {voice} voice clips · {photos} photos · {transcripts} transcripts',
   'f_pv.capture_origin.empty': 'No field captures referenced',
@@ -530,4 +532,9 @@ export const EN: TranslationMap = {
   'settings.preview.link_role_routing': 'Role routing preview',
   'shell.more.body': 'Schedule, reports, settings, and memory surfaces.',
   'shell.more.nav_aria': 'More destinations',
+  'f_e1.loop.draft_preview': 'Draft review (Preview) →',
+  'f_fd.override.reason_required': 'Add a reason before saving the override.',
+  'review.draft.fixture_preview_link': 'Open fixture Preview draft →',
+  'review.draft.not_found_body': 'No draft matches this id yet. Open the fixture Preview to walk the capture loop.',
+  'review.draft.not_found_title': 'Draft not found',
 };
