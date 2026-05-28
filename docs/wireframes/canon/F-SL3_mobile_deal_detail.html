@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-SL3 · Mobile Deal detail · Patel ADU · Pipeline-first lens</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+
+/* Phone */
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+.top-chrome { padding: 6px 14px 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--kerf-border-soft); }
+.tc-back { display: flex; align-items: center; gap: 3px; color: var(--kerf-amber); font-size: 12.5px; font-weight: 600; }
+.tc-back svg { width: 16px; height: 16px; fill: currentColor; }
+.tc-title { flex: 1; text-align: center; font-size: 13px; color: var(--kerf-text-dim); font-weight: 500; }
+.tc-action { font-size: 12px; color: var(--kerf-text-mute); font-weight: 600; }
+.tc-action svg { width: 16px; height: 16px; fill: currentColor; }
+
+.body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+
+/* Deal header */
+.deal-header { padding: 16px 4px 14px; }
+.dh-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.dh-name { font-size: 19px; font-weight: 700; color: var(--kerf-text); letter-spacing: -0.01em; line-height: 1.2; }
+.dh-stage { font-size: 9.5px; padding: 2px 7px; border-radius: 4px; background: rgba(245,181,68,0.14); color: var(--kerf-amber); letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
+.dh-meta { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.45; }
+.dh-meta strong { color: var(--kerf-text); font-weight: 600; }
+
+/* RH summary */
+.rh-summary { margin: 12px 0 12px; padding: 11px 12px; background: rgba(201,169,97,0.05); border-left: 2px solid var(--right-hand); border-radius: 4px; display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: flex-start; }
+.rh-avatar { width: 24px; height: 24px; border-radius: 6px; background: rgba(201,169,97,0.16); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.5; }
+.rh-text em { color: var(--field-green); font-style: normal; font-weight: 600; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+
+/* Signals */
+.signals { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.signal-row { display: grid; grid-template-columns: 20px 1fr; gap: 9px; align-items: center; padding: 8px 11px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; font-size: 11.5px; }
+.signal-row.action { border-left: 3px solid var(--field-green); padding-left: 9px; }
+.signal-icon { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; background: var(--kerf-surface-2); color: var(--kerf-text-mute); }
+.signal-icon svg { width: 11px; height: 11px; fill: currentColor; }
+.signal-icon.green { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.signal-icon.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.signal-icon.blue { background: rgba(123,168,255,0.14); color: var(--kerf-blue); }
+.signal-text { color: var(--kerf-text-dim); line-height: 1.4; }
+.signal-text strong { color: var(--kerf-text); font-weight: 600; }
+.signal-text .signal-detail { color: var(--kerf-text-mute); font-size: 10.5px; display: block; margin-top: 1px; }
+
+/* Primary action card */
+.primary-action { margin-bottom: 14px; padding: 13px 14px; background: rgba(56,201,119,0.05); border: 1px solid rgba(56,201,119,0.30); border-radius: 11px; }
+.pa-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.pa-eyebrow::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+.pa-title { font-size: 13.5px; color: var(--kerf-text); font-weight: 700; margin-bottom: 4px; }
+.pa-detail { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; margin-bottom: 10px; }
+.pa-amount { font-size: 18px; color: var(--kerf-text); font-weight: 700; font-family: "SF Mono", Menlo, monospace; margin-bottom: 10px; }
+.pa-cta-row { display: flex; gap: 8px; }
+.pa-cta { flex: 1; padding: 9px 12px; background: var(--field-green); color: #0A1A0F; border-radius: 8px; font-size: 12.5px; font-weight: 700; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.pa-cta svg { width: 12px; height: 12px; fill: currentColor; }
+.pa-cta.secondary { background: var(--kerf-surface); color: var(--kerf-text-dim); flex: 0 0 auto; padding: 9px 14px; }
+
+/* Tab strip */
+.tab-strip { display: flex; gap: 0; border-bottom: 1px solid var(--kerf-border-soft); margin: 2px 0 0; overflow-x: auto; scrollbar-width: none; }
+.tab-strip::-webkit-scrollbar { display: none; }
+.tab { padding: 11px 12px 10px; font-size: 11.5px; color: var(--kerf-text-mute); font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; cursor: pointer; }
+.tab.active { color: var(--kerf-text); border-bottom-color: var(--kerf-amber); }
+.tab .tab-count { font-size: 9.5px; color: var(--kerf-text-mute); margin-left: 3px; font-weight: 500; }
+.tab.active .tab-count { color: var(--kerf-amber); }
+
+.tab-content { padding: 14px 0 0; }
+
+/* Overview content blocks */
+.ov-block { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 12px 14px; margin-bottom: 10px; }
+.ov-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 8px; display: flex; align-items: baseline; gap: 8px; }
+.ov-eyebrow .ov-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; }
+
+.scope-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 0; font-size: 11.5px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.scope-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.scope-row:first-of-type { padding-top: 0; }
+.scope-label { color: var(--kerf-text-mute); font-size: 10.5px; }
+.scope-val { color: var(--kerf-text); font-weight: 600; text-align: right; }
+.scope-val.mono { font-family: "SF Mono", Menlo, monospace; }
+
+/* Relationship card */
+.rel-block { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: center; padding: 8px 0; }
+.rel-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(123,168,255,0.18); color: var(--kerf-blue); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.rel-name { font-size: 12px; color: var(--kerf-text); font-weight: 600; }
+.rel-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Bottom bar */
+.bottom-bar { background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border); padding: 8px 0 22px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; position: relative; flex-shrink: 0; }
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--kerf-amber); }
+.bb-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-icon svg.icon-more { width: 20px; height: 20px; }
+.bb-fab-wrap { position: relative; }
+.bb-fab { width: 52px; height: 52px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; align-items: center; justify-content: center; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); box-shadow: 0 6px 18px rgba(245,181,68,0.40); border: 3px solid var(--kerf-bg); }
+.bb-fab svg.mic-icon { width: 24px; height: 24px; fill: currentColor; }
+.bb-fab-label { font-size: 10px; color: var(--kerf-text-mute); margin-top: 32px; font-weight: 600; text-align: center; }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-SL1 · Sales pipeline (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-SL3 · Deal detail · Patel ADU</span>
+    <span class="sep">›</span>
+    <span class="step">F-PV1 · Proposal preview (artifact)</span>
+  </div>
+  <h1>F-SL3 · Mobile Deal detail · Patel ADU · action-led</h1>
+  <p>
+    Per-deal lens. Reached by tapping a deal row from F-SL1 pipeline. Same lens-not-console discipline as F-CL2/F-PR2 scoped to a single deal. <em>Lead with deal state · surface the next action first · tabs are lenses, not departments.</em> Patel ADU scenario: proposal drafted today, ready to send — the primary action card sits directly under the synthesis, above the tab strip. Overview tab default renders scope summary, pricing breakdown, and the linked relationship (referral source). Activity · Proposal · Notes · Files reachable via tab strip.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-SL3 · Mobile Deal detail · Patel ADU · Overview tab default</div>
+  <p class="frame-narr">
+    Owner tapped Patel from F-SL1's attention list (proposal ready to send). Surface loads with deal name + stage tag + meta (referred by realtor · site survey done). RH synthesis: <em>"Proposal drafted today · ready to send · site survey + past ADU work priced against your standards."</em> Three signals (state · last touch · readiness). <strong>Primary action card</strong> renders prominently: "Proposal ready · $187,500 · Send to Anjali" with green CTA. Below: tab strip (Overview · Activity · Proposal · Notes · Files). Overview default carries scope summary, pricing breakdown, linked relationship (Cassandra Reyes · referring realtor). Bottom bar Sales active.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Sales
+          </div>
+          <div class="tc-title">Deal</div>
+          <div class="tc-action">
+            <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </div>
+        </div>
+
+        <div class="body">
+
+          <div class="deal-header">
+            <div class="dh-row">
+              <div class="dh-name">Patel, Anjali</div>
+              <span class="dh-stage">Bid</span>
+            </div>
+            <div class="dh-meta">
+              <strong>ADU pre-design</strong> · 3851 Lila Ave · 600sf detached
+            </div>
+            <div class="dh-meta" style="margin-top: 3px;">
+              EST-020 · referred by Cassandra Reyes (realtor)
+            </div>
+          </div>
+
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text">
+              Proposal drafted today 14:42 · <em>ready to send.</em> Priced against your past 7 ADU jobs · site survey complete.
+            </div>
+          </div>
+
+          <div class="signals">
+
+            <div class="signal-row">
+              <span class="signal-icon green">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-2 12-3 3-1.4-1.4 1.6-1.6H8v-2h6.2l-1.6-1.6L14 9z"/></svg>
+              </span>
+              <div class="signal-text">
+                <strong>Proposal drafted</strong>
+                <span class="signal-detail">EST-020 · $187,500 · today 14:42</span>
+              </div>
+            </div>
+
+            <div class="signal-row">
+              <span class="signal-icon blue">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+              </span>
+              <div class="signal-text">
+                <strong>Site survey complete</strong>
+                <span class="signal-detail">Yesterday 10:14 · setbacks confirmed · utilities mapped</span>
+              </div>
+            </div>
+
+            <div class="signal-row">
+              <span class="signal-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15 15 0 0 1-6.59-6.59l2.2-2.2a1 1 0 0 0 .25-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1 17 17 0 0 0 17 17 1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/></svg>
+              </span>
+              <div class="signal-text">
+                <strong>Last touch: discovery call</strong>
+                <span class="signal-detail">May 12 · 28 min · scope confirmed</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- PRIMARY ACTION CARD -->
+          <div class="primary-action">
+            <div class="pa-eyebrow">Next step</div>
+            <div class="pa-title">Send proposal to Anjali</div>
+            <div class="pa-detail">Drafted today · awaits your final review before send. <em>Once signed, becomes a contract and routes to Projects.</em></div>
+            <div class="pa-amount">$187,500</div>
+            <div class="pa-cta-row">
+              <div class="pa-cta">
+                <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+                Send proposal
+              </div>
+              <div class="pa-cta secondary">Preview</div>
+            </div>
+          </div>
+
+          <!-- TAB STRIP -->
+          <div class="tab-strip">
+            <div class="tab active">Overview</div>
+            <div class="tab">Activity <span class="tab-count">5</span></div>
+            <div class="tab">Proposal</div>
+            <div class="tab">Notes <span class="tab-count">2</span></div>
+            <div class="tab">Files <span class="tab-count">4</span></div>
+          </div>
+
+          <div class="tab-content">
+
+            <!-- Scope summary -->
+            <div class="ov-block">
+              <div class="ov-eyebrow">Scope of work</div>
+              <div class="scope-row"><span class="scope-label">Type</span><span class="scope-val">Detached ADU build</span></div>
+              <div class="scope-row"><span class="scope-label">Size</span><span class="scope-val mono">600 sf</span></div>
+              <div class="scope-row"><span class="scope-label">Bedrooms</span><span class="scope-val">1 + flex</span></div>
+              <div class="scope-row"><span class="scope-label">Bath</span><span class="scope-val">1 full</span></div>
+              <div class="scope-row"><span class="scope-label">Kitchen</span><span class="scope-val">Compact galley</span></div>
+              <div class="scope-row"><span class="scope-label">Timeline</span><span class="scope-val">~9 mo design + build</span></div>
+            </div>
+
+            <!-- Pricing summary -->
+            <div class="ov-block">
+              <div class="ov-eyebrow">Pricing <span class="ov-action">View proposal →</span></div>
+              <div class="scope-row"><span class="scope-label">Base build</span><span class="scope-val mono">$167,100</span></div>
+              <div class="scope-row"><span class="scope-label">Allowances</span><span class="scope-val mono">$14,800</span></div>
+              <div class="scope-row"><span class="scope-label">Design + permits</span><span class="scope-val mono">$5,600</span></div>
+              <div class="scope-row" style="border-top: 1px solid var(--kerf-border); padding-top: 8px; margin-top: 4px;"><span class="scope-label" style="color: var(--kerf-text); font-size: 11.5px; font-weight: 600;">Total</span><span class="scope-val mono" style="font-size: 13px; color: var(--kerf-amber);">$187,500</span></div>
+            </div>
+
+            <!-- Relationship -->
+            <div class="ov-block">
+              <div class="ov-eyebrow">Relationships</div>
+              <div class="rel-block">
+                <div class="rel-avatar">AP</div>
+                <div>
+                  <div class="rel-name">Anjali Patel</div>
+                  <div class="rel-meta">Contracting client · homeowner · first project</div>
+                </div>
+              </div>
+              <div class="rel-block">
+                <div class="rel-avatar">CR</div>
+                <div>
+                  <div class="rel-name">Cassandra Reyes</div>
+                  <div class="rel-meta">Referral source · realtor · 3rd referral this year</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Bottom bar · Sales active -->
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>
+            Sales
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-SL3 · Spec</h3>
+
+    <h4>Action-led deal detail</h4>
+    <ul>
+      <li><strong>Lead with state synthesis</strong> · header + RH summary + 3 signals BEFORE tabs</li>
+      <li><strong>Primary action card</strong> · the highest-impact next step renders prominently above the tab strip · green-accent · clear CTA</li>
+      <li><strong>Tabs are lenses</strong> · Overview default · Activity · Proposal · Notes · Files</li>
+      <li><strong>No transcript/audit nav</strong> · trust surfaces stay exception-tier</li>
+    </ul>
+
+    <h4>Why Primary action above the tab strip</h4>
+    <p>Deal detail is action-oriented in a way client/project detail isn't. The operator opens a deal to <em>do something</em> with it — send · follow up · reply · close. Surfacing the next action card above tabs makes the surface execution-first. Same lesson F-PR4 applied with the execution row.</p>
+
+    <h4>5 tabs (lenses into one deal)</h4>
+    <ul>
+      <li><strong>Overview (default):</strong> scope summary · pricing breakdown · linked relationships</li>
+      <li><strong>Activity:</strong> chronological touches (calls · meetings · site visits · emails · RH suggestions)</li>
+      <li><strong>Proposal:</strong> proposal lifecycle view (when one exists) · drafted → sent → signed</li>
+      <li><strong>Notes:</strong> RH-aware notes + voice memos about the deal</li>
+      <li><strong>Files:</strong> survey photos · concept sketches · selections · signed docs</li>
+    </ul>
+
+    <h4>Locked Sales canon applied</h4>
+    <ul>
+      <li><em>Pipeline-first, proposal-enabled, relationship-aware, pre-deal only.</em></li>
+      <li>Proposal exists in service of a deal · "View proposal" routes to F-PV1 (client-facing artifact)</li>
+      <li>Client = contracting counterparty · Patel-direct deal: Anjali is client, realtor Cassandra is referral source</li>
+      <li>Relationships block surfaces both linked parties · canonical record lives in Team+Ops > Clients</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Back arrow → F-SL1 Sales pipeline</li>
+      <li>Send proposal CTA → V18 gate (external send) · post-send routes to Proposal tab</li>
+      <li>Preview CTA → F-PV1 Proposal Preview (client view)</li>
+      <li>"View proposal →" link in Pricing block → F-PV1</li>
+      <li>Activity tab → activity timeline · touch log</li>
+      <li>Anjali rel-block tap → Team+Ops > Clients > Anjali Patel (canonical record)</li>
+      <li>Cassandra rel-block tap → Team+Ops > Clients > Cassandra Reyes (relationship record)</li>
+      <li>🎤 Speak (long-hold) → RH conversation pre-bound to Patel deal context</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>Not a contact record with every field visible</li>
+      <li>Not a parallel proposal management surface</li>
+      <li>Not a tabbed forensics console</li>
+      <li>Not Salesforce / HubSpot opportunity detail</li>
+      <li>Not a "rebuild the deal from scratch" form</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-SL1_mobile_sales_pipeline.html</code> · entry path</li>
+      <li><code>F-PV1_mobile_proposal_view.html</code> · client-facing proposal artifact</li>
+      <li><code>F-G1_desktop_draft_review.html</code> · operator-facing scope+pricing gate (upstream of this)</li>
+      <li><code>Kerf_Layer_A_Subdomain_Map_2026-05-18.md</code> · Sales canon</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · lead with summary</li>
+      <li><code>feedback_avoid_overbuilding_review_surfaces.md</code> · lens not console</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Per-tab content for Activity / Proposal / Notes / Files (sketched, not rendered)</li>
+      <li>Designer-led deal variant (Ault Coronado vanity — designer is client)</li>
+      <li>Lost-deal close flow (V1.5+)</li>
+      <li>Bulk action on multiple deals (V2+)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>Deal state, then action.</em> The synthesis sentence + 3 signals tell the operator where the deal stands. The primary action card surfaces the next move directly — no need to drill through tabs to find it. Tabs sit beneath as lenses into the deal's history and artifacts. The 80% scan case (what do I need to do with this deal?) is answered above the tab strip.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a Salesforce opportunity detail. Not a HubSpot deal record. Not five mini-dashboards stitched together. Not a custom-field intake form. <strong>F-SL3 is the deal lens with one prominent next-action card and tabbed drill underneath.</strong> Proposal lives inside the deal, not parallel to it.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

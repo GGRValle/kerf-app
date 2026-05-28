@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-HR1a · Mobile Time tracking review</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+*{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--kerf-bg);color:var(--kerf-text);line-height:1.5;font-size:13px;}
+.page{max-width:1500px;margin:0 auto;padding:32px 24px 80px;}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--kerf-border);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--kerf-text-dim);}
+.view-toggle-bar .vtb-label{font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;}
+.view-toggle-bar .vtb-options{display:flex;gap:2px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-radius:8px;padding:2px;}
+.view-toggle-bar .vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--kerf-text-mute);cursor:pointer;font-weight:600;}
+.view-toggle-bar .vtb-tab.active{background:var(--kerf-amber);color:#1A1300;}
+.view-toggle-bar .vtb-hint{margin-left:auto;font-size:10.5px;color:var(--kerf-text-mute);}
+body.presentation-mode .page{max-width:none;padding:0 24px 80px;} body.presentation-mode .frame{grid-template-columns:1fr;gap:14px;} body.presentation-mode .frame-spec{display:none;}
+.page-header{border-bottom:1px solid var(--kerf-border);padding-bottom:22px;margin-bottom:32px;}
+.page-header .crumb{font-size:11px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;}
+.page-header .crumb .step{color:var(--kerf-text-dim);} .page-header .crumb .step.current{color:var(--kerf-amber);} .page-header .crumb .sep{color:var(--kerf-border);margin:0 8px;}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px;} .page-header p{color:var(--kerf-text-dim);margin:0;font-size:13px;max-width:1080px;line-height:1.6;} .page-header p em{color:var(--right-hand);font-style:normal;}
+.frame{display:grid;grid-template-columns:1fr 380px;gap:28px;margin-bottom:56px;align-items:start;}
+.frame-label{grid-column:1 / -1;font-size:13px;color:var(--kerf-amber);font-weight:600;margin-bottom:4px;}
+.frame-narr{grid-column:1 / -1;margin:0 0 14px;color:var(--kerf-text-dim);font-size:12.5px;line-height:1.7;max-width:1080px;} .frame-narr em{color:var(--right-hand);font-style:normal;}
+.frame-render{border:1px solid var(--kerf-border);border-radius:12px;background:linear-gradient(180deg,#14181F 0%,#0A0D11 100%);padding:32px;display:flex;justify-content:center;}
+.frame-spec{border:1px solid var(--kerf-border);border-radius:12px;background:var(--kerf-bg-2);padding:18px 16px;font-size:12px;color:var(--kerf-text-dim);height:fit-content;position:sticky;top:60px;}
+.frame-spec h3{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-text);font-weight:700;margin:0 0 10px;}
+.frame-spec h4{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin:14px 0 6px;} .frame-spec h4:first-of-type{margin-top:0;}
+.frame-spec ul{padding-left:16px;margin:0 0 8px;} .frame-spec li{margin-bottom:4px;line-height:1.55;} .frame-spec em{color:var(--right-hand);font-style:normal;}
+.frame-spec .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px;} .frame-spec .badge.doctrine{background:rgba(56,201,119,0.16);color:var(--field-green);}
+.phone{width:380px;background:var(--kerf-bg);border:1.5px solid var(--kerf-border);border-radius:42px;padding:14px;position:relative;box-shadow:0 16px 50px rgba(0,0,0,0.5);}
+.phone-notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:124px;height:26px;background:var(--kerf-bg);border-radius:0 0 16px 16px;z-index:5;}
+.phone-screen{background:var(--kerf-bg);border-radius:30px;overflow:hidden;height:740px;display:flex;flex-direction:column;}
+.status-bar{display:flex;justify-content:space-between;padding:13px 24px 6px;font-size:11.5px;font-weight:600;} .status-bar .right{color:var(--kerf-text-dim);}
+.top-chrome{padding:6px 16px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--kerf-border-soft);}
+.tc-back{display:flex;align-items:center;gap:4px;color:var(--kerf-amber);font-size:13px;font-weight:600;} .tc-back svg{width:18px;height:18px;fill:currentColor;}
+.tc-title{flex:1;text-align:center;font-size:15px;font-weight:700;} .tc-action{font-size:13px;color:var(--kerf-amber);font-weight:600;}
+.body{flex:1;overflow-y:auto;padding:0 14px 14px;}
+.rh-summary{margin:14px 0 14px;padding:11px 13px;background:rgba(201,169,97,0.05);border-left:2px solid var(--right-hand);border-radius:4px;display:grid;grid-template-columns:26px 1fr;gap:10px;}
+/* Export/Print affordances · Lane 7B canon · audit-logged on Export */
+.actions-strip{display:flex;justify-content:flex-end;gap:14px;margin:-4px 0 12px;padding:0 2px;font-size:11px;}
+.as-action{color:var(--kerf-amber);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
+.as-action svg{width:11px;height:11px;fill:currentColor;}
+
+.rh-avatar{width:26px;height:26px;border-radius:7px;background:rgba(201,169,97,0.16);color:var(--right-hand);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.rh-text{font-size:12px;line-height:1.5;} .rh-text strong{font-weight:700;} .rh-text em{color:var(--kerf-red);font-style:normal;font-weight:600;} .rh-text .rh-amber{color:var(--kerf-amber);font-weight:600;}
+.view-mode-toggle{display:flex;gap:4px;padding:3px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border-soft);border-radius:8px;margin:12px 4px 4px;width:fit-content;}
+.vmt-option{padding:5px 12px;font-size:10.5px;color:var(--kerf-text-mute);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;border-radius:5px;cursor:pointer;}
+.vmt-option.active{background:var(--kerf-amber);color:#1A1300;}
+.section-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin:6px 4px 8px;display:flex;align-items:baseline;gap:8px;}
+.section-label .sl-count{color:var(--kerf-text-dim);font-size:9.5px;}
+.item-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.item-row{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:11px 13px;display:grid;grid-template-columns:1fr 14px;gap:10px;align-items:center;}
+.item-row.attention{border-left:3px solid var(--kerf-amber);padding-left:11px;}
+.item-name{font-size:13px;font-weight:600;line-height:1.3;} .item-meta{font-size:10.5px;color:var(--kerf-text-mute);margin-top:2px;}
+.item-state{font-size:11px;color:var(--kerf-text-dim);margin-top:4px;line-height:1.4;} .item-state.amber{color:var(--kerf-amber);font-weight:600;}
+.row-chip{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;padding:2px 6px;border-radius:4px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;margin-bottom:3px;}
+.row-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .row-chip.red::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-red);}
+.row-chip.amber{background:rgba(245,181,68,0.14);color:var(--kerf-amber);} .row-chip.amber::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-amber);}
+.row-chip.green{background:rgba(56,201,119,0.12);color:var(--field-green);} .row-chip.green::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--field-green);}
+.compress-row{background:var(--kerf-bg-2);border:1px dashed var(--kerf-border-soft);border-radius:10px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11.5px;}
+.compress-row .cr-text{color:var(--kerf-text-dim);} .compress-row .cr-action{color:var(--kerf-amber);font-weight:700;}
+.btn-inline{display:inline-block;margin-top:6px;padding:4px 10px;border-radius:6px;background:var(--kerf-surface-2);border:1px solid var(--kerf-border-soft);font-size:10.5px;color:var(--kerf-amber);font-weight:700;}
+.grid-view{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.grid-tile{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:10px 11px;}
+.grid-tile.attention{border-left:3px solid var(--kerf-amber);padding-left:9px;}
+.gt-name{font-size:12.5px;font-weight:700;line-height:1.25;} .gt-phase{font-size:9.5px;color:var(--kerf-text-mute);margin-top:3px;text-transform:uppercase;font-weight:600;letter-spacing:0.04em;}
+.gt-chip-row{margin-top:6px;} .gt-chip{display:inline-flex;align-items:center;gap:3px;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+.gt-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .gt-chip.red::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-red);}
+.gt-chip.amber{background:rgba(245,181,68,0.14);color:var(--kerf-amber);} .gt-chip.amber::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-amber);}
+.gt-rhythm{font-size:9.5px;color:var(--kerf-text-mute);margin-top:6px;}
+.bottom-bar{background:var(--kerf-bg-2);border-top:1px solid var(--kerf-border);padding:8px 0 22px;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;flex-shrink:0;}
+.bb-tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--kerf-text-mute);font-weight:600;padding:5px 0;} .bb-tab.active{color:var(--kerf-amber);}
+.bb-icon svg{width:22px;height:22px;fill:currentColor;} .bb-fab-wrap{position:relative;}
+.bb-fab{width:52px;height:52px;border-radius:50%;background:var(--kerf-amber);color:#1A1300;display:flex;align-items:center;justify-content:center;position:absolute;bottom:2px;left:50%;transform:translateX(-50%);box-shadow:0 6px 18px rgba(245,181,68,0.40);border:3px solid var(--kerf-bg);}
+.bb-fab svg{width:24px;height:24px;fill:currentColor;} .bb-fab-label{font-size:10px;color:var(--kerf-text-mute);margin-top:32px;font-weight:600;text-align:center;}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.callout{background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-left:3px solid var(--kerf-amber);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--kerf-text-dim);line-height:1.55;}
+.callout strong{color:var(--kerf-text);font-weight:600;} .callout em{color:var(--right-hand);font-style:normal;}
+.callout .callout-title{display:block;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin-bottom:5px;}
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px;">Theme</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">Team &amp; Ops</span><span class="sep">›</span><span class="step">HR</span><span class="sep">›</span><span class="step current">F-HR1a · Time tracking (mobile)</span></div>
+  <h1>F-HR1a · Mobile Time tracking review</h1>
+  <p>Comparison surface for peer time entries needing approval this week. <em>Right Hand</em> leads with week rollup; flagged and overtime rows surface first. List + Grid per Grid Doctrine.</p>
+</div>
+
+<!-- LIST FRAME -->
+<div class="frame">
+  <div class="frame-label">Frame · F-HR1a · List view · Week of May 18</div>
+  <p class="frame-narr">Owner reviews W2 crew hours before payroll export. Flagged entries (missed punch, GPS mismatch, OT threshold) sort above standard ready-to-approve batch.</p>
+  <div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="phone-screen">
+    <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+    <div class="top-chrome">
+      <div class="tc-back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>HR</div>
+      <div class="tc-title">Time tracking</div>
+      <div class="tc-action">Export</div>
+    </div>
+    <div class="body">
+      <div class="rh-summary"><div class="rh-avatar">RH</div><div class="rh-text"><strong>Week of May 18 · 6 W2 crew · 234 total hours.</strong> <em>4 entries flagged for review.</em> <span class="rh-amber">2 overtime.</span></div></div>
+        <div class="actions-strip"><span class="as-action" title="Print queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="as-action" title="Export · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+      <div class="view-mode-toggle"><span class="vmt-option active">List</span><span class="vmt-option">Grid</span></div>
+
+      <div class="section-label">Flagged for review<span class="sl-count">· 4</span></div>
+      <div class="item-list">
+        <div class="item-row attention">
+          <div>
+            <div class="item-name">Diego S. · Tue · 9.2h</div>
+            <div class="item-meta">Wegrzyn assignment</div>
+            <span class="row-chip red">At risk</span>
+            <div class="item-state">GPS mismatch — clocked at Wegrzyn, GPS at home</div>
+          </div><span>›</span>
+        </div>
+        <div class="item-row attention">
+          <div>
+            <div class="item-name">Miguel G. · Mon · missed punch</div>
+            <div class="item-meta">Hernandez · 0.0h logged</div>
+            <span class="row-chip amber">Needs review</span>
+            <div class="item-state amber">Missed punch — supervisor note required</div>
+          </div><span>›</span>
+        </div>
+        <div class="item-row attention">
+          <div>
+            <div class="item-name">Carlos R. · Wed · 10.5h</div>
+            <div class="item-meta">Hernandez pantry</div>
+            <span class="row-chip amber">OT threshold</span>
+            <div class="item-state amber">Daily total exceeds 10h policy</div>
+          </div><span>›</span>
+        </div>
+        <div class="item-row attention">
+          <div>
+            <div class="item-name">Tito T. · Fri · 8.0h</div>
+            <div class="item-meta">Hernandez · partial day</div>
+            <span class="row-chip red">At risk</span>
+            <div class="item-state">Clock-out missing — still on-site per GPS</div>
+          </div><span>›</span>
+        </div>
+      </div>
+
+      <div class="section-label">Overtime<span class="sl-count">· 2</span></div>
+      <div class="item-list">
+        <div class="item-row">
+          <div>
+            <div class="item-name">Carlos R. · week total 42.5h</div>
+            <div class="item-meta">2.5h OT this week</div>
+            <span class="row-chip amber">Submitted</span>
+            <span class="btn-inline">Approve OT</span>
+          </div><span>›</span>
+        </div>
+        <div class="item-row">
+          <div>
+            <div class="item-name">Marcus R. · week total 41.0h</div>
+            <div class="item-meta">1.0h OT · superintendent</div>
+            <span class="row-chip amber">Submitted</span>
+            <span class="btn-inline">Approve OT</span>
+          </div><span>›</span>
+        </div>
+      </div>
+
+      <div class="section-label">Standard entries</div>
+      <div class="compress-row"><span class="cr-text">+ 28 standard entries ready</span><span class="cr-action">Approve all ›</span></div>
+
+      <div class="section-label">Last week</div>
+      <div class="compress-row"><span class="cr-text">+ 34 entries · approved &amp; exported May 11</span><span class="cr-action">View ›</span></div>
+    </div>
+    <div class="bottom-bar">
+      <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+      <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+      <div class="bb-fab-wrap"><div class="bb-fab"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg></div><div class="bb-fab-label">Speak</div></div>
+      <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>Clients</div>
+      <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More</div>
+    </div>
+  </div></div></div>
+
+  <div class="frame-spec">
+    <h3>F-HR1a List · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><span class="badge doctrine">1</span><strong>Macro / comparison / detail?</strong> Comparison — peer time entries this week</li>
+      <li><span class="badge doctrine">2</span><strong>List / grid / both?</strong> Both — List default, Grid for macro scan</li>
+      <li><span class="badge doctrine">3</span><strong>Cognitive job?</strong> What hours need approval? Any anomalies?</li>
+      <li><span class="badge doctrine">4</span><strong>Hidden until drill?</strong> Per-employee history, payroll export path</li>
+    </ul>
+    <h4>Lifecycle states</h4>
+    <ul><li>Time entry: <em>submitted</em> · <em>approved</em> · <em>exported</em> (last week)</li><li>Flags: chip-tier only — never full-row red</li></ul>
+      <h4>Export / Print affordances (Lane 7B)</h4>
+    <ul><li>Actions strip below RH summary · <code>Print</code> + <code>Export ▾</code> weekly summary · PDF · CSV · XLSX</li><li>Existing Export to QB/payroll provider (rail CTA) stays as primary payroll egress · Lane 7B Print adds weekly-summary printable for archive</li><li>Audit trail on every Export event: operator + week + format · payroll lifecycle untouched</li></ul>
+  </div>
+</div>
+
+<!-- GRID FRAME -->
+<div class="frame">
+  <div class="frame-label">Frame · F-HR1a · Grid view · macro scan</div>
+  <p class="frame-narr">Grid tiles: employee name · week total · flag chip · site assignment rhythm line.</p>
+  <div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="phone-screen">
+    <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+    <div class="top-chrome"><div class="tc-back">‹ HR</div><div class="tc-title">Time tracking</div><div class="tc-action">Export</div></div>
+    <div class="body">
+      <div class="rh-summary"><div class="rh-avatar">RH</div><div class="rh-text"><strong>234h · 6 crew.</strong> <em>4 flagged.</em></div></div>
+        <div class="actions-strip"><span class="as-action" title="Print queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="as-action" title="Export · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+      <div class="view-mode-toggle"><span class="vmt-option">List</span><span class="vmt-option active">Grid</span></div>
+      <div class="grid-view">
+        <div class="grid-tile attention"><div class="gt-name">Diego S.</div><div class="gt-phase">38.2h this week</div><div class="gt-chip-row"><span class="gt-chip red">At risk</span></div><div class="gt-rhythm">Wegrzyn · GPS flag</div></div>
+        <div class="grid-tile attention"><div class="gt-name">Carlos R.</div><div class="gt-phase">42.5h this week</div><div class="gt-chip-row"><span class="gt-chip amber">OT</span></div><div class="gt-rhythm">Hernandez · 2.5h OT</div></div>
+        <div class="grid-tile attention"><div class="gt-name">Miguel G.</div><div class="gt-phase">36.0h this week</div><div class="gt-chip-row"><span class="gt-chip amber">Review</span></div><div class="gt-rhythm">Hernandez · missed punch</div></div>
+        <div class="grid-tile attention"><div class="gt-name">Tito T.</div><div class="gt-phase">37.8h this week</div><div class="gt-chip-row"><span class="gt-chip red">At risk</span></div><div class="gt-rhythm">Hernandez · no clock-out</div></div>
+        <div class="grid-tile"><div class="gt-name">Marcus R.</div><div class="gt-phase">41.0h this week</div><div class="gt-chip-row"><span class="gt-chip amber">OT</span></div><div class="gt-rhythm">Multi-site · 1h OT</div></div>
+        <div class="grid-tile"><div class="gt-name">Joaquín G.</div><div class="gt-phase">39.4h this week</div><div class="gt-chip-row"><span class="gt-chip green">Ready</span></div><div class="gt-rhythm">Wegrzyn · on track</div></div>
+      </div>
+    </div>
+    <div class="bottom-bar">
+      <div class="bb-tab">Home</div><div class="bb-tab">Projects</div><div class="bb-fab-wrap"><div class="bb-fab"></div><div class="bb-fab-label">Speak</div></div><div class="bb-tab">Clients</div><div class="bb-tab active">More</div>
+    </div>
+  </div></div></div>
+  <div class="frame-spec"><h3>F-HR1a Grid · Spec</h3><ul><li>2-col tiles · gt-name = employee · gt-phase = week total · gt-chip = flag state · gt-rhythm = site</li></ul></div>
+</div>
+
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">What this surface enforces</span><em>Approval queue, not timesheet editor.</em> Right Hand summarizes the week; anomalies surface as chips. Standard entries compress to batch approve. Professional HR tone — flags describe facts, not judgment.</div>
+  <div class="callout"><span class="callout-title">What this surface refuses to be</span>Not a full payroll system. Not per-punch editing at list density. Not employee performance commentary. Drill to crew/employee detail for history.</div>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('presentation-mode',tab.dataset.mode==='presentation');});});
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const next=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector(`[data-mode="${next}"]`).click();}});
+document.querySelectorAll('[data-theme]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('light-mode',tab.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',tab.dataset.theme);}catch(e){}});});
+try{const saved=localStorage.getItem('kerf_wf_theme');if(saved==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'));}}catch(e){}
+</script>
+</body>
+</html>

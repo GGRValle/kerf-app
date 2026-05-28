@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-H1 · Desktop Audit Detail · per-decision trust receipt</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+
+/* Desktop frame */
+.desktop-frame {
+  background: var(--kerf-bg);
+  border: 1px solid var(--kerf-border);
+  border-radius: 12px;
+  overflow: hidden;
+  width: 100%;
+  display: flex; flex-direction: column;
+  min-height: 920px;
+}
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 22px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-back { color: var(--kerf-blue); font-size: 11px; font-weight: 600; }
+
+/* Audit header */
+.audit-header {
+  background: var(--kerf-bg-2);
+  border-bottom: 1px solid var(--kerf-border-soft);
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px; align-items: center;
+}
+.ah-text {}
+.ah-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-amber); font-weight: 700; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.ah-eyebrow .ah-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--field-green); box-shadow: 0 0 8px rgba(56,201,119,0.6); }
+.ah-title { font-size: 20px; font-weight: 700; color: var(--kerf-text); letter-spacing: -0.01em; margin-bottom: 3px; }
+.ah-meta { font-size: 12px; color: var(--kerf-text-dim); line-height: 1.45; }
+.ah-meta code { font-family: "SF Mono", Menlo, monospace; padding: 1px 5px; background: var(--kerf-bg); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.ah-meta .ah-sep { color: var(--kerf-border); margin: 0 6px; }
+
+.ah-status-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700;
+  background: rgba(56,201,119,0.12); color: var(--field-green);
+  border: 1px solid rgba(56,201,119,0.40);
+}
+.ah-status-pill svg { width: 14px; height: 14px; fill: currentColor; }
+
+/* Audit body — two-column */
+.audit-body {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  flex: 1;
+  min-height: 700px;
+}
+
+.audit-main { padding: 20px 22px; overflow-y: auto; border-right: 1px solid var(--kerf-border-soft); }
+.audit-rail { padding: 20px; overflow-y: auto; background: var(--kerf-bg-2); display: flex; flex-direction: column; gap: 16px; }
+
+/* Section */
+.audit-section { margin-bottom: 22px; }
+.audit-section:last-child { margin-bottom: 0; }
+.audit-sec-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.audit-sec-title {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text); font-weight: 700;
+}
+.audit-sec-title .count { color: var(--kerf-text-mute); margin-left: 6px; font-weight: 500; font-size: 10.5px; }
+.audit-sec-action { font-size: 10.5px; color: var(--kerf-blue); font-weight: 600; }
+
+/* Validator cards */
+.validator-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.validator-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+}
+.validator-card.passed {
+  border-left: 3px solid var(--field-green);
+}
+.validator-mark {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: rgba(56,201,119,0.16); color: var(--field-green);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.validator-mark svg { width: 12px; height: 12px; fill: currentColor; }
+.validator-id {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px; color: var(--right-hand); font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.validator-name { font-size: 12px; color: var(--kerf-text); font-weight: 600; margin-top: 2px; line-height: 1.3; }
+.validator-detail { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 3px; line-height: 1.5; }
+
+/* Source ref cards */
+.source-ref-list { display: flex; flex-direction: column; gap: 7px; }
+.source-ref {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 11px 13px;
+  display: grid; grid-template-columns: 30px 1fr auto; gap: 11px; align-items: center;
+}
+.source-ref-icon {
+  width: 30px; height: 30px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.source-ref-icon svg { width: 15px; height: 15px; fill: currentColor; }
+.source-ref-icon.transcript { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.source-ref-icon.cohort { background: rgba(201,169,97,0.14); color: var(--right-hand); }
+.source-ref-icon.roomplan { background: rgba(123,168,255,0.14); color: var(--kerf-blue); }
+.source-ref-icon.confirmed { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.source-ref-text {}
+.source-ref-title { font-size: 12px; color: var(--kerf-text); font-weight: 600; line-height: 1.35; }
+.source-ref-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; line-height: 1.45; }
+.source-ref-meta code { font-family: "SF Mono", Menlo, monospace; font-size: 10px; color: var(--right-hand); }
+.source-ref-action {
+  font-size: 11px; color: var(--kerf-blue); font-weight: 600;
+  padding: 5px 9px; background: rgba(123,168,255,0.10); border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Pricing breakdown */
+.pricing-row {
+  display: grid; grid-template-columns: 1fr 110px 110px 110px;
+  gap: 12px; align-items: center;
+  padding: 9px 13px;
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 8px;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+.pricing-header {
+  background: transparent; border: none;
+  padding: 4px 13px;
+  font-size: 9.5px; color: var(--kerf-text-mute);
+  letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;
+}
+.pricing-name { color: var(--kerf-text); font-weight: 600; }
+.pricing-val { font-family: "SF Mono", Menlo, monospace; text-align: right; }
+.pricing-val.model { color: var(--kerf-text-dim); }
+.pricing-val.final { color: var(--kerf-text); font-weight: 700; }
+.pricing-val.delta { color: var(--kerf-text-mute); font-size: 11px; }
+.pricing-val.delta.green { color: var(--field-green); }
+.pricing-val.delta.amber { color: var(--kerf-amber); }
+
+/* Approval chain timeline */
+.timeline-list { display: flex; flex-direction: column; gap: 0; }
+.timeline-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 12px;
+  padding: 9px 0;
+  position: relative;
+}
+.timeline-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 8.5px;
+  top: 24px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--kerf-border-soft);
+}
+.timeline-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--kerf-surface);
+  border: 2px solid var(--kerf-border);
+  flex-shrink: 0;
+  margin-top: 2px;
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.timeline-dot svg { width: 9px; height: 9px; fill: var(--kerf-text-mute); }
+.timeline-dot.done { background: var(--field-green); border-color: var(--field-green); }
+.timeline-dot.done svg { fill: #0A1A0F; }
+.timeline-dot.current { background: var(--kerf-amber); border-color: var(--kerf-amber); }
+.timeline-dot.current svg { fill: #1A1300; }
+.timeline-text {}
+.timeline-event { font-size: 12px; color: var(--kerf-text); font-weight: 600; line-height: 1.35; }
+.timeline-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; }
+.timeline-meta code { font-family: "SF Mono", Menlo, monospace; font-size: 10px; }
+
+/* Right rail · DecisionPacket */
+.packet-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.packet-header {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  margin-bottom: 10px;
+}
+.packet-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(201,169,97,0.14); color: var(--right-hand);
+  display: flex; align-items: center; justify-content: center;
+}
+.packet-icon svg { width: 16px; height: 16px; fill: currentColor; }
+.packet-title { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.3; }
+.packet-subtitle { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; font-family: "SF Mono", Menlo, monospace; }
+
+.packet-field {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 11.5px;
+}
+.packet-field:last-child { border-bottom: none; }
+.packet-key { color: var(--kerf-text-mute); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; padding-top: 1px; }
+.packet-val { color: var(--kerf-text); font-family: "SF Mono", Menlo, monospace; font-size: 10.5px; line-height: 1.4; word-break: break-all; }
+
+/* Role visibility */
+.role-list { display: flex; flex-direction: column; gap: 6px; }
+.role-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 8px;
+  padding: 9px 11px;
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+}
+.role-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.role-class { font-size: 10px; color: var(--kerf-text-mute); margin-top: 1px; }
+.role-class code { font-family: "SF Mono", Menlo, monospace; }
+.role-permission {
+  font-size: 9.5px; padding: 3px 8px; border-radius: 4px;
+  letter-spacing: 0.06em; font-weight: 700;
+}
+.role-permission.full { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.role-permission.redacted { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.role-permission.hidden { background: rgba(248,113,113,0.10); color: var(--kerf-red); }
+
+/* Action bar */
+.action-bar {
+  border-top: 1px solid var(--kerf-border);
+  background: var(--kerf-bg-2);
+  padding: 14px 22px;
+  display: flex; align-items: center; gap: 14px;
+}
+.ab-status { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.ab-status .as-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--field-green); }
+.ab-status strong { color: var(--kerf-text); font-weight: 600; }
+.ab-spacer { flex: 1; }
+.ab-btn {
+  padding: 9px 16px; font-size: 12px; font-weight: 600;
+  border-radius: 8px;
+  background: var(--kerf-surface-2); color: var(--kerf-text-dim);
+  border: 1px solid var(--kerf-border);
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ab-btn:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.ab-btn svg { width: 13px; height: 13px; fill: currentColor; }
+.ab-btn.danger { color: var(--kerf-red); }
+.ab-btn.danger:hover { background: rgba(248,113,113,0.08); }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1/A2 · Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-B1/B2 · Decision Card</span>
+    <span class="sep">›</span>
+    <span class="step current">F-H1 · Audit Detail (Settings-located)</span>
+  </div>
+  <h1>F-H1 · Desktop Audit Detail · per-decision trust receipt</h1>
+  <p>
+    Settings-located audit destination reached via the "View audit detail" deep-link from F-B1 / F-B2 Decision Card. <em>This is the substrate destination</em> — canon vocabulary IS expected here (AltitudePacket / DecisionPacket / validator IDs / cohort / archetype / variance band). Per <code>feedback_audit_deep_link_not_top_nav.md</code>, audit never lives in top nav; the operator surface presents plain English, and the substrate stays one click deep at Settings → Audit. Anyone navigating here is explicitly asking for trust detail — show the whole picture. Five sections render the full receipt: <strong>trust check</strong> (validator wall) · <strong>source references</strong> (what fed the decision) · <strong>pricing breakdown</strong> (model vs final per line) · <strong>role visibility</strong> (who sees what under the permission lattice) · <strong>approval chain</strong> (timeline of the decision lifecycle). Right rail surfaces the DecisionPacket metadata.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-H1 · Desktop audit detail · Hernandez CO-002 · trust check passed</div>
+  <p class="frame-narr">
+    Operator clicked "View audit detail" on F-B2 Decision Card. This surface loads in the Settings → Audit destination scope. Trust check passed banner is visible at the top; below it, the validator wall shows all 9 checks that ran (V7 source refs · V8 pricing · V12 role visibility · V17 approval · V18 send-gate readiness · plus structural validators V1/V2/V6/V9). Source references list the 4 plain-English sources from the Decision Card, now annotated with their canon-vocabulary anchors (transcript hash, cohort window, RoomPlan model ID, confirmed-detail event IDs). Pricing breakdown shows model-suggested vs operator-final per scope line. Role visibility shows which roles see this artifact and what data class is redacted per role. Approval chain renders as a vertical timeline. Right rail packet card holds the DecisionPacket metadata (packet ID, parent refs, model versions, timestamps).
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/settings/audit/decisions/altpkt_co-002_a7f3</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Audit search · packet IDs, decision titles, dates</div>
+      </div>
+
+      <div class="bc-bar">
+        <span class="bc-link">Settings</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-link">Audit</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-link">Decisions</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-link active">CO-002 · pantry scope expansion</span>
+        <div class="bc-spacer"></div>
+        <span class="bc-back">‹ Back to Decision Card</span>
+      </div>
+
+      <!-- Audit header -->
+      <div class="audit-header">
+        <div class="ah-text">
+          <div class="ah-eyebrow"><span class="ah-dot"></span>Trust receipt · DecisionPacket</div>
+          <div class="ah-title">Hernandez CO-002 · pantry scope expansion · $14,820.00</div>
+          <div class="ah-meta">
+            <code>altpkt_co-002_a7f3</code>
+            <span class="ah-sep">·</span>
+            Approved 2026-05-17 09:47 by Christian Asdal
+            <span class="ah-sep">·</span>
+            Generated by Right Hand 14:42
+            <span class="ah-sep">·</span>
+            Validator wall <code>v1.4.2</code>
+          </div>
+        </div>
+        <div class="ah-status-pill">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg>
+          Trust check passed
+        </div>
+      </div>
+
+      <!-- Audit body -->
+      <div class="audit-body">
+
+        <!-- LEFT main -->
+        <div class="audit-main">
+
+          <!-- Validator wall -->
+          <div class="audit-section">
+            <div class="audit-sec-head">
+              <span class="audit-sec-title">Validator wall <span class="count">· 9 of 9 passed</span></span>
+              <span class="audit-sec-action">Validator definitions →</span>
+            </div>
+            <div class="validator-grid">
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V7 · source-refs</div>
+                  <div class="validator-name">All scope lines anchored</div>
+                  <div class="validator-detail">5/5 lines tied to transcript timestamps, cohort comparables, or RoomPlan pins</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V8 · pricing-range</div>
+                  <div class="validator-name">All lines within cohort range</div>
+                  <div class="validator-detail">No outliers · 11-job cohort (4 pantry + 7 small-room cabinetry, 18mo window)</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V12 · role-visibility</div>
+                  <div class="validator-name">Permission lattice correct</div>
+                  <div class="validator-detail">Owner full · PM project-redacted · field/sub role-filtered · client read-only on artifact</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V17 · approval-authority</div>
+                  <div class="validator-name">Within owner sign-off authority</div>
+                  <div class="validator-detail">$14,820 ≤ $25,000 owner threshold · no escalation required</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V18 · send-gate</div>
+                  <div class="validator-name">Send-gate items resolved at F-G1</div>
+                  <div class="validator-detail">Tape-verify cleared · budget anchor resolved with client</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V1 · entity-lifecycle</div>
+                  <div class="validator-name">Lifecycle states valid</div>
+                  <div class="validator-detail">CO-002 transitioned draft → approved per state machine</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V2 · money-integrity</div>
+                  <div class="validator-name">Storage-as-cents intact</div>
+                  <div class="validator-detail">1,482,000 cents stored · displayed as $14,820.00 · no float operations</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V6 · trust-discipline</div>
+                  <div class="validator-name">No fabricated comparables</div>
+                  <div class="validator-detail">All cohort references map to real past project IDs · zero synthetic data</div>
+                </div>
+              </div>
+
+              <div class="validator-card passed">
+                <span class="validator-mark"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div>
+                  <div class="validator-id">V9 · ai-disclosure</div>
+                  <div class="validator-name">§13 disclosure rendered</div>
+                  <div class="validator-detail">Operator surface: "AI-assisted by Kerf Right Hand" · client artifact: "Contractor-reviewed"</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Source references -->
+          <div class="audit-section">
+            <div class="audit-sec-head">
+              <span class="audit-sec-title">Source references <span class="count">· 4</span></span>
+              <span class="audit-sec-action">Open all sources →</span>
+            </div>
+            <div class="source-ref-list">
+
+              <div class="source-ref">
+                <div class="source-ref-icon transcript">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+                </div>
+                <div class="source-ref-text">
+                  <div class="source-ref-title">Field walk transcript · today 14:22</div>
+                  <div class="source-ref-meta">3 scope lines anchored · <code>transcript_id: txn_a7f3</code> · original immutable · 1 edit overlay</div>
+                </div>
+                <span class="source-ref-action">Open →</span>
+              </div>
+
+              <div class="source-ref">
+                <div class="source-ref-icon cohort">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 17h18v2H3zm3-5h12v2H6zm3-5h6v2H9z"/></svg>
+                </div>
+                <div class="source-ref-text">
+                  <div class="source-ref-title">Cohort comparables · 11 past projects</div>
+                  <div class="source-ref-meta">4 pantry conversions (archetype: pantry-conversion) + 7 small-room cabinetry · 18mo window · <code>cohort_id: ch_pantry_18mo</code> · variance band P25-P75</div>
+                </div>
+                <span class="source-ref-action">Open →</span>
+              </div>
+
+              <div class="source-ref">
+                <div class="source-ref-icon roomplan">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3v18h18V3H3zm16 16H5V5h14v14zM7 7h6v6H7zm0 8h10v2H7z"/></svg>
+                </div>
+                <div class="source-ref-text">
+                  <div class="source-ref-title">RoomPlan model · today's measurements</div>
+                  <div class="source-ref-meta">Footprint reuse · <code>roomplan_model_id: rp_m_019</code> · use-label: <strong>estimate-safe</strong> (verify-before-release for cabinetry)</div>
+                </div>
+                <span class="source-ref-action">Open →</span>
+              </div>
+
+              <div class="source-ref">
+                <div class="source-ref-icon confirmed">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg>
+                </div>
+                <div class="source-ref-text">
+                  <div class="source-ref-title">3 confirmed details · operator-resolved</div>
+                  <div class="source-ref-meta">Shelving finish · door swing · electrical extent · <code>clarification_events: cf_a, cf_b, cf_c</code> · resolved 14:31, 14:38, 14:42</div>
+                </div>
+                <span class="source-ref-action">Open →</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing breakdown · model vs final -->
+          <div class="audit-section">
+            <div class="audit-sec-head">
+              <span class="audit-sec-title">Pricing · model-suggested vs operator-final</span>
+              <span class="audit-sec-action">Export CSV →</span>
+            </div>
+
+            <div class="pricing-row pricing-header">
+              <div>Scope line</div>
+              <div style="text-align: right;">Model</div>
+              <div style="text-align: right;">Final</div>
+              <div style="text-align: right;">Delta</div>
+            </div>
+
+            <div class="pricing-row">
+              <div class="pricing-name">Footprint convert · demo + framing + drywall</div>
+              <div class="pricing-val model">$3,400</div>
+              <div class="pricing-val final">$3,400</div>
+              <div class="pricing-val delta">—</div>
+            </div>
+            <div class="pricing-row">
+              <div class="pricing-name">Washer/dryer relocate · plumbing + 240V</div>
+              <div class="pricing-val model">$2,850</div>
+              <div class="pricing-val final">$2,850</div>
+              <div class="pricing-val delta">—</div>
+            </div>
+            <div class="pricing-row">
+              <div class="pricing-name">Shelving · long wall · factory-finish</div>
+              <div class="pricing-val model">$5,200</div>
+              <div class="pricing-val final">$5,200</div>
+              <div class="pricing-val delta">—</div>
+            </div>
+            <div class="pricing-row">
+              <div class="pricing-name">Counter run · back wall + 20A circuit</div>
+              <div class="pricing-val model">$2,340</div>
+              <div class="pricing-val final">$2,340</div>
+              <div class="pricing-val delta">—</div>
+            </div>
+            <div class="pricing-row">
+              <div class="pricing-name">Door swing + vent termination + paint</div>
+              <div class="pricing-val model">$1,030</div>
+              <div class="pricing-val final">$1,030</div>
+              <div class="pricing-val delta">—</div>
+            </div>
+            <div class="pricing-row" style="background: rgba(245,181,68,0.06); border-color: rgba(245,181,68,0.30); margin-top: 4px;">
+              <div class="pricing-name" style="font-weight: 700;">Subtotal · CO-002</div>
+              <div class="pricing-val model">$14,820</div>
+              <div class="pricing-val final" style="font-size: 14px;">$14,820</div>
+              <div class="pricing-val delta">0.0%</div>
+            </div>
+          </div>
+
+          <!-- Approval chain -->
+          <div class="audit-section">
+            <div class="audit-sec-head">
+              <span class="audit-sec-title">Approval chain · lifecycle timeline</span>
+            </div>
+            <div class="timeline-list">
+
+              <div class="timeline-item">
+                <span class="timeline-dot done"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div class="timeline-text">
+                  <div class="timeline-event">Capture session created</div>
+                  <div class="timeline-meta">Daniel · 14:22 · F-E1 → wrote to Hernandez Daily Log <code>dl_hernandez_2026-05-17</code></div>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <span class="timeline-dot done"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div class="timeline-text">
+                  <div class="timeline-event">Transcript reviewed and approved</div>
+                  <div class="timeline-meta">Christian · 14:36 · F-F1 → 1 edit overlay · 2 gaps resolved · transcript hash <code>txn_a7f3</code></div>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <span class="timeline-dot done"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div class="timeline-text">
+                  <div class="timeline-event">Draft assembled by Right Hand</div>
+                  <div class="timeline-meta">Right Hand · 14:42 · F-G1 → 5 scope lines · cohort window 18mo · model version <code>v1.4.2</code></div>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <span class="timeline-dot done"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div class="timeline-text">
+                  <div class="timeline-event">Send-gates resolved</div>
+                  <div class="timeline-meta">Christian · 14:44–09:31 (overnight) · tape-verify cleared by Daniel · budget anchor resolved via Maria SMS</div>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <span class="timeline-dot current"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg></span>
+                <div class="timeline-text">
+                  <div class="timeline-event">Decision approved</div>
+                  <div class="timeline-meta">Christian · 2026-05-17 09:47 · F-B2 Decision Card → routed to client-projection queue · external send pending V18-next gate</div>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <span class="timeline-dot"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8v8m-4-4h8"/></svg></span>
+                <div class="timeline-text">
+                  <div class="timeline-event">External send (pending)</div>
+                  <div class="timeline-meta">Awaiting operator action at client-projection surface (separate V18 gate)</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT rail -->
+        <div class="audit-rail">
+
+          <!-- DecisionPacket card -->
+          <div class="packet-card">
+            <div class="packet-header">
+              <div class="packet-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 8c-1.45 0-2.26 1.44-1.93 2.51l-3.55 3.56c-.3-.09-.74-.09-1.04 0l-2.55-2.55c.34-1.07-.48-2.52-1.93-2.52-1.44 0-2.26 1.44-1.92 2.52l-4.56 4.55c-1.07-.34-2.51.48-2.51 1.92 0 1.1.9 2 2 2 1.44 0 2.25-1.44 1.92-2.51l4.55-4.56c.3.09.74.09 1.04 0l2.55 2.55c-.34 1.08.48 2.52 1.93 2.52 1.44 0 2.26-1.44 1.92-2.52l3.56-3.55c1.07.33 2.51-.48 2.51-1.93 0-1.1-.9-2-2-2z"/></svg>
+              </div>
+              <div>
+                <div class="packet-title">DecisionPacket</div>
+                <div class="packet-subtitle">altpkt_co-002_a7f3</div>
+              </div>
+            </div>
+
+            <div class="packet-field">
+              <div class="packet-key">Type</div>
+              <div class="packet-val">change_order · co-002</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Project</div>
+              <div class="packet-val">proj_hernandez_pantry</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Modifies</div>
+              <div class="packet-val">est_014 (approved 2026-04-22)</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Final amount</div>
+              <div class="packet-val">1,482,000 cents ($14,820.00)</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Approver</div>
+              <div class="packet-val">user_christian_asdal</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Approved at</div>
+              <div class="packet-val">2026-05-17T09:47:14Z</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Model</div>
+              <div class="packet-val">altitude_engine v1.4.2</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Validator wall</div>
+              <div class="packet-val">9/9 passed · all green</div>
+            </div>
+            <div class="packet-field">
+              <div class="packet-key">Parent packets</div>
+              <div class="packet-val">cap_a7f3 (capture)<br/>txn_a7f3 (transcript)<br/>draft_a7f3 (draft)</div>
+            </div>
+          </div>
+
+          <!-- Role visibility -->
+          <div>
+            <div style="font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 8px;">Role visibility</div>
+            <div class="role-list">
+              <div class="role-row">
+                <div>
+                  <div class="role-name">Owner (Christian)</div>
+                  <div class="role-class"><code>data_class: full · operator-private allowed</code></div>
+                </div>
+                <span class="role-permission full">FULL</span>
+              </div>
+              <div class="role-row">
+                <div>
+                  <div class="role-name">PM (Marcus R.)</div>
+                  <div class="role-class"><code>data_class: project-scoped · margin redacted</code></div>
+                </div>
+                <span class="role-permission redacted">REDACTED</span>
+              </div>
+              <div class="role-row">
+                <div>
+                  <div class="role-name">Admin / Ops (TBD)</div>
+                  <div class="role-class"><code>data_class: admin-scoped · subs + paperwork</code></div>
+                </div>
+                <span class="role-permission redacted">PARTIAL</span>
+              </div>
+              <div class="role-row">
+                <div>
+                  <div class="role-name">Field Hand (Daniel)</div>
+                  <div class="role-class"><code>data_class: own-lane · no pricing detail</code></div>
+                </div>
+                <span class="role-permission hidden">SCOPE-ONLY</span>
+              </div>
+              <div class="role-row">
+                <div>
+                  <div class="role-name">Client (Maria H.)</div>
+                  <div class="role-class"><code>data_class: artifact-only · no margin · no comparables</code></div>
+                </div>
+                <span class="role-permission redacted">ARTIFACT</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trust posture reminder -->
+          <div style="padding: 11px 13px; background: rgba(56,201,119,0.04); border-left: 2px solid var(--field-green); border-radius: 3px; font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.5;">
+            <strong style="color: var(--field-green);">Vendor protection active.</strong> Privileged-class entries (legal, HR, capital, attorney) never transit external LLM. This DecisionPacket contains no privileged-class data. Tenant-keyed encryption applied to operator-private fields. Per <code style="font-family: 'SF Mono', Menlo, monospace; font-size: 10px;">project_kerf_blackboard.md</code>.
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Action bar -->
+      <div class="action-bar">
+        <div class="ab-status">
+          <span class="as-dot"></span>
+          <span><strong>Trust check passed.</strong> 9/9 validators · all sources anchored · permission lattice clean.</span>
+        </div>
+        <div class="ab-spacer"></div>
+        <button class="ab-btn">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 20h14v-2H5zm7-18-7 7h4v6h6v-6h4z" transform="rotate(180 12 12)"/></svg>
+          Export receipt (PDF)
+        </button>
+        <button class="ab-btn danger">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z"/></svg>
+          Dispute this decision
+        </button>
+        <button class="ab-btn">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back to Decision Card
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-H1 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 1 rebuild order · CLOSE</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>Home + Decision Card family + Start + Capture + Transcript + Draft</span></div>
+      <div class="sl-step current"><span class="sl-dot">17</span><span><span class="sl-name">F-H1</span> · Audit Detail <em>(this · Tier 1 close)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">✓</span><span>Tier 1 complete</span></div>
+    </div>
+
+    <h4>What this surface is</h4>
+    <p>The <em>substrate destination</em>. Reached via "View audit detail" deep-link from F-B1/F-B2 Decision Card. Per <code>feedback_audit_deep_link_not_top_nav.md</code>, audit lives one click deep at Settings → Audit, never top nav. Anyone navigating here is explicitly asking for trust detail.</p>
+
+    <h4>Canon vocabulary IS allowed here</h4>
+    <ul>
+      <li><strong>This is the one operator surface where canon vocabulary surfaces directly</strong> — AltitudePacket / DecisionPacket / validator IDs / cohort / archetype / variance band / P25-P75 / data_class / operator-private</li>
+      <li>Plain-English rule still applies in operator-facing primary surfaces — this surface is the inverse: the substrate destination shows the receipts</li>
+      <li>Per <code>feedback_translate_canon_vocabulary_at_surface.md</code>: "Audit substrate (Settings → Audit) may surface canon vocabulary for trust review"</li>
+    </ul>
+
+    <h4>Five sections</h4>
+    <ul>
+      <li><strong>Validator wall · 9 checks</strong> — V1/V2/V6/V7/V8/V9/V12/V17/V18 canonical validators. Each card has validator ID, name, detail. All passed for an approved decision. A failed validator would render in red and block approval at F-G1.</li>
+      <li><strong>Source references · 4</strong> — same 4 plain-English sources from F-B1/B2 Decision Card, now annotated with their canon anchors: transcript hash · cohort ID + window + variance band · RoomPlan model ID + use-label · clarification event IDs</li>
+      <li><strong>Pricing breakdown</strong> — model-suggested vs operator-final per scope line, with delta. Subtotal row highlighted. Storage-as-cents shown on the DecisionPacket card; display-as-dollars on the pricing table.</li>
+      <li><strong>Approval chain</strong> — vertical timeline from capture → transcript → draft → send-gate resolution → decision approval → (pending external send). Each event has actor, timestamp, anchor reference.</li>
+      <li><strong>Role visibility</strong> — Owner / PM / Admin / Field / Sub / Client rows with data_class and permission level. Permission lattice visible. Operator-private content surfaces here for the Owner but not for any other role.</li>
+    </ul>
+
+    <h4>Right rail · DecisionPacket card</h4>
+    <ul>
+      <li>Packet ID prominently displayed (<code>altpkt_co-002_a7f3</code>) — copyable for support / dispute / audit export</li>
+      <li>All packet fields shown: type · project · modifies · final amount (cents + dollar display) · approver · timestamp · model version · validator status · parent packets</li>
+      <li>Below: role visibility list with data_class per role</li>
+      <li>Below: vendor protection reminder — privileged-class never transits external LLM, tenant-keyed encryption for operator-private fields</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Audit at Settings · one click deep · never top nav</li>
+      <li><span class="badge canon">canon</span>Canon vocabulary surfaces here (validator IDs, packet IDs, cohort/archetype/variance) — the substrate destination is where trust receipts live</li>
+      <li><span class="badge canon">canon</span>Permission lattice visible — operator sees what each role sees, including their own redaction class</li>
+      <li><span class="badge canon">canon</span>Money displayed dual: cents (storage truth) on the packet card + dollars (operator display) on the pricing table</li>
+      <li><span class="badge canon">canon</span>Vendor protection reminder visible — privileged-class isolation + tenant-keyed encryption · the public-trust posture</li>
+      <li><span class="badge canon">canon</span>Dispute path exists · "Dispute this decision" opens a structured grievance flow (operator-initiated reopen)</li>
+    </ul>
+
+    <h4>What this surface enables</h4>
+    <ul>
+      <li><strong>Trust verification</strong> · operator can confirm any specific aspect of the decision (which source · which validator · which model version)</li>
+      <li><strong>Audit export</strong> · PDF export of the full receipt for legal-defensibility (De Wall pattern)</li>
+      <li><strong>Reproducibility</strong> · packet ID + model version + cohort window + source IDs let any future analyst reproduce the decision logic</li>
+      <li><strong>Dispute initiation</strong> · operator can open a structured dispute that reopens the decision lifecycle</li>
+      <li><strong>Per-project audit lens</strong> · same substrate surfaces via Projects > [project] > Audit sub-tab filtered to that project's decisions</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Source reference "Open →" → respective source destination (transcript · cohort comparable · RoomPlan model · clarification event)</li>
+      <li>Validator "Validator definitions →" → canon definition page for V1-V18 validators</li>
+      <li>Pricing "Export CSV →" → CSV export of the pricing breakdown</li>
+      <li>"Export receipt (PDF)" → full audit receipt as PDF</li>
+      <li>"Dispute this decision" → structured dispute flow · creates a dispute packet · reopens decision lifecycle</li>
+      <li>"Back to Decision Card" → F-B1 (mobile) or F-B2 (desktop) Decision Card</li>
+      <li>Breadcrumb "Settings · Audit · Decisions" → respective audit destination scope</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>proposal_review_phase2/F-37_desktop_audit_event_stream.html</code> — superseded (different concern; event-stream view stays as a separate destination)</li>
+      <li><code>F-B1/F-B2 · Decision Card</code> — upstream (this surface is reached from here)</li>
+      <li><code>feedback_audit_deep_link_not_top_nav.md</code> — Option C audit posture canon</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> — plain-English rule (with audit-substrate exception)</li>
+      <li><code>project_kerf_blackboard.md</code> — permission lattice + vendor protection + data_class taxonomy</li>
+      <li><code>kerf_variance_band_architecture.md</code> — cohort + variance band canon</li>
+      <li><code>kerf_transcript_canon.md</code> — three-part transcript schema</li>
+      <li><code>kerf_lidar_precision_limits_and_apple_wrap.md</code> — RoomPlan use-labels</li>
+      <li><code>kerf_ai_disclosure_pattern.md</code> — §13 disclosure (validator V9)</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> — canon (parent)</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Full audit event-stream view (cross-decision) · separate destination at Settings > Audit > Events</li>
+      <li>Per-project Audit sub-tab on Project Detail · same substrate, project-filtered</li>
+      <li>Audit search · packet IDs, decision titles, dates, validator failures</li>
+      <li>Dispute flow detail · this surface shows the entry point; the dispute flow itself is its own surface</li>
+      <li>Multi-tenant audit aggregation · enterprise tier</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface guarantees</span>
+    <em>Every decision has a receipt.</em> No "the AI did it" hand-wave. The validator wall, source references, pricing breakdown, approval chain, role visibility, and DecisionPacket metadata are all reproducible. If the decision is ever disputed in legal proceedings or audit, the full trail is one click deep — at the substrate destination, not the operator surface.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a chronological event log (that's a separate destination). Not an operator-primary surface (operator surfaces stay plain English). Not a Kerf-staff backdoor (vendor protection + tenant-keyed encryption hold). <strong>F-H1 is the trust receipt for one decision, the per-decision substrate slice of the Audit destination.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

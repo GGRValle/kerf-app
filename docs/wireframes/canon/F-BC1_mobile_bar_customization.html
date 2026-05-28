@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-BC1 · Mobile Customize navigation · 3 mandatory + 2 swap</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11; --kerf-bg-2: #14181F; --kerf-surface: #1A1F28; --kerf-surface-2: #232936;
+  --kerf-border: #2A3140; --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1; --kerf-text-dim: #98A1B3; --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544; --kerf-green: #4ADE80; --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF; --kerf-violet: #A78BFA; --kerf-magenta: #E879A8;
+  --field-green: #38C977; --right-hand: #C9A961;
+}
+body.light-mode { --kerf-bg: #FFFFFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFFFFF; --kerf-surface-2: #EBEEF2; --kerf-border: #C9D0D8; --kerf-border-soft: #DFE3E8; --kerf-text: #0A0D11; --kerf-text-dim: #4A5462; --kerf-text-mute: #7B8492; }
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 780px; display: flex; flex-direction: column; }
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; font-weight: 600; }
+
+.top-chrome { padding: 6px 16px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--kerf-border-soft); }
+.tc-back { display: flex; align-items: center; gap: 4px; color: var(--kerf-amber); font-size: 13px; font-weight: 600; min-width: 72px; }
+.tc-back svg { width: 18px; height: 18px; fill: currentColor; }
+.tc-title { flex: 1; text-align: center; font-size: 15px; font-weight: 700; }
+.tc-spacer { min-width: 72px; }
+
+.body { flex: 1; overflow-y: auto; padding: 14px 16px 16px; }
+
+.hero { background: linear-gradient(135deg, rgba(245,181,68,0.10) 0%, rgba(201,169,97,0.05) 100%); border: 1px solid rgba(245,181,68,0.35); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+.hero-title { font-size: 15px; font-weight: 700; color: var(--kerf-text); line-height: 1.35; }
+.hero-sub { font-size: 11.5px; color: var(--kerf-text-dim); margin-top: 6px; line-height: 1.5; }
+.hero-sub strong { color: var(--kerf-magenta); }
+.hero-sub em { color: var(--kerf-amber); font-style: normal; font-weight: 600; }
+
+.section-label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin: 16px 0 8px; }
+
+.bar-preview-wrap { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 12px; padding: 14px 12px 10px; margin-bottom: 4px; }
+.bar-preview-label { font-size: 10px; color: var(--kerf-text-mute); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 10px; }
+.bar-preview { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; padding: 8px 4px 4px; background: var(--kerf-bg-2); border-radius: 10px; border: 1px solid var(--kerf-border-soft); }
+.bp-tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9.5px; color: var(--kerf-text-mute); font-weight: 600; position: relative; padding-top: 10px; }
+.bp-tab.locked::before { content: '🔒'; position: absolute; top: 0; font-size: 8px; opacity: 0.85; }
+.bp-tab.swap { color: var(--kerf-amber); }
+.bp-tab.selected { color: var(--kerf-amber); }
+.bp-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.bp-fab-wrap { position: relative; }
+.bp-fab { width: 46px; height: 46px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; align-items: center; justify-content: center; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border: 3px solid var(--kerf-bg-2); box-shadow: 0 4px 14px rgba(245,181,68,0.35); font-size: 16px; font-weight: 700; }
+.bp-fab-label { margin-top: 34px; font-size: 9px; }
+
+.mandatory-list { display: flex; flex-direction: column; gap: 6px; }
+.mand-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(232,121,168,0.06); border: 1px solid rgba(232,121,168,0.25); border-radius: 9px; font-size: 12.5px; font-weight: 600; }
+.mand-lock { color: var(--kerf-magenta); font-size: 14px; }
+.mand-badge { margin-left: auto; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-magenta); font-weight: 700; }
+
+.picker-block { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+.picker-title { font-size: 12px; font-weight: 700; color: var(--kerf-text); margin-bottom: 4px; }
+.picker-hint { font-size: 10.5px; color: var(--kerf-text-mute); margin-bottom: 10px; }
+.radio-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--kerf-text-dim); margin-bottom: 4px; }
+.radio-row:hover { background: var(--kerf-bg-2); }
+.radio-row.selected { background: rgba(245,181,68,0.10); color: var(--kerf-text); font-weight: 600; border: 1px solid rgba(245,181,68,0.30); }
+.radio-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--kerf-border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.radio-row.selected .radio-dot { border-color: var(--kerf-amber); }
+.radio-row.selected .radio-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--kerf-amber); }
+
+.proposed-preview { background: var(--kerf-bg-2); border: 1px dashed var(--kerf-border); border-radius: 10px; padding: 12px; margin: 14px 0; }
+.proposed-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 8px; }
+.proposed-bar { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; padding: 8px 4px; background: var(--kerf-surface); border-radius: 8px; }
+.pb-tab { font-size: 9px; text-align: center; color: var(--kerf-text-mute); font-weight: 600; padding-top: 8px; }
+.pb-tab.hl { color: var(--kerf-amber); font-weight: 700; }
+.pb-fab { grid-column: 3; text-align: center; }
+.pb-fab-inner { width: 40px; height: 40px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; padding-bottom: 8px; }
+.btn-primary { padding: 12px; background: var(--kerf-amber); color: #1A1300; border-radius: 10px; font-size: 13px; font-weight: 700; text-align: center; }
+.btn-secondary { padding: 12px; background: var(--kerf-surface); color: var(--kerf-text-dim); border: 1px solid var(--kerf-border-soft); border-radius: 10px; font-size: 13px; font-weight: 600; text-align: center; }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+.callout em { color: var(--right-hand); font-style: normal; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px">Theme</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Grid view: <strong>NO</strong> · Settings → Customize navigation</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">F-SP1 · Settings</span><span class="sep">›</span><span class="step current">F-BC1 · Customize navigation</span></div>
+  <h1>F-BC1 · Mobile bar customization · 3 mandatory + 2 you choose</h1>
+  <p>Detail surface reached from Settings → Customize navigation. Operator picks two swappable bottom-bar slots; Home · SPEAK · More stay locked. Default bar: Home · Projects · SPEAK · Clients · More. <strong>Grid view: NO.</strong></p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-BC1 · Customize navigation · proposed: Sales + Schedule</div>
+  <p class="frame-narr">Christian opens bar customization from Settings. Current bar shown with lock icons on mandatory slots. Slot 1 changes from Projects to Sales; slot 2 from Clients to Schedule. Small preview reflects the proposed bar before Apply.</p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>●●● 88%</span></div>
+        <div class="top-chrome">
+          <div class="tc-back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Settings</div>
+          <div class="tc-title">Customize navigation</div>
+          <div class="tc-spacer"></div>
+        </div>
+
+        <div class="body">
+          <div class="hero">
+            <div class="hero-title">Your bottom bar · 5 slots</div>
+            <div class="hero-sub"><strong>3 mandatory</strong> (Home · SPEAK · More) · <em>2 you choose</em> from Projects · Schedule · Money · Sales · Crew</div>
+          </div>
+
+          <div class="section-label">Current bar</div>
+          <div class="bar-preview-wrap">
+            <div class="bar-preview-label">Today · default owner bar</div>
+            <div class="bar-preview">
+              <div class="bp-tab locked"><span class="bp-icon">⌂</span>Home</div>
+              <div class="bp-tab swap selected"><span class="bp-icon">▣</span>Projects</div>
+              <div class="bp-fab-wrap bp-tab locked"><div class="bp-fab">♪</div><span class="bp-fab-label">Speak</span></div>
+              <div class="bp-tab swap selected"><span class="bp-icon">◎</span>Clients</div>
+              <div class="bp-tab locked"><span class="bp-icon">▦</span>More</div>
+            </div>
+          </div>
+
+          <div class="section-label">Mandatory · locked</div>
+          <div class="mandatory-list">
+            <div class="mand-row"><span class="mand-lock">🔒</span>Home<span class="mand-badge">mandatory</span></div>
+            <div class="mand-row"><span class="mand-lock">🔒</span>SPEAK<span class="mand-badge">mandatory</span></div>
+            <div class="mand-row"><span class="mand-lock">🔒</span>More<span class="mand-badge">mandatory</span></div>
+          </div>
+
+          <div class="section-label">Swap slot 1</div>
+          <div class="picker-block">
+            <div class="picker-title">Position 2 · currently Projects</div>
+            <div class="picker-hint">Pick one destination for this swappable slot</div>
+            <div class="radio-row selected"><span class="radio-dot"></span>Sales</div>
+            <div class="radio-row"><span class="radio-dot"></span>Projects</div>
+            <div class="radio-row"><span class="radio-dot"></span>Schedule</div>
+            <div class="radio-row"><span class="radio-dot"></span>Money</div>
+            <div class="radio-row"><span class="radio-dot"></span>Crew</div>
+          </div>
+
+          <div class="section-label">Swap slot 2</div>
+          <div class="picker-block">
+            <div class="picker-title">Position 4 · currently Clients</div>
+            <div class="picker-hint">Pick one destination for this swappable slot</div>
+            <div class="radio-row"><span class="radio-dot"></span>Projects</div>
+            <div class="radio-row selected"><span class="radio-dot"></span>Schedule</div>
+            <div class="radio-row"><span class="radio-dot"></span>Money</div>
+            <div class="radio-row"><span class="radio-dot"></span>Sales</div>
+            <div class="radio-row"><span class="radio-dot"></span>Clients</div>
+            <div class="radio-row"><span class="radio-dot"></span>Crew</div>
+          </div>
+
+          <div class="proposed-preview">
+            <div class="proposed-label">Proposed bar preview</div>
+            <div class="proposed-bar">
+              <div class="pb-tab">Home</div>
+              <div class="pb-tab hl">Sales</div>
+              <div class="pb-fab"><div class="pb-fab-inner">♪</div>Speak</div>
+              <div class="pb-tab hl">Schedule</div>
+              <div class="pb-tab">More</div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <div class="btn-primary">Apply changes</div>
+            <div class="btn-secondary">Reset to default</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-BC1 · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><strong>Detail</strong> — configuration surface, not a list or grid of business objects</li>
+      <li><strong>List only</strong> — radio pickers; <strong>Grid view: NO</strong></li>
+      <li><strong>Cognitive job</strong> — customize my 5-slot mobile bottom bar (3 mandatory + 2 swappable)</li>
+      <li><strong>Hidden until drill</strong> — sidebar IA editor (desktop), role-root defaults, billing tier locks</li>
+    </ul>
+    <h4>Bar canon</h4>
+    <ul>
+      <li>Mandatory: Home · SPEAK · More (lock icons)</li>
+      <li>Swappable pool: Projects · Schedule · Money · Sales · Crew</li>
+      <li>Default: Projects + Clients · example proposed: Sales + Schedule</li>
+      <li>Reached via Settings → Customize navigation (see F-SP1)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">Enforces</span>3-mandatory + 2-swap contract from bottom-bar canon. Operator sees current bar, picks two slots, previews before Apply.</div>
+  <div class="callout"><span class="callout-title">Refuses</span>Not a theme picker. Not role-root admin. Not free-form icon drag-and-drop. <strong>Grid view: NO.</strong></div>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation'); }); });
+document.querySelectorAll('[data-theme]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.body.classList.toggle('light-mode', tab.dataset.theme === 'light'); try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {} }); });
+try { if (localStorage.getItem('kerf_wf_theme') === 'light') { document.body.classList.add('light-mode'); document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light')); } } catch (e) {}
+</script>
+</body>
+</html>

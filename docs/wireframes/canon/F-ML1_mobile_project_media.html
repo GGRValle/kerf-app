@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-ML1 · Mobile Project Media Library · Wegrzyn kitchen</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+.top-chrome {
+  padding: 6px 16px 12px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.tc-back {
+  display: flex; align-items: center; gap: 4px;
+  color: var(--kerf-amber); font-size: 13px; font-weight: 600;
+  white-space: nowrap;
+}
+.tc-back svg { width: 18px; height: 18px; fill: currentColor; flex-shrink: 0; }
+.tc-title { flex: 1; text-align: center; font-size: 14px; color: var(--kerf-text); font-weight: 700; line-height: 1.25; }
+.tc-spacer { width: 52px; flex-shrink: 0; }
+
+.body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+
+.rh-summary {
+  margin: 14px 0 10px;
+  padding: 11px 13px;
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+}
+.rh-avatar {
+  width: 26px; height: 26px; border-radius: 7px;
+  background: rgba(201,169,97,0.16); color: var(--right-hand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.5; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+
+.filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 4px 8px; align-items: center; }
+.filter-chip { font-size: 9.5px; padding: 4px 9px; border-radius: 6px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); color: var(--kerf-text-dim); font-weight: 600; white-space: nowrap; }
+.filter-chip.active { background: rgba(245,181,68,0.14); border-color: rgba(245,181,68,0.35); color: var(--kerf-amber); }
+
+.sort-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 4px 10px; align-items: center; }
+.sort-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-right: 2px; }
+.sort-option { font-size: 9.5px; padding: 4px 8px; border-radius: 5px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); color: var(--kerf-text-mute); font-weight: 600; }
+.sort-option.active { background: rgba(245,181,68,0.14); border-color: rgba(245,181,68,0.35); color: var(--kerf-amber); }
+
+.section-label {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  margin: 4px 4px 8px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 9.5px; letter-spacing: 0.04em; }
+
+.media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px; }
+.media-thumb {
+  position: relative; aspect-ratio: 1; border-radius: 7px; overflow: hidden;
+  border: 1px solid var(--kerf-border-soft); cursor: pointer;
+}
+.media-thumb.video::after {
+  content: '▶'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(10,13,17,0.65); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; padding-left: 2px;
+}
+.mt-preview { width: 100%; height: 100%; }
+.mt-date {
+  position: absolute; bottom: 4px; left: 4px;
+  font-size: 7.5px; font-weight: 700; color: #fff;
+  background: rgba(10,13,17,0.62); padding: 2px 5px; border-radius: 3px;
+  letter-spacing: 0.02em;
+}
+.mt-capturer {
+  position: absolute; top: 4px; right: 4px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(10,13,17,0.72); color: var(--kerf-text);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 700; border: 1px solid rgba(255,255,255,0.15);
+}
+.mt-phase {
+  position: absolute; top: 4px; left: 4px;
+  font-size: 6.5px; padding: 2px 4px; border-radius: 3px;
+  background: rgba(10,13,17,0.55); color: rgba(255,255,255,0.85);
+  letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase;
+  max-width: calc(100% - 28px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mt-flag {
+  position: absolute; bottom: 4px; right: 4px;
+  font-size: 6.5px !important; padding: 2px 4px !important;
+}
+
+.row-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 8.5px; padding: 2px 6px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+}
+.row-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.row-chip.red::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-red); }
+
+.load-more-note {
+  text-align: center; font-size: 10px; color: var(--kerf-text-mute);
+  padding: 8px 4px 4px; font-weight: 500;
+}
+
+.voice-landing-banner {
+  margin: 10px 4px 8px;
+  padding: 9px 11px;
+  background: rgba(201,169,97,0.08);
+  border: 1px solid rgba(201,169,97,0.22);
+  border-radius: 8px;
+  font-size: 11px; color: var(--kerf-text-dim); line-height: 1.45;
+}
+.voice-landing-banner em { color: var(--right-hand); font-style: normal; font-weight: 600; }
+.voice-landing-banner .vl-route { display: block; font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+/* Fullscreen viewer */
+.viewer-screen { background: #000; }
+.viewer-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 44px 16px 10px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.72) 0%, transparent 100%);
+}
+.viewer-close { color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.viewer-close svg { width: 18px; height: 18px; fill: currentColor; }
+.viewer-counter { color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 600; }
+.viewer-image {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #2a3140 0%, #1a1f28 40%, #232936 100%);
+  min-height: 0;
+}
+.viewer-image-inner {
+  width: 100%; height: 100%;
+  background: linear-gradient(160deg, #3d4a5c 0%, #2a3140 45%, #1f2530 100%);
+}
+.viewer-sheet {
+  background: var(--kerf-bg);
+  border-top: 1px solid var(--kerf-border);
+  padding: 12px 16px 18px;
+  flex-shrink: 0;
+}
+.viewer-meta { margin-bottom: 10px; }
+.viewer-meta .vm-title { font-size: 13px; font-weight: 700; color: var(--kerf-text); line-height: 1.35; }
+.viewer-meta .vm-sub { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 4px; line-height: 1.45; }
+.viewer-meta .vm-sub strong { color: var(--kerf-text-dim); font-weight: 600; }
+.viewer-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+.viewer-btn {
+  flex: 1; padding: 9px 10px; border-radius: 8px; text-align: center;
+  font-size: 11px; font-weight: 700;
+  border: 1px solid var(--kerf-border-soft); background: var(--kerf-surface); color: var(--kerf-text-dim);
+}
+.viewer-btn.primary { background: var(--kerf-amber); color: #1A1300; border-color: var(--kerf-amber); }
+.viewer-btn.link { color: var(--kerf-blue); border-color: rgba(123,168,255,0.25); background: rgba(123,168,255,0.08); }
+.voice-caption-hint {
+  padding: 9px 11px;
+  background: var(--kerf-bg-2);
+  border: 1px dashed var(--kerf-border);
+  border-radius: 8px;
+  font-size: 10.5px; color: var(--kerf-text-mute); line-height: 1.5; text-align: center;
+}
+.voice-caption-hint em { color: var(--right-hand); font-style: normal; font-weight: 600; }
+
+.bottom-bar {
+  background: var(--kerf-bg-2);
+  border-top: 1px solid var(--kerf-border);
+  padding: 8px 0 22px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  position: relative;
+  flex-shrink: 0;
+}
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--kerf-amber); }
+.bb-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-icon svg.icon-more { width: 20px; height: 20px; }
+.bb-fab-wrap { position: relative; }
+.bb-fab {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--kerf-amber); color: #1A1300;
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 6px 18px rgba(245,181,68,0.40);
+  border: 3px solid var(--kerf-bg);
+}
+.bb-fab svg.mic-icon { width: 24px; height: 24px; fill: currentColor; }
+.bb-fab-label { font-size: 10px; color: var(--kerf-text-mute); margin-top: 32px; font-weight: 600; text-align: center; }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+
+@media print {
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  .view-toggle-bar { display: none !important; }
+  .frame-spec { display: none !important; }
+  .frame { grid-template-columns: 1fr !important; gap: 0 !important; page-break-inside: avoid; margin-bottom: 18px !important; }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  .frame-render { background: #FFFFFF !important; padding: 12px !important; border: 1px solid #999 !important; box-shadow: none !important; }
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  .phone { background: #FFFFFF !important; border-color: #999 !important; box-shadow: none !important; }
+  .phone-screen, .body { background: #FFFFFF !important; color: #0A0D11 !important; }
+  .top-chrome, .bottom-bar { background: #F4F6F9 !important; border-color: #999 !important; color: #0A0D11 !important; }
+  .grid-tile, .media-thumb, .rh-summary, .project-row { background: #FFFFFF !important; border-color: #C9D0D8 !important; color: #0A0D11 !important; }
+  .callout { background: #F4F6F9 !important; border-color: #999 !important; color: #4A5462 !important; page-break-inside: avoid; }
+  .callout strong { color: #0A0D11 !important; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle · Grid view: NO List/Grid toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-PR2 · Project detail</span>
+    <span class="sep">›</span>
+    <span class="step current">F-ML1 · Project Media Library (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step">F-ML2 · Desktop sibling</span>
+  </div>
+  <h1>F-ML1 · Mobile Project Media Library · browse + voice-retrieve</h1>
+  <p>
+    Per-project media lens reached from Project Detail → Media sub-tab · or voice query <em>"Right Hand, take me to Wegrzyn pictures."</em> Photos, videos, and daily logs captured via F-E1 write here and to the daily log — single source of truth. Primary cognitive job: <strong>"see what was captured on this job and jump to the right moment."</strong> RH summary leads · thumbnail grid is the only browse mode · no List/Grid comparison toggle on this detail surface.
+  </p>
+</div>
+
+<!-- Frame 1 · Default grid -->
+<div class="frame">
+  <div class="frame-label">Frame 1 · F-ML1 · Default · All filter · 24 of 248 thumbs · most recent sort</div>
+  <p class="frame-narr">
+    Owner or PM drills from Wegrzyn project → Media. <em>Right Hand synthesis first</em> — <strong>"248 photos · 32 videos · 47 daily logs · last captured 2h ago by Carlos."</strong> Filter chips for type and grouping · sort row defaults to Most recent. Three-column thumbnail grid shows 24 items (20–30 range) with gradient placeholders · date overlay · capturer initial · subtle phase tag. Two thumbs carry red chip overlays for damage-flagged photos — chip-tier only, no row border. Footer note: <code>248 total · lazy-load on scroll</code>. <em>GC archetype baseline: hundreds of items per long build · default window is recent-first, not full history.</em>
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="status-bar"><span>10:18</span><span class="right">●●● 84%</span></div>
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Project
+          </div>
+          <div class="tc-title">Wegrzyn kitchen · Media</div>
+          <div class="tc-spacer"></div>
+        </div>
+        <div class="body">
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text"><strong>248 photos · 32 videos · 47 daily logs</strong> · last captured 2h ago by Carlos</div>
+          </div>
+          <div class="filter-row">
+            <span class="filter-chip active">All</span>
+            <span class="filter-chip">Photos</span>
+            <span class="filter-chip">Videos</span>
+            <span class="filter-chip">Daily logs</span>
+            <span class="filter-chip">By date</span>
+            <span class="filter-chip">By phase</span>
+            <span class="filter-chip">By capturer</span>
+          </div>
+          <div class="sort-row">
+            <span class="sort-label">Sort</span>
+            <span class="sort-option active">Most recent</span>
+            <span class="sort-option">Oldest first</span>
+            <span class="sort-option">By phase</span>
+          </div>
+          <div class="section-label">Recent media <span class="sl-count">· showing 24 of 248</span></div>
+          <div class="media-grid" id="grid-default"></div>
+          <div class="load-more-note">248 total · scroll to load more</div>
+        </div>
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-ML1 · Spec</h3>
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Lane 6 · Project Media Library</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-E1 · Field Capture (upstream)</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-PR2 · Project Detail (Media sub-tab entry)</span></div>
+      <div class="sl-step current"><span class="sl-dot">6</span><span><span class="sl-name">F-ML1</span> · Mobile Media Library <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">7</span><span>F-ML2 · Desktop sibling</span></div>
+    </div>
+
+    <h4>4-question rule (F-FD1 pattern)</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> Detail/browse — per-project media lens, not portfolio comparison.</li>
+      <li><strong>List / grid / both?</strong> Thumbnail grid only · <strong>NO List/Grid toggle</strong> (detail surface · grid is primary).</li>
+      <li><strong>Cognitive job?</strong> See what was captured on this job · filter to photos/videos/dailies · jump to daily log or fullscreen.</li>
+      <li><strong>Hidden until drill?</strong> Full history (lazy-load) · fullscreen viewer · daily log body (F-E1 anchor).</li>
+    </ul>
+
+    <h4>Doctrine applied</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — browse project media, retrieve by voice or filter</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — RH counts + last capture, not folder tree</li>
+      <li><span class="badge doctrine">d-3</span><em>Red chip-tier only</em> — damage flag on thumb overlay · no row border accent</li>
+      <li><span class="badge doctrine">d-4</span><em>Plain contractor vocab</em> — phase tags as text · no "extracted entities"</li>
+      <li><span class="badge doctrine">d-5</span><em>Right Hand only</em> — no agent names in body copy</li>
+    </ul>
+
+    <h4>Scale lens · 20–30 default · hundreds stress test</h4>
+    <ul>
+      <li><strong>Default window:</strong> 24 thumbs visible (3-col mobile) · most recent sort</li>
+      <li><strong>248 total:</strong> lazy-load / infinite scroll · fetch next 24 on bottom threshold · skeleton placeholders during fetch</li>
+      <li><strong>Stress test (500+):</strong> same grid shape · phase/date grouping chips compress scan · voice retrieval preferred for "show me framing week"</li>
+      <li><strong>Performance note:</strong> thumbs are CDN-resized previews · full-res only in viewer</li>
+    </ul>
+
+    <h4>Capture integration · F-E1</h4>
+    <ul>
+      <li>Photo/video from F-E1 writes to Daily Log AND appears here · same file path + metadata in event log</li>
+      <li>Viewer action <strong>Open daily log</strong> → F-E1 daily log for capture date · scrolls to anchor</li>
+      <li>LiDAR / RoomPlan captures route to F-RC1 · still listed in Media with type badge (deferred badge in V1)</li>
+    </ul>
+
+    <h4>Voice retrieval routing</h4>
+    <ul>
+      <li><code>"Right Hand, take me to Wegrzyn pictures"</code> → F-ML1 · project=Wegrzyn · filter=Photos · sort=Most recent</li>
+      <li><code>"Wegrzyn videos"</code> → filter=Videos</li>
+      <li><code>"Most recent dailies from Hernandez"</code> → project=Hernandez · filter=Daily logs</li>
+      <li><code>"Show me framing photos from last week"</code> → filter=Photos · phase=Framing · date=last 7d</li>
+      <li><code>"Right Hand, label this framing day 3"</code> → viewer open · voice caption edit (see Frame 3)</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Back → F-PR2 Project Detail · Media context preserved</li>
+      <li>Thumb tap → fullscreen viewer (Frame 3)</li>
+      <li>Open daily log → F-E1 daily log anchor for that capture day</li>
+      <li>Share → OS share sheet · watermark optional (Settings)</li>
+      <li>🎤 Speak → RH pre-bound to project + current filter</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Voice landing -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-ML1 · Voice query landing · Photos filter active</div>
+  <p class="frame-narr">
+    Operator said <em>"Right Hand, take me to Wegrzyn pictures."</em> Right Hand routes directly to F-ML1 with project bound to Wegrzyn kitchen · <strong>Photos filter active</strong> · Most recent sort unchanged. Voice landing banner confirms the interpreted query at top — then same 3-col grid, photos only. No separate "voice mode" UI · the surface IS the answer. Grid view: NO List/Grid toggle.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="status-bar"><span>10:18</span><span class="right">●●● 84%</span></div>
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Project
+          </div>
+          <div class="tc-title">Wegrzyn kitchen · Media</div>
+          <div class="tc-spacer"></div>
+        </div>
+        <div class="body">
+          <div class="voice-landing-banner">
+            <em>"Right Hand, take me to Wegrzyn pictures"</em>
+            <span class="vl-route">→ Wegrzyn kitchen · Photos · Most recent</span>
+          </div>
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text"><strong>248 photos · 32 videos · 47 daily logs</strong> · showing photos · last captured 2h ago by Carlos</div>
+          </div>
+          <div class="filter-row">
+            <span class="filter-chip">All</span>
+            <span class="filter-chip active">Photos</span>
+            <span class="filter-chip">Videos</span>
+            <span class="filter-chip">Daily logs</span>
+            <span class="filter-chip">By date</span>
+            <span class="filter-chip">By phase</span>
+            <span class="filter-chip">By capturer</span>
+          </div>
+          <div class="sort-row">
+            <span class="sort-label">Sort</span>
+            <span class="sort-option active">Most recent</span>
+            <span class="sort-option">Oldest first</span>
+            <span class="sort-option">By phase</span>
+          </div>
+          <div class="section-label">Photos <span class="sl-count">· showing 24 of 248</span></div>
+          <div class="media-grid" id="grid-voice"></div>
+          <div class="load-more-note">248 photos · scroll to load more</div>
+        </div>
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>Voice landing · Spec</h3>
+    <h4>Routing canon</h4>
+    <ul>
+      <li>Voice resolves project + media type + optional phase/date before paint</li>
+      <li>Filter chip reflects resolved intent · operator can override manually</li>
+      <li>Banner is dismissible after 5s · does not block interaction</li>
+      <li>Failed resolution → RH asks clarifying question · does not land on empty grid</li>
+    </ul>
+    <h4>Examples</h4>
+    <ul>
+      <li><code>"Spokane kitchen photos"</code> → project match · Photos filter</li>
+      <li><code>"Hernandez videos from yesterday"</code> → Videos · date=yesterday</li>
+      <li><code>"Wegrzyn damage photos"</code> → Photos · flagged-only implicit filter</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Frame 3 · Fullscreen viewer -->
+<div class="frame">
+  <div class="frame-label">Frame 3 · F-ML1 · Fullscreen viewer · tap thumb · voice caption</div>
+  <p class="frame-narr">
+    Tap any thumb → fullscreen viewer. Metadata panel: date · capturer · phase · daily log link. Actions: <strong>Open daily log</strong> (routes to F-E1 anchor) · <strong>Share</strong>. Swipe left/right for prev/next in current filter. Voice caption hint at bottom: <em>"Right Hand, label this framing day 3"</em> — voice editing where editing exists, no form fields on the viewer chrome.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen viewer-screen">
+        <div class="viewer-top">
+          <div class="viewer-close">
+            <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+            Close
+          </div>
+          <div class="viewer-counter">12 of 248</div>
+        </div>
+        <div class="viewer-image"><div class="viewer-image-inner"></div></div>
+        <div class="viewer-sheet">
+          <div class="viewer-meta">
+            <div class="vm-title">North wall rough-in · outlet conflict</div>
+            <div class="vm-sub">May 20 · 10:42a · <strong>Carlos M.</strong> · Framing · Wegrzyn kitchen</div>
+          </div>
+          <div class="viewer-actions">
+            <div class="viewer-btn primary">Open daily log</div>
+            <div class="viewer-btn link">Share</div>
+          </div>
+          <div class="voice-caption-hint">🎤 <em>"Right Hand, label this framing day 3"</em></div>
+        </div>
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>Viewer · Spec</h3>
+    <h4>Viewer anatomy</h4>
+    <ul>
+      <li>Full-bleed preview · pinch-zoom · swipe nav within filter set</li>
+      <li>Metadata: caption (editable via voice) · date · capturer · phase · project</li>
+      <li>Damage-flagged photos show red chip in metadata row · same chip-tier doctrine</li>
+      <li><strong>Open daily log</strong> → F-E1 · date-scoped · scrolls to photo anchor in log body</li>
+      <li><strong>Share</strong> → native share · optional Kerf watermark (Settings)</li>
+    </ul>
+    <h4>Voice edit</h4>
+    <ul>
+      <li><code>"Right Hand, label this framing day 3"</code> → updates caption/phase tag · audit on save</li>
+      <li><code>"Flag this as damage"</code> → adds red chip overlay · routes note to PM</li>
+      <li>No inline text field · voice-first edit per D-046</li>
+    </ul>
+    <h4>F-FD1 cross-ref</h4>
+    <ul>
+      <li>Single-capture detail (F-FD1) shows routing log + transcript · viewer stays lightweight</li>
+      <li>Drill to F-FD1 from viewer metadata link (deferred · "More detail" affordance)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>Business brain, not file cabinet.</em> RH summary tells the operator what's on the job before they scroll 248 thumbs. Voice lands on the same surface with filter pre-set. Every capture ties back to a daily log — Media is the flat browse layer on top of F-E1's day-scoped canon.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a folder tree. Not a List/Grid comparison toggle. Not an "extracted entities" panel. Not CompanyCam's project album with tags UI. <strong>F-ML1 is the project's visual memory — browse recent, voice-retrieve specific, drill to the daily log that owns the capture.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function() {
+  var items = [
+    { date: 'May 24', cap: 'C', phase: 'Framing', grad: '145deg,#4a5568,#2d3748,#1a202c', flag: false, video: false },
+    { date: 'May 24', cap: 'C', phase: 'Framing', grad: '160deg,#5a6478,#3d4654,#252b36', flag: false, video: false },
+    { date: 'May 23', cap: 'D', phase: 'Rough-in', grad: '135deg,#556270,#434e5a,#2c3440', flag: true, video: false },
+    { date: 'May 23', cap: 'C', phase: 'Rough-in', grad: '170deg,#64748b,#475569,#334155', flag: false, video: true },
+    { date: 'May 23', cap: 'A', phase: 'Rough-in', grad: '150deg,#6b7280,#4b5563,#374151', flag: false, video: false },
+    { date: 'May 22', cap: 'C', phase: 'Framing', grad: '140deg,#78716c,#57534e,#44403c', flag: false, video: false },
+    { date: 'May 22', cap: 'T', phase: 'Framing', grad: '155deg,#71717a,#52525b,#3f3f46', flag: false, video: false },
+    { date: 'May 22', cap: 'C', phase: 'Demo', grad: '125deg,#78716c,#57534e,#292524', flag: false, video: false },
+    { date: 'May 21', cap: 'D', phase: 'Demo', grad: '165deg,#6b7280,#4b5563,#1f2937', flag: true, video: false },
+    { date: 'May 21', cap: 'C', phase: 'Demo', grad: '145deg,#57534e,#44403c,#292524', flag: false, video: false },
+    { date: 'May 21', cap: 'C', phase: 'Demo', grad: '160deg,#64748b,#475569,#334155', flag: false, video: false },
+    { date: 'May 20', cap: 'C', phase: 'Rough-in', grad: '135deg,#556270,#434e5a,#2c3440', flag: false, video: false },
+    { date: 'May 20', cap: 'C', phase: 'Rough-in', grad: '150deg,#4a5568,#2d3748,#1a202c', flag: false, video: false },
+    { date: 'May 20', cap: 'A', phase: 'Framing', grad: '170deg,#71717a,#52525b,#3f3f46', flag: false, video: false },
+    { date: 'May 19', cap: 'D', phase: 'Framing', grad: '140deg,#78716c,#57534e,#44403c', flag: false, video: true },
+    { date: 'May 19', cap: 'C', phase: 'Framing', grad: '155deg,#64748b,#475569,#334155', flag: false, video: false },
+    { date: 'May 19', cap: 'T', phase: 'Trim', grad: '125deg,#6b7280,#4b5563,#374151', flag: false, video: false },
+    { date: 'May 18', cap: 'C', phase: 'Tile', grad: '165deg,#57534e,#44403c,#292524', flag: false, video: false },
+    { date: 'May 18', cap: 'C', phase: 'Tile', grad: '145deg,#556270,#434e5a,#2c3440', flag: false, video: false },
+    { date: 'May 18', cap: 'D', phase: 'Trim', grad: '160deg,#4a5568,#2d3748,#1a202c', flag: false, video: false },
+    { date: 'May 17', cap: 'C', phase: 'Framing', grad: '135deg,#71717a,#52525b,#3f3f46', flag: false, video: false },
+    { date: 'May 17', cap: 'A', phase: 'Rough-in', grad: '150deg,#64748b,#475569,#334155', flag: false, video: false },
+    { date: 'May 16', cap: 'C', phase: 'Demo', grad: '170deg,#78716c,#57534e,#44403c', flag: false, video: false },
+    { date: 'May 16', cap: 'C', phase: 'Demo', grad: '140deg,#6b7280,#4b5563,#374151', flag: false, video: false },
+    { date: 'May 15', cap: 'D', phase: 'Framing', grad: '155deg,#52525b,#3f3f46,#27272a', flag: false, video: false },
+    { date: 'May 15', cap: 'C', phase: 'Rough-in', grad: '130deg,#57534e,#44403c,#292524', flag: false, video: false }
+  ];
+
+  function renderGrid(id, photosOnly) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var count = 0;
+    items.forEach(function(it) {
+      if (photosOnly && it.video) return;
+      if (count >= 24) return;
+      count++;
+      var thumb = document.createElement('div');
+      thumb.className = 'media-thumb' + (it.video ? ' video' : '');
+      var parts = it.grad.split(',');
+      var bg = 'linear-gradient(' + parts[0] + ',' + parts.slice(1).join(',') + ')';
+      thumb.innerHTML =
+        '<div class="mt-preview" style="background:' + bg + '"></div>' +
+        '<span class="mt-phase">' + it.phase + '</span>' +
+        '<span class="mt-capturer">' + it.cap + '</span>' +
+        '<span class="mt-date">' + it.date + '</span>' +
+        (it.flag ? '<span class="mt-flag row-chip red">Damage</span>' : '');
+      el.appendChild(thumb);
+    });
+  }
+
+  renderGrid('grid-default', false);
+  renderGrid('grid-voice', true);
+})();
+
+document.querySelectorAll('[data-mode]').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('[data-mode]').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    var next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector('[data-mode="' + next + '"]').click();
+  }
+});
+document.querySelectorAll('[data-theme]').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('[data-theme]').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (err) {}
+  });
+});
+try {
+  var saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(function(t) {
+      t.classList.toggle('active', t.dataset.theme === 'light');
+    });
+  }
+} catch (err) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-VC1 · Desktop Spend Card Framing · V1.5+ partner integration posture</title>
+<style>
+:root {
+  --kerf-bg:#0A0D11; --kerf-bg-2:#14181F; --kerf-surface:#1A1F28; --kerf-surface-2:#232936;
+  --kerf-border:#2A3140; --kerf-border-soft:#1F2530; --kerf-text:#E8ECF1; --kerf-text-dim:#98A1B3; --kerf-text-mute:#6A7282;
+  --kerf-amber:#F5B544; --kerf-green:#4ADE80; --kerf-red:#F87171; --kerf-blue:#7BA8FF; --kerf-violet:#A78BFA; --kerf-magenta:#E879A8; --kerf-cyan:#67D6E0;
+  --field-green:#38C977; --right-hand:#C9A961;
+}
+body.light-mode { --kerf-bg:#FFFFFF; --kerf-bg-2:#F4F6F9; --kerf-surface:#FFFFFF; --kerf-surface-2:#EBEEF2; --kerf-border:#C9D0D8; --kerf-border-soft:#DFE3E8; --kerf-text:#0A0D11; --kerf-text-dim:#4A5462; --kerf-text-mute:#7B8492; }
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--kerf-bg); color:var(--kerf-text); line-height:1.5; font-size:13px; }
+.page { max-width:1700px; margin:0 auto; padding:32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width:none; padding:0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns:1fr; gap:14px; }
+body.presentation-mode .frame-spec { display:none; }
+.page-header { border-bottom:1px solid var(--kerf-border); padding-bottom:22px; margin-bottom:32px; }
+.page-header .crumb { font-size:11px; color:var(--kerf-text-mute); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:10px; }
+.page-header h1 { font-size:19px; font-weight:600; margin:0 0 6px; }
+.page-header p { color:var(--kerf-text-dim); margin:0; font-size:13px; max-width:1080px; line-height:1.6; }
+.page-header p em { color:var(--right-hand); font-style:normal; }
+.frame { display:grid; grid-template-columns:1fr 360px; gap:28px; margin-bottom:56px; align-items:start; }
+.frame-label { grid-column:1 / -1; font-size:13px; letter-spacing:0.04em; color:var(--kerf-amber); font-weight:600; margin-bottom:4px; }
+.frame-narr { grid-column:1 / -1; margin:0 0 14px; color:var(--kerf-text-dim); font-size:12.5px; line-height:1.7; max-width:1080px; }
+.frame-render { border:1px solid var(--kerf-border); border-radius:12px; background:linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding:28px; overflow:hidden; }
+.frame-spec { border:1px solid var(--kerf-border); border-radius:12px; background:var(--kerf-bg-2); padding:18px 16px; font-size:12px; color:var(--kerf-text-dim); height:fit-content; position:sticky; top:60px; }
+.frame-spec h3 { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--kerf-text); font-weight:700; margin:0 0 10px; }
+.frame-spec h4 { font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--kerf-amber); font-weight:700; margin:14px 0 6px; }
+.frame-spec ul { padding-left:16px; margin:0 0 8px; }
+.frame-spec li { margin-bottom:4px; line-height:1.55; }
+.desktop-frame { background:var(--kerf-bg); border:1px solid var(--kerf-border); border-radius:12px; overflow:hidden; width:100%; display:flex; flex-direction:column; min-height:820px; }
+.app-chrome { background:var(--kerf-bg-2); border-bottom:1px solid var(--kerf-border); padding:9px 14px; display:flex; align-items:center; gap:10px; font-size:11px; }
+.chrome-dots { display:flex; gap:5px; }
+.chrome-dots .d { width:11px; height:11px; border-radius:50%; }
+.chrome-dots .d:nth-child(1) { background:#FF5F57; opacity:0.7; }
+.chrome-dots .d:nth-child(2) { background:#FEBC2E; opacity:0.7; }
+.chrome-dots .d:nth-child(3) { background:#28C840; opacity:0.7; }
+.chrome-url { margin-left:14px; font-family:"SF Mono",Menlo,monospace; font-size:11px; color:var(--kerf-text-mute); padding:4px 10px; background:var(--kerf-bg); border-radius:6px; }
+.chrome-spacer { flex:1; }
+.chrome-search { background:var(--kerf-bg); border:1px solid var(--kerf-border-soft); border-radius:6px; padding:5px 10px; font-size:11px; color:var(--kerf-text-mute); width:220px; }
+.app-body { display:grid; grid-template-columns:232px 1fr; min-height:760px; }
+.sidebar { background:var(--kerf-bg-2); border-right:1px solid var(--kerf-border-soft); padding:14px 12px; display:flex; flex-direction:column; gap:4px; }
+.sb-logo { display:flex; align-items:center; gap:8px; padding:6px 8px 14px; margin-bottom:4px; border-bottom:1px solid var(--kerf-border-soft); }
+.sb-mark { width:24px; height:24px; background:var(--kerf-amber); color:#1A1300; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+.sb-brand { font-size:13px; color:var(--kerf-text); font-weight:700; }
+.sb-tenant { display:block; font-size:10px; color:var(--kerf-text-mute); font-weight:500; margin-top:1px; }
+.sb-section-label { font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--kerf-text-mute); font-weight:700; padding:12px 8px 6px; }
+.sb-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px; font-size:12.5px; color:var(--kerf-text-dim); font-weight:500; position:relative; }
+.sb-item.active { background:rgba(245,181,68,0.10); color:var(--kerf-amber); font-weight:600; }
+.sb-item.active::before { content:''; position:absolute; left:-12px; top:9px; bottom:9px; width:3px; background:var(--kerf-amber); border-radius:0 2px 2px 0; }
+.sb-item.muted { opacity:0.45; }
+.sb-item .sb-icon { width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+.sb-item .sb-icon svg { width:18px; height:18px; fill:currentColor; }
+.sb-item .sb-restrict { margin-left:auto; font-size:9px; color:var(--kerf-text-mute); font-weight:600; letter-spacing:0.05em; }
+.sb-fab { margin:14px auto; width:64px; height:64px; border-radius:50%; background:var(--kerf-amber); color:#1A1300; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 6px 20px rgba(245,181,68,0.40); }
+.sb-fab svg { width:26px; height:26px; fill:currentColor; }
+.sb-fab-label { font-size:8.5px; letter-spacing:0.06em; font-weight:700; margin-top:-2px; }
+.sb-spacer { flex:1; }
+.sb-user { display:flex; align-items:center; gap:10px; padding:8px 10px; border-top:1px solid var(--kerf-border-soft); margin:8px -12px -14px; background:var(--kerf-bg-2); }
+.sb-user-avatar { width:28px; height:28px; border-radius:50%; background:rgba(201,169,97,0.20); color:var(--right-hand); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; }
+.main { display:flex; flex-direction:column; }
+.banner { background:rgba(245,181,68,0.10); border-bottom:1px solid rgba(245,181,68,0.30); color:var(--kerf-amber); padding:10px 24px; font-size:11.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; }
+.main-header { padding:18px 24px 10px; border-bottom:1px solid var(--kerf-border-soft); }
+.hero-title { font-size:22px; color:var(--kerf-text); font-weight:700; }
+.hero-meta { font-size:12px; color:var(--kerf-text-dim); margin-top:4px; }
+.body-wrap { display:grid; grid-template-columns:1fr 320px; gap:22px; padding:18px 24px 24px; }
+.tx-list { background:var(--kerf-surface); border:1px solid var(--kerf-border-soft); border-radius:12px; padding:14px; }
+.list-head { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--kerf-text-mute); font-weight:700; margin-bottom:10px; }
+.tx-row { display:grid; grid-template-columns:1fr 120px 110px 120px; gap:14px; align-items:center; padding:10px 0; border-bottom:1px solid var(--kerf-border-soft); }
+.tx-row:last-child { border-bottom:0; }
+.tx-name { font-size:12.5px; color:var(--kerf-text); font-weight:700; }
+.tx-meta { font-size:10.5px; color:var(--kerf-text-mute); margin-top:2px; }
+.tx-amt { text-align:right; font-family:"SF Mono",Menlo,monospace; font-size:12px; color:var(--kerf-text); font-weight:700; }
+.chip { display:inline-flex; align-items:center; gap:4px; font-size:9px; padding:2px 7px; border-radius:4px; letter-spacing:0.08em; font-weight:700; text-transform:uppercase; }
+.chip.green { background:rgba(56,201,119,0.12); color:var(--field-green); }
+.chip.amber { background:rgba(245,181,68,0.14); color:var(--kerf-amber); }
+.chip.red { background:rgba(248,113,113,0.12); color:var(--kerf-red); }
+.chip.green::before, .chip.amber::before, .chip.red::before { content:''; width:5px; height:5px; border-radius:50%; }
+.chip.green::before { background:var(--field-green); }
+.chip.amber::before { background:var(--kerf-amber); }
+.chip.red::before { background:var(--kerf-red); }
+.rail-card { background:var(--kerf-surface); border:1px solid var(--kerf-border-soft); border-radius:11px; padding:12px 14px; margin-bottom:14px; }
+.rail-eyebrow { font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--kerf-text-mute); font-weight:700; margin-bottom:10px; }
+.pf-row { display:grid; grid-template-columns:1fr auto; gap:8px; padding:6px 0; font-size:12px; color:var(--kerf-text-dim); border-bottom:1px solid var(--kerf-border-soft); }
+.pf-row:last-child { border-bottom:0; }
+.pf-label { color:var(--kerf-text-mute); font-size:11px; }
+.pf-val { color:var(--kerf-text); font-weight:600; }
+.callout-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:24px; }
+.callout { background:var(--kerf-bg-2); border:1px solid var(--kerf-border); border-left:3px solid var(--kerf-amber); border-radius:8px; padding:12px 14px; font-size:11.5px; color:var(--kerf-text-dim); line-height:1.55; }
+.callout .callout-title { display:block; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--kerf-amber); font-weight:700; margin-bottom:5px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="view-toggle-bar" id="vtb">
+    <span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+    <span class="vtb-label" style="margin-left: 14px;">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+    <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+  </div>
+  <div class="page-header">
+    <div class="crumb">Money · V1.5+ framing</div>
+    <h1>F-VC1 · Desktop Spend Card / Transaction Framing · partner-first V1.5+ posture</h1>
+    <p>This is not a V1 build surface. It is a design stake in the ground that shows how Kerf would treat spend-card transactions when partner-integrated later, while keeping fintech rails out of the in-house V1 scope.</p>
+  </div>
+
+  <div class="frame">
+    <div class="frame-label">Frame · F-VC1 · Spend card / transaction posture preview</div>
+    <p class="frame-narr">The key question here is not “how do we build card rails?” It is <em>what should Kerf look like when card rails arrive through a partner?</em> The answer: confidence chips, project tagging, exception queue, and human approval — not a homegrown banking product.</p>
+    <div class="frame-render">
+      <div class="desktop-frame">
+        <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/money/spend</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find a transaction or project</div></div>
+        <div class="app-body">
+          <div class="sidebar">
+            <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+            <div class="sb-section-label">Primary</div>
+            <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+            <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+            <div class="sb-fab"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><div class="sb-fab-label">SPEAK</div></div>
+            <div class="sb-section-label">All</div>
+            <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg></span>Money</div>
+            <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>AR + AP</div>
+            <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Margin</div>
+            <div class="sb-subitem" style="opacity:0.55;"><span class="sb-sub-tick">&#x21B3;</span>Spend · Coming V1.5+</div>
+            <div class="sb-item muted"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v4H4zm0 6h10v10H4z"/></svg></span>Marketing<span class="sb-restrict">coming V1.5+</span></div>
+            <div class="sb-spacer"></div>
+            <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div>Christian Asdal</div><div style="font-size:9.5px;color:var(--kerf-text-mute);">Owner · GGR</div></div></div>
+          </div>
+
+          <div class="main">
+            <div class="banner">V1.5+ · Partner integration · Not in V1</div>
+            <div class="main-header">
+              <div class="hero-title">Spend card transactions · partner-integrated via Stripe Issuing or similar</div>
+              <div class="hero-meta">Kerf owns categorization posture, project tagging, and exception handling. Payment rails stay partner-side.</div>
+            </div>
+            <div class="body-wrap">
+              <div class="tx-list">
+                <div class="list-head">Transaction queue</div>
+                <div class="tx-row"><div><div class="tx-name">Floor &amp; Decor · tile order</div><div class="tx-meta">Wegrzyn kitchen · Hector pickup card · today 8:42a</div></div><div class="chip green">Matched to PO</div><div class="tx-amt">$1,842.16</div><div class="chip green">92% confidence</div></div>
+                <div class="tx-row"><div><div class="tx-name">Home Depot · framing lumber</div><div class="tx-meta">Hernandez pantry · Carlos card · today 7:18a</div></div><div class="chip amber">Needs tag</div><div class="tx-amt">$286.44</div><div class="chip amber">61% confidence</div></div>
+                <div class="tx-row"><div><div class="tx-name">Sherwin-Williams · paint deposit</div><div class="tx-meta">Dunne punch list · office card · yesterday 4:55p</div></div><div class="chip green">Categorized</div><div class="tx-amt">$118.07</div><div class="chip green">97% confidence</div></div>
+                <div class="tx-row"><div><div class="tx-name">Restaurant charge · unknown</div><div class="tx-meta">No project match · Miguel card · yesterday 12:14p</div></div><div class="chip red">Flagged</div><div class="tx-amt">$43.82</div><div class="chip red">24% confidence</div></div>
+              </div>
+              <div>
+                <div class="rail-card">
+                  <div class="rail-eyebrow">Approval queue</div>
+                  <div class="pf-row"><div class="pf-label">Needs project tag</div><div class="pf-val">3</div></div>
+                  <div class="pf-row"><div class="pf-label">Flagged for review</div><div class="pf-val">1</div></div>
+                  <div class="pf-row"><div class="pf-label">Matched to PO</div><div class="pf-val">12</div></div>
+                </div>
+                <div class="rail-card">
+                  <div class="rail-eyebrow">Design posture</div>
+                  <div style="font-size:11px;color:var(--kerf-text-dim);line-height:1.55;">Auto-categorization is advisory. Operator approves exceptions. Project tagging matters more than finance-theory dashboards.</div>
+                </div>
+                <div class="rail-card">
+                  <div class="rail-eyebrow">Why partner</div>
+                  <div style="font-size:11px;color:var(--kerf-text-dim);line-height:1.55;">Per Kerf scope exclusions, fintech rails are partner-first through V2.1. In-house card issuance and banking decisions defer to V3.0+.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-spec">
+      <h3>F-VC1 · Spec</h3>
+      <h4>4-question rule</h4>
+      <ul>
+        <li><strong>Macro / comparison / detail?</strong> Detail / framing preview.</li>
+        <li><strong>List / grid / both?</strong> List only.</li>
+        <li><strong>Operator cognitive job?</strong> Understand Kerf’s design posture for partner-integrated spend cards and transaction categorization.</li>
+        <li><strong>What stays hidden until drill-down?</strong> Actual payment rails, partner banking UX, and deeper transaction ledger mechanics.</li>
+      </ul>
+      <h4>Why this exists</h4>
+      <ul>
+        <li>It marks the V1.5+ design position without pretending Kerf is building banking rails now.</li>
+        <li>It centers tagging, categorization confidence, and approval flow.</li>
+        <li>It keeps partner integration strategy explicit in the canon set.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout-row">
+    <div class="callout"><span class="callout-title">What this enforces</span>Kerf is partner-first on fintech rails. The product owns project context, categorization, and approvals — not the banking substrate.</div>
+    <div class="callout"><span class="callout-title">What this refuses to be</span>Not a hidden promise of in-house banking in V1, and not a sketch of a full accounting suite. This is a scoped framing surface.</div>
+  </div>
+</div>
+<script>
+(() => {
+  const body = document.body;
+  const savedTheme = localStorage.getItem('kerf_wf_theme') || 'dark';
+  const savedMode = localStorage.getItem('kerf_wf_mode') || 'annotated';
+  const applyTheme = (theme) => { body.classList.toggle('light-mode', theme === 'light'); document.querySelectorAll('[data-theme]').forEach(el => el.classList.toggle('active', el.dataset.theme === theme)); localStorage.setItem('kerf_wf_theme', theme); };
+  const applyMode = (mode) => { body.classList.toggle('presentation-mode', mode === 'presentation'); document.querySelectorAll('[data-mode]').forEach(el => el.classList.toggle('active', el.dataset.mode === mode)); localStorage.setItem('kerf_wf_mode', mode); };
+  document.querySelectorAll('[data-theme]').forEach(el => el.addEventListener('click', () => applyTheme(el.dataset.theme)));
+  document.querySelectorAll('[data-mode]').forEach(el => el.addEventListener('click', () => applyMode(el.dataset.mode)));
+  document.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'v') applyMode(body.classList.contains('presentation-mode') ? 'annotated' : 'presentation'); });
+  applyTheme(savedTheme); applyMode(savedMode);
+})();
+</script>
+</body>
+</html>

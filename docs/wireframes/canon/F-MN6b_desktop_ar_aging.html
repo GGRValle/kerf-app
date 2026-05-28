@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-MN6b · Desktop AR aging · Desktop Money home · operating money at desktop density</title>
+<style>
+:root{--kerf-bg:#0A0D11;--kerf-bg-2:#14181F;--kerf-surface:#1A1F28;--kerf-surface-2:#232936;--kerf-border:#2A3140;--kerf-border-soft:#1F2530;--kerf-text:#E8ECF1;--kerf-text-dim:#98A1B3;--kerf-text-mute:#6A7282;--kerf-amber:#F5B544;--kerf-green:#4ADE80;--kerf-red:#F87171;--kerf-blue:#7BA8FF;--kerf-violet:#A78BFA;--kerf-cyan:#67D6E0;--field-green:#38C977;--right-hand:#C9A961;}
+body.light-mode{--kerf-bg:#FFF;--kerf-bg-2:#F4F6F9;--kerf-surface:#FFF;--kerf-surface-2:#EBEEF2;--kerf-border:#C9D0D8;--kerf-border-soft:#DFE3E8;--kerf-text:#0A0D11;--kerf-text-dim:#4A5462;--kerf-text-mute:#7B8492;}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9 0%,#FFF 100%)!important;} body.light-mode .view-toggle-bar{background:rgba(255,255,255,0.92)!important;} body.light-mode .desktop-frame{box-shadow:0 8px 30px rgba(0,0,0,0.10);}
+body.light-mode .chrome-dots .d:nth-child(1){background:#FF5F57;opacity:1;} body.light-mode .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:1;} body.light-mode .chrome-dots .d:nth-child(3){background:#28C840;opacity:1;}
+*{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--kerf-bg);color:var(--kerf-text);line-height:1.5;font-size:13px;}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px;}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--kerf-border);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--kerf-text-dim);}
+.view-toggle-bar .vtb-label{font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;}
+.view-toggle-bar .vtb-options{display:flex;gap:2px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-radius:8px;padding:2px;}
+.view-toggle-bar .vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--kerf-text-mute);cursor:pointer;font-weight:600;}
+.view-toggle-bar .vtb-tab.active{background:var(--kerf-amber);color:#1A1300;} .view-toggle-bar .vtb-hint{margin-left:auto;font-size:10.5px;color:var(--kerf-text-mute);}
+body.presentation-mode .page{max-width:none;padding:0 24px 80px;} body.presentation-mode .frame{grid-template-columns:1fr;gap:14px;} body.presentation-mode .frame-spec{display:none;}
+.page-header{border-bottom:1px solid var(--kerf-border);padding-bottom:22px;margin-bottom:32px;}
+.page-header .crumb{font-size:11px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;} .page-header .crumb .step{color:var(--kerf-text-dim);} .page-header .crumb .step.current{color:var(--kerf-amber);} .page-header .crumb .sep{color:var(--kerf-border);margin:0 8px;}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px;} .page-header p{color:var(--kerf-text-dim);margin:0;font-size:13px;max-width:1080px;line-height:1.6;} .page-header p em{color:var(--right-hand);font-style:normal;}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px;align-items:start;}
+.frame-label{grid-column:1 / -1;font-size:13px;color:var(--kerf-amber);font-weight:600;margin-bottom:4px;}
+.frame-narr{grid-column:1 / -1;margin:0 0 14px;color:var(--kerf-text-dim);font-size:12.5px;line-height:1.7;max-width:1080px;} .frame-narr em{color:var(--right-hand);font-style:normal;}
+.frame-render{border:1px solid var(--kerf-border);border-radius:12px;background:linear-gradient(180deg,#14181F 0%,#0A0D11 100%);padding:28px;overflow:hidden;}
+.frame-spec{border:1px solid var(--kerf-border);border-radius:12px;background:var(--kerf-bg-2);padding:18px 16px;font-size:12px;color:var(--kerf-text-dim);height:fit-content;position:sticky;top:60px;}
+.frame-spec h3{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-text);font-weight:700;margin:0 0 10px;}
+.frame-spec h4{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin:14px 0 6px;} .frame-spec h4:first-of-type{margin-top:0;}
+.frame-spec ul{padding-left:16px;margin:0 0 8px;} .frame-spec li{margin-bottom:4px;line-height:1.55;} .frame-spec code{background:var(--kerf-surface);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--right-hand);}
+
+.desktop-frame{background:var(--kerf-bg);border:1px solid var(--kerf-border);border-radius:12px;overflow:hidden;width:100%;display:flex;flex-direction:column;min-height:820px;}
+.app-chrome{background:var(--kerf-bg-2);border-bottom:1px solid var(--kerf-border);padding:9px 14px;display:flex;align-items:center;gap:10px;font-size:11px;}
+.chrome-dots{display:flex;gap:5px;} .chrome-dots .d{width:11px;height:11px;border-radius:50%;}
+.chrome-dots .d:nth-child(1){background:#FF5F57;opacity:0.7;} .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:0.7;} .chrome-dots .d:nth-child(3){background:#28C840;opacity:0.7;}
+.chrome-url{margin-left:14px;font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--kerf-text-mute);padding:4px 10px;background:var(--kerf-bg);border-radius:6px;} .chrome-spacer{flex:1;}
+.chrome-search{background:var(--kerf-bg);border:1px solid var(--kerf-border-soft);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--kerf-text-mute);width:220px;}
+.app-body{display:grid;grid-template-columns:232px 1fr;min-height:760px;}
+.sidebar{background:var(--kerf-bg-2);border-right:1px solid var(--kerf-border-soft);padding:14px 12px;display:flex;flex-direction:column;gap:4px;}
+.sb-logo{display:flex;align-items:center;gap:8px;padding:6px 8px 14px;margin-bottom:4px;border-bottom:1px solid var(--kerf-border-soft);}
+.sb-mark{width:24px;height:24px;background:var(--kerf-amber);color:#1A1300;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+.sb-brand{font-size:13px;color:var(--kerf-text);font-weight:700;} .sb-tenant{display:block;font-size:10px;color:var(--kerf-text-mute);font-weight:500;margin-top:1px;}
+.sb-section-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;padding:12px 8px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;font-size:12.5px;color:var(--kerf-text-dim);font-weight:500;position:relative;cursor:pointer;}
+.sb-item:hover{background:var(--kerf-surface);color:var(--kerf-text);} .sb-item.active{background:rgba(245,181,68,0.10);color:var(--kerf-amber);font-weight:600;}
+.sb-item.active::before{content:'';position:absolute;left:-12px;top:9px;bottom:9px;width:3px;background:var(--kerf-amber);border-radius:0 2px 2px 0;}
+.sb-item .sb-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;} .sb-item .sb-icon svg{width:18px;height:18px;fill:currentColor;}
+.sb-subitem{padding:5px 10px 5px 38px;font-size:11.5px;color:var(--kerf-text-mute);border-radius:7px;cursor:pointer;position:relative;font-weight:500;}
+.sb-subitem:hover{background:var(--kerf-surface);color:var(--kerf-text-dim);} .sb-subitem .sb-sub-tick{position:absolute;left:24px;top:5px;color:var(--kerf-text-mute);font-size:11px;opacity:0.55;}
+.sb-fab{margin:18px auto 14px;width:64px;height:64px;border-radius:50%;background:var(--kerf-amber);color:#1A1300;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(245,181,68,0.40);position:relative;}
+.sb-fab svg.mic-icon{width:26px;height:26px;fill:currentColor;} .sb-fab .sb-fab-label{font-size:8.5px;letter-spacing:0.06em;font-weight:700;margin-top:-2px;}
+.sb-divider{height:1px;background:var(--kerf-border-soft);margin:8px 0;} .sb-spacer{flex:1;}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-top:1px solid var(--kerf-border-soft);margin:8px -12px -14px;background:var(--kerf-bg-2);}
+.sb-user-avatar{width:28px;height:28px;border-radius:50%;background:rgba(201,169,97,0.20);color:var(--right-hand);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;}
+.sb-user-name{font-size:11.5px;color:var(--kerf-text);font-weight:600;} .sb-user-meta{font-size:9.5px;color:var(--kerf-text-mute);margin-top:1px;}
+
+.main{padding:0;display:flex;flex-direction:column;background:var(--kerf-bg);}
+.bc-bar{background:var(--kerf-bg);border-bottom:1px solid var(--kerf-border-soft);padding:11px 24px;display:flex;align-items:center;gap:10px;font-size:11.5px;}
+.bc-link{color:var(--kerf-text-dim);} .bc-link.active{color:var(--kerf-text);font-weight:600;} .bc-spacer{flex:1;}
+.bc-action{color:var(--kerf-amber);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;} .bc-action svg{width:12px;height:12px;fill:currentColor;}
+.main-header{padding:18px 24px 4px;}
+.main-title{font-size:22px;font-weight:600;color:var(--kerf-text);margin:0;} .main-meta{font-size:12px;color:var(--kerf-text-mute);margin-top:4px;}
+.main-content{display:grid;grid-template-columns:1fr 340px;gap:22px;padding:14px 24px 24px;flex:1;}
+
+.money-area{display:flex;flex-direction:column;gap:18px;}
+.section-label{font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;display:flex;align-items:baseline;gap:8px;margin-bottom:-4px;}
+.section-label .sl-count{color:var(--kerf-text-dim);font-weight:600;font-size:10px;letter-spacing:0.04em;}
+.section-label .sl-total{margin-left:auto;font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;letter-spacing:0;text-transform:none;}
+.money-list{display:flex;flex-direction:column;gap:7px;}
+.money-row{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:1.6fr 1fr 180px 14px;gap:14px;align-items:center;}
+.money-row.attention{border-left:3px solid var(--kerf-amber);padding-left:14px;}
+.mr-name-block{}
+.mr-name{font-size:13.5px;color:var(--kerf-text);font-weight:700;} .mr-meta{font-size:10.5px;color:var(--kerf-text-mute);margin-top:2px;}
+.mr-scope{font-size:12px;color:var(--kerf-text-dim);} .mr-scope strong{color:var(--kerf-text);font-weight:600;}
+.mr-scope-detail{display:block;font-size:10.5px;color:var(--kerf-text-mute);margin-top:2px;}
+.mr-state-block{text-align:right;}
+.row-chip{display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;margin-bottom:4px;}
+.row-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .row-chip.red::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-red);}
+.row-chip.amber{background:rgba(245,181,68,0.14);color:var(--kerf-amber);} .row-chip.amber::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-amber);}
+.row-chip.green{background:rgba(56,201,119,0.14);color:var(--field-green);} .row-chip.green::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--field-green);}
+.mr-amount{font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;font-size:15px;} .mr-amount.red{color:var(--kerf-red);} .mr-amount.amber{color:var(--kerf-amber);}
+.mr-amount-note{display:block;font-family:-apple-system,sans-serif;font-size:10px;color:var(--kerf-text-mute);margin-top:1px;font-weight:500;}
+.mr-arrow{color:var(--kerf-text-mute);font-size:14px;}
+
+.rail{display:flex;flex-direction:column;gap:14px;}
+.rh-card{background:rgba(201,169,97,0.05);border-left:2px solid var(--right-hand);border-radius:4px;padding:11px 13px;}
+.rh-eyebrow{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--right-hand);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.rh-eyebrow .rh-dot{width:5px;height:5px;border-radius:50%;background:var(--right-hand);}
+.rh-text{font-size:12px;color:var(--kerf-text);line-height:1.55;} .rh-text strong{color:var(--kerf-text);font-weight:700;} .rh-text em{color:var(--kerf-red);font-style:normal;font-weight:600;} .rh-text .rh-amber{color:var(--kerf-amber);font-weight:600;}
+.pressure-card{background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.30);border-radius:11px;padding:12px 14px;}
+.pc-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-red);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.pc-eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--kerf-red);box-shadow:0 0 5px rgba(248,113,113,0.6);}
+.pc-title{font-size:13px;color:var(--kerf-text);font-weight:700;margin-bottom:5px;} .pc-detail{font-size:11.5px;color:var(--kerf-text-dim);line-height:1.55;}
+.pc-detail .pc-mono{font-family:"SF Mono",Menlo,monospace;color:var(--kerf-red);font-weight:700;}
+.rail-card{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:11px;padding:12px 14px;}
+.rail-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-bottom:10px;}
+.pf-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:6px 0;font-size:12px;color:var(--kerf-text-dim);border-bottom:1px solid var(--kerf-border-soft);}
+.pf-row:last-child{border-bottom:0;padding-bottom:0;} .pf-row:first-child{padding-top:0;}
+.pf-label{color:var(--kerf-text-mute);font-size:11px;} .pf-val{color:var(--kerf-text);font-weight:600;font-family:"SF Mono",Menlo,monospace;font-size:11.5px;} .pf-val.amber{color:var(--kerf-amber);} .pf-val.green{color:var(--field-green);} .pf-val.red{color:var(--kerf-red);}
+.qb-card{background:var(--kerf-surface);border:1px dashed var(--kerf-border);border-radius:11px;padding:11px 13px;}
+.qb-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-bottom:6px;}
+.qb-text{font-size:12px;color:var(--kerf-text-dim);line-height:1.5;} .qb-text strong{color:var(--kerf-text);font-weight:600;}
+.qb-cta{margin-top:9px;font-size:11px;color:var(--kerf-blue);font-weight:700;}
+
+/* View mode toggle · canon 2026-05-18 PM late · List | Grid */
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; margin: 0 0 14px; width: fit-content; }
+.vmt-option { padding: 5px 12px; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+
+/* Grid view · compact tiles · canon 2026-05-18 PM late · scan not detail */
+.grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+.grid-tile { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 10px 11px; cursor: pointer; }
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip carries the flag · F-MN6b CSS swept 2026-05-24 during Lane 1 rebuild */
+.grid-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 9px; }
+.grid-tile.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 9px; }
+.grid-tile.success { border-left: 3px solid var(--field-green); padding-left: 9px; }
+.gt-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.25; }
+.gt-phase { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 3px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.gt-chip-row { margin-top: 6px; }
+.gt-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 8px; padding: 2px 5px; border-radius: 3px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.gt-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); } .gt-chip.red::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-red); }
+.gt-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); } .gt-chip.amber::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-amber); }
+.gt-chip.cyan { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); } .gt-chip.cyan::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-cyan); }
+.gt-chip.green { background: rgba(56,201,119,0.12); color: var(--field-green); } .gt-chip.green::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--field-green); }
+.gt-rhythm { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 6px; font-weight: 500; }
+
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px;">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">F-MN6a · AR aging (mobile)</span><span class="sep">›</span><span class="step current">F-MN6b · AR aging (desktop)</span></div>
+  <h1>F-MN6b · Desktop AR aging detail · peer receivables comparison</h1>
+  <p>Money → AR drill-down. Bucket-grouped table. <em>Dollars displayed · integer cents stored.</em></p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame 1 · F-MN6b · List view · AR aging by bucket</div>
+  <p class="frame-narr">Bucket-grouped table: Client · Invoice · Amount · Aging · Last contact · Action. Right rail: AR rollup · DSO vs. last month · patterns flagged.</p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/money/ar</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find an invoice, payment, or vendor</div></div>
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Overview</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>AR</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>AP</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Allowances</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Margin</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Home</span><span style="color:var(--kerf-border);">›</span><span class="bc-link">Money</span><span style="color:var(--kerf-border);">›</span><span class="bc-link active">AR</span><div class="bc-spacer"></div><span class="bc-action">Filter</span><span class="bc-action" title="Print queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="bc-action" title="Export current view · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+          <div class="main-header"><h2 class="main-title">AR aging</h2><div class="main-meta">17 open invoices · $53,100 total AR · $28,550 &gt; 30 days · Whitaker 112d escalated</div></div>
+
+          <div class="main-content">
+
+            <div class="money-area">
+              <div class="view-mode-toggle"><span class="vmt-option active">List</span><span class="vmt-option">Grid</span></div>
+              <div class="section-label danger">90+ days<span class="sl-count">· 1</span><span class="sl-total">$6,800</span></div>
+              <div class="money-row table-head ar-cols"><span class="th">Client</span><span class="th">Invoice</span><span class="th">Amount</span><span class="th">Aging</span><span class="th">Last contact</span><span class="th">Action</span><span></span></div>
+              <div class="money-list">
+                <div class="money-row ar-cols attention">
+                  <div class="mr-col"><strong>Whitaker</strong><div class="mr-meta">Kitchen · closed</div></div><div class="mr-col">Inv #2026-001</div>
+                  <div class="mr-col mono">$6,800</div><div class="mr-col"><span class="row-chip red">112d Escalated</span></div><div class="mr-col">Call 4/22</div>
+                  <div class="mr-action">Call</div><span class="mr-arrow">›</span>
+                </div>
+              </div>
+              <div class="section-label warn">61-90 days<span class="sl-count">· 3</span><span class="sl-total">$9,000</span></div>
+              <div class="money-row table-head ar-cols"><span class="th">Client</span><span class="th">Invoice</span><span class="th">Amount</span><span class="th">Aging</span><span class="th">Last contact</span><span class="th">Action</span><span></span></div>
+              <div class="money-list">
+                <div class="money-row ar-cols attention">
+                  <div class="mr-col"><strong>Vega</strong></div><div class="mr-col">Inv #2026-008</div>
+                  <div class="mr-col mono">$4,500</div><div class="mr-col"><span class="row-chip red">68d</span></div><div class="mr-col">Email 5/4</div>
+                  <div class="mr-action">Call</div><span class="mr-arrow">›</span>
+                </div>
+                <div class="money-row ar-cols attention">
+                  <div class="mr-col"><strong>Moore</strong><div class="mr-meta">Closed · final true-up</div></div><div class="mr-col">Inv #2026-005</div>
+                  <div class="mr-col mono">$3,100</div><div class="mr-col"><span class="row-chip red">78d</span></div><div class="mr-col">Email 5/2</div>
+                  <div class="mr-action">Call</div><span class="mr-arrow">›</span>
+                </div>
+                <div class="money-row ar-cols attention">
+                  <div class="mr-col"><strong>Dunne</strong></div><div class="mr-col">Inv #2026-004</div>
+                  <div class="mr-col mono">$1,400</div><div class="mr-col"><span class="row-chip red">84d</span></div><div class="mr-col">Email 4/30</div>
+                  <div class="mr-action">Call</div><span class="mr-arrow">›</span>
+                </div>
+              </div>
+              <div class="section-label warn">31-60 days<span class="sl-count">· 5</span><span class="sl-total">$12,750</span></div>
+              <div class="money-row table-head ar-cols"><span class="th">Client</span><span class="th">Invoice</span><span class="th">Amount</span><span class="th">Aging</span><span class="th">Last contact</span><span class="th">Action</span><span></span></div>
+              <div class="money-list">
+                <div class="money-row ar-cols">
+                  <div class="mr-col"><strong>Goldberg-Lee</strong></div><div class="mr-col">Inv #2026-019</div>
+                  <div class="mr-col mono">$4,200</div><div class="mr-col"><span class="row-chip amber">38d</span></div><div class="mr-col">Reminder 5/14</div>
+                  <div class="mr-action">Send reminder</div><span class="mr-arrow">›</span>
+                </div>
+                <div class="money-row ar-cols">
+                  <div class="mr-col"><strong>O'Brien</strong></div><div class="mr-col">Inv #2026-016</div>
+                  <div class="mr-col mono">$2,800</div><div class="mr-col"><span class="row-chip amber">45d</span></div><div class="mr-col">Reminder 5/10</div>
+                  <div class="mr-action">Send reminder</div><span class="mr-arrow">›</span>
+                </div>
+                <div class="money-row ar-cols">
+                  <div class="mr-col"><strong>Brennan</strong></div><div class="mr-col">Inv #2026-013</div>
+                  <div class="mr-col mono">$2,200</div><div class="mr-col"><span class="row-chip amber">56d</span></div><div class="mr-col">Reminder 5/6</div>
+                  <div class="mr-action">Send reminder</div><span class="mr-arrow">›</span>
+                </div>
+                <div class="money-row ar-cols">
+                  <div class="mr-col"><strong>Williamson</strong></div><div class="mr-col">Inv #2026-014</div>
+                  <div class="mr-col mono">$1,950</div><div class="mr-col"><span class="row-chip amber">52d</span></div><div class="mr-col">Reminder 5/8</div>
+                  <div class="mr-action">Send reminder</div><span class="mr-arrow">›</span>
+                </div>
+                <div class="money-row ar-cols">
+                  <div class="mr-col"><strong>Coring</strong></div><div class="mr-col">Inv #2026-015</div>
+                  <div class="mr-col mono">$1,600</div><div class="mr-col"><span class="row-chip amber">48d</span></div><div class="mr-col">Reminder 5/9</div>
+                  <div class="mr-action">Send reminder</div><span class="mr-arrow">›</span>
+                </div>
+              </div>
+              <div class="section-label">0-30 days<span class="sl-count">· 8</span><span class="sl-total">$24,550</span></div>
+              <div class="money-row table-head ar-cols"><span class="th">Client</span><span class="th">Invoice</span><span class="th">Amount</span><span class="th">Aging</span><span class="th">Last contact</span><span class="th">Action</span><span></span></div>
+              <div class="money-list">
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Khan</strong></div><div class="mr-col">Inv #2026-027</div><div class="mr-col mono">$5,600</div><div class="mr-col">14d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Wegrzyn</strong></div><div class="mr-col">Inv #2026-026</div><div class="mr-col mono">$4,800</div><div class="mr-col">18d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Ault</strong></div><div class="mr-col">Inv #2026-033</div><div class="mr-col mono">$3,400</div><div class="mr-col">3d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Patel</strong></div><div class="mr-col">Inv #2026-029</div><div class="mr-col mono">$3,200</div><div class="mr-col">12d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Hernandez</strong></div><div class="mr-col">Inv #2026-030</div><div class="mr-col mono">$2,400</div><div class="mr-col">9d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Singh</strong></div><div class="mr-col">Inv #2026-031</div><div class="mr-col mono">$2,100</div><div class="mr-col">28d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Carter</strong></div><div class="mr-col">Inv #2026-028</div><div class="mr-col mono">$1,800</div><div class="mr-col">22d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+                <div class="money-row ar-cols"><div class="mr-col"><strong>Reyes</strong></div><div class="mr-col">Inv #2026-032</div><div class="mr-col mono">$1,250</div><div class="mr-col">6d</div><div class="mr-col">—</div><div class="mr-action">—</div><span class="mr-arrow">›</span></div>
+              </div>
+            </div>
+
+            <div class="rail">
+              <div class="rh-card"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div><div class="rh-text"><strong>$53,100 total AR · 17 open invoices.</strong> <em>$28,550 aging &gt; 30 days.</em> <span class="rh-amber">Whitaker 112d escalated</span> · 3 invoices in 61-90d need a call (Vega · Moore · Dunne).</div></div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">AR rollup</div>
+                <div class="pf-row"><span class="pf-label">Total AR</span><span class="pf-val">$53,100</span></div>
+                <div class="pf-row"><span class="pf-label">90+ (escalated)</span><span class="pf-val red">$6,800</span></div>
+                <div class="pf-row"><span class="pf-label">61-90 (at risk)</span><span class="pf-val red">$9,000</span></div>
+                <div class="pf-row"><span class="pf-label">31-60 (past due)</span><span class="pf-val amber">$12,750</span></div>
+                <div class="pf-row"><span class="pf-label">0-30 (normal)</span><span class="pf-val green">$24,550</span></div>
+                <div class="pf-row"><span class="pf-label">DSO this month</span><span class="pf-val amber">34d</span></div>
+                <div class="pf-row"><span class="pf-label">DSO last month</span><span class="pf-val green">28d</span></div>
+              </div>
+              <div class="patterns-card">
+                <div class="patterns-eyebrow">Patterns flagged</div>
+                <div class="patterns-text"><strong>Whitaker</strong> 112d on closed-job invoice — escalate to small claims path? <strong>61-90d cluster</strong> (Vega · Moore · Dunne) — batch a call day. <strong>DSO drift</strong> from 28d to 34d in 30 days — collection cadence slipping.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-MN6b List · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul><li><strong>Macro / comparison / detail?</strong> Comparison (peer AR items across clients · bucket-grouped)</li><li><strong>List / grid / both?</strong> List + Grid (sibling toggle to Frame 2)</li><li><strong>Cognitive job?</strong> Who owes me what, how old, who needs a call?</li><li><strong>Hidden until drill?</strong> Per-invoice ledger · payment history · client Money sub-tab</li></ul>
+    <h4>Density · 17 open invoices · $53,100 AR</h4>
+    <ul><li>90+ days · 1 · $6,800 · Whitaker · red Escalated chip · Call action</li><li>61-90 days · 3 · $9,000 · Vega/Moore/Dunne · red At-risk chip · Call action</li><li>31-60 days · 5 · $12,750 · amber Past-due chip · Send-reminder action</li><li>0-30 days · 8 · $24,550 · no chip · normal flow · no action</li><li>Service-trade stress (50+): table compresses with bucket rollup + Grid view sorted by aging-days × amount</li></ul>
+    <h4>Money model</h4>
+    <ul><li>Display: dollars · Store: <code>integer cents</code> on every amount</li><li>Aging buckets: 0-30 / 31-60 / 61-90 / 90+ · canonical AR posture</li><li>Red is chip-tier only · no full-row red borders · no `.grid-tile.risk` left-border (Lane 3 doctrine · this file's CSS swept 2026-05-24)</li></ul>
+    <h4>Rail (right · 340px) · AR-specific (no Money-Home content)</h4>
+    <ul><li>RH card · 17-invoice headline + escalation call-out + 61-90 cluster name</li><li>AR rollup · total + per-bucket + DSO this/last month (drift visible)</li><li>Patterns-flagged · escalation path · cluster-call batching · DSO drift signal</li></ul>
+      <h4>Export / Print affordances (Lane 7B)</h4>
+    <ul><li>Top-right bc-bar carries <code>Print</code> + <code>Export ▾</code> alongside Filter</li><li>Audit trail entry on every Export · operator + date range + format</li></ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Grid view alternate · canon 2026-05-18 PM late -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-MN6b · Grid view · 4-column AR scan · 17 invoices</div>
+  <p class="frame-narr">Same 17 receivables as List frame in 4-column tiles (one dataset, two views). <em>gt-name</em> = client · <em>gt-phase</em> = aging bucket · <em>gt-chip</em> = days · <em>gt-rhythm</em> = amount. Red chip = 90+ and 61-90 days (call needed) · amber chip + amber border = 31-60 (past due) · neutral chip = 0-30 (normal flow). <em>Service-trade stress test (50+ invoices):</em> 4-column anatomy unchanged · scroll handles the rest · filter compresses to single-bucket focus.</p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/money/ar</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find an invoice, payment, or vendor</div></div>
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Overview</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>AR</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>AP</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Allowances</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Margin</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Home</span><span style="color:var(--kerf-border);">›</span><span class="bc-link">Money</span><span style="color:var(--kerf-border);">›</span><span class="bc-link active">AR</span><div class="bc-spacer"></div><span class="bc-action">Filter</span><span class="bc-action" title="Print queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="bc-action" title="Export current view · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+          <div class="main-header"><h2 class="main-title">AR aging</h2><div class="main-meta">17 open invoices · grid scan by aging × amount</div></div>
+
+          <div class="main-content">
+
+            <div class="money-area">
+              <div class="view-mode-toggle"><span class="vmt-option">List</span><span class="vmt-option active">Grid</span></div>
+              <div class="section-label">Open receivables<span class="sl-count">· 17</span><span class="sl-total">$53,100</span></div>
+              <div class="grid-view">
+                <div class="grid-tile"><div class="gt-name">Whitaker</div><div class="gt-phase">90+ days</div><div class="gt-chip-row"><span class="gt-chip red">112d Escalated</span></div><div class="gt-rhythm">$6,800</div></div>
+                <div class="grid-tile"><div class="gt-name">Vega</div><div class="gt-phase">61-90 days</div><div class="gt-chip-row"><span class="gt-chip red">68d</span></div><div class="gt-rhythm">$4,500</div></div>
+                <div class="grid-tile"><div class="gt-name">Moore</div><div class="gt-phase">61-90 days</div><div class="gt-chip-row"><span class="gt-chip red">78d</span></div><div class="gt-rhythm">$3,100</div></div>
+                <div class="grid-tile"><div class="gt-name">Dunne</div><div class="gt-phase">61-90 days</div><div class="gt-chip-row"><span class="gt-chip red">84d</span></div><div class="gt-rhythm">$1,400</div></div>
+                <div class="grid-tile attention"><div class="gt-name">Goldberg-Lee</div><div class="gt-phase">31-60 days</div><div class="gt-chip-row"><span class="gt-chip amber">38d</span></div><div class="gt-rhythm">$4,200</div></div>
+                <div class="grid-tile attention"><div class="gt-name">O'Brien</div><div class="gt-phase">31-60 days</div><div class="gt-chip-row"><span class="gt-chip amber">45d</span></div><div class="gt-rhythm">$2,800</div></div>
+                <div class="grid-tile attention"><div class="gt-name">Brennan</div><div class="gt-phase">31-60 days</div><div class="gt-chip-row"><span class="gt-chip amber">56d</span></div><div class="gt-rhythm">$2,200</div></div>
+                <div class="grid-tile attention"><div class="gt-name">Williamson</div><div class="gt-phase">31-60 days</div><div class="gt-chip-row"><span class="gt-chip amber">52d</span></div><div class="gt-rhythm">$1,950</div></div>
+                <div class="grid-tile attention"><div class="gt-name">Coring</div><div class="gt-phase">31-60 days</div><div class="gt-chip-row"><span class="gt-chip amber">48d</span></div><div class="gt-rhythm">$1,600</div></div>
+                <div class="grid-tile"><div class="gt-name">Khan</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">14d</span></div><div class="gt-rhythm">$5,600</div></div>
+                <div class="grid-tile"><div class="gt-name">Wegrzyn</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">18d</span></div><div class="gt-rhythm">$4,800</div></div>
+                <div class="grid-tile"><div class="gt-name">Ault</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">3d</span></div><div class="gt-rhythm">$3,400</div></div>
+                <div class="grid-tile"><div class="gt-name">Patel</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">12d</span></div><div class="gt-rhythm">$3,200</div></div>
+                <div class="grid-tile"><div class="gt-name">Hernandez</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">9d</span></div><div class="gt-rhythm">$2,400</div></div>
+                <div class="grid-tile"><div class="gt-name">Singh</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">28d</span></div><div class="gt-rhythm">$2,100</div></div>
+                <div class="grid-tile"><div class="gt-name">Carter</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">22d</span></div><div class="gt-rhythm">$1,800</div></div>
+                <div class="grid-tile"><div class="gt-name">Reyes</div><div class="gt-phase">0-30 days</div><div class="gt-chip-row"><span class="gt-chip">6d</span></div><div class="gt-rhythm">$1,250</div></div>
+              </div>
+            </div>
+
+            <div class="rail">
+              <div class="rh-card"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div><div class="rh-text"><strong>17 open invoices · scan by aging × amount.</strong> <em>Top oldest: Whitaker $6,800 · 112d.</em> <span class="rh-amber">Top recent: Khan $5,600 · 14d normal flow.</span> Net $53,100 AR.</div></div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Tile legend</div>
+                <div class="pf-row"><span class="pf-label">Red chip 90+ / 61-90</span><span class="pf-val red">Call needed</span></div>
+                <div class="pf-row"><span class="pf-label">Amber chip + border 31-60</span><span class="pf-val amber">Send reminder</span></div>
+                <div class="pf-row"><span class="pf-label">Neutral chip 0-30</span><span class="pf-val">Normal flow · no action</span></div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Top oldest (call list)</div>
+                <div class="pf-row"><span class="pf-label">Whitaker · 112d</span><span class="pf-val red">$6,800</span></div>
+                <div class="pf-row"><span class="pf-label">Dunne · 84d</span><span class="pf-val red">$1,400</span></div>
+                <div class="pf-row"><span class="pf-label">Moore · 78d</span><span class="pf-val red">$3,100</span></div>
+                <div class="pf-row"><span class="pf-label">Vega · 68d</span><span class="pf-val red">$4,500</span></div>
+              </div>
+              <div class="patterns-card">
+                <div class="patterns-eyebrow">Patterns flagged</div>
+                <div class="patterns-text"><strong>61-90d cluster</strong> (Vega · Moore · Dunne · $9,000 total) — batch a call day. <strong>Whitaker 90+</strong> on closed-job — escalation path needed.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-MN6b Grid · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul><li><strong>Macro / comparison / detail?</strong> Comparison (delta-magnitude posture by aging × amount)</li><li><strong>List / grid / both?</strong> Grid (sibling toggle to Frame 1 List)</li><li><strong>Cognitive job?</strong> Which biggest oldest invoices need attention first?</li><li><strong>Hidden until drill?</strong> Per-invoice line items · payment history (tile click → row detail)</li></ul>
+    <h4>Tile anatomy</h4>
+    <ul><li>4-column desktop grid · 17 tiles · same 17 invoices as List frame (one dataset, two views)</li><li>gt-name = client · gt-phase = aging bucket · gt-chip = days + state · gt-rhythm = open $</li><li>Red chip = call needed (90+ Escalated · 61-90 At-risk) · no border (chip-tier only per D-046)</li><li>Amber chip + amber `.grid-tile.attention` left-border = past due (31-60d)</li><li>Neutral chip = normal flow (0-30d) · no border</li><li>`.grid-tile.risk` class not used — Lane 3 doctrine: red is chip-tier only</li></ul>
+    <h4>Rail (right · 340px) · AR-specific (no Money-Home content)</h4>
+    <ul><li>RH card · scan-posture headline naming top-oldest + top-recent</li><li>Tile legend · explains red-chip vs amber-chip+border vs neutral-chip distinctions</li><li>Top-oldest card · 4 biggest aging × amount tiles for call-list batch</li><li>Patterns-flagged · 61-90d cluster batching · 90+ escalation path</li></ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">What this surface enforces</span><em>AR as an action queue by age.</em> Bucket order matches collections instinct.</div>
+  <div class="callout"><span class="callout-title">What this surface refuses to be</span>Not the general ledger. <strong>F-MN6b compares open receivables</strong> — drill for invoice history.</div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('presentation-mode',tab.dataset.mode==='presentation');});});
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const next=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector(`[data-mode="${next}"]`).click();}});
+document.querySelectorAll('[data-theme]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('light-mode',tab.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',tab.dataset.theme);}catch(e){}});});
+try{const saved=localStorage.getItem('kerf_wf_theme');if(saved==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'));}}catch(e){}
+</script>
+</body>
+</html>

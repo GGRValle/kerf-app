@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-ES4 · Desktop Estimator/Sales Consultant Home · macro glimpse · violet</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11; --kerf-bg-2: #14181F; --kerf-surface: #1A1F28; --kerf-surface-2: #232936;
+  --kerf-border: #2A3140; --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1; --kerf-text-dim: #98A1B3; --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544; --kerf-green: #4ADE80; --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF; --kerf-violet: #A78BFA; --kerf-cyan: #67D6E0;
+  --field-green: #38C977; --right-hand: #C9A961;
+  --es-violet: #9D7FE8;
+}
+body.light-mode { --kerf-bg: #FFFFFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFFFFF; --kerf-surface-2: #EBEEF2; --kerf-border: #C9D0D8; --kerf-border-soft: #DFE3E8; --kerf-text: #0A0D11; --kerf-text-dim: #4A5462; --kerf-text-mute: #7B8492; }
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--es-violet); color: #1A0F3A; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+.view-toggle-bar .vtb-hint kbd { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--es-violet); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--es-violet); font-style: normal; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; color: var(--es-violet); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--es-violet); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--es-violet); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--es-violet); }
+
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 240px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--es-violet); color: #1A0F3A; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(157,127,232,0.10); color: var(--es-violet); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--es-violet); border-radius: 0 2px 2px 0; }
+.sb-item.expanded { background: rgba(157,127,232,0.10); color: var(--es-violet); font-weight: 600; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--es-violet); font-weight: 600; background: rgba(157,127,232,0.08); }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-limited { font-size: 9px; color: var(--kerf-text-mute); margin-left: auto; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; }
+.sb-fab { margin: 18px auto 14px; width: 64px; height: 64px; border-radius: 50%; background: var(--es-violet); color: #1A0F3A; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(157,127,232,0.40); }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(157,127,232,0.20); color: var(--es-violet); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-spacer { flex: 1; }
+.bc-meta { color: var(--kerf-text-mute); font-size: 11.5px; }
+
+.role-header { padding: 18px 24px 10px; display: flex; align-items: center; gap: 14px; }
+.role-avatar-lg { width: 44px; height: 44px; border-radius: 50%; background: rgba(157,127,232,0.18); color: var(--es-violet); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
+.role-name-lg { font-size: 20px; color: var(--kerf-text); font-weight: 700; line-height: 1.2; }
+.role-title-lg { font-size: 11.5px; color: var(--es-violet); font-weight: 600; letter-spacing: 0.04em; margin-top: 2px; }
+.role-meta { margin-left: auto; font-size: 11.5px; color: var(--kerf-text-mute); }
+
+.synthesis-row { padding: 0 24px 14px; }
+.rh-card { background: rgba(157,127,232,0.05); border-left: 2px solid var(--es-violet); border-radius: 4px; padding: 11px 14px; }
+.rh-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--es-violet); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--es-violet); }
+.rh-text { font-size: 13px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { font-weight: 700; }
+.rh-text em { color: var(--field-green); font-style: normal; font-weight: 600; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+.rh-text .rh-red { color: var(--kerf-red); font-weight: 600; }
+
+.home-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 248px; gap: 16px; padding: 4px 24px 24px; align-items: start; }
+.home-col { display: flex; flex-direction: column; gap: 10px; }
+.col-label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 2px; }
+.col-label .sl-count { color: var(--kerf-text-dim); font-size: 10px; letter-spacing: 0.04em; }
+
+.one-thing { background: linear-gradient(135deg, rgba(157,127,232,0.12) 0%, rgba(157,127,232,0.04) 100%); border: 1px solid rgba(157,127,232,0.45); border-radius: 12px; padding: 14px 16px; }
+.ot-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--es-violet); font-weight: 700; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.ot-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--es-violet); }
+.ot-title { font-size: 15px; color: var(--kerf-text); font-weight: 700; line-height: 1.3; margin-bottom: 5px; }
+.ot-detail { font-size: 12px; color: var(--kerf-text-dim); line-height: 1.55; margin-bottom: 10px; }
+.ot-amount { font-size: 17px; color: var(--kerf-text); font-weight: 700; font-family: "SF Mono", Menlo, monospace; margin-bottom: 12px; }
+.ot-amount-note { font-size: 11px; color: var(--kerf-text-mute); font-weight: 500; margin-left: 6px; font-family: -apple-system, sans-serif; }
+.ot-cta-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ot-cta { padding: 8px 14px; background: var(--es-violet); color: #1A0F3A; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.ot-cta.secondary { background: var(--kerf-surface); color: var(--kerf-text-dim); border: 1px solid var(--kerf-border-soft); }
+
+.od-list { display: flex; flex-direction: column; gap: 7px; }
+.od-item { display: grid; grid-template-columns: 10px 1fr 12px; gap: 9px; padding: 9px 11px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 9px; align-items: start; font-size: 12px; }
+.od-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+.od-dot.violet { background: var(--es-violet); }
+.od-dot.amber { background: var(--kerf-amber); }
+.od-dot.red { background: var(--kerf-red); }
+.od-text { line-height: 1.4; font-weight: 600; }
+.od-meta { display: block; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 2px; }
+.od-arrow { color: var(--kerf-text-mute); font-size: 13px; margin-top: 2px; }
+.chip { display: inline-flex; align-items: center; gap: 3px; font-size: 8px; padding: 2px 5px; border-radius: 3px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; margin-left: 4px; vertical-align: middle; }
+.chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.chip.red::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-red); }
+
+.pulse-block { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 12px; padding: 12px 14px; }
+.pulse-metric { padding: 10px 0; border-bottom: 1px solid var(--kerf-border-soft); }
+.pulse-metric:last-child { border-bottom: 0; padding-bottom: 0; }
+.pulse-metric:first-child { padding-top: 0; }
+.pm-label { font-size: 10px; color: var(--kerf-text-mute); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; }
+.pm-value { font-size: 20px; color: var(--es-violet); font-weight: 700; margin-top: 3px; font-family: "SF Mono", Menlo, monospace; }
+.pm-value.amber { color: var(--kerf-amber); font-size: 16px; }
+.pm-sub { font-size: 10.5px; color: var(--kerf-text-dim); margin-top: 2px; }
+
+.right-rail { display: flex; flex-direction: column; gap: 12px; }
+.rail-card { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 12px; padding: 12px 13px; }
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; }
+.rail-eyebrow.violet { color: var(--es-violet); }
+.attr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.attr-cell { padding: 8px 7px; background: var(--kerf-bg-2); border-radius: 7px; text-align: center; }
+.attr-source { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; }
+.attr-count { font-size: 15px; color: var(--kerf-text); font-weight: 700; margin-top: 2px; }
+.attr-rate { font-size: 9px; color: var(--field-green); margin-top: 1px; font-weight: 600; }
+.attr-rate.muted { color: var(--kerf-text-mute); }
+.rail-row { display: grid; grid-template-columns: 28px 1fr 12px; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11.5px; }
+.rail-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.rail-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--kerf-surface-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.rail-icon.red { background: rgba(248,113,113,0.14); color: var(--kerf-red); }
+.rail-icon.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.rail-icon.violet { background: rgba(157,127,232,0.18); color: var(--es-violet); }
+.rail-text { font-weight: 600; line-height: 1.35; }
+.rail-detail { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.rail-arrow { color: var(--kerf-text-mute); font-size: 12px; }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--es-violet); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--es-violet); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--es-violet); font-weight: 700; margin-bottom: 5px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle · Grid view: <strong>NO</strong></span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-ES1 · Estimator Home (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-ES4 refresh · F-ES2 · Desktop Estimator Home</span>
+  </div>
+  <h1>F-ES4 · Desktop Estimator / Sales Consultant Home · macro glimpse</h1>
+  <p>
+    Refreshed desktop sibling of F-ES3 mobile. <em>Violet role accent</em> (<code>--es-violet: #9D7FE8</code>). Owner Home shape at desktop density: <strong>One Thing · On Deck · The Pulse</strong> plus a right rail for lead-source rollup, stalled leads, and estimates due. Estimator sidebar IA: Sales expanded · Projects and Schedule limited · Marketing with Attribution active · Settings without Audit. <strong>Grid view: NO.</strong>
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-ES4 · Desktop Estimator Home · Jamie Ruiz · default state</div>
+  <p class="frame-narr">
+    Jamie opens desktop Home between site visits. Right Hand leads with deal motion. One Thing: send Ault revised proposal. Three-column glimpse plus right rail keeps daily sales actions in view while surfacing attribution context at desktop width. No grid toggle — this is a macro glimpse, not a pipeline database.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/home</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a deal, client, or proposal</div>
+      </div>
+
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All · role-filtered</div>
+          <div class="sb-item expanded"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Pipeline</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Proposals</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Deals</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects<span class="sb-limited">limited</span></div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>My assigned</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule<span class="sb-limited">limited</span></div>
+          <div class="sb-item expanded"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Attribution</div>
+
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/><path d="m19.4 13 2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1c-.5-.4-1-.7-1.7-1l-.4-2.6A.5.5 0 0 0 14 4h-4a.5.5 0 0 0-.5.4l-.4 2.7c-.6.2-1.2.6-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5c-.1.2-.1.5.1.6L4.6 13c0 .3-.1.7-.1 1s0 .7.1 1l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5c.1.2.4.3.6.2l2.5-1c.5.4 1 .7 1.7 1l.4 2.6c0 .3.3.5.5.5h4c.2 0 .5-.2.5-.4l.4-2.7c.6-.2 1.2-.6 1.7-1l2.5 1c.2.1.5 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6L19.4 15c0-.3.1-.7.1-1s0-.7-.1-1z"/></svg></span>Settings</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">JR</div>
+            <div>
+              <div class="sb-user-name">Jamie Ruiz</div>
+              <div class="sb-user-meta">Estimator / Sales Consultant</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link active">Home</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-meta">Wed May 20 · 8:14 am</span>
+          </div>
+
+          <div class="role-header">
+            <div class="role-avatar-lg">JR</div>
+            <div>
+              <div class="role-name-lg">Jamie Ruiz</div>
+              <div class="role-title-lg">Estimator / Sales Consultant</div>
+            </div>
+            <div class="role-meta">4 deals active · 2 estimates due this week</div>
+          </div>
+
+          <div class="synthesis-row">
+            <div class="rh-card">
+              <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div>
+              <div class="rh-text">
+                <strong>Good morning, Jamie.</strong> <em>4 deals in active discussion</em> · <span class="rh-amber">2 estimates due this week</span> · <span class="rh-red">1 lead 8 days quiet</span> (needs touch).
+              </div>
+            </div>
+          </div>
+
+          <div class="home-grid">
+            <div class="home-col">
+              <div class="col-label">One Thing</div>
+              <div class="one-thing">
+                <div class="ot-eyebrow">Top deal today</div>
+                <div class="ot-title">Send Ault revised proposal — they are waiting</div>
+                <div class="ot-detail">PROP-2042 viewed twice · revision ready · client asked for allowance clarity yesterday. Signature block primed.</div>
+                <div class="ot-amount">$142,800<span class="ot-amount-note">· whole-home refresh · realtor referral</span></div>
+                <div class="ot-cta-row">
+                  <div class="ot-cta">Send proposal</div>
+                  <div class="ot-cta secondary">Preview as client</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-col">
+              <div class="col-label">On Deck <span class="sl-count">· 4</span></div>
+              <div class="od-list">
+                <div class="od-item">
+                  <span class="od-dot violet"></span>
+                  <div><span class="od-text">Patel ADU</span><span class="od-meta">Finalize estimate lines after site photos · due Thu</span></div>
+                  <span class="od-arrow">›</span>
+                </div>
+                <div class="od-item">
+                  <span class="od-dot amber"></span>
+                  <div><span class="od-text">Williamson garage</span><span class="od-meta">Site visit 10:00 AM · rough numbers after walk</span></div>
+                  <span class="od-arrow">›</span>
+                </div>
+                <div class="od-item">
+                  <span class="od-dot violet"></span>
+                  <div><span class="od-text">Ramirez follow-up</span><span class="od-meta">Proposal viewed · no reply · <span class="chip red">stale</span> 8d</span></div>
+                  <span class="od-arrow">›</span>
+                </div>
+                <div class="od-item">
+                  <span class="od-dot red"></span>
+                  <div><span class="od-text">Florencia kitchen</span><span class="od-meta">Re-engage web lead · 3d no contact</span></div>
+                  <span class="od-arrow">›</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="home-col">
+              <div class="col-label">The Pulse</div>
+              <div class="pulse-block">
+                <div class="pulse-metric">
+                  <div class="pm-label">Pipeline · active stage</div>
+                  <div class="pm-value">$480k</div>
+                  <div class="pm-sub">6 deals in motion</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pm-label">Win rate · this month</div>
+                  <div class="pm-value">38%</div>
+                  <div class="pm-sub">Up from 31% last month</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pm-label">Leads · this week</div>
+                  <div class="pm-value">6</div>
+                  <div class="pm-sub">2 realtor · 2 web · 2 repeat</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pm-label">Estimates due</div>
+                  <div class="pm-value amber">2</div>
+                  <div class="pm-sub">Patel Thu · Chen Fri</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="right-rail">
+              <div class="rail-card">
+                <div class="rail-eyebrow violet">Lead sources · 30d</div>
+                <div class="attr-grid">
+                  <div class="attr-cell"><div class="attr-source">Realtor</div><div class="attr-count">3</div><div class="attr-rate">42% close</div></div>
+                  <div class="attr-cell"><div class="attr-source">Referral</div><div class="attr-count">2</div><div class="attr-rate">50% close</div></div>
+                  <div class="attr-cell"><div class="attr-source">Web</div><div class="attr-count">4</div><div class="attr-rate muted">18% close</div></div>
+                  <div class="attr-cell"><div class="attr-source">Repeat</div><div class="attr-count">1</div><div class="attr-rate">100% close</div></div>
+                </div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Stalled leads</div>
+                <div class="rail-row">
+                  <div class="rail-icon red">RM</div>
+                  <div><span class="rail-text">Ramirez</span><span class="rail-detail">8d since proposal · $42,600</span></div>
+                  <span class="rail-arrow">›</span>
+                </div>
+                <div class="rail-row">
+                  <div class="rail-icon amber">FL</div>
+                  <div><span class="rail-text">Florencia</span><span class="rail-detail">3d no contact · pre-qual</span></div>
+                  <span class="rail-arrow">›</span>
+                </div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Estimates due this week</div>
+                <div class="rail-row">
+                  <div class="rail-icon violet">PA</div>
+                  <div><span class="rail-text">Patel ADU</span><span class="rail-detail">Due Thu · $187k scope</span></div>
+                  <span class="rail-arrow">›</span>
+                </div>
+                <div class="rail-row">
+                  <div class="rail-icon violet">CH</div>
+                  <div><span class="rail-text">Chen negotiation</span><span class="rail-detail">Due Fri · cost concerns</span></div>
+                  <span class="rail-arrow">›</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-ES4 · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><strong>Macro / glimpse</strong> — sales motion summary for Jamie, not a pipeline grid</li>
+      <li><strong>List only</strong> — On Deck rows and rail lists; <strong>Grid view: NO</strong></li>
+      <li><strong>Cognitive job</strong> — what deals need me today? estimates due? where are leads stalling?</li>
+      <li><strong>Hidden until drill</strong> — margin posture, cash, owner strategy, full pipeline table, Audit</li>
+    </ul>
+    <h4>Sidebar IA (Estimator)</h4>
+    <ul>
+      <li>Home (active) · Start · SPEAK (violet FAB)</li>
+      <li>Sales expanded: Pipeline · Proposals · Deals</li>
+      <li>Projects limited: My assigned only</li>
+      <li>Schedule limited (no sub-items)</li>
+      <li>Marketing expanded · Attribution active sub</li>
+      <li>Settings — <strong>no Audit</strong> in nav</li>
+    </ul>
+    <h4>Main layout</h4>
+    <ul>
+      <li>3 columns: One Thing · On Deck · The Pulse</li>
+      <li>Right rail: 4-cell attribution rollup · top stalled leads · estimates due this week</li>
+      <li>Red chip-tier only (e.g. stale on Ramirez)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves</span>
+    <em>Estimator role-root</em> in Owner Home shape at desktop density — violet accent, Sales-expanded sidebar, glimpse columns plus attribution context in the right rail.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses</span>
+    Not a CRM dashboard. Not owner financials. Not Audit in top nav. <strong>Grid view: NO</strong> — macro glimpse only.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation'); }); });
+document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) { const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation'; document.querySelector(`[data-mode="${next}"]`).click(); } });
+document.querySelectorAll('[data-theme]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.body.classList.toggle('light-mode', tab.dataset.theme === 'light'); try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (err) {} }); });
+try { const saved = localStorage.getItem('kerf_wf_theme'); if (saved === 'light') { document.body.classList.add('light-mode'); document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light')); } } catch (err) {}
+</script>
+</body>
+</html>

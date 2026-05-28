@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-PR4 · Desktop Project Detail · one job, nine lenses, denser canvas</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.page-header .doctrine-note { background: rgba(245,181,68,0.06); border-left: 3px solid var(--kerf-amber); padding: 9px 14px; border-radius: 4px; margin-top: 12px; font-size: 12px; color: var(--kerf-text-dim); line-height: 1.6; max-width: 1080px; }
+.page-header .doctrine-note strong { color: var(--kerf-amber); }
+.page-header .doctrine-note em { color: var(--kerf-text); font-style: normal; font-weight: 600; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.guardrail { background: rgba(248,113,113,0.16); color: var(--kerf-red); }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 940px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 880px; }
+
+/* Sidebar */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-text-mute); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action:hover { color: var(--kerf-text); }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* PROJECT HEADER */
+.project-header { padding: 20px 24px 4px; display: flex; align-items: flex-start; gap: 18px; }
+.ph-identity { flex: 1; }
+.ph-name { font-size: 24px; font-weight: 700; color: var(--kerf-text); letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 6px; }
+.ph-meta { font-size: 12.5px; color: var(--kerf-text-dim); line-height: 1.5; }
+.ph-meta strong { color: var(--kerf-text); font-weight: 600; }
+.ph-meta .ph-sep { color: var(--kerf-border); margin: 0 8px; }
+.ph-meta .ph-id { font-family: "SF Mono", Menlo, monospace; color: var(--kerf-text-mute); font-size: 11px; }
+.ph-meta .ph-phase-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; background: rgba(56,201,119,0.14); color: var(--field-green); font-size: 10px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; margin-right: 8px; vertical-align: 1px; }
+.ph-actions { display: flex; gap: 8px; }
+.ph-btn { padding: 7px 12px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 7px; font-size: 12px; color: var(--kerf-text-dim); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.ph-btn:hover { color: var(--kerf-text); border-color: var(--kerf-border); }
+.ph-btn.primary { background: var(--kerf-amber); color: #1A1300; border-color: var(--kerf-amber); }
+.ph-btn svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* SYNTHESIS ROW (full-width RH sentence) */
+.synthesis-row {
+  padding: 14px 24px 4px;
+}
+.rh-card {
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  padding: 11px 14px;
+}
+.rh-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 13px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text em { color: var(--kerf-amber); font-style: normal; font-weight: 600; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+
+/* EXECUTION ROW: 3 first-class cards (Field today · Schedule this week · Budget posture) */
+.execution-row {
+  padding: 14px 24px 18px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.exec-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 13px 15px;
+  display: flex; flex-direction: column;
+}
+.exec-card.field { background: rgba(56,201,119,0.04); border-color: rgba(56,201,119,0.24); }
+.exec-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 7px; display: flex; align-items: baseline; gap: 7px; }
+.exec-eyebrow.field { color: var(--field-green); display: flex; align-items: center; gap: 6px; }
+.exec-eyebrow.field::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+.exec-eyebrow .ee-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.exec-headline { font-size: 13.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.35; margin-bottom: 4px; }
+.exec-headline.field { color: var(--kerf-text); }
+.exec-detail { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.5; margin-bottom: 6px; }
+.exec-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: auto; padding-top: 4px; line-height: 1.45; }
+.exec-meta strong { color: var(--kerf-text); font-weight: 600; }
+.exec-meta.amber { color: var(--kerf-amber); font-weight: 600; }
+
+/* Schedule mini rows inside exec-card */
+.exec-card .sched-row { display: grid; grid-template-columns: 52px 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11.5px; }
+.exec-card .sched-row:last-child { border-bottom: 0; padding-bottom: 2px; }
+.exec-card .sched-row:first-of-type { padding-top: 0; }
+.exec-card .sched-day { font-size: 10px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.exec-card .sched-day strong { display: block; font-size: 11.5px; color: var(--kerf-text); letter-spacing: 0; text-transform: none; font-weight: 700; margin-top: 1px; }
+.exec-card .sched-content { color: var(--kerf-text); font-weight: 600; line-height: 1.35; font-size: 11.5px; }
+.exec-card .sched-content .sched-detail { display: block; color: var(--kerf-text-mute); font-size: 10px; margin-top: 1px; font-weight: 500; }
+.exec-card .sched-content.pending { color: var(--kerf-amber); }
+
+/* Budget mini rows inside exec-card */
+.exec-card .bud-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; padding: 4px 0; font-size: 11.5px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.exec-card .bud-row:last-child { border-bottom: 0; padding-bottom: 2px; }
+.exec-card .bud-row:first-of-type { padding-top: 0; }
+.exec-card .bud-label { color: var(--kerf-text-mute); font-size: 10.5px; }
+.exec-card .bud-val { color: var(--kerf-text); font-weight: 600; font-family: "SF Mono", Menlo, monospace; font-size: 11px; }
+.exec-card .bud-val.amber { color: var(--kerf-amber); }
+.exec-card .bud-val.green { color: var(--field-green); }
+
+/* TAB STRIP */
+.tab-strip {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  padding: 0 24px;
+  background: var(--kerf-bg);
+}
+.tab {
+  padding: 12px 16px 11px;
+  font-size: 12.5px; color: var(--kerf-text-mute);
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tab:hover { color: var(--kerf-text-dim); }
+.tab.active { color: var(--kerf-text); border-bottom-color: var(--kerf-amber); }
+.tab .tab-count {
+  font-size: 10px; color: var(--kerf-text-mute);
+  margin-left: 4px; font-weight: 500;
+}
+.tab.active .tab-count { color: var(--kerf-amber); }
+.tab .tab-flag { font-size: 9px; padding: 1px 6px; border-radius: 4px; background: rgba(245,181,68,0.16); color: var(--kerf-amber); letter-spacing: 0.06em; font-weight: 700; margin-left: 5px; text-transform: uppercase; }
+
+/* CONTENT */
+.tab-content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 18px 24px 24px; flex: 1; }
+
+/* Scope main column */
+.scope-main { display: flex; flex-direction: column; gap: 18px; }
+.scope-section {}
+.scope-sec-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 8px; display: flex; align-items: baseline; gap: 8px; }
+.scope-sec-eyebrow .ss-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+.scope-sec-eyebrow .ss-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* Proposal card */
+.proposal-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 12px; align-items: center;
+}
+.pp-name { font-size: 14px; color: var(--kerf-text); font-weight: 700; }
+.pp-meta { font-size: 11px; color: var(--kerf-text-mute); margin-top: 3px; }
+.pp-amount { font-size: 20px; color: var(--kerf-text); font-weight: 700; text-align: right; font-family: "SF Mono", Menlo, monospace; }
+.pp-amount-sub { font-size: 10px; color: var(--field-green); letter-spacing: 0.06em; text-transform: uppercase; text-align: right; font-weight: 700; margin-top: 2px; }
+
+/* CO card */
+.co-card {
+  background: rgba(245,181,68,0.04);
+  border: 1px solid rgba(245,181,68,0.30);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.co-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.co-name { font-size: 14px; color: var(--kerf-text); font-weight: 700; }
+.co-state { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(245,181,68,0.18); color: var(--kerf-amber); letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.co-amount-line { font-size: 12.5px; color: var(--kerf-text-dim); margin-bottom: 4px; }
+.co-amount { color: var(--kerf-amber); font-weight: 700; font-family: "SF Mono", Menlo, monospace; }
+.co-trust { font-size: 11px; color: var(--kerf-text-mute); margin-bottom: 11px; }
+
+/* Continuity callout (guardrail G3) */
+.co-continuity {
+  background: var(--kerf-bg-2);
+  border-left: 3px solid var(--right-hand);
+  border-radius: 4px;
+  padding: 9px 12px;
+  font-size: 11.5px;
+  color: var(--kerf-text-dim);
+  line-height: 1.5;
+}
+.co-continuity .cc-label { display: block; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 4px; }
+.co-continuity strong { color: var(--kerf-text); font-weight: 600; }
+.co-continuity .cc-link { color: var(--kerf-blue); font-weight: 600; cursor: pointer; margin-left: 6px; }
+
+.co-cta-row { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+.co-meta { font-size: 11px; color: var(--kerf-text-mute); }
+.co-cta { padding: 8px 14px; background: var(--kerf-amber); color: #1A1300; border-radius: 7px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.co-cta svg { width: 11px; height: 11px; fill: currentColor; }
+
+.add-co {
+  margin-top: 10px;
+  padding: 11px 14px;
+  background: transparent;
+  border: 1px dashed var(--kerf-border);
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--kerf-text-dim);
+  font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer;
+}
+.add-co:hover { color: var(--kerf-text); border-color: var(--kerf-amber); }
+.add-co svg { width: 11px; height: 11px; fill: currentColor; }
+
+/* Two-column compact lists at desktop (exclusions + allowances side-by-side) */
+.list-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.list-compact {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 0 14px;
+}
+.list-item {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 10px; align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 12px;
+}
+.list-item:last-child { border-bottom: none; }
+.list-text { color: var(--kerf-text-dim); line-height: 1.4; }
+.list-text strong { color: var(--kerf-text); font-weight: 600; }
+.list-val { color: var(--kerf-text); font-weight: 600; font-family: "SF Mono", Menlo, monospace; font-size: 11px; }
+.list-val .lv-sub { color: var(--kerf-text-mute); font-weight: 500; font-size: 10px; margin-left: 6px; }
+
+/* To-do tab · Lane 5 · project-scoped task table */
+.todo-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+.todo-table th { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; text-align: left; padding: 0 10px 4px; }
+.todo-table td { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); padding: 10px 12px; font-size: 12px; vertical-align: middle; }
+.todo-table tr td:first-child { border-radius: 8px 0 0 8px; }
+.todo-table tr td:last-child { border-radius: 0 8px 8px 0; }
+.todo-table .tt-task { font-weight: 600; color: var(--kerf-text); }
+.todo-table .tt-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 3px; }
+.todo-chip { display: inline-flex; font-size: 8.5px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; margin-right: 4px; }
+.todo-chip.stage { background: var(--kerf-bg-2); color: var(--kerf-text-mute); }
+.todo-chip.due { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.todo-chip.open { background: rgba(123,168,255,0.12); color: var(--kerf-blue); }
+.todo-chip.done { background: rgba(56,201,119,0.12); color: var(--field-green); }
+.todo-chip.blocked { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.todo-add-bar { margin: 0 0 14px; padding: 10px 14px; background: rgba(201,169,97,0.06); border: 1px dashed rgba(201,169,97,0.35); border-radius: 9px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.todo-add-bar svg { width: 16px; height: 16px; fill: var(--right-hand); }
+.todo-add-bar em { color: var(--right-hand); font-style: normal; font-weight: 600; }
+.todo-closeout-note { margin-top: 14px; padding: 11px 14px; background: rgba(103,214,224,0.06); border: 1px solid rgba(103,214,224,0.25); border-radius: 9px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.45; }
+.todo-closeout-note strong { color: var(--kerf-cyan); font-weight: 600; }
+.convert-punch-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 14px; background: var(--kerf-cyan); color: #0A1A1F; border-radius: 8px; font-size: 11px; font-weight: 700; }/* Recent media preview · Lane 6 */
+.media-preview { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+.mp-eyebrow { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.mp-eyebrow .mp-link { color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.media-thumb-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.media-thumb { aspect-ratio: 1; border-radius: 8px; background: linear-gradient(135deg, var(--kerf-bg-2), var(--kerf-surface-2)); border: 1px solid var(--kerf-border-soft); position: relative; }
+.media-thumb .mt-date { position: absolute; bottom: 5px; left: 5px; font-size: 8px; padding: 2px 5px; border-radius: 3px; background: rgba(10,13,17,0.8); color: var(--kerf-text); font-weight: 600; }
+.media-thumb.video::after { content: '▶'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 16px; color: var(--kerf-text); opacity: 0.9; }
+.mp-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 8px; }
+.media-tab-note { padding: 12px 14px; background: rgba(56,201,119,0.06); border: 1px solid rgba(56,201,119,0.25); border-radius: 9px; font-size: 12px; color: var(--kerf-text-dim); line-height: 1.45; margin-bottom: 14px; }
+.media-tab-note strong { color: var(--field-green); font-weight: 600; }
+.media-tab-cta { display: inline-block; margin-top: 8px; font-size: 11.5px; color: var(--kerf-blue); font-weight: 700; }
+/* RIGHT RAIL — Field / Schedule / Budget continuity (guardrail G3 surface-level) */
+.detail-rail { display: flex; flex-direction: column; gap: 14px; }
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* Field card */
+.field-card { padding: 11px 14px; background: rgba(56,201,119,0.04); border: 1px solid rgba(56,201,119,0.24); border-radius: 11px; }
+.fc-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.fc-eyebrow .fc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+.fc-headline { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.fc-detail { font-size: 11.5px; color: var(--kerf-text-dim); margin-top: 3px; line-height: 1.5; }
+.fc-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 6px; }
+.fc-cta { margin-top: 8px; font-size: 11px; color: var(--field-green); font-weight: 700; }
+
+/* Schedule mini */
+.sched-row { display: grid; grid-template-columns: 56px 1fr; gap: 9px; padding: 6px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11.5px; }
+.sched-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.sched-row:first-child { padding-top: 0; }
+.sched-day { font-size: 10px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.sched-day strong { display: block; font-size: 12.5px; color: var(--kerf-text); letter-spacing: 0; text-transform: none; font-weight: 700; margin-top: 1px; }
+.sched-content { color: var(--kerf-text); font-weight: 600; line-height: 1.4; }
+.sched-content .sched-detail { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+
+/* Budget rows */
+.bud-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 0; font-size: 12px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.bud-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.bud-row:first-child { padding-top: 0; }
+.bud-label { color: var(--kerf-text-mute); font-size: 11px; }
+.bud-val { color: var(--kerf-text); font-weight: 600; font-family: "SF Mono", Menlo, monospace; font-size: 11.5px; }
+.bud-val.amber { color: var(--kerf-amber); }
+.bud-val.green { color: var(--field-green); }
+
+/* Audit quiet card */
+.audit-row {
+  margin-top: 4px;
+  background: var(--kerf-bg-2);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 10px 12px;
+  display: grid; grid-template-columns: 22px 1fr auto;
+  gap: 10px; align-items: center;
+  font-size: 11.5px; color: var(--kerf-text-mute);
+}
+.audit-row svg { width: 14px; height: 14px; fill: currentColor; }
+.audit-row .audit-text { color: var(--kerf-text-dim); line-height: 1.4; }
+.audit-row .audit-text strong { color: var(--kerf-text); font-weight: 600; }
+.audit-row .audit-cta { color: var(--kerf-blue); font-size: 10.5px; font-weight: 700; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-PR2 · Project detail (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step">F-PR3 · Projects list (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-PR4 · Project Detail (desktop)</span>
+  </div>
+  <h1>F-PR4 · Desktop Project Detail · execution-first · nine lenses underneath</h1>
+  <p>
+    Desktop projection of F-PR2 mobile · <strong>v2 execution-first reframe (2026-05-18)</strong>. Same four guardrails, restructured around what running a job actually looks like. <em>First-load priority order: what's happening now · who's doing it · what's next on the schedule · what money/contract state matters.</em> The synthesis row is one full-width RH sentence; the three execution cards (Field today · Schedule this week · Money posture) sit BELOW it as first-class main-column content — not buried in the right rail. The 5-cell state strip is dropped (Phase/Moving/Blocked/Decision/Changed all surface within the execution cards). Tabs (Scope · Schedule · Budget · Field · Media · Comms · To-do · Files · Audit) sit beneath the execution snapshot as drill-down lenses. The rail slims to just the CO-002 decision card and a quiet Audit deep-link.
+  </p>
+  <div class="doctrine-note">
+    <strong>Four guardrails preserved · v2 reframe applies G3 more aggressively:</strong> (G1) <em>Lead with execution state</em> — header + RH sentence + 3-card execution row span ~32% of viewport before tabs; what's happening now reads first. (G2) <em>9 tabs as lenses</em> — same quiet style; tabs are drill-downs into the snapshot, not parallel mini-products. (G3) <em>Field/Schedule/Money first-class</em> — promoted from rail to main column as a 3-card row; the chain reads at page level, not in a sidebar afterthought. (G4) <em>Audit quiet</em> — 9th tab no count chip, single rail row, no callout treatment.
+  </div>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-PR4 · Desktop Project Detail · Hernandez pantry conversion · Scope tab default</div>
+  <p class="frame-narr">
+    Owner clicked Hernandez pantry from F-PR3 (or from F-CL4's "Open project"). Page loads with project name + meta line (client + address + system id + estimated complete + PM). Synthesis row spans the width: RH sentence on the left, the 5-cell state strip (Phase / Moving / Blocked / Decision / Changed) on the right as a horizontal strip — same canonical questions as mobile, just arranged horizontally to take the desktop width. Tab strip below renders the 7 lenses; Scope is active with a small <code>CO</code> flag because a change order is in flight. Scope content in the main column shows the proposal headline, the CO-002 in-flight card with the "Built from" continuity callout intact, then exclusions and allowances as a side-by-side compact list pair. The right rail surfaces three continuity cards — Field (today's walk · Carlos + Tito · last log) · Schedule mini (Wed insulation · Thu drywall · Mon cabinet install pending) · Budget mini (contract · CO · invoiced · AR open) — so the chain reads on the page without leaving the Scope tab.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/projects/hernandez-pantry-prj-014</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Projects</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Hernandez · pantry conversion</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action" title="Print per-job report · scope · schedule · budget · field rollup">
+              <svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>
+              Print job report
+            </span>
+            <span class="bc-action" title="Export per-job report · PDF · CSV · XLSX · audit-logged">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+              Export ▾
+            </span>
+            <span class="bc-action">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+              Actions
+            </span>
+          </div>
+
+          <!-- HEADER -->
+          <div class="project-header">
+            <div class="ph-identity">
+              <div class="ph-name">Pantry conversion</div>
+              <div class="ph-meta">
+                <span class="ph-phase-tag">Active</span>
+                <strong>Hernandez, Mark &amp; Maria</strong>
+                <span class="ph-sep">·</span>
+                1247 Marlborough Ave, Mission Hills
+                <span class="ph-sep">·</span>
+                <span class="ph-id">PRJ-014 · EST-014</span>
+                <span class="ph-sep">·</span>
+                PM: Marcus Riley
+                <span class="ph-sep">·</span>
+                Est. complete Aug 2026
+              </div>
+            </div>
+            <div class="ph-actions">
+              <div class="ph-btn"><svg viewBox="0 0 24 24"><path d="M14 2 12.5 3.5 16 7l-9 9-1.5-1.5L4 16 9 21l1.5-1.5L9 18l9-9 3 3 1.5-1.5L14 2z"/></svg>Log a touch</div>
+              <div class="ph-btn primary"><svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-2 12-3 3-1.4-1.4 1.6-1.6H8v-2h6.2l-1.6-1.6L14 9z"/></svg>Send update</div>
+            </div>
+          </div>
+
+          <!-- SYNTHESIS ROW · RH sentence only -->
+          <div class="synthesis-row">
+            <div class="rh-card">
+              <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div>
+              <div class="rh-text">
+                Schematic phase · framing day 2 on track · <em>CO-002 awaiting your approval ($14,820)</em> · field walk captured today.
+              </div>
+            </div>
+          </div>
+
+          <!-- EXECUTION ROW · what's happening now · who's doing it · what's next on schedule · money state -->
+          <div class="execution-row">
+
+            <div class="exec-card field">
+              <div class="exec-eyebrow field">Field · today</div>
+              <div class="exec-headline">Day 2 framing · on track</div>
+              <div class="exec-detail">Carlos + Tito on-site · clocked in 8:04 · field walk captured 14:22 (voice + 4 photos)</div>
+              <div class="exec-meta"><strong>1 measurement flagged</strong> &middot; verify before fab</div>
+            </div>
+
+            <div class="exec-card">
+              <div class="exec-eyebrow">Schedule · this week<span class="ee-action">Schedule &rarr;</span></div>
+              <div class="sched-row">
+                <div class="sched-day">Wed<strong>May 20</strong></div>
+                <div class="sched-content">Insulation
+                  <span class="sched-detail">Carlos lead · no conflicts</span>
+                </div>
+              </div>
+              <div class="sched-row">
+                <div class="sched-day">Thu<strong>May 21</strong></div>
+                <div class="sched-content">Drywall
+                  <span class="sched-detail">Subbed · Hector's crew</span>
+                </div>
+              </div>
+              <div class="sched-row">
+                <div class="sched-day">Mon<strong>Jun 1</strong></div>
+                <div class="sched-content pending">Cabinet install
+                  <span class="sched-detail">Pending CO-002 + tape verify</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="exec-card">
+              <div class="exec-eyebrow">Money · contract posture<span class="ee-action">Money &rarr;</span></div>
+              <div class="bud-row"><span class="bud-label">Base contract</span><span class="bud-val">$87,200</span></div>
+              <div class="bud-row"><span class="bud-label">CO-002 pending</span><span class="bud-val amber">+$14,820</span></div>
+              <div class="bud-row"><span class="bud-label">Invoiced</span><span class="bud-val">$43,600 (2/4)</span></div>
+              <div class="bud-row"><span class="bud-label">AR open</span><span class="bud-val amber">$21,800</span></div>
+              <div class="bud-row"><span class="bud-label">Margin posture</span><span class="bud-val green">on track</span></div>
+            </div>
+
+          </div>
+
+          <!-- TAB STRIP -->
+          <div class="tab-strip">
+            <div class="tab active">Scope <span class="tab-flag">CO</span></div>
+            <div class="tab">Schedule <span class="tab-count">3</span></div>
+            <div class="tab">Budget</div>
+            <div class="tab">Field <span class="tab-count">2</span></div>
+            <div class="tab">Media <span class="tab-count">327</span></div>
+            <div class="tab">Comms <span class="tab-count">5</span></div>
+            <div class="tab">To-do <span class="tab-count">10</span></div>
+            <div class="tab">Files <span class="tab-count">4</span></div>
+            <div class="tab">Audit</div>
+          </div>
+
+          <!-- SCOPE TAB CONTENT -->
+          <div class="tab-content">
+
+            <!-- LEFT: scope main -->
+            <div class="scope-main">
+
+              <!-- Recent media preview · Lane 6 -->
+              <div class="media-preview">
+                <div class="mp-eyebrow">Recent media <span class="mp-link">View all 327 →</span></div>
+                <div class="media-thumb-row">
+                  <div class="media-thumb"><span class="mt-date">Today</span></div>
+                  <div class="media-thumb video"><span class="mt-date">Yesterday</span></div>
+                  <div class="media-thumb"><span class="mt-date">Jun 9</span></div>
+                </div>
+                <div class="mp-meta">248 photos · 32 videos · last capture 2h ago · Carlos · opens F-ML2</div>
+              </div>
+
+              <div class="scope-section">
+                <div class="scope-sec-eyebrow">Proposal</div>
+                <div class="proposal-card">
+                  <div>
+                    <div class="pp-name">EST-014</div>
+                    <div class="pp-meta">Approved 2026-04-22 · base scope · signed</div>
+                  </div>
+                  <div>
+                    <div class="pp-amount">$87,200</div>
+                    <div class="pp-amount-sub">Approved</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scope-section">
+                <div class="scope-sec-eyebrow">Change orders <span class="ss-count">· 1 in flight</span></div>
+
+                <div class="co-card">
+                  <div class="co-head">
+                    <div class="co-name">CO-002 · pantry scope expansion</div>
+                    <span class="co-state">Draft</span>
+                  </div>
+                  <div class="co-amount-line">Awaiting your approval · <span class="co-amount">+$14,820</span></div>
+                  <div class="co-trust">Trust check passed · built from your past pantry jobs</div>
+
+                  <!-- Continuity callout (guardrail G3) -->
+                  <div class="co-continuity">
+                    <span class="cc-label">Built from</span>
+                    <strong>Field walk → transcript → priced against your past 11 pantry/cabinetry jobs.</strong> <span class="cc-link">View chain →</span>
+                  </div>
+
+                  <div class="co-cta-row">
+                    <div class="co-meta">Maria asked in field walk today 14:22 · Marcus to verify measurements tomorrow</div>
+                    <div class="co-cta">
+                      Open Decision Card
+                      <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <button class="add-co">
+                  <svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>
+                  Add change order
+                </button>
+              </div>
+
+              <!-- Exclusions + Allowances side-by-side at desktop -->
+              <div class="list-pair">
+
+                <div class="scope-section">
+                  <div class="scope-sec-eyebrow">Exclusions <span class="ss-count">· 3</span></div>
+                  <div class="list-compact">
+                    <div class="list-item">
+                      <span class="list-text">No structural work to existing walls</span>
+                    </div>
+                    <div class="list-item">
+                      <span class="list-text">Tile pattern selections by Maria H.</span>
+                    </div>
+                    <div class="list-item">
+                      <span class="list-text">Light fixtures purchased by client</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="scope-section">
+                  <div class="scope-sec-eyebrow">Allowances <span class="ss-count">· $17.2k total · $0 spent</span></div>
+                  <div class="list-compact">
+                    <div class="list-item">
+                      <span class="list-text"><strong>Cabinetry</strong></span>
+                      <span class="list-val">$12,000<span class="lv-sub">$0 spent</span></span>
+                    </div>
+                    <div class="list-item">
+                      <span class="list-text"><strong>Tile</strong></span>
+                      <span class="list-val">$4,000<span class="lv-sub">$0 spent</span></span>
+                    </div>
+                    <div class="list-item">
+                      <span class="list-text"><strong>Hardware</strong></span>
+                      <span class="list-val">$1,200<span class="lv-sub">$0 spent</span></span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- RIGHT RAIL · slimmed: CO inline preview + quiet Audit only -->
+            <div class="detail-rail">
+
+              <div class="rail-card" style="background: rgba(245,181,68,0.06); border-color: rgba(245,181,68,0.30);">
+                <div class="rail-eyebrow" style="color: var(--kerf-amber);">Pending your approval</div>
+                <div style="font-size: 13.5px; color: var(--kerf-text); font-weight: 700; margin-bottom: 5px;">CO-002 · pantry scope expansion</div>
+                <div style="font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; margin-bottom: 8px;">
+                  Floor-to-ceiling shelving expanded to long wall · counter run with dedicated circuit · door swing reversal. Maria asked in field walk today.
+                </div>
+                <div style="font-size: 18px; color: var(--kerf-amber); font-weight: 700; font-family: 'SF Mono', Menlo, monospace; margin: 6px 0 4px;">+$14,820</div>
+                <div style="font-size: 10.5px; color: var(--kerf-text-mute); margin-bottom: 10px;">Trust check passed &middot; built from your past 11 pantry/cabinetry jobs</div>
+                <div style="font-size: 12px; color: var(--kerf-amber); font-weight: 700; cursor: pointer;">Open Decision Card &rarr;</div>
+              </div>
+
+              <!-- Audit quiet (guardrail G4) -->
+              <div class="audit-row">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg>
+                <div class="audit-text">
+                  <strong>Audit trail available</strong>
+                  · 47 events logged this project
+                </div>
+                <span class="audit-cta">View &rarr;</span>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-PR4 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 2 build · Projects + Clients</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL1/CL2 · Mobile Clients pair</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-PR1/PR2 · Mobile Projects pair</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL3/CL4 · Desktop Clients pair</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-PR3 · Desktop Projects list</span></div>
+      <div class="sl-step current"><span class="sl-dot">4</span><span><span class="sl-name">F-PR4</span> · Desktop Project Detail <em>(this · Tier 2 closeout)</em></span></div>
+    </div>
+
+    <h4>Four guardrails preserved · v2 execution-first reframe</h4>
+    <ul>
+      <li><span class="badge guardrail">G1</span><em>Lead with execution state.</em> Header + RH sentence + 3-card execution row span ~32% of viewport before tabs. The 5-cell state strip from v1 is dropped — Phase/Moving/Blocked/Decision/Changed all surface naturally within the execution cards + RH sentence. The first thing the operator sees is what's happening now.</li>
+      <li><span class="badge guardrail">G2</span><em>9 tabs as lenses.</em> Same 9 tabs (Scope · Schedule · Budget · Field · Media · Comms · To-do · Files · Audit). Tab strip is quiet — single-pixel underline on active. Small <code>CO</code> flag on Scope (because a CO is in flight). Audit no count chip. Tabs are drill-downs into the snapshot above, not parallel mini-products.</li>
+      <li><span class="badge guardrail">G3</span><em>Field/Schedule/Money first-class, not rail-only.</em> v1 placed these as continuity cards in the right rail; v2 promotes them to a 3-card execution row in the main column. The chain reads at page level. The CO card inside Scope still carries the "Built from" callout — so the provenance is visible inside the decision; the execution state is visible at the surface.</li>
+      <li><span class="badge guardrail">G4</span><em>Audit quiet.</em> 9th tab, no count chip. Single audit row in the slimmed rail with "47 events logged · View" deep-link. No callout treatment, no badge.</li>
+    </ul>
+
+    <h4>v2 execution-first reframe (vs v1)</h4>
+    <p><strong>What changed (2026-05-18):</strong> First-load tilt was too scope-first in v1. Critique landed: <em>"first page should feel closer to contract / state · schedule / who-what-where · invoicing / money posture."</em> Reframe:</p>
+    <ul>
+      <li><strong>Lifted</strong> Field card + Schedule mini + Budget mini from the right rail into the main column as a 3-card execution row, before the tab strip</li>
+      <li><strong>Dropped</strong> the 5-cell state strip (Phase/Moving/Blocked/Decision/Changed) — redundant with execution row content + RH sentence; Blocked "nothing right now" was filler</li>
+      <li><strong>Slimmed</strong> the right rail to just CO-002 decision card + Audit deep-link</li>
+      <li><strong>Synthesis row</strong> simplified from 2-column (RH + state strip) to single full-width RH sentence above the execution row</li>
+      <li><strong>Result:</strong> ~32% of viewport above tabs reads as execution snapshot; tabs and scope content sit below as drill-downs</li>
+    </ul>
+
+    <h4>Desktop density choices (carried from v1)</h4>
+    <ul>
+      <li><strong>Exclusions + Allowances side-by-side</strong> · two compact lists at half-width instead of stacked. Same density as mobile per list; desktop just fits two columns.</li>
+      <li><strong>Actions in header</strong> · Log a touch · Send update · Actions menu in breadcrumb. Mobile had a single ⋯ action sheet; desktop affords the two most common actions inline.</li>
+      <li><strong>PM name + Estimated complete in meta line</strong> · mobile collapsed to client + address; desktop fits PM and date.</li>
+      <li><strong>Schedule mini scope is project-scoped</strong> · F-PR3 rail shows portfolio lookahead; this card shows just this project. Same data model, different scope by surface.</li>
+    </ul>
+
+    <h4>The 7 lenses (same as F-PR2)</h4>
+    <ul>
+      <li><strong>Scope (default):</strong> proposal · change orders · exclusions · allowances</li>
+      <li><strong>Schedule:</strong> milestones · weekly schedule · sub commitments · conflicts</li>
+      <li><strong>Budget:</strong> contract · CO history · invoices · AR · margin posture (owner-private)</li>
+      <li><strong>Field:</strong> daily logs · transcripts · photos · LiDAR scans · measurements</li>
+      <li><strong>Media:</strong> flat project media browse · photos · videos · daily log media · drills to F-ML2 (Lane 6)</li>
+      <li><strong>Comms:</strong> SMS · email · portal threads · meeting notes — project-scoped</li>
+      <li><strong>To-do:</strong> project-scoped tasks · assignee · due · stage · voice add · punch candidate flags · converts at closeout (Lane 5 · Frame 2)</li>
+      <li><strong>Files:</strong> drawings · contracts · permits · selections · receipts</li>
+      <li><strong>Audit:</strong> 47 events · decision trail · transcript provenance · model-vs-final (G4 quiet)</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>A forensics console with 7 equal mini-products</li>
+      <li>A Buildertrend project hub with custom-tab plug-ins</li>
+      <li>A Procore-style 27-module workspace</li>
+      <li>A Gantt-dominated project page</li>
+      <li>A "scope = contract document viewer" surface (scope is decisions-in-flight, not paperwork)</li>
+      <li>A loud Audit tab with red badges (refused via G4)</li>
+      <li>A workstation that hides Field / Schedule / Budget behind tab clicks (refused via G3 surface-level)</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — see this project's state, drill where action lives</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — RH synthesis + state strip · before tabs</li>
+      <li><span class="badge doctrine">d-3</span><em>3-color discipline</em> — amber pending · green on-track · red drift · neutral informational · cyan closing</li>
+      <li><span class="badge doctrine">d-4</span><em>Phase as text tag</em> — "Active" tag distinct from state colors</li>
+      <li><span class="badge doctrine">d-5</span><em>Trust surfaces exception-tier</em> — Audit available but not loud · transcript reached only via Field tab</li>
+      <li><span class="badge doctrine">d-6</span><em>Field/Schedule/Money continuity</em> — same continuity rail as F-CL4 · same content shape as F-A2 Owner Home lookahead</li>
+      <li><span class="badge canon">canon</span>Right Hand named once · no other agent names in copy</li>
+      <li><span class="badge canon">canon</span>Per <code>kerf_client_section_canonical.md</code> · Projects nested under Clients</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Open Decision Card → F-B2 · Desktop Decision Card · CO-002 review</li>
+      <li>View chain → F-F1 · Transcript Review · field walk transcript pinned to CO-002</li>
+      <li>Open field log → F-RC1 / Field walk capture detail</li>
+      <li>Schedule → · 3 places (state cell · rail action · sidebar) → Schedule destination (Tier 3 · deferred)</li>
+      <li>Money → · rail action → Money destination (Tier 3 · deferred)</li>
+      <li>Audit view → F-H1 · Audit Detail (deep link only)</li>
+      <li>Log a touch → field log capture sheet (project-scoped)</li>
+      <li>Send update → client comms (Comms tab pre-bound to Maria)</li>
+      <li>Breadcrumb · Hernandez → F-CL4 · client detail</li>
+      <li>Tab clicks → switch lens within F-PR4</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-PR2_mobile_project_detail.html</code> · mobile counterpart · same four guardrails</li>
+      <li><code>F-PR3_desktop_projects_list.html</code> · entry path from desktop list</li>
+      <li><code>F-CL4_desktop_client_detail.html</code> · sibling "Open project" path</li>
+      <li><code>F-B2_desktop_decision_card.html</code> · downstream CO decision</li>
+      <li><code>F-F1_desktop_transcript_review.html</code> · "View chain" routes there</li>
+      <li><code>F-H1_audit_detail.html</code> · Audit tab deep link</li>
+      <li><code>feedback_avoid_overbuilding_review_surfaces.md</code> · doctrine: lens not console</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · doctrine: lead with summary</li>
+      <li><code>kerf_trust_surfaces_exception_tier.md</code> · Audit and transcript stay exception-tier</li>
+      <li><code>Kerf_IA_Framework_v3_2026-05-17.md</code> · Projects detail spec (9 sub-tabs, Scope default)</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Per-tab content for Schedule / Budget / Field / Comms / Files / Audit (sketched, not rendered)</li>
+      <li>CO history view (when 5+ COs accumulate on one project)</li>
+      <li>Designer-led project treatment (Ault Coronado vanity — designer relationship variant)</li>
+      <li>Phase progression sub-tab (Schematic → DD → CD → Construction → Closeout) — implicit in current phase tag</li>
+      <li>PM-tier projection (PM sees same surface, different actions available)</li>
+      <li>Multi-tenant deep-link (cross-business project view at Enterprise tier)</li>
+    </ul>
+      <h4>Per-job report affordances (Lane 7B)</h4>
+    <ul><li>Top-right bc-bar carries <code>Print job report</code> + <code>Export ▾</code> + Actions kebab</li><li>Per-job report = scope + schedule + budget + field rollup as single printable</li><li>Audit trail on Export · data egress logged (operator + job + format)</li></ul>
+  </div>
+</div>
+
+<!-- Frame 2 · To-do tab · Lane 5 -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-PR4 · Desktop Project Detail · Hernandez pantry · To-do tab active</div>
+  <p class="frame-narr">
+    Operator clicks <em>To-do</em> in the tab strip. Desktop table: Task · Stage · Due · Assignee · State · Action. 10 project-scoped to-dos (8 open · 2 done). Voice-add bar with Right Hand utterance. Two punch candidates flagged. Closeout note points to F-CO1a conversion — active project, convert button appears when phase = Closeout. <em>GC baseline 5–15 items; 50+ compresses Done section.</em>
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/projects/prj-014/todo</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a task, capture, or project</div>
+      </div>
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div></div></div>
+        </div>
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Projects</span><span class="bc-sep">›</span><span class="bc-link">Hernandez pantry</span><span class="bc-sep">›</span><span class="bc-link active">To-do</span></div>
+          <div class="project-header-block">
+            <div class="ph-row">
+              <div>
+                <h2 class="ph-name">Pantry conversion <span class="ph-phase-tag active">Active</span></h2>
+                <div class="ph-meta">Luis Hernandez · 1247 Marlborough Ave · PRJ-014 · PM Marcus · est. complete Jun 12</div>
+              </div>
+            </div>
+            <div class="synthesis-row">
+              <div class="rh-card-inline">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · project</div>
+                <div class="rh-text"><strong>10 project to-dos.</strong> <span class="rh-amber">4 due this week.</span> 2 flagged as punch candidates at closeout.</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-strip">
+            <div class="tab">Scope <span class="tab-flag">CO</span></div>
+            <div class="tab">Schedule <span class="tab-count">3</span></div>
+            <div class="tab">Budget</div>
+            <div class="tab">Field <span class="tab-count">2</span></div>
+            <div class="tab">Media <span class="tab-count">327</span></div>
+            <div class="tab">Comms <span class="tab-count">5</span></div>
+            <div class="tab active">To-do <span class="tab-count">10</span></div>
+            <div class="tab">Files <span class="tab-count">4</span></div>
+            <div class="tab">Audit</div>
+          </div>
+          <div class="tab-content" style="padding: 18px 24px 24px;">
+            <div class="todo-add-bar">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg>
+              <span><em>Add to-do</em> · typed or voice · "Right Hand, mark the Hernandez tile check done"</span>
+            </div>
+            <div class="scope-sec-eyebrow">Open · 8</div>
+            <table class="todo-table">
+              <thead><tr><th>Task</th><th>Stage</th><th>Due</th><th>Assignee</th><th>State</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td><div class="tt-task">Check Hernandez tile order before rough-in</div></td><td><span class="todo-chip stage">Framing</span></td><td><span class="todo-chip due">Today</span></td><td>CA</td><td><span class="todo-chip open">Open</span></td><td style="color:var(--kerf-blue);font-weight:600;">Done →</td></tr>
+                <tr><td><div class="tt-task">Verify pantry measurements with Marcus</div></td><td><span class="todo-chip stage">Framing</span></td><td><span class="todo-chip due">Today</span></td><td>MR</td><td><span class="todo-chip open">Open</span></td><td style="color:var(--kerf-blue);font-weight:600;">Done →</td></tr>
+                <tr><td><div class="tt-task">Confirm cabinet delivery window</div></td><td><span class="todo-chip stage">Cabinetry</span></td><td><span class="todo-chip due">Fri</span></td><td>MR</td><td><span class="todo-chip open">Open</span></td><td style="color:var(--kerf-blue);font-weight:600;">Done →</td></tr>
+                <tr><td><div class="tt-task">Schedule electrical rough inspection</div></td><td><span class="todo-chip stage">Rough</span></td><td><span class="todo-chip due">Tomorrow</span></td><td>CT</td><td><span class="todo-chip open">Open</span></td><td style="color:var(--kerf-blue);font-weight:600;">Done →</td></tr>
+                <tr><td><div class="tt-task">Flag grout color choice with Maria</div></td><td><span class="todo-chip stage">Tile</span></td><td>—</td><td>MR</td><td><span class="todo-chip blocked">Blocked</span></td><td style="color:var(--kerf-blue);font-weight:600;">Unblock →</td></tr>
+                <tr><td><div class="tt-task">Confirm backsplash template</div><div class="tt-meta">Punch candidate</div></td><td><span class="todo-chip stage">Tile</span></td><td><span class="todo-chip due">Wed</span></td><td>CT</td><td><span class="todo-chip open">Open</span></td><td style="color:var(--kerf-blue);font-weight:600;">Done →</td></tr>
+                <tr><td><div class="tt-task">Touch-up paint at pantry entry</div><div class="tt-meta">Punch candidate</div></td><td><span class="todo-chip stage">Finish</span></td><td>No due</td><td>—</td><td><span class="todo-chip open">Open</span></td><td style="color:var(--kerf-blue);font-weight:600;">Done →</td></tr>
+                <tr><td><div class="tt-task">Order hardware pulls from Ferguson</div></td><td><span class="todo-chip stage">Cabinetry</span></td><td><span class="todo-chip due">Mon</span></td><td>MR</td><td><span class="todo-chip open">Open</span></td><td style="color:var(--kerf-blue);font-weight:600;">Done →</td></tr>
+              </tbody>
+            </table>
+            <div class="scope-sec-eyebrow" style="margin-top:16px;">Done · 2</div>
+            <table class="todo-table">
+              <tbody>
+                <tr><td><div class="tt-task" style="color:var(--kerf-text-dim);text-decoration:line-through;">Send CO-002 summary to Maria</div></td><td>Scope</td><td>Today</td><td>CA</td><td><span class="todo-chip done">Done</span></td><td>—</td></tr>
+                <tr><td><div class="tt-task" style="color:var(--kerf-text-dim);text-decoration:line-through;">Document field walk photos</div></td><td>Field</td><td>Mon</td><td>CT</td><td><span class="todo-chip done">Done</span></td><td>—</td></tr>
+              </tbody>
+            </table>
+            <div class="todo-closeout-note">
+              <strong>At closeout:</strong> open project to-dos convert to punch list in one tap → F-CO1a/b. Convert-to-punch button appears when project phase = Closeout.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-PR4 To-do tab · Spec</h3>
+    <ul>
+      <li><strong>8th tab (9 total)</strong> · To-do after Comms, before Files · desktop table density</li>
+      <li><strong>Voice completion</strong> · "Right Hand, mark the Hernandez tile check done"</li>
+      <li><strong>Convert-to-punch</strong> · deferred to closeout phase · see F-CO1a conversion banner</li>
+      <li><strong>Cross-ref</strong> · F-TD2 global queue · F-CO1b desktop closeout</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Frame 3 · Media tab · Lane 6 -->
+<div class="frame">
+  <div class="frame-label">Frame 3 · F-PR4 · Desktop Project Detail · Wegrzyn kitchen · Media tab · drill to F-ML2</div>
+  <p class="frame-narr">
+    Operator clicks <em>Media</em> tab. Compact summary + drill to F-ML2 full library. Daily logs with media listed below preview — same assets as Field tab, flat browse for "all kitchen photos" without scrolling daily logs. Voice query <em>"take me to Wegrzyn pictures"</em> skips this tab and lands directly on F-ML2 with Photos filter.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/projects/prj-018/media</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a capture, photo, or daily log</div>
+      </div>
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div></div></div>
+        </div>
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Projects</span><span class="bc-sep">›</span><span class="bc-link">Wegrzyn kitchen</span><span class="bc-sep">›</span><span class="bc-link active">Media</span></div>
+          <div class="project-header-block">
+            <div class="ph-row"><div><h2 class="ph-name">Wegrzyn kitchen <span class="ph-phase-tag closing">Closeout</span></h2><div class="ph-meta">Maria Wegrzyn · 4287 Pacifica Way · PRJ-018</div></div></div>
+            <div class="synthesis-row"><div class="rh-card-inline"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · media</div><div class="rh-text"><strong>248 photos · 32 videos · 47 daily logs.</strong> Last captured 2h ago by Carlos.</div></div></div>
+          </div>
+          <div class="tab-strip">
+            <div class="tab">Scope</div><div class="tab">Schedule <span class="tab-count">3</span></div><div class="tab">Budget</div><div class="tab">Field <span class="tab-count">2</span></div>
+            <div class="tab active">Media <span class="tab-count">327</span></div><div class="tab">Comms <span class="tab-count">5</span></div><div class="tab">To-do <span class="tab-count">10</span></div><div class="tab">Files <span class="tab-count">4</span></div><div class="tab">Audit</div>
+          </div>
+          <div class="tab-content" style="padding:18px 24px 24px;">
+            <div class="media-tab-note"><strong>Full media library</strong> — browse all project photos, videos, and daily log captures. Same source as Field captures · single file reference.<div class="media-tab-cta">Open F-ML2 →</div></div>
+            <div class="media-preview"><div class="mp-eyebrow">Most recent <span class="mp-link">View all 327 →</span></div><div class="media-thumb-row"><div class="media-thumb"><span class="mt-date">2h</span></div><div class="media-thumb video"><span class="mt-date">Yesterday</span></div><div class="media-thumb"><span class="mt-date">Jun 9</span></div></div><div class="mp-meta">Framing · Carlos · tap for fullscreen viewer with Open daily log + Share</div></div>
+            <div class="scope-sec-eyebrow">Daily logs with media · 47</div>
+            <div class="list-compact"><div class="list-item"><span class="list-text"><strong>Jun 9 · Framing day 4</strong> · 12 photos</span><span class="list-val">→</span></div><div class="list-item"><span class="list-text"><strong>Jun 8 · Rough-in check</strong> · 8 photos · 1 video</span><span class="list-val">→</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="frame-spec"><h3>F-PR4 Media tab · Spec</h3><ul><li><strong>5th tab (9 total)</strong> · Media after Field · drills to F-ML2</li><li>Scope tab recent-media preview on Frame 1</li><li>Voice routing in <code>voice_retrieval_routing.md</code></li></ul></div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves — Tier 2 closeout</span>
+    Four guardrails hold at desktop. The synthesis row spans wider without becoming louder. The 9 tabs read as lenses, not departments. The Field/Schedule/Budget continuity reads twice — inside the CO card and in the rail — so the chain is visible without leaving Scope. Audit is present but quiet. <em>The same surface that worked at 380px works at 1700px with the same hierarchy and more breathing room.</em> Tier 2 (Clients + Projects mobile + desktop) is now structurally closed.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a Buildertrend project hub. Not a Procore 27-module workspace. Not a Gantt page. Not a forensics console where Audit dominates. Not a Scope-is-the-contract-document viewer. <strong>F-PR4 is the per-project relationship lens from F-PR2, given desktop width to surface the Field/Schedule/Budget chain at the page level — without breaking the tabs-as-lenses promise.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

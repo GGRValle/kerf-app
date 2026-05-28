@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-MN5a · Mobile Allowance exception queue · comparison · list + grid</title>
+<style>
+:root{--kerf-bg:#0A0D11;--kerf-bg-2:#14181F;--kerf-surface:#1A1F28;--kerf-surface-2:#232936;--kerf-border:#2A3140;--kerf-border-soft:#1F2530;--kerf-text:#E8ECF1;--kerf-text-dim:#98A1B3;--kerf-text-mute:#6A7282;--kerf-amber:#F5B544;--kerf-green:#4ADE80;--kerf-red:#F87171;--kerf-blue:#7BA8FF;--kerf-violet:#A78BFA;--kerf-cyan:#67D6E0;--field-green:#38C977;--right-hand:#C9A961;}
+body.light-mode{--kerf-bg:#FFF;--kerf-bg-2:#F4F6F9;--kerf-surface:#FFF;--kerf-surface-2:#EBEEF2;--kerf-border:#C9D0D8;--kerf-border-soft:#DFE3E8;--kerf-text:#0A0D11;--kerf-text-dim:#4A5462;--kerf-text-mute:#7B8492;}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9 0%,#FFF 100%)!important;}
+body.light-mode .view-toggle-bar{background:rgba(255,255,255,0.92)!important;}
+body.light-mode .phone{box-shadow:0 16px 50px rgba(0,0,0,0.15);}
+body.light-mode .phone-notch{background:#1a1a1d!important;}
+*{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--kerf-bg);color:var(--kerf-text);line-height:1.5;font-size:13px;}
+.page{max-width:1500px;margin:0 auto;padding:32px 24px 80px;}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--kerf-border);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--kerf-text-dim);}
+.view-toggle-bar .vtb-label{font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;}
+.view-toggle-bar .vtb-options{display:flex;gap:2px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-radius:8px;padding:2px;}
+.view-toggle-bar .vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--kerf-text-mute);cursor:pointer;font-weight:600;}
+.view-toggle-bar .vtb-tab.active{background:var(--kerf-amber);color:#1A1300;}
+.view-toggle-bar .vtb-hint{margin-left:auto;font-size:10.5px;color:var(--kerf-text-mute);}
+body.presentation-mode .page{max-width:none;padding:0 24px 80px;} body.presentation-mode .frame{grid-template-columns:1fr;gap:14px;} body.presentation-mode .frame-spec{display:none;}
+.page-header{border-bottom:1px solid var(--kerf-border);padding-bottom:22px;margin-bottom:32px;}
+.page-header .crumb{font-size:11px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;}
+.page-header .crumb .step{color:var(--kerf-text-dim);} .page-header .crumb .step.current{color:var(--kerf-amber);} .page-header .crumb .sep{color:var(--kerf-border);margin:0 8px;}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px;} .page-header p{color:var(--kerf-text-dim);margin:0;font-size:13px;max-width:1080px;line-height:1.6;} .page-header p em{color:var(--right-hand);font-style:normal;}
+.frame{display:grid;grid-template-columns:1fr 380px;gap:28px;margin-bottom:56px;align-items:start;}
+.frame-label{grid-column:1 / -1;font-size:13px;color:var(--kerf-amber);font-weight:600;margin-bottom:4px;}
+.frame-narr{grid-column:1 / -1;margin:0 0 14px;color:var(--kerf-text-dim);font-size:12.5px;line-height:1.7;max-width:1080px;} .frame-narr em{color:var(--right-hand);font-style:normal;}
+.frame-render{border:1px solid var(--kerf-border);border-radius:12px;background:linear-gradient(180deg,#14181F 0%,#0A0D11 100%);padding:32px;display:flex;justify-content:center;}
+.frame-spec{border:1px solid var(--kerf-border);border-radius:12px;background:var(--kerf-bg-2);padding:18px 16px;font-size:12px;color:var(--kerf-text-dim);height:fit-content;position:sticky;top:60px;}
+.frame-spec h3{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-text);font-weight:700;margin:0 0 10px;}
+.frame-spec h4{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin:14px 0 6px;} .frame-spec h4:first-of-type{margin-top:0;}
+.frame-spec ul{padding-left:16px;margin:0 0 8px;} .frame-spec li{margin-bottom:4px;line-height:1.55;} .frame-spec code{background:var(--kerf-surface);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--right-hand);}
+.phone{width:380px;background:var(--kerf-bg);border:1.5px solid var(--kerf-border);border-radius:42px;padding:14px;position:relative;box-shadow:0 16px 50px rgba(0,0,0,0.5);}
+.phone-notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:124px;height:26px;background:var(--kerf-bg);border-radius:0 0 16px 16px;z-index:5;}
+.phone-screen{background:var(--kerf-bg);border-radius:30px;overflow:hidden;height:740px;display:flex;flex-direction:column;position:relative;}
+.status-bar{display:flex;justify-content:space-between;padding:13px 24px 6px;font-size:11.5px;color:var(--kerf-text);font-weight:600;} .status-bar .right{color:var(--kerf-text-dim);}
+.top-chrome{padding:6px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--kerf-border-soft);}
+.tc-back{display:flex;align-items:center;gap:3px;color:var(--kerf-amber);font-size:12.5px;font-weight:600;} .tc-back svg{width:16px;height:16px;fill:currentColor;}
+.tc-title{flex:1;text-align:center;font-size:13px;color:var(--kerf-text-dim);font-weight:500;}
+.tc-action{font-size:12px;color:var(--kerf-amber);font-weight:600;}
+.body{flex:1;overflow-y:auto;padding:0 14px 14px;}
+.rh-summary{margin:12px 0 14px;padding:11px 12px;background:rgba(201,169,97,0.05);border-left:2px solid var(--right-hand);border-radius:4px;display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:flex-start;}
+/* Export/Print affordances · Lane 7B canon · audit-logged on Export */
+.actions-strip{display:flex;justify-content:flex-end;gap:14px;margin:-4px 0 12px;padding:0 2px;font-size:11px;}
+.as-action{color:var(--kerf-amber);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
+.as-action svg{width:11px;height:11px;fill:currentColor;}
+.rh-avatar{width:24px;height:24px;border-radius:6px;background:rgba(201,169,97,0.16);color:var(--right-hand);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.rh-text{font-size:12px;color:var(--kerf-text);line-height:1.5;} .rh-text em{color:var(--kerf-red);font-style:normal;font-weight:600;} .rh-text strong{color:var(--kerf-text);font-weight:700;} .rh-text .rh-amber{color:var(--kerf-amber);font-weight:600;}
+.section-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;display:flex;align-items:baseline;gap:8px;margin:14px 4px 8px;}
+.section-label .sl-count{color:var(--kerf-text-dim);font-weight:600;font-size:10px;}
+.section-label .sl-total{margin-left:auto;font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;letter-spacing:0;text-transform:none;}
+.money-list{display:flex;flex-direction:column;gap:6px;}
+.money-row{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:11px 13px;display:grid;grid-template-columns:1fr auto 14px;gap:11px;align-items:center;}
+.money-row.stack{grid-template-columns:1fr 14px;align-items:flex-start;}
+.mr-body{display:flex;flex-direction:column;gap:3px;}
+.row-chip{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;padding:2px 6px;border-radius:4px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;align-self:flex-start;}
+.row-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .row-chip.red::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-red);}
+.row-chip.green{background:rgba(56,201,119,0.14);color:var(--field-green);} .row-chip.green::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--field-green);}
+.mr-text{font-size:12px;color:var(--kerf-text);line-height:1.4;font-weight:600;}
+.mr-detail{display:block;color:var(--kerf-text-mute);font-size:10.5px;margin-top:1px;font-weight:500;}
+.mr-bidact{font-size:10.5px;color:var(--kerf-text-mute);font-weight:500;}
+.mr-amount{font-family:"SF Mono",Menlo,monospace;font-weight:700;font-size:14px;align-self:flex-start;margin-top:2px;} .mr-amount.red{color:var(--kerf-red);} .mr-amount.green{color:var(--field-green);}
+.money-arrow{color:var(--kerf-text-mute);font-size:13px;align-self:center;}
+.bottom-bar{background:var(--kerf-bg-2);border-top:1px solid var(--kerf-border);padding:8px 0 22px;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;flex-shrink:0;}
+.bb-tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--kerf-text-mute);font-weight:600;padding:5px 0;} .bb-tab.active{color:var(--kerf-amber);}
+.bb-icon{display:inline-flex;width:22px;height:22px;} .bb-icon svg{width:22px;height:22px;fill:currentColor;}
+.bb-fab-wrap{position:relative;} .bb-fab{width:52px;height:52px;border-radius:50%;background:var(--kerf-amber);color:#1A1300;display:flex;align-items:center;justify-content:center;position:absolute;bottom:2px;left:50%;transform:translateX(-50%);box-shadow:0 6px 18px rgba(245,181,68,0.40);border:3px solid var(--kerf-bg);} .bb-fab svg{width:24px;height:24px;fill:currentColor;}
+.bb-fab-label{font-size:10px;color:var(--kerf-text-mute);margin-top:32px;font-weight:600;text-align:center;}
+.view-mode-toggle{display:flex;gap:4px;padding:3px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border-soft);border-radius:8px;margin:12px 4px 4px;width:fit-content;}
+.vmt-option{padding:5px 12px;font-size:10.5px;color:var(--kerf-text-mute);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;border-radius:5px;cursor:pointer;}
+.vmt-option.active{background:var(--kerf-amber);color:#1A1300;}
+.grid-view{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.grid-tile{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:10px 11px;cursor:pointer;}
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip carries the flag */
+.grid-tile.success{border-left:3px solid var(--field-green);padding-left:9px;}
+.gt-name{font-size:12.5px;color:var(--kerf-text);font-weight:700;}
+.gt-phase{font-size:9.5px;color:var(--kerf-text-mute);margin-top:3px;text-transform:uppercase;font-weight:600;}
+.gt-chip-row{margin-top:6px;}
+.gt-chip{display:inline-flex;align-items:center;gap:3px;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:700;text-transform:uppercase;}
+.gt-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .gt-chip.red::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-red);}
+.gt-chip.green{background:rgba(56,201,119,0.12);color:var(--field-green);} .gt-chip.green::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--field-green);}
+.gt-rhythm{font-size:9.5px;color:var(--kerf-text-mute);margin-top:6px;font-family:"SF Mono",Menlo,monospace;}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.callout{background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-left:3px solid var(--kerf-amber);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--kerf-text-dim);line-height:1.55;}
+.callout strong{color:var(--kerf-text);font-weight:600;} .callout em{color:var(--right-hand);font-style:normal;}
+.callout .callout-title{display:block;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin-bottom:5px;}
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  body, body.light-mode { background: #FFFFFF !important; color: #0A0D11 !important; --kerf-bg: #FFFFFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFFFFF; --kerf-surface-2: #EBEEF2; --kerf-border: #999999; --kerf-border-soft: #C9D0D8; --kerf-text: #0A0D11; --kerf-text-dim: #4A5462; --kerf-text-mute: #6B7280; }
+  .view-toggle-bar { display: none !important; }
+  .frame-spec { display: none !important; }
+  .frame { grid-template-columns: 1fr !important; gap: 0 !important; page-break-inside: avoid; margin-bottom: 18px !important; }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  .frame-render { background: #FFFFFF !important; padding: 12px !important; border: 1px solid #999 !important; box-shadow: none !important; }
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  .phone, .desktop-frame { background: #FFFFFF !important; border-color: #999 !important; box-shadow: none !important; }
+  .phone-screen, .app-body, .main, .body, .app-chrome { background: #FFFFFF !important; color: #0A0D11 !important; }
+  .top-chrome, .top-bar, .bottom-bar { background: #F4F6F9 !important; border-color: #999 !important; color: #0A0D11 !important; }
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary { background: #FFFFFF !important; border-color: #C9D0D8 !important; color: #0A0D11 !important; }
+  .callout { background: #F4F6F9 !important; border-color: #999 !important; color: #4A5462 !important; page-break-inside: avoid; }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px;">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">F-MN1 · Money home</span><span class="sep">›</span><span class="step current">F-MN5a · Allowance exceptions (mobile)</span><span class="sep">›</span><span class="step">F-MN5b · desktop</span></div>
+  <h1>F-MN5a · Mobile Allowance exception queue · peer comparison · list + grid</h1>
+  <p>Money drill-down: where allowances are slipping vs. recovering margin. <em>Comparison surface</em> — not project budget depth. Dollars shown; stored as integer cents in the data model.</p>
+</div>
+
+<!-- Frame 1 · List -->
+<div class="frame">
+  <div class="frame-label">Frame 1 · F-MN5a · List view · over vs. under allowance · 16 exceptions</div>
+  <p class="frame-narr">Right Hand opens with the weekly exception count. Rows group by <em>over allowance</em> (client conversation + change order) vs. <em>under allowance</em> (margin recovery). Bid vs. actual on every row; state chip carries lifecycle (Needs CO · Margin recovery). <em>Service-trade stress test (50+ exceptions):</em> sections compress with rollups · search/filter by trade · Grid view by delta-magnitude.</p>
+  <div class="frame-render">
+    <div class="phone"><div class="phone-notch"></div><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><span class="right">●●● 86%</span></div>
+      <div class="top-chrome">
+        <div class="tc-back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Money</div>
+        <div class="tc-title">Allowances</div>
+        <div class="tc-action">Filter</div>
+      </div>
+      <div class="body">
+        <div class="rh-summary"><div class="rh-avatar">RH</div><div class="rh-text"><strong>16 allowance exceptions this week</strong> · <em>6 over</em> (needs client conversation · +$5,350) · <span class="rh-amber">10 under</span> (margin recovery · -$3,610)</div></div>
+        <div class="actions-strip"><span class="as-action" title="Print queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="as-action" title="Export · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+        <div class="view-mode-toggle"><span class="vmt-option active">List</span><span class="vmt-option">Grid</span></div>
+        <div class="section-label">Over allowance<span class="sl-count">· 6</span><span class="sl-total">+$5,350</span></div>
+        <div class="money-list">
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Wegrzyn · tile $/sq ft<span class="mr-detail">bid $18 / actual $22 · kitchen backsplash</span></div>
+              <span class="row-chip red">Needs CO</span>
+              <div class="mr-amount red">+$1,240</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Khan · countertop quartz<span class="mr-detail">bid $58/sf / actual $74/sf · island + perimeter</span></div>
+              <span class="row-chip red">Needs CO</span>
+              <div class="mr-amount red">+$1,920</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Patel · cabinetry<span class="mr-detail">bid $12,400 / actual $13,000 · upper cabinets line</span></div>
+              <span class="row-chip red">Needs CO</span>
+              <div class="mr-amount red">+$600</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Reyes · plumbing fixtures<span class="mr-detail">bid $2,800 / actual $3,400 · hall bath</span></div>
+              <span class="row-chip red">Needs CO</span>
+              <div class="mr-amount red">+$600</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Ault · shower glass enclosure<span class="mr-detail">bid $1,400 / actual $1,950 · primary bath</span></div>
+              <span class="row-chip red">Needs CO</span>
+              <div class="mr-amount red">+$550</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Goldberg-Lee · island pendants<span class="mr-detail">bid $480 / actual $920 · kitchen lighting</span></div>
+              <span class="row-chip red">Needs CO</span>
+              <div class="mr-amount red">+$440</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+        </div>
+        <div class="section-label">Under allowance<span class="sl-count">· 10</span><span class="sl-total">-$3,610</span></div>
+        <div class="money-list">
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Hernandez · fixtures<span class="mr-detail">bid $4,800 / actual $3,900 · pantry conversion</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$900</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Carter · interior paint<span class="mr-detail">bid $4,200 / actual $3,750 · whole house</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$450</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Singh · backsplash<span class="mr-detail">bid $1,800 / actual $1,350 · accent tile</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$450</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Coring · hardware<span class="mr-detail">bid $1,100 / actual $720 · cabinet pulls</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$380</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Dunne · appliances<span class="mr-detail">bid $2,200 / actual $1,850 · master bath closeout</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$350</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Vega · accent tile<span class="mr-detail">bid $1,250 / actual $900 · powder room</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$350</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Moore · flooring<span class="mr-detail">bid $6,100 / actual $5,850 · closed job · final true-up</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$250</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">O'Brien · mirror + medicine cabinet<span class="mr-detail">bid $620 / actual $440 · primary bath</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$180</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Williamson · cabinet pulls<span class="mr-detail">bid $480 / actual $310 · kitchen</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$170</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+          <div class="money-row stack">
+            <div class="mr-body">
+              <div class="mr-text">Brennan · door hardware<span class="mr-detail">bid $720 / actual $590 · interior doors</span></div>
+              <span class="row-chip green">Margin recovery</span>
+              <div class="mr-amount green">-$130</div>
+            </div>
+            <span class="money-arrow">›</span>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+        <div class="bb-fab-wrap"><div class="bb-fab"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div><div class="bb-fab-label">Speak</div></div>
+        <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 0-4 4v3H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V5a4 4 0 0 0-4-4zm-2 7V5a2 2 0 1 1 4 0v3h-4z"/></svg></span>Money</div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More</div>
+      </div>
+    </div></div>
+  </div>
+  <div class="frame-spec">
+    <h3>F-MN5a List · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul><li><strong>Macro / comparison / detail?</strong> Comparison (peer allowance exceptions across active projects)</li><li><strong>List / grid / both?</strong> List + Grid (both)</li><li><strong>Cognitive job?</strong> Where are allowances slipping? Which client conversations do I need?</li><li><strong>Hidden until drill?</strong> Per-line cost detail · vendor PO · project budget lens (drill to project)</li></ul>
+    <h4>Density · 16 exceptions visible</h4>
+    <ul><li>Over allowance · 6 · +$5,350 total · Needs CO chip · red amount</li><li>Under allowance · 10 · -$3,610 net · Margin recovery chip · green amount</li><li>Service-trade stress: 50+ exceptions render via section rollups + filter + Grid by delta-magnitude</li></ul>
+    <h4>Money model</h4>
+    <ul><li>Display: dollars · Store: <code>integer cents</code> on every amount</li><li>Lifecycle states: <code>over</code> · <code>under</code> · <code>on_track</code> · chips: Needs CO (red) · Margin recovery (green)</li><li>Red is chip-tier only · no full-row red borders · the chip + amount color carry the flag</li></ul>
+    <h4>Bottom bar (3 + 1 + 1)</h4>
+    <ul><li>Mandatory: Home · Projects · Speak (FAB)</li><li>User-defined: More</li><li>Context-aware (slot 4): Money (current domain · active here)</li></ul>
+      <h4>Export / Print affordances (Lane 7B)</h4>
+    <ul><li>Actions strip below RH summary · <code>Print</code> + <code>Export ▾</code> · PDF · CSV · XLSX</li><li>Print = current view (filter state preserved · over/under sections kept) · Export = same dataset, machine-readable</li><li>Audit trail entry on every Export: operator + date range + format · data egress logged</li></ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Grid -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-MN5a · Grid view · 2-column exception scan · 16 tiles</div>
+  <p class="frame-narr">Grid replaces list for macro scan of the same 16 exceptions. <em>gt-name</em> = project · <em>gt-phase</em> = line item · <em>gt-chip</em> = over/under lifecycle · <em>gt-rhythm</em> = delta amount. Red is chip-tier; no full-row red borders. <em>Stress test (50+ exceptions):</em> vertical scroll handles the rest · column count stays 2 · tile anatomy unchanged.</p>
+  <div class="frame-render">
+    <div class="phone"><div class="phone-notch"></div><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><span class="right">●●● 86%</span></div>
+      <div class="top-chrome"><div class="tc-back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>Money</div><div class="tc-title">Allowances</div><div class="tc-action">Filter</div></div>
+      <div class="body">
+        <div class="rh-summary"><div class="rh-avatar">RH</div><div class="rh-text"><strong>16 exceptions</strong> · scan by project · tap for budget drill · red = over · green = under</div></div>
+        <div class="actions-strip"><span class="as-action" title="Print queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="as-action" title="Export · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+        <div class="view-mode-toggle"><span class="vmt-option">List</span><span class="vmt-option active">Grid</span></div>
+        <div class="section-label">This week<span class="sl-count">· 16</span><span class="sl-total">net +$1,740</span></div>
+        <div class="grid-view">
+          <div class="grid-tile risk"><div class="gt-name">Wegrzyn</div><div class="gt-phase">Tile $/sq ft</div><div class="gt-chip-row"><span class="gt-chip red">Over</span></div><div class="gt-rhythm">+$1,240</div></div>
+          <div class="grid-tile risk"><div class="gt-name">Khan</div><div class="gt-phase">Quartz countertop</div><div class="gt-chip-row"><span class="gt-chip red">Over</span></div><div class="gt-rhythm">+$1,920</div></div>
+          <div class="grid-tile risk"><div class="gt-name">Patel</div><div class="gt-phase">Cabinetry</div><div class="gt-chip-row"><span class="gt-chip red">Over</span></div><div class="gt-rhythm">+$600</div></div>
+          <div class="grid-tile risk"><div class="gt-name">Reyes</div><div class="gt-phase">Plumbing fixtures</div><div class="gt-chip-row"><span class="gt-chip red">Over</span></div><div class="gt-rhythm">+$600</div></div>
+          <div class="grid-tile risk"><div class="gt-name">Ault</div><div class="gt-phase">Shower glass</div><div class="gt-chip-row"><span class="gt-chip red">Over</span></div><div class="gt-rhythm">+$550</div></div>
+          <div class="grid-tile risk"><div class="gt-name">Goldberg-Lee</div><div class="gt-phase">Island pendants</div><div class="gt-chip-row"><span class="gt-chip red">Over</span></div><div class="gt-rhythm">+$440</div></div>
+          <div class="grid-tile success"><div class="gt-name">Hernandez</div><div class="gt-phase">Fixtures</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$900</div></div>
+          <div class="grid-tile success"><div class="gt-name">Carter</div><div class="gt-phase">Interior paint</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$450</div></div>
+          <div class="grid-tile success"><div class="gt-name">Singh</div><div class="gt-phase">Backsplash</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$450</div></div>
+          <div class="grid-tile success"><div class="gt-name">Coring</div><div class="gt-phase">Hardware</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$380</div></div>
+          <div class="grid-tile success"><div class="gt-name">Dunne</div><div class="gt-phase">Appliances</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$350</div></div>
+          <div class="grid-tile success"><div class="gt-name">Vega</div><div class="gt-phase">Accent tile</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$350</div></div>
+          <div class="grid-tile success"><div class="gt-name">Moore</div><div class="gt-phase">Flooring</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$250</div></div>
+          <div class="grid-tile success"><div class="gt-name">O'Brien</div><div class="gt-phase">Mirror + med cab</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$180</div></div>
+          <div class="grid-tile success"><div class="gt-name">Williamson</div><div class="gt-phase">Cabinet pulls</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$170</div></div>
+          <div class="grid-tile success"><div class="gt-name">Brennan</div><div class="gt-phase">Door hardware</div><div class="gt-chip-row"><span class="gt-chip green">Under</span></div><div class="gt-rhythm">-$130</div></div>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+        <div class="bb-fab-wrap"><div class="bb-fab"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div><div class="bb-fab-label">Speak</div></div>
+        <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 0 0-4 4v3H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V5a4 4 0 0 0-4-4zm-2 7V5a2 2 0 1 1 4 0v3h-4z"/></svg></span>Money</div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More</div>
+      </div>
+    </div></div>
+  </div>
+  <div class="frame-spec">
+    <h3>F-MN5a Grid · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul><li><strong>Macro / comparison / detail?</strong> Comparison (peer scan · delta-magnitude posture)</li><li><strong>List / grid / both?</strong> Grid (sibling toggle to Frame 1 List)</li><li><strong>Cognitive job?</strong> Scan delta-magnitude · which projects need the conversation first?</li><li><strong>Hidden until drill?</strong> Full bid/actual + CO recommendation (drill to row detail)</li></ul>
+    <h4>Tile anatomy</h4>
+    <ul><li>2-column mobile grid · 16 tiles · same exceptions as List frame</li><li>Left accent: success green for under · risk chip-tier (no row border) for over</li><li>gt-name · gt-phase · gt-chip · gt-rhythm (delta $)</li></ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">What this surface enforces</span><em>Allowance exceptions as a weekly conversation queue.</em> Over = client + CO path. Under = margin recovery signal. Grouped sections prevent mixing the two jobs. Density target 15-20 active exceptions per the GGR scale lens.</div>
+  <div class="callout"><span class="callout-title">What this surface refuses to be</span>Not the project budget spreadsheet. Not vendor PO detail. <strong>F-MN5a is peer comparison for allowance drift</strong> — drill to project for line-level cost, drill to vendor for PO ledger.</div>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('presentation-mode',tab.dataset.mode==='presentation');});});
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const next=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector(`[data-mode="${next}"]`).click();}});
+document.querySelectorAll('[data-theme]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('light-mode',tab.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',tab.dataset.theme);}catch(e){}});});
+try{const saved=localStorage.getItem('kerf_wf_theme');if(saved==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'));}}catch(e){}
+</script>
+</body>
+</html>

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-B1b · Mobile Decision Card · Edit mode</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+
+/* Phone */
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome — edit mode */
+.top-chrome {
+  padding: 6px 14px 12px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.tc-cancel {
+  color: var(--kerf-text-dim); font-size: 13px; font-weight: 500;
+  padding: 4px 6px;
+}
+.tc-title { flex: 1; text-align: center; font-size: 14px; color: var(--kerf-text); font-weight: 700; }
+.tc-title .tc-sub { display: block; font-size: 10px; color: var(--kerf-amber); font-weight: 600; margin-top: 1px; letter-spacing: 0.08em; text-transform: uppercase; }
+.tc-save {
+  color: var(--kerf-amber); font-size: 13px; font-weight: 700;
+  padding: 4px 8px;
+  background: rgba(245,181,68,0.10);
+  border-radius: 7px;
+}
+.tc-save.disabled { color: var(--kerf-text-mute); background: transparent; }
+
+/* Body */
+.body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+
+/* RH edit framing */
+.rh-edit-framing {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-left: 3px solid var(--right-hand);
+  border-radius: 9px;
+  padding: 10px 12px;
+  margin: 14px 0 14px;
+  display: grid; grid-template-columns: 24px 1fr;
+  gap: 10px;
+}
+.rh-edit-framing .rh-av { width: 24px; height: 24px; border-radius: 6px; background: rgba(201,169,97,0.16); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; }
+.rh-edit-framing .rh-txt { font-size: 11.5px; color: var(--kerf-text); line-height: 1.5; }
+.rh-edit-framing .rh-txt strong { color: var(--kerf-text); font-weight: 600; }
+.rh-edit-framing .rh-txt em { color: var(--kerf-text-mute); font-style: normal; font-size: 10.5px; display: block; margin-top: 3px; }
+
+/* Quick adjustments */
+.quick-adj-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin: 0 4px 7px; }
+.quick-adj {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.qa-row {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 10px; align-items: center;
+}
+.qa-row .qa-label { font-size: 12px; color: var(--kerf-text); font-weight: 600; }
+.qa-row .qa-label .qa-sub { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.qa-row .qa-value {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--kerf-surface-2);
+  border: 1px solid var(--kerf-border);
+  border-radius: 7px;
+  padding: 4px;
+}
+.qa-stepper-btn {
+  width: 24px; height: 24px;
+  background: transparent;
+  color: var(--kerf-text-dim);
+  font-size: 13px; font-weight: 700;
+  border: none;
+  border-radius: 4px;
+}
+.qa-stepper-btn:hover { color: var(--kerf-amber); }
+.qa-num {
+  font-size: 13px; color: var(--kerf-text); font-weight: 700;
+  min-width: 50px; text-align: center;
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+/* Scope lines */
+.lines-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  margin: 0 4px 8px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.lines-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+
+.line-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+/* Collapsed line */
+.line-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 11px 13px;
+  display: grid; grid-template-columns: 1fr auto auto;
+  gap: 10px; align-items: center;
+}
+.line-card.warn { border-color: rgba(245,181,68,0.40); background: rgba(245,181,68,0.04); }
+.line-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 600; line-height: 1.35; }
+.line-name .line-meta { display: block; font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; font-weight: 500; }
+.line-name .line-meta .line-flag { color: var(--kerf-amber); font-weight: 700; }
+.line-total { font-size: 13px; color: var(--kerf-text); font-weight: 700; font-family: "SF Mono", Menlo, monospace; }
+.line-arrow { color: var(--kerf-text-mute); font-size: 14px; }
+
+/* Expanded line */
+.line-expanded {
+  background: rgba(245,181,68,0.04);
+  border: 1px solid rgba(245,181,68,0.30);
+  border-radius: 11px;
+  padding: 13px 14px 12px;
+}
+.line-exp-head { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: flex-start; margin-bottom: 11px; }
+.line-exp-name { font-size: 13px; color: var(--kerf-text); font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; }
+.line-exp-name .line-exp-tag {
+  display: inline-block;
+  font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--kerf-amber); font-weight: 700;
+  margin-top: 4px;
+}
+.line-exp-collapse {
+  width: 24px; height: 24px;
+  background: transparent;
+  color: var(--kerf-text-mute);
+  font-size: 14px;
+  border: none;
+}
+
+.line-fields { display: flex; flex-direction: column; gap: 7px; margin-bottom: 11px; }
+.lf-row {
+  display: grid; grid-template-columns: 72px 1fr auto;
+  gap: 10px; align-items: center;
+}
+.lf-label { font-size: 10.5px; color: var(--kerf-text-mute); letter-spacing: 0.04em; font-weight: 600; }
+.lf-value {
+  font-size: 12.5px; color: var(--kerf-text); font-weight: 600;
+  font-family: "SF Mono", Menlo, monospace;
+  padding: 6px 9px;
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border);
+  border-radius: 7px;
+  min-width: 90px;
+  text-align: right;
+}
+.lf-value.editable {
+  border-color: rgba(245,181,68,0.40);
+  background: rgba(245,181,68,0.06);
+}
+.lf-value.global {
+  font-size: 11px; color: var(--kerf-text-mute);
+  background: transparent;
+  border: 1px dashed var(--kerf-border);
+}
+.lf-stepper { display: flex; align-items: center; gap: 2px; background: var(--kerf-surface); border: 1px solid var(--kerf-border); border-radius: 7px; padding: 3px; }
+.lf-stepper-btn { width: 22px; height: 22px; background: transparent; color: var(--kerf-text-dim); border: none; font-size: 12px; font-weight: 700; }
+.lf-stepper-num { font-size: 12px; color: var(--kerf-text); font-weight: 700; min-width: 38px; text-align: center; font-family: "SF Mono", Menlo, monospace; }
+.lf-edit-btn {
+  font-size: 10.5px; color: var(--kerf-blue); font-weight: 700;
+  padding: 5px 9px;
+  background: rgba(123,168,255,0.08);
+  border: 1px solid rgba(123,168,255,0.20);
+  border-radius: 6px;
+}
+
+.line-totals {
+  border-top: 1px dashed rgba(245,181,68,0.30);
+  padding-top: 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.line-tot-row { display: flex; justify-content: space-between; align-items: baseline; }
+.line-tot-row .lt-label { font-size: 11px; color: var(--kerf-text-dim); }
+.line-tot-row .lt-value { font-size: 13.5px; color: var(--kerf-text); font-weight: 700; font-family: "SF Mono", Menlo, monospace; }
+.line-tot-row.rh { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 3px; }
+.line-tot-row.rh .lt-label .rh-check { color: var(--field-green); font-weight: 700; }
+.line-tot-row.rh .lt-value { font-size: 11px; color: var(--kerf-text-dim); font-weight: 500; }
+
+/* Add line button */
+.add-line-btn {
+  background: transparent;
+  border: 1.5px dashed var(--kerf-border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-size: 12px; color: var(--kerf-text-dim); font-weight: 600;
+  width: 100%;
+  text-align: center;
+}
+
+/* Override callout */
+.override-call {
+  background: rgba(201,169,97,0.06);
+  border: 1px solid rgba(201,169,97,0.30);
+  border-left: 3px solid var(--right-hand);
+  border-radius: 9px;
+  padding: 11px 12px;
+  margin-bottom: 14px;
+  display: none;  /* shown when there's an override */
+}
+.override-call.active { display: block; }
+.oc-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 4px; }
+.oc-text { font-size: 11.5px; color: var(--kerf-text); line-height: 1.5; margin-bottom: 9px; }
+.oc-text strong { color: var(--kerf-text); font-weight: 700; }
+.oc-actions { display: flex; gap: 7px; }
+.oc-btn {
+  font-size: 11px; font-weight: 700; padding: 5px 10px;
+  background: rgba(201,169,97,0.14); color: var(--right-hand);
+  border: 1px solid rgba(201,169,97,0.30);
+  border-radius: 6px;
+}
+.oc-btn.dismiss { background: transparent; color: var(--kerf-text-mute); border-color: var(--kerf-border); }
+
+/* Totals card */
+.totals-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin: 0 4px 7px; }
+.totals-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 13px 15px;
+  margin-bottom: 12px;
+}
+.tot-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 11.5px; }
+.tot-row .tr-label { color: var(--kerf-text-dim); }
+.tot-row .tr-value { color: var(--kerf-text); font-weight: 700; font-family: "SF Mono", Menlo, monospace; }
+.tot-row.delta { color: var(--field-green); }
+.tot-row.delta .tr-value { color: var(--field-green); }
+.tot-row.new { border-top: 1px solid var(--kerf-border-soft); padding-top: 8px; margin-top: 4px; font-size: 13px; }
+.tot-row.new .tr-label { color: var(--kerf-text); font-weight: 600; }
+.tot-row.new .tr-value { font-size: 16px; color: var(--kerf-text); }
+.tot-row.margin { font-size: 10.5px; color: var(--kerf-text-mute); }
+.tot-row.margin .tr-value { font-size: 11px; font-weight: 600; }
+
+/* Trust-recheck reminder */
+.recheck-reminder {
+  background: rgba(123,168,255,0.05);
+  border: 1px solid rgba(123,168,255,0.25);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 10.5px;
+  color: var(--kerf-text-dim);
+  line-height: 1.5;
+  margin-bottom: 14px;
+  display: grid; grid-template-columns: 18px 1fr;
+  gap: 9px; align-items: center;
+}
+.recheck-reminder .rr-icon { color: var(--kerf-blue); font-size: 14px; font-weight: 700; }
+.recheck-reminder strong { color: var(--kerf-text); font-weight: 600; }
+
+/* Action section */
+.action-section {
+  border-top: 1px solid var(--kerf-border-soft);
+  padding: 14px 14px 14px;
+  background: var(--kerf-bg-2);
+  flex-shrink: 0;
+}
+.action-primary {
+  width: 100%;
+  background: var(--kerf-amber); color: #1A1300;
+  border: none;
+  padding: 13px 16px;
+  border-radius: 11px;
+  font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-bottom: 8px;
+}
+.action-primary.disabled { opacity: 0.45; }
+.action-discard {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--kerf-border);
+  padding: 11px 16px;
+  border-radius: 11px;
+  font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 600;
+  text-align: center;
+}
+.action-preview {
+  width: 100%;
+  background: var(--kerf-surface);
+  border: 1px solid rgba(123,168,255,0.30);
+  padding: 11px 16px;
+  border-radius: 11px;
+  font-size: 12.5px; color: var(--kerf-blue); font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  margin-bottom: 8px;
+}
+
+/* Bottom bar */
+.bottom-bar { background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border); padding: 8px 0 22px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; position: relative; flex-shrink: 0; }
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--kerf-amber); }
+.bb-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-icon svg.icon-more { width: 20px; height: 20px; }
+.bb-fab-wrap { position: relative; }
+.bb-fab { width: 52px; height: 52px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; align-items: center; justify-content: center; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); box-shadow: 0 6px 18px rgba(245,181,68,0.40); border: 3px solid var(--kerf-bg); }
+.bb-fab svg.mic-icon { width: 24px; height: 24px; fill: currentColor; }
+.bb-fab-label { font-size: 10px; color: var(--kerf-text-mute); margin-top: 32px; font-weight: 600; text-align: center; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd style="background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); padding: 1px 5px; border-radius: 3px; font-size: 10px; color: var(--kerf-text-dim);">V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1 · Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-B1 · Decision Card (pending)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-B1b · Decision Card · Edit mode</span>
+    <span class="sep">›</span>
+    <span class="step">F-B1 · Decision Card (back to pending with new totals + trust re-check)</span>
+  </div>
+  <h1>F-B1b · Mobile Decision Card · Edit mode</h1>
+  <p>
+    The critical state. Operator taps <strong>Edit</strong> on the pending Decision Card (F-B1) and lands here. This is where trust either holds or fails: if editing feels opaque or like fighting Right Hand, the operator won't approve. If editing feels like Right Hand made a sensible first pass that I can adjust naturally — change a quantity, override a sub cost, tweak markup — trust holds. Quantities · labor hours · material costs · sub costs · markup all editable per line. Global markup % at top. Right Hand's suggestion stays visible as the operator overrides. Trust check re-runs on Save. Plain English throughout — no AltitudePacket / model_suggested / Policy Gate vocabulary in operator copy.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-B1b · Edit mode · Line 1 expanded · 4 lines collapsed · 1 line flagged · no edits yet</div>
+  <p class="frame-narr">
+    Top chrome shows Cancel · "Edit CO-002" title · Save (initially disabled until operator changes something, then amber). Right Hand framing at top sets the tone — gentle, not adversarial. Quick adjustments card surfaces the two most common bulk-edit levers: global markup % and materials buffer %. Five scope-line cards follow; Line 1 expanded by default to show the full edit shape (Qty stepper · Labor hours stepper · Material edit · Sub field · Markup global indicator · Line total + RH-matched indicator). Line 5 has an amber warning border because Right Hand's suggested value is outside the operator's typical floor — surfaces as scannable hint, not blocker. Totals card shows before / delta / new with margin. Trust-recheck reminder above the action row. Save / Discard pinned above bar.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:44</span><span class="right">●●● 85%</span></div>
+
+        <!-- Top chrome — edit mode -->
+        <div class="top-chrome">
+          <div class="tc-cancel">Cancel</div>
+          <div class="tc-title">
+            CO-002
+            <span class="tc-sub">Edit mode</span>
+          </div>
+          <div class="tc-save disabled">Save</div>
+        </div>
+
+        <!-- Body -->
+        <div class="body">
+
+          <!-- RH edit framing -->
+          <div class="rh-edit-framing">
+            <div class="rh-av">RH</div>
+            <div class="rh-txt">
+              <strong>You're editing 5 scope lines.</strong> Change anything you want. My suggestions stay visible so you can see what you're overriding.
+              <em>Trust check re-runs when you Save. Original draft preserved.</em>
+            </div>
+          </div>
+
+          <!-- Quick adjustments -->
+          <div class="quick-adj-eyebrow">Quick adjustments</div>
+          <div class="quick-adj">
+            <div class="qa-row">
+              <div class="qa-label">
+                Markup %
+                <span class="qa-sub">Applies to all lines unless overridden</span>
+              </div>
+              <div class="qa-value">
+                <button class="qa-stepper-btn">−</button>
+                <span class="qa-num">22.0</span>
+                <button class="qa-stepper-btn">+</button>
+              </div>
+            </div>
+            <div class="qa-row">
+              <div class="qa-label">
+                Materials buffer
+                <span class="qa-sub">Contingency for selection variance</span>
+              </div>
+              <div class="qa-value">
+                <button class="qa-stepper-btn">−</button>
+                <span class="qa-num">10%</span>
+                <button class="qa-stepper-btn">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scope lines -->
+          <div class="lines-eyebrow">
+            Scope lines <span class="lines-count">· 5 of 5</span>
+          </div>
+          <div class="line-list">
+
+            <!-- LINE 1 · expanded -->
+            <div class="line-expanded">
+              <div class="line-exp-head">
+                <div>
+                  <div class="line-exp-name">Convert laundry → pantry · footprint reuse</div>
+                  <div class="line-exp-tag">Editing</div>
+                </div>
+                <button class="line-exp-collapse">⌃</button>
+              </div>
+
+              <div class="line-fields">
+                <div class="lf-row">
+                  <span class="lf-label">Qty</span>
+                  <span></span>
+                  <div class="lf-stepper">
+                    <button class="lf-stepper-btn">−</button>
+                    <span class="lf-stepper-num">1 ea</span>
+                    <button class="lf-stepper-btn">+</button>
+                  </div>
+                </div>
+                <div class="lf-row">
+                  <span class="lf-label">Labor</span>
+                  <span></span>
+                  <div class="lf-stepper">
+                    <button class="lf-stepper-btn">−</button>
+                    <span class="lf-stepper-num">8 h</span>
+                    <button class="lf-stepper-btn">+</button>
+                  </div>
+                </div>
+                <div class="lf-row">
+                  <span class="lf-label">Material</span>
+                  <span class="lf-value editable">$1,200</span>
+                  <button class="lf-edit-btn">Edit</button>
+                </div>
+                <div class="lf-row">
+                  <span class="lf-label">Sub</span>
+                  <span class="lf-value" style="color: var(--kerf-text-mute);">—</span>
+                  <button class="lf-edit-btn">Add</button>
+                </div>
+                <div class="lf-row">
+                  <span class="lf-label">Markup</span>
+                  <span class="lf-value global">22% · global</span>
+                  <button class="lf-edit-btn">Override</button>
+                </div>
+              </div>
+
+              <div class="line-totals">
+                <div class="line-tot-row">
+                  <span class="lt-label">Line total</span>
+                  <span class="lt-value">$1,464</span>
+                </div>
+                <div class="line-tot-row rh">
+                  <span class="lt-label"><span class="rh-check">✓</span> RH suggested</span>
+                  <span class="lt-value">$1,464 · matches</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- LINE 2 · collapsed -->
+            <div class="line-card">
+              <div class="line-name">
+                Pantry shelving · factory finish
+                <span class="line-meta">qty 18 LF · 12 h labor · $2,400</span>
+              </div>
+              <span class="line-total">$2,928</span>
+              <span class="line-arrow">›</span>
+            </div>
+
+            <!-- LINE 3 · collapsed -->
+            <div class="line-card">
+              <div class="line-name">
+                Door swing · pocket door install
+                <span class="line-meta">qty 1 · 4 h labor · $850</span>
+              </div>
+              <span class="line-total">$1,037</span>
+              <span class="line-arrow">›</span>
+            </div>
+
+            <!-- LINE 4 · collapsed -->
+            <div class="line-card">
+              <div class="line-name">
+                Electrical rough-in · outlets + lighting
+                <span class="line-meta">sub: Patel · $2,800 · 18% margin</span>
+              </div>
+              <span class="line-total">$3,304</span>
+              <span class="line-arrow">›</span>
+            </div>
+
+            <!-- LINE 5 · collapsed with warning -->
+            <div class="line-card warn">
+              <div class="line-name">
+                Painting · trim + walls
+                <span class="line-meta"><span class="line-flag">⚠ over typical</span> · qty 220 SF · $1,850</span>
+              </div>
+              <span class="line-total">$2,257</span>
+              <span class="line-arrow">›</span>
+            </div>
+
+            <!-- Add line -->
+            <button class="add-line-btn">+ Add scope line</button>
+          </div>
+
+          <!-- Override callout (hidden by default, shown when there's an override) -->
+          <div class="override-call">
+            <div class="oc-label">Right Hand noticed</div>
+            <div class="oc-text">
+              You set <strong>Line 4 sub cost</strong> below my suggestion. <strong>Save this as your preference</strong> so I use $2,800 on future Patel electrical jobs?
+            </div>
+            <div class="oc-actions">
+              <button class="oc-btn">Save preference</button>
+              <button class="oc-btn dismiss">Not now</button>
+            </div>
+          </div>
+
+          <!-- Totals -->
+          <div class="totals-eyebrow">Totals</div>
+          <div class="totals-card">
+            <div class="tot-row">
+              <span class="tr-label">Previous draft</span>
+              <span class="tr-value">$14,820</span>
+            </div>
+            <div class="tot-row delta">
+              <span class="tr-label">Your edits</span>
+              <span class="tr-value">no changes yet</span>
+            </div>
+            <div class="tot-row new">
+              <span class="tr-label">New total</span>
+              <span class="tr-value">$14,820</span>
+            </div>
+            <div class="tot-row margin">
+              <span class="tr-label">Effective margin</span>
+              <span class="tr-value">22.0%</span>
+            </div>
+          </div>
+
+          <!-- Trust recheck -->
+          <div class="recheck-reminder">
+            <span class="rr-icon">ⓘ</span>
+            <div>
+              <strong>Trust check re-runs on Save.</strong> Source refs · pricing · role visibility · approval all re-verified before the decision can be approved.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Action section -->
+        <div class="action-section">
+          <button class="action-preview">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="opacity: 0.7;"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+            Preview client view
+          </button>
+          <button class="action-primary disabled">Save changes →</button>
+          <button class="action-discard">Discard edits</button>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar">
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-B1b · Spec</h3>
+
+    <h4>Position in flow</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Decision Card states</div>
+      <div class="sl-step done"><span class="sl-dot">A</span><span><span class="sl-name">F-B1</span> · pending decision (4 actions visible)</span></div>
+      <div class="sl-step current"><span class="sl-dot">B</span><span><span class="sl-name">F-B1b</span> · edit mode <em style="font-style: normal; color: var(--kerf-text-mute);">(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">A'</span><span><span class="sl-name">F-B1</span> · pending decision · updated totals · trust re-check running</span></div>
+      <div class="sl-step"><span class="sl-dot">C</span><span><span class="sl-name">F-B1</span> · approved · DecisionPacket recorded (post-approval)</span></div>
+    </div>
+
+    <h4>What's editable</h4>
+    <ul>
+      <li><strong>Per line:</strong> Qty (stepper) · Labor hours (stepper) · Material cost · Sub cost · Markup % override</li>
+      <li><strong>Global:</strong> Markup % (applies to all lines unless overridden) · Materials buffer %</li>
+      <li><strong>Structural:</strong> + Add scope line · swipe-to-delete a line</li>
+      <li><strong>Assumptions:</strong> tap a confirmed assumption → re-confirm or change</li>
+      <li><strong>Scope wording:</strong> tap line name → text edit (the client-facing copy)</li>
+    </ul>
+
+    <h4>What's NOT editable on this surface</h4>
+    <ul>
+      <li>Change-order identity (CO-002 stays CO-002 · a different CO would be a new draft)</li>
+      <li>Trust check pass/fail itself (re-runs deterministically based on your inputs)</li>
+      <li>Audit substrate (immutable · your edits become events in audit)</li>
+      <li>Right Hand's suggestions (they remain visible · you override, but you don't delete RH's reasoning)</li>
+    </ul>
+
+    <h4>Right Hand's role during edit (plain English)</h4>
+    <ul>
+      <li>Each line shows RH's suggested total below the operator's current total</li>
+      <li>"✓ matches" when current = RH suggestion (line 1 here)</li>
+      <li>"$X · RH suggested $Y" when user has overridden</li>
+      <li>This is the operator-facing version of <code>system_final_*</code> vs <code>model_suggested_*</code> — canon vocabulary lives in audit substrate</li>
+    </ul>
+
+    <h4>Override-as-preference pattern</h4>
+    <ul>
+      <li>When operator overrides RH consistently (e.g., specific sub on specific scope category), Right Hand surfaces the override callout: <em>"Save this as your preference so I use $X on future jobs?"</em></li>
+      <li>Saves to tenant pricing memory · feeds future cohort comparables</li>
+      <li>This is how RH learns the contractor without ever claiming to "learn" — preferences are saved explicitly with consent</li>
+      <li>Per <code>kerf_scope_exclusions.md</code>: AI learns the owner, owner does not train AI</li>
+    </ul>
+
+    <h4>Line-card warning state</h4>
+    <ul>
+      <li>Amber border when a line is "over typical" — flagged by pricing source-class bounds (V6/V7 in audit)</li>
+      <li>Surfaced as scannable hint, NOT blocker · operator can save anyway</li>
+      <li>Tap the warning to expand — shows what bound was exceeded in plain English (<em>"Your typical paint cost on jobs this size is $1,200–$1,600. This line is $1,850."</em>)</li>
+      <li>Re-checked on Save · trust check may flag for review but won't auto-reject</li>
+    </ul>
+
+    <h4>Voice editing — input modality, page is commit gate</h4>
+    <ul>
+      <li><strong>🎤 Speak supports edit instructions on this surface.</strong> Operator long-presses Speak in edit mode and says: <em>"Change markup to 25%"</em> or <em>"Set Patel electrical sub cost to $2,800"</em> or <em>"Reduce painting line by 20%"</em></li>
+      <li>Right Hand interprets the voice intent and applies the edit to the visible state — the operator sees the change in the line cards / totals immediately</li>
+      <li>Voice can edit multiple lines in one capture (<em>"Bump markup to 25% and add an outlet to the pantry — call it 2 hours and $200 material"</em>)</li>
+      <li><strong>Voice is the input modality; the visual page is the commit gate.</strong> Voice never auto-saves — operator must visually review the applied edits and tap Save</li>
+      <li>This honors AI disclosure §13: "Review before approval" — voice doesn't bypass review</li>
+      <li>Voice ambiguity (e.g., "make the labor reasonable") triggers Clarification agent inline: <em>"Right Hand: which line — pantry framing or shelving? And what's reasonable to you here?"</em></li>
+      <li>Visual edits and voice edits are equivalent in audit · both become edit events with the same provenance shape (operator override vs RH suggestion)</li>
+    </ul>
+
+    <h4>Save / Cancel / Discard semantics</h4>
+    <ul>
+      <li><strong>Cancel</strong> (top-left) — exit edit mode, return to F-B1 pending state, no changes saved (confirmation modal if edits exist)</li>
+      <li><strong>Save</strong> (top-right) — persist edits, trust check re-runs, return to F-B1 with updated totals + recheck-running state, then resolves to passed/failed</li>
+      <li><strong>Discard edits</strong> (bottom) — clear all edits without exiting (operator can keep editing fresh)</li>
+      <li>Save button stays disabled until at least one edit is made · prevents no-op saves</li>
+    </ul>
+
+    <h4>Trust posture preserved</h4>
+    <ul>
+      <li>Original draft preserved · edits become an event in audit (per <code>kerf_transcript_canon.md</code> overlay pattern, applied to draft)</li>
+      <li>Audit substrate shows: <em>"Operator edit · Line 4 sub cost · $2,800 → $2,500 · 14:52"</em></li>
+      <li>RH's original suggestions preserved · operator's overrides preserved · provenance chain intact</li>
+      <li>Trust check re-runs on Save · returns pass/warn/fail · operator sees plain-English result</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Plain English at operator surface · no model_suggested / system_final language visible</li>
+      <li><span class="badge canon">canon</span>Outputs are artifacts · edits adjust the artifact, not the substrate</li>
+      <li><span class="badge canon">canon</span>Inputs once · consequences propagate · edits flow into draft, totals update live, recheck runs</li>
+      <li><span class="badge canon">canon</span>Right Hand is the continuity layer · RH's suggestions stay visible during operator override</li>
+      <li><span class="badge canon">canon</span>Audit at Settings → Audit · edit history preserved as immutable event log</li>
+      <li><span class="badge canon">canon</span>AI learns the owner, owner does not train AI · save-preference is explicit consent</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Cancel → F-B1 (pending decision · no changes)</li>
+      <li>Save → trust re-check → F-B1 (pending decision · updated totals)</li>
+      <li>Discard edits → reset to RH-suggested values · stay in edit mode</li>
+      <li>+ Add scope line → inline form to add new line</li>
+      <li>Swipe a line → reveal Remove action</li>
+      <li>Tap line name on collapsed card → expand that line, collapse previously-expanded</li>
+      <li>Override callout · Save preference → tenant pricing memory updated · feeds future drafts</li>
+      <li>🎤 Speak (long-hold) → RH conversation: "Help me figure out the right markup here"</li>
+      <li>Bottom bar tabs → exit edit mode with unsaved-changes confirmation</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-B1_mobile_decision_card.html</code> — State A (pending decision)</li>
+      <li><code>F-G1_desktop_draft_review.html</code> — desktop draft review (Tier 1 upcoming)</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> — plain English rule</li>
+      <li><code>feedback_audit_deep_link_not_top_nav.md</code> — Option C audit posture</li>
+      <li><code>kerf_variance_band_architecture.md</code> — pricing source-class bounds (warning state basis)</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> — canon (doctrine bound)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">Why this surface matters most</span>
+    Edit mode is where the trust posture either holds or fails. If editing feels like fighting Right Hand — opaque, defensive, slow — the operator won't approve. If it feels like <em>Right Hand made a sensible first pass that I can adjust naturally</em>, trust holds. Quantities, labor, materials, subs, markup all editable per line. <strong>Right Hand's suggestions stay visible</strong> so the operator sees what they're overriding — never hidden, never argued with.
+  </div>
+  <div class="callout">
+    <span class="callout-title">The override-as-preference loop</span>
+    When the operator overrides Right Hand the same way twice on the same scope category, RH asks: <em>"Save this as your preference for future jobs?"</em> Yes → tenant pricing memory updates → future drafts use the contractor's actual practice as the new baseline. <strong>That's how Kerf learns the owner without ever claiming to "learn"</strong> — every preference is explicit consent, never silent inference.
+  </div>
+  <div class="callout" style="grid-column: 1 / -1; border-left-color: var(--right-hand);">
+    <span class="callout-title" style="color: var(--right-hand);">Voice editing — input modality, page is commit gate</span>
+    Editing on this surface supports voice instructions to Right Hand. Operator long-holds 🎤 Speak and says <em>"change markup to 25%"</em> or <em>"set Patel electrical sub cost to $2,800"</em> or <em>"reduce painting line by 20%"</em> — Right Hand applies the edits to the visible state immediately, and the operator sees totals + line cards update live. <strong>But voice never auto-saves.</strong> The operator must visually land on this page, review the applied edits, and tap Save. <strong>Voice is the input modality; this page is the commit gate.</strong> Honors AI disclosure §13 ("Review before approval") — voice doesn't bypass review. Voice ambiguity (<em>"make labor reasonable"</em>) triggers Clarification agent inline before applying. Voice edits and tap edits are equivalent in audit — both become edit events with the same provenance shape.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

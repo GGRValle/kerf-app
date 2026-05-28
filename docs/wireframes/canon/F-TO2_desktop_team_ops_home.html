@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-TO2 · Desktop Team &amp; Ops home · people-axis truth at desktop density</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+
+/* Sidebar */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-amber); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+.main-header { padding: 18px 24px 4px; display: flex; align-items: center; justify-content: space-between; }
+.main-title { font-size: 22px; font-weight: 600; color: var(--kerf-text); margin: 0; letter-spacing: -0.01em; }
+.main-meta { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+.main-content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 14px 24px 24px; flex: 1; }
+
+/* LEFT · sub-lens cards */
+.lens-area { display: flex; flex-direction: column; gap: 14px; }
+.section-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; display: flex; align-items: baseline; gap: 8px; margin-bottom: -4px; }
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+
+.lens-list { display: flex; flex-direction: column; gap: 8px; }
+
+.lens-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 16px;
+  display: grid; grid-template-columns: 40px 1.6fr 1.4fr 14px;
+  gap: 16px; align-items: center;
+  cursor: pointer;
+}
+.lens-card:hover { border-color: var(--kerf-border); }
+.lens-card.attention { border-left: 3px solid var(--kerf-amber); padding-left: 14px; }
+.lens-card.behind { border-left: 3px solid var(--kerf-amber); padding-left: 14px; }
+
+.lens-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--kerf-bg-2);
+  color: var(--kerf-text-dim);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lens-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.lens-icon.crew { background: rgba(74,222,128,0.10); color: var(--field-green); }
+.lens-icon.subs { background: rgba(167,139,250,0.12); color: var(--kerf-violet); }
+.lens-icon.hr { background: rgba(232,121,168,0.12); color: var(--kerf-magenta); }
+.lens-icon.purchasing { background: rgba(103,214,224,0.12); color: var(--kerf-cyan); }
+.lens-icon.bookkeeping { background: rgba(123,168,255,0.12); color: var(--kerf-blue); }
+
+.lens-name-block {}
+.lens-name {
+  font-size: 14.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.25;
+  display: flex; align-items: center; gap: 8px;
+}
+.lens-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; padding: 2px 7px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+}
+.lens-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.lens-chip.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.lens-chip.green { background: rgba(56,201,119,0.12); color: var(--field-green); }
+.lens-chip.green::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+.lens-sub { font-size: 11px; color: var(--kerf-text-mute); margin-top: 4px; line-height: 1.4; font-weight: 500; }
+
+.lens-state {
+  font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500;
+  line-height: 1.45;
+}
+.lens-state strong { color: var(--kerf-text); font-weight: 600; }
+.lens-state .ls-amber { color: var(--kerf-amber); font-weight: 600; }
+.lens-state .ls-meta { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 3px; font-weight: 500; }
+.lens-arrow { color: var(--kerf-text-mute); font-size: 14px; }
+
+/* RIGHT RAIL */
+.ops-rail { display: flex; flex-direction: column; gap: 14px; }
+.rh-card {
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  padding: 11px 13px;
+}
+.rh-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-red); font-style: normal; font-weight: 600; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+.rh-text .rh-cyan { color: var(--kerf-cyan); font-weight: 600; }
+
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 9px; letter-spacing: 0.04em; }
+
+/* Needs you queue · rail */
+.needs-rows { display: flex; flex-direction: column; gap: 0; }
+.needs-row {
+  display: grid; grid-template-columns: 1fr 14px;
+  gap: 10px; align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid var(--kerf-border-soft);
+  cursor: pointer;
+}
+.needs-row:first-child { padding-top: 0; border-top: 0; }
+.needs-row:last-child { padding-bottom: 0; }
+.nr-line {
+  font-size: 12px; color: var(--kerf-text); font-weight: 600; line-height: 1.35;
+}
+.nr-meta {
+  font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; font-weight: 500;
+}
+.nr-meta.amber { color: var(--kerf-amber); font-weight: 600; }
+.nr-arrow { color: var(--kerf-text-mute); font-size: 13px; }
+
+/* Ops summary */
+.os-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 0; font-size: 12px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.os-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.os-row:first-child { padding-top: 0; }
+.os-label { color: var(--kerf-text-mute); font-size: 11px; }
+.os-val { color: var(--kerf-text); font-weight: 600; }
+.os-val.amber { color: var(--kerf-amber); }
+.os-val.green { color: var(--field-green); }
+
+/* Working for you · rail */
+.working-card {
+  background: rgba(201,169,97,0.04);
+  border: 1px solid rgba(201,169,97,0.18);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 8px;
+  padding: 11px 13px;
+}
+.working-eyebrow {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--right-hand); font-weight: 700; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 5px;
+}
+.working-eyebrow .we-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.working-text { font-size: 11px; color: var(--kerf-text-dim); line-height: 1.55; }
+.working-text strong { color: var(--kerf-text); font-weight: 600; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-TO1 · Team &amp; Ops home (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-TO2 · Team &amp; Ops home (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step">F-CR3 · F-SB3 · F-HR2 · F-PU2 · F-BK2 (sub-lens drills)</span>
+  </div>
+  <h1>F-TO2 · Desktop Team &amp; Ops home · people-axis truth at desktop density</h1>
+  <p>
+    Desktop projection of F-TO1. Same <em>domain glimpse, not employee database</em> discipline. Left sidebar carries the business graph with Team &amp; Ops active and its five sub-lenses expanded as sub-items. Main area is 2-column: <em>five sub-lens summary cards</em> on the left (Crew · Subs · HR · Purchasing · Bookkeeping), <em>operations rail</em> on the right (RH synthesis · Needs-you queue · ops summary · Working-for-you trust note). No Grid view — Team &amp; Ops is a domain home, not a peer-comparison surface. Individual employees, vendor detail, transaction ledgers stay one click deep via the sub-lens drills.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-TO2 · Desktop Team &amp; Ops home · default state · Owner role</div>
+  <p class="frame-narr">
+    Owner clicked Team &amp; Ops in the sidebar — the section expands to show the five sub-lens children. RH synthesis on the rail leads with the domain sentence. The five sub-lens cards on the left each carry their icon · name + chip · sub-line · current state with amber accents for action-driving items. The rail below the RH card carries a <em>Needs you</em> action queue (payroll · insurance · reconciliation · invoice signoff), an ops summary (headcount · open POs · payroll cadence · reconciliation cadence), and a quiet <em>Working for you</em> note explaining the background work — without naming any agents.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/team-ops</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+
+          <!-- Team & Ops · active with 5 sub-items -->
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Crew</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Subs</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>HR</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Purchasing</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Team &amp; Ops</span>
+            <div class="bc-spacer"></div>
+          </div>
+
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">Team &amp; Ops</h2>
+              <div class="main-meta">5 sub-lenses · people-axis and admin glimpse</div>
+            </div>
+          </div>
+
+          <div class="main-content">
+
+            <!-- LEFT · sub-lens cards -->
+            <div class="lens-area">
+
+              <div class="section-label">Sub-lenses <span class="sl-count">· 5</span></div>
+              <div class="lens-list">
+
+                <div class="lens-card">
+                  <div class="lens-icon crew">
+                    <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><circle cx="17" cy="9.5" r="2.6"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg>
+                  </div>
+                  <div class="lens-name-block">
+                    <div class="lens-name">Crew</div>
+                    <div class="lens-sub">W2 employees · roster + utilization</div>
+                  </div>
+                  <div class="lens-state">
+                    <strong>8 active</strong> · 1 idle today
+                    <span class="ls-meta"><span class="ls-amber">Payroll due Fri</span> · 38h pending approval</span>
+                  </div>
+                  <span class="lens-arrow">›</span>
+                </div>
+
+                <div class="lens-card attention">
+                  <div class="lens-icon subs">
+                    <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4zm14 0v-3l5 4-5 4z"/></svg>
+                  </div>
+                  <div class="lens-name-block">
+                    <div class="lens-name">
+                      Subs
+                      <span class="lens-chip amber">Insurance · 17d</span>
+                    </div>
+                    <div class="lens-sub">1099 contractors · insurance, W-9, bid pipeline</div>
+                  </div>
+                  <div class="lens-state">
+                    <strong>12 active</strong> · 1 insurance expiring
+                    <span class="ls-meta">Westside Tile expires May 30 · 1 bid stalled (Coronado)</span>
+                  </div>
+                  <span class="lens-arrow">›</span>
+                </div>
+
+                <div class="lens-card attention">
+                  <div class="lens-icon hr">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg>
+                  </div>
+                  <div class="lens-name-block">
+                    <div class="lens-name">
+                      HR
+                      <span class="lens-chip amber">Payroll Fri</span>
+                    </div>
+                    <div class="lens-sub">Time tracking · payroll · documentation · anniversaries</div>
+                  </div>
+                  <div class="lens-state">
+                    <strong><span class="ls-amber">38h pending approval</span></strong>
+                    <span class="ls-meta">Carlos 5-yr anniversary next week · 2 timesheets flagged for drift</span>
+                  </div>
+                  <span class="lens-arrow">›</span>
+                </div>
+
+                <div class="lens-card attention">
+                  <div class="lens-icon purchasing">
+                    <svg viewBox="0 0 24 24"><path d="M7 4h2l1 2h11l-3 9H8L6 4H3V2h4zm-1 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm12 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
+                  </div>
+                  <div class="lens-name-block">
+                    <div class="lens-name">
+                      Purchasing
+                      <span class="lens-chip amber">Invoice 11d</span>
+                    </div>
+                    <div class="lens-sub">Open POs · vendor management · invoice signoff</div>
+                  </div>
+                  <div class="lens-state">
+                    <strong>4 open POs</strong> · $14,200 pending
+                    <span class="ls-meta"><span class="ls-amber">Pacific Tile invoice $3,140 · 11d late</span></span>
+                  </div>
+                  <span class="lens-arrow">›</span>
+                </div>
+
+                <div class="lens-card behind">
+                  <div class="lens-icon bookkeeping">
+                    <svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 4v2h10V7zm0 4v2h10v-2zm0 4v2h6v-2z"/></svg>
+                  </div>
+                  <div class="lens-name-block">
+                    <div class="lens-name">
+                      Bookkeeping
+                      <span class="lens-chip amber">2d behind</span>
+                    </div>
+                    <div class="lens-sub">Reconciliation · QB Desktop sync · fillable role</div>
+                  </div>
+                  <div class="lens-state">
+                    <strong>Reconciled through May 16</strong>
+                    <span class="ls-meta">QB sync clean · cadence 2d behind · run by Owner</span>
+                  </div>
+                  <span class="lens-arrow">›</span>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- RIGHT · Operations rail -->
+            <div class="ops-rail">
+
+              <div class="rh-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · Team &amp; Ops</div>
+                <div class="rh-text">
+                  <strong>Mostly clean.</strong> <span class="rh-amber">Payroll due Friday — 38h pending.</span> One sub insurance expires in 17 days. Bookkeeping cadence 2 days behind. No drift on the crew side.
+                </div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Needs you <span class="re-count">· 4 today</span></div>
+                <div class="needs-rows">
+
+                  <div class="needs-row">
+                    <div>
+                      <div class="nr-line">Approve payroll · 38h</div>
+                      <div class="nr-meta amber">$4,840 · due Friday</div>
+                    </div>
+                    <span class="nr-arrow">›</span>
+                  </div>
+
+                  <div class="needs-row">
+                    <div>
+                      <div class="nr-line">Renew Westside Tile insurance</div>
+                      <div class="nr-meta">expires May 30 · 17 days</div>
+                    </div>
+                    <span class="nr-arrow">›</span>
+                  </div>
+
+                  <div class="needs-row">
+                    <div>
+                      <div class="nr-line">Reconcile last 2 days</div>
+                      <div class="nr-meta">bookkeeping cadence behind</div>
+                    </div>
+                    <span class="nr-arrow">›</span>
+                  </div>
+
+                  <div class="needs-row">
+                    <div>
+                      <div class="nr-line">Sign off Pacific Tile invoice</div>
+                      <div class="nr-meta amber">$3,140 · PO-104 · 11d late</div>
+                    </div>
+                    <span class="nr-arrow">›</span>
+                  </div>
+
+                </div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Ops summary</div>
+                <div class="os-row"><span class="os-label">Headcount</span><span class="os-val">8 W2 · 12 subs</span></div>
+                <div class="os-row"><span class="os-label">Open POs</span><span class="os-val">$14,200 pending</span></div>
+                <div class="os-row"><span class="os-label">Payroll this Fri</span><span class="os-val amber">$4,840 · 38h</span></div>
+                <div class="os-row"><span class="os-label">Reconciliation</span><span class="os-val">through May 16</span></div>
+                <div class="os-row"><span class="os-label">QB sync</span><span class="os-val green">clean</span></div>
+              </div>
+
+              <div class="working-card">
+                <div class="working-eyebrow"><span class="we-dot"></span>Working for you</div>
+                <div class="working-text">
+                  Kerf is watching timesheet drift on the kitchen crew, tracking insurance expiry dates across all 12 subs, and reconciling the bookkeeping cadence against your QB sync window. <strong>Renewals and invoice signoff surface here before they become problems.</strong>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-TO2 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 2 build · Team &amp; Ops</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CR1 / F-CR2 (Crew sub-lens · mobile)</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-TO1 · Mobile Team &amp; Ops home</span></div>
+      <div class="sl-step current"><span class="sl-dot">3</span><span><span class="sl-name">F-TO2</span> · Desktop Team &amp; Ops home <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">4</span><span>F-SB1 · F-SB2 · F-CR3 · F-HR2 · F-PU2 · F-BK2 (sub-lens drills)</span></div>
+    </div>
+
+    <h4>4-question dispatch</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> · macro / glimpse · domain home, sub-lens nav</li>
+      <li><strong>List, grid, or both?</strong> · list of 5 summary cards · <em>no Grid view</em> (Grid is reserved for peer-comparison surfaces)</li>
+      <li><strong>Operator's cognitive job</strong> · <em>is my people-axis and admin in order?</em> — payroll, sub insurance, HR signals, POs, bookkeeping cadence</li>
+      <li><strong>What stays hidden</strong> · individual employees, vendor detail, transaction ledgers, time entries — drill via sub-lens</li>
+    </ul>
+
+    <h4>Desktop density choices</h4>
+    <ul>
+      <li><strong>4-column sub-lens row at desktop width</strong> · icon · name+sub-line · state · arrow. Mobile collapsed all into one stack.</li>
+      <li><strong>Sidebar shows 5 sub-lens children expanded</strong> when Team &amp; Ops is active · mobile bottom bar can't carry sub-nav, so it lives only in the body.</li>
+      <li><strong>Right rail-led ops synthesis</strong> · RH card + Needs-you queue + ops summary + Working-for-you · all telemetry in the rail, list dominates the main column.</li>
+      <li><strong>Ops summary in rail</strong> · headcount · open PO total · payroll · reconciliation · QB sync · five quick stats, reference-tier, never page-leading.</li>
+      <li><strong>Working-for-you in rail</strong> · mobile carried it inside the phone body below content; desktop puts it in rail so the main column stays focused on the five sub-lens cards.</li>
+    </ul>
+
+    <h4>Layer A subdomain map (5 sub-lenses)</h4>
+    <ul>
+      <li><strong>Crew</strong> · W2 employees · drills to F-CR3 (desktop)</li>
+      <li><strong>Subs</strong> · 1099 contractors · drills to F-SB2 (desktop)</li>
+      <li><strong>HR / People</strong> · time tracking, payroll, anniversaries, documentation</li>
+      <li><strong>Purchasing</strong> · open POs, vendor management, invoice signoff</li>
+      <li><strong>Bookkeeping</strong> · reconciliation state, QB sync · fillable role (Owner / agent / external bookkeeper MCP)</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — see people-axis state, drill to the sub-lens that needs work</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — rail RH card opens the page</li>
+      <li><span class="badge doctrine">d-3</span><em>No Grid view here</em> · domain home not peer-comparison · Grid doctrine respected</li>
+      <li><span class="badge doctrine">d-4</span><em>Red is chip-tier</em> · no full-row red outlines · amber chips for action-due states</li>
+      <li><span class="badge doctrine">d-5</span><em>Agent names absent</em> · Right Hand is the only named identity · "insurance expiry flagged" not "Field Hand flagged"</li>
+      <li><span class="badge doctrine">d-6</span><em>Plainspoken vocabulary</em> · "your team" / "your subs" not "cohort" or "AltitudePacket"</li>
+      <li><span class="badge doctrine">d-7</span><em>Trust surfaces exception-tier</em> · no transcript/audit nav on this page</li>
+      <li><span class="badge canon">canon</span>Domain glimpse, not employee/vendor database · individual records hidden one click deep</li>
+      <li><span class="badge canon">canon</span>Reference content in rail, never leading the page</li>
+    </ul>
+
+    <h4>Sub-lens card anatomy</h4>
+    <ul>
+      <li><strong>Icon tile</strong> · color-tinted per sub-lens · scannable signpost</li>
+      <li><strong>Name + chip</strong> · sub-lens label · amber chip when action-due</li>
+      <li><strong>Sub-line</strong> · plain-English description of what lives in the sub-lens</li>
+      <li><strong>State block</strong> · primary count + amber accents on action-driving items · meta line for context</li>
+      <li><strong>Left-border accent</strong> · amber for attention / behind · transparent for clean</li>
+      <li><strong>Arrow</strong> · drill into the sub-lens</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Sidebar sub-items → respective sub-lens drill targets</li>
+      <li>Crew card click → F-CR3 · Crew roster (desktop)</li>
+      <li>Subs card click → F-SB2 · Subs roster (desktop)</li>
+      <li>HR card click → F-HR2 · Time / payroll lens (Tier 3 · deferred)</li>
+      <li>Purchasing card click → F-PU2 · Purchasing lens (Tier 3 · deferred)</li>
+      <li>Bookkeeping card click → F-BK2 · Bookkeeping lens (Tier 3 · deferred)</li>
+      <li>Needs-you row click → respective sub-lens pre-scoped to the action</li>
+      <li>Sidebar Home → F-A2 · Owner Home (desktop)</li>
+      <li>Sidebar Projects → F-PR3 · Projects list</li>
+      <li>Global search → cross-domain query</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>Not an employee database</li>
+      <li>Not a vendor management console</li>
+      <li>Not a time-entry grid</li>
+      <li>Not a transaction ledger</li>
+      <li>Not a Houzz Pro "Team" page with column toggles and contact rows</li>
+      <li>Not a Buildertrend admin dashboard with 12 widgets</li>
+      <li>Not a Grid view of subs/crew · that's the F-SB2 / F-CR3 surface, one click deeper</li>
+      <li>Not a multi-tab admin hub with quick filters</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-TO1_mobile_team_ops_home.html</code> · mobile counterpart</li>
+      <li><code>F-PR3_desktop_projects_list.html</code> · sibling desktop pattern (sidebar IA + 2-column main with rail)</li>
+      <li><code>F-CR3_desktop_crew_roster.html</code> · Crew sub-lens drill target</li>
+      <li><code>F-SB2_desktop_subs_roster.html</code> · Subs sub-lens drill target (separate track)</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> · Layer A · Team / Ops domain (people-axis truth)</li>
+      <li><code>Kerf_IA_Framework_v3_2026-05-17.md</code> · domain home specs</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · doctrine: lead with summary</li>
+      <li><code>feedback_agent_names_not_in_operator_copy.md</code> · doctrine: no agent names</li>
+      <li><code>feedback_red_is_chip_tier_not_row_tier.md</code> · doctrine: chip-tier red only</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> · doctrine: plain English at the boundary</li>
+      <li><code>kerf_trust_surfaces_exception_tier.md</code> · no transcript/audit nav here</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>HR / Purchasing / Bookkeeping sub-lens desktop surfaces (F-HR2 · F-PU2 · F-BK2)</li>
+      <li>External bookkeeper MCP integration / fillable bookkeeping role permissions</li>
+      <li>QB Desktop IIF sync state UI on the Bookkeeping card</li>
+      <li>Admin/Ops role-root projection (payroll + HR forward, lighter weight)</li>
+      <li>PM-tier projection (PMs see only their crew/subs · same surface, different filter)</li>
+      <li>Multi-business roll-up for tenants running GGR + Valle + HPG (Layer C · Multi-business tier)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves at desktop density</span>
+    The mobile glimpse works at desktop without becoming an admin console. <em>Adding columns, not features.</em> The sub-lens card splits into icon · name+sub-line · state · arrow instead of stacking. The rail carries the RH synthesis, the Needs-you queue, the ops summary, and the Working-for-you trust note — all reference-tier content sits in the rail so the main column stays a list of five sub-lens summaries. Insurance expiry, payroll cadence, and invoice signoff surface twice (chip on the card, row in the queue) because they are the highest-attention items today.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not an employee database. Not a vendor console. Not a Buildertrend admin dashboard. Not a Houzz Pro "Team" page with column toggles. <strong>F-TO2 is F-TO1 with breathing room, plus the ops summary and Needs-you queue the rail can carry.</strong> A 1700px viewport spent on the same cognitive job — <em>is my people-axis and admin in order?</em> — not on more widgets stitched together. Individual employees, vendor detail, transaction ledgers stay one click deep.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

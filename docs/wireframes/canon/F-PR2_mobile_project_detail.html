@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-PR2 · Mobile Project Detail · one job, nine lenses</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.page-header .doctrine-note {
+  background: rgba(245,181,68,0.06);
+  border-left: 3px solid var(--kerf-amber);
+  padding: 9px 14px;
+  border-radius: 4px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--kerf-text-dim);
+  line-height: 1.6;
+  max-width: 1080px;
+}
+.page-header .doctrine-note strong { color: var(--kerf-amber); }
+.page-header .doctrine-note em { color: var(--kerf-text); font-style: normal; font-weight: 600; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.guardrail { background: rgba(248,113,113,0.14); color: var(--kerf-red); }
+
+/* Phone */
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome */
+.top-chrome {
+  padding: 6px 14px 10px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.tc-back {
+  display: flex; align-items: center; gap: 3px;
+  color: var(--kerf-amber); font-size: 12.5px; font-weight: 600;
+}
+.tc-back svg { width: 16px; height: 16px; fill: currentColor; }
+.tc-title { flex: 1; text-align: center; font-size: 13px; color: var(--kerf-text-dim); font-weight: 500; }
+.tc-action {
+  color: var(--kerf-text-mute);
+}
+.tc-action svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Body */
+.body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+
+/* HEADER · project identity */
+.project-header { padding: 14px 4px 12px; }
+.ph-name {
+  font-size: 19px; font-weight: 700; color: var(--kerf-text);
+  letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 4px;
+}
+.ph-meta {
+  font-size: 11.5px; color: var(--kerf-text-dim);
+  line-height: 1.45;
+}
+.ph-meta strong { color: var(--kerf-text); font-weight: 600; }
+
+/* RH summary */
+/* Export/Print affordances · Lane 7B canon · audit-logged on Export · per-job report */
+.actions-strip{display:flex;justify-content:flex-end;gap:14px;margin:-4px 0 12px;padding:0 2px;font-size:11px;}
+.as-action{color:var(--kerf-amber);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
+.as-action svg{width:11px;height:11px;fill:currentColor;}
+.rh-summary {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  display: grid; grid-template-columns: 24px 1fr;
+  gap: 9px; align-items: flex-start;
+}
+.rh-avatar {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: rgba(201,169,97,0.16); color: var(--right-hand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.5; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-amber); font-style: normal; font-weight: 600; }
+
+/* 5 state signal rows (Christian's guardrail #1) */
+.state-strip {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 0 11px;
+  margin-bottom: 14px;
+}
+.state-row {
+  display: grid; grid-template-columns: 78px 1fr;
+  gap: 10px; align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 11.5px;
+}
+.state-row:last-child { border-bottom: none; }
+.state-key {
+  font-size: 9.5px; color: var(--kerf-text-mute);
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700;
+}
+.state-val { color: var(--kerf-text); line-height: 1.4; }
+.state-val.muted { color: var(--kerf-text-mute); font-style: italic; }
+.state-val.amber { color: var(--kerf-amber); font-weight: 600; }
+.state-val.green { color: var(--field-green); font-weight: 500; }
+.state-val .sv-amount { color: var(--kerf-amber); font-weight: 700; }
+
+/* Tab strip */
+.tab-strip {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  margin: 2px 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-strip::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 11px 11px 10px;
+  font-size: 11.5px; color: var(--kerf-text-mute);
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tab.active { color: var(--kerf-text); border-bottom-color: var(--kerf-amber); }
+.tab .tab-count {
+  font-size: 9.5px; color: var(--kerf-text-mute);
+  margin-left: 3px; font-weight: 500;
+  padding: 1px 5px; background: var(--kerf-surface); border-radius: 9px;
+}
+.tab.active .tab-count { color: var(--kerf-amber); }
+.tab .tab-flag {
+  font-size: 9px; color: var(--kerf-amber);
+  margin-left: 3px; font-weight: 700;
+  padding: 1px 5px; background: rgba(245,181,68,0.14); border-radius: 9px;
+}
+
+/* Tab content */
+.tab-content { padding: 14px 0 0; }
+
+/* Scope tab sections */
+.scope-section { margin-bottom: 14px; }
+.scope-sec-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  margin-bottom: 7px;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.scope-sec-eyebrow .ss-count {
+  color: var(--kerf-text-dim); font-weight: 600;
+  font-size: 9px; letter-spacing: 0.04em;
+}
+
+/* Proposal headline */
+.proposal-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 10px 12px;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 10px; align-items: center;
+}
+.pp-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 600; }
+.pp-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; }
+.pp-amount { font-size: 14px; color: var(--kerf-text); font-weight: 700; text-align: right; }
+.pp-amount-sub { font-size: 9.5px; color: var(--field-green); margin-top: 1px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; }
+
+/* CO card with continuity callout */
+.co-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-left: 3px solid var(--kerf-amber);
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin-bottom: 7px;
+}
+.co-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 8px;
+}
+.co-name { font-size: 13px; color: var(--kerf-text); font-weight: 700; line-height: 1.3; }
+.co-state {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  background: rgba(245,181,68,0.14); color: var(--kerf-amber);
+  letter-spacing: 0.06em; font-weight: 700; flex-shrink: 0;
+  text-transform: uppercase;
+}
+.co-amount-line { font-size: 12px; color: var(--kerf-text); font-weight: 600; margin-top: 4px; }
+.co-amount-line .co-amount { color: var(--kerf-amber); }
+.co-trust { font-size: 10.5px; color: var(--field-green); margin-top: 2px; font-weight: 500; }
+.co-continuity {
+  margin-top: 9px;
+  padding: 8px 10px;
+  background: var(--kerf-bg);
+  border: 1px dashed var(--kerf-border);
+  border-radius: 7px;
+  font-size: 10.5px; color: var(--kerf-text-mute); line-height: 1.55;
+}
+.co-continuity .cc-label {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--right-hand); font-weight: 700; display: block; margin-bottom: 3px;
+}
+.co-continuity strong { color: var(--kerf-text-dim); font-weight: 600; }
+.co-continuity .cc-link { color: var(--kerf-blue); font-weight: 600; }
+.co-arrow {
+  display: block; text-align: right; font-size: 11px; color: var(--kerf-blue);
+  margin-top: 7px; font-weight: 600;
+}
+
+/* Add CO affordance */
+.add-co {
+  padding: 9px 12px;
+  background: transparent;
+  border: 1px dashed var(--kerf-border);
+  border-radius: 8px;
+  font-size: 11.5px; color: var(--kerf-text-dim); font-weight: 600;
+  text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.add-co svg { width: 11px; height: 11px; fill: currentColor; }
+
+/* Exclusions / allowances list */
+.list-compact {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 0 11px;
+}
+.list-item {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 10px; align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 11.5px;
+}
+.list-item:last-child { border-bottom: none; }
+.list-text { color: var(--kerf-text-dim); line-height: 1.4; }
+.list-text strong { color: var(--kerf-text); font-weight: 600; }
+.list-val { color: var(--kerf-text); font-weight: 600; font-family: "SF Mono", Menlo, monospace; font-size: 11px; }
+.list-val .lv-sub { color: var(--kerf-text-mute); font-weight: 500; font-size: 10px; margin-left: 5px; }
+
+.see-all {
+  margin-top: 6px;
+  padding: 6px 11px;
+  font-size: 11px; color: var(--kerf-blue); font-weight: 600;
+  text-align: center;
+}
+
+/* To-do tab · Lane 5 · project-scoped task list */
+.todo-list { display: flex; flex-direction: column; gap: 6px; }
+.todo-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 10px 12px;
+  display: grid; grid-template-columns: 18px 1fr auto;
+  gap: 10px; align-items: start;
+}
+.todo-check {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1.5px solid var(--kerf-border); margin-top: 2px;
+}
+.todo-check.done { background: rgba(56,201,119,0.15); border-color: var(--field-green); color: var(--field-green); font-size: 10px; display: flex; align-items: center; justify-content: center; }
+.todo-text { font-size: 12px; color: var(--kerf-text); font-weight: 600; line-height: 1.35; }
+.todo-text.done { color: var(--kerf-text-dim); text-decoration: line-through; font-weight: 500; }
+.todo-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.todo-chip { font-size: 8px; padding: 2px 5px; border-radius: 3px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.todo-chip.stage { background: var(--kerf-bg-2); color: var(--kerf-text-mute); }
+.todo-chip.due { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.todo-chip.due.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.todo-chip.state { background: rgba(56,201,119,0.12); color: var(--field-green); }
+.todo-chip.blocked { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.todo-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-dim); font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.todo-add-bar {
+  margin: 10px 0 12px;
+  padding: 9px 12px;
+  background: rgba(201,169,97,0.06);
+  border: 1px dashed rgba(201,169,97,0.35);
+  border-radius: 9px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--kerf-text-dim);
+}
+.todo-add-bar svg { width: 14px; height: 14px; fill: var(--right-hand); flex-shrink: 0; }
+.todo-add-bar em { color: var(--right-hand); font-style: normal; font-weight: 600; }
+.todo-closeout-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(103,214,224,0.06);
+  border: 1px solid rgba(103,214,224,0.25);
+  border-radius: 8px;
+  font-size: 11px; color: var(--kerf-text-dim); line-height: 1.45;
+}
+.todo-closeout-note strong { color: var(--kerf-cyan); font-weight: 600; }/* Recent media preview · Lane 6 · Scope tab quick link to F-ML1 */
+.media-preview {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.mp-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.mp-eyebrow .mp-link { color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; }
+.media-thumb-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.media-thumb {
+  aspect-ratio: 1; border-radius: 7px;
+  background: linear-gradient(135deg, var(--kerf-bg-2) 0%, var(--kerf-surface-2) 100%);
+  border: 1px solid var(--kerf-border-soft);
+  position: relative; overflow: hidden;
+}
+.media-thumb .mt-date {
+  position: absolute; bottom: 4px; left: 4px;
+  font-size: 7.5px; padding: 2px 4px; border-radius: 3px;
+  background: rgba(10,13,17,0.75); color: var(--kerf-text); font-weight: 600;
+}
+.media-thumb.video::after {
+  content: '▶'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-size: 14px; color: var(--kerf-text); opacity: 0.85;
+}
+.mp-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 7px; }
+
+/* Media tab drill · Lane 6 */
+.media-tab-note {
+  padding: 12px;
+  background: rgba(56,201,119,0.06);
+  border: 1px solid rgba(56,201,119,0.25);
+  border-radius: 9px;
+  font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.45;
+  margin-bottom: 12px;
+}
+.media-tab-note strong { color: var(--field-green); font-weight: 600; }
+.media-tab-cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 8px; font-size: 11px; color: var(--kerf-blue); font-weight: 700;
+}
+/* Bottom bar */
+.bottom-bar {
+  background: var(--kerf-bg-2);
+  border-top: 1px solid var(--kerf-border);
+  padding: 8px 0 22px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  position: relative;
+  flex-shrink: 0;
+}
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--kerf-amber); }
+.bb-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-icon svg.icon-more { width: 20px; height: 20px; }
+.bb-fab-wrap { position: relative; }
+.bb-fab {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--kerf-amber); color: #1A1300;
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 6px 18px rgba(245,181,68,0.40);
+  border: 3px solid var(--kerf-bg);
+}
+.bb-fab svg.mic-icon { width: 24px; height: 24px; fill: currentColor; }
+.bb-fab-label { font-size: 10px; color: var(--kerf-text-mute); margin-top: 32px; font-weight: 600; text-align: center; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1 · Owner Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-PR1 · Projects list</span>
+    <span class="sep">›</span>
+    <span class="step current">F-PR2 · Project Detail · Hernandez pantry</span>
+  </div>
+  <h1>F-PR2 · Mobile Project Detail · one job, nine lenses</h1>
+  <p>
+    Per-project lens. Reached by tapping a project from F-PR1 or via Client Detail's project card. This is the surface where Tier 2 doctrine is most at risk — 9 sub-tabs (Scope · Schedule · Budget · Field · Media · Comms · To-do · Files · Audit) invite a forensics console, IA v3 spec lists Scope · Schedule · Budget · Field · Comms · Files · Audit and the temptation is to render nine equal mini-products. The four guardrails Christian locked refuse that. <em>Lead with project state synthesis. Tabs are lenses into one job. Field / Schedule / Budget continuity stays visible. Audit available, not loud.</em>
+  </p>
+  <div class="doctrine-note">
+    <strong>Four guardrails applied (Christian, this session):</strong> (G1) <em>Lead with project state synthesis</em> — name + meta + RH synthesis + 5 explicit state rows BEFORE any tabs. (G2) <em>9 tabs feel like lenses into one job, not nine mini-products</em> — RH summary unifies what each tab covers; tab strip is visually secondary. (G3) <em>Field / Schedule / Budget continuity visible</em> — Scope tab's CO-002 card carries an explicit "Built from: field walk → transcript → priced against your past pantry jobs" continuity callout so the chain reads on the surface. (G4) <em>Audit available, not loud</em> — Audit is the 9th tab with no count chip (other tabs have counts: Schedule 3 · Field 2 · Media 327 · Comms 5 · To-do 10 · Files 4 · Scope CO flag); the absence is the quiet. Operator only clicks it when something needs verification.
+  </div>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-PR2 · Mobile Project Detail · Hernandez pantry conversion · Scope tab default</div>
+  <p class="frame-narr">
+    Owner tapped Hernandez pantry from F-PR1's attention list. Surface loads with project name, meta line, one Right Hand synthesis sentence, and a 5-row state strip answering the canonical questions (Phase / Moving / Blocked / Decision / Changed). Below that, 9-tab strip with Scope active (Scope · Schedule · Budget · Field · Media · Comms · To-do · Files · Audit). Scope tab content shows the EST-014 proposal headline, the CO-002 card in flight with explicit Field→Scope→Budget continuity callout, then compact exclusions and allowances lists. The 9th tab (Audit) renders without a count chip — visually present, behaviorally quiet.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+
+        <!-- Top chrome -->
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Projects
+          </div>
+          <div class="tc-title">Project</div>
+          <div class="tc-action">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="body">
+
+          <!-- HEADER -->
+          <div class="project-header">
+            <div class="ph-name">Pantry conversion</div>
+            <div class="ph-meta">
+              <strong>Hernandez</strong> · 1247 Marlborough Ave · est. complete Aug 2026
+            </div>
+          </div>
+
+          <!-- RH summary -->
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text">
+              Schematic phase · framing day 2 on track · <em>CO-002 awaiting your approval ($14,820)</em> · field walk captured today.
+            </div>
+          </div>
+
+          <div class="actions-strip"><span class="as-action" title="Print per-job report · scope · schedule · budget · field rollup"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print job report</span><span class="as-action" title="Export per-job report · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+
+          <!-- 5 STATE SIGNAL ROWS (guardrail #1) -->
+          <div class="state-strip">
+            <div class="state-row">
+              <span class="state-key">Phase</span>
+              <span class="state-val">Schematic · framing day 2</span>
+            </div>
+            <div class="state-row">
+              <span class="state-key">Moving</span>
+              <span class="state-val green">On track · Carlos + Tito on-site</span>
+            </div>
+            <div class="state-row">
+              <span class="state-key">Blocked</span>
+              <span class="state-val muted">Nothing right now</span>
+            </div>
+            <div class="state-row">
+              <span class="state-key">Decision</span>
+              <span class="state-val amber">CO-002 awaiting approval · <span class="sv-amount">+$14,820</span></span>
+            </div>
+            <div class="state-row">
+              <span class="state-key">Changed</span>
+              <span class="state-val">Field walk captured today 14:22</span>
+            </div>
+          </div>
+
+          <!-- TAB STRIP (guardrail #2 + #4) -->
+          <div class="tab-strip">
+            <div class="tab active">Scope <span class="tab-flag">CO</span></div>
+            <div class="tab">Schedule <span class="tab-count">3</span></div>
+            <div class="tab">Budget</div>
+            <div class="tab">Field <span class="tab-count">2</span></div>
+            <div class="tab">Media <span class="tab-count">327</span></div>
+            <div class="tab">Comms <span class="tab-count">5</span></div>
+            <div class="tab">To-do <span class="tab-count">10</span></div>
+            <div class="tab">Files <span class="tab-count">4</span></div>
+            <div class="tab">Audit</div>
+          </div>
+
+          <!-- SCOPE TAB CONTENT (default) -->
+          <div class="tab-content">
+
+            <!-- Recent media preview · Lane 6 · quick link to F-ML1 -->
+            <div class="media-preview">
+              <div class="mp-eyebrow">
+                Recent media <span class="mp-link">View all →</span>
+              </div>
+              <div class="media-thumb-row">
+                <div class="media-thumb"><span class="mt-date">Today</span></div>
+                <div class="media-thumb video"><span class="mt-date">Yesterday</span></div>
+                <div class="media-thumb"><span class="mt-date">Mon</span></div>
+              </div>
+              <div class="mp-meta">248 photos · 32 videos · last capture 2h ago · Carlos on-site</div>
+            </div>
+
+            <!-- Proposal headline -->
+            <div class="scope-section">
+              <div class="scope-sec-eyebrow">Proposal</div>
+              <div class="proposal-card">
+                <div>
+                  <div class="pp-name">EST-014</div>
+                  <div class="pp-meta">Approved 2026-04-22 · base scope</div>
+                </div>
+                <div>
+                  <div class="pp-amount">$87,200</div>
+                  <div class="pp-amount-sub">Approved</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Change orders -->
+            <div class="scope-section">
+              <div class="scope-sec-eyebrow">
+                Change orders <span class="ss-count">· 1 in flight</span>
+              </div>
+
+              <div class="co-card">
+                <div class="co-head">
+                  <div class="co-name">CO-002 · pantry scope expansion</div>
+                  <span class="co-state">Draft</span>
+                </div>
+                <div class="co-amount-line">Awaiting your approval · <span class="co-amount">+$14,820</span></div>
+                <div class="co-trust">Trust check passed · built from your past pantry jobs</div>
+
+                <!-- CONTINUITY CALLOUT (guardrail #3) -->
+                <div class="co-continuity">
+                  <span class="cc-label">Built from</span>
+                  <strong>Field walk → transcript → priced against your past 11 pantry/cabinetry jobs.</strong> <span class="cc-link">View chain →</span>
+                </div>
+
+                <span class="co-arrow">Open Decision Card →</span>
+              </div>
+
+              <button class="add-co">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>
+                Add change order
+              </button>
+            </div>
+
+            <!-- Exclusions -->
+            <div class="scope-section">
+              <div class="scope-sec-eyebrow">
+                Exclusions <span class="ss-count">· 3</span>
+              </div>
+              <div class="list-compact">
+                <div class="list-item">
+                  <span class="list-text">No structural work to existing walls</span>
+                </div>
+                <div class="list-item">
+                  <span class="list-text">Tile pattern selections by Maria H.</span>
+                </div>
+                <div class="list-item">
+                  <span class="list-text">Light fixtures purchased by client</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Allowances -->
+            <div class="scope-section">
+              <div class="scope-sec-eyebrow">
+                Allowances <span class="ss-count">· $17,200 total · $0 spent</span>
+              </div>
+              <div class="list-compact">
+                <div class="list-item">
+                  <span class="list-text"><strong>Cabinetry</strong></span>
+                  <span class="list-val">$12,000<span class="lv-sub">$0 spent</span></span>
+                </div>
+                <div class="list-item">
+                  <span class="list-text"><strong>Tile</strong></span>
+                  <span class="list-val">$4,000<span class="lv-sub">$0 spent</span></span>
+                </div>
+                <div class="list-item">
+                  <span class="list-text"><strong>Hardware</strong></span>
+                  <span class="list-val">$1,200<span class="lv-sub">$0 spent</span></span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-PR2 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 2 · Projects</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL1 / CL2 (Clients list + detail)</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-PR1 · Mobile Projects list</span></div>
+      <div class="sl-step current"><span class="sl-dot">4</span><span><span class="sl-name">F-PR2</span> · Mobile Project Detail <em>(this · Scope default)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">5+</span><span>F-PR3 / PR4 · Desktop variants</span></div>
+    </div>
+
+    <h4>Four guardrails applied</h4>
+    <ul>
+      <li><span class="badge guardrail">G1</span><em>Lead with project state synthesis.</em> Header + RH summary + 5 explicit state rows render BEFORE the tab strip. Operator sees Phase · Moving · Blocked · Decision · Changed at a glance, in 5 seconds. The tabs render below that.</li>
+      <li><span class="badge guardrail">G2</span><em>9 tabs feel like lenses into ONE job.</em> The RH summary at top names what each tab will carry: <em>schematic (Scope) · framing day 2 (Schedule + Field) · CO-002 awaiting approval (Scope + Budget) · field walk captured (Field + Comms) · media library (Media) · project to-dos (To-do).</em> Each tab is a different angle on the same project. The strip is visually secondary.</li>
+      <li><span class="badge guardrail">G3</span><em>Field / Schedule / Budget continuity visible.</em> The CO-002 card on the Scope tab carries an explicit "Built from" callout: <em>Field walk → transcript → priced against your past pantry jobs.</em> The chain reads on the surface — operator sees field reality flowing into scope into money without leaving the page.</li>
+      <li><span class="badge guardrail">G4</span><em>Audit available, not loud.</em> Audit is the 9th tab. It renders at equal visual weight to the others — but with no count chip (other tabs have counts: Schedule 3 · Field 2 · Media 327 · Comms 5 · To-do 10 · Files 4 · Scope CO flag). The absence is the quiet. Operator only clicks Audit when something needs verification — which matches the exception-tier reclassification.</li>
+    </ul>
+
+    <h4>5 state signal rows (the canonical questions)</h4>
+    <ul>
+      <li><strong>Phase</strong> · what stage the project is in</li>
+      <li><strong>Moving</strong> · what's happening today (with on-track/drift state)</li>
+      <li><strong>Blocked</strong> · what's stopped (or "nothing right now" — italicized muted text)</li>
+      <li><strong>Decision</strong> · what needs operator approval/action (amber when pending)</li>
+      <li><strong>Changed</strong> · most recent material event</li>
+    </ul>
+    <p>Each row is plain English + state. Color-coded only when action is implied. <em>Not a stat grid.</em></p>
+
+    <h4>Tab strip · 7 lenses</h4>
+    <ul>
+      <li><strong>Scope</strong> (default) · proposal · COs · exclusions · allowances</li>
+      <li><strong>Schedule</strong> · tasks · milestones · crew assignments · lookahead</li>
+      <li><strong>Budget</strong> · estimate vs actual · CO impact · allowances spent · margin (Owner-only)</li>
+      <li><strong>Field</strong> · daily logs · captures · transcripts (read-only via deep-link)</li>
+      <li><strong>Media</strong> · all project photos/videos/daily logs · flat browse · drills to F-ML1 (Lane 6)</li>
+      <li><strong>Comms</strong> · client emails · SMS · portal threads · designer messages</li>
+      <li><strong>To-do</strong> · project-scoped tasks · assignee · due · stage · voice add · converts to punch at closeout (Lane 5 · see Frame 2)</li>
+      <li><strong>Files</strong> · drawings · permits · signed agreements · photos-as-deliverables</li>
+      <li><strong>Audit</strong> · per-project decision log · filtered view of Settings → Audit</li>
+    </ul>
+
+    <h4>Tab count semantics</h4>
+    <ul>
+      <li><strong>Scope</strong> shows "CO" flag (amber) when a CO is in flight · otherwise no chip</li>
+      <li><strong>Schedule</strong> shows count of milestones in next 2 weeks</li>
+      <li><strong>Budget</strong> · no chip (single state, no count)</li>
+      <li><strong>Field</strong> shows count of recent captures (last 7 days)</li>
+      <li><strong>Media</strong> shows total media count (photos + videos + daily log entries with media)</li>
+      <li><strong>Comms</strong> shows count of recent threads (last 14 days)</li>
+      <li><strong>To-do</strong> shows count of open project tasks</li>
+      <li><strong>Files</strong> shows total file count</li>
+      <li><strong>Audit</strong> · no chip · the absence is the visual quiet (guardrail #4)</li>
+    </ul>
+
+    <h4>Continuity callout (guardrail #3)</h4>
+    <p>The CO-002 card carries an explicit "Built from" line that names the chain in plain English:</p>
+    <ul>
+      <li><strong>Field walk</strong> (Field domain) →</li>
+      <li><strong>Transcript</strong> (Field domain, exception-tier access) →</li>
+      <li><strong>Priced against your past pantry jobs</strong> (Sales/Budget domain via comparables)</li>
+    </ul>
+    <p>"View chain →" link expands the continuity into a stepped diagram (out of scope for this build · sketches in spec). The point: operator sees Field reality flowing into Scope decision into Budget impact without leaving Project Detail.</p>
+
+    <h4>Scope tab content order</h4>
+    <ul>
+      <li><strong>Proposal</strong> (compact card) · single line summary of the base scope</li>
+      <li><strong>Change orders</strong> (most prominent · CO-002 is the action) · in-flight CO card with continuity callout</li>
+      <li><strong>Exclusions</strong> (compact list · 3 items)</li>
+      <li><strong>Allowances</strong> (compact list with $ amount + $ spent)</li>
+    </ul>
+    <p>Each section is glanceable. Scope tab is dense but appropriately so — this is the consequence center.</p>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>Not 9 mini-dashboards stitched together</li>
+      <li>Not a Gantt chart</li>
+      <li>Not a project management workstation with toolbars and bulk actions</li>
+      <li>Not Buildertrend's tab-of-everything-per-project</li>
+      <li>Not a contact-style profile page</li>
+      <li>Not a "click + and fill out 47 fields" project creator</li>
+      <li>Not an audit forensics console (Audit tab is quiet · forensics live at F-H1)</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>One primary cognitive job · see project state, drill where work is happening</li>
+      <li><span class="badge canon">canon</span>Smart summary leads · header + RH + 5 signals before tabs</li>
+      <li><span class="badge canon">canon</span>3-color discipline · amber pending · green on-track · red drift · cyan closing · neutral informational</li>
+      <li><span class="badge canon">canon</span>Phase as text label · status colors stay reserved for state</li>
+      <li><span class="badge canon">canon</span>Trust surfaces stay exception-tier · Audit is the 9th tab with no count, operator clicks only when needed · CO-002 trust check passed framed in plain English</li>
+      <li><span class="badge canon">canon</span>Continuity visible · Field → Scope → Budget chain on the CO card</li>
+      <li><span class="badge canon">canon</span>Money displayed dollars · stored cents per CLAUDE.md</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Back arrow → F-PR1 Projects list (or F-CL2 if drilled from client detail)</li>
+      <li>Top-right meta (⋯) → action sheet (edit project · archive · export · clone)</li>
+      <li>RH summary tap → expand RH conversation pre-bound to this project</li>
+      <li>State rows · Decision → F-B1/B2 Decision Card for CO-002</li>
+      <li>State rows · Changed → F-PR2 Field tab scrolled to today's Daily Log</li>
+      <li>Tab tap → switch lens (default Scope · all 9 sub-tabs accessible)</li>
+      <li>EST-014 proposal card tap → Proposal Review (Tier 2 surface · deferred)</li>
+      <li>CO-002 card tap → "Open Decision Card →" routes to F-B1 (mobile) or F-B2 (desktop)</li>
+      <li>"Built from · View chain" → continuity diagram (out of scope for this build)</li>
+      <li>"Add change order" → F-S1 → Start change order pre-bound to this project</li>
+      <li>Audit tab → per-project audit log (filtered view of F-H1 destination)</li>
+      <li>🎤 Speak (long-hold) → RH conversation pre-bound to Hernandez pantry context</li>
+    </ul>
+
+    <h4>Per-tab content sketches (other 8 tabs)</h4>
+    <ul>
+      <li><strong>Schedule:</strong> today's deployment · 2-week lookahead · milestones · drift events</li>
+      <li><strong>Budget:</strong> $87,200 base + $14,820 CO pending = $102,020 if approved · margin (Owner-only) · allowances spent</li>
+      <li><strong>Media:</strong> all project photos/videos/daily logs · flat browse · drills to F-ML1 (Lane 6)</li>
+      <li><strong>To-do:</strong> project-scoped tasks · assignee · due · stage · voice add · converts to punch at closeout (Lane 5 · Frame 2)</li>
+      <li><strong>Field:</strong> today's Daily Log entry · recent captures · transcripts (deep-link to F-F1 only on operator click)</li>
+      <li><strong>Comms:</strong> recent SMS/email/portal threads with Maria H. · last 14 days</li>
+      <li><strong>Files:</strong> drawings · permits · signed EST-014 · photos-as-deliverables</li>
+      <li><strong>Audit:</strong> per-project decision log filtered by this project · CO-002 trust receipt visible · routes to F-H1 detail on click</li>
+    </ul>
+    <p>All 8 non-default tabs are sketches in this spec · full rendering deferred to follow-on builds.</p>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-PR1_mobile_projects_list.html</code> · entry path</li>
+      <li><code>F-CL2_mobile_client_detail.html</code> · alternate entry (via Hernandez client card)</li>
+      <li><code>F-B1_mobile_decision_card.html</code> · CO-002 Open Decision Card destination</li>
+      <li><code>F-F1_desktop_transcript_review.html</code> · exception-tier · reached only via Field tab or "View chain" affordance</li>
+      <li><code>F-H1_desktop_audit_detail.html</code> · per-project audit lens of same substrate</li>
+      <li><code>F-S1_mobile_start_action_sheet.html</code> · Add CO routes through Start change order</li>
+      <li><code>Kerf_IA_Framework_v3_2026-05-17.md</code> · Project detail spec (9 sub-tabs · Scope · Schedule · Budget · Field · Media · Comms · To-do · Files · Audit)</li>
+      <li><code>kerf_trust_surfaces_exception_tier.md</code> · Audit quiet, exception-tier</li>
+      <li><code>kerf_daily_log_canon.md</code> · Field tab anchors to per-day Daily Log</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · doctrine: lead with summary</li>
+      <li><code>feedback_avoid_overbuilding_review_surfaces.md</code> · doctrine: no forensics console</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Non-default tab content rendering (Schedule / Budget / Field / Comms / Files / Audit each get their own follow-on)</li>
+      <li>Continuity "View chain →" stepped diagram</li>
+      <li>Desktop variants F-PR3 / PR4</li>
+      <li>Multi-project comparison view</li>
+      <li>Project templates / clone-from-existing flow</li>
+      <li>Per-project RH conversation thread (separate concern)</li>
+    </ul>
+      <h4>Per-job report affordances (Lane 7B)</h4>
+    <ul><li>Actions strip below RH · <code>Print job report</code> + <code>Export ▾</code></li><li>Per-job report bundles scope + schedule + budget + field rollup into a single printable · this is the per-job report endpoint Christian named in the Phase B brief</li><li>Audit trail on Export · operator + job + format · data egress logged</li><li>Lives in actions-strip (not as a sub-tab) · 9-tab Project Detail row stays untouched</li></ul>
+  </div>
+</div>
+
+<!-- Frame 2 · To-do tab · Lane 5 -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-PR2 · Mobile Project Detail · Hernandez pantry · To-do tab active</div>
+  <p class="frame-narr">
+    Operator taps <em>To-do</em> in the tab strip. Project-scoped task list — 10 open/done items accumulated during the build. Each row: task · stage chip · assignee avatar · due chip · state. Voice-add bar at top: <em>"Right Hand, add a to-do: check Hernandez tile order."</em> Two items flagged as punch candidates (convert at closeout → F-CO1a). Active-phase project — no convert button yet; closeout note points forward. <em>Scale lens: 5–15 project to-dos is the GC baseline; at 50+ the same row anatomy holds with section compression.</em>
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Projects
+          </div>
+          <div class="tc-title">Pantry conversion</div>
+          <div class="tc-action">⋯</div>
+        </div>
+
+        <div class="body">
+
+          <div class="project-header">
+            <div class="ph-name">Pantry conversion</div>
+            <div class="ph-meta">Luis Hernandez · 1247 Marlborough Ave · PRJ-014</div>
+          </div>
+
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text">
+              <strong>10 project to-dos.</strong> <span class="rh-amber">4 due this week.</span> 2 flagged as punch candidates at closeout.
+            </div>
+          </div>
+
+          <div class="state-strip">
+            <div class="state-row"><span class="state-key">Phase</span><span class="state-val">Schematic · framing day 2</span></div>
+            <div class="state-row"><span class="state-key">Moving</span><span class="state-val green">On track · Carlos + Tito on-site</span></div>
+            <div class="state-row"><span class="state-key">Blocked</span><span class="state-val muted">1 to-do blocked · grout color</span></div>
+            <div class="state-row"><span class="state-key">Decision</span><span class="state-val amber">CO-002 awaiting approval</span></div>
+            <div class="state-row"><span class="state-key">Changed</span><span class="state-val">Field walk captured today 14:22</span></div>
+          </div>
+
+          <div class="tab-strip">
+            <div class="tab">Scope <span class="tab-flag">CO</span></div>
+            <div class="tab">Schedule <span class="tab-count">3</span></div>
+            <div class="tab">Budget</div>
+            <div class="tab">Field <span class="tab-count">2</span></div>
+            <div class="tab">Media <span class="tab-count">327</span></div>
+            <div class="tab">Comms <span class="tab-count">5</span></div>
+            <div class="tab active">To-do <span class="tab-count">10</span></div>
+            <div class="tab">Files <span class="tab-count">4</span></div>
+            <div class="tab">Audit</div>
+          </div>
+
+          <div class="tab-content">
+
+            <div class="todo-add-bar">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+              <span><em>Add to-do</em> · "Right Hand, check Hernandez tile order"</span>
+            </div>
+
+            <div class="scope-sec-eyebrow">Open <span class="ss-count">· 8</span></div>
+            <div class="todo-list">
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Check Hernandez tile order before rough-in</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Framing</span><span class="todo-chip due">Today</span><span class="todo-chip">Open</span></div>
+                </div>
+                <div class="todo-avatar">CA</div>
+              </div>
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Verify pantry measurements with Marcus</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Framing</span><span class="todo-chip due">Today</span><span class="todo-chip">Open</span></div>
+                </div>
+                <div class="todo-avatar">MR</div>
+              </div>
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Confirm cabinet delivery window with Valle</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Cabinetry</span><span class="todo-chip due">Fri</span><span class="todo-chip">Open</span></div>
+                </div>
+                <div class="todo-avatar">MR</div>
+              </div>
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Schedule electrical rough inspection</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Rough</span><span class="todo-chip due">Tomorrow</span><span class="todo-chip">Open</span></div>
+                </div>
+                <div class="todo-avatar">CT</div>
+              </div>
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Flag grout color choice with Maria</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Tile</span><span class="todo-chip blocked">Blocked</span></div>
+                </div>
+                <div class="todo-avatar">MR</div>
+              </div>
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Order hardware pulls from Ferguson</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Cabinetry</span><span class="todo-chip due">Mon</span><span class="todo-chip">Open</span></div>
+                </div>
+                <div class="todo-avatar">MR</div>
+              </div>
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Confirm backsplash template with tile sub</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Tile</span><span class="todo-chip due">Wed</span><span class="todo-chip">Open</span> · punch candidate</div>
+                </div>
+                <div class="todo-avatar">CT</div>
+              </div>
+
+              <div class="todo-row">
+                <div class="todo-check"></div>
+                <div>
+                  <div class="todo-text">Touch-up paint at pantry entry</div>
+                  <div class="todo-meta"><span class="todo-chip stage">Finish</span><span class="todo-chip due">No due date</span><span class="todo-chip">Open</span> · punch candidate</div>
+                </div>
+                <div class="todo-avatar">—</div>
+              </div>
+
+            </div>
+
+            <div class="scope-sec-eyebrow" style="margin-top:14px;">Done <span class="ss-count">· 2</span></div>
+            <div class="todo-list">
+              <div class="todo-row">
+                <div class="todo-check done">✓</div>
+                <div>
+                  <div class="todo-text done">Send CO-002 summary to Maria</div>
+                  <div class="todo-meta"><span class="todo-chip state">Done</span> · completed today</div>
+                </div>
+                <div class="todo-avatar">CA</div>
+              </div>
+              <div class="todo-row">
+                <div class="todo-check done">✓</div>
+                <div>
+                  <div class="todo-text done">Document field walk photos</div>
+                  <div class="todo-meta"><span class="todo-chip state">Done</span> · completed Mon</div>
+                </div>
+                <div class="todo-avatar">CT</div>
+              </div>
+            </div>
+
+            <div class="todo-closeout-note">
+              <strong>At closeout:</strong> open to-dos convert to punch list in one tap → F-CO1a. 2 items already flagged as punch candidates.
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="bottom-bar">
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="bb-fab-wrap"><div class="bb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg></div><div class="bb-fab-label">Speak</div></div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>Clients</div>
+          <div class="bb-tab"><span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-PR2 To-do tab · Spec</h3>
+    <h4>Lane 5 patch</h4>
+    <ul>
+      <li><strong>8th tab (9 total)</strong> · To-do inserted after Comms, before Files · count = open project tasks</li>
+      <li><strong>10 sample to-dos</strong> · 8 open + 2 done · GC baseline (5–15 range)</li>
+      <li><strong>Voice add</strong> · todo-add-bar with mic + Right Hand example utterance</li>
+      <li><strong>Punch candidate flags</strong> · 2 items marked · convert affordance lives at closeout (F-CO1a)</li>
+      <li><strong>Lifecycle states</strong> · Open · Done · Blocked visible as chips</li>
+      <li><strong>Cross-ref</strong> · <code>F-TD1</code> global queue · <code>F-CO1a</code> conversion path</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Frame 3 · Media tab · Lane 6 -->
+<div class="frame">
+  <div class="frame-label">Frame 3 · F-PR2 · Mobile Project Detail · Wegrzyn kitchen · Media tab · drill to F-ML1</div>
+  <p class="frame-narr">
+    Operator taps <em>Media</em> in the tab strip (327 total · photos + videos + daily log media). Tab shows a compact summary + direct drill to the full media library (F-ML1). Same surface voice lands on when operator says <em>"Right Hand, take me to Wegrzyn pictures."</em> Voice and manual navigation converge on F-ML1 — the tab is the in-project entry point, not a duplicate browse UI.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+        <div class="top-chrome">
+          <div class="tc-back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>Projects</div>
+          <div class="tc-title">Wegrzyn kitchen</div>
+          <div class="tc-action">⋯</div>
+        </div>
+        <div class="body">
+          <div class="project-header">
+            <div class="ph-name">Wegrzyn kitchen</div>
+            <div class="ph-meta">Maria Wegrzyn · 4287 Pacifica Way · PRJ-018 · Closeout</div>
+          </div>
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text"><strong>248 photos · 32 videos · 47 daily logs.</strong> Last captured 2h ago by Carlos. <span class="rh-amber">Most active week: Jun 3–9 framing.</span></div>
+          </div>
+          <div class="tab-strip">
+            <div class="tab">Scope</div>
+            <div class="tab">Schedule <span class="tab-count">3</span></div>
+            <div class="tab">Budget</div>
+            <div class="tab">Field <span class="tab-count">2</span></div>
+            <div class="tab active">Media <span class="tab-count">327</span></div>
+            <div class="tab">Comms <span class="tab-count">5</span></div>
+            <div class="tab">To-do <span class="tab-count">10</span></div>
+            <div class="tab">Files <span class="tab-count">4</span></div>
+            <div class="tab">Audit</div>
+          </div>
+          <div class="tab-content">
+            <div class="media-tab-note">
+              <strong>Project media library</strong> — all photos, videos, and daily log captures for this job in one browse surface. Same files referenced from daily logs · single source of truth.
+              <div class="media-tab-cta">Open full media library → F-ML1</div>
+            </div>
+            <div class="media-preview">
+              <div class="mp-eyebrow">Most recent <span class="mp-link">View all 327 →</span></div>
+              <div class="media-thumb-row">
+                <div class="media-thumb"><span class="mt-date">2h</span></div>
+                <div class="media-thumb video"><span class="mt-date">Yesterday</span></div>
+                <div class="media-thumb"><span class="mt-date">Jun 9</span></div>
+              </div>
+              <div class="mp-meta">Framing phase · Carlos · tap any thumb for fullscreen viewer</div>
+            </div>
+            <div class="scope-sec-eyebrow">Daily logs with media <span class="ss-count">· 47</span></div>
+            <div class="list-compact">
+              <div class="list-item"><span class="list-text"><strong>Jun 9 · Framing day 4</strong> · 12 photos · Carlos</span><span class="list-val">→</span></div>
+              <div class="list-item"><span class="list-text"><strong>Jun 8 · Rough-in check</strong> · 8 photos · 1 video · Tito</span><span class="list-val">→</span></div>
+              <div class="list-item"><span class="list-text"><strong>Jun 6 · Demo complete</strong> · 6 photos · Marcus</span><span class="list-val">→</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-bar">
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="bb-fab-wrap"><div class="bb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div><div class="bb-fab-label">Speak</div></div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>Clients</div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/></svg></span>More</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-PR2 Media tab · Spec</h3>
+    <ul>
+      <li><strong>5th tab (9 total)</strong> · Media after Field · count = total media items</li>
+      <li><strong>Drills to F-ML1</strong> · tab is entry point · full browse lives on F-ML1</li>
+      <li><strong>Scope tab preview</strong> · 3 recent thumbs + "View all" on default Scope frame</li>
+      <li><strong>Voice convergence</strong> · "take me to Wegrzyn pictures" → F-ML1 with Photos filter</li>
+      <li><strong>Cross-ref</strong> · F-E1 capture · daily log canon · F-FD1 capture detail</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>One job, nine lenses · continuity visible · audit quiet.</em> The 5 state rows answer the brain-questions in 5 seconds: Phase · Moving · Blocked · Decision · Changed. The CO-002 card on Scope makes the Field→Scope→Budget chain explicit (operator sees field reality flowing into money without leaving the page). The tab strip stays visually secondary — operator picks a lens only when they need it.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not 9 mini-products stitched together. Not a Gantt chart. Not a project management workstation. Not Buildertrend's tab-of-everything. Not an audit forensics console. <strong>F-PR2 is one project seen from nine angles, with state synthesis leading and continuity made visible.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-SP1a · Account editor · username · password · avatar · notifications</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11; --kerf-bg-2: #14181F; --kerf-surface: #1A1F28; --kerf-surface-2: #232936;
+  --kerf-border: #2A3140; --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1; --kerf-text-dim: #98A1B3; --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544; --kerf-green: #4ADE80; --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF; --field-green: #38C977; --right-hand: #C9A961;
+  --settings-accent: #C9A961;
+}
+body.light-mode { --kerf-bg: #FFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFF; --kerf-surface-2: #EBEEF2; --kerf-border: #C9D0D8; --kerf-border-soft: #DFE3E8; --kerf-text: #0A0D11; --kerf-text-dim: #4A5462; --kerf-text-mute: #7B8492; }
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--settings-accent); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .frame-spec { display: none; }
+body.presentation-mode .frame { grid-template-columns: 1fr; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step.current { color: var(--settings-accent); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--settings-accent); font-style: normal; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; color: var(--settings-accent); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--settings-accent); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--settings-accent); }
+
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; background: #555; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; }
+.chrome-spacer { flex: 1; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; }
+.sb-item.active { background: rgba(201,169,97,0.12); color: var(--settings-accent); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--settings-accent); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); }
+.sb-fab svg { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--settings-accent); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+
+.main { display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { padding: 11px 24px; border-bottom: 1px solid var(--kerf-border-soft); display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-spacer { flex: 1; }
+.bc-actions { display: flex; gap: 10px; }
+.btn { padding: 7px 14px; border-radius: 8px; font-size: 11.5px; font-weight: 700; border: 1px solid var(--kerf-border-soft); background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.btn.primary { background: var(--settings-accent); color: #1A1300; border-color: var(--settings-accent); }
+
+.main-header { padding: 18px 24px 8px; }
+.main-title { font-size: 22px; font-weight: 600; margin: 0; }
+.main-meta { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+.editor-body { display: grid; grid-template-columns: 1fr 280px; gap: 24px; padding: 8px 24px 24px; }
+.form-section { margin-bottom: 20px; }
+.form-eyebrow { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; }
+.form-card { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 14px 16px; }
+.form-row { margin-bottom: 12px; }
+.form-row:last-child { margin-bottom: 0; }
+.form-label { font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 600; margin-bottom: 4px; display: block; }
+.form-input { width: 100%; padding: 9px 11px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; font-size: 12.5px; color: var(--kerf-text); }
+.form-hint { font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px; }
+.form-hint.ok { color: var(--field-green); }
+
+.avatar-block { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.avatar-preview { width: 64px; height: 64px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--settings-accent); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; border: 2px solid var(--kerf-border-soft); }
+.avatar-actions { font-size: 11.5px; color: var(--kerf-blue); font-weight: 600; }
+
+.toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 12px; }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { color: var(--kerf-text); font-weight: 500; }
+.toggle-label span { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 400; margin-top: 2px; }
+.toggle-pill { width: 36px; height: 20px; border-radius: 10px; background: var(--field-green); position: relative; }
+.toggle-pill.off { background: var(--kerf-border); }
+.toggle-pill::after { content: ''; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.toggle-pill.off::after { right: auto; left: 2px; }
+
+.lang-toggle { display: flex; gap: 6px; }
+.lang-opt { padding: 6px 12px; border-radius: 7px; font-size: 11px; font-weight: 700; border: 1px solid var(--kerf-border-soft); color: var(--kerf-text-mute); }
+.lang-opt.active { background: rgba(245,181,68,0.14); color: var(--kerf-amber); border-color: rgba(245,181,68,0.35); }
+
+.editor-rail { display: flex; flex-direction: column; gap: 12px; }
+.rail-card { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 14px; }
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 8px; }
+.rail-text { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.5; }
+.audit-note { margin-top: 10px; padding: 9px 11px; background: var(--kerf-bg-2); border-left: 2px solid var(--settings-accent); border-radius: 4px; font-size: 10.5px; color: var(--kerf-text-mute); }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--settings-accent); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--settings-accent); font-weight: 700; margin-bottom: 5px; }
+
+@media print {
+  .view-toggle-bar, .frame-spec { display: none !important; }
+  .frame { grid-template-columns: 1fr !important; }
+  body { background: #fff !important; color: #0A0D11 !important; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px">Theme</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Grid view: NO · detail form surface</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">F-SP1 · Settings</span><span class="sep">›</span><span class="step current">F-SP1a · Account editor</span></div>
+  <h1>F-SP1a · Account editor · username · password · avatar · notifications · language</h1>
+  <p>Drill from F-SP1 Account card. Operator edits identity, credentials, contact info, avatar, notification channels, and UI language. Every save writes an audit trail entry. Voice editing where fields exist: <em>"Right Hand, update my phone number."</em></p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-SP1a · Account editor · Christian Asdal · default edit state</div>
+  <p class="frame-narr">Owner tapped Account on F-SP1. Form sections: avatar + username · password change (current password confirm) · personal info · notification toggles · English/Spanish language. Save/Cancel in breadcrumb bar. Right rail explains audit-on-save. <em>Single-operator Solo tier — one account editor per tenant for V1.</em></p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/settings/account</div>
+        <div class="chrome-spacer"></div>
+      </div>
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-fab"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All · collapsed</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg></span>Settings</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div></div></div>
+        </div>
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link">Settings</span><span style="color:var(--kerf-border)">›</span><span class="bc-link active">Account</span>
+            <div class="bc-spacer"></div>
+            <div class="bc-actions"><span class="btn">Cancel</span><span class="btn primary">Save changes</span></div>
+          </div>
+          <div class="main-header">
+            <h2 class="main-title">Account</h2>
+            <div class="main-meta">christian.asdal · Owner · GGR Design + Remodeling</div>
+          </div>
+          <div class="editor-body">
+            <div>
+              <div class="form-section">
+                <div class="form-eyebrow">Profile</div>
+                <div class="form-card">
+                  <div class="avatar-block">
+                    <div class="avatar-preview">CA</div>
+                    <div><div style="font-size:12px;font-weight:600;color:var(--kerf-text)">Christian Asdal</div><div class="avatar-actions">Upload photo · Use initials</div></div>
+                  </div>
+                  <div class="form-row"><label class="form-label">Username</label><input class="form-input" value="christian.asdal" readonly style="opacity:0.85"><div class="form-hint ok">Available · unique within tenant</div></div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-eyebrow">Password</div>
+                <div class="form-card">
+                  <div class="form-row"><label class="form-label">Current password</label><input class="form-input" type="password" value="••••••••"></div>
+                  <div class="form-row"><label class="form-label">New password</label><input class="form-input" type="password" placeholder="Min 12 characters"></div>
+                  <div class="form-row"><label class="form-label">Confirm new password</label><input class="form-input" type="password" placeholder="Re-enter new password"></div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-eyebrow">Personal info</div>
+                <div class="form-card">
+                  <div class="form-row"><label class="form-label">Full name</label><input class="form-input" value="Christian Asdal"></div>
+                  <div class="form-row"><label class="form-label">Email</label><input class="form-input" value="christian@ggrremodel.com"></div>
+                  <div class="form-row"><label class="form-label">Phone</label><input class="form-input" value="(408) 555-0142"></div>
+                  <div class="form-row"><label class="form-label">Timezone</label><input class="form-input" value="America/Los_Angeles (Pacific)"></div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-eyebrow">Language</div>
+                <div class="form-card">
+                  <div class="lang-toggle"><span class="lang-opt active">English</span><span class="lang-opt">Español</span></div>
+                  <div class="form-hint" style="margin-top:8px">UI language · Spanish-native platform · V2.1 ships full Spanish UI</div>
+                </div>
+              </div>
+              <div class="form-section">
+                <div class="form-eyebrow">Notifications</div>
+                <div class="form-card">
+                  <div class="toggle-row"><div class="toggle-label">Email<span>Decisions · approvals · daily digest</span></div><div class="toggle-pill"></div></div>
+                  <div class="toggle-row"><div class="toggle-label">Push<span>Right Hand alerts · urgent only</span></div><div class="toggle-pill"></div></div>
+                  <div class="toggle-row"><div class="toggle-label">SMS<span>Client-facing sends · off by default</span></div><div class="toggle-pill off"></div></div>
+                  <div class="toggle-row"><div class="toggle-label">Slack / Teams<span>Integration if connected</span></div><div class="toggle-pill off"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="editor-rail">
+              <div class="rail-card">
+                <div class="rail-eyebrow">Right Hand · account</div>
+                <div class="rail-text">Changes here update how Kerf addresses you and where alerts land. Password changes require current-password confirmation.</div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Audit on save</div>
+                <div class="rail-text">Every field change writes to the audit trail — who changed what, when. Last account edit: Apr 12 · password not changed since install.</div>
+                <div class="audit-note"><strong>On save:</strong> audit event <code>account.updated</code> · fields diff logged</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-SP1a · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> Detail — single-operator account editor (not a settings landing)</li>
+      <li><strong>List / grid / both?</strong> Neither — form sections · <strong>Grid view: NO</strong></li>
+      <li><strong>Cognitive job?</strong> Edit username · credentials · contact info · avatar · notification channels · UI language</li>
+      <li><strong>Hidden until drill?</strong> Password hash · full audit history · permissions matrix (F-SP1 Permissions card)</li>
+    </ul>
+    <h4>Memory exposure</h4>
+    <ul><li><strong>Identity-layer editor</strong> · editable by consequence · §13 audit on every save · password is write-only substrate — never in model or Right Hand working memory · profile fields update operator identity only</li></ul>
+    <h4>Fields (Lane 7)</h4>
+    <ul>
+      <li><strong>Username</strong> · editable · uniqueness check within tenant</li>
+      <li><strong>Password</strong> · change with current-password confirm</li>
+      <li><strong>Personal info</strong> · full name · email · phone · timezone</li>
+      <li><strong>Avatar</strong> · upload + preview · initials fallback</li>
+      <li><strong>Notifications</strong> · email · push · SMS · Slack/Teams toggles</li>
+      <li><strong>Language</strong> · English / Español · ties to Spanish-native canon</li>
+      <li><strong>Save / Cancel</strong> · audit trail on any change</li>
+    </ul>
+    <h4>Voice editing</h4>
+    <ul>
+      <li>"Right Hand, update my phone number to …"</li>
+      <li>"Right Hand, switch my language to Spanish"</li>
+    </ul>
+    <h4>Routes</h4>
+    <ul>
+      <li>F-SP1 Account card → this surface</li>
+      <li>Cancel → F-SP1</li>
+      <li>Save → F-SP1 + toast + audit event</li>
+    </ul>
+    <h4>Grid view</h4>
+    <ul><li><strong>NO</strong> — detail form surface</li></ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">Enforces</span>Account is a real editor, not a landing-card stub. Audit on every save. Language toggle visible for Spanish-native path.</div>
+  <div class="callout"><span class="callout-title">Refuses</span>Not a multi-user admin console. Not billing. Not permissions matrix. <strong>Grid view: NO.</strong></div>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation'); }); });
+document.querySelectorAll('[data-theme]').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.body.classList.toggle('light-mode', tab.dataset.theme === 'light'); }); });
+</script>
+</body>
+</html>
