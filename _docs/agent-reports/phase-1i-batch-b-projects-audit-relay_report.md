@@ -1,6 +1,6 @@
 # Phase 1I Batch B — Projects, Audit, Relay
 
-**Branch:** `phase-1i-batch-b-projects-audit-relay` @ `d9aa46e`  
+**Branch:** `phase-1i-batch-b-projects-audit-relay` @ `b0fe2c1`  
 **Base:** `origin/main` @ `d06815a`  
 **Agent:** B  
 **Scope:** Relay, Project List/Detail, project tabs, Status, Closeout, Work Orders, audit deep links  
@@ -42,19 +42,26 @@ Relay API additions (`GET /field-daily/relay-feed` enrichment, `POST /relay-card
 
 ## Clean-worktree proof (2026-05-28)
 
-Run from repo root on branch `phase-1i-batch-b-projects-audit-relay`, `git status` clean (after `npm ci`):
+Verified from a **fresh checkout**, not the agent’s dirty workspace:
 
 ```bash
+git fetch origin phase-1i-batch-b-projects-audit-relay
+git worktree add /tmp/kerf-1i-b-verify origin/phase-1i-batch-b-projects-audit-relay
+cd /tmp/kerf-1i-b-verify
+git rev-parse --short HEAD   # b0fe2c1
+npm ci
 npm run typecheck
 npm run build:astro
 node --import tsx --test tests/phase1i-batch-b-projects-audit-relay.test.ts tests/phase1d-audit-projection.test.ts
 ```
 
-| Command | Result |
-|---------|--------|
+| Step | Result |
+|------|--------|
+| `git worktree` @ `origin/phase-1i-batch-b-projects-audit-relay` | `b0fe2c1` (detached HEAD, empty tree) |
+| `npm ci` | Pass |
 | `npm run typecheck` | Pass |
-| `npm run build:astro` | Pass |
-| Focused tests (above) | **12/12** pass |
+| `npm run build:astro` | Pass (`Server built` / `Complete!`) |
+| Focused tests | **12/12** pass |
 
 ## Surface status
 
