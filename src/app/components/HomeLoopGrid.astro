@@ -3,4 +3,67 @@ import { HOME_OPERATOR_LOOPS } from '../lib/shellRoutes.js';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 const { t } = createLayoutContext();
 ---
-<section aria-label={t('home.loops.aria')}><h2>{t('home.loops.heading')}</h2><ul>{HOME_OPERATOR_LOOPS.map((loop) => (<li><a href={loop.href}>{t(loop.titleKey)} — {t(loop.detailKey)}</a></li>))}</ul></section>
+<section class="home-loops" aria-label={t('home.loops.aria')}>
+  <div class="home-loops-label">{t('home.loops.heading')}</div>
+  <div class="home-loops-grid">
+    {HOME_OPERATOR_LOOPS.map((loop) => (
+      <a class="home-loop-card" href={loop.href}>
+        <span class="home-loop-title">{t(loop.titleKey)}</span>
+        <span class="home-loop-detail">{t(loop.detailKey)}</span>
+        <span class="home-loop-arrow" aria-hidden="true">→</span>
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .home-loops-label {
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted, #6a7282);
+    margin: 0.5rem 0.25rem 0.6rem;
+  }
+  .home-loops-grid {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .home-loop-card {
+    position: relative;
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.85rem 2.2rem 0.85rem 0.95rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 14px;
+    background: var(--surface, #fff);
+    color: inherit;
+    text-decoration: none;
+  }
+  .home-loop-card:hover {
+    border-color: color-mix(in srgb, var(--accent, #f5b544) 45%, transparent);
+  }
+  .home-loop-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+  }
+  .home-loop-detail {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text-muted, #6a7282);
+  }
+  .home-loop-arrow {
+    position: absolute;
+    right: 0.95rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent, #f5b544);
+    font-weight: 700;
+  }
+  @media (min-width: 900px) {
+    .home-loops-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

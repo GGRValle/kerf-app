@@ -60,7 +60,7 @@
 }
 
 .lane23-lowconf {
-  background: color-mix(in srgb, var(--chip-amber, #b54708) 12%, white);
+  background: color-mix(in srgb, var(--chip-amber, #b54708) 12%, var(--surface, #fff));
   border-bottom: 1px dashed var(--chip-amber, #b54708);
 }
 
@@ -86,7 +86,7 @@
   border: 1px solid var(--chip-amber, #b54708);
   border-radius: 10px;
   padding: 0.75rem;
-  background: color-mix(in srgb, var(--chip-amber, #b54708) 6%, white);
+  background: color-mix(in srgb, var(--chip-amber, #b54708) 6%, var(--surface, #fff));
 }
 
 .lane23-followup-actions {
@@ -108,7 +108,7 @@
 .lane23-btn.primary {
   background: var(--accent, #0f766e);
   border-color: var(--accent, #0f766e);
-  color: #fff;
+  color: var(--on-accent, #fff);
 }
 
 .lane23-loop-actions {
@@ -126,7 +126,7 @@ a.lane23-btn {
 }
 
 a.lane23-btn.primary {
-  color: #fff;
+  color: var(--on-accent, #fff);
 }
 
 .lane23-notice {

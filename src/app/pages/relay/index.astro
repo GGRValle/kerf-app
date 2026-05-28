@@ -186,15 +186,15 @@ const relayCopy = {
     }
 
     :global(.relay-card[data-severity='block']) {
-      border-left: 4px solid #d92d20;
+      border-left: 4px solid var(--kerf-red, #d92d20);
     }
 
     :global(.relay-card[data-severity='warn']) {
-      border-left: 4px solid #f5b544;
+      border-left: 4px solid var(--kerf-amber, #f5b544);
     }
 
     :global(.relay-card[data-severity='info']) {
-      border-left: 4px solid #026aa2;
+      border-left: 4px solid var(--kerf-blue, #026aa2);
     }
 
     :global(.relay-card-top) {

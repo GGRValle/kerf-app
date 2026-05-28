@@ -32,10 +32,13 @@
   /* ===== Generic shell vocabulary remapped onto canon ===== */
   --bg: var(--kerf-bg);
   --surface: var(--kerf-surface);
+  --surface-2: var(--kerf-surface-2);
   --text: var(--kerf-text);
   --text-muted: var(--kerf-text-dim);
   --border: var(--kerf-border);
+  --border-soft: var(--kerf-border-soft);
   --accent: var(--kerf-amber);
+  --on-accent: #1a1300;
   --chip-red: var(--kerf-red);
   --chip-amber: var(--kerf-amber);
   --chip-green: var(--kerf-green);
@@ -109,15 +112,25 @@ body {
   top: 0;
   z-index: 10;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-top, 0px));
+  padding-top: max(0.6rem, env(safe-area-inset-top, 0px));
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
+.kerf-topbar-lead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .kerf-brand {
   font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
   color: var(--text);
   text-decoration: none;
 }
@@ -134,6 +147,22 @@ body {
 
 .kerf-nav::-webkit-scrollbar {
   display: none;
+}
+
+/* Canon phone-app chrome (Right Hand avatar) — only meaningful on mobile. */
+.kerf-topbar-rh {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--right-hand, #c9a961);
+  background: color-mix(in srgb, var(--right-hand, #c9a961) 20%, transparent);
 }
 
 .kerf-nav-link {
@@ -164,10 +193,26 @@ body {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+/*
+ * Mobile (iPhone width): the horizontal desktop web nav strip is replaced by
+ * canon phone-app chrome — a clean brand header with the Right Hand avatar,
+ * plus the fixed MobileBottomNav + Speak affordance. No clipped
+ * "Kerf · Home · Capture…" strip.
+ */
+@media (max-width: 899px) {
+  .kerf-nav {
+    display: none;
+  }
+}
+
 @media (min-width: 900px) {
   .kerf-topbar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+  }
+  .kerf-nav {
+    flex: 1;
+  }
+  .kerf-topbar-rh {
+    display: none;
   }
 }
