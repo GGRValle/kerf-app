@@ -2,13 +2,11 @@
 import Layout from '../../../layouts/Layout.astro';
 import ActionsStrip from '../../../components/ActionsStrip.astro';
 import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
-import ProjectAuditPanel from '../../../components/ProjectAuditPanel.astro';
-import Card from '../../../components/Card.astro';
+import ProjectTabContent from '../../../components/project/ProjectTabContent.astro';
 import { getApiDeps } from '../../../../api/lib/deps.js';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getLane23Project, isProjectTabId } from '../../../lib/lane23Fixtures.js';
 import { loadProjectAuditTrail } from '../../../../project/projectAuditProjection.js';
-import type { I18nKey } from '../../../../i18n/keys.js';
 import '../../../styles/lane23.css';
 
 const { t, context } = createLayoutContext();
@@ -16,22 +14,14 @@ const { id, tab } = Astro.params;
 const project = id ? getLane23Project(id) : null;
 const activeTab = tab && isProjectTabId(tab) ? tab : null;
 
+if (project !== null && activeTab === 'scope') {
+  return Astro.redirect(`/projects/${project.project_id}`);
+}
+
 const auditEntries =
   project !== null && activeTab === 'audit'
     ? await loadProjectAuditTrail(getApiDeps().tenantReader, context.tenantId, project.project_id)
     : [];
-
-const PANEL_KEYS: Record<string, I18nKey> = {
-  scope: 'project.panel.scope',
-  schedule: 'project.panel.schedule',
-  budget: 'project.panel.budget',
-  field: 'project.panel.field',
-  media: 'project.panel.media',
-  comms: 'project.panel.comms',
-  todo: 'project.panel.todo',
-  files: 'project.panel.files',
-  audit: 'project.panel.audit',
-};
 ---
 
 <Layout titleKey="project.list.title" activeHref="/projects">
@@ -47,32 +37,36 @@ const PANEL_KEYS: Record<string, I18nKey> = {
             <p class="lane23-project-meta">{project.client_name}</p>
           </div>
         </div>
-        <ActionsStrip actions={[
-          { label: t('action.print'), title: t('action.print') },
-          { label: t('action.export.menu'), title: t('action.export.menu') },
-        ]} />
+        <ActionsStrip
+          actions={[
+            { label: t('action.print'), title: t('action.print') },
+            { label: t('action.export.menu'), title: t('action.export.menu') },
+          ]}
+        />
       </div>
 
       <ProjectTabStrip projectId={project.project_id} activeTab={activeTab} labelFor={t} />
 
       <div class="lane23-tab-panel">
-        {activeTab === 'audit' ? (
-          <ProjectAuditPanel entries={auditEntries} labelFor={t} />
-        ) : (
-          <Card title={t(`project.tab.${activeTab}`)}>
-            <p>{t(PANEL_KEYS[activeTab])}</p>
-          </Card>
-        )}
+        <ProjectTabContent
+          project={project}
+          activeTab={activeTab}
+          labelFor={t}
+          auditEntries={auditEntries}
+        />
       </div>
-      <p id="lane23-export-status" class="lane23-notice" role="status"></p>
     </div>
   )}
 </Layout>
 
-<script define:vars={{ projectId: project?.project_id, tenantId: context.tenantId, successKey: 'project.export.success', errorKey: 'project.export.error' }}>
+<script define:vars={{
+  projectId: project?.project_id,
+  tenantId: context.tenantId,
+  successMsg: t('project.export.success'),
+  errorMsg: t('project.export.error'),
+}}>
   if (projectId) {
-    const statusEl = document.getElementById('lane23-export-status');
-    document.querySelectorAll('.actions-strip .as-action').forEach((btn, idx) => {
+    document.querySelectorAll('.lane23-page .actions-strip .as-action').forEach((btn, idx) => {
       btn.addEventListener('click', async () => {
         const format = idx === 0 ? 'print' : 'pdf';
         try {
@@ -82,9 +76,9 @@ const PANEL_KEYS: Record<string, I18nKey> = {
             body: JSON.stringify({ format }),
           });
           if (!res.ok) throw new Error('export_failed');
-          statusEl.textContent = successKey;
+          if (statusEl) statusEl.textContent = successMsg;
         } catch {
-          statusEl.textContent = errorKey;
+          if (statusEl) statusEl.textContent = errorMsg;
         }
       });
     });

@@ -1,0 +1,108 @@
+---
+import Card from '../Card.astro';
+import Row from '../Row.astro';
+import PreviewNotice from './PreviewNotice.astro';
+import ProjectAuditPanel from '../ProjectAuditPanel.astro';
+import type { ProjectAuditEntry } from '../../../project/projectAuditProjection.js';
+import type { Lane23ProjectRecord, ProjectTabId } from '../../lib/lane23Fixtures.js';
+import { formatCentsDisplay } from '../../lib/lane23Fixtures.js';
+import type { I18nKey } from '../../../i18n/keys.js';
+
+export interface Props {
+  project: Lane23ProjectRecord;
+  activeTab: ProjectTabId;
+  labelFor: (key: I18nKey) => string;
+  auditEntries?: readonly ProjectAuditEntry[];
+}
+
+const { project, activeTab, labelFor: t, auditEntries = [] } = Astro.props;
+const previewBadge = t('action.preview.badge');
+---
+
+{activeTab === 'audit' ? (
+  <ProjectAuditPanel entries={auditEntries} labelFor={t} />
+) : activeTab === 'field' ? (
+  <Card title={t('project.tab.field')}>
+    <p>{t('project.panel.field')}</p>
+    <div class="lane23-action-links">
+      <a class="lane23-btn-link" href="/field-capture">{t('project.field.link_capture')}</a>
+      <a class="lane23-btn-link" href="/relay">{t('project.field.link_relay')}</a>
+      <a class="lane23-btn-link" href="/field-detail">{t('project.field.link_detail')}</a>
+    </div>
+    {project.work_orders.length === 0 ? (
+      <p class="lane23-notice">{t('project.field.no_work_orders')}</p>
+    ) : (
+      project.work_orders.map((wo) => (
+        <a href={`/projects/${project.project_id}/work-orders/${wo.work_order_id}`} class="lane23-project-link">
+          <Row title={wo.title} meta={`${wo.trade} · ${wo.scheduled_date}`} showArrow />
+        </a>
+      ))
+    )}
+  </Card>
+) : activeTab === 'budget' ? (
+  <Card title={t('project.tab.budget')}>
+    <p>{t('project.panel.budget')}</p>
+    <p class="lane23-notice">{formatCentsDisplay(project.budget_cents)}</p>
+    <PreviewNotice badgeLabel={previewBadge} message={t('project.budget.preview_next')} />
+  </Card>
+) : activeTab === 'schedule' ? (
+  <Card title={t('project.tab.schedule')}>
+    <p>{t('project.panel.schedule')}</p>
+    <a class="lane23-btn-link" href={`/projects/${project.project_id}/status`}>{t('project.schedule.link_status')}</a>
+    <PreviewNotice badgeLabel={previewBadge} message={t('project.schedule.preview_next')} />
+  </Card>
+) : activeTab === 'comms' ? (
+  <Card title={t('project.tab.comms')}>
+    <p>{t('project.panel.comms')}</p>
+    <div class="lane23-action-links">
+      <a class="lane23-btn-link" href="/transcript-review">{t('project.comms.link_transcript')}</a>
+      <a class="lane23-btn-link" href="/relay">{t('project.comms.link_relay')}</a>
+    </div>
+    <PreviewNotice badgeLabel={previewBadge} message={t('project.comms.preview_next')} />
+  </Card>
+) : activeTab === 'media' ? (
+  <Card title={t('project.tab.media')}>
+    <p>{t('project.panel.media')}</p>
+    <PreviewNotice badgeLabel={previewBadge} message={t('project.media.preview_next')} />
+  </Card>
+) : activeTab === 'todo' ? (
+  <Card title={t('project.tab.todo')}>
+    <p>{t('project.panel.todo')}</p>
+    <PreviewNotice badgeLabel={previewBadge} message={t('project.todo.preview_next')} />
+  </Card>
+) : activeTab === 'files' ? (
+  <Card title={t('project.tab.files')}>
+    <p>{t('project.panel.files')}</p>
+    <PreviewNotice badgeLabel={previewBadge} message={t('project.files.preview_next')} />
+  </Card>
+) : (
+  <Card title={t(`project.tab.${activeTab}`)}>
+    <p>{t(`project.panel.${activeTab}`)}</p>
+  </Card>
+)}
+
+<style>
+  .lane23-preview,
+  .lane23-action-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0.75rem 0;
+  }
+  .lane23-btn-link {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #d8dee6);
+    color: var(--accent, #0f766e);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+  .lane23-project-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+</style>

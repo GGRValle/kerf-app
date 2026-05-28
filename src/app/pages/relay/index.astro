@@ -11,6 +11,7 @@ const relayCopy = {
   errorPrefix: t('rh.relay.list.error_prefix'),
   fallbackHeadline: t('rh.relay.card.fallback_headline'),
   fallbackBody: t('rh.relay.card.fallback_body'),
+  openCard: t('rh.relay.card.open'),
   transcript: t('rh.relay.card.transcript'),
   severity: {
     block: t('rh.relay.severity.block'),
@@ -83,8 +84,9 @@ const relayCopy = {
     }
     list.innerHTML = '';
     for (const item of items) {
-      const card = document.createElement('article');
+      const card = document.createElement('a');
       card.className = 'relay-card';
+      card.href = `/relay/${encodeURIComponent(item.entry_id)}`;
       card.dataset.severity = item.severity ?? 'review';
       const top = document.createElement('div');
       top.className = 'relay-card-top';
@@ -110,7 +112,10 @@ const relayCopy = {
       const transcript = document.createElement('p');
       transcript.textContent = item.transcript_text ?? '—';
       details.append(summary, transcript);
-      card.append(top, title, description, details);
+      const cta = document.createElement('span');
+      cta.className = 'relay-card-cta';
+      cta.textContent = relayCopy.openCard;
+      card.append(top, title, description, details, cta);
       list.append(card);
     }
   }
@@ -164,6 +169,20 @@ const relayCopy = {
       border-radius: 8px;
       background: var(--surface, #fff);
       padding: 1rem;
+    }
+
+    :global(a.relay-card) {
+      display: block;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    :global(.relay-card-cta) {
+      display: inline-block;
+      margin-top: 0.25rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent, #0f766e);
     }
 
     :global(.relay-card[data-severity='block']) {

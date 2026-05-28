@@ -27,10 +27,12 @@ const project = id ? getLane23Project(id) : null;
             <p class="lane23-project-meta">{project.client_name} · {project.address_line}</p>
           </div>
         </div>
-        <ActionsStrip actions={[
-          { label: t('action.print'), title: t('action.print') },
-          { label: t('action.export.menu'), title: t('action.export.menu') },
-        ]} />
+        <ActionsStrip
+          actions={[
+            { label: t('action.print'), title: t('action.print') },
+            { label: t('action.export.menu'), title: t('action.export.menu') },
+          ]}
+        />
       </div>
 
       <ProjectTabStrip projectId={project.project_id} activeTab="scope" labelFor={t} />
@@ -45,33 +47,32 @@ const project = id ? getLane23Project(id) : null;
           </div>
           <p class="lane23-notice">{t('project.detail.budget')}: {formatCentsDisplay(project.budget_cents)}</p>
           <p class="lane23-notice">{t('project.detail.phase')}: {project.phase}</p>
+          <div class="lane23-quick-links">
+            <a class="lane23-btn-link" href={`/projects/${project.project_id}/field`}>{t('project.scope.link_field')}</a>
+            <a class="lane23-btn-link" href="/relay">{t('project.scope.link_relay')}</a>
+            <a class="lane23-btn-link" href={`/projects/${project.project_id}/audit`}>{t('project.scope.link_audit')}</a>
+          </div>
         </Card>
       </div>
-      <p id="lane23-export-status" class="lane23-notice" role="status"></p>
     </div>
   )}
 </Layout>
 
-<script define:vars={{ projectId: project?.project_id, tenantId: context.tenantId, successKey: 'project.export.success', errorKey: 'project.export.error' }}>
-  if (!projectId) {
-    // no-op
-  } else {
-    const statusEl = document.getElementById('lane23-export-status');
-    document.querySelectorAll('.actions-strip .as-action').forEach((btn, idx) => {
-      btn.addEventListener('click', async () => {
-        const format = idx === 0 ? 'print' : 'pdf';
-        try {
-          const res = await fetch(`/api/v1/projects/${projectId}/export?tenant_id=${tenantId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ format }),
-          });
-          if (!res.ok) throw new Error('export_failed');
-          statusEl.textContent = successKey;
-        } catch {
-          statusEl.textContent = errorKey;
-        }
-      });
-    });
+
+<style>
+  .lane23-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
-</script>
+  .lane23-btn-link {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #d8dee6);
+    color: var(--accent, #0f766e);
+    font-weight: 600;
+    text-decoration: none;
+  }
+</style>

@@ -4,6 +4,7 @@ import SectionLabel from './SectionLabel.astro';
 import type { ProjectAuditEntry } from '../../project/projectAuditProjection.js';
 import type { I18nKey } from '../../i18n/keys.js';
 import { formatAuditFieldValue } from '../lib/formatOperatorLabel.js';
+import { auditEntryLink } from '../lib/projectAuditLinks.js';
 
 export interface Props {
   entries: readonly ProjectAuditEntry[];
@@ -26,8 +27,10 @@ const verdictTone: Record<string, 'green' | 'amber' | 'red'> = {
     <p class="lane23-notice">{t('project.audit.empty')}</p>
   ) : (
     <ol class="project-audit-list">
-      {entries.map((entry) => (
-        <li class="project-audit-entry" data-event-id={entry.event_id} data-kind={entry.kind}>
+      {entries.map((entry) => {
+        const link = auditEntryLink(entry);
+        return (
+        <li class="project-audit-entry" data-event-id={entry.event_id} data-kind={entry.kind} id={`audit-${entry.event_id}`}>
           <div class="project-audit-entry__head">
             <time datetime={entry.at}>{entry.at}</time>
             <Chip
@@ -35,6 +38,7 @@ const verdictTone: Record<string, 'green' | 'amber' | 'red'> = {
               tone="cyan"
               variant="outlined"
             />
+            {link ? <a class="project-audit-entry__link" href={link.href}>{t(link.labelKey)}</a> : null}
           </div>
 
           {entry.kind === 'send_gate.evaluated' && (
@@ -162,7 +166,13 @@ const verdictTone: Record<string, 'green' | 'amber' | 'red'> = {
             </div>
           )}
         </li>
-      ))}
+      );
+      })}
     </ol>
   )}
 </div>
+
+<style>
+  .project-audit-entry__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+  .project-audit-entry__link { margin-left: auto; font-size: 0.82rem; font-weight: 600; color: var(--accent, #0f766e); text-decoration: none; }
+</style>

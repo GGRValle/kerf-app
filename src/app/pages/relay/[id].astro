@@ -1,9 +1,136 @@
 ---
-import RouteShellPage from '../../components/RouteShellPage.astro';
+import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
 
-const { id } = Astro.params;
+const { id: entryId } = Astro.params;
+const { t, context } = createLayoutContext();
+
+const copy = {
+  back: t('rh.relay.detail.back'),
+  loading: t('rh.relay.detail.loading'),
+  notFound: t('rh.relay.detail.not_found'),
+  markReviewed: t('rh.relay.detail.mark_reviewed'),
+  reviewed: t('rh.relay.detail.reviewed'),
+  reviewError: t('rh.relay.detail.review_error'),
+  transcript: t('rh.relay.detail.transcript_toggle'),
+  projectLink: t('rh.relay.detail.open_project'),
+  auditLink: t('rh.relay.detail.audit_link'),
+  draftLink: t('rh.relay.detail.open_draft'),
+  reviewed: t('rh.relay.detail.reviewed_status'),
+};
 ---
 
-<RouteShellPage title={`Relay ${id}`} routeName="relay-detail" phase="capture">
-  <p>Relay card detail for <code>{id}</code>.</p>
-</RouteShellPage>
+<Layout titleKey="rh.relay.list.title" activeHref="/relay">
+  <main class="relay-detail-page" data-entry-id={entryId} data-tenant={context.tenantId}>
+    <p class="relay-detail-back"><a href="/relay">{copy.back}</a></p>
+    <div id="relay-detail-root" aria-live="polite"><p>{copy.loading}</p></div>
+  </main>
+
+  <script define:vars={{ entryId, tenantId: context.tenantId, copy }}>
+  const root = document.getElementById('relay-detail-root');
+
+  function renderItem(item) {
+    if (!(root instanceof HTMLElement)) return;
+    const auditHref = `/projects/${item.project_id}/audit#audit-${item.surfaced_event_id ?? item.relay_card_id}`;
+    root.innerHTML = '';
+    const header = document.createElement('header');
+    const h1 = document.createElement('h1');
+    h1.textContent = item.summary ?? 'Field update';
+    const meta = document.createElement('p');
+    meta.className = 'relay-detail-meta';
+    meta.textContent = `${item.project_name} · ${new Date(item.surfaced_at).toLocaleString()}`;
+    header.append(h1, meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'relay-detail-actions';
+    for (const [href, label] of [
+      [`/projects/${item.project_id}`, copy.projectLink],
+      [auditHref, copy.auditLink],
+      ['/draft-review', copy.draftLink],
+    ]) {
+      const a = document.createElement('a');
+      a.href = href;
+      a.className = 'relay-detail-btn';
+      a.textContent = label;
+      actions.append(a);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'relay-detail-body';
+    if (item.description) {
+      const p = document.createElement('p');
+      p.textContent = item.description;
+      body.append(p);
+    }
+    const details = document.createElement('details');
+    details.open = true;
+    const summary = document.createElement('summary');
+    summary.textContent = copy.transcript;
+    const transcript = document.createElement('p');
+    transcript.textContent = item.transcript_text ?? '—';
+    details.append(summary, transcript);
+    body.append(details);
+
+    const reviewRow = document.createElement('div');
+    reviewRow.className = 'relay-detail-review';
+    const status = document.createElement('p');
+    status.className = 'relay-detail-status';
+    if (item.reviewed) {
+      status.textContent = `${copy.reviewed} · ${item.reviewed_outcome ?? ''}`;
+      reviewRow.append(status);
+    } else {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'relay-detail-btn primary';
+      btn.textContent = copy.markReviewed;
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          const res = await fetch(`/api/v1/relay-cards/${item.relay_card_id}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tenant_id: tenantId, reviewer: 'office_operator', outcome: 'acknowledged' }),
+          });
+          if (!res.ok) throw new Error('review_failed');
+          status.textContent = copy.reviewed;
+          btn.remove();
+          reviewRow.append(status);
+        } catch {
+          status.textContent = copy.reviewError;
+          btn.disabled = false;
+        }
+      });
+      reviewRow.append(btn, status);
+    }
+
+    root.append(header, actions, body, reviewRow);
+  }
+
+  async function load() {
+    try {
+      const res = await fetch(`/api/v1/field-daily/relay-feed?tenant_id=${tenantId}`);
+      const body = await res.json();
+      const item = (body.items ?? []).find((row) => row.entry_id === entryId);
+      if (!item) {
+        root.innerHTML = `<p>${copy.notFound}</p>`;
+        return;
+      }
+      renderItem(item);
+    } catch {
+      root.innerHTML = `<p>${copy.notFound}</p>`;
+    }
+  }
+  void load();
+  </script>
+
+  <style>
+    .relay-detail-page { max-width: 720px; margin: 0 auto; padding: 1rem 1rem 4rem; }
+    .relay-detail-back a { color: var(--accent, #0f766e); font-weight: 600; text-decoration: none; }
+    .relay-detail-meta { color: var(--text-muted, #5c6670); }
+    :global(.relay-detail-actions) { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+    :global(.relay-detail-btn) { padding: 0.45rem 0.85rem; border-radius: 8px; border: 1px solid var(--border, #d8dee6); color: var(--accent, #0f766e); font-weight: 600; text-decoration: none; cursor: pointer; background: #fff; }
+    :global(.relay-detail-btn.primary) { background: var(--accent, #0f766e); color: #fff; border-color: transparent; }
+    :global(.relay-detail-body) { border: 1px solid var(--border, #d8dee6); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    :global(.relay-detail-status) { margin: 0; color: var(--text-muted, #5c6670); font-size: 0.9rem; }
+  </style>
+</Layout>

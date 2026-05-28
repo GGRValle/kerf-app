@@ -8,7 +8,7 @@ import { getLane23Project } from '../../../lib/lane23Fixtures.js';
 import type { I18nKey } from '../../../../i18n/keys.js';
 import '../../../styles/lane23.css';
 
-const { t, context } = createLayoutContext();
+const { t } = createLayoutContext();
 const { id } = Astro.params;
 const project = id ? getLane23Project(id) : null;
 ---
@@ -19,16 +19,56 @@ const project = id ? getLane23Project(id) : null;
   ) : (
     <div class="lane23-page">
       <p class="lane23-crumb"><a href={`/projects/${project.project_id}`}>{t('project.detail.back')}</a></p>
-      <ProjectTabStrip projectId={project.project_id} activeTab="audit" labelFor={t} />
+      <ProjectTabStrip projectId={project.project_id} activeTab="scope" labelFor={t} />
       <Card title={t('project.closeout.title')}>
         <p class="lane23-notice">{t('project.closeout.subtitle')}</p>
+        <p class="lane23-preview-note">
+          <Chip label={t('action.preview.badge')} tone="amber" variant="outlined" />
+          {t('project.closeout.preview_notice')}
+        </p>
         {project.closeout_steps.map((step) => (
           <div class="lane23-closeout-step">
             <span>{t(step.label_key as I18nKey)}</span>
-            <Chip label={step.done ? 'done' : 'open'} tone={step.done ? 'green' : 'amber'} />
+            <Chip
+              label={step.done ? t('project.closeout.status_done') : t('project.closeout.status_open')}
+              tone={step.done ? 'green' : 'amber'}
+              variant="outlined"
+            />
           </div>
         ))}
+        <a class="lane23-btn-link" href={`/projects/${project.project_id}/audit`}>
+          {t('project.closeout.link_audit')}
+        </a>
       </Card>
     </div>
   )}
 </Layout>
+
+<style>
+  .lane23-preview-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0 1rem;
+    font-size: 0.9rem;
+    color: var(--text-muted, #5c6670);
+  }
+  .lane23-closeout-step {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border, #d8dee6);
+  }
+  .lane23-btn-link {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #d8dee6);
+    color: var(--accent, #0f766e);
+    font-weight: 600;
+    text-decoration: none;
+  }
+</style>
