@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-AO1 · Mobile Admin/Ops Home · money + team bias</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+  --ao-magenta: #E879A8;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFFFFF; --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8; --kerf-border-soft: #DFE3E8; --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462; --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step.current { color: var(--ao-magenta); }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; color: var(--ao-magenta); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ao-magenta); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; }
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; font-weight: 600; }
+.top-chrome { padding: 8px 16px 12px; display: flex; align-items: center; gap: 10px; }
+.tc-greeting { font-size: 15px; font-weight: 600; flex: 1; }
+.tc-greeting .tc-sub { display: block; font-size: 11px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.tc-avatar { width: 30px; height: 30px; border-radius: 50%; background: rgba(232,121,168,0.20); color: var(--ao-magenta); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.home-body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+.rh-summary { background: rgba(201,169,97,0.05); border-left: 2px solid var(--right-hand); border-radius: 4px; padding: 9px 11px; margin-bottom: 12px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.rh-summary strong { color: var(--kerf-text); font-weight: 600; }
+.rh-summary em { color: var(--kerf-amber); font-style: normal; font-weight: 600; }
+.section-label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin: 14px 4px 8px; display: flex; align-items: baseline; gap: 8px; }
+.section-label .sl-count { color: var(--kerf-text-dim); font-size: 10px; }
+.section-label .sl-action { margin-left: auto; color: var(--ao-magenta); font-size: 10px; text-transform: none; letter-spacing: 0; }
+.one-thing { background: linear-gradient(135deg, rgba(232,121,168,0.12) 0%, rgba(232,121,168,0.04) 100%); border: 1px solid rgba(232,121,168,0.45); border-radius: 14px; padding: 14px; margin-bottom: 4px; }
+.one-thing .ot-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ao-magenta); font-weight: 700; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.one-thing .ot-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ao-magenta); }
+.one-thing .ot-headline { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.one-thing .ot-detail { font-size: 12px; color: var(--kerf-text-dim); margin-bottom: 11px; }
+.one-thing .ot-cta { background: var(--ao-magenta); color: #1A0812; padding: 8px 14px; border-radius: 9px; font-size: 12px; font-weight: 700; display: inline-block; }
+.brain-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.bq { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 9px 11px; }
+.bq-q { font-size: 9.5px; color: var(--kerf-text-mute); line-height: 1.3; }
+.bq-a { font-size: 11.5px; font-weight: 600; margin-top: 3px; }
+.bq-a .bq-warn { color: var(--kerf-amber); }
+.bq-a .bq-num { color: var(--field-green); }
+.on-deck-list { display: flex; flex-direction: column; gap: 6px; }
+.od-item { display: grid; grid-template-columns: 14px 1fr; gap: 9px; padding: 9px 11px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 9px; font-size: 11.5px; }
+.od-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+.od-dot.amber { background: var(--kerf-amber); }
+.od-dot.red { background: var(--kerf-red); }
+.od-dot.magenta { background: var(--ao-magenta); }
+.od-meta { display: block; font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; }
+.pulse-list .pl-item { font-size: 11.5px; color: var(--kerf-text-dim); padding: 8px 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.pl-item:last-child { border-bottom: none; }
+.pl-event { color: var(--kerf-text); font-weight: 600; }
+.pl-cons { color: var(--field-green); }
+.pl-cons.amber { color: var(--kerf-amber); }
+.bottom-bar { background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border); padding: 8px 0 22px; display: grid; grid-template-columns: repeat(5, 1fr); flex-shrink: 0; }
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--ao-magenta); }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-fab-wrap { position: relative; }
+.bb-fab { width: 52px; height: 52px; border-radius: 50%; background: var(--ao-magenta); color: #1A0812; display: flex; align-items: center; justify-content: center; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); border: 3px solid var(--kerf-bg); box-shadow: 0 6px 18px rgba(232,121,168,0.35); }
+.bb-fab-label { font-size: 10px; margin-top: 32px; text-align: center; }
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--ao-magenta); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ao-magenta); font-weight: 700; margin-bottom: 5px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+<div class="view-toggle-bar">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px">Theme</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> · Grid view: NO (Home glimpse)</span>
+</div>
+</div>
+</div>
+<div class="page-header">
+  <div class="crumb"><span class="step current">F-AO1 · Admin/Ops Home (mobile)</span></div>
+  <h1>F-AO1 · Mobile Admin/Ops Home</h1>
+  <p>Role-root projection for back-office: payroll, bank recon, POs, compliance. Money + Team &amp; Ops bias — not owner strategy, not deals pipeline, not project drift. No Audit in nav (owner-private).</p>
+</div>
+<div class="frame">
+  <div class="frame-label">Frame · F-AO1 · Mobile Admin/Ops Home · glimpse (no grid)</div>
+  <p class="frame-narr">Admin/Ops opens Kerf to the same graph with a different IA: bottom bar swaps Projects→Schedule and Clients→Money. Magenta accent distinguishes this role-root from Owner amber and PM blue.</p>
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>●●● 86%</span></div>
+        <div class="top-chrome">
+          <div class="tc-greeting">Good morning, Pat<span class="tc-sub">Monday · May 19 · Admin/Ops</span></div>
+          <div class="tc-avatar">PR</div>
+        </div>
+        <div class="home-body">
+          <div class="rh-summary"><strong>Right Hand:</strong> 22 uncategorized transactions · payroll due Fri · <em>2 expiring COIs</em> · 1 expense over policy.</div>
+          <div class="section-label">One Thing</div>
+          <div class="one-thing">
+            <div class="ot-eyebrow"><span class="ot-dot"></span> Needs your hand today</div>
+            <div class="ot-headline">Reconcile bank feed through May 19</div>
+            <div class="ot-detail">22 transactions · QBO sync paused until categorized.</div>
+            <span class="ot-cta">Open Money →</span>
+          </div>
+          <div class="section-label">On Deck <span class="sl-count">· 4</span></div>
+          <div class="on-deck-list">
+            <div class="od-item"><span class="od-dot magenta"></span><div>Run payroll preview for Fri<span class="od-meta">4 time entries flagged</span></div></div>
+            <div class="od-item"><span class="od-dot amber"></span><div>Renew Padilla COI before May 24<span class="od-meta">compliance · Team &amp; Ops</span></div></div>
+            <div class="od-item"><span class="od-dot amber"></span><div>Approve Hernandez expense over policy<span class="od-meta">$186 meals · needs manager OK</span></div></div>
+            <div class="od-item"><span class="od-dot red"></span><div>Match 3 orphaned card charges<span class="od-meta">no project tag</span></div></div>
+          </div>
+          <div class="section-label">The Pulse <span class="sl-count">· today</span></div>
+          <div class="pulse-list">
+            <div class="pl-item"><span class="pl-event">AP batch queued</span> · $14.8k this week · <span class="pl-cons">3 subs awaiting payment</span></div>
+            <div class="pl-item"><span class="pl-event">Time entry flagged</span> · Carlos M. · <span class="pl-cons amber">missing job code</span></div>
+            <div class="pl-item"><span class="pl-event">COI reminder sent</span> · Westside Tile · <span class="pl-cons">expires in 17 days</span></div>
+          </div>
+          <div class="section-label">Business state</div>
+          <div class="brain-strip">
+            <div class="bq"><div class="bq-q">Where is my money flowing?</div><div class="bq-a"><span class="bq-num">$14.8k</span> AP · <span class="bq-warn">$31k AR open</span></div></div>
+            <div class="bq"><div class="bq-q">Team &amp; Ops</div><div class="bq-a">4 entries flagged · <span class="bq-warn">2 COIs</span></div></div>
+            <div class="bq"><div class="bq-q">Compliance</div><div class="bq-a"><span class="bq-warn">2 expiring</span> · payroll Fri</div></div>
+            <div class="bq"><div class="bq-q">Marketing (limited)</div><div class="bq-a">1 referral payout due</div></div>
+          </div>
+        </div>
+        <div class="bottom-bar">
+          <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM5 4h14a2 2 0 0 1 2 2v14l-4-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></span>Schedule</div>
+          <div class="bb-fab-wrap"><div class="bb-fab"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm7 0a7 7 0 0 1-6 6.92V21h-2v-3.08A7 7 0 0 1 5 11h2a5 5 0 0 0 10 0h2z"/></svg></div><div class="bb-fab-label">Speak</div></div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v2H4zm0 7h10v2H4zm0 7h16v2H4z"/></svg></span>Money</div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="frame-spec">
+    <h3>F-AO1 · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> Macro glimpse (Home).</li>
+      <li><strong>List / grid / both?</strong> List rows only — <strong>Grid view: NO</strong>.</li>
+      <li><strong>Cognitive job?</strong> What admin/ops work needs my hand today (payroll · recon · POs · compliance).</li>
+      <li><strong>Hidden until drill?</strong> Owner strategy, deals/pipeline, project drift, Audit stream.</li>
+    </ul>
+    <h4>Role-root IA</h4>
+    <ul>
+      <li>Bottom bar: Home · Schedule · Speak · Money · More (no Projects/Clients swap).</li>
+      <li>More menu: Team &amp; Ops · Marketing (limited) · Settings — <strong>no Audit</strong>.</li>
+      <li>Accent: magenta <code>#E879A8</code>.</li>
+    </ul>
+  </div>
+</div>
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">5-second read</span>Reconcile the bank feed. Payroll Friday. Two COIs expiring. Money and compliance — not the job site.</div>
+  <div class="callout"><span class="callout-title">Not this surface</span>No owner One Thing on margin. No sales pipeline. No Audit (owner-private). No grid tiles.</div>
+</div>
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  if (localStorage.getItem('kerf_wf_theme') === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-C1 · Mobile Field Hand Home · Mano de Campo</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--kerf-bg);
+  color: var(--kerf-text);
+  line-height: 1.5;
+  font-size: 13px;
+}
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; transition: max-width 0.18s ease, padding 0.18s ease; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+.view-toggle-bar .vtb-hint kbd { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); padding: 1px 5px; border-radius: 3px; font-size: 10px; color: var(--kerf-text-dim); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .page-header { padding: 24px 0 14px; margin-bottom: 18px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+body.presentation-mode .frame-render { padding: 28px; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.role { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.frame-spec .badge.bilingual { background: rgba(232,121,168,0.14); color: var(--kerf-magenta); }
+
+/* Phone */
+.phone {
+  width: 380px;
+  background: var(--kerf-bg);
+  border: 1.5px solid var(--kerf-border);
+  border-radius: 42px;
+  padding: 14px;
+  position: relative;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.5);
+}
+.phone-notch {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  width: 124px; height: 26px;
+  background: var(--kerf-bg); border-radius: 0 0 16px 16px;
+  z-index: 5;
+}
+.phone-screen {
+  background: var(--kerf-bg);
+  border-radius: 30px;
+  overflow: hidden;
+  height: 740px;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome — Field Hand variant: site context visible */
+.top-chrome {
+  padding: 8px 16px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.tc-greeting { font-size: 15px; color: var(--kerf-text); font-weight: 600; flex: 1; }
+.tc-greeting .tc-sub { display: block; font-size: 11px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.tc-greeting .tc-site {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 4px;
+  font-size: 10px; color: var(--field-green); font-weight: 600;
+  padding: 2px 7px;
+  background: rgba(56,201,119,0.10);
+  border: 1px solid rgba(56,201,119,0.30);
+  border-radius: 4px;
+}
+.tc-greeting .tc-site::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--field-green); box-shadow: 0 0 6px rgba(56,201,119,0.6);
+}
+.tc-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(56,201,119,0.16); color: var(--field-green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11.5px; font-weight: 700;
+}
+
+/* Body scrollable */
+.home-body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+
+.section-label {
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  margin: 14px 4px 8px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+.section-label .sl-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10px; text-transform: none; letter-spacing: 0; }
+
+/* Today's work — Field Hand's One Thing equivalent */
+.todays-work {
+  background: linear-gradient(135deg, rgba(56,201,119,0.10) 0%, rgba(56,201,119,0.04) 100%);
+  border: 1px solid rgba(56,201,119,0.40);
+  border-radius: 14px;
+  padding: 14px 14px 13px;
+  position: relative;
+}
+.tw-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--field-green); font-weight: 700; margin-bottom: 7px;
+  display: flex; align-items: center; gap: 6px;
+}
+.tw-eyebrow .tw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--field-green); box-shadow: 0 0 8px rgba(56,201,119,0.7); }
+.tw-headline { font-size: 14px; color: var(--kerf-text); font-weight: 600; line-height: 1.4; margin-bottom: 4px; letter-spacing: -0.01em; }
+.tw-detail { font-size: 12px; color: var(--kerf-text-dim); line-height: 1.5; margin-bottom: 6px; }
+.tw-scope {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--field-green); font-weight: 600;
+  padding: 3px 8px;
+  background: rgba(56,201,119,0.10);
+  border: 1px solid rgba(56,201,119,0.25);
+  border-radius: 5px;
+  margin-bottom: 11px;
+}
+.tw-cta-row { display: flex; gap: 8px; align-items: center; }
+.tw-cta {
+  background: var(--field-green); color: #0A1A0F;
+  padding: 9px 14px; border-radius: 9px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tw-cta-secondary {
+  font-size: 11px; color: var(--kerf-text-dim); font-weight: 600;
+  padding: 9px 12px;
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+}
+
+/* My day · 4-cell strip */
+.brain-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.bq { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 9px 11px; }
+.bq-q { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.04em; line-height: 1.3; }
+.bq-a { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; margin-top: 3px; line-height: 1.4; }
+.bq-a .bq-num { color: var(--field-green); }
+.bq-a .bq-warn { color: var(--kerf-amber); }
+.bq-a .bq-name { color: var(--kerf-text-dim); font-weight: 500; font-size: 10.5px; }
+.bq-a .bq-tier { color: var(--right-hand); }
+
+/* Captures · list with thumbnail / icon hint */
+.captures-list { display: flex; flex-direction: column; gap: 6px; }
+.cap-item {
+  display: grid; grid-template-columns: 36px 1fr auto;
+  gap: 10px;
+  padding: 9px 11px;
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  align-items: center;
+}
+.cap-thumb {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--kerf-surface-2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--kerf-text-mute);
+}
+.cap-thumb svg { width: 18px; height: 18px; fill: currentColor; }
+.cap-thumb.photo { background: rgba(123,168,255,0.10); color: var(--kerf-blue); }
+.cap-thumb.voice { background: rgba(167,139,250,0.10); color: var(--kerf-violet); }
+.cap-text { font-size: 12px; color: var(--kerf-text); line-height: 1.35; font-weight: 600; }
+.cap-text .cap-meta { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 2px; }
+.cap-text .cap-flag { color: var(--kerf-amber); font-weight: 700; }
+.cap-arrow { color: var(--kerf-text-mute); font-size: 14px; }
+
+/* From RH · single message */
+.rh-msg {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-left: 3px solid var(--right-hand);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: grid; grid-template-columns: 26px 1fr;
+  gap: 10px;
+}
+.rh-avatar {
+  width: 26px; height: 26px; border-radius: 7px;
+  background: rgba(201,169,97,0.16); color: var(--right-hand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+.rh-text {
+  font-size: 12px; color: var(--kerf-text); line-height: 1.5;
+}
+.rh-text strong { color: var(--kerf-text); font-weight: 600; }
+.rh-text em { color: var(--field-green); font-style: normal; }
+.rh-text .rh-time { display: block; font-size: 10px; color: var(--kerf-text-mute); margin-top: 3px; font-family: "SF Mono", Menlo, monospace; }
+
+/* Bottom bar */
+.bottom-bar {
+  background: var(--kerf-bg-2);
+  border-top: 1px solid var(--kerf-border);
+  padding: 8px 0 22px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  position: relative;
+  flex-shrink: 0;
+}
+.bb-tab {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--kerf-text-mute); font-weight: 600;
+  padding: 5px 0;
+}
+.bb-tab.active { color: var(--kerf-amber); }
+
+.bb-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-icon svg.icon-more { width: 20px; height: 20px; }
+
+.bb-fab-wrap { position: relative; }
+.bb-fab {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--kerf-amber); color: #1A1300;
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 6px 18px rgba(245,181,68,0.40);
+  border: 3px solid var(--kerf-bg);
+}
+.bb-fab svg.mic-icon { width: 24px; height: 24px; fill: currentColor; }
+.bb-fab-label { font-size: 10px; color: var(--kerf-text-mute); margin-top: 32px; font-weight: 600; text-align: center; }
+
+/* Annotation callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout {
+  background: var(--kerf-bg-2);
+  border: 1px solid var(--kerf-border);
+  border-left: 3px solid var(--field-green);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 11.5px;
+  color: var(--kerf-text-dim);
+  line-height: 1.55;
+}
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--field-green); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle · True scale hides the spec rail</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1 · Owner Home (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step">F-A2 · Owner Home (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-C1 · Field Hand Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-D1 · More sidebar</span>
+    <span class="sep">›</span>
+    <span class="step">F-B1 · Decision Card</span>
+  </div>
+  <h1>F-C1 · Mobile Field Hand Home · Mano de Campo</h1>
+  <p>
+    The role-root proof point. Same 5-slot primitive as F-A1 Owner Home, but Field Hand projection — different defaults (Log + Clock), different content shape (today's work, not "one thing"), bilingual identity ("Habla" on the Speak button). Field Hand is not employee-mobile-mode; it's a teammate to the worker, scope-anchored. Today's work card shows what · where · how long · which scope line. Clock-in is the primary action. From RH section carries owner messages routed to crew. Per <code style="font-family: 'SF Mono', Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px;">kerf_agent_naming.md</code> and Operating Model Canon role-roots layer.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-C1 · Mobile Field Hand Home · default state · Carlos crew lead on Hernandez site</div>
+  <p class="frame-narr">
+    Same bar contract as F-A1 — Home (mandatory) · Log (Field Hand default swap) · 🎤 Habla (mandatory, Spanish-aware) · Clock (Field Hand default swap) · More (mandatory). Different defaults because crew daily work centers on capturing what happens and tracking time against scope. The "Today's work" card replaces "One Thing" because for crew, <em>the work itself is the thing</em>. Site context surfaces in the top chrome ("Hernandez site" pill, green to indicate GPS-matched location). Brain-strip becomes "My day" with crew-specific questions: Hours · L-tier · Next job · Messages.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:41</span><span class="right">●●● 92%</span></div>
+
+        <div class="top-chrome">
+          <div class="tc-greeting">
+            Buenos días, Carlos
+            <span class="tc-sub">Viernes · 17 mayo</span>
+            <span class="tc-site">Hernandez site</span>
+          </div>
+          <div class="tc-avatar">CR</div>
+        </div>
+
+        <div class="home-body">
+
+          <!-- Today's work -->
+          <div class="section-label">Today's work · Tu trabajo hoy</div>
+          <div class="todays-work">
+            <div class="tw-eyebrow"><span class="tw-dot"></span> En obra hoy</div>
+            <div class="tw-headline">Hernandez · framing day 2</div>
+            <div class="tw-detail">8h expected · Carlos + Tito · 1247 Marlborough Ave</div>
+            <div class="tw-scope">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M14 2 12.5 3.5 16 7l-9 9-1.5-1.5L4 16 9 21l1.5-1.5L9 18l9-9 3 3 1.5-1.5L14 2z"/></svg>
+              Scope line · framing (carpentry)
+            </div>
+            <div class="tw-cta-row">
+              <span class="tw-cta">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM13 7h-2v6l5 3 1-1.73L13 11.5z"/></svg>
+                Clock in
+              </span>
+              <span class="tw-cta-secondary">View scope</span>
+            </div>
+          </div>
+
+          <!-- My day · 4-cell -->
+          <div class="section-label">My day · Mi día</div>
+          <div class="brain-strip">
+            <div class="bq">
+              <div class="bq-q">Hours this week</div>
+              <div class="bq-a"><span class="bq-num">28h</span> · <span class="bq-name">12h left</span></div>
+            </div>
+            <div class="bq">
+              <div class="bq-q">L-tier</div>
+              <div class="bq-a"><span class="bq-tier">L2</span> · <span class="bq-name">ready for L3</span></div>
+            </div>
+            <div class="bq">
+              <div class="bq-q">Next job</div>
+              <div class="bq-a">Wegrzyn · <span class="bq-name">Mon</span></div>
+            </div>
+            <div class="bq">
+              <div class="bq-q">Messages</div>
+              <div class="bq-a"><span class="bq-warn">1 from RH</span></div>
+            </div>
+          </div>
+
+          <!-- Captures -->
+          <div class="section-label">
+            Captures today · Capturas
+            <span class="sl-count">· 2</span>
+            <span class="sl-action">See all →</span>
+          </div>
+          <div class="captures-list">
+            <div class="cap-item">
+              <div class="cap-thumb photo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3 7 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3l-2-2zm3 14a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+              </div>
+              <div class="cap-text">
+                Photo · north wall outlet conflict
+                <span class="cap-meta"><span class="cap-flag">flagged for RH</span> · 08:42</span>
+              </div>
+              <span class="cap-arrow">›</span>
+            </div>
+            <div class="cap-item">
+              <div class="cap-thumb voice">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+              </div>
+              <div class="cap-text">
+                Voice note · 0:42
+                <span class="cap-meta">transcript ready · pantry shelving question</span>
+              </div>
+              <span class="cap-arrow">›</span>
+            </div>
+          </div>
+
+          <!-- From RH -->
+          <div class="section-label">From Right Hand · Mano Derecha</div>
+          <div class="rh-msg">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text">
+              <strong>Christian aprobó</strong> los cambios de hoy. <em>Sigue adelante con framing — la pared norte está bien para continuar.</em>
+              <span class="rh-time">08:14</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar">
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 2h2v6l2-1 2 1V4h6v16H6zM10 13h8v2h-8zm0 4h6v2h-6z"/></svg></span>
+            Log
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Habla</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM13 7h-2v6l5 3 1-1.73L13 11.5z"/></svg></span>
+            Clock
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-C1 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 1 rebuild order</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span><span class="sl-name">F-A1</span> · Mobile Owner Home</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span><span class="sl-name">F-A2</span> · Desktop Owner Home</span></div>
+      <div class="sl-step current"><span class="sl-dot">3</span><span><span class="sl-name">F-C1</span> · Mobile Field Hand Home <em style="font-style: normal; color: var(--kerf-text-mute);">(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">4</span><span><span class="sl-name">F-D1</span> · More sidebar overlay</span></div>
+      <div class="sl-step"><span class="sl-dot">5+</span><span><span class="sl-name">F-B1/B2 · E1 · F1 · G1 · H1</span> · drill surfaces</span></div>
+    </div>
+
+    <h4>Sections (top to bottom)</h4>
+    <ul>
+      <li><strong>Today's work</strong> — replaces Owner's "One Thing"; for crew, the work itself is the thing</li>
+      <li><strong>My day</strong> — 4-cell strip: Hours · L-tier · Next job · Messages</li>
+      <li><strong>Captures today</strong> — photo + voice notes recorded on site; flagged items surface to RH</li>
+      <li><strong>From Right Hand</strong> — owner messages routed to crew; bilingual</li>
+    </ul>
+
+    <h4>Bar contract (Field Hand defaults)</h4>
+    <ul>
+      <li><span class="badge canon">M</span>Pos 1 · Home</li>
+      <li><span class="badge role">FH</span>Pos 2 · <strong>Log</strong> (Field Hand default swap; replaces Owner's Projects)</li>
+      <li><span class="badge canon">M</span>Pos 3 · 🎤 Habla (mandatory · bilingual label)</li>
+      <li><span class="badge role">FH</span>Pos 4 · <strong>Clock</strong> (Field Hand default swap; replaces Owner's Clients)</li>
+      <li><span class="badge canon">M</span>Pos 5 · More (sidebar opener)</li>
+    </ul>
+
+    <h4>Bilingual identity</h4>
+    <ul>
+      <li><span class="badge bilingual">B</span>Greeting: <em>Buenos días</em> (locale-detected)</li>
+      <li><span class="badge bilingual">B</span>Speak button label: <em>Habla</em> (Mano de Campo bilingual cue per <code>kerf_agent_naming.md</code>)</li>
+      <li><span class="badge bilingual">B</span>Section labels: dual English / Spanish (subtle, secondary)</li>
+      <li><span class="badge bilingual">B</span>RH message preserved in Spanish if RH responded in Spanish</li>
+      <li>Tenant-level locale picks UI language; agent identity carries both languages as constant cue</li>
+    </ul>
+
+    <h4>Site context</h4>
+    <ul>
+      <li>Green "Hernandez site" pill in top chrome — GPS-matched to project address</li>
+      <li>Voice capture pre-binds to Hernandez automatically — crew doesn't say <em>"for Hernandez"</em></li>
+      <li>If crew moves between sites in one day, pill updates and voice context follows</li>
+      <li>If no GPS match, pill omitted and voice prompts "which job?"</li>
+    </ul>
+
+    <h4>Today's work card</h4>
+    <ul>
+      <li>Headline: project · phase · day</li>
+      <li>Detail: hours expected · who's on it · address</li>
+      <li>Scope-line pill — green badge anchoring to work order > scope line</li>
+      <li>Primary CTA: <strong>Clock in</strong> (green, dominant)</li>
+      <li>Secondary: <strong>View scope</strong> (subdued)</li>
+      <li>Per Operating Model Canon doctrine #6: every field action anchors to scope and labor</li>
+    </ul>
+
+    <h4>Captures section</h4>
+    <ul>
+      <li>List of today's captures (photos + voice notes)</li>
+      <li>Per-item: thumbnail (photo glyph or voice glyph), title, meta, flag-for-RH indicator</li>
+      <li>Voice note shows duration + "transcript ready" when processed</li>
+      <li>Photos with EXIF location matching site auto-anchor to current Daily Log</li>
+      <li>"See all →" routes to Log destination (today's Daily Log)</li>
+    </ul>
+
+    <h4>From Right Hand</h4>
+    <ul>
+      <li>Direct messages from RH to this crew member</li>
+      <li>Often routed approvals: <em>"Christian aprobó X · sigue adelante"</em></li>
+      <li>Bilingual: surfaces in the locale RH spoke in</li>
+      <li>Long-hold Speak FAB → opens RH conversation thread (V1.5+)</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>No surveillance dashboard (no "are you working?" framing)</li>
+      <li>No generic checklist detached from scope/labor</li>
+      <li>No Money / Sales / Admin / Client Success surfaces (those are Owner/PM concerns)</li>
+      <li>No agent name surfaced as a feature ("Drift agent flagged…")</li>
+      <li>No AltitudePacket / Policy Gate / cohort vocabulary</li>
+    </ul>
+
+    <h4>What changes vs F-A1 Owner Home</h4>
+    <ul>
+      <li>Green accent palette (Field) replaces amber accent (Owner) — visual role differentiation</li>
+      <li>Greeting + site context replace Owner's date-only chrome</li>
+      <li>"Today's work" replaces "One Thing"</li>
+      <li>"My day" 4-cell replaces "Business state" 4-cell — crew-scoped questions</li>
+      <li>"Captures today" + "From RH" replace "On Deck" + "The Pulse" — crew has different priorities</li>
+      <li>Bar swap defaults change: Projects + Clients → Log + Clock</li>
+      <li>Speak button label: "Speak" → "Habla" (when tenant locale = ES)</li>
+      <li>Avatar accent color reflects role (Field green vs Right Hand gold)</li>
+    </ul>
+
+    <h4>What stays identical</h4>
+    <ul>
+      <li>Same 5-slot bar primitive (3 mandatory + 2 swap)</li>
+      <li>Same monochrome silhouette icon system (More is the 4-color quadrant exception)</li>
+      <li>Same layered disclosure pattern</li>
+      <li>Same plain-English discipline</li>
+      <li>Same Right Hand voice (just routed crew-side here)</li>
+      <li>Same chrome dimensions and section labels</li>
+    </ul>
+
+    <h4>Routes (downstream)</h4>
+    <ul>
+      <li>Today's work card → Work order detail (scope-anchored execution surface)</li>
+      <li>Clock in CTA → time logged against scope line "framing (carpentry)"</li>
+      <li>Capture item · photo → Capture detail (EXIF + scope-anchor + Daily Log link)</li>
+      <li>Capture item · voice → Transcript view (per <code>kerf_transcript_canon.md</code>)</li>
+      <li>RH message → RH conversation thread</li>
+      <li>"My day" Hours cell → My Time history</li>
+      <li>"My day" L-tier cell → My Profile (L-ladder progress)</li>
+      <li>Log (Pos 2) → Daily Log destination (today + this week)</li>
+      <li>Clock (Pos 4) → Clock in/out destination</li>
+      <li>More (Pos 5) → Field Hand More sidebar (Schedule · other-crew · Messages · Profile · Settings)</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Role roots are projections of the same business graph · same primitive, different defaults</li>
+      <li><span class="badge canon">canon</span>Inputs once · consequences propagate · capture → Daily Log → owner Pulse</li>
+      <li><span class="badge canon">canon</span>Every field action anchors to scope and labor · clock in to scope line</li>
+      <li><span class="badge canon">canon</span>Spanish-native first-class · architecture phase 1</li>
+      <li><span class="badge canon">canon</span>Plain English at operator surface · no substrate vocabulary</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-A1_mobile_owner_home.html</code> — Owner sibling (same primitive)</li>
+      <li><code>kerf_agent_naming.md</code> — Field Hand / Mano de Campo canon</li>
+      <li><code>kerf_daily_log_canon.md</code> — Daily Log destination</li>
+      <li><code>kerf_transcript_canon.md</code> — voice transcript schema</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> — canon (role-roots layer)</li>
+      <li><code>Kerf_IA_Framework_v3_2026-05-17.md</code> — IA projection</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What the crew sees in 5 seconds</span>
+    "Today I'm <strong>framing day 2 at Hernandez</strong>. 8 hours expected. <em>Clock in to start</em>. 28 hours this week. Christian approved the change — keep going. Yesterday I flagged the north wall outlet — still flagged for RH."
+  </div>
+  <div class="callout">
+    <span class="callout-title">Why Field Hand is a teammate, not a tracker</span>
+    Capture is voluntary, scope-anchored, and bilingual. Clock-in is one tap. The L-tier badge shows graduated trust toward L3 (not a metric used against you). RH messages route owner intent to crew in their language. <strong>Field Hand serves the worker, not surveils them.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

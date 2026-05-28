@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-CL1 · Mobile Clients list · doctrine applied</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.page-header .doctrine-note {
+  background: rgba(245,181,68,0.06);
+  border-left: 3px solid var(--kerf-amber);
+  padding: 9px 14px;
+  border-radius: 4px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--kerf-text-dim);
+  line-height: 1.6;
+  max-width: 1080px;
+}
+.page-header .doctrine-note strong { color: var(--kerf-amber); }
+.page-header .doctrine-note em { color: var(--kerf-text); font-style: normal; font-weight: 600; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+
+/* Phone */
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome — sub-surface (back + title + add) */
+.top-chrome {
+  padding: 6px 16px 12px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.tc-back {
+  display: flex; align-items: center; gap: 4px;
+  color: var(--kerf-amber); font-size: 13px; font-weight: 600;
+}
+.tc-back svg { width: 18px; height: 18px; fill: currentColor; }
+.tc-title { flex: 1; text-align: center; font-size: 15px; color: var(--kerf-text); font-weight: 700; }
+.tc-action {
+  font-size: 13px; color: var(--kerf-amber); font-weight: 600;
+  display: flex; align-items: center; gap: 4px;
+}
+.tc-action svg { width: 14px; height: 14px; fill: currentColor; }
+
+/* Body */
+.body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+
+/* RH summary */
+.rh-summary {
+  margin: 14px 0 14px;
+  padding: 11px 13px;
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+}
+.rh-avatar {
+  width: 26px; height: 26px; border-radius: 7px;
+  background: rgba(201,169,97,0.16); color: var(--right-hand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.5; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-red); font-style: normal; font-weight: 600; }
+
+/* Section label */
+.section-label {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  margin: 6px 4px 8px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.section-label .sl-count {
+  color: var(--kerf-text-dim); font-weight: 600;
+  font-size: 9.5px; letter-spacing: 0.04em;
+}
+
+/* Client row */
+.client-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.client-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 11px 13px;
+  display: grid; grid-template-columns: 1fr 14px;
+  gap: 10px; align-items: center;
+  position: relative;
+}
+.client-row.attention {
+  border-left: 3px solid var(--kerf-amber);
+  padding-left: 11px;
+}
+.client-row.happy {
+  border-left: 3px solid var(--field-green);
+  padding-left: 11px;
+}
+/* .client-row.risk treatment retired 2026-05-18 · chip carries the flag instead of a full-row outline */
+.row-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 8.5px; padding: 2px 6px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.row-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.row-chip.red::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-red); }
+.cl-name { font-size: 13px; color: var(--kerf-text); font-weight: 600; line-height: 1.3; }
+.cl-phase {
+  font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 500;
+  margin-top: 2px; line-height: 1.4;
+}
+.cl-state {
+  font-size: 11px; color: var(--kerf-text-dim); font-weight: 500;
+  margin-top: 4px; line-height: 1.4;
+}
+.cl-state.amber { color: var(--kerf-amber); font-weight: 600; }
+.cl-state.red { color: var(--kerf-red); font-weight: 600; }
+.cl-state.green { color: var(--field-green); font-weight: 600; }
+.cl-arrow { color: var(--kerf-text-mute); font-size: 13px; }
+
+/* Pipeline summary at bottom */
+.pipeline-card {
+  background: var(--kerf-bg-2);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
+}
+.pl-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 8px;
+}
+.pl-funnel {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+.pl-stage {
+  text-align: center;
+  padding: 6px 4px;
+  background: var(--kerf-surface);
+  border-radius: 6px;
+}
+.pl-stage-count { font-size: 14px; color: var(--kerf-text); font-weight: 700; }
+.pl-stage-label { font-size: 9px; color: var(--kerf-text-mute); margin-top: 2px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.pl-stage.empty .pl-stage-count { color: var(--kerf-text-mute); font-weight: 500; }
+
+/* Bottom bar */
+.bottom-bar {
+  background: var(--kerf-bg-2);
+  border-top: 1px solid var(--kerf-border);
+  padding: 8px 0 22px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  position: relative;
+  flex-shrink: 0;
+}
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--kerf-amber); }
+.bb-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-icon svg.icon-more { width: 20px; height: 20px; }
+.bb-fab-wrap { position: relative; }
+.bb-fab {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--kerf-amber); color: #1A1300;
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 6px 18px rgba(245,181,68,0.40);
+  border: 3px solid var(--kerf-bg);
+}
+.bb-fab svg.mic-icon { width: 24px; height: 24px; fill: currentColor; }
+.bb-fab-label { font-size: 10px; color: var(--kerf-text-mute); margin-top: 32px; font-weight: 600; text-align: center; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+
+/* View mode toggle · canon 2026-05-18 PM late · List | Grid */
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; margin: 12px 4px 4px; width: fit-content; }
+.vmt-option { padding: 5px 12px; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+
+/* Grid view · compact tiles · canon 2026-05-18 PM late · scan not detail */
+.grid-view { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.grid-tile { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 10px 11px; cursor: pointer; }
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip carries the flag */
+.grid-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 9px; }
+.grid-tile.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 9px; }
+.grid-tile.success { border-left: 3px solid var(--field-green); padding-left: 9px; }
+.gt-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.25; }
+.gt-phase { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 3px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.gt-chip-row { margin-top: 6px; }
+.gt-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 8px; padding: 2px 5px; border-radius: 3px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.gt-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); } .gt-chip.red::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-red); }
+.gt-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); } .gt-chip.amber::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-amber); }
+.gt-chip.cyan { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); } .gt-chip.cyan::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-cyan); }
+.gt-chip.green { background: rgba(56,201,119,0.12); color: var(--field-green); } .gt-chip.green::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--field-green); }
+.gt-rhythm { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 6px; font-weight: 500; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1 · Owner Home</span>
+    <span class="sep">›</span>
+    <span class="step current">F-CL1 · Clients list (mobile · Tier 2 start)</span>
+    <span class="sep">›</span>
+    <span class="step">F-CL2 · Client detail (next)</span>
+  </div>
+  <h1>F-CL1 · Mobile Clients list · Tier 2 proving ground</h1>
+  <p>
+    First Tier 2 surface. Reached by tapping <em>Clients</em> in the Owner default bar. Tests whether the doctrine locked in the visual review + reclassification holds when the natural temptation is to build a CRM forensics console. Per <code>feedback_business_brain_not_file_cabinet.md</code>: <em>operator surfaces lead with smart summaries; folders sit underneath.</em> Per the visual-review preface: <em>"A surface should do one primary cognitive job."</em> F-CL1's primary cognitive job is <strong>"see the state of my client portfolio at a glance and drill where attention is needed."</strong> Not a contact-management database. Not a filter-and-sort console. Not a CRM workstation.
+  </p>
+  <div class="doctrine-note">
+    <strong>Doctrine applied:</strong> Right Hand summary leads (synthesis line, not stat grid). Client rows sorted by attention-needed first (risk · pending · active · leads · repeat) — not alphabetical. Each row carries a state one-liner that tells the operator <em>what's happening with this client right now</em>, color-coded only when action is implied (amber pending · red drift · green happy). Phase indicator as plain text label, not a colored pill (status colors stay reserved for state). Pipeline summary at the bottom (funnel counts) — not a top-of-page header. No filter bar, no sort controls, no transcript or audit tabs. The surface refuses to be a forensics console.
+  </div>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-CL1 · Mobile Clients list · default state · Owner role · 17-client portfolio</div>
+  <p class="frame-narr">
+    Owner tapped Clients from Home. <em>Passive reference, not operating console</em> — Clients is the CRM-rooted baseline lookup; active work lives in Projects. RH synthesis: <em>"17 clients · 6 active · 4 closing · 4 lead · 3 recently closed. From Sales pipeline: 3 just closed-won."</em> Sections by lifecycle stage (Active · Closing · Lead · Closed) sorted alphabetically within stage. Active operating signals (drift, CO pending) <strong>visible as light chips but drill to Project Detail for the real job truth</strong>. "+ 47 historical" compression rollup keeps lapsed/closed history accessible without crowding the active view. Pipeline funnel link sits underneath as reference. <em>Service-trade stress test (200+ historical):</em> rollup expands · stage sections stay disciplined · pattern holds.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+
+        <!-- Top chrome -->
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Home
+          </div>
+          <div class="tc-title">Clients</div>
+          <div class="tc-action">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>
+            Add
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="body">
+
+          <!-- RH summary · passive synthesis · drill-to-project for active work -->
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text">
+              <strong>17 clients · 6 active · 4 closing · 4 lead · 3 recently closed.</strong> From Sales pipeline: <span class="rh-amber">3 just closed-won.</span> Active operating signals are visible — <em>drill to Projects for the real job truth.</em>
+            </div>
+          </div>
+
+          <!-- View mode toggle · List (default) | Grid -->
+          <div class="view-mode-toggle">
+            <span class="vmt-option active">List</span>
+            <span class="vmt-option">Grid</span>
+          </div>
+
+          <!-- Active section · clients with in-flight projects · 6 -->
+          <div class="section-label">
+            Active <span class="sl-count">· 6</span>
+          </div>
+          <div class="client-list">
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Cheng, Wei</div>
+                <div class="cl-phase">Active · primary suite addition · since Apr 2026</div>
+                <div class="cl-state">Day 6 of 21 · framing</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Foster, Joe</div>
+                <div class="cl-phase">Active · whole-house remodel · since Mar 2026</div>
+                <div class="cl-state">Day 22 of 90 · drywall</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row attention">
+              <div>
+                <div class="cl-name">Hernandez, Luis</div>
+                <div class="cl-phase">Active · pantry conversion · since Mar 2026</div>
+                <span class="row-chip amber">CO pending</span>
+                <div class="cl-state">$14,820 · drill to Project for CO-002 decision</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Nakamura, Sho</div>
+                <div class="cl-phase">Active · garage conversion · since Apr 2026</div>
+                <div class="cl-state">Day 12 of 28 · electrical rough</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row attention">
+              <div>
+                <div class="cl-name">Patel, Dev</div>
+                <div class="cl-phase">Active · ADU build · since May 2026</div>
+                <span class="row-chip amber">Sub bid late</span>
+                <div class="cl-state">Drill to Project for sub-bid resolution</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Wegrzyn, Maria</div>
+                <div class="cl-phase">Active · kitchen + primary bath · since Feb 2026</div>
+                <span class="row-chip red">At risk</span>
+                <div class="cl-state">Drill to Project for tile-crew conflict</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+          </div>
+
+          <!-- Closing section · finishing this week or next · 4 -->
+          <div class="section-label">
+            Closing <span class="sl-count">· 4</span>
+          </div>
+          <div class="client-list">
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Ault, Sarah · Ault Design Studio</div>
+                <div class="cl-phase">Closing · Coronado vanity (designer-led)</div>
+                <div class="cl-state">Signoff due Tue</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Goldberg, Aaron</div>
+                <div class="cl-phase">Closing · kitchen + island</div>
+                <span class="row-chip amber">CO pending</span>
+                <div class="cl-state">$8,420 · drill to Project for CO-003</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">O'Brien, Patrick &amp; Liz</div>
+                <div class="cl-phase">Closing · mudroom + laundry</div>
+                <div class="cl-state">Cabinet install Mon</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Reyes, Elena</div>
+                <div class="cl-phase">Closing · master bath</div>
+                <div class="cl-state">Final walk Thu · invoice cleared</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+          </div>
+
+          <!-- Lead section · pre-contract · 4 -->
+          <div class="section-label">
+            Lead <span class="sl-count">· 4</span>
+          </div>
+          <div class="client-list">
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Avenida, Christine</div>
+                <div class="cl-phase">Lead · kitchen remodel inquiry</div>
+                <span class="row-chip red">Stale 3d</span>
+                <div class="cl-state">Drill to Sales for pipeline follow-up</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Olsen, Brian</div>
+                <div class="cl-phase">Lead · whole-house refresh · est $300-450k</div>
+                <div class="cl-state">Intake call Fri</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Vasquez, Maria</div>
+                <div class="cl-phase">Lead · whole-home cosmetic</div>
+                <div class="cl-state">Qual scheduled Thu 2pm · from Marketing</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Whitmore, Tess</div>
+                <div class="cl-phase">Lead · bath remodel</div>
+                <div class="cl-state">Auto-replied · qual Thu · from Marketing</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+          </div>
+
+          <!-- Closed (recent) · 3 + historical rollup -->
+          <div class="section-label">
+            Closed <span class="sl-count">· 3 recent</span>
+          </div>
+          <div class="client-list">
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">Dunne, James</div>
+                <div class="cl-phase">Closed · master bath · final walk Fri</div>
+                <div class="cl-state">Retainer release pending · $6,400</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row happy">
+              <div>
+                <div class="cl-name">Hossini, Reza</div>
+                <div class="cl-phase">Closed · last project Mar 2026 · paid in full</div>
+                <span class="row-chip green">Referral source</span>
+                <div class="cl-state">5-star Google review · 2 referrals last quarter</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+            <div class="client-row">
+              <div>
+                <div class="cl-name">López, María Elena</div>
+                <div class="cl-phase">Closed · last project Jan 2026</div>
+                <div class="cl-state">12mo anniversary in Jul · referral source</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+
+          </div>
+
+          <!-- Historical rollup · keep lapsed/old clients accessible without crowding -->
+          <div class="client-list" style="margin-bottom: 14px;">
+            <div class="client-row" style="border-style: dashed; opacity: 0.85;">
+              <div>
+                <div class="cl-name" style="font-weight: 500; color: var(--kerf-text-dim);">+ 47 historical clients</div>
+                <div class="cl-phase">Closed &gt; 6mo · Lapsed · Archived</div>
+                <div class="cl-state">Tap to expand · search by name · re-engagement candidates flagged</div>
+              </div>
+              <span class="cl-arrow">›</span>
+            </div>
+          </div>
+
+          <!-- Pipeline summary · reference content · drills to Sales for active pursuit -->
+          <div class="pipeline-card">
+            <div class="pl-eyebrow">Pipeline · funnel<span style="float: right; font-weight: 600; color: var(--kerf-amber); font-size: 9.5px;">FROM SALES ›</span></div>
+            <div class="pl-funnel">
+              <div class="pl-stage">
+                <div class="pl-stage-count">4</div>
+                <div class="pl-stage-label">Lead</div>
+              </div>
+              <div class="pl-stage">
+                <div class="pl-stage-count">3</div>
+                <div class="pl-stage-label">Qual</div>
+              </div>
+              <div class="pl-stage">
+                <div class="pl-stage-count">3</div>
+                <div class="pl-stage-label">Proposed</div>
+              </div>
+              <div class="pl-stage">
+                <div class="pl-stage-count">2</div>
+                <div class="pl-stage-label">Neg</div>
+              </div>
+              <div class="pl-stage">
+                <div class="pl-stage-count">3</div>
+                <div class="pl-stage-label">Won 30d</div>
+              </div>
+            </div>
+            <div style="font-size: 10px; color: var(--kerf-text-mute); margin-top: 8px; line-height: 1.5;">
+              <strong style="color: var(--field-green); font-weight: 600;">3 just closed-won this week</strong> — Yamamoto · O'Brien · Whitaker · all auto-created as Active clients above.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom bar — Owner default with Clients active -->
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-CL1 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 2 build · entry point</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>Tier 1 · 13 surfaces complete</span></div>
+      <div class="sl-step current"><span class="sl-dot">1</span><span><span class="sl-name">F-CL1</span> · Mobile Clients list <em>(this · Tier 2 start)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">2</span><span>F-CL2 · Mobile Client detail (next)</span></div>
+      <div class="sl-step"><span class="sl-dot">3+</span><span>F-CL3/CL4 · Desktop · then Projects detail</span></div>
+    </div>
+
+    <h4>The doctrine in action</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — see portfolio state, drill where needed. NOT a database browser.</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — RH synthesis line at top, not stat grid, not filter bar</li>
+      <li><span class="badge doctrine">d-3</span><em>Inline state, not side panel</em> — each client row carries its own state one-liner; no side rail with extracted detail</li>
+      <li><span class="badge doctrine">d-4</span><em>3-color status discipline preserved</em> — amber pending · red drift · green happy/referral · neutral for "on track / no action needed"</li>
+      <li><span class="badge doctrine">d-5</span><em>Phase as text, not status color</em> — Active / Lead / Qualified / Repeat shown as plain text label (don't conflate phase with state-needs-action)</li>
+      <li><span class="badge doctrine">d-6</span><em>Pipeline at bottom</em> — funnel summary is reference content; doesn't lead the page</li>
+      <li><span class="badge doctrine">d-7</span><em>No transcript or audit nav</em> — trust surfaces are exception-tier, reached on demand from artifacts</li>
+    </ul>
+
+    <h4>Row anatomy</h4>
+    <ul>
+      <li><strong>Client name</strong> · primary text · scannable</li>
+      <li><strong>Phase + project context</strong> · sub-line, plain English ("Active · pantry conversion" or "Lead · kitchen remodel inquiry")</li>
+      <li><strong>State one-liner</strong> · what's happening with this client right now · color-coded only when action is implied</li>
+      <li><strong>Left-border accent</strong> · amber for pending · red for risk · green for happy / referral signal · neutral border for "on track"</li>
+      <li><strong>Arrow</strong> · standard drill-in affordance to F-CL2 Client Detail</li>
+    </ul>
+
+    <h4>Sort order (locked)</h4>
+    <p>Rows sort by <strong>attention-needed first</strong>, not alphabetical:</p>
+    <ul>
+      <li><strong>Within Active:</strong> risk (red) → pending (amber) → on-track (neutral) → closing (cyan)</li>
+      <li><strong>Within Leads:</strong> stuck/quiet (amber) → recently-active (neutral)</li>
+      <li><strong>Within Repeat:</strong> referral-path (green) → no-active-touch (neutral)</li>
+    </ul>
+    <p>Operator can override via long-press header → sort picker (alphabetical / project-count / last-touched). Default is attention-needed.</p>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>Not a contact-management database</li>
+      <li>Not a CRM-style multi-tab workstation</li>
+      <li>Not a filter-and-sort forensics console (default sort is attention-needed; explicit sort picker for everything else)</li>
+      <li>Not a "click + to add 47 fields" intake form (Add routes to F-S1 Start sheet → Start client intake; lean intake flow)</li>
+      <li>Not Houzz Pro's grid of contact cards with field-by-field detail</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Back arrow → F-A1 Owner Home (or whatever destination drilled from)</li>
+      <li>Add → F-S1 Start sheet → Start client intake (intent-first; medium chosen on next step)</li>
+      <li>Client row tap → F-CL2 Client Detail (5 sub-tabs: Projects · Comms · Notes · Files · Relationships; Satisfaction appears when CS agent has signals)</li>
+      <li>Pipeline card tap → F-Sales pipeline funnel (Tier 3 surface — defer until built)</li>
+      <li>Bottom bar Home / Projects / Speak / More → respective destinations</li>
+      <li>🎤 Speak (long-hold) → RH conversation pre-bound to Clients context · "tell me about my clients" / "what's at risk"</li>
+    </ul>
+
+    <h4>What's not on this surface (deliberately)</h4>
+    <ul>
+      <li>No filter bar (sort defaults handle the 80% case; long-press for the 20%)</li>
+      <li>No search bar at top (sub-surfaces don't need their own search — global search lives at app level)</li>
+      <li>No tabs (no Active/Leads/Repeat tabs — sections in one scrollable view instead)</li>
+      <li>No "View Pipeline" CTA up-top (pipeline IS at the bottom)</li>
+      <li>No "Inactive" or "Archive" section (those are filter views via long-press)</li>
+      <li>No designer/architect/referral-source filter (those live on Client Detail Relationships sub-tab)</li>
+      <li>No engagement metrics dashboard (that's Client Success domain, surfaces at 10+ tier)</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Plain English · Right Hand framing once at top · no agent names elsewhere</li>
+      <li><span class="badge canon">canon</span>3-color discipline (amber / green / red) reserved for state · phase is plain text</li>
+      <li><span class="badge canon">canon</span>Permission lattice · Owner sees full; PM scope will hide margin-tied state; Field/Sub scope will not surface Clients destination at all</li>
+      <li><span class="badge canon">canon</span>One primary cognitive job · see portfolio state · drill where attention is needed</li>
+      <li><span class="badge canon">canon</span>Trust surfaces stay exception-tier · no transcript/audit nav here</li>
+      <li><span class="badge canon">canon</span>Smart summary leads · folders sit underneath · per <code>feedback_business_brain_not_file_cabinet.md</code></li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-A1_mobile_owner_home.html</code> · entry point (Clients in default bar)</li>
+      <li><code>F-CL2_mobile_client_detail.html</code> · next build (per-client lens with 5 sub-tabs)</li>
+      <li><code>F-S1_mobile_start_action_sheet.html</code> · Add routes through Start client intake</li>
+      <li><code>kerf_client_section_canonical.md</code> · Clients as first-class architectural surface</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · doctrine: lead with summary, folders underneath</li>
+      <li><code>feedback_avoid_overbuilding_review_surfaces.md</code> · doctrine: no forensics console</li>
+      <li><code>kerf_trust_surfaces_exception_tier.md</code> · no transcript/audit nav here</li>
+      <li><code>Kerf_IA_Framework_v3_2026-05-17.md</code> · Clients destination spec (list + detail + 5 sub-tabs)</li>
+      <li><code>_docs/operations/Kerf_Visual_Review_2026-05-17.md</code> · doctrine block applied</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>F-CL2 Client Detail (next surface in queue)</li>
+      <li>Desktop variants F-CL3/CL4</li>
+      <li>Bulk operations (bulk-update phase, bulk-message) — defer to V2</li>
+      <li>Filter picker UI (long-press affordance, but actual picker is a Settings-style modal — separate surface)</li>
+      <li>Client merge / duplicate resolution flow — operations concern, V2.5</li>
+      <li>Designer/architect distinct view — surfaces in Client Detail > Relationships</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Grid view alternate · canon 2026-05-18 PM late -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-CL1 · Grid view · 17-client portfolio comparison · passive lens</div>
+  <p class="frame-narr">
+    Operator taps <em>Grid</em> in the view-mode toggle. Compact tiles replace the section-grouped list. All 17 clients across stages visible · 2-column mobile · grouped by stage section (Active · Closing · Lead · Closed). Tile content stays disciplined: name + stage + project rhythm + state chip (when needed). <em>Operating signals visible but the tile is a baseline reference</em> — drill into any tile for the Client Record (passive baseline) · drill again for Project Detail (where active work lives).
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:43</span><span class="right">●●● 86%</span></div>
+
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Home
+          </div>
+          <div class="tc-title">Clients</div>
+          <div class="tc-action">
+            <svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>
+            Add
+          </div>
+        </div>
+
+        <div class="body">
+
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text">
+              <strong>17 clients · 6 active · 4 closing · 4 lead · 3 closed.</strong> <em>Passive baseline</em> — drill in for record · drill again for active work.
+            </div>
+          </div>
+
+          <div class="view-mode-toggle">
+            <span class="vmt-option">List</span>
+            <span class="vmt-option active">Grid</span>
+          </div>
+
+          <!-- Active section · 6 tiles -->
+          <div class="section-label" style="margin: 12px 4px 8px;">Active <span class="sl-count">· 6</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Cheng, Wei</div>
+              <div class="gt-phase">Active · primary suite</div>
+              <div class="gt-rhythm">Day 6 of 21</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Foster, Joe</div>
+              <div class="gt-phase">Active · whole-house</div>
+              <div class="gt-rhythm">Day 22 of 90</div>
+            </div>
+            <div class="grid-tile attention">
+              <div class="gt-name">Hernandez, Luis</div>
+              <div class="gt-phase">Active · pantry</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">CO pending</span></div>
+              <div class="gt-rhythm">$14.8k · drill to Project</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Nakamura, Sho</div>
+              <div class="gt-phase">Active · garage conv.</div>
+              <div class="gt-rhythm">Day 12 of 28</div>
+            </div>
+            <div class="grid-tile attention">
+              <div class="gt-name">Patel, Dev</div>
+              <div class="gt-phase">Active · ADU</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">Sub bid late</span></div>
+              <div class="gt-rhythm">Day 8 of 60 · drill to Project</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Wegrzyn, Maria</div>
+              <div class="gt-phase">Active · kitchen + bath</div>
+              <div class="gt-chip-row"><span class="gt-chip red">At risk</span></div>
+              <div class="gt-rhythm">Day 4 of 11 · drill to Project</div>
+            </div>
+          </div>
+
+          <!-- Closing section · 4 tiles -->
+          <div class="section-label" style="margin: 14px 4px 8px;">Closing <span class="sl-count">· 4</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Ault, Sarah</div>
+              <div class="gt-phase">Closing · vanity</div>
+              <div class="gt-rhythm">Signoff due Tue</div>
+            </div>
+            <div class="grid-tile attention">
+              <div class="gt-name">Goldberg, Aaron</div>
+              <div class="gt-phase">Closing · kitchen</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">CO pending</span></div>
+              <div class="gt-rhythm">$8.4k · drill to Project</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">O'Brien, Patrick &amp; Liz</div>
+              <div class="gt-phase">Closing · mudroom</div>
+              <div class="gt-rhythm">Cabinets Mon</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Reyes, Elena</div>
+              <div class="gt-phase">Closing · master bath</div>
+              <div class="gt-rhythm">Final walk Thu</div>
+            </div>
+          </div>
+
+          <!-- Lead section · 4 tiles -->
+          <div class="section-label" style="margin: 14px 4px 8px;">Lead <span class="sl-count">· 4</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Avenida, Christine</div>
+              <div class="gt-phase">Lead · kitchen</div>
+              <div class="gt-chip-row"><span class="gt-chip red">Stale 3d</span></div>
+              <div class="gt-rhythm">Pre-qual · drill to Sales</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Olsen, Brian</div>
+              <div class="gt-phase">Lead · whole-house</div>
+              <div class="gt-rhythm">Est $300-450k · call Fri</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Vasquez, Maria</div>
+              <div class="gt-phase">Lead · whole-home</div>
+              <div class="gt-chip-row"><span class="gt-chip blue">From Marketing</span></div>
+              <div class="gt-rhythm">Qual Thu 2pm</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Whitmore, Tess</div>
+              <div class="gt-phase">Lead · bath</div>
+              <div class="gt-chip-row"><span class="gt-chip blue">From Marketing</span></div>
+              <div class="gt-rhythm">Qual Thu</div>
+            </div>
+          </div>
+
+          <!-- Closed section · 3 tiles + rollup ref -->
+          <div class="section-label" style="margin: 14px 4px 8px;">Closed <span class="sl-count">· 3 recent · 47 historical</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Dunne, James</div>
+              <div class="gt-phase">Closed · master bath</div>
+              <div class="gt-rhythm">Retainer pending · $6.4k</div>
+            </div>
+            <div class="grid-tile success">
+              <div class="gt-name">Hossini, Reza</div>
+              <div class="gt-phase">Closed · Mar 2026</div>
+              <div class="gt-chip-row"><span class="gt-chip green">Referral source</span></div>
+              <div class="gt-rhythm">5-star · 2 referrals</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">López, María Elena</div>
+              <div class="gt-phase">Closed · Jan 2026</div>
+              <div class="gt-rhythm">Anniv Jul · referral source</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-CL1 Grid · Spec</h3>
+    <h4>Big-picture canon applied</h4>
+    <ul>
+      <li><strong>Comparison view</strong> · every client visible at once</li>
+      <li>2-column mobile · no attention compression</li>
+      <li>Tile content disciplined: name + category + state chip + rhythm line · scan not detail</li>
+      <li>Map view (V1.5+) would be third toggle option · deferred</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves</span>
+    The doctrine holds at Tier 2. <em>Smart summary leads · folders underneath</em> works exactly the same at the Clients destination as it does on Home. The temptation to build a CRM forensics console was real (Houzz Pro and every CRM does it); the discipline refuses. Wegrzyn-at-risk reads in 5 seconds; Hernandez CO-pending reads in 5 seconds; the operator drills where attention is needed. That's the job.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a contact database. Not a CRM workstation. Not a "click + and fill 47 fields" intake form. Not a filter-and-sort dashboard. <strong>F-CL1 is the portfolio-state synthesis with drill affordances underneath.</strong> The 80% case (see state, drill) handled by default; the 20% case (find a specific client by name) handled by global search at app level.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-SB2 · Desktop Subs list · roster state at desktop density</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+
+/* Sidebar */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item.expanded { color: var(--kerf-text); font-weight: 600; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem.active::before { content: ''; position: absolute; left: -12px; top: 5px; bottom: 5px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-amber); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+.main-header { padding: 18px 24px 4px; display: flex; align-items: center; justify-content: space-between; }
+/* View mode toggle */
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; }
+.vmt-option { padding: 6px 14px; font-size: 11px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+.vmt-option.deferred { opacity: 0.4; font-size: 10px; }
+/* Grid view · 4-column desktop */
+.grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 14px 24px 24px; }
+.grid-tile { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 13px 15px; cursor: pointer; }
+.grid-tile:hover { border-color: var(--kerf-border); }
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip carries the flag */
+.grid-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 13px; }
+.grid-tile.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 13px; }
+.grid-tile.stellar { border-left: 3px solid var(--field-green); padding-left: 13px; }
+.grid-tile.inactive { opacity: 0.55; }
+.gt-name { font-size: 13.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.2; }
+.gt-phase { font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.gt-contact { font-size: 11px; color: var(--kerf-text-dim); margin-top: 6px; font-weight: 500; }
+.gt-chip-row { margin-top: 8px; min-height: 16px; }
+.gt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
+.gt-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.gt-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.gt-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.gt-chip.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.gt-chip.cyan { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); }
+.gt-chip.cyan::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-cyan); }
+.gt-chip.green { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.gt-chip.green::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+.gt-rhythm { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 8px; font-weight: 500; }
+.main-title { font-size: 22px; font-weight: 600; color: var(--kerf-text); margin: 0; letter-spacing: -0.01em; }
+.main-meta { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+.main-content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 14px 24px 24px; flex: 1; }
+
+/* LEFT · Sub list */
+.sub-area { display: flex; flex-direction: column; gap: 16px; }
+.section-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; display: flex; align-items: baseline; gap: 8px; margin-bottom: -4px; }
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+
+.sub-list { display: flex; flex-direction: column; gap: 8px; }
+
+.sub-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 13px 16px;
+  display: grid; grid-template-columns: 1.6fr 1fr 220px 14px;
+  gap: 14px; align-items: center;
+  cursor: pointer;
+}
+.sub-row.attention { border-left: 3px solid var(--kerf-amber); padding-left: 14px; }
+.sub-row.inactive { opacity: 0.55; }
+/* .sub-row.risk treatment retired 2026-05-18 · chip carries the flag instead of a full-row outline */
+.row-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; padding: 2px 7px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.row-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.row-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.row-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.row-chip.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.row-chip:hover { filter: brightness(1.15); }
+
+.sr-name-block {}
+.sr-name { font-size: 14px; color: var(--kerf-text); font-weight: 700; line-height: 1.3; display: flex; align-items: center; gap: 7px; }
+.sr-trade-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--kerf-bg-2); color: var(--kerf-text-dim); letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.sr-trade-tag.active { background: rgba(56,201,119,0.12); color: var(--field-green); }
+.sr-meta { font-size: 11px; color: var(--kerf-text-mute); margin-top: 3px; line-height: 1.4; }
+
+.sr-contact { font-size: 12px; color: var(--kerf-text-dim); line-height: 1.4; }
+.sr-contact strong { color: var(--kerf-text); font-weight: 600; }
+.sr-contact-detail { display: block; font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; }
+
+.sr-state-block { text-align: right; }
+.sr-state { font-size: 12px; color: var(--kerf-text-dim); font-weight: 500; line-height: 1.4; }
+.sr-state.amber { color: var(--kerf-amber); font-weight: 600; }
+.sr-state.red { color: var(--kerf-red); font-weight: 600; }
+.sr-state.cyan { color: var(--kerf-cyan); font-weight: 600; }
+.sr-state.green { color: var(--field-green); font-weight: 600; }
+.sr-state-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; }
+.sr-arrow { color: var(--kerf-text-mute); font-size: 14px; }
+
+/* RIGHT RAIL */
+.roster-rail { display: flex; flex-direction: column; gap: 14px; }
+.rh-card {
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  padding: 11px 13px;
+}
+.rh-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-red); font-style: normal; font-weight: 600; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+.rh-text .rh-cyan { color: var(--kerf-cyan); font-weight: 600; }
+
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* Roster summary */
+.rs-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 0; font-size: 12px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.rs-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.rs-row:first-child { padding-top: 0; }
+.rs-label { color: var(--kerf-text-mute); font-size: 11px; }
+.rs-val { color: var(--kerf-text); font-weight: 600; }
+.rs-val.amber { color: var(--kerf-amber); }
+.rs-val.green { color: var(--field-green); }
+.rs-val.red { color: var(--kerf-red); }
+
+/* COI watch */
+.cw-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11.5px; }
+.cw-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.cw-row:first-child { padding-top: 0; }
+.cw-name { color: var(--kerf-text); font-weight: 600; }
+.cw-detail { display: block; font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; font-weight: 500; }
+.cw-when { font-size: 10.5px; font-weight: 700; text-align: right; }
+.cw-when.amber { color: var(--kerf-amber); }
+.cw-when.green { color: var(--field-green); }
+.cw-when.red { color: var(--kerf-red); }
+
+/* At-risk card */
+.at-risk-card {
+  background: rgba(248,113,113,0.05);
+  border: 1px solid rgba(248,113,113,0.30);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+.ar-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-red); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.ar-eyebrow .ar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); box-shadow: 0 0 5px rgba(248,113,113,0.6); }
+.ar-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; }
+.ar-detail { font-size: 11px; color: var(--kerf-text-dim); margin-top: 4px; line-height: 1.5; }
+.ar-cta { margin-top: 9px; font-size: 11px; color: var(--kerf-red); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-SB1 · Subs list (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-SB2 · Subs list (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step">F-SBD · Sub detail (deferred)</span>
+  </div>
+  <h1>F-SB2 · Desktop Subs list · roster state at desktop density</h1>
+  <p>
+    Desktop projection of F-SB1. Same roster-state-not-database discipline. Left sidebar carries the 9 business graph domains — <em>Team &amp; Ops expanded with Subs sub-item active</em> (siblings: Crew · HR · Purchasing · Bookkeeping). Main area is 2-column: <em>sub list</em> on the left (attention-sorted, sectioned Attention / Active / Closed), <em>roster rail</em> on the right (RH synthesis · at-risk callout · roster summary · COI watch). Each row at desktop width: company + trade · contact + 1099 status · current state one-liner with COI date · drill arrow. Sort order: reliability flag → insurance expiring → bid quiet → calm → closed.
+  </p>
+</div>
+
+<!-- ============================================ -->
+<!-- FRAME 1 · LIST VIEW -->
+<!-- ============================================ -->
+<div class="frame">
+  <div class="frame-label">Frame · F-SB2 · Desktop Subs list · List view · default state · Owner role</div>
+  <p class="frame-narr">
+    Owner clicked Subs under Team &amp; Ops in the sidebar. RH synthesis on the rail leads with the roster sentence (same as F-SB1 mobile, denser layout). Below: at-risk callout for Westside Tile (no-show flag), roster summary (12 active · COI status · W-9 status · reliability flags), and a COI watch listing the next renewals with day-level countdown. The sub list sections by Attention (3) and Active (6) and Closed (3). Each row at desktop width: company name + trade tag · primary contact + 1099 status · current state one-liner · drill arrow. <em>The 80% scan case (roster state at a glance) is handled by the rail; the 20% drill case (find a specific sub) by the list.</em>
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/team/subs</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a sub, contact, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item expanded"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Crew</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Subs</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>HR</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Purchasing</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Team &amp; Ops</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Subs</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action">
+              <svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>
+              Add sub
+            </span>
+          </div>
+
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">Subs</h2>
+              <div class="main-meta">12 active · sorted by attention · 1099 roster</div>
+            </div>
+            <div class="view-mode-toggle">
+              <span class="vmt-option active">List</span>
+              <span class="vmt-option">Grid</span>
+              <span class="vmt-option deferred">Map · V1.5+</span>
+            </div>
+          </div>
+
+          <div class="main-content">
+
+            <!-- LEFT · Sub list -->
+            <div class="sub-area">
+
+              <div class="section-label">Attention <span class="sl-count">· 3</span></div>
+              <div class="sub-list">
+
+                <div class="sub-row">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Westside Tile
+                      <span class="sr-trade-tag">Tile sub</span>
+                    </div>
+                    <div class="sr-meta">SUB-024 · 4 jobs YTD · last on-site 2d ago</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Manuel Ortega</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Sept</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <span class="row-chip red">No-show 2d</span>
+                    <div class="sr-state red">Wegrzyn · stalled tile install</div>
+                    <div class="sr-state-meta">flagged 2 of last 4 jobs · Marcus escalated</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row attention">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Hector's Drywall
+                      <span class="sr-trade-tag">Drywall sub</span>
+                    </div>
+                    <div class="sr-meta">SUB-009 · 9 jobs YTD · 3yr partner</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Hector Ramirez</strong>
+                    <span class="sr-contact-detail">1099 valid · COI expires Jun 4</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state amber">COI renewal · needs upload</div>
+                    <div class="sr-state-meta">17 days · text reminder sent Mon</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row attention">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Padilla Plumbing
+                      <span class="sr-trade-tag">Plumbing sub</span>
+                    </div>
+                    <div class="sr-meta">SUB-014 · 6 jobs YTD · 2yr partner</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Luis Padilla</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Oct</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state amber">Bid 4d quiet · Ault Coronado</div>
+                    <div class="sr-state-meta">awaiting quote · last reply Thu</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+              </div>
+
+              <div class="section-label">Active subs <span class="sl-count">· 6</span></div>
+              <div class="sub-list">
+
+                <div class="sub-row">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Saul Electrical
+                      <span class="sr-trade-tag active">Electrical</span>
+                    </div>
+                    <div class="sr-meta">SUB-002 · 14 jobs YTD · 4yr partner</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Saul Hernandez</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Dec</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state">Hernandez · on-site Tue</div>
+                    <div class="sr-state-meta">critical path · panel upgrade</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Pacific Tile
+                      <span class="sr-trade-tag active">Tile</span>
+                    </div>
+                    <div class="sr-meta">SUB-008 · 8 jobs YTD · 3yr partner</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Carlos Mendoza</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Nov</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state cyan">Dunne · finishing Fri</div>
+                    <div class="sr-state-meta">closeout · grout cure 48h</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Mesa Electric
+                      <span class="sr-trade-tag active">Electrical</span>
+                    </div>
+                    <div class="sr-meta">SUB-001 · 11 jobs YTD · 5yr partner · stellar</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Tomás Diaz</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Feb</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state green">Cleared · ready</div>
+                    <div class="sr-state-meta">awaiting next assignment</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Rapid Plumbing
+                      <span class="sr-trade-tag active">Plumbing</span>
+                    </div>
+                    <div class="sr-meta">SUB-005 · 7 jobs YTD · 2yr partner · stellar</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Jorge Silva</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Mar</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state green">Cleared · ready</div>
+                    <div class="sr-state-meta">awaiting next assignment</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      San Diego Tile Co
+                      <span class="sr-trade-tag active">Tile</span>
+                    </div>
+                    <div class="sr-meta">SUB-019 · 5 jobs YTD · 1yr partner</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Ana Vasquez</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Jan</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state">Williamson · Wed install</div>
+                    <div class="sr-state-meta">scope · primary bath</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Coastline Glass
+                      <span class="sr-trade-tag active">Glass</span>
+                    </div>
+                    <div class="sr-meta">SUB-022 · 3 jobs YTD · new partner</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Brian Cole</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Aug</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state">Moore · pending bid</div>
+                    <div class="sr-state-meta">shower enclosure scope</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+              </div>
+
+              <div class="section-label">Closed / inactive <span class="sl-count">· 3</span></div>
+              <div class="sub-list">
+
+                <div class="sub-row inactive">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Bayside Demo
+                      <span class="sr-trade-tag">Demo sub</span>
+                    </div>
+                    <div class="sr-meta">SUB-011 · last job 6mo ago · paused</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Eric Tanaka</strong>
+                    <span class="sr-contact-detail">1099 on file · COI lapsed</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state">Inactive · re-engage if needed</div>
+                    <div class="sr-state-meta">priced out last bid round</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row inactive">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      Carmel Custom Cabs
+                      <span class="sr-trade-tag">Cabinetry sub</span>
+                    </div>
+                    <div class="sr-meta">SUB-007 · replaced · use Valle in-house</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Daniel Reyes</strong>
+                    <span class="sr-contact-detail">1099 on file · COI lapsed</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state">Replaced · Valle dropship pivot</div>
+                    <div class="sr-state-meta">last job 11mo ago</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+                <div class="sub-row inactive">
+                  <div class="sr-name-block">
+                    <div class="sr-name">
+                      North County HVAC
+                      <span class="sr-trade-tag">HVAC sub</span>
+                    </div>
+                    <div class="sr-meta">SUB-013 · paused · pricing reset pending</div>
+                  </div>
+                  <div class="sr-contact">
+                    <strong>Greg Whitman</strong>
+                    <span class="sr-contact-detail">1099 valid · COI through Jul</span>
+                  </div>
+                  <div class="sr-state-block">
+                    <div class="sr-state">Paused · awaiting new rates</div>
+                    <div class="sr-state-meta">last job 4mo ago</div>
+                  </div>
+                  <span class="sr-arrow">›</span>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- RIGHT · Roster rail -->
+            <div class="roster-rail">
+
+              <div class="rh-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · roster</div>
+                <div class="rh-text">
+                  <strong>12 active subs.</strong> <em>1 flagged for repeated no-shows (Westside Tile).</em> <span class="rh-amber">1 needs insurance renewal in 17 days.</span> <span class="rh-amber">1 bid 4 days quiet.</span> Mesa &amp; Rapid still stellar &mdash; long bench.
+                </div>
+              </div>
+
+              <div class="at-risk-card">
+                <div class="ar-eyebrow"><span class="ar-dot"></span>At risk · 1</div>
+                <div class="ar-name">Westside Tile · no-show pattern</div>
+                <div class="ar-detail">2 no-shows in last 4 jobs. Wegrzyn tile install stalled. Manuel not returning calls since Friday. Pacific Tile and San Diego Tile both available to backfill.</div>
+                <div class="ar-cta">Open Westside Tile →</div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Roster · summary</div>
+                <div class="rs-row"><span class="rs-label">Active subs</span><span class="rs-val">12</span></div>
+                <div class="rs-row"><span class="rs-label">COI on file</span><span class="rs-val amber">11 valid · 1 expiring</span></div>
+                <div class="rs-row"><span class="rs-label">W-9 on file</span><span class="rs-val green">12 valid</span></div>
+                <div class="rs-row"><span class="rs-label">Reliability flags</span><span class="rs-val red">1 active</span></div>
+                <div class="rs-row"><span class="rs-label">YTD spend (1099)</span><span class="rs-val">$284,300</span></div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">COI watch <span class="re-action">All COIs</span></div>
+                <div class="cw-row">
+                  <div>
+                    <div class="cw-name">Hector's Drywall</div>
+                    <div class="cw-detail">expires Jun 4 · reminder sent</div>
+                  </div>
+                  <div class="cw-when amber">17d</div>
+                </div>
+                <div class="cw-row">
+                  <div>
+                    <div class="cw-name">North County HVAC</div>
+                    <div class="cw-detail">expires Jul 22 · paused sub</div>
+                  </div>
+                  <div class="cw-when amber">65d</div>
+                </div>
+                <div class="cw-row">
+                  <div>
+                    <div class="cw-name">Coastline Glass</div>
+                    <div class="cw-detail">expires Aug 14</div>
+                  </div>
+                  <div class="cw-when green">88d</div>
+                </div>
+                <div class="cw-row">
+                  <div>
+                    <div class="cw-name">Westside Tile</div>
+                    <div class="cw-detail">expires Sept 30</div>
+                  </div>
+                  <div class="cw-when green">135d</div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-SB2 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 2 build · Team &amp; Ops · Subs</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-SB1 · Mobile Subs list</span></div>
+      <div class="sl-step current"><span class="sl-dot">2</span><span><span class="sl-name">F-SB2</span> · Desktop Subs list <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">3</span><span>F-SBD · Sub Detail (drill · deferred)</span></div>
+      <div class="sl-step"><span class="sl-dot">4</span><span>F-CR1 · Crew list (sibling sub-item · deferred)</span></div>
+    </div>
+
+    <h4>Desktop density choices</h4>
+    <ul>
+      <li><strong>4-column row at desktop width</strong> · company + trade | contact + 1099 | state | arrow. Mobile stacked all three into one block.</li>
+      <li><strong>Right rail-led roster synthesis</strong> · mobile had RH summary above the list and roster footer below; desktop puts both in the rail so the list dominates the main column.</li>
+      <li><strong>COI watch in the rail</strong> · 4 day-grouped rows. Compliance signal that lives natively at desktop density (mobile relegated to footer summary).</li>
+      <li><strong>SUB ids visible</strong> · meta line carries system id at desktop width without crowding (mobile dropped it).</li>
+      <li><strong>Partner tenure visible</strong> · "3yr partner" surfaces relationship depth where mobile collapsed to jobs-YTD only.</li>
+      <li><strong>Sidebar Team &amp; Ops expanded</strong> · Subs active, siblings (Crew · HR · Purchasing · Bookkeeping · Clients) visible for context.</li>
+    </ul>
+
+    <h4>Doctrine bound (same as F-SB1, scoped to desktop)</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — see roster state, drill where risk lives</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — rail RH card opens the page</li>
+      <li><span class="badge doctrine">d-3</span><em>Sort by attention</em> — no-show / liability → insurance expiring → bid quiet → calm → closed</li>
+      <li><span class="badge doctrine">d-4</span><em>Trade as text tag</em> · status colors reserved for state (red liability · amber compliance · cyan critical path · green stellar/cleared)</li>
+      <li><span class="badge doctrine">d-5</span><em>Red is chip-tier, not row-tier</em> · Westside Tile carries red chip, row stays visually neutral</li>
+      <li><span class="badge doctrine">d-6</span><em>Roster summary in rail</em>, not page header — reference content never leads</li>
+      <li><span class="badge doctrine">d-7</span><em>No filter bar</em> · default sort handles 80% · search via global chrome search</li>
+      <li><span class="badge doctrine">d-8</span><em>Trust surfaces exception-tier</em> — no audit or transcript nav on this page</li>
+      <li><span class="badge canon">canon</span>Right Hand named once · no agent names elsewhere</li>
+    </ul>
+
+    <h4>Section order (locked)</h4>
+    <ul>
+      <li><strong>Attention</strong> · subs with active flags (no-show · insurance · bid quiet)</li>
+      <li><strong>Active subs</strong> · everyone in good standing, sorted by current rhythm</li>
+      <li><strong>Closed / inactive</strong> · muted · re-engageable</li>
+      <li><strong>Archive</strong> · long-press / Actions menu · not on default view</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Add sub (top-right) → F-S1 · Start sheet → Add sub workflow</li>
+      <li>Sub row click → F-SBD · Sub Detail (jobs · COI · payments · threads)</li>
+      <li>Westside Tile at-risk callout → F-SBD · Westside Tile detail (drift state)</li>
+      <li>COI watch row → F-SBD · sub with COI tab focused</li>
+      <li>"All COIs" rail link → COI compliance overview (deferred)</li>
+      <li>Sidebar Crew → F-CR1 · Crew list (W2 sibling)</li>
+      <li>Sidebar Team &amp; Ops parent → Team &amp; Ops landing</li>
+      <li>Global search → cross-domain query</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>Not a vendor database</li>
+      <li>Not a procurement system with PO tracking</li>
+      <li>Not a Rolodex with 47 fields per row</li>
+      <li>Not a Buildertrend subcontractor portal</li>
+      <li>Not a kanban with availability columns</li>
+      <li>Not a filter-and-sort dashboard with multi-select chips</li>
+      <li>Not a desktop "see more" expansion burying the list under aggregate widgets</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-SB1_mobile_subs_list.html</code> · mobile counterpart</li>
+      <li><code>F-PR3_desktop_projects_list.html</code> · pattern reference (sidebar · density · rail)</li>
+      <li><code>F-CR1_desktop_crew_list.html</code> · W2 sibling roster (deferred)</li>
+      <li><code>F-SBD_desktop_sub_detail.html</code> · downstream drill (deferred)</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> · Layer A · domain 8 People/Admin/Ops</li>
+      <li><code>feedback_red_is_chip_tier_not_row_tier.md</code> · doctrine: no full-row red borders</li>
+      <li><code>feedback_agent_names_not_in_operator_copy.md</code> · doctrine: name the work, not the agent</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> · doctrine: plainspoken</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>F-SBD Sub Detail (jobs · COI · 1099 history · payments · threads)</li>
+      <li>F-CR1 Crew list (W2 sibling roster)</li>
+      <li>COI bulk request flow</li>
+      <li>Year-end 1099 generation flow</li>
+      <li>Trade filter UI (when 50+ subs)</li>
+      <li>PM-tier projection (PMs would see only their assigned subs)</li>
+      <li>Sub onboarding migration (from competitor system)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- FRAME 2 · GRID VIEW -->
+<!-- ============================================ -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-SB2 · Grid view · big-picture roster comparison at desktop density</div>
+  <p class="frame-narr">
+    Operator toggles to <em>Grid</em>. 4-column desktop grid · 16 tiles · the whole bench visible at once. Tile content disciplined: company + trade + 1099 status + contact line + state chip + rhythm. State chips carry the flag (red no-show / liability · amber COI / bid quiet · cyan critical path · green stellar). Inactive subs muted for reference. Optimized for <strong>scan, not detail</strong>. Map view stays V1.5+ (third toggle option, deferred · geo-routed dispatch). Drill into any tile for full Sub Detail.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/team/subs?view=grid</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a sub, contact, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item expanded"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Crew</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Subs</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>HR</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Purchasing</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Team &amp; Ops</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Subs</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action"><svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>Add sub</span>
+          </div>
+
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">Subs</h2>
+              <div class="main-meta">16 total · every sub visible · scan view</div>
+            </div>
+            <div class="view-mode-toggle">
+              <span class="vmt-option">List</span>
+              <span class="vmt-option active">Grid</span>
+              <span class="vmt-option deferred">Map · V1.5+</span>
+            </div>
+          </div>
+
+          <div class="grid-view">
+
+            <div class="grid-tile risk">
+              <div class="gt-name">Westside Tile</div>
+              <div class="gt-phase">Tile · 1099 valid</div>
+              <div class="gt-contact">Manuel Ortega · 4 jobs YTD</div>
+              <div class="gt-chip-row"><span class="gt-chip red">No-show 2d</span></div>
+              <div class="gt-rhythm">Wegrzyn · stalled tile install</div>
+            </div>
+
+            <div class="grid-tile attention">
+              <div class="gt-name">Hector's Drywall</div>
+              <div class="gt-phase">Drywall · 1099 valid</div>
+              <div class="gt-contact">Hector Ramirez · 9 jobs YTD</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">Insurance 17d</span></div>
+              <div class="gt-rhythm">COI renewal due Jun 4</div>
+            </div>
+
+            <div class="grid-tile attention">
+              <div class="gt-name">Padilla Plumbing</div>
+              <div class="gt-phase">Plumbing · 1099 valid</div>
+              <div class="gt-contact">Luis Padilla · 6 jobs YTD</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">Bid 4d quiet</span></div>
+              <div class="gt-rhythm">Ault Coronado · waiting quote</div>
+            </div>
+
+            <div class="grid-tile closing">
+              <div class="gt-name">Saul Electrical</div>
+              <div class="gt-phase">Electrical · 1099 valid</div>
+              <div class="gt-contact">Saul Hernandez · 14 jobs YTD</div>
+              <div class="gt-chip-row"><span class="gt-chip cyan">Critical path</span></div>
+              <div class="gt-rhythm">Hernandez · on-site Tue</div>
+            </div>
+
+            <div class="grid-tile closing">
+              <div class="gt-name">Pacific Tile</div>
+              <div class="gt-phase">Tile · 1099 valid</div>
+              <div class="gt-contact">Carlos Mendoza · 8 jobs YTD</div>
+              <div class="gt-chip-row"><span class="gt-chip cyan">Closing this week</span></div>
+              <div class="gt-rhythm">Dunne · finishing Fri</div>
+            </div>
+
+            <div class="grid-tile stellar">
+              <div class="gt-name">Mesa Electric</div>
+              <div class="gt-phase">Electrical · 1099 valid</div>
+              <div class="gt-contact">Tomás Diaz · 11 jobs YTD</div>
+              <div class="gt-chip-row"><span class="gt-chip green">Stellar 3yr</span></div>
+              <div class="gt-rhythm">Cleared · ready</div>
+            </div>
+
+            <div class="grid-tile stellar">
+              <div class="gt-name">Rapid Plumbing</div>
+              <div class="gt-phase">Plumbing · 1099 valid</div>
+              <div class="gt-contact">Jorge Silva · 7 jobs YTD</div>
+              <div class="gt-chip-row"><span class="gt-chip green">Stellar 2yr</span></div>
+              <div class="gt-rhythm">Cleared · ready</div>
+            </div>
+
+            <div class="grid-tile">
+              <div class="gt-name">San Diego Tile Co</div>
+              <div class="gt-phase">Tile · 1099 valid</div>
+              <div class="gt-contact">Ana Vasquez · 5 jobs YTD</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Williamson · Wed install</div>
+            </div>
+
+            <div class="grid-tile">
+              <div class="gt-name">Coastline Glass</div>
+              <div class="gt-phase">Glass · 1099 valid</div>
+              <div class="gt-contact">Brian Cole · 3 jobs YTD</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Moore · bid pending</div>
+            </div>
+
+            <div class="grid-tile">
+              <div class="gt-name">North Coast HVAC</div>
+              <div class="gt-phase">HVAC · 1099 valid</div>
+              <div class="gt-contact">Greg Whitman · 2 jobs YTD</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Available · cleared</div>
+            </div>
+
+            <div class="grid-tile">
+              <div class="gt-name">Coronado Roofing</div>
+              <div class="gt-phase">Roofing · 1099 valid</div>
+              <div class="gt-contact">Marco Vega · 1 job YTD</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Past job · 2024</div>
+            </div>
+
+            <div class="grid-tile">
+              <div class="gt-name">SD Stone Co</div>
+              <div class="gt-phase">Stone · 1099 valid</div>
+              <div class="gt-contact">Pia Chen · 4 jobs YTD</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Patel · bid pending</div>
+            </div>
+
+            <div class="grid-tile inactive">
+              <div class="gt-name">Bayside Demo</div>
+              <div class="gt-phase">Demo · inactive</div>
+              <div class="gt-contact">Eric Tanaka · last job 6mo</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Paused · priced out</div>
+            </div>
+
+            <div class="grid-tile inactive">
+              <div class="gt-name">Carmel Custom Cabs</div>
+              <div class="gt-phase">Cabinetry · replaced</div>
+              <div class="gt-contact">Daniel Reyes · last job 11mo</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Valle dropship pivot</div>
+            </div>
+
+            <div class="grid-tile inactive">
+              <div class="gt-name">North County HVAC</div>
+              <div class="gt-phase">HVAC · paused</div>
+              <div class="gt-contact">Greg Whitman · last job 4mo</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Awaiting new rates</div>
+            </div>
+
+            <div class="grid-tile inactive">
+              <div class="gt-name">La Mesa Painting</div>
+              <div class="gt-phase">Paint · inactive</div>
+              <div class="gt-contact">Rosa Aguilar · last job 8mo</div>
+              <div class="gt-chip-row"></div>
+              <div class="gt-rhythm">Replaced · use in-house</div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-SB2 Grid · Spec</h3>
+    <h4>Big-picture canon applied</h4>
+    <ul>
+      <li><strong>Comparison view</strong> · every sub visible at once</li>
+      <li>4-column desktop grid · 16 tiles fit easily on one screen · no attention compression</li>
+      <li>Tile content disciplined: company + trade + 1099 + contact + state chip + rhythm</li>
+      <li>State palette: red (no-show / liability) · amber (COI / bid quiet) · cyan (critical path / closing) · green (stellar)</li>
+      <li>Inactive subs muted (opacity) · stay on the grid for re-engagement scan</li>
+      <li>Map view (V1.5+) shown as third toggle option (deferred · geo-routed dispatch)</li>
+      <li>Drill into any tile → F-SBD Sub Detail</li>
+    </ul>
+
+    <h4>Why Grid matters for Subs at desktop</h4>
+    <ul>
+      <li>The whole bench fits in one viewport · 16 tiles at 4-wide is the real "show me everyone" view</li>
+      <li>Stellar-vs-flagged comparison is the core question on bid-out · grid puts both adjacent</li>
+      <li>Trade-by-trade visual scan: tile coverage, electrical coverage, plumbing coverage · roster shape is the answer</li>
+      <li>Inactive/closed subs muted but present · re-engagement is one click away</li>
+    </ul>
+
+    <h4>What Grid view refuses to be</h4>
+    <ul>
+      <li>Not a kanban (no drag between availability columns)</li>
+      <li>Not a dashboard with micro-metrics per tile</li>
+      <li>Not a Houzz Pro vendor card grid with 47 fields</li>
+      <li>Not a procurement portal</li>
+      <li>Scan-first · disciplined per the big-picture canon</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves at desktop density</span>
+    The mobile Subs list works at desktop without becoming a vendor database. <em>Adding columns, not features.</em> The third column (contact + 1099 status) gets its own zone instead of cramming into the name line. The roster rail carries the RH summary, at-risk callout, and COI watch — so the main column stays a list, not a dashboard. Westside Tile surfaces twice (once as a row, once as a rail callout) — that's intentional: it's the highest-attention item on the bench.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a vendor database. Not a Buildertrend subcontractor portal. Not a procurement system with PO tracking. Not a tile dashboard with custom-column filters. <strong>F-SB2 is F-SB1 with breathing room, plus the COI watch the rail can carry.</strong> A 1700px viewport spent on the same cognitive job — bench state at a glance — not on more widgets stitched together.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

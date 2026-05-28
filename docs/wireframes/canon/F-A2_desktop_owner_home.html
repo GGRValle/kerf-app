@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-A2 · Desktop Owner Home · Right Hand launchpad</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--kerf-bg);
+  color: var(--kerf-text);
+  line-height: 1.5;
+  font-size: 13px;
+}
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+.view-toggle-bar .vtb-hint kbd { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); padding: 1px 5px; border-radius: 3px; font-size: 10px; color: var(--kerf-text-dim); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .page-header { padding: 24px 0 14px; margin-bottom: 18px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+body.presentation-mode .frame-render { padding: 22px; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.role-mandatory { background: rgba(232,121,168,0.14); color: var(--kerf-magenta); }
+.frame-spec .badge.role-swap { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.frame-spec .badge.role-visible { background: rgba(123,168,255,0.14); color: var(--kerf-blue); }
+
+/* ============================================
+   Desktop frame
+   ============================================ */
+.desktop-frame {
+  background: var(--kerf-bg);
+  border: 1px solid var(--kerf-border);
+  border-radius: 12px;
+  overflow: hidden;
+  width: 100%;
+  display: flex; flex-direction: column;
+}
+
+/* Window chrome */
+.app-chrome {
+  background: var(--kerf-bg-2);
+  border-bottom: 1px solid var(--kerf-border);
+  padding: 9px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px;
+}
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; background: var(--kerf-surface); }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url {
+  margin-left: 14px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--kerf-text-mute);
+  padding: 4px 10px;
+  background: var(--kerf-bg);
+  border-radius: 6px;
+  flex: 0 0 auto;
+}
+.chrome-spacer { flex: 1; }
+.chrome-search {
+  background: var(--kerf-bg);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--kerf-text-mute);
+  width: 220px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* App body: sidebar + main */
+.app-body {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  min-height: 800px;
+}
+
+/* Sidebar */
+.sidebar {
+  background: var(--kerf-bg-2);
+  border-right: 1px solid var(--kerf-border-soft);
+  padding: 14px 12px 14px;
+  display: flex; flex-direction: column;
+  gap: 4px;
+}
+.sb-logo {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px 14px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.sb-logo .sb-mark {
+  width: 24px; height: 24px;
+  background: var(--kerf-amber); color: #1A1300;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.sb-logo .sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; letter-spacing: -0.01em; }
+.sb-logo .sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+
+.sb-section-label {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  padding: 12px 8px 6px;
+}
+
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--kerf-text-dim);
+  font-weight: 500;
+  position: relative;
+  cursor: pointer;
+}
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active {
+  background: rgba(245,181,68,0.10);
+  color: var(--kerf-amber);
+  font-weight: 600;
+}
+.sb-item.active::before {
+  content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px;
+  background: var(--kerf-amber); border-radius: 0 2px 2px 0;
+}
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-item .sb-marker {
+  width: 5px; height: 5px; border-radius: 50%;
+  margin-left: auto;
+}
+.sb-item .sb-marker.mandatory { background: var(--kerf-magenta); }
+.sb-item .sb-marker.swap { background: var(--kerf-amber); }
+.sb-item .sb-marker.visible { background: var(--kerf-blue); opacity: 0.5; }
+
+/* Speak FAB in sidebar */
+.sb-fab {
+  margin: 14px auto;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--kerf-amber); color: #1A1300;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700;
+  box-shadow: 0 6px 20px rgba(245,181,68,0.40);
+  cursor: pointer;
+  position: relative;
+}
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-fab-marker {
+  position: absolute; top: -8px; right: -2px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--kerf-magenta);
+}
+
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+
+/* User chip at bottom */
+.sb-user {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--kerf-border-soft);
+  margin: 8px -12px -14px;
+  background: var(--kerf-bg-2);
+}
+.sb-user-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(201,169,97,0.20); color: var(--right-hand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11.5px; font-weight: 700;
+}
+.sb-user-text { line-height: 1.3; flex: 1; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main area */
+.main {
+  padding: 0;
+  display: flex; flex-direction: column;
+  background: var(--kerf-bg);
+}
+
+/* Breadcrumb bar */
+.bc-bar {
+  background: var(--kerf-bg);
+  border-bottom: 1px solid var(--kerf-border-soft);
+  padding: 11px 22px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11.5px;
+}
+.bc-link { color: var(--kerf-text-dim); }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-blue); font-size: 11px; font-weight: 600; }
+
+/* Greeting */
+.greeting {
+  padding: 22px 28px 12px;
+}
+.greeting h2 { font-size: 22px; font-weight: 600; color: var(--kerf-text); margin: 0; letter-spacing: -0.01em; }
+.greeting .gr-sub { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+/* Right Hand summary line */
+.rh-summary {
+  margin: 6px 28px 0;
+  padding: 10px 14px;
+  background: rgba(201,169,97,0.04);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  font-size: 12.5px;
+  color: var(--kerf-text-dim);
+  line-height: 1.6;
+}
+.rh-summary strong { color: var(--kerf-text); font-weight: 600; }
+.rh-summary em { color: var(--right-hand); font-style: normal; }
+
+/* Main content area */
+.main-content {
+  padding: 16px 28px 28px;
+  display: flex; flex-direction: column;
+  gap: 18px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.section-label {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  margin: 6px 0 -2px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+.section-label .sl-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; }
+
+/* One Thing — desktop variant */
+.one-thing-desktop {
+  background: linear-gradient(135deg, rgba(245,181,68,0.10) 0%, rgba(201,169,97,0.05) 100%);
+  border: 1px solid rgba(245,181,68,0.40);
+  border-radius: 12px;
+  padding: 18px 22px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 22px;
+  align-items: center;
+}
+.ot-content { line-height: 1.4; }
+.ot-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.ot-eyebrow .ot-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--kerf-amber); box-shadow: 0 0 8px rgba(245,181,68,0.7); }
+.ot-headline { font-size: 16px; color: var(--kerf-text); font-weight: 600; line-height: 1.35; margin-bottom: 5px; letter-spacing: -0.01em; }
+.ot-detail { font-size: 12.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.ot-disclosure-inline { font-size: 10px; color: var(--kerf-text-mute); margin-top: 8px; }
+.ot-disclosure-inline strong { color: var(--right-hand); font-weight: 600; }
+.ot-cta-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.ot-cta {
+  background: var(--kerf-amber); color: #1A1300;
+  padding: 10px 18px; border-radius: 9px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0.02em;
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+.ot-secondary { font-size: 10.5px; color: var(--kerf-text-mute); }
+
+/* Business state — 5-cell strip */
+.brain-strip-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.bq {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 12px 14px 11px;
+}
+.bq-q { font-size: 10px; color: var(--kerf-text-mute); letter-spacing: 0.04em; line-height: 1.3; }
+.bq-a { font-size: 13px; color: var(--kerf-text); font-weight: 600; margin-top: 5px; line-height: 1.45; }
+.bq-a .bq-num { color: var(--field-green); }
+.bq-a .bq-warn { color: var(--kerf-amber); }
+.bq-a .bq-risk { color: var(--kerf-red); }
+.bq-a .bq-name { color: var(--kerf-text-dim); font-weight: 500; font-size: 12px; }
+.bq-sub { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+/* 2-column grid: On Deck + Pulse */
+.two-col { display: grid; grid-template-columns: 1fr 1.2fr; gap: 22px; }
+
+/* On Deck */
+.on-deck-list { display: flex; flex-direction: column; gap: 7px; }
+
+/* Portfolio at-a-glance · glimpse strip · canon 2026-05-18 PM late · NOT a dashboard */
+.portfolio-block { margin-bottom: 18px; }
+.portfolio-strip { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.portfolio-strip::-webkit-scrollbar { display: none; }
+.pf-tile { flex: 0 0 138px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.pf-tile:hover { border-color: var(--kerf-border); }
+.pf-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 10px; }
+.pf-tile.risk { border-left: 3px solid var(--kerf-red); padding-left: 10px; }
+.pf-tile.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 10px; }
+.pf-tile-name { font-size: 12px; color: var(--kerf-text); font-weight: 700; line-height: 1.2; }
+.pf-tile-phase { font-size: 10px; color: var(--kerf-text-mute); margin-top: 3px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.pf-tile-state { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 10.5px; color: var(--kerf-text-dim); font-weight: 500; }
+.pf-state-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--kerf-text-mute); flex-shrink: 0; }
+.pf-state-dot.green { background: var(--field-green); }
+.pf-state-dot.amber { background: var(--kerf-amber); }
+.pf-state-dot.red { background: var(--kerf-red); }
+.pf-state-dot.cyan { background: var(--kerf-cyan); }
+.od-item {
+  display: grid; grid-template-columns: 14px 1fr auto;
+  gap: 10px;
+  padding: 10px 13px;
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: var(--kerf-text);
+  align-items: center;
+}
+.od-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+.od-dot.amber { background: var(--kerf-amber); box-shadow: 0 0 6px rgba(245,181,68,0.5); }
+.od-dot.red { background: var(--kerf-red); box-shadow: 0 0 6px rgba(248,113,113,0.5); }
+.od-dot.violet { background: var(--kerf-violet); }
+.od-dot.cyan { background: var(--kerf-cyan); }
+.od-text { line-height: 1.4; }
+.od-text .od-meta { display: block; font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; }
+.od-text .od-meta .od-flag { color: var(--kerf-red); font-weight: 700; }
+.od-arrow { color: var(--kerf-text-mute); font-size: 14px; }
+
+/* Pulse */
+.pulse-list { display: flex; flex-direction: column; gap: 0; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 4px 14px; }
+.pl-item {
+  font-size: 12px;
+  color: var(--kerf-text-dim);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  line-height: 1.5;
+}
+.pl-item:last-child { border-bottom: none; }
+.pl-row { display: flex; align-items: baseline; gap: 10px; }
+.pl-content { flex: 1; }
+.pl-time { font-size: 10.5px; color: var(--kerf-text-mute); font-family: "SF Mono", Menlo, monospace; flex-shrink: 0; }
+.pl-event { color: var(--kerf-text); font-weight: 600; }
+.pl-obj { color: var(--kerf-text); }
+.pl-cons { color: var(--field-green); }
+.pl-cons.amber { color: var(--kerf-amber); }
+.pl-cons.violet { color: var(--kerf-violet); }
+.pl-cons.cyan { color: var(--kerf-cyan); }
+
+/* Annotation callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle · True scale hides the spec rail</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1 · Owner Home (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-A2 · Owner Home (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step">F-C1 · Field Hand Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-D1 · More sidebar</span>
+    <span class="sep">›</span>
+    <span class="step">F-B1 · Decision Card</span>
+  </div>
+  <h1>F-A2 · Desktop Owner Home · Right Hand launchpad (denser presentation)</h1>
+  <p>
+    Same mental model as F-A1 — projected through desktop chrome. Left sidebar carries the bar contract translated vertically: mandatory anchors (Home · Speak · More) preserved, but desktop density allows all 9 business graph domains to be always-visible instead of compressing 4 of them under More. The two user-defined slots from mobile (Projects + Clients) appear as <strong>pinned</strong> top of the secondary list; everything else stays one click away in the sidebar itself. Per IA v3 redline: same logic on both form factors, denser presentation as density allows. Per Operating Model Canon protection sentence #3: <em>packaging tiers unlock projections of the same graph; they do not redefine the ontology.</em>
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-A2 · Desktop Owner Home · default state</div>
+  <p class="frame-narr">
+    On the right side of the layout: a 5-cell business state strip (mobile's 4 cells expanded with the fifth brain-question, Pipeline, made visible because the desktop has room). Below: a 2-column grid with On Deck on the left (5 items vs mobile's 3) and Pulse on the right (8 items vs mobile's 4). Right Hand summary line appears under the greeting, leading with synthesis: <em>"4 jobs active. 1 decision needs you. 1 drift to handle."</em>
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <!-- Window chrome -->
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/home</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a project, client, or capture</div>
+      </div>
+
+      <!-- App body -->
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <!-- Primary (revised IA · Home + Start only) -->
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item active">
+            <span class="sb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <!-- Speak FAB · separated, not a Primary peer -->
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <!-- All · 6-domain Layer A cluster -->
+          <div class="sb-section-label">All</div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+
+          <div class="sb-divider"></div>
+
+          <!-- More (settings + audit + tier C hook) -->
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/><path d="m19.4 13 2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1c-.5-.4-1-.7-1.7-1l-.4-2.6A.5.5 0 0 0 14 4h-4a.5.5 0 0 0-.5.4l-.4 2.7c-.6.2-1.2.6-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5c-.1.2-.1.5.1.6L4.6 13c0 .3-.1.7-.1 1s0 .7.1 1l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5c.1.2.4.3.6.2l2.5-1c.5.4 1 .7 1.7 1l.4 2.6c0 .3.3.5.5.5h4c.2 0 .5-.2.5-.4l.4-2.7c.6-.2 1.2-.6 1.7-1l2.5 1c.2.1.5 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6L19.4 15c0-.3.1-.7.1-1s0-.7-.1-1z"/></svg></span>Settings
+          </div>
+          <div class="sb-item">
+            <span class="sb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit
+          </div>
+          <div class="sb-item" style="color: var(--kerf-magenta); opacity: 0.5;">
+            <span class="sb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Other business units
+          </div>
+
+          <div class="sb-spacer"></div>
+
+          <!-- User chip -->
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div class="sb-user-text">
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main area -->
+        <div class="main">
+
+          <!-- Breadcrumb -->
+          <div class="bc-bar">
+            <span class="bc-link active">Home</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action">Customize bar</span>
+          </div>
+
+          <!-- Greeting -->
+          <div class="greeting">
+            <h2>Good morning, Christian</h2>
+            <div class="gr-sub">Friday · May 17 · 9:41 AM</div>
+          </div>
+
+          <!-- RH summary -->
+          <div class="rh-summary">
+            <strong>4 active jobs</strong>, <strong>1 lead in pipeline</strong>. <em>One decision needs you</em> (Hernandez CO-002). <em>One drift to handle</em> (Wegrzyn rough-in tomorrow). <strong>$47k AR</strong> outstanding · 1 invoice 9 days late.
+          </div>
+
+          <!-- Main content -->
+          <div class="main-content">
+
+            <!-- One Thing -->
+            <div>
+              <div class="section-label">One Thing</div>
+              <div class="one-thing-desktop">
+                <div class="ot-content">
+                  <div class="ot-eyebrow"><span class="ot-dot"></span> Needs your approval</div>
+                  <div class="ot-headline">Hernandez CO-002 · pantry scope expansion</div>
+                  <div class="ot-detail">$14,820 · 5 scope lines priced against past pantry conversions · trust check passed · 3 details you already confirmed.</div>
+                  <div class="ot-disclosure-inline"><strong>AI-assisted by Kerf Right Hand</strong> · Review before approval.</div>
+                </div>
+                <div class="ot-cta-wrap">
+                  <button class="ot-cta">Open decision →</button>
+                  <span class="ot-secondary">or press <kbd style="background: var(--kerf-surface-2); padding: 1px 5px; border-radius: 3px; font-size: 10px; color: var(--kerf-text-dim);">⏎</kbd></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Business state · 5 cells -->
+            <div>
+              <div class="section-label">Business state</div>
+              <div class="brain-strip-5">
+                <div class="bq">
+                  <div class="bq-q">Where are my guys?</div>
+                  <div class="bq-a">4 crews · <span class="bq-num">3 on track</span></div>
+                  <div class="bq-sub">Hernandez · Dunne · Wegrzyn · Ault</div>
+                </div>
+                <div class="bq">
+                  <div class="bq-q">Where is my money?</div>
+                  <div class="bq-a"><span class="bq-num">$47k</span> AR · <span class="bq-warn">1 late</span></div>
+                  <div class="bq-sub">Dunne 9d · Wegrzyn 12d to invoice</div>
+                </div>
+                <div class="bq">
+                  <div class="bq-q">What's closing or drifting?</div>
+                  <div class="bq-a">Dunne <span class="bq-name">Fri walk</span> · <span class="bq-warn">Wegrzyn -2d</span></div>
+                  <div class="bq-sub">Tile conflict tomorrow · drift flagged</div>
+                </div>
+                <div class="bq">
+                  <div class="bq-q">Client health</div>
+                  <div class="bq-a"><span class="bq-warn">1 at risk</span> · <span class="bq-name">Wegrzyn</span></div>
+                  <div class="bq-sub">3 happy · 1 referral pending Dunne</div>
+                </div>
+                <div class="bq">
+                  <div class="bq-q">Pipeline opportunities</div>
+                  <div class="bq-a">4 leads · <span class="bq-warn">1 quiet 3d</span></div>
+                  <div class="bq-sub">Avenida Florencia · Coronado vanity new</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Portfolio at-a-glance · glimpse strip · canon 2026-05-18 PM late -->
+            <div class="portfolio-block">
+              <div class="section-label">
+                Portfolio
+                <span class="sl-count">· 4 active</span>
+                <span class="sl-action">Open Projects →</span>
+              </div>
+              <div class="portfolio-strip">
+                <div class="pf-tile risk">
+                  <div class="pf-tile-name">Wegrzyn</div>
+                  <div class="pf-tile-phase">Active · kitchen</div>
+                  <div class="pf-tile-state"><span class="pf-state-dot red"></span>At risk · tile crew</div>
+                </div>
+                <div class="pf-tile attention">
+                  <div class="pf-tile-name">Hernandez</div>
+                  <div class="pf-tile-phase">Active · pantry</div>
+                  <div class="pf-tile-state"><span class="pf-state-dot amber"></span>CO-002 pending</div>
+                </div>
+                <div class="pf-tile attention">
+                  <div class="pf-tile-name">Ault</div>
+                  <div class="pf-tile-phase">Bid · vanity</div>
+                  <div class="pf-tile-state"><span class="pf-state-dot amber"></span>Sub bid 4d late</div>
+                </div>
+                <div class="pf-tile closing">
+                  <div class="pf-tile-name">Dunne</div>
+                  <div class="pf-tile-phase">Closing · master bath</div>
+                  <div class="pf-tile-state"><span class="pf-state-dot cyan"></span>Final walk Fri</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2-column: On Deck + Pulse -->
+            <div class="two-col">
+
+              <!-- On Deck · left column -->
+              <div>
+                <div class="section-label">
+                  On Deck
+                  <span class="sl-count">· 5</span>
+                  <span class="sl-action">See queue →</span>
+                </div>
+                <div class="on-deck-list">
+                  <div class="od-item">
+                    <span class="od-dot amber"></span>
+                    <div class="od-text">
+                      Maria H. waiting on revised quote
+                      <span class="od-meta">2 days · awaiting your response</span>
+                    </div>
+                    <span class="od-arrow">›</span>
+                  </div>
+                  <div class="od-item">
+                    <span class="od-dot red"></span>
+                    <div class="od-text">
+                      Wegrzyn rough-in inspection tomorrow
+                      <span class="od-meta"><span class="od-flag">drift flagged</span> · tile crew conflict</span>
+                    </div>
+                    <span class="od-arrow">›</span>
+                  </div>
+                  <div class="od-item">
+                    <span class="od-dot violet"></span>
+                    <div class="od-text">
+                      Ault tile sub bid · 4 days late
+                      <span class="od-meta">Coronado vanity · sub hasn't responded</span>
+                    </div>
+                    <span class="od-arrow">›</span>
+                  </div>
+                  <div class="od-item">
+                    <span class="od-dot amber"></span>
+                    <div class="od-text">
+                      Avenida Florencia · 3 days no contact
+                      <span class="od-meta">Lead pre-qual · pipeline drift</span>
+                    </div>
+                    <span class="od-arrow">›</span>
+                  </div>
+                  <div class="od-item">
+                    <span class="od-dot cyan"></span>
+                    <div class="od-text">
+                      Dunne · ready for final walk Friday
+                      <span class="od-meta">Punch list 90% done · review with client</span>
+                    </div>
+                    <span class="od-arrow">›</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pulse · right column -->
+              <div>
+                <div class="section-label">
+                  The Pulse
+                  <span class="sl-count">· today</span>
+                  <span class="sl-action">Full stream →</span>
+                </div>
+                <div class="pulse-list">
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Field walk captured</span> · <span class="pl-obj">Hernandez</span> · <span class="pl-cons">draft proposal ready</span>
+                      </div>
+                      <span class="pl-time">14:22</span>
+                    </div>
+                  </div>
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Wegrzyn slipped 2 days</span> · <span class="pl-cons amber">tile crew conflict tomorrow</span>
+                      </div>
+                      <span class="pl-time">11:14</span>
+                    </div>
+                  </div>
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Dunne signed CO-001</span> · <span class="pl-cons">routed to QBO export</span>
+                      </div>
+                      <span class="pl-time">09:48</span>
+                    </div>
+                  </div>
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Designer added project</span> · <span class="pl-obj">Ault Design</span> · <span class="pl-cons violet">Coronado vanity in lead</span>
+                      </div>
+                      <span class="pl-time">08:30</span>
+                    </div>
+                  </div>
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Sub portal accepted</span> · <span class="pl-obj">Carlos plumbing</span> · <span class="pl-cons">Hernandez Mon confirmed</span>
+                      </div>
+                      <span class="pl-time">Thu 17:20</span>
+                    </div>
+                  </div>
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Review garnered</span> · <span class="pl-obj">Dunne</span> · <span class="pl-cons cyan">5-star Google · referral pending</span>
+                      </div>
+                      <span class="pl-time">Thu 16:08</span>
+                    </div>
+                  </div>
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Invoice paid</span> · <span class="pl-obj">Hossini · IN-10057</span> · <span class="pl-cons">AR -$22,400</span>
+                      </div>
+                      <span class="pl-time">Thu 14:45</span>
+                    </div>
+                  </div>
+                  <div class="pl-item">
+                    <div class="pl-row">
+                      <div class="pl-content">
+                        <span class="pl-event">Permit issued</span> · <span class="pl-obj">Hernandez</span> · <span class="pl-cons">framing inspection scheduled</span>
+                      </div>
+                      <span class="pl-time">Thu 11:12</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-A2 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 1 rebuild order</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span><span class="sl-name">F-A1</span> · Mobile Owner Home</span></div>
+      <div class="sl-step current"><span class="sl-dot">2</span><span><span class="sl-name">F-A2</span> · Desktop Owner Home <em style="font-style: normal; color: var(--kerf-text-mute);">(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">3</span><span><span class="sl-name">F-C1</span> · Mobile Field Hand Home</span></div>
+      <div class="sl-step"><span class="sl-dot">4</span><span><span class="sl-name">F-D1</span> · More sidebar overlay</span></div>
+      <div class="sl-step"><span class="sl-dot">5+</span><span><span class="sl-name">F-B1/B2 · E1 · F1 · G1 · H1</span> · drill surfaces</span></div>
+    </div>
+
+    <h4>Desktop logic preserved</h4>
+    <ul>
+      <li><strong>Same mental model</strong> as F-A1 mobile · One Thing / Business state / On Deck / Pulse</li>
+      <li><strong>Same bar contract</strong> translated to sidebar — Home (mandatory) · Projects (swap) · Speak (mandatory, FAB) · Clients (swap) · Settings/Audit (under More function, here exposed directly)</li>
+      <li><strong>Denser presentation</strong> — all 9 domains always-visible in sidebar because density allows. Mobile compresses 4 of them under More; desktop doesn't need to.</li>
+      <li>"More" function becomes the bottom group (Settings · Audit · Tier C hook) rather than a sidebar opener</li>
+    </ul>
+
+    <h4>Sidebar markers (legend)</h4>
+    <ul>
+      <li><span class="badge role-mandatory">M</span>Mandatory anchor (Home · Speak)</li>
+      <li><span class="badge role-swap">S</span>User-defined / swappable (Projects · Clients · default)</li>
+      <li><span class="badge role-visible">V</span>Always-visible secondary (Sales · Schedule · Field · Money · People · Client Success)</li>
+    </ul>
+
+    <h4>Right Hand summary line</h4>
+    <ul>
+      <li>New element on desktop (mobile lacks vertical room for it)</li>
+      <li>1-line synthesis: active jobs · pending decisions · drift · pipeline · AR state</li>
+      <li>Speaks through Right Hand: <em>"one decision needs you"</em>, <em>"one drift to handle"</em></li>
+      <li>Sits under greeting · above One Thing card · sets context</li>
+    </ul>
+
+    <h4>5-cell business state</h4>
+    <ul>
+      <li>Mobile shows 4 brain-question cells; desktop room enables the 5th (Pipeline)</li>
+      <li>Each cell has sub-line of detail (mobile hides this; desktop shows it)</li>
+      <li>Cells: Where are my guys / Where is my money / What's closing or drifting / Client health / Pipeline opportunities</li>
+    </ul>
+
+    <h4>2-column grid</h4>
+    <ul>
+      <li>On Deck (left) — 5 items vs mobile's 3</li>
+      <li>Pulse (right) — 8 items vs mobile's 4, spans yesterday + today</li>
+      <li>Right rail is wider (1.2:1) to give Pulse more breathing room</li>
+    </ul>
+
+    <h4>Pulse grammar</h4>
+    <ul>
+      <li>Same as F-A1: <strong>event · object · consequence</strong></li>
+      <li>Color-coded consequences: green = forward · amber = needs attention · violet = informational · cyan = revenue/growth signals (new on desktop given Pulse depth)</li>
+      <li>Yesterday's items shown with "Thu" prefix on timestamp</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Same logic both form factors · IA v3 redline honored</li>
+      <li><span class="badge canon">canon</span>Plain English at operator surface · no AltitudePacket / Policy Gate / cohort vocabulary</li>
+      <li><span class="badge canon">canon</span>Inputs once · consequences propagate (Pulse items end in consequences)</li>
+      <li><span class="badge canon">canon</span>Agents-as-work · "drift flagged" appears in metadata sub-line · agent names never surface in operator copy (only the work surfaces)</li>
+      <li><span class="badge canon">canon</span>Audit at Settings · sidebar bottom group, never primary nav</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>One Thing CTA → <code>/decisions/[id]</code> (F-B2 desktop)</li>
+      <li>RH summary inline links → relevant project / money / client detail</li>
+      <li>Brain cell · Money → <code>/money/ar</code></li>
+      <li>Brain cell · Pipeline → <code>/sales</code> pipeline view</li>
+      <li>Pulse item · review garnered → <code>/clients/[id]/satisfaction</code></li>
+      <li>Sidebar · 🎤 Speak → context-bound capture (defaults to general capture from Home)</li>
+      <li>Customize bar action → bar personalization settings</li>
+    </ul>
+
+    <h4>Forbidden</h4>
+    <ul>
+      <li>No top tabs (sidebar primary)</li>
+      <li>No "Create New" hub button</li>
+      <li>No agent name surfaced as a feature</li>
+      <li>No canon vocabulary in operator copy</li>
+      <li>No separate notifications inbox</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-A1_mobile_owner_home.html</code> — mobile sibling</li>
+      <li><code>Kerf_Mobile_BottomBar_v2_3Mandatory_2Swap_2026-05-17.html</code> — bar contract</li>
+      <li><code>Kerf_IA_Framework_v3_2026-05-17.md</code> — IA projection</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> — canon</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What desktop adds vs mobile</span>
+    Right Hand summary line · 5th brain-question (Pipeline) made visible · sub-line of detail per cell · 5 On Deck items vs 3 · 8 Pulse items vs 4 · all 9 domains always-visible in sidebar · breadcrumb chrome · global search.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What desktop preserves</span>
+    Same 4-section mental model · same Right Hand voice · same plain English at operator surface · same Pulse grammar · same bar contract (mandatory + swap + overflow, just rendered with more breathing room) · same color discipline · same disclosure layering.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

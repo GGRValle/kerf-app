@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-SU2 · Desktop Superintendent Home · jobsite execution oversight at desktop density</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11; --kerf-bg-2: #14181F; --kerf-surface: #1A1F28; --kerf-surface-2: #232936;
+  --kerf-border: #2A3140; --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1; --kerf-text-dim: #98A1B3; --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544; --kerf-green: #4ADE80; --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF; --kerf-violet: #A78BFA; --kerf-magenta: #E879A8; --kerf-cyan: #67D6E0;
+  --field-green: #38C977; --right-hand: #C9A961; --super-cyan: #5BBED2;
+}
+body.light-mode { --kerf-bg: #FFFFFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFFFFF; --kerf-surface-2: #EBEEF2; --kerf-border: #C9D0D8; --kerf-border-soft: #DFE3E8; --kerf-text: #0A0D11; --kerf-text-dim: #4A5462; --kerf-text-mute: #7B8492; }
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--super-cyan); color: #0A2A30; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--super-cyan); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--super-cyan); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--super-cyan); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; color: var(--super-cyan); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--super-cyan); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--super-cyan); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--super-cyan); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+
+/* Sidebar · new IA, Super role-filtered (no Sales, no Marketing) */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--super-cyan); color: #0A2A30; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(91,190,210,0.10); color: var(--super-cyan); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--super-cyan); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-item.muted { opacity: 0.45; }
+.sb-item.muted .sb-restrict { margin-left: auto; font-size: 9px; color: var(--kerf-text-mute); font-weight: 600; letter-spacing: 0.05em; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 18px auto 14px; width: 64px; height: 64px; border-radius: 50%; background: var(--super-cyan); color: #0A2A30; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(91,190,210,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(91,190,210,0.20); color: var(--super-cyan); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-meta { color: var(--kerf-text-mute); font-size: 11.5px; }
+
+/* Role header */
+.role-header { padding: 18px 24px 14px; display: flex; align-items: center; gap: 14px; }
+.role-avatar-lg { width: 44px; height: 44px; border-radius: 50%; background: rgba(91,190,210,0.16); color: var(--super-cyan); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
+.role-name-lg { font-size: 20px; color: var(--kerf-text); font-weight: 700; line-height: 1.2; }
+.role-title-lg { font-size: 11.5px; color: var(--super-cyan); font-weight: 600; letter-spacing: 0.04em; margin-top: 2px; }
+.role-meta { margin-left: auto; font-size: 11.5px; color: var(--kerf-text-mute); }
+
+/* Synthesis */
+.synthesis-row { padding: 6px 24px 16px; }
+.rh-card { background: rgba(91,190,210,0.05); border-left: 2px solid var(--super-cyan); border-radius: 4px; padding: 11px 14px; }
+.rh-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--super-cyan); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--super-cyan); }
+.rh-text { font-size: 13px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-red); font-style: normal; font-weight: 600; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+
+/* Main content · 2-column layout */
+.main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 24px 24px; flex: 1; }
+.col { display: flex; flex-direction: column; gap: 16px; }
+
+/* One Thing card */
+.one-thing { background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.30); border-radius: 12px; padding: 14px 16px; }
+.ot-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-red); font-weight: 700; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.ot-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--kerf-red); box-shadow: 0 0 6px rgba(248,113,113,0.7); }
+.ot-title { font-size: 16px; color: var(--kerf-text); font-weight: 700; line-height: 1.3; margin-bottom: 5px; }
+.ot-detail { font-size: 12px; color: var(--kerf-text-dim); line-height: 1.55; margin-bottom: 12px; }
+.ot-detail strong { color: var(--kerf-text); font-weight: 600; }
+.ot-cta-row { display: flex; gap: 10px; }
+.ot-cta { padding: 9px 14px; background: var(--super-cyan); color: #0A2A30; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.ot-cta.secondary { background: var(--kerf-surface); color: var(--kerf-text-dim); border: 1px solid var(--kerf-border-soft); }
+
+/* Rails */
+.rail { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 12px; padding: 13px 14px; }
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+.rail-eyebrow .re-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.rail-eyebrow.field { color: var(--field-green); display: flex; align-items: center; gap: 6px; }
+.rail-eyebrow.field::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+.rail-eyebrow.amber { color: var(--kerf-amber); display: flex; align-items: center; gap: 6px; }
+.rail-eyebrow.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.rail-eyebrow.green { color: var(--field-green); display: flex; align-items: center; gap: 6px; }
+.rail-eyebrow.green::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+
+.rail-row { display: grid; grid-template-columns: 32px 1fr 14px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--kerf-border-soft); }
+.rail-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.rail-row:first-of-type { padding-top: 0; }
+.rail-icon { width: 32px; height: 32px; border-radius: 7px; background: var(--kerf-surface-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.rail-icon.field { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.rail-icon.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.rail-icon.cyan { background: rgba(91,190,210,0.16); color: var(--super-cyan); }
+.rail-icon.red { background: rgba(248,113,113,0.14); color: var(--kerf-red); }
+.rail-icon.blue { background: rgba(123,168,255,0.14); color: var(--kerf-blue); }
+.rail-text { font-size: 12px; color: var(--kerf-text); line-height: 1.4; font-weight: 600; }
+.rail-text .rail-detail { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 1px; font-weight: 500; }
+.rail-arrow { color: var(--kerf-text-mute); font-size: 13px; }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--super-cyan); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--super-cyan); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--super-cyan); font-weight: 700; margin-bottom: 5px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-SU1 · Superintendent Home (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-SU2 · Superintendent Home (desktop)</span>
+  </div>
+  <h1>F-SU2 · Desktop Superintendent Home · jobsite execution oversight at desktop density</h1>
+  <p>
+    Desktop projection of F-SU1. <em>Cyan-accent role-root</em>. Carries the new sidebar IA (Primary: Home + Start · Speak FAB separated · All cluster role-filtered — Sales + Marketing excluded for Superintendent role visibility). Two-column main: One Thing + Today's deployments + Drift in the left column · Quality gates + Comms in the right column. Same execution-state focus as mobile, denser layout exploiting desktop real estate.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-SU2 · Desktop Superintendent Home · Marcus Riley · default state</div>
+  <p class="frame-narr">
+    Marcus opens desktop Superintendent Home in the morning at his truck or jobsite trailer. Role-filtered sidebar shows Home + Start in Primary · Speak FAB separated · Projects + Schedule + Money (limited) + Team+Ops in All cluster · Sales and Marketing not visible (role visibility canon). Role header carries Marcus's identity + cyan title accent. RH synthesis sentence full-width. Two-column main: <em>One Thing card + Today's deployments rail + Drift rail</em> in left column · <em>Quality gates rail + Comms rail</em> in right column. Same content as F-SU1 mobile, distributed at desktop width.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/home</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a project, deployment, or comm</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar · Super role-filtered new IA -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All · role-filtered</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item muted"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money<span class="sb-restrict">budget only</span></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Crew</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">MR</div>
+            <div>
+              <div class="sb-user-name">Marcus Riley</div>
+              <div class="sb-user-meta">Superintendent · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link active">Home</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-meta">Wed May 20 · 7:42 am</span>
+          </div>
+
+          <div class="role-header">
+            <div class="role-avatar-lg">MR</div>
+            <div>
+              <div class="role-name-lg">Marcus Riley</div>
+              <div class="role-title-lg">Superintendent · jobsite execution oversight</div>
+            </div>
+            <div class="role-meta">4 jobs in flight · 1 to resolve today</div>
+          </div>
+
+          <div class="synthesis-row">
+            <div class="rh-card">
+              <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div>
+              <div class="rh-text">
+                <strong>4 jobs in flight.</strong> <em>1 to resolve today (Wegrzyn tile crew conflict).</em> Hernandez on track · Dunne walks Friday · Coronado in bid. <span class="rh-amber">Verify shelving measurement before fab release.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="main-content">
+
+            <!-- LEFT column -->
+            <div class="col">
+
+              <!-- One Thing -->
+              <div class="one-thing">
+                <div class="ot-eyebrow">One Thing</div>
+                <div class="ot-title">Wegrzyn · tile crew conflict tomorrow</div>
+                <div class="ot-detail">Carlos's framing crew won't be clear of kitchen by 7am when Hector's tile crew arrives. <strong>Resolve crew assignment by 5pm today.</strong> Options: extend framing day · push tile to Thu · split crews.</div>
+                <div class="ot-cta-row">
+                  <div class="ot-cta">Open Wegrzyn</div>
+                  <div class="ot-cta secondary">Call Hector</div>
+                  <div class="ot-cta secondary">Talk to Carlos</div>
+                </div>
+              </div>
+
+              <!-- Today's deployments -->
+              <div class="rail">
+                <div class="rail-eyebrow field">Today · deployments<span class="re-count">· 3 sites</span></div>
+
+                <div class="rail-row">
+                  <div class="rail-icon field">HZ</div>
+                  <div class="rail-text">
+                    Hernandez · framing day 2
+                    <span class="rail-detail">Carlos + Tito · clocked in 8:04 · on schedule</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+
+                <div class="rail-row">
+                  <div class="rail-icon field">WG</div>
+                  <div class="rail-text">
+                    Wegrzyn · kitchen rough-in
+                    <span class="rail-detail">Miguel + Diego · clocked in 7:58 · tile sub Thu</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+
+                <div class="rail-row">
+                  <div class="rail-icon field">DN</div>
+                  <div class="rail-text">
+                    Dunne · punch list
+                    <span class="rail-detail">Tony · clocked in 8:12 · final walk Fri 10am</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+              </div>
+
+              <!-- Drift to resolve -->
+              <div class="rail">
+                <div class="rail-eyebrow amber">Drift to resolve<span class="re-count">· 2</span></div>
+
+                <div class="rail-row">
+                  <div class="rail-icon red">!</div>
+                  <div class="rail-text">
+                    Wegrzyn · tile crew tomorrow
+                    <span class="rail-detail">Crew clear deadline 5pm today</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+
+                <div class="rail-row">
+                  <div class="rail-icon amber">⏵</div>
+                  <div class="rail-text">
+                    Hernandez · cabinetry on hold
+                    <span class="rail-detail">CO-002 pending owner approval · install Mon Jun 1</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT column -->
+            <div class="col">
+
+              <!-- Quality gates -->
+              <div class="rail">
+                <div class="rail-eyebrow green">Quality gates<span class="re-count">· 2 pending</span></div>
+
+                <div class="rail-row">
+                  <div class="rail-icon cyan">✓</div>
+                  <div class="rail-text">
+                    Dunne · final walk Fri 10am
+                    <span class="rail-detail">Punch list 90% · owner + client on-site</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+
+                <div class="rail-row">
+                  <div class="rail-icon cyan">⌖</div>
+                  <div class="rail-text">
+                    Hernandez · shelving measurement verify
+                    <span class="rail-detail">1 LiDAR flag · before fab release · tape today</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+              </div>
+
+              <!-- Comms · demoted to surfaced-urgent state -->
+              <div class="rail">
+                <div class="rail-eyebrow">Needs reply<span class="re-count">· 1</span><span class="re-action">All comms →</span></div>
+
+                <div class="rail-row">
+                  <div class="rail-icon blue">CR</div>
+                  <div class="rail-text">
+                    Carlos · shelving dry-fit question
+                    <span class="rail-detail">9:14 · waiting on your call · 2 other comms ack'd</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+              </div>
+
+              <!-- Bid-vs-actual variance -->
+              <div class="rail">
+                <div class="rail-eyebrow amber">Bid-vs-actual<span class="re-count">· 1 watch</span></div>
+
+                <div class="rail-row">
+                  <div class="rail-icon amber">∆</div>
+                  <div class="rail-text">
+                    Hernandez framing · running +12%
+                    <span class="rail-detail">Bid 18 hrs · actual 20.2 hrs to date · still on critical path</span>
+                  </div>
+                  <span class="rail-arrow">›</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-SU2 · Spec</h3>
+
+    <h4>Role-filtered sidebar (NEW)</h4>
+    <ul>
+      <li><strong>Primary:</strong> Home (active) + Start</li>
+      <li><strong>Speak FAB:</strong> cyan-accented (matches role color), separated</li>
+      <li><strong>All · role-filtered:</strong> Projects · Schedule · Money (muted · budget only) · Team+Ops (with Crew + Clients sub-items)</li>
+      <li><strong>Sales:</strong> NOT visible · Super doesn't access deal pipeline</li>
+      <li><strong>Marketing:</strong> NOT visible · Super doesn't access lifecycle outreach</li>
+      <li><strong>Settings only at bottom</strong> · no Audit (Super reaches audit via Project Detail when needed)</li>
+    </ul>
+
+    <h4>Money muted treatment</h4>
+    <p>Money sidebar item rendered at 0.45 opacity with "budget only" restrict label. Super has per-project budget visibility (via Project Detail) but no portfolio AR/AP/margin. Visual signal that Money exists in the system but Super's access is scoped.</p>
+
+    <h4>2-column main layout</h4>
+    <ul>
+      <li><strong>Left column:</strong> One Thing + Today's deployments + Drift to resolve</li>
+      <li><strong>Right column:</strong> Quality gates + Field crew comms + Bid-vs-actual variance</li>
+      <li>Desktop adds bid-vs-actual rail (not in mobile due to space) — surfaces the new Schedule-canon quantitative drift agent lane</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-SU1_mobile_superintendent_home.html</code> · mobile counterpart</li>
+      <li><code>F-P2_desktop_pm_home.html</code> · analogous role-root pattern (PM)</li>
+      <li><code>F-SL2_desktop_sales_pipeline.html</code> · sidebar IA precedent</li>
+      <li><code>Kerf_Layer_A_Subdomain_Map_2026-05-18.md</code> · Superintendent role-root canon</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Super-specific quality-gate workflow detail (V1.5+)</li>
+      <li>Multi-Super coordination at scale (V2+)</li>
+      <li>Super-level reporting / week-rollup (V1.5+)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves</span>
+    <em>Role-root projections work cleanly at desktop density.</em> Sidebar role-filtering hides Sales and Marketing entirely (clean architectural separation), Money shows muted with restrict label, Team+Ops has the Crew + Clients sub-items Super has access to. Cyan accent extends through synthesis card · One Thing CTA · sidebar active state · Speak FAB. Same business graph, projected through Superintendent's lane.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not Owner Home with the sales rail removed. Not PM Home with different content. <strong>F-SU2 is a distinct role-root projection</strong> with execution-state rails, bid-vs-actual variance surfaced at desktop, and quality-gate visibility a PM doesn't carry.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

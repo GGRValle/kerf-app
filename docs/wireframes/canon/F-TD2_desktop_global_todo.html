@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-TD2 · Desktop Global To-Do · cross-project task queue at desktop density</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-amber); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+.bc-voice { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; background: rgba(201,169,97,0.08); border: 1px solid rgba(201,169,97,0.25); border-radius: 7px; color: var(--right-hand); font-size: 11px; font-weight: 600; cursor: pointer; }
+.bc-voice svg { width: 13px; height: 13px; fill: currentColor; }
+.bc-voice-hint { font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; }
+
+.main-header { padding: 18px 24px 4px; display: flex; align-items: center; justify-content: space-between; }
+.main-title { font-size: 22px; font-weight: 600; color: var(--kerf-text); margin: 0; letter-spacing: -0.01em; }
+.main-meta { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; }
+.vmt-option { padding: 6px 14px; font-size: 11px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 24px 0; }
+.filter-chip { padding: 5px 11px; font-size: 11px; border-radius: 16px; border: 1px solid var(--kerf-border-soft); color: var(--kerf-text-dim); font-weight: 600; cursor: pointer; background: var(--kerf-bg-2); }
+.filter-chip.active { background: rgba(245,181,68,0.14); border-color: rgba(245,181,68,0.35); color: var(--kerf-amber); }
+
+.main-content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 14px 24px 24px; flex: 1; }
+.todo-area { display: flex; flex-direction: column; gap: 16px; }
+.section-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; display: flex; align-items: baseline; gap: 8px; margin-bottom: -4px; }
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+
+.todo-table { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; overflow: hidden; }
+.todo-table-head { display: grid; grid-template-columns: 1.8fr 1.1fr 0.7fr 0.75fr 0.65fr 52px; gap: 10px; padding: 9px 14px; background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border-soft); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.todo-row { display: grid; grid-template-columns: 1.8fr 1.1fr 0.7fr 0.75fr 0.65fr 52px; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--kerf-border-soft); align-items: center; cursor: pointer; }
+.todo-row:last-child { border-bottom: 0; }
+.todo-row:hover { background: rgba(255,255,255,0.02); }
+.todo-row.rollup { border-style: dashed; opacity: 0.85; }
+.td-task { font-size: 13px; color: var(--kerf-text); font-weight: 600; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.td-project { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.35; }
+.td-project strong { color: var(--kerf-text); font-weight: 600; display: block; }
+.td-project span { font-size: 10px; color: var(--kerf-text-mute); }
+.td-due { font-size: 11px; font-weight: 600; }
+.td-due.red { color: var(--kerf-red); }
+.td-due.amber { color: var(--kerf-amber); }
+.td-due.dim { color: var(--kerf-text-mute); font-weight: 500; }
+.td-assignee { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--kerf-text-dim); }
+.td-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-dim); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+.td-avatar.owner { background: rgba(201,169,97,0.18); color: var(--right-hand); }
+.td-avatar.pm { background: rgba(123,168,255,0.14); color: var(--kerf-blue); }
+.td-avatar.field { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.td-state { font-size: 11px; color: var(--kerf-text-dim); font-weight: 600; }
+.td-state.blocked { color: var(--kerf-red); }
+.td-state.done { color: var(--field-green); }
+.td-action { color: var(--kerf-text-mute); font-size: 14px; text-align: right; }
+.row-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+.row-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.row-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+
+.todo-rail { display: flex; flex-direction: column; gap: 14px; }
+.rh-card { background: rgba(201,169,97,0.05); border-left: 2px solid var(--right-hand); border-radius: 4px; padding: 11px 13px; }
+.rh-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { font-weight: 700; }
+.rh-text em { color: var(--kerf-red); font-style: normal; font-weight: 600; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+
+.rail-card { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 12px 14px; }
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; }
+.pattern-card { background: rgba(248,113,113,0.05); border: 1px solid rgba(248,113,113,0.30); border-radius: 10px; padding: 11px 13px; }
+.pattern-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-red); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.pattern-eyebrow .ar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.pattern-text { font-size: 12px; color: var(--kerf-text); line-height: 1.5; font-weight: 600; }
+.pattern-detail { font-size: 11px; color: var(--kerf-text-dim); margin-top: 4px; line-height: 1.5; }
+.pattern-cta { margin-top: 9px; font-size: 11px; color: var(--kerf-red); font-weight: 600; }
+
+.la-row { display: grid; grid-template-columns: 36px 1fr; gap: 9px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11.5px; }
+.la-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.la-row:first-child { padding-top: 0; }
+.la-day { font-size: 10px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding-top: 2px; line-height: 1.3; }
+.la-day strong { display: block; font-size: 13px; color: var(--kerf-text); letter-spacing: 0; text-transform: none; font-weight: 700; margin-top: 1px; }
+.la-content { color: var(--kerf-text); line-height: 1.4; font-weight: 600; }
+.la-content .la-detail { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+
+.grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 14px 24px 24px; }
+.grid-tile { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 13px 15px; cursor: pointer; }
+.grid-tile:hover { border-color: var(--kerf-border); }
+.grid-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 13px; }
+.gt-name { font-size: 13.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.2; }
+.gt-phase { font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.gt-client { font-size: 11px; color: var(--kerf-text-dim); margin-top: 6px; font-weight: 500; }
+.gt-chip-row { margin-top: 8px; }
+.gt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
+.gt-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.gt-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.gt-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.gt-chip.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.gt-rhythm { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 8px; font-weight: 500; }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+@media print {
+  body, body.light-mode {
+    background: #FFFFFF !important; color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFFFFF; --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999; --kerf-border-soft: #C9D0D8; --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462; --kerf-text-mute: #6B7280;
+  }
+  .view-toggle-bar { display: none !important; }
+  .frame-spec { display: none !important; }
+  .frame { grid-template-columns: 1fr !important; gap: 0 !important; page-break-inside: avoid; margin-bottom: 18px !important; }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  .frame-render { background: #FFFFFF !important; padding: 12px !important; border: 1px solid #999 !important; box-shadow: none !important; }
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .desktop-frame, .sidebar, .todo-table, .rail-card, .rh-card, .pattern-card, .grid-tile { background: #FFFFFF !important; border-color: #C9D0D8 !important; color: #0A0D11 !important; }
+  .callout { background: #F4F6F9 !important; border-color: #999 !important; page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-TD1 · Global To-Do (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-TD2 · Global To-Do (desktop)</span>
+  </div>
+  <h1>F-TD2 · Desktop Global To-Do · cross-project task queue at desktop density</h1>
+  <p>
+    Desktop projection of F-TD1. Same cross-project queue discipline — not a task manager database. <em>To-do</em> is a top-level sidebar item under All (not nested under Projects). Main area is 2-column: wide table list on the left (Task · Project · Due · Assignee · State · Action), synthesis rail on the right (Right Hand summary · per-day rollup · patterns flagged). List + Grid toggle on comparison surface only. Voice add affordance visible in breadcrumb bar. Red chip-tier only. Right Hand named once.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-TD2 · Desktop Global To-Do · List view · default · Owner role · 18 to-dos · 6 projects</div>
+  <p class="frame-narr">
+    Owner clicked To-do from sidebar. RH synthesis on the rail: <em>18 to-dos total · 4 due today · 2 overdue · 6 projects with pending items.</em> Filter chips default to All. Table sections: Overdue (2) · Today (4) · This week (4) · Later (1) · Standalone (2) · Done (2 shown + "+ 3 done" rollup). Hernandez pattern flagged in rail — 4 open items, likely blocking pantry conversion. Per-day rollup shows today through Fri. <em>GC archetype baseline at 15-20 items; service-trade stress test (50+) compresses Done section and rolls low-attention Later items behind "+ N more."</em>
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/todo</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a task, project, or capture</div>
+      </div>
+
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>To-do</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">To-do</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-voice">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+              Add to-do
+            </span>
+            <span class="bc-voice-hint">"Right Hand, add a to-do…"</span>
+          </div>
+
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">To-do</h2>
+              <div class="main-meta">18 open + done · 6 projects · sorted by attention</div>
+            </div>
+            <div class="view-mode-toggle">
+              <span class="vmt-option active">List</span>
+              <span class="vmt-option">Grid</span>
+            </div>
+          </div>
+
+          <div class="filter-chips">
+            <span class="filter-chip active">All</span>
+            <span class="filter-chip">Today</span>
+            <span class="filter-chip">Overdue</span>
+            <span class="filter-chip">By project</span>
+            <span class="filter-chip">By assignee</span>
+            <span class="filter-chip">Standalone</span>
+          </div>
+
+          <div class="main-content">
+            <div class="todo-area">
+
+              <div class="section-label">Overdue <span class="sl-count">· 2</span></div>
+              <div class="todo-table">
+                <div class="todo-table-head"><span>Task</span><span>Project</span><span>Due</span><span>Assignee</span><span>State</span><span>Action</span></div>
+
+                <div class="todo-row">
+                  <div class="td-task">Confirm tile order delivery date</div>
+                  <div class="td-project"><strong>Pantry conversion</strong><span>Luis Hernandez · PRJ-014</span></div>
+                  <div class="td-due red">1d overdue</div>
+                  <div class="td-assignee"><span class="td-avatar pm">MK</span>Mike · PM</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Resolve tile crew conflict with supplier</div>
+                  <div class="td-project"><strong>Kitchen + Primary bath</strong><span>Maria Wegrzyn · PRJ-018</span></div>
+                  <div class="td-due red">2d overdue</div>
+                  <div class="td-assignee"><span class="td-avatar pm">MK</span>Mike · PM</div>
+                  <div class="td-state blocked">Blocked</div>
+                  <div class="td-action">›</div>
+                </div>              </div>
+
+              <div class="section-label">Today <span class="sl-count">· 4</span></div>
+              <div class="todo-table">
+                <div class="todo-table-head"><span>Task</span><span>Project</span><span>Due</span><span>Assignee</span><span>State</span><span>Action</span></div>
+
+                <div class="todo-row">
+                  <div class="td-task">Review CO-002 framing change order</div>
+                  <div class="td-project"><strong>Pantry conversion</strong><span>Luis Hernandez · PRJ-014</span></div>
+                  <div class="td-due amber">Today</div>
+                  <div class="td-assignee"><span class="td-avatar owner">CA</span>Christian · Owner</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Call Hernandez about tile selection delay</div>
+                  <div class="td-project"><strong>Pantry conversion</strong><span>Luis Hernandez · PRJ-014</span></div>
+                  <div class="td-due amber">Today</div>
+                  <div class="td-assignee"><span class="td-avatar owner">CA</span>Christian · Owner</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Approve CO-003 lighting upgrade</div>
+                  <div class="td-project"><strong>Kitchen + island</strong><span>Aaron Goldberg · PRJ-024</span></div>
+                  <div class="td-due amber">Today</div>
+                  <div class="td-assignee"><span class="td-avatar owner">CA</span>Christian · Owner</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Send Ault final signoff packet</div>
+                  <div class="td-project"><strong>Coronado vanity</strong><span>Sarah Ault · PRJ-021</span></div>
+                  <div class="td-due amber">Today</div>
+                  <div class="td-assignee"><span class="td-avatar pm">SR</span>Sarah · PM</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>              </div>
+
+              <div class="section-label">This week <span class="sl-count">· 4</span></div>
+              <div class="todo-table">
+                <div class="todo-table-head"><span>Task</span><span>Project</span><span>Due</span><span>Assignee</span><span>State</span><span>Action</span></div>
+
+                <div class="todo-row">
+                  <div class="td-task">Chase structural eng. report</div>
+                  <div class="td-project"><strong>ADU build</strong><span>Dev Patel · PRJ-022</span></div>
+                  <div class="td-due dim">Wed</div>
+                  <div class="td-assignee"><span class="td-avatar pm">MK</span>Mike · PM</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Confirm Dunne final walk attendees</div>
+                  <div class="td-project"><strong>Master bath</strong><span>James Dunne · PRJ-011</span></div>
+                  <div class="td-due dim">Fri</div>
+                  <div class="td-assignee"><span class="td-avatar pm">SR</span>Sarah · PM</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Order backsplash tile sample</div>
+                  <div class="td-project"><strong>Kitchen + Primary bath</strong><span>Maria Wegrzyn · PRJ-018</span></div>
+                  <div class="td-due dim">Fri</div>
+                  <div class="td-assignee"><span class="td-avatar field">MC</span>Marcus · Field</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Check framing inspection readiness</div>
+                  <div class="td-project"><strong>Pantry conversion</strong><span>Luis Hernandez · PRJ-014</span></div>
+                  <div class="td-due dim">Fri</div>
+                  <div class="td-assignee"><span class="td-avatar field">CR</span>Carlos · Field</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>              </div>
+
+              <div class="section-label">Later <span class="sl-count">· 1</span></div>
+              <div class="todo-table">
+                <div class="todo-table-head"><span>Task</span><span>Project</span><span>Due</span><span>Assignee</span><span>State</span><span>Action</span></div>
+
+                <div class="todo-row">
+                  <div class="td-task">Review Patel framing sub bids</div>
+                  <div class="td-project"><strong>ADU build</strong><span>Dev Patel · PRJ-022</span></div>
+                  <div class="td-due dim">Mon</div>
+                  <div class="td-assignee"><span class="td-avatar pm">MK</span>Mike · PM</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>              </div>
+
+              <div class="section-label">Standalone <span class="sl-count">· 2</span></div>
+              <div class="todo-table">
+                <div class="todo-table-head"><span>Task</span><span>Project</span><span>Due</span><span>Assignee</span><span>State</span><span>Action</span></div>
+
+                <div class="todo-row">
+                  <div class="td-task">Update vendor insurance certificates</div>
+                  <div class="td-project"><strong>Standalone</strong><span>Ops · no project link</span></div>
+                  <div class="td-due dim">No due date</div>
+                  <div class="td-assignee"><span class="td-avatar owner">CA</span>Christian · Owner</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">Renew business license filing</div>
+                  <div class="td-project"><strong>Standalone</strong><span>Ops · no project link</span></div>
+                  <div class="td-due dim">No due date</div>
+                  <div class="td-assignee"><span class="td-avatar owner">CA</span>Christian · Owner</div>
+                  <div class="td-state ">Open</div>
+                  <div class="td-action">›</div>
+                </div>              </div>
+
+              <div class="section-label">Done <span class="sl-count">· 2 + 3</span></div>
+              <div class="todo-table">
+                <div class="todo-table-head"><span>Task</span><span>Project</span><span>Due</span><span>Assignee</span><span>State</span><span>Action</span></div>
+
+                <div class="todo-row">
+                  <div class="td-task">Complete O'Brien cabinet measure</div>
+                  <div class="td-project"><strong>Mudroom + laundry</strong><span>Patrick O'Brien · PRJ-023</span></div>
+                  <div class="td-due dim">Sat</div>
+                  <div class="td-assignee"><span class="td-avatar field">CR</span>Carlos · Field</div>
+                  <div class="td-state done">Done</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row">
+                  <div class="td-task">File Nakamura electrical permit</div>
+                  <div class="td-project"><strong>Garage conversion</strong><span>Sho Nakamura · PRJ-016</span></div>
+                  <div class="td-due dim">Fri</div>
+                  <div class="td-assignee"><span class="td-avatar pm">MK</span>Mike · PM</div>
+                  <div class="td-state done">Done</div>
+                  <div class="td-action">›</div>
+                </div>
+                <div class="todo-row rollup">
+                  <div class="td-task">+ 3 done this week</div>
+                  <div class="td-project"><strong>Various</strong><span>tap to expand</span></div>
+                  <div class="td-due dim">—</div>
+                  <div class="td-assignee"><span class="td-avatar ">—</span>—</div>
+                  <div class="td-state done">Done</div>
+                  <div class="td-action">›</div>
+                </div>              </div>
+
+            </div>
+
+            <div class="todo-rail">
+              <div class="rh-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · to-do queue</div>
+                <div class="rh-text">
+                  <strong>18 to-dos total.</strong> <span class="rh-amber">4 due today.</span> <em>2 overdue.</em> 6 projects with pending items.
+                </div>
+              </div>
+
+              <div class="pattern-card">
+                <div class="pattern-eyebrow"><span class="ar-dot"></span>Patterns flagged · 1</div>
+                <div class="pattern-text">Hernandez has 4 open · likely blocking</div>
+                <div class="pattern-detail">Pantry conversion stalled on tile + CO-002. Three items due today or this week on one job — check in with Luis?</div>
+                <div class="pattern-cta">Open Hernandez to-dos →</div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">This week · rollup</div>
+                <div class="la-row">
+                  <div class="la-day">Today<strong>4</strong></div>
+                  <div class="la-content">CO-002 review · call Hernandez · CO-003 approve · Ault signoff<span class="la-detail">2 Owner · 1 PM · Hernandez ×2</span></div>
+                </div>
+                <div class="la-row">
+                  <div class="la-day">Wed<strong>1</strong></div>
+                  <div class="la-content">Patel structural eng. chase<span class="la-detail">Mike · ADU build</span></div>
+                </div>
+                <div class="la-row">
+                  <div class="la-day">Fri<strong>3</strong></div>
+                  <div class="la-content">Dunne walk confirm · backsplash sample · framing inspection<span class="la-detail">2 PM/Field · Wegrzyn + Hernandez</span></div>
+                </div>
+                <div class="la-row">
+                  <div class="la-day">Mon<strong>1</strong></div>
+                  <div class="la-content">Patel framing sub bid review<span class="la-detail">Mike · ADU build</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-TD2 · Spec</h3>
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Lane 5 · To-do system</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-TD1 · Mobile Global To-Do</span></div>
+      <div class="sl-step current"><span class="sl-dot">2</span><span><span class="sl-name">F-TD2</span> · Desktop Global To-Do <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">3</span><span>F-PR2/PR4 · Project Detail To-do sub-tab patch</span></div>
+      <div class="sl-step"><span class="sl-dot">4</span><span>F-CO1a/b · Closeout punch conversion patch</span></div>
+    </div>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> Comparison · cross-project operator queue at desktop density</li>
+      <li><strong>List / grid / both?</strong> Both · 6-column table (List) · 4-column per-project tiles (Grid · distinct chrome)</li>
+      <li><strong>Cognitive job?</strong> Scan what needs doing across all projects · patterns + per-day rollup on rail · drill to project context</li>
+      <li><strong>Hidden until drill?</strong> Per-project filtered list · F-PR4 To-do sub-tab · voice capture sheet · Done-section rollup</li>
+    </ul>
+    <h4>IA decision (locked)</h4>
+    <ul>
+      <li><strong>To-do is top-level under All</strong> — same tier as Projects, Schedule, Money. Not a sub-item under Projects.</li>
+      <li>Mobile bottom bar slot 4 = To-do when on this surface (F-TD1).</li>
+    </ul>
+    <h4>Desktop density choices</h4>
+    <ul>
+      <li><strong>6-column table</strong> · Task · Project · Due · Assignee · State · Action. Mobile stacked into card rows.</li>
+      <li><strong>Rail-led synthesis</strong> · RH summary + patterns flagged + per-day rollup. List dominates main column.</li>
+      <li><strong>Filter chips</strong> · All / Today / Overdue / By project / By assignee / Standalone — same set as F-TD1.</li>
+      <li><strong>Voice add</strong> · breadcrumb bar chip with mic + hint text. Sidebar SPEAK FAB also visible.</li>
+    </ul>
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — see what needs doing across the business, drill to project context</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — rail RH card opens the page</li>
+      <li><span class="badge doctrine">d-3</span><em>Sort by attention</em> — overdue → today → this week → later → standalone → done (compressed)</li>
+      <li><span class="badge doctrine">d-4</span><em>Red chip-tier only</em> — overdue as chip/text, not row border</li>
+      <li><span class="badge canon">canon</span>Right Hand named once · no agent names elsewhere</li>
+      <li><span class="badge canon">canon</span>List + Grid toggle on comparison surface only</li>
+    </ul>
+    <h4>Sample data</h4>
+    <ul>
+      <li><strong>18 to-dos</strong> · 13 open + 5 done (2 shown + 3 rollup)</li>
+      <li><strong>6 projects</strong> with pending items: Hernandez · Wegrzyn · Goldberg · Ault · Patel · Dunne</li>
+      <li><strong>2 standalone</strong> ops items · 2 overdue · 4 due today</li>
+    </ul>
+    <h4>Routes</h4>
+    <ul>
+      <li>Task row click → project To-do sub-tab (F-PR4) or standalone detail</li>
+      <li>Hernandez pattern → filtered Hernandez view</li>
+      <li>Add to-do voice chip → capture sheet with to-do intent</li>
+      <li>Sidebar Projects → F-PR3 · Home → F-A2</li>
+    </ul>
+  </div>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-TD2 · Grid view · per-project to-do comparison at desktop density</div>
+  <p class="frame-narr">
+    Operator toggles to <em>Grid</em>. 4-column grid · 6 project tiles + 1 standalone tile · each tile shows open count + next due date. Optimized for <strong>scan by project, not detail</strong>. Hernandez tile carries red chip (4 open · next due Today). Drill into any tile → filtered list for that project. <em>Service-trade stress test (50+ items)</em>: same 4-col grid, vertical scroll, project grouping holds.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/todo?view=grid</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a task, project, or capture</div>
+      </div>
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>To-do</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link">Home</span><span class="bc-sep">›</span><span class="bc-link active">To-do</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-voice"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>Add to-do</span>
+            <span class="bc-voice-hint">"Right Hand, add a to-do…"</span>
+          </div>
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">To-do</h2>
+              <div class="main-meta">6 projects · scan by job · next due visible</div>
+            </div>
+            <div class="view-mode-toggle">
+              <span class="vmt-option">List</span>
+              <span class="vmt-option active">Grid</span>
+            </div>
+          </div>
+
+          <div class="section-label" style="margin: 14px 0 8px; padding-left: 24px;">Projects with open to-dos <span class="sl-count">· 6</span></div>
+          <div class="grid-view">
+            <div class="grid-tile attention">
+              <div class="gt-name">Pantry conversion</div>
+              <div class="gt-phase">4 open</div>
+              <div class="gt-client">Luis Hernandez · PRJ-014</div>
+              <div class="gt-chip-row"><span class="gt-chip red">Likely blocking</span></div>
+              <div class="gt-rhythm">Next due · Today · CO-002 review</div>
+            </div>
+            <div class="grid-tile attention">
+              <div class="gt-name">Kitchen + Primary bath</div>
+              <div class="gt-phase">2 open · 1 blocked</div>
+              <div class="gt-client">Maria Wegrzyn · PRJ-018</div>
+              <div class="gt-chip-row"><span class="gt-chip red">2d overdue</span></div>
+              <div class="gt-rhythm">Next due · Fri · backsplash sample</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Kitchen + island</div>
+              <div class="gt-phase">1 open</div>
+              <div class="gt-client">Aaron Goldberg · PRJ-024</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">Due today</span></div>
+              <div class="gt-rhythm">CO-003 lighting · $8,420</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Coronado vanity</div>
+              <div class="gt-phase">1 open</div>
+              <div class="gt-client">Sarah Ault · PRJ-021</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">Due today</span></div>
+              <div class="gt-rhythm">Final signoff packet</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">ADU build</div>
+              <div class="gt-phase">2 open</div>
+              <div class="gt-client">Dev Patel · PRJ-022</div>
+              <div class="gt-rhythm">Next due · Wed · structural eng.</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Master bath</div>
+              <div class="gt-phase">1 open</div>
+              <div class="gt-client">James Dunne · PRJ-011</div>
+              <div class="gt-rhythm">Next due · Fri · final walk</div>
+            </div>
+          </div>
+
+          <div class="section-label" style="margin: 14px 0 8px; padding-left: 24px;">Standalone <span class="sl-count">· 2</span></div>
+          <div class="grid-view" style="padding-top: 0;">
+            <div class="grid-tile">
+              <div class="gt-name">Ops · standalone</div>
+              <div class="gt-phase">2 open</div>
+              <div class="gt-client">No project link</div>
+              <div class="gt-rhythm">Insurance certs · license renewal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-TD2 Grid · Spec</h3>
+    <h4>Comparison view canon</h4>
+    <ul>
+      <li><strong>Per-project tiles</strong> · open count + next due + client line</li>
+      <li>4-column desktop grid · scan by project, not by individual task</li>
+      <li>Red/amber chips carry attention flags — no row border treatment</li>
+      <li>Drill into tile → filtered list for that project</li>
+      <li>Standalone items get their own section (not forced into project grid)</li>
+    </ul>
+    <h4>What Grid refuses to be</h4>
+    <ul>
+      <li>Not a kanban board with drag-between-columns</li>
+      <li>Not a Houzz Pro task grid with 47 fields per tile</li>
+      <li>Not a dashboard with micro-metrics per project</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves at desktop density</span>
+    F-TD1 works at desktop without becoming a task manager. <em>Adding columns, not features.</em> The 6-column table spreads task context across full width. The rail carries RH synthesis, patterns, and per-day rollup — so the main column stays a queue, not a dashboard. Hernandez surfaces twice (pattern card + 4-open grid tile) — intentional highest-attention signal.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not Asana. Not a Gantt-linked task board. Not Buildertrend's to-do module. <strong>F-TD2 is F-TD1 with breathing room, plus the patterns and rollup the rail can carry.</strong> A 1700px viewport spent on the same cognitive job — what needs doing across the business — not on more widgets stitched together.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

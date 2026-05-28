@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-MN4 · Desktop Margin posture · OWNER-PRIVATE</title>
+<style>
+:root{--kerf-bg:#0A0D11;--kerf-bg-2:#14181F;--kerf-surface:#1A1F28;--kerf-surface-2:#232936;--kerf-border:#2A3140;--kerf-border-soft:#1F2530;--kerf-text:#E8ECF1;--kerf-text-dim:#98A1B3;--kerf-text-mute:#6A7282;--kerf-amber:#F5B544;--kerf-red:#F87171;--kerf-blue:#7BA8FF;--field-green:#38C977;--right-hand:#C9A961;--owner-private:#7C5BD8;}
+body.light-mode{--kerf-bg:#FFF;--kerf-bg-2:#F4F6F9;--kerf-surface:#FFF;--kerf-surface-2:#EBEEF2;--kerf-border:#C9D0D8;--kerf-border-soft:#DFE3E8;--kerf-text:#0A0D11;--kerf-text-dim:#4A5462;--kerf-text-mute:#7B8492;}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9 0%,#FFF 100%)!important;} body.light-mode .view-toggle-bar{background:rgba(255,255,255,0.92)!important;} body.light-mode .desktop-frame{box-shadow:0 8px 30px rgba(0,0,0,0.10);}
+body.light-mode .chrome-dots .d:nth-child(1){background:#FF5F57;opacity:1;} body.light-mode .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:1;} body.light-mode .chrome-dots .d:nth-child(3){background:#28C840;opacity:1;}
+*{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--kerf-bg);color:var(--kerf-text);line-height:1.5;font-size:13px;}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px;}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--kerf-border);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--kerf-text-dim);}
+.view-toggle-bar .vtb-label{font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;}
+.view-toggle-bar .vtb-options{display:flex;gap:2px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-radius:8px;padding:2px;}
+.view-toggle-bar .vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--kerf-text-mute);cursor:pointer;font-weight:600;}
+.view-toggle-bar .vtb-tab.active{background:var(--owner-private);color:#FFF;} .view-toggle-bar .vtb-hint{margin-left:auto;font-size:10.5px;color:var(--kerf-text-mute);}
+body.presentation-mode .page{max-width:none;padding:0 24px 80px;} body.presentation-mode .frame{grid-template-columns:1fr;gap:14px;} body.presentation-mode .frame-spec{display:none;}
+.page-header{border-bottom:1px solid var(--kerf-border);padding-bottom:22px;margin-bottom:32px;}
+.page-header .crumb{font-size:11px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;} .page-header .crumb .step{color:var(--kerf-text-dim);} .page-header .crumb .step.current{color:var(--owner-private);}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px;} .page-header p{color:var(--kerf-text-dim);margin:0;font-size:13px;max-width:1080px;line-height:1.6;} .page-header p em{color:var(--owner-private);font-style:normal;}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px;align-items:start;}
+.frame-label{grid-column:1 / -1;font-size:13px;color:var(--owner-private);font-weight:600;margin-bottom:4px;}
+.frame-narr{grid-column:1 / -1;margin:0 0 14px;color:var(--kerf-text-dim);font-size:12.5px;line-height:1.7;max-width:1080px;} .frame-narr em{color:var(--owner-private);font-style:normal;}
+.frame-render{border:1px solid var(--kerf-border);border-radius:12px;background:linear-gradient(180deg,#14181F 0%,#0A0D11 100%);padding:28px;overflow:hidden;}
+.frame-spec{border:1px solid var(--kerf-border);border-radius:12px;background:var(--kerf-bg-2);padding:18px 16px;font-size:12px;color:var(--kerf-text-dim);height:fit-content;position:sticky;top:60px;}
+.frame-spec h3{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-text);font-weight:700;margin:0 0 10px;}
+.frame-spec h4{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--owner-private);font-weight:700;margin:14px 0 6px;} .frame-spec h4:first-of-type{margin-top:0;}
+.frame-spec ul{padding-left:16px;margin:0 0 8px;} .frame-spec li{margin-bottom:4px;line-height:1.55;}
+
+.desktop-frame{background:var(--kerf-bg);border:1px solid var(--kerf-border);border-radius:12px;overflow:hidden;width:100%;display:flex;flex-direction:column;min-height:820px;}
+.app-chrome{background:var(--kerf-bg-2);border-bottom:1px solid var(--kerf-border);padding:9px 14px;display:flex;align-items:center;gap:10px;font-size:11px;}
+.chrome-dots{display:flex;gap:5px;} .chrome-dots .d{width:11px;height:11px;border-radius:50%;}
+.chrome-dots .d:nth-child(1){background:#FF5F57;opacity:0.7;} .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:0.7;} .chrome-dots .d:nth-child(3){background:#28C840;opacity:0.7;}
+.chrome-url{margin-left:14px;font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--kerf-text-mute);padding:4px 10px;background:var(--kerf-bg);border-radius:6px;} .chrome-spacer{flex:1;}
+.chrome-search{background:var(--kerf-bg);border:1px solid var(--kerf-border-soft);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--kerf-text-mute);width:220px;}
+.app-body{display:grid;grid-template-columns:232px 1fr;min-height:760px;}
+.sidebar{background:var(--kerf-bg-2);border-right:1px solid var(--kerf-border-soft);padding:14px 12px;display:flex;flex-direction:column;gap:4px;}
+.sb-logo{display:flex;align-items:center;gap:8px;padding:6px 8px 14px;margin-bottom:4px;border-bottom:1px solid var(--kerf-border-soft);}
+.sb-mark{width:24px;height:24px;background:var(--owner-private);color:#FFF;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+.sb-brand{font-size:13px;color:var(--kerf-text);font-weight:700;} .sb-tenant{display:block;font-size:10px;color:var(--kerf-text-mute);font-weight:500;margin-top:1px;}
+.sb-section-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;padding:12px 8px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;font-size:12.5px;color:var(--kerf-text-dim);font-weight:500;position:relative;cursor:pointer;}
+.sb-item:hover{background:var(--kerf-surface);color:var(--kerf-text);} .sb-item.active{background:rgba(124,91,216,0.12);color:var(--owner-private);font-weight:600;}
+.sb-item.active::before{content:'';position:absolute;left:-12px;top:9px;bottom:9px;width:3px;background:var(--owner-private);border-radius:0 2px 2px 0;}
+.sb-item .sb-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;} .sb-item .sb-icon svg{width:18px;height:18px;fill:currentColor;}
+.sb-subitem{padding:5px 10px 5px 38px;font-size:11.5px;color:var(--kerf-text-mute);border-radius:7px;cursor:pointer;position:relative;font-weight:500;}
+.sb-subitem.active{color:var(--owner-private);font-weight:600;}
+.sb-subitem .sb-sub-tick{position:absolute;left:24px;top:5px;color:var(--kerf-text-mute);font-size:11px;opacity:0.55;}
+.sb-subitem .sb-lock{font-size:10px;margin-left:5px;}
+.sb-fab{margin:18px auto 14px;width:64px;height:64px;border-radius:50%;background:var(--owner-private);color:#FFF;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(124,91,216,0.40);position:relative;}
+.sb-fab svg.mic-icon{width:26px;height:26px;fill:currentColor;} .sb-fab .sb-fab-label{font-size:8.5px;letter-spacing:0.06em;font-weight:700;margin-top:-2px;}
+.sb-divider{height:1px;background:var(--kerf-border-soft);margin:8px 0;} .sb-spacer{flex:1;}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-top:1px solid var(--kerf-border-soft);margin:8px -12px -14px;background:var(--kerf-bg-2);}
+.sb-user-avatar{width:28px;height:28px;border-radius:50%;background:rgba(124,91,216,0.20);color:var(--owner-private);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;}
+.sb-user-name{font-size:11.5px;color:var(--kerf-text);font-weight:600;} .sb-user-meta{font-size:9.5px;color:var(--kerf-text-mute);margin-top:1px;}
+
+.main{padding:0;display:flex;flex-direction:column;background:var(--kerf-bg);}
+.bc-bar{background:var(--kerf-bg);border-bottom:1px solid var(--kerf-border-soft);padding:11px 24px;display:flex;align-items:center;gap:10px;font-size:11.5px;}
+.bc-link{color:var(--kerf-text-dim);} .bc-link.active{color:var(--owner-private);font-weight:600;} .bc-spacer{flex:1;}
+.bc-private{color:var(--owner-private);font-size:11px;font-weight:600;}
+.main-header{padding:18px 24px 4px;display:flex;align-items:center;gap:12px;}
+.main-title{font-size:22px;font-weight:600;color:var(--kerf-text);margin:0;}
+.main-lock{font-size:14px;color:var(--owner-private);}
+.main-meta{font-size:12px;color:var(--kerf-text-mute);}
+.main-content{display:grid;grid-template-columns:1fr 340px;gap:22px;padding:14px 24px 24px;flex:1;}
+
+/* Private banner top */
+.private-banner{margin:8px 24px 16px;padding:10px 13px;background:rgba(124,91,216,0.08);border:1px solid rgba(124,91,216,0.30);border-radius:8px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--owner-private);font-weight:600;}
+
+.area{display:flex;flex-direction:column;gap:18px;}
+.section-label{font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;display:flex;align-items:baseline;gap:8px;margin-bottom:-4px;}
+.section-label .sl-count{color:var(--kerf-text-dim);font-weight:600;font-size:10px;letter-spacing:0.04em;}
+
+.margin-row{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:1.6fr 1fr 120px 14px;gap:14px;align-items:center;margin-bottom:7px;}
+.margin-row.under{border-left:3px solid var(--kerf-red);padding-left:14px;}
+.margin-row.watch{border-left:3px solid var(--kerf-amber);padding-left:14px;}
+.margin-row.on-track{border-left:3px solid var(--field-green);padding-left:14px;}
+.mr-name{font-size:13.5px;color:var(--kerf-text);font-weight:700;} .mr-meta{font-size:10.5px;color:var(--kerf-text-mute);margin-top:2px;}
+.mr-detail{font-size:11.5px;color:var(--kerf-text-dim);line-height:1.4;} .mr-detail strong{color:var(--kerf-text);font-weight:600;}
+.mr-margin{text-align:right;font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;font-size:18px;}
+.mr-margin.red{color:var(--kerf-red);} .mr-margin.amber{color:var(--kerf-amber);} .mr-margin.green{color:var(--field-green);}
+.mr-margin-note{display:block;font-family:-apple-system,sans-serif;font-size:10px;color:var(--kerf-text-mute);margin-top:1px;font-weight:500;}
+.mr-arrow{color:var(--kerf-text-mute);font-size:14px;}
+
+.rail{display:flex;flex-direction:column;gap:14px;}
+.rh-card{background:rgba(124,91,216,0.05);border-left:2px solid var(--owner-private);border-radius:4px;padding:11px 13px;}
+.rh-eyebrow{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--owner-private);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.rh-eyebrow .rh-dot{width:5px;height:5px;border-radius:50%;background:var(--owner-private);}
+.rh-text{font-size:12px;color:var(--kerf-text);line-height:1.55;} .rh-text strong{color:var(--kerf-text);font-weight:700;} .rh-text em{color:var(--kerf-red);font-style:normal;font-weight:600;} .rh-text .rh-green{color:var(--field-green);font-weight:600;}
+
+.portfolio-card{background:var(--kerf-surface);border:1px solid rgba(124,91,216,0.30);border-radius:11px;padding:14px;}
+.ps-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--owner-private);font-weight:700;margin-bottom:10px;}
+.ps-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;font-size:12px;border-bottom:1px solid var(--kerf-border-soft);}
+.ps-row:last-child{border-bottom:0;padding-bottom:0;}
+.ps-label{color:var(--kerf-text-dim);} .ps-val{font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;font-size:14px;} .ps-val.green{color:var(--field-green);} .ps-val.amber{color:var(--kerf-amber);} .ps-val.red{color:var(--kerf-red);}
+
+.trend-card{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:11px;padding:12px 14px;}
+.tc-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-bottom:10px;}
+.tc-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-items:end;height:80px;}
+.tc-bar{background:var(--kerf-surface-2);border-radius:3px 3px 0 0;} .tc-bar.green{background:var(--field-green);} .tc-bar.amber{background:var(--kerf-amber);}
+.tc-month{font-size:9px;color:var(--kerf-text-mute);text-align:center;margin-top:6px;font-weight:600;}
+.tc-summary{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:9px;border-top:1px solid var(--kerf-border-soft);font-size:11.5px;}
+.tc-trend-label{color:var(--kerf-text-mute);} .tc-trend-val{font-family:"SF Mono",Menlo,monospace;color:var(--field-green);font-weight:700;}
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style></head>
+<body><div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px;">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">F-MN3 · Margin (mobile)</span><span class="sep">›</span><span class="step current">F-MN4 · Margin (desktop · OWNER-PRIVATE)</span></div>
+  <h1>F-MN4 · Desktop Margin posture · OWNER-PRIVATE</h1>
+  <p>Desktop projection. Same canon as F-MN3 · <em>architecturally invisible</em> to Admin/Ops · PM · Estimator. Violet accent everywhere · sidebar shows lock icon on Margin sub-item · Money domain itself is hidden from non-Owner roles via the sidebar entirely (this surface is Owner-only).</p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-MN4 · Owner-only · strategic margin lens</div>
+  <p class="frame-narr">Owner accesses via Money sidebar → Margin sub-item (with lock icon · only Owner can see it). Banner reinforces privacy. Left main: portfolio margin stat + per-project rows sorted by under-target. Right rail: RH synthesis · 6-month trend chart · margin baseline editor (V1.5+ link).</p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/money/margin</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find a project</div></div>
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Margin<span class="sb-lock">🔒</span></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Home</span><span style="color:var(--kerf-border);">›</span><span class="bc-link">Money</span><span style="color:var(--kerf-border);">›</span><span class="bc-link active">Margin 🔒</span><div class="bc-spacer"></div><span class="bc-private">Owner-only</span><span class="bc-action" title="Print · owner-private · do not leave printed copies unsecured"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="bc-action" title="Export · owner-private · audit-logged · role-gated"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+
+          <div class="private-banner">🔒 Architecturally private · Admin/Ops · PM · Estimator do not see this surface or know it exists in their nav</div>
+
+          <div class="main-header"><h2 class="main-title">Margin posture <span class="main-lock">🔒</span></h2><div class="main-meta">· strategic money · Owner-only</div></div>
+
+          <div class="main-content">
+
+            <div class="area">
+              <div class="section-label">Per-project · attention-sorted<span class="sl-count">· 4 active</span></div>
+
+              <div class="margin-row under">
+                <div><div class="mr-name">Wegrzyn · kitchen + primary bath</div><div class="mr-meta">Target 30% · tile sub cost overrun</div></div>
+                <div class="mr-detail">Target margin 30% (kitchen archetype default). Running 22% · tile sub came in $4,200 over bid.<br><strong>Drift Agent flagged</strong> 2026-05-15.</div>
+                <div class="mr-margin red">22.0%<span class="mr-margin-note">-8.0 pts</span></div>
+                <span class="mr-arrow">›</span>
+              </div>
+
+              <div class="margin-row watch">
+                <div><div class="mr-name">Ault · Coronado vanity</div><div class="mr-meta">Target 28% · designer-led pressure</div></div>
+                <div class="mr-detail">Target margin 28% (designer-led archetype). Running 25% · markup vs Valle dropship.<br>Watch · not yet flagged.</div>
+                <div class="mr-margin amber">25.0%<span class="mr-margin-note">-3.0 pts</span></div>
+                <span class="mr-arrow">›</span>
+              </div>
+
+              <div class="margin-row on-track">
+                <div><div class="mr-name">Hernandez · pantry conversion</div><div class="mr-meta">Target 32% · framing on track</div></div>
+                <div class="mr-detail">Target margin 32% (pantry archetype). Running 32% on signed scope. CO-002 if approved trims to 31.5%.</div>
+                <div class="mr-margin green">32.0%<span class="mr-margin-note">on target</span></div>
+                <span class="mr-arrow">›</span>
+              </div>
+
+              <div class="margin-row on-track">
+                <div><div class="mr-name">Dunne · master bath (closing)</div><div class="mr-meta">Target 32% · ahead of plan</div></div>
+                <div class="mr-detail">Target margin 32%. Finishing at 34% · came in under labor estimate · clean closeout expected.</div>
+                <div class="mr-margin green">34.0%<span class="mr-margin-note">+2.0 pts</span></div>
+                <span class="mr-arrow">›</span>
+              </div>
+            </div>
+
+            <div class="rail">
+              <div class="rh-card"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · margin</div><div class="rh-text"><strong>Blended 28.4%.</strong> <em>Wegrzyn under target.</em> <span class="rh-green">Hernandez + Dunne on/above target.</span> 6-month trend +5.2 pts.</div></div>
+
+              <div class="portfolio-card">
+                <div class="ps-eyebrow">Portfolio · active · blended</div>
+                <div class="ps-row"><span class="ps-label">Target (weighted)</span><span class="ps-val">30.2%</span></div>
+                <div class="ps-row"><span class="ps-label">Actual to date</span><span class="ps-val amber">28.4%</span></div>
+                <div class="ps-row"><span class="ps-label">Delta</span><span class="ps-val amber">-1.8 pts</span></div>
+                <div class="ps-row"><span class="ps-label">Est profit to date</span><span class="ps-val green">$58,400</span></div>
+                <div class="ps-row"><span class="ps-label">Est profit at close</span><span class="ps-val green">$143,800</span></div>
+              </div>
+
+              <div class="trend-card">
+                <div class="tc-eyebrow">Trend · 6 months blended</div>
+                <div class="tc-bars"><div class="tc-bar amber" style="height:52%;"></div><div class="tc-bar amber" style="height:60%;"></div><div class="tc-bar amber" style="height:55%;"></div><div class="tc-bar green" style="height:72%;"></div><div class="tc-bar green" style="height:78%;"></div><div class="tc-bar green" style="height:82%;"></div></div>
+                <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;"><div class="tc-month">Dec</div><div class="tc-month">Jan</div><div class="tc-month">Feb</div><div class="tc-month">Mar</div><div class="tc-month">Apr</div><div class="tc-month">May</div></div>
+                <div class="tc-summary"><span class="tc-trend-label">6mo trend</span><span class="tc-trend-val">+5.2 pts</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-MN4 · Spec</h3>
+    <h4>Owner-private canon</h4>
+    <ul><li>Architecturally invisible to Admin/Ops · PM · Estimator · Field Hand · Sub</li><li>Sidebar shows Margin sub-item with lock icon · only Owner sees this entry · for non-Owners the sub-item doesn't render at all</li><li>Bread crumb shows "Owner-only" indicator</li><li>Violet accent throughout</li><li>Banner reinforces privacy</li></ul>
+      <h4>Export / Print affordances (Lane 7B · owner-private)</h4>
+    <ul><li>Top-right bc-bar carries <code>Print</code> + <code>Export ▾</code> alongside the Owner-only badge</li><li><strong>Owner-only · audit-logged · role-gated</strong> · printed copies require secure handling</li><li>Export inherits 🔒 lock · format selector limited to PDF (no CSV/XLSX for margin posture · data-egress-restricted)</li></ul>
+  </div>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('presentation-mode',tab.dataset.mode==='presentation');});});
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const next=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector(`[data-mode="${next}"]`).click();}});
+document.querySelectorAll('[data-theme]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('light-mode',tab.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',tab.dataset.theme);}catch(e){}});});
+try{const saved=localStorage.getItem('kerf_wf_theme');if(saved==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'));}}catch(e){}
+</script>
+</body></html>

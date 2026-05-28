@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-BK1b · Desktop Bookkeeping recon · 3-column workflow at desktop density</title>
+<style>
+:root{--kerf-bg:#0A0D11;--kerf-bg-2:#14181F;--kerf-surface:#1A1F28;--kerf-surface-2:#232936;--kerf-border:#2A3140;--kerf-border-soft:#1F2530;--kerf-text:#E8ECF1;--kerf-text-dim:#98A1B3;--kerf-text-mute:#6A7282;--kerf-amber:#F5B544;--kerf-green:#4ADE80;--kerf-red:#F87171;--kerf-blue:#7BA8FF;--kerf-violet:#A78BFA;--kerf-cyan:#67D6E0;--field-green:#38C977;--right-hand:#C9A961;}
+body.light-mode{--kerf-bg:#FFF;--kerf-bg-2:#F4F6F9;--kerf-surface:#FFF;--kerf-surface-2:#EBEEF2;--kerf-border:#C9D0D8;--kerf-border-soft:#DFE3E8;--kerf-text:#0A0D11;--kerf-text-dim:#4A5462;--kerf-text-mute:#7B8492;}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9 0%,#FFF 100%)!important;} body.light-mode .view-toggle-bar{background:rgba(255,255,255,0.92)!important;} body.light-mode .desktop-frame{box-shadow:0 8px 30px rgba(0,0,0,0.10);}
+body.light-mode .chrome-dots .d:nth-child(1){background:#FF5F57;opacity:1;} body.light-mode .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:1;} body.light-mode .chrome-dots .d:nth-child(3){background:#28C840;opacity:1;}
+*{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--kerf-bg);color:var(--kerf-text);line-height:1.5;font-size:13px;}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px;}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--kerf-border);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--kerf-text-dim);}
+.view-toggle-bar .vtb-label{font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;}
+.view-toggle-bar .vtb-options{display:flex;gap:2px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-radius:8px;padding:2px;}
+.view-toggle-bar .vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--kerf-text-mute);cursor:pointer;font-weight:600;}
+.view-toggle-bar .vtb-tab.active{background:var(--kerf-amber);color:#1A1300;} .view-toggle-bar .vtb-hint{margin-left:auto;font-size:10.5px;color:var(--kerf-text-mute);}
+body.presentation-mode .page{max-width:none;padding:0 24px 80px;} body.presentation-mode .frame{grid-template-columns:1fr;gap:14px;} body.presentation-mode .frame-spec{display:none;}
+.page-header{border-bottom:1px solid var(--kerf-border);padding-bottom:22px;margin-bottom:32px;}
+.page-header .crumb{font-size:11px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;} .page-header .crumb .step{color:var(--kerf-text-dim);} .page-header .crumb .step.current{color:var(--kerf-amber);} .page-header .crumb .sep{color:var(--kerf-border);margin:0 8px;}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px;} .page-header p{color:var(--kerf-text-dim);margin:0;font-size:13px;max-width:1080px;line-height:1.6;} .page-header p em{color:var(--right-hand);font-style:normal;}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px;align-items:start;}
+.frame-label{grid-column:1 / -1;font-size:13px;color:var(--kerf-amber);font-weight:600;margin-bottom:4px;}
+.frame-narr{grid-column:1 / -1;margin:0 0 14px;color:var(--kerf-text-dim);font-size:12.5px;line-height:1.7;max-width:1080px;} .frame-narr em{color:var(--right-hand);font-style:normal;}
+.frame-render{border:1px solid var(--kerf-border);border-radius:12px;background:linear-gradient(180deg,#14181F 0%,#0A0D11 100%);padding:28px;overflow:hidden;}
+.frame-spec{border:1px solid var(--kerf-border);border-radius:12px;background:var(--kerf-bg-2);padding:18px 16px;font-size:12px;color:var(--kerf-text-dim);height:fit-content;position:sticky;top:60px;}
+.frame-spec h3{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-text);font-weight:700;margin:0 0 10px;}
+.frame-spec h4{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin:14px 0 6px;} .frame-spec h4:first-of-type{margin-top:0;}
+.frame-spec ul{padding-left:16px;margin:0 0 8px;} .frame-spec li{margin-bottom:4px;line-height:1.55;} .frame-spec code{background:var(--kerf-surface);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--right-hand);}
+
+.desktop-frame{background:var(--kerf-bg);border:1px solid var(--kerf-border);border-radius:12px;overflow:hidden;width:100%;display:flex;flex-direction:column;min-height:820px;}
+.app-chrome{background:var(--kerf-bg-2);border-bottom:1px solid var(--kerf-border);padding:9px 14px;display:flex;align-items:center;gap:10px;font-size:11px;}
+.chrome-dots{display:flex;gap:5px;} .chrome-dots .d{width:11px;height:11px;border-radius:50%;}
+.chrome-dots .d:nth-child(1){background:#FF5F57;opacity:0.7;} .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:0.7;} .chrome-dots .d:nth-child(3){background:#28C840;opacity:0.7;}
+.chrome-url{margin-left:14px;font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--kerf-text-mute);padding:4px 10px;background:var(--kerf-bg);border-radius:6px;} .chrome-spacer{flex:1;}
+.chrome-search{background:var(--kerf-bg);border:1px solid var(--kerf-border-soft);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--kerf-text-mute);width:220px;}
+.app-body{display:grid;grid-template-columns:232px 1fr;min-height:760px;}
+.sidebar{background:var(--kerf-bg-2);border-right:1px solid var(--kerf-border-soft);padding:14px 12px;display:flex;flex-direction:column;gap:4px;}
+.sb-logo{display:flex;align-items:center;gap:8px;padding:6px 8px 14px;margin-bottom:4px;border-bottom:1px solid var(--kerf-border-soft);}
+.sb-mark{width:24px;height:24px;background:var(--kerf-amber);color:#1A1300;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+.sb-brand{font-size:13px;color:var(--kerf-text);font-weight:700;} .sb-tenant{display:block;font-size:10px;color:var(--kerf-text-mute);font-weight:500;margin-top:1px;}
+.sb-section-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;padding:12px 8px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;font-size:12.5px;color:var(--kerf-text-dim);font-weight:500;position:relative;cursor:pointer;}
+.sb-item:hover{background:var(--kerf-surface);color:var(--kerf-text);} .sb-item.active{background:rgba(245,181,68,0.10);color:var(--kerf-amber);font-weight:600;}
+.sb-item.active::before{content:'';position:absolute;left:-12px;top:9px;bottom:9px;width:3px;background:var(--kerf-amber);border-radius:0 2px 2px 0;}
+.sb-item .sb-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;} .sb-item .sb-icon svg{width:18px;height:18px;fill:currentColor;}
+.sb-subitem{padding:5px 10px 5px 38px;font-size:11.5px;color:var(--kerf-text-mute);border-radius:7px;cursor:pointer;position:relative;font-weight:500;}
+.sb-subitem:hover{background:var(--kerf-surface);color:var(--kerf-text-dim);} .sb-subitem .sb-sub-tick{position:absolute;left:24px;top:5px;color:var(--kerf-text-mute);font-size:11px;opacity:0.55;}
+.sb-fab{margin:18px auto 14px;width:64px;height:64px;border-radius:50%;background:var(--kerf-amber);color:#1A1300;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(245,181,68,0.40);position:relative;}
+.sb-fab svg.mic-icon{width:26px;height:26px;fill:currentColor;} .sb-fab .sb-fab-label{font-size:8.5px;letter-spacing:0.06em;font-weight:700;margin-top:-2px;}
+.sb-divider{height:1px;background:var(--kerf-border-soft);margin:8px 0;} .sb-spacer{flex:1;}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-top:1px solid var(--kerf-border-soft);margin:8px -12px -14px;background:var(--kerf-bg-2);}
+.sb-user-avatar{width:28px;height:28px;border-radius:50%;background:rgba(201,169,97,0.20);color:var(--right-hand);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;}
+.sb-user-name{font-size:11.5px;color:var(--kerf-text);font-weight:600;} .sb-user-meta{font-size:9.5px;color:var(--kerf-text-mute);margin-top:1px;}
+
+.main{padding:0;display:flex;flex-direction:column;background:var(--kerf-bg);}
+.bc-bar{background:var(--kerf-bg);border-bottom:1px solid var(--kerf-border-soft);padding:11px 24px;display:flex;align-items:center;gap:10px;font-size:11.5px;}
+.bc-link{color:var(--kerf-text-dim);} .bc-link.active{color:var(--kerf-text);font-weight:600;} .bc-spacer{flex:1;}
+.bc-action{color:var(--kerf-amber);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;} .bc-action svg{width:12px;height:12px;fill:currentColor;}
+.main-header{padding:18px 24px 4px;}
+.main-title{font-size:22px;font-weight:600;color:var(--kerf-text);margin:0;} .main-meta{font-size:12px;color:var(--kerf-text-mute);margin-top:4px;}
+.main-content{display:grid;grid-template-columns:1fr 340px;gap:22px;padding:14px 24px 24px;flex:1;}
+
+.money-area{display:flex;flex-direction:column;gap:18px;}
+.section-label{font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;display:flex;align-items:baseline;gap:8px;margin-bottom:-4px;}
+.section-label .sl-count{color:var(--kerf-text-dim);font-weight:600;font-size:10px;letter-spacing:0.04em;}
+.section-label .sl-total{margin-left:auto;font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;letter-spacing:0;text-transform:none;}
+.money-list{display:flex;flex-direction:column;gap:7px;}
+.money-row{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:1.6fr 1fr 180px 14px;gap:14px;align-items:center;}
+.money-row.attention{border-left:3px solid var(--kerf-amber);padding-left:14px;}
+.mr-name-block{}
+.mr-name{font-size:13.5px;color:var(--kerf-text);font-weight:700;} .mr-meta{font-size:10.5px;color:var(--kerf-text-mute);margin-top:2px;}
+.mr-scope{font-size:12px;color:var(--kerf-text-dim);} .mr-scope strong{color:var(--kerf-text);font-weight:600;}
+.mr-scope-detail{display:block;font-size:10.5px;color:var(--kerf-text-mute);margin-top:2px;}
+.mr-state-block{text-align:right;}
+.row-chip{display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;margin-bottom:4px;}
+.row-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .row-chip.red::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-red);}
+.row-chip.amber{background:rgba(245,181,68,0.14);color:var(--kerf-amber);} .row-chip.amber::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-amber);}
+.row-chip.green{background:rgba(56,201,119,0.14);color:var(--field-green);} .row-chip.green::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--field-green);}
+.mr-amount{font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;font-size:15px;} .mr-amount.red{color:var(--kerf-red);} .mr-amount.amber{color:var(--kerf-amber);}
+.mr-amount-note{display:block;font-family:-apple-system,sans-serif;font-size:10px;color:var(--kerf-text-mute);margin-top:1px;font-weight:500;}
+.mr-arrow{color:var(--kerf-text-mute);font-size:14px;}
+
+.rail{display:flex;flex-direction:column;gap:14px;}
+.rh-card{background:rgba(201,169,97,0.05);border-left:2px solid var(--right-hand);border-radius:4px;padding:11px 13px;}
+.rh-eyebrow{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--right-hand);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.rh-eyebrow .rh-dot{width:5px;height:5px;border-radius:50%;background:var(--right-hand);}
+.rh-text{font-size:12px;color:var(--kerf-text);line-height:1.55;} .rh-text strong{color:var(--kerf-text);font-weight:700;} .rh-text em{color:var(--kerf-red);font-style:normal;font-weight:600;} .rh-text .rh-amber{color:var(--kerf-amber);font-weight:600;}
+.pressure-card{background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.30);border-radius:11px;padding:12px 14px;}
+.pc-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-red);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.pc-eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--kerf-red);box-shadow:0 0 5px rgba(248,113,113,0.6);}
+.pc-title{font-size:13px;color:var(--kerf-text);font-weight:700;margin-bottom:5px;} .pc-detail{font-size:11.5px;color:var(--kerf-text-dim);line-height:1.55;}
+.pc-detail .pc-mono{font-family:"SF Mono",Menlo,monospace;color:var(--kerf-red);font-weight:700;}
+.rail-card{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:11px;padding:12px 14px;}
+.rail-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-bottom:10px;}
+.pf-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:6px 0;font-size:12px;color:var(--kerf-text-dim);border-bottom:1px solid var(--kerf-border-soft);}
+.pf-row:last-child{border-bottom:0;padding-bottom:0;} .pf-row:first-child{padding-top:0;}
+.pf-label{color:var(--kerf-text-mute);font-size:11px;} .pf-val{color:var(--kerf-text);font-weight:600;font-family:"SF Mono",Menlo,monospace;font-size:11.5px;} .pf-val.amber{color:var(--kerf-amber);} .pf-val.green{color:var(--field-green);} .pf-val.red{color:var(--kerf-red);}
+.qb-card{background:var(--kerf-surface);border:1px dashed var(--kerf-border);border-radius:11px;padding:11px 13px;}
+.qb-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-bottom:6px;}
+.qb-text{font-size:12px;color:var(--kerf-text-dim);line-height:1.5;} .qb-text strong{color:var(--kerf-text);font-weight:600;}
+.qb-cta{margin-top:9px;font-size:11px;color:var(--kerf-blue);font-weight:700;}
+
+/* View mode toggle · canon 2026-05-18 PM late · List | Grid */
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; margin: 0 0 14px; width: fit-content; }
+.vmt-option { padding: 5px 12px; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+
+/* Grid view · compact tiles · canon 2026-05-18 PM late · scan not detail */
+.grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+.grid-tile { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 10px 11px; cursor: pointer; }
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip carries the flag · F-BK1b CSS swept 2026-05-24 during Lane 1 rebuild */
+.grid-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 9px; }
+.grid-tile.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 9px; }
+.grid-tile.success { border-left: 3px solid var(--field-green); padding-left: 9px; }
+.gt-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.25; }
+.gt-phase { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 3px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.gt-chip-row { margin-top: 6px; }
+.gt-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 8px; padding: 2px 5px; border-radius: 3px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.gt-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); } .gt-chip.red::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-red); }
+.gt-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); } .gt-chip.amber::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-amber); }
+.gt-chip.cyan { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); } .gt-chip.cyan::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-cyan); }
+.gt-chip.green { background: rgba(56,201,119,0.12); color: var(--field-green); } .gt-chip.green::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--field-green); }
+.gt-rhythm { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 6px; font-weight: 500; }
+
+/* Bookkeeping 3-col · F-BK1b polish */
+.bk-workspace { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.bk-cols { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px; align-items: start; }
+.bk-col { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 12px 14px; min-width: 0; }
+.bk-col .section-label { margin: 0 0 10px; }
+.bk-row { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 9px; padding: 10px 12px; margin-bottom: 7px; }
+.bk-row:last-child { margin-bottom: 0; }
+.bk-row.attention { border-left: 3px solid var(--kerf-red); padding-left: 10px; }
+.bk-row-title { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.35; }
+.bk-row-detail { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 3px; line-height: 1.4; }
+.bk-row-amt { font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-dim); margin-top: 4px; }
+.row-acts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.row-act { font-size: 10px; color: var(--kerf-blue); font-weight: 700; cursor: pointer; padding: 4px 9px; background: var(--kerf-bg-2); border-radius: 5px; border: 1px solid var(--kerf-border-soft); }
+.confirm-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(56,201,119,0.08); border: 1px solid rgba(56,201,119,0.22); border-radius: 8px; margin-bottom: 10px; font-size: 11px; color: var(--kerf-text-dim); }
+.confirm-bar .cb-action { color: var(--kerf-amber); font-weight: 700; cursor: pointer; }
+.compressed-bk { font-size: 11px; color: var(--kerf-text-mute); padding: 4px 0 2px; line-height: 1.45; }
+.compressed-bk + .compressed-bk { padding-top: 0; }
+.match-acts { display: flex; gap: 8px; margin-top: 8px; }
+.recon-bar { height: 8px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 4px; overflow: hidden; margin: 8px 0 6px; }
+.recon-fill { height: 100%; width: 94%; background: var(--field-green); border-radius: 3px; }
+.recon-meta { font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5; }
+.patterns-card { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 12px 14px; }
+.patterns-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 6px; }
+.patterns-text { font-size: 12px; color: var(--kerf-text-dim); line-height: 1.55; }
+.patterns-text strong { color: var(--kerf-text); font-weight: 600; }
+.fill-toggle { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.fill-opt { font-size: 10px; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--kerf-border-soft); color: var(--kerf-text-mute); font-weight: 600; cursor: pointer; }
+.fill-opt.active { background: var(--kerf-amber); color: #1A1300; border-color: var(--kerf-amber); }
+
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px;">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">F-BK1a · Bookkeeping (mobile)</span><span class="sep">›</span><span class="step current">F-BK1b · Bookkeeping (desktop)</span></div>
+  <h1>F-BK1b · Desktop Bookkeeping · how current is bookkeeping</h1>
+  <p>Team &amp; Ops → Bookkeeping. Three-column recon + grid. <em>Fillable function</em> — Owner, delegate, or external MCP. Dollars in UI · integer cents in storage.</p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame 1 · F-BK1b · List view · 3-column recon workflow · 17 unreconciled items</div>
+  <p class="frame-narr">Desktop sibling of F-BK1a. Three columns ordered by required attention type: <em>Needs my hand</em> (judgment calls · 5) → <em>Auto-ready to confirm</em> (RH matched · 8 · batch-confirm available) → <em>Unmatched payments</em> (money in but no invoice · 4). Right rail: Right Hand summary · recon progress · QB sync state · Filled-by toggle (Owner / Delegate / External MCP per <code>feedback_bookkeeping_is_a_fillable_function.md</code>) · patterns flagged. NEVER auto-confirms — every match requires operator touch. <em>Service-trade stress test (50+ items):</em> columns compress with batch-confirm + filter by vendor/amount + Grid view by state.</p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/team/bookkeeping</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find an invoice, payment, or vendor</div></div>
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Home</span><span style="color:var(--kerf-border);">›</span><span class="bc-link">Team &amp; Ops</span><span style="color:var(--kerf-border);">›</span><span class="bc-link active">Bookkeeping</span><div class="bc-spacer"></div><span class="bc-action"><svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>Run sync</span><span class="bc-action" title="Print recon queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="bc-action" title="Export · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+          <div class="main-header"><h2 class="main-title">Bookkeeping</h2><div class="main-meta">17 unreconciled · 5 need your judgment · 8 auto-matched · 4 unmatched payments · bank feed through today</div></div>
+
+          <div class="main-content">
+
+            <div class="bk-workspace">
+              <div class="view-mode-toggle"><span class="vmt-option active">List</span><span class="vmt-option">Grid</span></div>
+              <div class="bk-cols">
+                <div class="bk-col">
+                  <div class="section-label">Needs my hand<span class="sl-count">· 5</span><span class="sl-total">$4,410</span></div>
+                  <div class="bk-row attention">
+                    <span class="row-chip red">Needs decision</span>
+                    <div class="bk-row-title">Lowes · $1,840</div>
+                    <div class="bk-row-detail">Split Wegrzyn + Hernandez? 2 possible jobs</div>
+                    <div class="row-acts"><span class="row-act">Split</span><span class="row-act">Categorize</span><span class="row-act">Skip</span></div>
+                  </div>
+                  <div class="bk-row attention">
+                    <span class="row-chip red">Needs decision</span>
+                    <div class="bk-row-title">Carter ACH · $1,800</div>
+                    <div class="bk-row-detail">"Stripe" sender · 3 open invoices possible</div>
+                    <div class="row-acts"><span class="row-act">Match</span><span class="row-act">Categorize</span><span class="row-act">Skip</span></div>
+                  </div>
+                  <div class="bk-row attention">
+                    <span class="row-chip red">Reverse</span>
+                    <div class="bk-row-title">Hernandez refund · -$320</div>
+                    <div class="bk-row-detail">Which invoice was reversed?</div>
+                    <div class="row-acts"><span class="row-act">Identify</span><span class="row-act">Skip</span></div>
+                  </div>
+                  <div class="bk-row attention">
+                    <span class="row-chip red">No job code</span>
+                    <div class="bk-row-title">Shell Fleet · $312</div>
+                    <div class="bk-row-detail">Fuel charge · needs project tag</div>
+                    <div class="row-acts"><span class="row-act">Tag job</span><span class="row-act">Overhead</span><span class="row-act">Skip</span></div>
+                  </div>
+                  <div class="bk-row attention">
+                    <span class="row-chip red">No job code</span>
+                    <div class="bk-row-title">ATM withdrawal · $200</div>
+                    <div class="bk-row-detail">Cash out · which job?</div>
+                    <div class="row-acts"><span class="row-act">Tag job</span><span class="row-act">Overhead</span><span class="row-act">Skip</span></div>
+                  </div>
+                </div>
+                <div class="bk-col">
+                  <div class="section-label">Auto-ready to confirm<span class="sl-count">· 8</span><span class="sl-total">$23,170</span></div>
+                  <div class="confirm-bar"><span>Confirm all 8 · $23,170</span><span class="cb-action">Confirm batch</span></div>
+                  <div class="bk-row">
+                    <span class="row-chip green">98% match</span>
+                    <div class="bk-row-title">KraftMaid · $11,200</div>
+                    <div class="bk-row-detail">→ Khan cabinet PO</div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip green">100% match</span>
+                    <div class="bk-row-title">Coastal Electric · $3,400</div>
+                    <div class="bk-row-detail">→ Goldberg-Lee invoice</div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip green">100% match</span>
+                    <div class="bk-row-title">Garcia Tile · $2,800</div>
+                    <div class="bk-row-detail">→ Hernandez invoice</div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip green">100% match</span>
+                    <div class="bk-row-title">Pacific Drywall · $2,100</div>
+                    <div class="bk-row-detail">→ Ault invoice</div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip green">100% match</span>
+                    <div class="bk-row-title">Allstate · $1,950</div>
+                    <div class="bk-row-detail">→ workers comp May</div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip green">95% match</span>
+                    <div class="bk-row-title">Fleet fuel · $890</div>
+                    <div class="bk-row-detail">→ May rollup</div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip green">100% match</span>
+                    <div class="bk-row-title">Hardware House · $620</div>
+                    <div class="bk-row-detail">→ Coring invoice</div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip green">100% match</span>
+                    <div class="bk-row-title">Cabinet Pulls Co · $210</div>
+                    <div class="bk-row-detail">→ Williamson invoice</div>
+                  </div>
+                </div>
+                <div class="bk-col">
+                  <div class="section-label">Unmatched payments<span class="sl-count">· 4</span><span class="sl-total">$12,350</span></div>
+                  <div class="bk-row">
+                    <span class="row-chip amber">Likely Khan deposit</span>
+                    <div class="bk-row-title">ACH in · $5,600</div>
+                    <div class="bk-row-detail">Sender "Khan" · no invoice yet · create deposit?</div>
+                    <div class="match-acts"><span class="row-act">Create deposit</span><span class="row-act">Different client</span></div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip amber">Sender unclear</span>
+                    <div class="bk-row-title">Wire in · $4,500</div>
+                    <div class="bk-row-detail">No sender name · check with client</div>
+                    <div class="match-acts"><span class="row-act">Identify</span><span class="row-act">Hold</span></div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip amber">ID needed</span>
+                    <div class="bk-row-title">Check #2247 · $1,800</div>
+                    <div class="bk-row-detail">Scan + identify client</div>
+                    <div class="match-acts"><span class="row-act">Scan check</span><span class="row-act">Manual ID</span></div>
+                  </div>
+                  <div class="bk-row">
+                    <span class="row-chip amber">Ambiguous</span>
+                    <div class="bk-row-title">Small payment · $450</div>
+                    <div class="bk-row-detail">Wegrzyn or O'Brien? check ledger</div>
+                    <div class="match-acts"><span class="row-act">Wegrzyn</span><span class="row-act">O'Brien</span><span class="row-act">Hold</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rail">
+              <div class="rh-card"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div><div class="rh-text"><strong>17 unreconciled · bank feed through today.</strong> <em>5 need your judgment.</em> <span class="rh-amber">8 auto-matched · one tap to confirm.</span> 4 payments-in with no invoice match yet.</div></div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Recon progress</div>
+                <div class="recon-bar"><div class="recon-fill"></div></div>
+                <div class="recon-meta"><strong>Reconciled through today</strong> · on target · 17 items waiting on operator touch</div>
+              </div>
+              <div class="qb-card">
+                <div class="qb-eyebrow">QB sync state</div>
+                <div class="qb-text"><strong>QB last synced 6h ago</strong> · 9 transactions pending export</div>
+                <div class="qb-cta">Run sync now →</div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Filled by</div>
+                <div class="recon-meta" style="margin-bottom:0;">Today: filled by <strong>Owner</strong> · Delegate available · External MCP not enabled (V1.5)</div>
+                <div class="fill-toggle"><span class="fill-opt active">Owner</span><span class="fill-opt">Delegate</span><span class="fill-opt">External MCP</span></div>
+              </div>
+              <div class="patterns-card">
+                <div class="patterns-eyebrow">Patterns flagged</div>
+                <div class="patterns-text"><strong>Lowes split jobs</strong> · 3rd time this month — consider auto-rule for materials across active jobs.</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-BK1b List · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul><li><strong>Macro / comparison / detail?</strong> Comparison (peer unreconciled items across 3 workflow buckets)</li><li><strong>List / grid / both?</strong> List + Grid (sibling toggle to Frame 2)</li><li><strong>Cognitive job?</strong> How current is bookkeeping? · what needs my judgment vs one-tap-confirm vs ID work?</li><li><strong>Hidden until drill?</strong> Per-transaction history · PO-to-invoice match · journal entry composition (drill to transaction detail)</li></ul>
+    <h4>Density · 17 unreconciled items</h4>
+    <ul><li>Needs my hand · 5 · $4,410 · red Needs-decision/Reverse/No-job-code chips · judgment calls</li><li>Auto-ready to confirm · 8 · $23,170 · green match-% chips · batch-confirm available</li><li>Unmatched payments · 4 · $12,350 · amber Likely/Sender-unclear/ID-needed/Ambiguous chips</li><li>Service-trade stress (50+): columns compress with batch-confirm + filter + Grid view by state</li></ul>
+    <h4>Money model</h4>
+    <ul><li>Display: dollars · Store: <code>integer cents</code> on every amount</li><li>Lifecycle states: <code>needs_judgment</code> · <code>auto_matched</code> · <code>unmatched</code> · <code>confirmed</code></li><li>Red is chip-tier only · no full-row red borders · `.grid-tile.risk` left-border removed (Lane 3 doctrine · CSS swept 2026-05-24)</li><li><strong>NEVER auto-confirms</strong> · every match requires operator touch (one-tap is still operator action)</li></ul>
+    <h4>Fillable function (memory canon)</h4>
+    <ul><li>Rail card · Owner / Delegate / External MCP roles</li><li>Today: Owner is filling · Delegate available · External MCP not enabled (V1.5 feature)</li><li>Per <code>feedback_bookkeeping_is_a_fillable_function.md</code> · role doesn't bind the surface; the work does</li></ul>
+    <h4>Sidebar selection</h4>
+    <ul><li>Team &amp; Ops active · Bookkeeping sub-item active (sub-item of Team &amp; Ops, not top-level domain)</li><li>Breadcrumb: Home › Team &amp; Ops › Bookkeeping</li></ul>
+      <h4>Export / Print affordances (Lane 7B)</h4>
+    <ul><li>Top-right bc-bar carries <code>Print</code> + <code>Export ▾</code> alongside Run sync</li><li>Audit trail on Export · sync state + Filled-by chip state captured in print</li></ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Grid view alternate · canon 2026-05-18 PM late -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-BK1b · Grid view · 4-column bookkeeping scan · 17 tiles</div>
+  <p class="frame-narr">Grid replaces list for scan by recon-state × amount. Same 17 items as Frame 1, one dataset two views. <em>gt-name</em> = source/vendor · <em>gt-phase</em> = recon bucket + context · <em>gt-chip</em> = state · <em>gt-rhythm</em> = amount. Red chip + amber border = needs judgment (5); green chip + green border = auto-matched ready to confirm (8); amber chip = unmatched payment-in (4). <em>Stress test (50+ items):</em> 4-column anatomy unchanged · scroll handles the rest · filter compresses to single-state focus.</p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/team/bookkeeping</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find an invoice, payment, or vendor</div></div>
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Home</span><span style="color:var(--kerf-border);">›</span><span class="bc-link">Team &amp; Ops</span><span style="color:var(--kerf-border);">›</span><span class="bc-link active">Bookkeeping</span><div class="bc-spacer"></div><span class="bc-action"><svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>Run sync</span><span class="bc-action" title="Print recon queue"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print</span><span class="bc-action" title="Export · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export ▾</span></div>
+          <div class="main-header"><h2 class="main-title">Bookkeeping</h2><div class="main-meta">17 unreconciled · grid scan by recon-state · same 17 items as List view</div></div>
+
+          <div class="main-content">
+
+
+            <div class="money-area">
+              <div class="view-mode-toggle"><span class="vmt-option">List</span><span class="vmt-option active">Grid</span></div>
+              <div class="section-label">All unreconciled<span class="sl-count">· 17</span><span class="sl-total">$39,930</span></div>
+              <div class="grid-view">
+                <div class="grid-tile attention"><div class="gt-name">Lowes</div><div class="gt-phase">Hand · split?</div><div class="gt-chip-row"><span class="gt-chip red">Split?</span></div><div class="gt-rhythm">$1,840</div></div>
+                <div class="grid-tile attention"><div class="gt-name">Carter ACH</div><div class="gt-phase">Hand · Stripe sender</div><div class="gt-chip-row"><span class="gt-chip red">3 possible</span></div><div class="gt-rhythm">$1,800</div></div>
+                <div class="grid-tile attention"><div class="gt-name">Hernandez</div><div class="gt-phase">Hand · refund</div><div class="gt-chip-row"><span class="gt-chip red">Reverse</span></div><div class="gt-rhythm">-$320</div></div>
+                <div class="grid-tile attention"><div class="gt-name">Shell Fleet</div><div class="gt-phase">Hand · fuel</div><div class="gt-chip-row"><span class="gt-chip red">Tag job</span></div><div class="gt-rhythm">$312</div></div>
+                <div class="grid-tile attention"><div class="gt-name">ATM</div><div class="gt-phase">Hand · cash</div><div class="gt-chip-row"><span class="gt-chip red">Tag job</span></div><div class="gt-rhythm">$200</div></div>
+                <div class="grid-tile success"><div class="gt-name">KraftMaid</div><div class="gt-phase">Auto · Khan PO</div><div class="gt-chip-row"><span class="gt-chip green">98%</span></div><div class="gt-rhythm">$11,200</div></div>
+                <div class="grid-tile success"><div class="gt-name">Coastal Electric</div><div class="gt-phase">Auto · Goldberg-Lee</div><div class="gt-chip-row"><span class="gt-chip green">100%</span></div><div class="gt-rhythm">$3,400</div></div>
+                <div class="grid-tile success"><div class="gt-name">Garcia Tile</div><div class="gt-phase">Auto · Hernandez</div><div class="gt-chip-row"><span class="gt-chip green">100%</span></div><div class="gt-rhythm">$2,800</div></div>
+                <div class="grid-tile success"><div class="gt-name">Pacific Drywall</div><div class="gt-phase">Auto · Ault</div><div class="gt-chip-row"><span class="gt-chip green">100%</span></div><div class="gt-rhythm">$2,100</div></div>
+                <div class="grid-tile success"><div class="gt-name">Allstate</div><div class="gt-phase">Auto · WC May</div><div class="gt-chip-row"><span class="gt-chip green">100%</span></div><div class="gt-rhythm">$1,950</div></div>
+                <div class="grid-tile success"><div class="gt-name">Fleet fuel</div><div class="gt-phase">Auto · May rollup</div><div class="gt-chip-row"><span class="gt-chip green">95%</span></div><div class="gt-rhythm">$890</div></div>
+                <div class="grid-tile success"><div class="gt-name">Hardware House</div><div class="gt-phase">Auto · Coring</div><div class="gt-chip-row"><span class="gt-chip green">100%</span></div><div class="gt-rhythm">$620</div></div>
+                <div class="grid-tile success"><div class="gt-name">Cabinet Pulls</div><div class="gt-phase">Auto · Williamson</div><div class="gt-chip-row"><span class="gt-chip green">100%</span></div><div class="gt-rhythm">$210</div></div>
+                <div class="grid-tile"><div class="gt-name">ACH "Khan"</div><div class="gt-phase">Unmatched in</div><div class="gt-chip-row"><span class="gt-chip amber">Likely deposit</span></div><div class="gt-rhythm">$5,600</div></div>
+                <div class="grid-tile"><div class="gt-name">Wire in</div><div class="gt-phase">Unmatched in</div><div class="gt-chip-row"><span class="gt-chip amber">Sender unclear</span></div><div class="gt-rhythm">$4,500</div></div>
+                <div class="grid-tile"><div class="gt-name">Check #2247</div><div class="gt-phase">Unmatched in</div><div class="gt-chip-row"><span class="gt-chip amber">ID needed</span></div><div class="gt-rhythm">$1,800</div></div>
+                <div class="grid-tile"><div class="gt-name">Small payment</div><div class="gt-phase">Unmatched in</div><div class="gt-chip-row"><span class="gt-chip amber">Ambiguous</span></div><div class="gt-rhythm">$450</div></div>
+              </div>
+            </div>
+
+            <div class="rail">
+              <div class="rh-card"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div><div class="rh-text"><strong>17 unreconciled · scan by state.</strong> <em>5 judgment.</em> <span class="rh-amber">8 auto-matched ready to confirm.</span> 4 unmatched payments. Tap any tile to act.</div></div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Grid legend</div>
+                <div class="pf-row"><span class="pf-label">Amber border + red chip</span><span class="pf-val red">Needs my hand · 5</span></div>
+                <div class="pf-row"><span class="pf-label">Green border + green chip</span><span class="pf-val green">Auto-matched · 8</span></div>
+                <div class="pf-row"><span class="pf-label">No border + amber chip</span><span class="pf-val amber">Unmatched in · 4</span></div>
+              </div>
+              <div class="qb-card">
+                <div class="qb-eyebrow">QB sync state</div>
+                <div class="qb-text"><strong>QB last synced 6h ago</strong> · 9 transactions pending export</div>
+                <div class="qb-cta">Run sync now →</div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Filled by</div>
+                <div class="recon-meta" style="margin-bottom:0;">Today: <strong>Owner</strong> · Delegate available · External MCP not enabled (V1.5)</div>
+                <div class="fill-toggle"><span class="fill-opt active">Owner</span><span class="fill-opt">Delegate</span><span class="fill-opt">External MCP</span></div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-BK1b Grid · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> Comparison (peer unreconciled items at macro scan by state)</li>
+      <li><strong>List / grid / both?</strong> List + Grid · Grid for state-based scan (sibling toggle to Frame 1)</li>
+      <li><strong>Cognitive job?</strong> Scan 17 items by recon-state × amount · what needs which kind of operator touch</li>
+      <li><strong>Hidden until drill?</strong> Per-transaction history · PO-to-invoice match · journal entry composition (drill to transaction detail)</li>
+    </ul>
+    <h4>Grid anatomy · 17 tiles</h4>
+    <ul><li>4-column desktop grid · same 17 items as List frame (one dataset, two views)</li><li>gt-name = source/vendor · gt-phase = recon bucket + context · gt-chip = state · gt-rhythm = $</li><li>Red chip + amber `.grid-tile.attention` border = needs my hand (5 tiles)</li><li>Green chip + green `.grid-tile.success` border = auto-matched, ready to confirm (8 tiles)</li><li>Amber chip + no border = unmatched payment-in, needs ID work (4 tiles)</li><li>`.grid-tile.risk` class not used — Lane 3 doctrine: red is chip-tier only (CSS swept 2026-05-24)</li></ul>
+    <h4>Money model</h4>
+    <ul><li>Display: dollars · Store: <code>integer cents</code> on every amount</li><li>Lifecycle states: <code>needs_judgment</code> · <code>auto_matched</code> · <code>unmatched</code> · <code>confirmed</code></li><li><strong>NEVER auto-confirms</strong> · D-046 lock</li></ul>
+    <h4>Fillable function (memory canon)</h4>
+    <ul><li>Filled-by chip preserved on Grid rail (parity with List frame)</li><li>Per <code>feedback_bookkeeping_is_a_fillable_function.md</code></li></ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">What this surface enforces</span><em>Bookkeeping as a workflow queue, not a ledger.</em> Three buckets ordered by required attention type: judgment first, batch-confirm second, ID-work third. Filled-by chip surfaces the role doing the work — Owner today, Delegate available, External MCP a V1.5 option. Never auto-confirms.</div>
+  <div class="callout"><span class="callout-title">What this surface refuses to be</span>Not the general ledger. Not transaction detail. Not the QB import screen. <strong>F-BK1b triages unreconciled items by required attention</strong> — drill to transaction detail for line items · journal entry composition stays in QB until V1.5 bidirectional sync lands.</div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('presentation-mode',tab.dataset.mode==='presentation');});});
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const next=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector(`[data-mode="${next}"]`).click();}});
+document.querySelectorAll('[data-theme]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('light-mode',tab.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',tab.dataset.theme);}catch(e){}});});
+try{const saved=localStorage.getItem('kerf_wf_theme');if(saved==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'));}}catch(e){}
+</script>
+</body>
+</html>

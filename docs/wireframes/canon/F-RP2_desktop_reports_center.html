@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-RP2 · Desktop Reports Center · printable cross-cutting reporting at desktop density</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.guardrail { background: rgba(248,113,113,0.14); color: var(--kerf-red); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+
+/* Sidebar */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-amber); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+.main-header { padding: 18px 24px 4px; display: flex; align-items: center; justify-content: space-between; }
+.main-title { font-size: 22px; font-weight: 600; color: var(--kerf-text); margin: 0; letter-spacing: -0.01em; }
+.main-meta { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+.main-content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 14px 24px 24px; flex: 1; }
+
+/* LEFT · reports area */
+.reports-area { display: flex; flex-direction: column; gap: 18px; }
+.section-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; display: flex; align-items: baseline; gap: 8px; margin-bottom: -4px; }
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+
+/* Category grid · 3x2 */
+.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.cat-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 15px;
+  cursor: pointer;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cat-card:hover { border-color: var(--kerf-border); }
+.cat-card.stub { opacity: 0.72; }
+.cat-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.cat-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.cat-icon.money { background: rgba(123,168,255,0.12); color: var(--kerf-blue); }
+.cat-icon.job { background: rgba(103,214,224,0.12); color: var(--kerf-cyan); }
+.cat-icon.work { background: rgba(74,222,128,0.10); color: var(--field-green); }
+.cat-icon.marketing { background: rgba(167,139,250,0.12); color: var(--kerf-violet); }
+.cat-icon.compliance { background: rgba(232,121,168,0.12); color: var(--kerf-magenta); }
+.cat-icon.custom { background: rgba(245,181,68,0.12); color: var(--kerf-amber); }
+.cat-name { font-size: 14px; color: var(--kerf-text); font-weight: 700; line-height: 1.25; }
+.cat-sub { font-size: 10.5px; color: var(--kerf-text-mute); line-height: 1.45; font-weight: 500; }
+.cat-count { font-size: 10px; color: var(--kerf-text-dim); font-weight: 600; margin-top: auto; }
+
+/* Report rows */
+.report-list { display: flex; flex-direction: column; gap: 6px; }
+.report-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 11px 14px;
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr 0.7fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.report-row.attention { border-left: 3px solid var(--kerf-amber); padding-left: 12px; }
+.report-row.private { border-left: 3px solid var(--right-hand); padding-left: 12px; }
+.rr-name { font-size: 13px; color: var(--kerf-text); font-weight: 600; line-height: 1.3; }
+.rr-meta { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; font-weight: 500; }
+.rr-date { font-size: 12px; color: var(--kerf-text-dim); font-weight: 500; }
+.rr-format {
+  display: inline-flex; align-items: center;
+  font-size: 9px; padding: 2px 7px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+  background: var(--kerf-bg-2); color: var(--kerf-text-dim);
+}
+.rr-format.pdf { background: rgba(248,113,113,0.10); color: var(--kerf-red); }
+.rr-format.csv { background: rgba(74,222,128,0.10); color: var(--field-green); }
+.rr-format.xlsx { background: rgba(123,168,255,0.10); color: var(--kerf-blue); }
+.rr-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.rr-btn {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 5px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--kerf-border-soft);
+  background: var(--kerf-bg-2); color: var(--kerf-text-dim);
+  white-space: nowrap;
+}
+.rr-btn.primary { background: rgba(245,181,68,0.14); border-color: rgba(245,181,68,0.28); color: var(--kerf-amber); }
+.rr-btn.export { padding-right: 8px; }
+.rr-btn.export::after { content: ' ▾'; font-size: 9px; opacity: 0.7; }
+.row-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; padding: 2px 7px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.row-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.row-chip.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.row-chip.private { background: rgba(201,169,97,0.14); color: var(--right-hand); }
+.row-chip.private::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rr-cadence { font-size: 11px; color: var(--kerf-text-dim); font-weight: 500; }
+.rr-cadence strong { color: var(--kerf-text); font-weight: 600; }
+
+/* RIGHT RAIL */
+.ops-rail { display: flex; flex-direction: column; gap: 14px; }
+.rh-card {
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  padding: 11px 13px;
+}
+.rh-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+.rh-text .rh-dim { color: var(--kerf-text-dim); }
+
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 9px; letter-spacing: 0.04em; }
+
+.pattern-rows { display: flex; flex-direction: column; gap: 0; }
+.pattern-row {
+  padding: 9px 0;
+  border-top: 1px solid var(--kerf-border-soft);
+  font-size: 12px; color: var(--kerf-text); line-height: 1.45; font-weight: 500;
+}
+.pattern-row:first-child { padding-top: 0; border-top: 0; }
+.pattern-row:last-child { padding-bottom: 0; }
+.pattern-row .pr-amber { color: var(--kerf-amber); font-weight: 600; }
+.pattern-row .pr-meta { display: block; font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; font-weight: 500; }
+
+.rail-summary { display: flex; flex-direction: column; gap: 0; }
+.rs-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 0; font-size: 12px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.rs-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.rs-row:first-child { padding-top: 0; }
+.rs-label { color: var(--kerf-text-mute); font-size: 11px; }
+.rs-val { color: var(--kerf-text); font-weight: 600; }
+.rs-val.amber { color: var(--kerf-amber); }
+.rs-val.green { color: var(--field-green); }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+
+/* Print mode */
+@media print {
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  .view-toggle-bar { display: none !important; }
+  .frame-spec { display: none !important; }
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary, .cat-card, .report-row {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-RP1 · Reports Center (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-RP2 · Reports Center (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step">Category drill · report runner · scheduled config</span>
+  </div>
+  <h1>F-RP2 · Desktop Reports Center · printable cross-cutting reporting at desktop density</h1>
+  <p>
+    Desktop projection of F-RP1. Reports center lives under <em>Team &amp; Ops → Reports</em> (D-046 C6) — not a top-level domain. Same <em>business brain, not file cabinet</em> discipline: RH synthesis leads, six category cards for navigation, recently-run and scheduled lists carry the operational rhythm. Pulls data from Money · Schedule · Projects · Team &amp; Ops. Every export writes an audit trail entry. Margin posture reports are <em>owner-private</em> — export limited per role-root. <strong>No List/Grid toggle</strong> — this is a domain home for report discovery and execution, not a peer-comparison surface.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-RP2 · Desktop Reports Center · default state · Owner role · 34 saved reports</div>
+  <p class="frame-narr">
+    Owner clicked Team &amp; Ops → Reports in the sidebar. RH synthesis on the rail opens with the portfolio sentence: <em>34 reports available · 8 recently run · 3 scheduled.</em> Main column leads with a 3×2 category grid (Money · Job · Work/Hours · Marketing · Compliance/HR · Custom stub). Below: <em>Recently run</em> (8 items showing last run date + format) and <em>Scheduled</em> (3 items with cadence). Each row carries <strong>Run · Print · Export ▾</strong> actions — Export dropdown offers PDF · CSV · XLSX; every export writes an audit entry. Rail below RH carries <em>Patterns flagged</em> ("P&amp;L hasn't been run in 14 days · last close-out 3 weeks ago") plus a quick inventory summary. <em>Scale lens: a mature shop accumulates 20–50 saved/recent reports — compression via sectioning and attention-sorted recent list, not a denser grid.</em> Margin posture row shows owner-private chip; PM/Admin role-roots would not see that row or its export affordance.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/team-ops/reports</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a report, job, or date range</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+
+          <!-- Team & Ops · active with sub-items expanded -->
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Crew</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Subs</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>HR</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Purchasing</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Bookkeeping</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Reports</div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Team &amp; Ops</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Reports</span>
+            <div class="bc-spacer"></div>
+          </div>
+
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">Reports</h2>
+              <div class="main-meta">34 available · 8 recently run · 3 scheduled · cross-domain printable exports</div>
+            </div>
+          </div>
+
+          <div class="main-content">
+
+            <!-- LEFT · reports area -->
+            <div class="reports-area">
+
+              <div class="section-label">Report categories <span class="sl-count">· 6</span></div>
+              <div class="cat-grid">
+
+                <div class="cat-card">
+                  <div class="cat-icon money"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3z"/></svg></div>
+                  <div class="cat-name">Money</div>
+                  <div class="cat-sub">P&amp;L · AR aging · AP aging · Cash flow · Margin posture</div>
+                  <div class="cat-count">11 reports</div>
+                </div>
+
+                <div class="cat-card">
+                  <div class="cat-icon job"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></div>
+                  <div class="cat-name">Job</div>
+                  <div class="cat-sub">Per-job report · cost vs. bid · status · time spent · materials</div>
+                  <div class="cat-count">8 reports</div>
+                </div>
+
+                <div class="cat-card">
+                  <div class="cat-icon work"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></div>
+                  <div class="cat-name">Work / Hours</div>
+                  <div class="cat-sub">Per-employee hours · Job costing roll-up · Weekly time summary</div>
+                  <div class="cat-count">7 reports</div>
+                </div>
+
+                <div class="cat-card">
+                  <div class="cat-icon marketing"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></div>
+                  <div class="cat-name">Marketing</div>
+                  <div class="cat-sub">Lead source performance · Win rate · Conversion funnel</div>
+                  <div class="cat-count">4 reports</div>
+                </div>
+
+                <div class="cat-card">
+                  <div class="cat-icon compliance"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7z"/></svg></div>
+                  <div class="cat-name">Compliance / HR</div>
+                  <div class="cat-sub">COI expirations · Cert renewals · Doc completeness</div>
+                  <div class="cat-count">3 reports</div>
+                </div>
+
+                <div class="cat-card stub">
+                  <div class="cat-icon custom"><svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg></div>
+                  <div class="cat-name">Custom</div>
+                  <div class="cat-sub">Operator-defined report builder · V1.5+ stub</div>
+                  <div class="cat-count">1 saved · builder deferred</div>
+                </div>
+
+              </div>
+
+              <div class="section-label">Recently run <span class="sl-count">· 8</span></div>
+              <div class="report-list">
+
+                <div class="report-row attention">
+                  <div>
+                    <div class="rr-name">Weekly P&amp;L</div>
+                    <div class="rr-meta">Money · operating view · May 3–May 17</div>
+                  </div>
+                  <div class="rr-date">May 17 · 6:04am</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">Hernandez · per-job report</div>
+                    <div class="rr-meta">Job · PRJ-014 · cost vs. bid · pantry conversion</div>
+                  </div>
+                  <div class="rr-date">May 22 · 2:18pm</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">Crew hours · week ending May 17</div>
+                    <div class="rr-meta">Work / Hours · 8 W2 · 38h pending approval</div>
+                  </div>
+                  <div class="rr-date">May 17 · 5:30pm</div>
+                  <div><span class="rr-format csv">CSV</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">AR aging</div>
+                    <div class="rr-meta">Money · $47.4k open · 1 invoice 8d late</div>
+                  </div>
+                  <div class="rr-date">May 15 · 9:12am</div>
+                  <div><span class="rr-format xlsx">XLSX</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">Wegrzyn · job costing roll-up</div>
+                    <div class="rr-meta">Work / Hours · PRJ-018 · tile + cabinetry pending</div>
+                  </div>
+                  <div class="rr-date">May 20 · 11:44am</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">Lead source performance</div>
+                    <div class="rr-meta">Marketing · Q2 YTD · referral + Houzz + direct</div>
+                  </div>
+                  <div class="rr-date">May 10 · 8:00am</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">COI expiration list</div>
+                    <div class="rr-meta">Compliance / HR · 12 subs · 1 expiring in 17d</div>
+                  </div>
+                  <div class="rr-date">May 1 · 7:15am</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row private">
+                  <div>
+                    <span class="row-chip private">Owner-private</span>
+                    <div class="rr-name">Margin posture</div>
+                    <div class="rr-meta">Money · portfolio margin · owner role-root only</div>
+                  </div>
+                  <div class="rr-date">May 3 · 4:22pm</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="section-label">Scheduled <span class="sl-count">· 3</span></div>
+              <div class="report-list">
+
+                <div class="report-row attention">
+                  <div>
+                    <span class="row-chip amber">Overdue cadence</span>
+                    <div class="rr-name">Weekly P&amp;L</div>
+                    <div class="rr-meta">Money · last run May 17 · 14 days ago</div>
+                  </div>
+                  <div class="rr-cadence"><strong>Every Monday</strong><br>6:00am</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">Monthly job costing</div>
+                    <div class="rr-meta">Job · all active projects · portfolio roll-up</div>
+                  </div>
+                  <div class="rr-cadence"><strong>1st of month</strong><br>7:00am</div>
+                  <div><span class="rr-format pdf">PDF</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+                <div class="report-row">
+                  <div>
+                    <div class="rr-name">AR aging</div>
+                    <div class="rr-meta">Money · receivables snapshot · email to Owner</div>
+                  </div>
+                  <div class="rr-cadence"><strong>Every Friday</strong><br>5:00pm</div>
+                  <div><span class="rr-format xlsx">XLSX</span></div>
+                  <div class="rr-actions">
+                    <span class="rr-btn primary">Run</span>
+                    <span class="rr-btn">Print</span>
+                    <span class="rr-btn export">Export</span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- RIGHT · Operations rail -->
+            <div class="ops-rail">
+
+              <div class="rh-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · Reports</div>
+                <div class="rh-text">
+                  <strong>34 reports available.</strong> <span class="rh-amber">8 recently run · 3 scheduled.</span> <span class="rh-dim">P&amp;L cadence is behind — last run 14 days ago. Close-out report hasn't been run in 3 weeks. Everything else is current.</span>
+                </div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Patterns flagged <span class="re-count">· 2</span></div>
+                <div class="pattern-rows">
+                  <div class="pattern-row">
+                    <span class="pr-amber">P&amp;L hasn't been run in 14 days</span>
+                    <span class="pr-meta">Weekly schedule missed · last successful run May 17</span>
+                  </div>
+                  <div class="pattern-row">
+                    Last close-out <span class="pr-amber">3 weeks ago</span>
+                    <span class="pr-meta">Dunne master bath · no close-out report since May 3</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Inventory summary</div>
+                <div class="rail-summary">
+                  <div class="rs-row"><span class="rs-label">Total saved</span><span class="rs-val">34</span></div>
+                  <div class="rs-row"><span class="rs-label">Recently run</span><span class="rs-val">8</span></div>
+                  <div class="rs-row"><span class="rs-label">Scheduled</span><span class="rs-val amber">3 · 1 overdue</span></div>
+                  <div class="rs-row"><span class="rs-label">Owner-private</span><span class="rs-val">1 (margin)</span></div>
+                  <div class="rs-row"><span class="rs-label">Last export</span><span class="rs-val green">May 22 · Hernandez job</span></div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-RP2 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Lane 7 · Phase A · Reports center</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-RP1 · Mobile Reports Center</span></div>
+      <div class="sl-step current"><span class="sl-dot">2</span><span><span class="sl-name">F-RP2</span> · Desktop Reports Center <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">3</span><span>Category drill · report runner · scheduled config</span></div>
+    </div>
+
+    <h4>IA placement · D-046 C6</h4>
+    <ul>
+      <li><strong>Route:</strong> <code>Team &amp; Ops → Reports</code> — NOT a top-level domain</li>
+      <li><strong>Sidebar:</strong> Team &amp; Ops active · sub-items expanded (Crew · Subs · HR · Purchasing · Bookkeeping · Clients · Reports active)</li>
+      <li><strong>Breadcrumb:</strong> Home › Team &amp; Ops › Reports</li>
+      <li><strong>Cross-links out:</strong> Money (P&amp;L · margin · AR/AP) · Schedule (timeline) · Projects (per-job) · Team &amp; Ops (hours / job costing)</li>
+    </ul>
+
+    <h4>4-question dispatch</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> · macro / domain home · report discovery + execution</li>
+      <li><strong>List, grid, or both?</strong> · category card grid (3×2) + list rows for recent/scheduled · <em>no List/Grid toggle</em></li>
+      <li><strong>Operator's cognitive job</strong> · <em>what reports do I need to run, print, or export?</em></li>
+      <li><strong>What stays hidden</strong> · report builder config · raw data tables · full audit chain — one click deeper</li>
+    </ul>
+
+    <h4>Export + audit guardrails</h4>
+    <ul>
+      <li><span class="badge guardrail">audit</span><strong>Every export writes an audit trail entry</strong> — data egress event · user · timestamp · format · report ID</li>
+      <li><span class="badge guardrail">audit</span>Print also logged when output leaves Kerf (browser print dialog confirmed)</li>
+      <li>Export dropdown: PDF · CSV · XLSX · format per report type</li>
+      <li>Run = regenerate in-app preview · no audit unless exported/printed</li>
+    </ul>
+
+    <h4>Owner-private margin handling</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Margin posture reports visible only to Owner role-root</li>
+      <li>PM · Admin · Field Hand projections: row hidden entirely · category card shows count minus private reports</li>
+      <li>Export of margin data: additional confirmation gate + audit entry tagged <code>owner-private-egress</code></li>
+      <li>Aligns with F-MN3/MN4 margin posture owner-private posture</li>
+    </ul>
+
+    <h4>Scale lens</h4>
+    <ul>
+      <li>Mature shop: <strong>20–50 saved/recent reports</strong></li>
+      <li>Compression: sectioned lists (recent 8 visible · "+ N more" at scale) · category cards stay 6 fixed</li>
+      <li>Attention-sorted recent list · overdue scheduled rows get amber chip</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — find and run the report you need</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — RH card + Patterns flagged on rail</li>
+      <li><span class="badge doctrine">d-3</span><em>No List/Grid toggle</em> · domain home not peer-comparison surface</li>
+      <li><span class="badge doctrine">d-4</span><em>Red is chip-tier</em> · amber chips for overdue cadence · owner-private chip for margin</li>
+      <li><span class="badge doctrine">d-5</span><em>Agent names absent</em> · Right Hand only</li>
+      <li><span class="badge doctrine">d-6</span><em>Plainspoken vocabulary</em> · "recently run" not "execution history"</li>
+      <li><span class="badge doctrine">d-7</span><em>Trust surfaces lightweight</em> · operator-facing · audit on export not inline</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Category card click → category drill (report list filtered)</li>
+      <li>Run → in-app report preview / runner</li>
+      <li>Print → browser print of rendered report</li>
+      <li>Export ▾ → PDF · CSV · XLSX + audit entry</li>
+      <li>Sidebar Clients → F-CL3 · Clients list</li>
+      <li>Sidebar Team &amp; Ops parent → F-TO2 · Team &amp; Ops home</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-RP1_mobile_reports_center.html</code> · mobile counterpart</li>
+      <li><code>F-TO2_desktop_team_ops_home.html</code> · parent domain home</li>
+      <li><code>F-PR3_desktop_projects_list.html</code> · sibling desktop pattern</li>
+      <li><code>F-MN3_desktop_margin_posture.html</code> · owner-private margin source</li>
+      <li><code>D-046-v1-wireframe-remediation-plan.md</code> · C6 Reports under Team &amp; Ops</li>
+      <li><code>Lane_7_reports_settings.md</code> · Lane 7 build brief</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves at desktop density</span>
+    Reports center works as a <em>cross-cutting operational surface</em> without becoming a BI dashboard. Six fixed category cards anchor navigation; recently-run and scheduled lists carry the rhythm. Run · Print · Export on every row makes the printable/exportable promise explicit. RH synthesis + Patterns flagged catch cadence drift ("P&amp;L hasn't been run in 14 days") before the operator has to hunt. Scale holds at 20–50 reports via sectioning, not density.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a standalone Reports top-level tab. Not a Buildertrend report builder with 40 filter chips. Not a QuickBooks clone with chart-of-accounts drilldown. Not a Grid view of report tiles. <strong>F-RP2 is F-RP1 with breathing room</strong> — category grid · wider rows · rail for synthesis and pattern flags. Margin posture stays owner-private; export always audits.
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

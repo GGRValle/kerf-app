@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-CL6 · Desktop Canonical Client Record · passive baseline · main + rail</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.page-header .doctrine-note { background: rgba(245,181,68,0.06); border-left: 3px solid var(--kerf-amber); padding: 9px 14px; border-radius: 4px; margin-top: 12px; font-size: 12px; color: var(--kerf-text-dim); line-height: 1.6; max-width: 1080px; }
+.page-header .doctrine-note strong { color: var(--kerf-amber); }
+.page-header .doctrine-note em { color: var(--kerf-text); font-style: normal; font-weight: 600; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.guardrail { background: rgba(248,113,113,0.16); color: var(--kerf-red); }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 1020px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 960px; }
+
+/* Sidebar */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-text-mute); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action:hover { color: var(--kerf-text); }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* CLIENT HEADER */
+.client-header { padding: 20px 24px 4px; display: flex; align-items: flex-start; gap: 18px; }
+.ch-identity { flex: 1; }
+.ch-name { font-size: 26px; font-weight: 700; color: var(--kerf-text); letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 6px; }
+.ch-meta { font-size: 12.5px; color: var(--kerf-text-dim); line-height: 1.5; }
+.ch-meta strong { color: var(--kerf-text); font-weight: 600; }
+.ch-meta .ph-sep { color: var(--kerf-border); margin: 0 8px; }
+.ch-meta .ph-id { font-family: "SF Mono", Menlo, monospace; color: var(--kerf-text-mute); font-size: 11px; }
+.ch-meta .ph-since { display: inline-block; padding: 2px 8px; border-radius: 4px; background: rgba(56,201,119,0.14); color: var(--field-green); font-size: 10px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; margin-right: 8px; vertical-align: 1px; }
+.ch-actions { display: flex; gap: 8px; }
+.ch-btn { padding: 7px 12px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 7px; font-size: 12px; color: var(--kerf-text-dim); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.ch-btn:hover { color: var(--kerf-text); border-color: var(--kerf-border); }
+.ch-btn.primary { background: var(--kerf-amber); color: #1A1300; border-color: var(--kerf-amber); }
+.ch-btn svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* RH synthesis row */
+.synthesis-row { padding: 14px 24px 18px; border-bottom: 1px solid var(--kerf-border-soft); }
+.rh-card { background: rgba(201,169,97,0.05); border-left: 2px solid var(--right-hand); border-radius: 4px; padding: 11px 14px; }
+.rh-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 13px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text em { color: var(--kerf-amber); font-style: normal; font-weight: 600; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text .rh-risk { color: var(--kerf-red); font-weight: 600; }
+
+/* TAB STRIP */
+.tab-strip {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  padding: 0 24px;
+  background: var(--kerf-bg);
+}
+.tab {
+  padding: 12px 16px 11px;
+  font-size: 12.5px; color: var(--kerf-text-mute);
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tab:hover { color: var(--kerf-text-dim); }
+.tab.active { color: var(--kerf-text); border-bottom-color: var(--kerf-amber); }
+.tab .tab-count { font-size: 10px; color: var(--kerf-text-mute); margin-left: 4px; font-weight: 500; }
+.tab.active .tab-count { color: var(--kerf-amber); }
+
+/* CONTENT */
+.tab-content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 18px 24px 24px; flex: 1; }
+
+/* Main column */
+.overview-main { display: flex; flex-direction: column; gap: 18px; }
+.sec-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 9px; display: flex; align-items: baseline; gap: 8px; }
+.sec-eyebrow .ss-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+.sec-eyebrow .ss-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* Active project card */
+.active-project-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.apc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.apc-name { font-size: 14.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.3; }
+.apc-name-sub { font-size: 11.5px; color: var(--kerf-text-mute); margin-top: 3px; font-weight: 500; }
+.apc-risk-chip { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(248,113,113,0.14); color: var(--kerf-red); letter-spacing: 0.06em; font-weight: 700; flex-shrink: 0; text-transform: uppercase; }
+.apc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+.apc-cell { font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.5; }
+.apc-cell strong { color: var(--kerf-text); font-weight: 600; }
+.apc-cell .apc-cell-label { display: block; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 3px; }
+.apc-cell .field-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); margin-right: 5px; vertical-align: 2px; }
+.apc-cta-row { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--kerf-border-soft); display: flex; justify-content: space-between; align-items: center; }
+.apc-meta { font-size: 11px; color: var(--kerf-text-mute); }
+.apc-cta { padding: 7px 13px; background: var(--kerf-surface-2); color: var(--kerf-text); border-radius: 7px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; border: 1px solid var(--kerf-border-soft); }
+.apc-cta:hover { border-color: var(--kerf-amber); color: var(--kerf-amber); }
+.apc-cta svg { width: 11px; height: 11px; fill: currentColor; }
+
+/* Open business + Pulse — paired two-column block */
+.pair-row { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+/* Open business list */
+.open-list {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 0 14px;
+}
+.open-row {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 12px; align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 12px;
+}
+.open-row:last-child { border-bottom: none; }
+.open-text { color: var(--kerf-text); line-height: 1.4; font-weight: 500; }
+.open-text .open-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+.open-text .at-risk-chip { display: inline-block; font-size: 9.5px; padding: 2px 6px; border-radius: 3px; background: rgba(248,113,113,0.14); color: var(--kerf-red); letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; margin-left: 6px; vertical-align: 1px; }
+.open-val { color: var(--kerf-text); font-weight: 700; font-family: "SF Mono", Menlo, monospace; font-size: 12px; text-align: right; }
+.open-val.amber { color: var(--kerf-amber); }
+.open-val .ov-sub { display: block; color: var(--kerf-text-mute); font-size: 10px; margin-top: 2px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+
+/* Pulse rows */
+.pulse-list {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 0 14px;
+}
+.pulse-row {
+  display: grid; grid-template-columns: 90px 1fr;
+  gap: 12px; align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 12px;
+}
+.pulse-row:last-child { border-bottom: none; }
+.pulse-key { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+.pulse-val { color: var(--kerf-text); line-height: 1.45; }
+.pulse-val .pulse-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+.pulse-val .nps { color: var(--field-green); font-weight: 700; }
+.pulse-val .ref-link { color: var(--kerf-blue); font-weight: 600; }
+.pulse-val .ref-attr { color: var(--field-green); font-weight: 700; font-family: "SF Mono", Menlo, monospace; }
+
+/* .timeline · history timeline CSS removed 2026-05-19 per D-046 §C2 lighten directive · timeline section dropped from F-CL5/CL6 · drill out to Project detail for active history */
+.timeline::before {
+  content: ''; position: absolute; left: 22px; top: 18px; bottom: 18px;
+  width: 1.5px; background: var(--kerf-border-soft);
+}
+.tl-row {
+  position: relative;
+  padding: 8px 0;
+  font-size: 12px;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 18px;
+  align-items: baseline;
+}
+.tl-row::before {
+  content: '';
+  position: absolute; left: -19px; top: 14px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--kerf-surface-2); border: 1.5px solid var(--kerf-border);
+}
+.tl-row.current::before { background: var(--kerf-amber); border-color: var(--kerf-amber); box-shadow: 0 0 0 3px rgba(245,181,68,0.15); }
+.tl-row.win::before { background: var(--field-green); border-color: var(--field-green); }
+.tl-date { font-size: 10px; color: var(--kerf-text-mute); letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
+.tl-content .tl-event { font-size: 12.5px; color: var(--kerf-text); font-weight: 600; line-height: 1.4; }
+.tl-content .tl-event .tl-amt { color: var(--field-green); font-weight: 700; font-family: "SF Mono", Menlo, monospace; margin-left: 6px; font-size: 11.5px; }
+.tl-content .tl-event .tl-current { color: var(--kerf-amber); }
+.tl-content .tl-detail { font-size: 11px; color: var(--kerf-text-mute); margin-top: 3px; line-height: 1.45; }
+
+/* RIGHT RAIL */
+.detail-rail { display: flex; flex-direction: column; gap: 14px; }
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* Watching card */
+.watching-card {
+  background: rgba(201,169,97,0.06);
+  border: 1px solid rgba(201,169,97,0.22);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.watching-card .rh-eyebrow { margin-bottom: 11px; }
+.watching-list { margin: 0; padding: 0; list-style: none; }
+.watching-item {
+  display: grid; grid-template-columns: 14px 1fr;
+  gap: 9px; align-items: flex-start;
+  padding: 7px 0;
+  font-size: 12px; color: var(--kerf-text); line-height: 1.45;
+  border-bottom: 1px solid rgba(201,169,97,0.12);
+}
+.watching-item:last-child { border-bottom: none; }
+.watching-item .wi-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--right-hand);
+  margin-top: 6px;
+}
+.watching-item.amber .wi-dot { background: var(--kerf-amber); }
+.watching-item.green .wi-dot { background: var(--field-green); }
+.watching-item .wi-text strong { color: var(--kerf-text); font-weight: 600; }
+.watching-item .wi-text .wi-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+
+/* Money snapshot card */
+.money-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.bud-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 7px 0; font-size: 12px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.bud-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.bud-row:first-child { padding-top: 0; }
+.bud-label { color: var(--kerf-text-mute); font-size: 11px; }
+.bud-val { color: var(--kerf-text); font-weight: 600; font-family: "SF Mono", Menlo, monospace; font-size: 11.5px; }
+.bud-val.amber { color: var(--kerf-amber); }
+.bud-val.green { color: var(--field-green); }
+
+/* Contact card */
+.contact-card { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 14px 16px; }
+.contact-row { display: grid; grid-template-columns: 70px 1fr; gap: 10px; padding: 6px 0; font-size: 12px; align-items: baseline; }
+.contact-key { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+.contact-val { color: var(--kerf-text); font-weight: 500; line-height: 1.4; }
+.contact-val .contact-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 1px; font-weight: 500; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">Operating Model Canon v1</span>
+    <span class="sep">›</span>
+    <span class="step">F-CL5 · Canonical Client Record (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-CL6 · Canonical Client Record · desktop</span>
+  </div>
+  <h1>F-CL6 · Desktop Canonical Client Record · source-of-truth client surface, wider canvas</h1>
+  <p>
+    Desktop projection of F-CL5. <em>Authoritative client record</em> — the surface a lawyer, bookkeeper, or future system migration would treat as source of truth for the client entity. Supersedes the earlier F-CL4 Client Detail variant. The main column carries the <em>four passive baseline sections</em> (Projects · Open balance · Last touch · Source). The right rail carries Contact · Money snapshot (2 rows: LTV + AR open · drill to Money for breakdown) · "What I'm watching for you" (upcoming touches + anniversaries only). <em>Drill out for active work</em> — change orders · drift response · daily logs · margin posture · variance band all live at PROJECT detail (F-PR4). Tabs (Projects · Comms · Notes · Files · Money) sit as drill-down lenses one click deeper. Per D-046 §C2 lighten directive — supersedes the prior 6-section developed-document treatment.
+  </p>
+  <div class="doctrine-note">
+    <strong>Disciplines applied:</strong> <em>Detail surface · no Grid view · no view-mode toggle</em> per the 4-question dispatch. <em>Business brain leads, file cabinet underneath</em> — Overview synthesizes; Files tab is a click deeper. <em>Red is chip-tier only</em> — "At risk" and "11 days" render as chips inside rows, never as row borders. <em>No agent names in operator copy</em> — only Right Hand named on the RH synthesis + Watching card. <em>Translate canon vocab</em> — "your past jobs" · "what I'm watching for you" replace cohort/altitude language. Clients lives under Team &amp; Ops in the sidebar per <code>kerf_client_section_canonical.md</code>; sub-item is active.
+  </div>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-CL6 · Desktop Canonical Client Record · Wegrzyn Family · Overview · LIGHTENED PASSIVE BASELINE</div>
+  <p class="frame-narr">
+    Owner clicked Wegrzyn Family from the Clients list. Page loads <em>passively</em>: client name + since/LTV/NPS/active-project meta + address + action buttons (Log note · New deal · Send message). RH synthesis row spans the width — one sentence. Tab strip · Overview default. Main column shows <em>four passive baseline sections</em> (Projects · Open balance · Last touch · Source). Right rail keeps Contact + RH "What I'm watching for you" (upcoming touches + anniversaries only — not full forensic monitoring). <em>Drill out for active work</em> (CO decisions · drift response · daily logs · margin posture all live at PROJECT detail). Per D-046 §C2 lighten directive — supersedes the prior 6-section developed-document treatment.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/clients/wegrzyn-family-cli-006</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Clients</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Wegrzyn Family</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+              Actions
+            </span>
+          </div>
+
+          <!-- CLIENT HEADER -->
+          <div class="client-header">
+            <div class="ch-identity">
+              <div class="ch-name">Wegrzyn Family</div>
+              <div class="ch-meta">
+                <span class="ph-since">Client</span>
+                <strong>Since Feb 2024</strong>
+                <span class="ph-sep">·</span>
+                2 jobs · $94k LTV
+                <span class="ph-sep">·</span>
+                Mission Hills, San Diego
+                <span class="ph-sep">·</span>
+                <span class="ph-id">CLI-006</span>
+                <span class="ph-sep">·</span>
+                Primary: Maria Wegrzyn
+              </div>
+            </div>
+            <div class="ch-actions">
+              <div class="ch-btn"><svg viewBox="0 0 24 24"><path d="M14 2 12.5 3.5 16 7l-9 9-1.5-1.5L4 16 9 21l1.5-1.5L9 18l9-9 3 3 1.5-1.5L14 2z"/></svg>Log note</div>
+              <div class="ch-btn"><svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>New deal</div>
+              <div class="ch-btn primary"><svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-2 12-3 3-1.4-1.4 1.6-1.6H8v-2h6.2l-1.6-1.6L14 9z"/></svg>Send message</div>
+            </div>
+          </div>
+
+          <!-- SYNTHESIS ROW · RH sentence -->
+          <div class="synthesis-row">
+            <div class="rh-card">
+              <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand</div>
+              <div class="rh-text">
+                Client since Feb 2024 · 2 jobs ($94k LTV) · <em>1 active project (kitchen, day 4 of 11, flagged <span class="rh-risk">tile sub conflict</span>)</em> · $8,200 AR aging 11 days · NPS 9 from first job · referred Moore family ($48k closed-won).
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB STRIP -->
+          <div class="tab-strip">
+            <div class="tab active">Overview</div>
+            <div class="tab">Projects <span class="tab-count">2</span></div>
+            <div class="tab">Comms <span class="tab-count">14</span></div>
+            <div class="tab">Notes <span class="tab-count">7</span></div>
+            <div class="tab">Files <span class="tab-count">22</span></div>
+            <div class="tab">Money</div>
+          </div>
+
+          <!-- OVERVIEW TAB CONTENT -->
+          <div class="tab-content">
+
+            <!-- LEFT: overview main · LIGHTENED · 4 passive baseline sections -->
+            <div class="overview-main">
+
+              <!-- PROJECTS · 3-5 rows max · drill to Project for active work -->
+              <div>
+                <div class="sec-eyebrow">
+                  Projects <span class="ss-count">· 2 total</span>
+                  <span class="ss-action">View all →</span>
+                </div>
+                <div class="open-list">
+                  <div class="open-row">
+                    <span class="open-text">
+                      Kitchen remodel <span class="at-risk-chip">Active · at risk</span>
+                      <span class="open-sub">EST-021 · day 4 of 11 · framing · tile-sub conflict (Marcus working it) · CO-002 pending $2,400</span>
+                    </span>
+                    <span class="open-val">
+                      Apr–Jul 2026
+                      <span class="ov-sub">drill to Project →</span>
+                    </span>
+                  </div>
+                  <div class="open-row">
+                    <span class="open-text">
+                      Bath remodel <span style="display:inline-block;padding:2px 7px;background:rgba(255,255,255,0.05);color:var(--kerf-text-mute);font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border-radius:3px;margin-left:6px;">Closed Jul 2024</span>
+                      <span class="open-sub">EST-008 · $46k · 8wk · NPS 9 · zero CO · margin held</span>
+                    </span>
+                    <span class="open-val">
+                      Mar–Jul 2024
+                      <span class="ov-sub">archived</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- OPEN BALANCE · single row · drill to Money -->
+              <div>
+                <div class="sec-eyebrow">
+                  Open balance
+                  <span class="ss-action">View Money →</span>
+                </div>
+                <div class="open-list">
+                  <div class="open-row">
+                    <span class="open-text">
+                      AR aging <span class="at-risk-chip">11 days</span>
+                      <span class="open-sub">Single open invoice (INV-218 · sent May 7) · drill to Money for full ledger and payment status</span>
+                    </span>
+                    <span class="open-val amber">$8,200</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- LAST TOUCH · single row · drill to Comms -->
+              <div>
+                <div class="sec-eyebrow">
+                  Last touch
+                  <span class="ss-action">View Comms →</span>
+                </div>
+                <div class="open-list">
+                  <div class="open-row">
+                    <span class="open-text">
+                      Text from Christian · 2d ago
+                      <span class="open-sub">"Tile pattern locked in — looks great" · drill to Comms for full thread (14 messages over project)</span>
+                    </span>
+                    <span class="open-val">
+                      May 17
+                      <span class="ov-sub">via SMS</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SOURCE · single row · provenance + relationship arc -->
+              <div>
+                <div class="sec-eyebrow">Source</div>
+                <div class="open-list">
+                  <div class="open-row">
+                    <span class="open-text">
+                      From Houzz inquiry · Feb 2024
+                      <span class="open-sub">Bath remodel pre-qual → won EST-008 · referred Moore family Sep 2024 ($48k closed-won) · LTV multiplier 1.51×</span>
+                    </span>
+                    <span class="open-val">
+                      Inbound
+                      <span class="ov-sub">website form</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT RAIL -->
+            <div class="detail-rail">
+
+              <!-- Contact -->
+              <div class="contact-card">
+                <div class="rail-eyebrow">Contact</div>
+                <div class="contact-row">
+                  <span class="contact-key">Primary</span>
+                  <span class="contact-val">
+                    Maria Wegrzyn
+                    <span class="contact-sub">Decision-maker · prefers text</span>
+                  </span>
+                </div>
+                <div class="contact-row">
+                  <span class="contact-key">Phone</span>
+                  <span class="contact-val">(619) 555-0142</span>
+                </div>
+                <div class="contact-row">
+                  <span class="contact-key">Email</span>
+                  <span class="contact-val">maria.w@gmail.com</span>
+                </div>
+                <div class="contact-row">
+                  <span class="contact-key">Spouse</span>
+                  <span class="contact-val">
+                    Mark Wegrzyn
+                    <span class="contact-sub">CC on contracts · approves &gt; $5k</span>
+                  </span>
+                </div>
+                <div class="contact-row">
+                  <span class="contact-key">Address</span>
+                  <span class="contact-val">
+                    1832 Sunset Blvd
+                    <span class="contact-sub">Mission Hills, San Diego 92103</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Money snapshot · LIGHTENED · single LTV + open AR · drill to Money for breakdown -->
+              <div class="money-card">
+                <div class="rail-eyebrow">
+                  Money snapshot
+                  <span class="re-action">Money →</span>
+                </div>
+                <div class="bud-row"><span class="bud-label">Lifetime value</span><span class="bud-val">$94,000</span></div>
+                <div class="bud-row"><span class="bud-label">AR open</span><span class="bud-val amber">$8,200 · 11d</span></div>
+                <div style="font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 10px; line-height: 1.5;">
+                  Drill to <strong style="color: var(--kerf-text-dim);">Money</strong> for invoice ledger · payment history · margin posture · projected cash.
+                </div>
+              </div>
+
+              <!-- WHAT I'M WATCHING FOR YOU · LIGHTENED · forward-looking touches + anniversaries only -->
+              <div class="watching-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>What I'm watching for you</div>
+                <ul class="watching-list">
+                  <li class="watching-item green">
+                    <span class="wi-dot"></span>
+                    <span class="wi-text">
+                      <strong>Moore referral anniversary</strong>
+                      <span class="wi-sub">Sep 2024 referral · 4-month touchpoint queued</span>
+                    </span>
+                  </li>
+                  <li class="watching-item">
+                    <span class="wi-dot"></span>
+                    <span class="wi-text">
+                      <strong>Kitchen 12mo post-handoff</strong>
+                      <span class="wi-sub">Jul 2027 · warranty check-in window</span>
+                    </span>
+                  </li>
+                  <li class="watching-item green">
+                    <span class="wi-dot"></span>
+                    <span class="wi-text">
+                      <strong>Bath 24mo anniversary</strong>
+                      <span class="wi-sub">Jul 2026 · last-job follow-up + review request</span>
+                    </span>
+                  </li>
+                </ul>
+                <div style="font-size: 10px; color: var(--kerf-text-mute); margin-top: 10px; line-height: 1.5; padding-top: 10px; border-top: 1px solid var(--kerf-border-soft);">
+                  <em>Active operating signals</em> (AR aging · sub conflicts · CO status) live at PROJECT detail — this card watches the <em>passive baseline</em>: upcoming touches, anniversaries, re-engagement windows.
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-CL6 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Canonical Clients pair · supersedes F-CL4</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL3/CL4 · Desktop Clients (legacy detail)</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL5 · Mobile Canonical Client Record</span></div>
+      <div class="sl-step current"><span class="sl-dot">6</span><span><span class="sl-name">F-CL6</span> · Desktop Canonical Client Record <em>(this · pair closeout)</em></span></div>
+    </div>
+
+    <h4>Why "canonical record"</h4>
+    <p>F-CL5/CL6 are the authoritative client entity surface. A lawyer reviewing a dispute, a bookkeeper reconciling AR, a future system migration extracting client state — all should consider this view source-of-truth. F-CL4 was experience-led; canonical record demands completeness without becoming console-y. <em>Business brain leads, file cabinet sits underneath.</em></p>
+
+    <h4>Four passive baseline sections (lightened Overview)</h4>
+    <ul>
+      <li><strong>Projects</strong> · short list of jobs (active project named with risk chip if any · closed rolled up · drill to F-PR4 for active work)</li>
+      <li><strong>Open balance</strong> · single AR row with aging chip · drill to Money tab for invoice ledger · payment history · margin posture</li>
+      <li><strong>Last touch</strong> · single row · operator-readable timing of last interaction</li>
+      <li><strong>Source</strong> · single row · referral / inquiry origin · LTV multiplier if known</li>
+    </ul>
+    <p>Above the four sections: <em>Header</em> (name · since · LTV · address · CLI-006 · primary contact) + <em>RH synthesis sentence</em>. Right rail keeps <em>Contact</em> + <em>Money snapshot</em> (2 rows: LTV + AR open) + <em>"What I'm watching for you"</em> — upcoming touches + anniversaries only · not active monitoring (that lives at Project detail). Per D-046 §C2 lighten directive — supersedes the prior 5-question "developed document" treatment.</p>
+
+    <h4>Six sub-tabs · drill-down lenses</h4>
+    <ul>
+      <li><strong>Overview</strong> (default · this render) · synthesis page</li>
+      <li><strong>Projects (2)</strong> · 1 active · 1 closed-won · routes to F-PR4</li>
+      <li><strong>Comms (14)</strong> · text · email · portal threads · last 14 days</li>
+      <li><strong>Notes (7)</strong> · operator notes · voice transcripts · RH summaries</li>
+      <li><strong>Files (22)</strong> · proposal · contract · LiDAR scans · permit · photos · invoices</li>
+      <li><strong>Money</strong> · AR · payment history · margin per job · LTV breakdown · no count chip</li>
+    </ul>
+
+    <h4>Layout · main + rail · desktop projection of the lightened mobile sections</h4>
+    <ul>
+      <li><strong>Main column</strong> · the four passive sections vertically (Projects → Open balance → Last touch → Source) · each compact, single-row or short-list shape</li>
+      <li><strong>Right rail</strong> · Contact card → Money snapshot (2 rows: LTV + AR open · drill to Money for breakdown) → "What I'm watching for you" (upcoming touches + anniversaries only · RH-toned)</li>
+      <li>Mobile vertical stack becomes desktop main+rail · same content, denser arrangement · same passive-baseline hierarchy</li>
+      <li>Watching card promoted to rail at desktop (was Overview-bottom on mobile) — visible without scroll</li>
+    </ul>
+
+    <h4>Grid doctrine applied</h4>
+    <ul>
+      <li><span class="badge canon">DETAIL</span>This is a detail surface — single client depth. <strong>No grid view. No view-mode toggle.</strong></li>
+      <li>Single-frame wireframe per the 4-question dispatch</li>
+      <li>Sub-tabs are lenses into one client, not parallel views of the same surface</li>
+    </ul>
+
+    <h4>Disciplines applied</h4>
+    <ul>
+      <li><span class="badge guardrail">D1</span><em>Business brain, not file cabinet</em> — synthesis leads · Files tab one click deeper</li>
+      <li><span class="badge guardrail">D2</span><em>Red is chip-tier only</em> — "At risk" chip in active project card head; "11 days" inline chip on AR row. No full-row red borders.</li>
+      <li><span class="badge guardrail">D3</span><em>No agent names in operator copy</em> — "Tile sub conflict flagged" / "AR aging 11 days" — never "Drift Agent flagged" / "Money Agent alerted." Only Right Hand named (RH eyebrow on synthesis + Watching card).</li>
+      <li><span class="badge guardrail">D4</span><em>Translate canon vocab</em> — "your past jobs" · "what I'm watching for you" · "history snapshot." No cohort/altitude/P25–P75/AltitudePacket language at the operator surface.</li>
+      <li><span class="badge doctrine">D5</span><em>Clients live under Team &amp; Ops</em> — sidebar shows Team &amp; Ops parent active with Clients sub-item active, per <code>kerf_client_section_canonical.md</code> demotion canon.</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>Not a Salesforce contact workstation with 40 editable fields</li>
+      <li>Not a Houzz Pro "client folder" experience (folders sit underneath, brain leads)</li>
+      <li>Not a HubSpot-style activity feed dominated by automated touches</li>
+      <li>Not a comparison grid of clients (that's F-CL3)</li>
+      <li>Not a marketing engagement-scoring dashboard</li>
+      <li>Not an audit forensics console (Audit lives at Settings → Audit)</li>
+      <li>Not a "client = 1 contact" CRM model — handles primary + spouse + future multi-contact</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One primary cognitive job</em> — who is this client, what's open, what to do about them</li>
+      <li><span class="badge doctrine">d-2</span><em>Smart summary leads</em> — header + RH synthesis before tabs</li>
+      <li><span class="badge doctrine">d-3</span><em>3-color discipline</em> — amber pending · green won/on-track · red drift (chip-tier) · neutral informational</li>
+      <li><span class="badge canon">canon</span>Right Hand named once · no other agent names in copy</li>
+      <li><span class="badge canon">canon</span>Clients upstream of Projects · per <code>kerf_client_section_canonical.md</code></li>
+      <li><span class="badge canon">canon</span>Money displayed dollars · stored cents</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Breadcrumb · Clients → F-CL3 Desktop Clients list</li>
+      <li>Header actions → Log note (note capture sheet) · New deal (Start change pre-bound) · Send message (Comms tab pre-bound to Maria)</li>
+      <li>Active project · Open project → F-PR4 Kitchen project detail</li>
+      <li>Active project · CO-002 mention → F-B2 Decision Card</li>
+      <li>Open business AR row → Money tab scrolled to INV-218</li>
+      <li>Open business CO row → F-B2 Decision Card · CO-002</li>
+      <li>Open business final walk row → Schedule pre-bound to Jun 9 10:00</li>
+      <li>Pulse · Moore Family link → Moore canonical record (F-CL6 sibling)</li>
+      <li>Timeline · Full timeline → expanded history view (deferred)</li>
+      <li>Rail · Money → action → Money domain destination (Tier 3 deferred)</li>
+      <li>Rail · Watching items → expand monitor detail / configure thresholds (Settings deep-link)</li>
+      <li>Tab clicks → switch lens within F-CL6</li>
+      <li>Sidebar · Team &amp; Ops / Clients → F-CL3 Clients list</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-CL4_desktop_client_detail.html</code> · legacy detail (superseded)</li>
+      <li><code>F-CL5_mobile_client_record.html</code> · sibling mobile canonical record</li>
+      <li><code>F-PR4_desktop_project_detail.html</code> · downstream from active project card</li>
+      <li><code>F-B2_desktop_decision_card.html</code> · CO-002 destination</li>
+      <li><code>kerf_client_section_canonical.md</code> · Clients first-class architectural surface · upstream of projects · under Team &amp; Ops</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · doctrine: lead with synthesis</li>
+      <li><code>feedback_red_is_chip_tier_not_row_tier.md</code> · doctrine: red lives in chips</li>
+      <li><code>feedback_agent_names_not_in_operator_copy.md</code> · doctrine: name the work, not the agent</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> · doctrine: plainspoken operator copy</li>
+      <li><code>feedback_avoid_overbuilding_review_surfaces.md</code> · doctrine: don't multi-panel forensics this surface</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> · Clients domain in 9-domain business graph (Layer A)</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Per-tab content for Projects · Comms · Notes · Files · Money (sketched, not rendered)</li>
+      <li>Multi-contact treatment (Mark vs Maria as distinct sub-records with approval thresholds)</li>
+      <li>Client portal preview (what they see today)</li>
+      <li>Referral graph visualization (Wegrzyn → Moore → onward)</li>
+      <li>Merge two clients flow</li>
+      <li>Designer-led / commercial client variants</li>
+      <li>Spanish-language toggle (V2.1 paid beta)</li>
+      <li>PM-tier projection (PM sees same record, different actions available)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>One client, passive baseline rendered, active work drills out — at desktop width.</em> Header + RH synthesis + four passive sections (Projects · Open balance · Last touch · Source) land the operator inside the relationship without scroll. Contact + Money snapshot (2 rows) + Watching card (upcoming touches + anniversaries only) sit in the rail. Projects / Comms / Notes / Files / Money tabs sit one click deeper as drill-down lenses. Active operating chrome (change orders · daily logs · margin posture · variance band) lives at Project detail — this surface stays the canonical reference, not the operating console.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a Salesforce contact workstation. Not a HubSpot activity feed. Not a Houzz Pro client folder. Not a comparison grid (that's F-CL3). Not an audit forensics console. Not a 40-field editable contact profile. <strong>F-CL6 is the durable, authoritative client entity at desktop width — business brain leading, file cabinet sitting underneath, sub-tabs as lenses not departments.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

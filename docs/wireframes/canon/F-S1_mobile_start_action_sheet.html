@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-S1 · Mobile Start Action Sheet · intent-first action shortcut</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+  --sweep-violet: #A78BFA;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+.view-toggle-bar .vtb-hint kbd { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); padding: 1px 5px; border-radius: 3px; font-size: 10px; color: var(--kerf-text-dim); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .compare-row { gap: 36px; }
+body.presentation-mode .column-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0 0 6px; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.page-header p em { color: var(--kerf-amber); font-style: normal; }
+.page-header .canon-note {
+  background: rgba(245,181,68,0.08);
+  border-left: 3px solid var(--kerf-amber);
+  padding: 9px 14px;
+  border-radius: 4px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--kerf-text-dim);
+  line-height: 1.6;
+  max-width: 1080px;
+}
+.page-header .canon-note strong { color: var(--kerf-amber); }
+.page-header .canon-note em { color: var(--kerf-text); font-style: normal; font-weight: 600; }
+
+.compare-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; margin-bottom: 40px; }
+@media (max-width: 1100px) { .compare-row { grid-template-columns: 1fr; gap: 36px; } }
+
+.column { display: flex; flex-direction: column; align-items: center; }
+
+.frame-tag { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 4px; }
+.frame-name { font-size: 15px; color: var(--kerf-text); font-weight: 600; margin-bottom: 4px; text-align: center; }
+.frame-formula { font-size: 11px; color: var(--kerf-text-mute); margin-bottom: 18px; font-family: "SF Mono", Menlo, monospace; letter-spacing: 0.02em; text-align: center; }
+.access-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  padding: 2px 7px; border-radius: 4px;
+  background: rgba(245,181,68,0.12); color: var(--kerf-amber);
+  margin-left: 8px;
+}
+
+/* Phone */
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 780px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome (faded behind sheet) */
+.top-chrome { padding: 6px 16px 12px; display: flex; align-items: center; gap: 10px; opacity: 0.32; pointer-events: none; }
+.tc-greeting { font-size: 15px; color: var(--kerf-text); font-weight: 600; flex: 1; line-height: 1.25; }
+.tc-greeting .tc-sub { display: block; font-size: 11px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.tc-avatar { width: 30px; height: 30px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+
+/* Home content (dimmed behind sheet) */
+.home-body-dim { flex: 1; padding: 0 14px 14px; opacity: 0.28; pointer-events: none; }
+.dim-card {
+  background: rgba(245,181,68,0.06);
+  border: 1px solid rgba(245,181,68,0.20);
+  border-radius: 14px;
+  padding: 12px;
+  margin: 14px 0;
+  height: 84px;
+}
+.dim-line { height: 8px; background: var(--kerf-surface); border-radius: 4px; margin: 6px 0; }
+.dim-line.short { width: 50%; }
+
+/* Scrim backdrop */
+.sheet-backdrop {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 78px;
+  background: rgba(0,0,0,0.55);
+  z-index: 3;
+  backdrop-filter: blur(2px);
+}
+
+/* Action sheet */
+.action-sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 78px;
+  background: var(--kerf-bg-2);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-top: 1px solid var(--kerf-border);
+  z-index: 4;
+  padding: 12px 14px 18px;
+  box-shadow: 0 -12px 30px rgba(0,0,0,0.6);
+  display: flex; flex-direction: column;
+  max-height: 640px;
+  overflow: hidden;
+}
+.sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--kerf-border);
+  margin: 4px auto 12px;
+}
+.sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px 12px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  margin-bottom: 10px;
+}
+.sheet-title { font-size: 16px; color: var(--kerf-text); font-weight: 700; letter-spacing: -0.01em; }
+.sheet-title .sheet-prompt { display: block; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 2px; letter-spacing: 0; }
+.sheet-close { color: var(--kerf-text-mute); font-size: 22px; line-height: 0.8; }
+
+.sheet-section-label {
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  padding: 6px 4px 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sheet-section-label .sl-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.sheet-section-label.sweep .sl-dot { background: var(--sweep-violet); }
+
+.sheet-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.sheet-item {
+  display: grid; grid-template-columns: 32px 1fr 12px;
+  gap: 12px; padding: 10px 11px;
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  align-items: center;
+}
+.sheet-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.sheet-icon svg { width: 18px; height: 18px; }
+.sheet-icon.work { background: rgba(245,181,68,0.12); color: var(--kerf-amber); }
+.sheet-icon.work svg { fill: var(--kerf-amber); }
+.sheet-icon.sweep { background: rgba(167,139,250,0.12); color: var(--sweep-violet); }
+.sheet-icon.sweep svg { fill: var(--sweep-violet); }
+.sheet-name { font-size: 13px; color: var(--kerf-text); font-weight: 600; line-height: 1.3; }
+.sheet-name .sheet-sub { display: block; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 2px; }
+.sheet-arrow { color: var(--kerf-text-mute); font-size: 13px; }
+
+/* Bottom bar (still visible) */
+.bottom-bar {
+  background: var(--kerf-bg-2);
+  border-top: 1px solid var(--kerf-border);
+  padding: 8px 0 22px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 5;
+}
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--kerf-amber); }
+.bb-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.bb-icon svg.icon-more { width: 20px; height: 20px; }
+.bb-icon.start-pinned { color: var(--kerf-amber); }
+.bb-fab-wrap { position: relative; }
+.bb-fab {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--kerf-amber); color: #1A1300;
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 6px 18px rgba(245,181,68,0.40);
+  border: 3px solid var(--kerf-bg);
+}
+.bb-fab svg.mic-icon { width: 24px; height: 24px; fill: currentColor; }
+.bb-fab-label { font-size: 10px; color: var(--kerf-text-mute); margin-top: 32px; font-weight: 600; text-align: center; }
+
+/* Column spec */
+.column-spec {
+  width: 380px;
+  margin-top: 18px;
+  background: var(--kerf-bg-2);
+  border: 1px solid var(--kerf-border);
+  border-radius: 12px;
+  padding: 14px 14px 13px;
+  font-size: 11.5px;
+  color: var(--kerf-text-dim);
+  line-height: 1.55;
+}
+.column-spec h4 { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 0 0 6px; }
+.column-spec p { margin: 0 0 6px; }
+.column-spec strong { color: var(--kerf-text); }
+.column-spec em { color: var(--kerf-amber); font-style: normal; }
+.column-spec ul { padding-left: 16px; margin: 4px 0 6px; }
+.column-spec li { margin-bottom: 2px; }
+
+/* Closing strip */
+.closing-strip {
+  background: var(--kerf-bg-2);
+  border: 1px solid var(--kerf-border);
+  border-left: 3px solid var(--kerf-amber);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-top: 8px;
+}
+.closing-strip h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 0 0 8px; }
+.closing-strip p { margin: 0 0 8px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.6; }
+.closing-strip p strong { color: var(--kerf-text); }
+.closing-strip p em { color: var(--kerf-amber); font-style: normal; }
+.closing-strip ul { margin: 4px 0 8px; padding-left: 20px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.6; }
+.closing-strip ul li strong { color: var(--kerf-text); }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1 · Owner Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-D1 · More sidebar</span>
+    <span class="sep">›</span>
+    <span class="step current">F-S1 · Start action sheet (intent-first rebuild)</span>
+  </div>
+  <h1>F-S1 · Mobile Start action sheet · intent-first action shortcut</h1>
+  <p>
+    Rebuild against the intent-first Start canon (<code>kerf_start_action_shortcut_canon.md</code>, 2026-05-17 PM). The action shortcut is now organized around what the contractor is <em>trying to start</em>, not which capture medium they want to use. Two sections — <strong>Start work</strong> (5 business actions: field walk · change order · proposal · client intake · takeoff) and <strong>Start a sweep</strong> (3 agent workflows: clarify · lookahead · drift check). Kerf chooses or offers the medium on the next step. Verb-not-agent rule holds throughout — labels are always plain-English work, never agent names.
+  </p>
+  <div class="canon-note">
+    <strong>Supersedes</strong> the prior media-led F-S1 (5 capture verbs: client/lead intake · LiDAR scan · voice/video walk · camera · plan upload). Media-led Start was one tap from drifting into a Houzz Pro launcher grid — <em>"choose tool → create item."</em> Intent-led Start keeps the surface on doctrine: capture reality via the action the user is starting, not via the file type they're producing. Per <code>kerf_start_action_shortcut_canon.md</code>.
+  </div>
+</div>
+
+<div class="compare-row">
+
+  <!-- ===== Frame 1: Start from pinned swap-slot 5 ===== -->
+  <div class="column">
+    <div class="frame-tag">Frame 1 · Pinned access</div>
+    <div class="frame-name">Start sheet open from bar <span class="access-badge">SWAP-SLOT 5</span></div>
+    <div class="frame-formula">Sales-heavy owner · Start pinned to swap-slot 5</div>
+
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:41</span><span class="right">●●● 86%</span></div>
+
+        <div class="top-chrome">
+          <div class="tc-greeting">
+            Good morning, Christian
+            <span class="tc-sub">Friday · May 17</span>
+          </div>
+          <div class="tc-avatar">CA</div>
+        </div>
+
+        <!-- Dimmed home behind -->
+        <div class="home-body-dim">
+          <div class="dim-card">
+            <div class="dim-line"></div>
+            <div class="dim-line short"></div>
+            <div class="dim-line short"></div>
+          </div>
+          <div class="dim-line short"></div>
+        </div>
+
+        <!-- Backdrop -->
+        <div class="sheet-backdrop"></div>
+
+        <!-- Action sheet -->
+        <div class="action-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <div class="sheet-title">
+              Start
+              <span class="sheet-prompt">What are you starting?</span>
+            </div>
+            <span class="sheet-close">×</span>
+          </div>
+
+          <!-- Section 1: business actions -->
+          <div class="sheet-section-label">
+            <span class="sl-dot"></span> Start work
+          </div>
+          <div class="sheet-list">
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.5 24 7 17l-2-2-2 5.5L0 19l4-9 6.5 1 3 3.5 4-1 1 2-5 2-4-1L5 17l3 3-2 5z"/></svg></span>
+              <div class="sheet-name">
+                Start field walk
+                <span class="sheet-sub">Voice + photo/video · on-site capture</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h6v1.5H8zm0 3h6v1.5H8zm0-6h3v1.5H8z"/><path d="m17 16-3.5 3.5L12 18l-1 1 2.5 2.5L18 17z"/></svg></span>
+              <div class="sheet-name">
+                Start change order
+                <span class="sheet-sub">Voice-first · photos/measurements optional</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v1.5H7zm0 3h10v1.5H7zm0 3h7v1.5H7zm0-9h5v1.5H7z"/></svg></span>
+              <div class="sheet-name">
+                Start estimate / proposal
+                <span class="sheet-sub">Voice · plan upload · LiDAR optional</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="4"/><path d="M1 21v-1a8 8 0 0 1 16 0v1z"/><path d="M19 8h4v2h-4z" transform="translate(0 5)"/><path d="M20 5h2v8h-2z" transform="translate(0 5)"/></svg></span>
+              <div class="sheet-name">
+                Start client intake
+                <span class="sheet-sub">Form · voice · or import from email</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 5h18v2H3zm0 12h18v2H3zM7 8v8H5V8zm12 0v8h-2V8zm-4 0v8h-2V8zm-4 0v8H9V8z"/></svg></span>
+              <div class="sheet-name">
+                Start takeoff
+                <span class="sheet-sub">LiDAR scan · room dimensions + scopes</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+          </div>
+
+          <!-- Section 2: agent workflows -->
+          <div class="sheet-section-label sweep" style="margin-top: 6px;">
+            <span class="sl-dot"></span> Start a sweep
+          </div>
+          <div class="sheet-list">
+            <div class="sheet-item">
+              <span class="sheet-icon sweep"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-7h-2v2h2zm-1-8a4 4 0 0 0-4 4h2a2 2 0 1 1 4 0c0 2-3 2-3 4h2c0-1 3-2 3-4a4 4 0 0 0-4-4z"/></svg></span>
+              <div class="sheet-name">
+                Start clarify
+                <span class="sheet-sub">Resolve an open ambiguity in scope or transcript</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon sweep"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/><path d="M14 13h-3v3l4-1.5z"/></svg></span>
+              <div class="sheet-name">
+                Start lookahead
+                <span class="sheet-sub">2-week schedule projection across active jobs</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon sweep"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m21 21-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 7v8M7 11h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+              <div class="sheet-name">
+                Start drift check
+                <span class="sheet-sub">Sweep active jobs for schedule + scope conflicts</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom bar — Start pinned to swap-slot 5 (replaces More for this persona) -->
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab active">
+            <span class="bb-icon start-pinned"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg></span>
+            Start
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="column-spec">
+      <h4>Pinned access · sales-heavy owner</h4>
+      <p><strong>Bar context:</strong> Home · Projects · 🎤 Speak · Clients · <em>Start (pinned · active)</em>. Owner pinned Start to swap-slot 5 (replacing More) because they walk first-time projects ≥ 2×/week.</p>
+      <p><strong>Sheet content:</strong> Identical to Frame 2. Same two sections, same items.</p>
+      <ul>
+        <li>Single tap on Start opens the sheet immediately — no More-sidebar detour</li>
+        <li>More is still accessible via Settings → personalize bar OR long-press another slot</li>
+        <li>The pinned-Start persona is the contractor doing 2-3 intakes per week + frequent change orders + regular drift checks</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== Frame 2: Start from More sidebar ===== -->
+  <div class="column">
+    <div class="frame-tag">Frame 2 · More-sidebar access</div>
+    <div class="frame-name">Start sheet open from More <span class="access-badge">DEFAULT</span></div>
+    <div class="frame-formula">Default owner · Start lives in More · two taps to reach</div>
+
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>9:41</span><span class="right">●●● 86%</span></div>
+
+        <div class="top-chrome">
+          <div class="tc-greeting">
+            Good morning, Christian
+            <span class="tc-sub">Friday · May 17</span>
+          </div>
+          <div class="tc-avatar">CA</div>
+        </div>
+
+        <!-- Dimmed home behind -->
+        <div class="home-body-dim">
+          <div class="dim-card">
+            <div class="dim-line"></div>
+            <div class="dim-line short"></div>
+            <div class="dim-line short"></div>
+          </div>
+          <div class="dim-line short"></div>
+        </div>
+
+        <!-- Backdrop -->
+        <div class="sheet-backdrop"></div>
+
+        <!-- Action sheet (same content as Frame 1) -->
+        <div class="action-sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-header">
+            <div class="sheet-title">
+              Start
+              <span class="sheet-prompt">What are you starting?</span>
+            </div>
+            <span class="sheet-close">×</span>
+          </div>
+
+          <div class="sheet-section-label">
+            <span class="sl-dot"></span> Start work
+          </div>
+          <div class="sheet-list">
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.5 24 7 17l-2-2-2 5.5L0 19l4-9 6.5 1 3 3.5 4-1 1 2-5 2-4-1L5 17l3 3-2 5z"/></svg></span>
+              <div class="sheet-name">
+                Start field walk
+                <span class="sheet-sub">Voice + photo/video · on-site capture</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h6v1.5H8zm0 3h6v1.5H8zm0-6h3v1.5H8z"/><path d="m17 16-3.5 3.5L12 18l-1 1 2.5 2.5L18 17z"/></svg></span>
+              <div class="sheet-name">
+                Start change order
+                <span class="sheet-sub">Voice-first · photos/measurements optional</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v1.5H7zm0 3h10v1.5H7zm0 3h7v1.5H7zm0-9h5v1.5H7z"/></svg></span>
+              <div class="sheet-name">
+                Start estimate / proposal
+                <span class="sheet-sub">Voice · plan upload · LiDAR optional</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="4"/><path d="M1 21v-1a8 8 0 0 1 16 0v1z"/><path d="M19 8h4v2h-4z" transform="translate(0 5)"/><path d="M20 5h2v8h-2z" transform="translate(0 5)"/></svg></span>
+              <div class="sheet-name">
+                Start client intake
+                <span class="sheet-sub">Form · voice · or import from email</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon work"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 5h18v2H3zm0 12h18v2H3zM7 8v8H5V8zm12 0v8h-2V8zm-4 0v8h-2V8zm-4 0v8H9V8z"/></svg></span>
+              <div class="sheet-name">
+                Start takeoff
+                <span class="sheet-sub">LiDAR scan · room dimensions + scopes</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+          </div>
+
+          <div class="sheet-section-label sweep" style="margin-top: 6px;">
+            <span class="sl-dot"></span> Start a sweep
+          </div>
+          <div class="sheet-list">
+            <div class="sheet-item">
+              <span class="sheet-icon sweep"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-7h-2v2h2zm-1-8a4 4 0 0 0-4 4h2a2 2 0 1 1 4 0c0 2-3 2-3 4h2c0-1 3-2 3-4a4 4 0 0 0-4-4z"/></svg></span>
+              <div class="sheet-name">
+                Start clarify
+                <span class="sheet-sub">Resolve an open ambiguity in scope or transcript</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon sweep"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/><path d="M14 13h-3v3l4-1.5z"/></svg></span>
+              <div class="sheet-name">
+                Start lookahead
+                <span class="sheet-sub">2-week schedule projection across active jobs</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+            <div class="sheet-item">
+              <span class="sheet-icon sweep"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m21 21-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 7v8M7 11h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+              <div class="sheet-name">
+                Start drift check
+                <span class="sheet-sub">Sweep active jobs for schedule + scope conflicts</span>
+              </div>
+              <span class="sheet-arrow">›</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom bar — Owner default with More -->
+        <div class="bottom-bar">
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>
+            Home
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>
+            Projects
+          </div>
+          <div class="bb-fab-wrap">
+            <div class="bb-fab">
+              <svg class="mic-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </div>
+            <div class="bb-fab-label">Speak</div>
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>
+            Clients
+          </div>
+          <div class="bb-tab">
+            <span class="bb-icon"><svg class="icon-more" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>
+            More
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="column-spec">
+      <h4>More-sidebar access · default owner</h4>
+      <p><strong>Bar context:</strong> Home · Projects · 🎤 Speak · Clients · More. Owner taps More → sidebar opens → Actions section → Start. Two-tap path to the same sheet.</p>
+      <p><strong>Sheet content:</strong> Identical to Frame 1. The pin is a shortcut, not a content variant.</p>
+      <ul>
+        <li>Right Hand may suggest pinning Start to swap-slot 5 after 14 days of intake-heavy usage</li>
+        <li>Suggestion is opt-in (never silent pin); owner explicitly accepts</li>
+        <li>This is the default access path for most owners who run 0-2 intakes per week</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- Spec — full reference -->
+<div class="closing-strip">
+  <h3>F-S1 · Intent-first canon · what changed and why</h3>
+  <p><strong>Prior version (superseded):</strong> 5 capture-verb cards — <em>Add client/lead · LiDAR scan · Voice/video walk · Photo/video · Plan/document upload.</em> Media-led. Asked the user to pick which tool / file type they wanted to produce.</p>
+  <p><strong>This version:</strong> Two sections of intent-led starts. <em>"Start work"</em> = 5 business actions (field walk · change order · estimate/proposal · client intake · takeoff). <em>"Start a sweep"</em> = 3 agent workflows (clarify · lookahead · drift check). User picks the action; Kerf chooses the medium on the next step.</p>
+  <p><strong>Why:</strong> Per <code>kerf_start_action_shortcut_canon.md</code>. Media-led Start was one tap from drifting into a Houzz Pro launcher grid. Intent-led keeps the surface on doctrine — capture reality via what the user is starting, not via the file type they're producing.</p>
+
+  <ul>
+    <li><strong>Start field walk</strong> → opens voice capture with photo/video add-on; routes capture into the active project's Daily Log</li>
+    <li><strong>Start change order</strong> → voice-first interview pre-bound to the active project; photos and measurements optional supporting evidence</li>
+    <li><strong>Start estimate / proposal</strong> → voice intake; plan/document upload; LiDAR scan if room measurements needed</li>
+    <li><strong>Start client intake</strong> → form (default) · voice (verbal walkthrough) · email-import (paste a client inquiry); creates a Sales-stage record or a Clients record depending on phase</li>
+    <li><strong>Start takeoff</strong> → opens LiDAR scan flow directly (the natural medium for takeoff); pre-bound to current project context if applicable</li>
+  </ul>
+
+  <ul>
+    <li><strong>Start clarify</strong> → picks an open ambiguity from the Holding rail (scope item with confidence flag, transcript edit pending review) and surfaces a resolution interface</li>
+    <li><strong>Start lookahead</strong> → generates a 2-week schedule projection across active jobs; flags conflicts before they happen</li>
+    <li><strong>Start drift check</strong> → sweeps active jobs for schedule + scope conflicts on demand (vs. the background drift detection that runs continuously)</li>
+  </ul>
+
+  <p><strong>Verb-not-agent enforcement:</strong> Every label is plain-English work. <em>"Start clarify"</em> not <em>"Start clarification agent."</em> Sub-descriptions name the medium or the work, never the agent. Per <code>feedback_agent_names_not_in_operator_copy.md</code>.</p>
+
+  <p><strong>Visual conventions:</strong> Start-work items use amber accent icons (matches the Owner accent + signals "actions you take"). Start-a-sweep items use violet accent icons (matches existing canon-violet usage for informational/computational content and signals "the system does something for you"). Both stay within the 3-color status discipline since these are role/category accents, not status colors.</p>
+
+  <p><strong>What this surface refuses to be:</strong> Not a launcher grid. Not a "pick a media type" prompt. Not an agent picker. Not a Houzz Pro create-new-something hub. <em>Start is the verb the contractor speaks; Kerf carries the rest.</em></p>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

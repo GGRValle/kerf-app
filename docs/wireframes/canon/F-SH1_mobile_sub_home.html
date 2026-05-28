@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-SH1 · Mobile Sub Home · contractor portal</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11; --kerf-bg-2: #14181F; --kerf-surface: #1A1F28; --kerf-surface-2: #232936;
+  --kerf-border: #2A3140; --kerf-border-soft: #1F2530; --kerf-text: #E8ECF1; --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282; --kerf-amber: #F5B544; --kerf-green: #4ADE80; --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF; --kerf-violet: #A78BFA; --kerf-magenta: #E879A8; --kerf-cyan: #67D6E0;
+  --field-green: #38C977; --right-hand: #C9A961; --sub-accent: #7BA8FF;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF; --kerf-bg-2: #F4F6F9; --kerf-surface: #FFFFFF; --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8; --kerf-border-soft: #DFE3E8; --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462; --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step.current { color: var(--sub-accent); }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; color: var(--sub-accent); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub-accent); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; }
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; font-weight: 600; }
+.sub-top { padding: 10px 16px 12px; border-bottom: 1px solid var(--kerf-border-soft); display: flex; align-items: center; gap: 10px; }
+.sub-logo { width: 36px; height: 36px; border-radius: 8px; background: var(--kerf-surface-2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: var(--sub-accent); letter-spacing: -0.02em; }
+.sub-brand { flex: 1; }
+.sub-brand .sb-name { font-size: 14px; font-weight: 700; }
+.sub-brand .sb-contractor { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+.sub-signout { font-size: 11px; color: var(--kerf-blue); font-weight: 600; }
+.home-body { flex: 1; overflow-y: auto; padding: 0 14px 10px; }
+.sub-hero { background: linear-gradient(135deg, rgba(123,168,255,0.12) 0%, rgba(123,168,255,0.04) 100%); border: 1px solid rgba(123,168,255,0.35); border-radius: 14px; padding: 14px; margin-top: 12px; }
+.sub-hero h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+.sub-hero p { font-size: 12px; color: var(--kerf-text-dim); margin: 0; }
+.section-label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin: 14px 4px 8px; }
+.wo-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 11px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 9px; margin-bottom: 6px; font-size: 12px; align-items: center; }
+.wo-row .wo-title { font-weight: 600; }
+.wo-row .wo-meta { display: block; font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; }
+.wo-arrow { color: var(--kerf-text-mute); }
+.row-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 8.5px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
+.row-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.row-chip.red::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-red); }
+.row-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.row-chip.amber::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--kerf-amber); }
+.act-item { font-size: 11.5px; color: var(--kerf-text-dim); padding: 8px 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.act-item:last-child { border-bottom: none; }
+.sub-footer { padding: 8px 16px 6px; font-size: 9.5px; color: var(--kerf-text-mute); text-align: center; line-height: 1.45; border-top: 1px solid var(--kerf-border-soft); }
+.bottom-bar { background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border); padding: 8px 0 22px; display: grid; grid-template-columns: repeat(4, 1fr); flex-shrink: 0; }
+.bb-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--kerf-text-mute); font-weight: 600; padding: 5px 0; }
+.bb-tab.active { color: var(--sub-accent); }
+.bb-icon svg { width: 22px; height: 22px; fill: currentColor; }
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--sub-accent); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub-accent); font-weight: 700; margin-bottom: 5px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+<div class="view-toggle-bar">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px">Theme</span>
+  <div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> · Grid view: NO</span>
+</div>
+<div class="page-header">
+  <div class="crumb"><span class="step current">F-SH1 · Sub Home (mobile)</span><span class="sep"> › </span><span class="step">F-SH2 · Sub Home (desktop)</span></div>
+  <h1>F-SH1 · Mobile Sub Home · contractor portal</h1>
+  <p>Sub-facing portal — not operator Kerf. Plain language for the subcontractor: work orders, payments to them, documents. No Kerf sidebar, no operator margin, no portfolio across contractors (V1 single-operator).</p>
+</div>
+<div class="frame">
+  <div class="frame-label">Frame · F-SH1 · Mobile Sub Home · Work tab active</div>
+  <p class="frame-narr">Saul (Padilla Plumbing) opens the GGR contractor portal on his phone. Top bar shows his company and who hired him. Bottom tabs are Work · Money · Docs · Profile — not the 5-slot operator bar. Disclosure footer explains Kerf powers the portal.</p>
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="status-bar"><span>9:41</span><span>●●● 86%</span></div>
+        <div class="sub-top">
+          <div class="sub-logo">PP</div>
+          <div class="sub-brand"><div class="sb-name">Padilla Plumbing</div><div class="sb-contractor">GGR Design + Remodeling</div></div>
+          <span class="sub-signout">Sign out</span>
+        </div>
+        <div class="home-body">
+          <div class="sub-hero">
+            <h2>Hi Saul</h2>
+            <p>2 active work orders · <strong>1 needs your attention</strong></p>
+          </div>
+          <div class="section-label">Active work orders</div>
+          <div class="wo-row">
+            <div><span class="wo-title">Wegrzyn kitchen · rough-in plumbing</span><span class="wo-meta">Due Wed May 21 · scope attached</span><span class="row-chip red">Needs response</span></div>
+            <span class="wo-arrow">›</span>
+          </div>
+          <div class="wo-row">
+            <div><span class="wo-title">Hernandez pantry · fixture trim</span><span class="wo-meta">In progress · started May 18</span></div>
+            <span class="wo-arrow">›</span>
+          </div>
+          <div class="section-label">Upcoming</div>
+          <div class="wo-row">
+            <div><span class="wo-title">Ault vanity · bid request</span><span class="wo-meta">Bid due Fri May 23</span><span class="row-chip amber">Pending bid</span></div>
+            <span class="wo-arrow">›</span>
+          </div>
+          <div class="section-label">Recent activity</div>
+          <div class="act-item">Invoice #1042 paid · $3,840 · May 12</div>
+          <div class="act-item">WO completed · Dunne master bath · May 8</div>
+        </div>
+        <div class="sub-footer">Powered by Kerf · your contractor uses Kerf to manage projects</div>
+        <div class="bottom-bar">
+          <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Work</div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg></span>Money</div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span>Docs</div>
+          <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg></span>Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="frame-spec">
+    <h3>F-SH1 · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> Macro glimpse (sub Home).</li>
+      <li><strong>List / grid / both?</strong> List rows only — <strong>Grid view: NO</strong>.</li>
+      <li><strong>Cognitive job?</strong> What work do I have, what's been paid to me, what do I need to upload.</li>
+      <li><strong>Hidden until drill?</strong> Operator margin, other contractors, Kerf operator IA, crew on other subs' jobs.</li>
+    </ul>
+    <h4>Chrome</h4>
+    <ul>
+      <li>No Kerf sidebar · 4-tab bottom bar (Work · Money · Docs · Profile).</li>
+      <li>Top: sub logo + contractor name + sign-out.</li>
+      <li>Footer disclosure required.</li>
+      <li>Sub-facing plain language only — no canon vocab.</li>
+    </ul>
+  </div>
+</div>
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">Sub tone</span><strong>Two jobs, one needs you.</strong> Bid on Ault. Last payment May 12. No AR/AP operator language.</div>
+  <div class="callout"><span class="callout-title">Not this surface</span>No operator margin. No Kerf nav rail. No grid. Red chip-tier only on the one WO that needs response.</div>
+</div>
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

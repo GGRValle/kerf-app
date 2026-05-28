@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-CS2 · Desktop Client Success Detail · the success-lens projection of a client, wider canvas</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.page-header .doctrine-note { background: rgba(245,181,68,0.06); border-left: 3px solid var(--kerf-amber); padding: 9px 14px; border-radius: 4px; margin-top: 12px; font-size: 12px; color: var(--kerf-text-dim); line-height: 1.6; max-width: 1080px; }
+.page-header .doctrine-note strong { color: var(--kerf-amber); }
+.page-header .doctrine-note em { color: var(--kerf-text); font-style: normal; font-weight: 600; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.guardrail { background: rgba(248,113,113,0.16); color: var(--kerf-red); }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 980px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 920px; }
+
+/* Sidebar */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item.expanded { background: rgba(245,181,68,0.04); color: var(--kerf-text-dim); font-weight: 600; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-text-mute); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action:hover { color: var(--kerf-text); }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* CLIENT HEADER */
+.client-header { padding: 20px 24px 4px; display: flex; align-items: flex-start; gap: 18px; }
+.ch-identity { flex: 1; }
+.ch-name { font-size: 26px; font-weight: 700; color: var(--kerf-text); letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 6px; }
+.ch-meta { font-size: 12.5px; color: var(--kerf-text-dim); line-height: 1.5; }
+.ch-meta strong { color: var(--kerf-text); font-weight: 600; }
+.ch-meta .ph-sep { color: var(--kerf-border); margin: 0 8px; }
+.ch-meta .ph-id { font-family: "SF Mono", Menlo, monospace; color: var(--kerf-text-mute); font-size: 11px; }
+.ch-meta .ch-advocate { display: inline-block; padding: 2px 8px; border-radius: 4px; background: rgba(201,169,97,0.16); color: var(--right-hand); font-size: 10px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; margin-right: 8px; vertical-align: 1px; }
+.ch-actions { display: flex; gap: 8px; }
+.ch-btn { padding: 7px 12px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 7px; font-size: 12px; color: var(--kerf-text-dim); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.ch-btn:hover { color: var(--kerf-text); border-color: var(--kerf-border); }
+.ch-btn.primary { background: var(--kerf-amber); color: #1A1300; border-color: var(--kerf-amber); }
+.ch-btn svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* RH synthesis row · full width */
+.synthesis-row { padding: 14px 24px 18px; border-bottom: 1px solid var(--kerf-border-soft); }
+.rh-card { background: rgba(201,169,97,0.05); border-left: 2px solid var(--right-hand); border-radius: 4px; padding: 11px 14px; }
+.rh-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 13px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text em { color: var(--kerf-amber); font-style: normal; font-weight: 600; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text .rh-green { color: var(--field-green); font-weight: 600; }
+
+/* CONTENT layout — two-column main + rail */
+.content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 18px 24px 24px; flex: 1; }
+
+/* Main column */
+.main-col { display: flex; flex-direction: column; gap: 18px; }
+.sec-eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 9px; display: flex; align-items: baseline; gap: 8px; }
+.sec-eyebrow .ss-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+.sec-eyebrow .ss-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* LIFECYCLE — horizontal stepper · full width */
+.lifecycle-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 16px 22px 14px;
+}
+.lc-stage-row {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  position: relative;
+  margin-bottom: 9px;
+}
+.lc-stage-row::before {
+  content: ''; position: absolute; left: 28px; right: 28px; top: 13px;
+  height: 1.5px; background: var(--kerf-border-soft); z-index: 0;
+}
+.lc-stage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; z-index: 1; }
+.lc-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--kerf-bg);
+  border: 1.5px solid var(--kerf-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--kerf-text-mute);
+  font-weight: 700;
+}
+.lc-dot.done { background: var(--field-green); border-color: var(--field-green); color: #0A1A0F; }
+.lc-dot.current { background: var(--right-hand); border-color: var(--right-hand); color: #1A1300; box-shadow: 0 0 0 4px rgba(201,169,97,0.18); }
+.lc-stage-name {
+  font-size: 11.5px; color: var(--kerf-text);
+  font-weight: 700; text-align: center; line-height: 1.3;
+}
+.lc-stage-date {
+  font-size: 9.5px; color: var(--kerf-text-mute);
+  letter-spacing: 0.04em; font-weight: 600;
+  text-align: center; text-transform: uppercase;
+  margin-top: -2px;
+}
+.lc-stage-amt {
+  font-size: 10.5px; color: var(--field-green);
+  font-weight: 700; font-family: "SF Mono", Menlo, monospace;
+  text-align: center;
+  margin-top: 1px;
+}
+.lc-stage.current .lc-stage-name { color: var(--right-hand); }
+.lc-stage:not(.done):not(.current) .lc-stage-name { color: var(--kerf-text-mute); font-weight: 500; }
+.lc-stage:not(.done):not(.current) .lc-stage-date { color: var(--kerf-text-mute); opacity: 0.5; }
+.lc-context {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--kerf-border-soft);
+  font-size: 12px; color: var(--kerf-text-dim); line-height: 1.55;
+}
+.lc-context strong { color: var(--kerf-text); font-weight: 600; }
+.lc-context em { color: var(--right-hand); font-style: normal; font-weight: 600; }
+
+/* Paired row: Touch cadence + Advocacy state */
+.pair-row { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+.touch-list, .advocacy-list {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 0 14px;
+}
+.touch-row, .adv-row {
+  display: grid; grid-template-columns: 92px 1fr;
+  gap: 12px; align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 12px;
+}
+.touch-row:last-child, .adv-row:last-child { border-bottom: none; }
+.touch-key, .adv-key { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+.touch-val, .adv-val { color: var(--kerf-text); line-height: 1.45; }
+.touch-val .touch-sub, .adv-val .adv-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+.touch-val .touch-green { color: var(--field-green); font-weight: 600; }
+.touch-val .touch-amber { color: var(--kerf-amber); font-weight: 600; }
+
+.adv-val .review-star { color: var(--right-hand); font-weight: 700; }
+.adv-val .review-pending { color: var(--kerf-text-mute); font-style: italic; }
+.adv-val .ref-link { color: var(--kerf-blue); font-weight: 600; }
+.adv-val .ref-won { color: var(--field-green); font-weight: 700; font-family: "SF Mono", Menlo, monospace; }
+.adv-val .ref-pipeline { color: var(--kerf-amber); font-weight: 600; font-family: "SF Mono", Menlo, monospace; }
+.adv-val .advocate-star { color: var(--right-hand); font-weight: 700; }
+
+/* Open marketing actions */
+.action-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.action-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: grid; grid-template-columns: 1fr auto auto;
+  gap: 14px; align-items: center;
+}
+.ac-text { font-size: 12.5px; color: var(--kerf-text); font-weight: 600; line-height: 1.4; }
+.ac-text .ac-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+.ac-chip {
+  font-size: 9.5px; padding: 3px 8px; border-radius: 4px;
+  letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase;
+  flex-shrink: 0;
+}
+.ac-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.ac-chip.cyan { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); }
+.ac-chip.muted { background: var(--kerf-bg-2); color: var(--kerf-text-mute); }
+.ac-cta { font-size: 11px; color: var(--kerf-blue); font-weight: 700; cursor: pointer; }
+.ac-cta:hover { color: var(--kerf-amber); }
+
+/* NPS history */
+.nps-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 16px 12px;
+}
+.nps-row {
+  display: grid; grid-template-columns: 1fr 88px 80px;
+  gap: 14px; align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 12px;
+}
+.nps-row:last-child { border-bottom: none; }
+.nps-label { color: var(--kerf-text); font-weight: 600; line-height: 1.4; }
+.nps-label .nps-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+.nps-date { font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 600; }
+.nps-val {
+  font-size: 16px; font-weight: 700; font-family: "SF Mono", Menlo, monospace;
+  color: var(--field-green); text-align: right;
+}
+.nps-val.pending { color: var(--kerf-text-mute); font-size: 11px; font-style: italic; font-weight: 600; font-family: inherit; }
+.nps-trend {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 11px 0 2px;
+  font-size: 11px; color: var(--kerf-text-mute);
+  border-top: 1px solid var(--kerf-border-soft);
+  margin-top: 4px;
+}
+.nps-trend strong { color: var(--field-green); font-weight: 700; }
+
+/* RIGHT RAIL */
+.rail { display: flex; flex-direction: column; gap: 14px; }
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* Watching card */
+.watching-card {
+  background: rgba(201,169,97,0.06);
+  border: 1px solid rgba(201,169,97,0.22);
+  border-radius: 11px;
+  padding: 14px 16px;
+}
+.watching-card .rh-eyebrow { margin-bottom: 11px; }
+.watching-list { margin: 0; padding: 0; list-style: none; }
+.watching-item {
+  display: grid; grid-template-columns: 14px 1fr;
+  gap: 9px; align-items: flex-start;
+  padding: 8px 0;
+  font-size: 12px; color: var(--kerf-text); line-height: 1.45;
+  border-bottom: 1px solid rgba(201,169,97,0.12);
+}
+.watching-item:last-child { border-bottom: none; }
+.watching-item .wi-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--right-hand); margin-top: 6px; }
+.watching-item.amber .wi-dot { background: var(--kerf-amber); }
+.watching-item.green .wi-dot { background: var(--field-green); }
+.watching-item .wi-text strong { color: var(--kerf-text); font-weight: 600; }
+.watching-item .wi-text .wi-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+.watching-cta {
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(201,169,97,0.15);
+  font-size: 11.5px; color: var(--kerf-blue); font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+
+/* Referral attribution rail card */
+.attr-row {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 8px; align-items: baseline;
+  padding: 7px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.attr-row:last-child { border-bottom: none; padding-bottom: 0; }
+.attr-row:first-child { padding-top: 0; }
+.attr-label { color: var(--kerf-text-mute); font-size: 11px; }
+.attr-label .attr-sub { display: block; color: var(--kerf-text-mute); font-size: 10px; margin-top: 1px; opacity: 0.7; }
+.attr-val { font-family: "SF Mono", Menlo, monospace; color: var(--kerf-text); font-weight: 700; font-size: 12px; }
+.attr-val.green { color: var(--field-green); }
+.attr-val.amber { color: var(--kerf-amber); }
+.attr-multiplier {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--kerf-border-soft);
+  font-size: 11px; color: var(--kerf-text-dim); line-height: 1.5;
+}
+.attr-multiplier strong { color: var(--right-hand); font-weight: 700; }
+
+/* Last comms rail card */
+.last-comm-list {}
+.last-comm-row {
+  display: grid; grid-template-columns: 56px 1fr;
+  gap: 10px; align-items: baseline;
+  padding: 7px 0;
+  font-size: 11.5px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.last-comm-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.last-comm-row:first-child { padding-top: 0; }
+.lc-when { font-size: 10px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.lc-body { color: var(--kerf-text); line-height: 1.4; }
+.lc-body .lc-sub { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-CS1 · Client Success Detail (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-CS2 · Client Success Detail · desktop</span>
+  </div>
+  <h1>F-CS2 · Desktop Client Success Detail · success-lens projection, wider canvas</h1>
+  <p>
+    Desktop projection of F-CS1. Same success-lens framing, denser two-column main+rail layout. Per-client deep view of post-close relationship state — warranty / reviews / referrals / anniversary / NPS / advocacy. <em>Success-lens projection</em> of the canonical client entity at <code>F-CL5/CL6</code>; same client, narrower focus. Main column carries Lifecycle stage stepper, Touch cadence + Advocacy state (paired), Open marketing actions, NPS history. Right rail carries Referral attribution snapshot, Last 3 comms, and What I'm watching for you (RH). Marketing → Success is active in the sidebar (Marketing expanded with sub-items: Reviews & Referrals · Outreach · Attribution · Success).
+  </p>
+  <div class="doctrine-note">
+    <strong>Disciplines applied:</strong> <em>Detail surface · no Grid view · no view-mode toggle</em> per the 4-question dispatch. <em>Business brain leads, file cabinet underneath</em> — synthesis sections render first; individual messages + full project history sit one click deeper at the canonical record. <em>Red is chip-tier only</em> — no full-row red borders; chips only for action states. <em>No agent names</em> — only Right Hand named on RH synthesis + Watching card. <em>Translate canon vocab</em> — "advocate status," "top quintile," "stable-high" replace "lifecycle segment 4," "cohort routing envelope," "P25–P75." Marketing sidebar item expanded with 4 sub-items per Operating Model Canon · Marketing's third pillar is Client Success.
+  </div>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-CS2 · Desktop Client Success · Moore Family · advocate stage</div>
+  <p class="frame-narr">
+    Owner clicked Moore Family from the Success list under Marketing → Success. Page loads with client name + advocate chip + meta (LTV · jobs · address · system id · primary contact), action buttons in the header (Log touch · Ask for review · Send anniversary). RH synthesis row spans the width below the header. Main column carries Lifecycle stage stepper (full-width with stage names + dates + amounts), Touch cadence + Advocacy state paired two-up, Open marketing actions (3 cards with state chips and CTA links), NPS history (per-job rows with trend line). Right rail carries Referral attribution rollup, Last 3 comms summary, and the RH Watching card with canonical-record drill. Six operator questions answered above the fold without tab clicks.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/marketing/success/moore-family-cli-008</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item expanded"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Reviews &amp; Referrals</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Outreach</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Attribution</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Success</div>
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Marketing</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Success</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Moore Family</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action">
+              <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+              Actions
+            </span>
+          </div>
+
+          <!-- CLIENT HEADER -->
+          <div class="client-header">
+            <div class="ch-identity">
+              <div class="ch-name">Moore Family</div>
+              <div class="ch-meta">
+                <span class="ch-advocate">★ Advocate</span>
+                <strong>3 jobs · 26 months</strong>
+                <span class="ph-sep">·</span>
+                $182k LTV
+                <span class="ph-sep">·</span>
+                Point Loma, San Diego
+                <span class="ph-sep">·</span>
+                <span class="ph-id">CLI-008</span>
+                <span class="ph-sep">·</span>
+                Primary: Maria Moore
+              </div>
+            </div>
+            <div class="ch-actions">
+              <div class="ch-btn"><svg viewBox="0 0 24 24"><path d="M14 2 12.5 3.5 16 7l-9 9-1.5-1.5L4 16 9 21l1.5-1.5L9 18l9-9 3 3 1.5-1.5L14 2z"/></svg>Log touch</div>
+              <div class="ch-btn"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>Ask for review</div>
+              <div class="ch-btn primary"><svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-2 12-3 3-1.4-1.4 1.6-1.6H8v-2h6.2l-1.6-1.6L14 9z"/></svg>Send anniversary</div>
+            </div>
+          </div>
+
+          <!-- SYNTHESIS ROW · RH sentence -->
+          <div class="synthesis-row">
+            <div class="rh-card">
+              <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · success lens</div>
+              <div class="rh-text">
+                Moore family · <strong>3 jobs over 26 months · $182k LTV</strong> · <span class="rh-green">NPS 9</span> · referred 2 (1 closed-won $48k Wegrzyn · 1 in pipeline $28k Patel) · last touch 12d · <em>14-month anniversary in 6 days · note drafted</em> · advocate status.
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTENT -->
+          <div class="content">
+
+            <!-- LEFT: main column -->
+            <div class="main-col">
+
+              <!-- LIFECYCLE STAGE -->
+              <div>
+                <div class="sec-eyebrow">Lifecycle stage <span class="ss-count">· current · advocate</span></div>
+                <div class="lifecycle-card">
+                  <div class="lc-stage-row">
+                    <div class="lc-stage done">
+                      <div class="lc-dot">✓</div>
+                      <div class="lc-stage-name">Lead</div>
+                      <div class="lc-stage-date">Sep 2023</div>
+                    </div>
+                    <div class="lc-stage done">
+                      <div class="lc-dot">✓</div>
+                      <div class="lc-stage-name">First project</div>
+                      <div class="lc-stage-date">Mar 2024 · Bath</div>
+                      <div class="lc-stage-amt">$46k</div>
+                    </div>
+                    <div class="lc-stage done">
+                      <div class="lc-dot">✓</div>
+                      <div class="lc-stage-name">Win-back / repeat</div>
+                      <div class="lc-stage-date">Aug 2024 · Bath #2</div>
+                      <div class="lc-stage-amt">$52k</div>
+                    </div>
+                    <div class="lc-stage current">
+                      <div class="lc-dot">★</div>
+                      <div class="lc-stage-name">Advocate</div>
+                      <div class="lc-stage-date">Mar 2025 · Kitchen + refs</div>
+                      <div class="lc-stage-amt">$84k</div>
+                    </div>
+                    <div class="lc-stage">
+                      <div class="lc-dot">·</div>
+                      <div class="lc-stage-name">Lapsed</div>
+                      <div class="lc-stage-date">—</div>
+                    </div>
+                  </div>
+                  <div class="lc-context">
+                    Entered <em>Advocate</em> stage Mar 2025 with third project (kitchen $84k) + referrals starting. <strong>Top quintile of your book</strong> by referral value · 1 of 3 advocate-stage clients currently active. Lifecycle progressing on the strong-repeat track · no signal of drift toward lapsed.
+                  </div>
+                </div>
+              </div>
+
+              <!-- TOUCH CADENCE + ADVOCACY STATE — PAIRED -->
+              <div class="pair-row">
+
+                <div>
+                  <div class="sec-eyebrow">Touch cadence</div>
+                  <div class="touch-list">
+                    <div class="touch-row">
+                      <span class="touch-key">Last touch</span>
+                      <span class="touch-val">
+                        Text from Christian · 12d ago
+                        <span class="touch-sub">"send pics when you have them"</span>
+                      </span>
+                    </div>
+                    <div class="touch-row">
+                      <span class="touch-key">Cadence</span>
+                      <span class="touch-val">
+                        Quarterly post-close · <span class="touch-green">on-track</span>
+                        <span class="touch-sub">13 total touches over 26 months</span>
+                      </span>
+                    </div>
+                    <div class="touch-row">
+                      <span class="touch-key">Next</span>
+                      <span class="touch-val">
+                        <span class="touch-amber">14-month anniversary</span> · 6 days
+                        <span class="touch-sub">Drafted · awaiting your approval</span>
+                      </span>
+                    </div>
+                    <div class="touch-row">
+                      <span class="touch-key">After that</span>
+                      <span class="touch-val">
+                        Holiday touch · December
+                        <span class="touch-sub">Scheduled by cadence engine</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="sec-eyebrow">Advocacy state</div>
+                  <div class="advocacy-list">
+                    <div class="adv-row">
+                      <span class="adv-key">Reviews</span>
+                      <span class="adv-val">
+                        Google <span class="review-star">5★</span> · Houzz <span class="review-star">5★</span> · Yelp <span class="review-pending">pending</span>
+                        <span class="adv-sub">Apr 2024 · Sep 2024 · ask queued for next month</span>
+                      </span>
+                    </div>
+                    <div class="adv-row">
+                      <span class="adv-key">Referrals</span>
+                      <span class="adv-val">
+                        <span class="ref-link">Wegrzyn</span> closed-won · <span class="ref-link">Patel</span> in lead
+                        <span class="adv-sub">2 referrals sent · 1 won · 1 still in pipeline</span>
+                      </span>
+                    </div>
+                    <div class="adv-row">
+                      <span class="adv-key">Worth</span>
+                      <span class="adv-val">
+                        <span class="ref-won">$48k</span> won + <span class="ref-pipeline">$28k</span> pipeline
+                        <span class="adv-sub">Attribution from Moore referrals only</span>
+                      </span>
+                    </div>
+                    <div class="adv-row">
+                      <span class="adv-key">Status</span>
+                      <span class="adv-val">
+                        <span class="advocate-star">★ Advocate</span> · top quintile
+                        <span class="adv-sub">Ranked by referral value across your book</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- OPEN MARKETING ACTIONS -->
+              <div>
+                <div class="sec-eyebrow">
+                  Open marketing actions
+                  <span class="ss-count">· 3</span>
+                  <span class="ss-action">All drafts →</span>
+                </div>
+                <div class="action-list">
+                  <div class="action-card">
+                    <div class="ac-text">
+                      Anniversary note · drafted
+                      <span class="ac-sub">14-month touchpoint · approval needed · 6 days out · personalized from Moore history</span>
+                    </div>
+                    <span class="ac-chip amber">Ready</span>
+                    <span class="ac-cta">Review draft →</span>
+                  </div>
+                  <div class="action-card">
+                    <div class="ac-text">
+                      Yelp review ask · drafted
+                      <span class="ac-sub">3rd platform · queued for next month after anniversary lands</span>
+                    </div>
+                    <span class="ac-chip cyan">Queued</span>
+                    <span class="ac-cta">Review draft →</span>
+                  </div>
+                  <div class="action-card">
+                    <div class="ac-text">
+                      Holiday touch · scheduled
+                      <span class="ac-sub">December · cadence engine queued · no draft yet</span>
+                    </div>
+                    <span class="ac-chip muted">Scheduled</span>
+                    <span class="ac-cta">View schedule →</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- NPS HISTORY -->
+              <div>
+                <div class="sec-eyebrow">NPS history</div>
+                <div class="nps-card">
+                  <div class="nps-row">
+                    <span class="nps-label">
+                      Bath #1
+                      <span class="nps-sub">Closeout survey · positive feedback noted</span>
+                    </span>
+                    <span class="nps-date">Jul 2024</span>
+                    <span class="nps-val">9</span>
+                  </div>
+                  <div class="nps-row">
+                    <span class="nps-label">
+                      Bath #2
+                      <span class="nps-sub">Closeout survey · "would refer to anyone"</span>
+                    </span>
+                    <span class="nps-date">Nov 2024</span>
+                    <span class="nps-val">10</span>
+                  </div>
+                  <div class="nps-row">
+                    <span class="nps-label">
+                      Kitchen
+                      <span class="nps-sub">Closing soon · ask queued for closeout day</span>
+                    </span>
+                    <span class="nps-date">Soon</span>
+                    <span class="nps-val pending">pending</span>
+                  </div>
+                  <div class="nps-trend">
+                    <span>Trend across 2 closed jobs · 0 promoter drift · 0 detractor signal</span>
+                    <strong>Stable-high</strong>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT RAIL -->
+            <div class="rail">
+
+              <!-- WATCHING -->
+              <div class="watching-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>What I'm watching for you</div>
+                <ul class="watching-list">
+                  <li class="watching-item amber">
+                    <span class="wi-dot"></span>
+                    <span class="wi-text">
+                      <strong>Anniversary approaching</strong>
+                      <span class="wi-sub">14-month touchpoint · 6 days out · note drafted</span>
+                    </span>
+                  </li>
+                  <li class="watching-item green">
+                    <span class="wi-dot"></span>
+                    <span class="wi-text">
+                      <strong>Referral momentum strong</strong>
+                      <span class="wi-sub">2 sent in last 12 months · 1 closed · 1 in pipeline</span>
+                    </span>
+                  </li>
+                  <li class="watching-item green">
+                    <span class="wi-dot"></span>
+                    <span class="wi-text">
+                      <strong>No quality issues flagged</strong>
+                      <span class="wi-sub">NPS stable-high · no warranty claims · no comms drift</span>
+                    </span>
+                  </li>
+                  <li class="watching-item">
+                    <span class="wi-dot"></span>
+                    <span class="wi-text">
+                      <strong>Patel deal still in lead stage</strong>
+                      <span class="wi-sub">Referred 4 months ago · light nudge available</span>
+                    </span>
+                  </li>
+                </ul>
+                <span class="watching-cta">
+                  Open canonical client record
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+
+              <!-- REFERRAL ATTRIBUTION -->
+              <div class="rail-card">
+                <div class="rail-eyebrow">Referral attribution</div>
+                <div class="attr-row">
+                  <span class="attr-label">
+                    Wegrzyn · closed-won
+                    <span class="attr-sub">Sep 2024 · bath</span>
+                  </span>
+                  <span class="attr-val green">$48k</span>
+                </div>
+                <div class="attr-row">
+                  <span class="attr-label">
+                    Patel · in pipeline
+                    <span class="attr-sub">Lead stage · 4 mo</span>
+                  </span>
+                  <span class="attr-val amber">$28k</span>
+                </div>
+                <div class="attr-row">
+                  <span class="attr-label">Total worth</span>
+                  <span class="attr-val">$76k</span>
+                </div>
+                <div class="attr-multiplier">
+                  <strong>2.41× LTV multiplier</strong> from Moore family on closed referrals · top quintile contributor to your book.
+                </div>
+              </div>
+
+              <!-- LAST 3 COMMS (summary only · full thread in canonical) -->
+              <div class="rail-card">
+                <div class="rail-eyebrow">
+                  Recent touches
+                  <span class="re-action">Open thread →</span>
+                </div>
+                <div class="last-comm-list">
+                  <div class="last-comm-row">
+                    <span class="lc-when">12d</span>
+                    <span class="lc-body">
+                      Text · Christian → Maria
+                      <span class="lc-sub">"send pics when you have them"</span>
+                    </span>
+                  </div>
+                  <div class="last-comm-row">
+                    <span class="lc-when">38d</span>
+                    <span class="lc-body">
+                      Email · Maria → Christian
+                      <span class="lc-sub">"Kitchen photos for our designer friend"</span>
+                    </span>
+                  </div>
+                  <div class="last-comm-row">
+                    <span class="lc-when">62d</span>
+                    <span class="lc-body">
+                      Text · Christian → Maria
+                      <span class="lc-sub">"Patel reached out — thx for the intro"</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-CS2 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Marketing · Client Success detail pair</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-MK1/MK2 · Marketing home (mobile + desktop)</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL5/CL6 · Canonical Client Record</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CS1 · Mobile Client Success Detail</span></div>
+      <div class="sl-step current"><span class="sl-dot">CS2</span><span><span class="sl-name">F-CS2</span> · Desktop Client Success Detail <em>(this)</em></span></div>
+    </div>
+
+    <h4>Success-lens vs canonical record</h4>
+    <p>F-CS1/CS2 is the <em>success-lens projection</em> of the client entity — focused narrowly on relationship / marketing / repeat-business state. F-CL5/CL6 (canonical record) carries the full ledger — all projects, all AR/AP, all comms, all files. Same underlying client, different lens. The Watching card's "Open canonical client record" CTA routes from success view to the full record.</p>
+
+    <h4>Six operator questions answered above-the-fold</h4>
+    <ul>
+      <li><strong>Where are they in the lifecycle?</strong> Header advocate chip + 5-step horizontal stepper (with amounts on completed stages)</li>
+      <li><strong>How fresh is the relationship?</strong> Touch cadence section (last · cadence + on-track state · next · after that)</li>
+      <li><strong>Are they advocating?</strong> Advocacy state section (reviews · referrals · worth · status)</li>
+      <li><strong>What action is open right now?</strong> Open marketing actions · 3 cards with state chips and per-card CTA</li>
+      <li><strong>How happy are they?</strong> NPS history · per-project rows + trend line</li>
+      <li><strong>What's Right Hand watching?</strong> Watching rail card · 4 monitors + canonical-record drill</li>
+    </ul>
+
+    <h4>Grid doctrine applied</h4>
+    <ul>
+      <li><span class="badge canon">DETAIL</span>This is a <em>detail</em> surface — single-client success depth. <strong>No grid view. No view-mode toggle.</strong></li>
+      <li>Single-frame wireframe per the 4-question dispatch</li>
+      <li>No tabs · Success is a focused single-lens projection (vs F-CL6's six lenses)</li>
+    </ul>
+
+    <h4>Disciplines applied</h4>
+    <ul>
+      <li><span class="badge guardrail">D1</span><em>Business brain, not file cabinet</em> — Synthesis sections render first. Individual messages live in canonical record Comms tab; full project history in canonical record Projects tab.</li>
+      <li><span class="badge guardrail">D2</span><em>Red is chip-tier only</em> — no full-row red borders anywhere on this advocate-stage render. State chips stay amber/cyan/muted. Red reserved for genuine risk (none here).</li>
+      <li><span class="badge guardrail">D3</span><em>No agent names in operator copy</em> — "anniversary drafted" / "queued by cadence engine" — name the work, not the agent. Right Hand named only on RH synthesis + Watching card.</li>
+      <li><span class="badge guardrail">D4</span><em>Translate canon vocab</em> — "advocate status," "top quintile," "your book," "LTV multiplier," "stable-high" — plainspoken English. No "lifecycle segment 4," "cohort routing envelope," "AltitudePacket."</li>
+      <li><span class="badge guardrail">D5</span><em>Sidebar IA</em> — Marketing expanded with sub-items (Reviews & Referrals · Outreach · Attribution · Success). Success is the active sub-item.</li>
+    </ul>
+
+    <h4>Sidebar IA · Marketing expansion</h4>
+    <p>Per Operating Model Canon, Marketing is one of the 9 business graph domains; under Marketing sit three pillars + Client Success. F-MK1/MK2 introduced Marketing as a single top-level item with no sub-items rendered. F-CS2 expands it to surface the 4 marketing sub-domains per current canon: <strong>Reviews & Referrals · Outreach · Attribution · Success</strong>. Success is active (this surface lives under it). The Marketing parent item carries the <code>expanded</code> visual state — softer amber background, no full active border. Pattern mirrors the Team & Ops → Clients precedent.</p>
+
+    <h4>Main column ordering</h4>
+    <ul>
+      <li><strong>Lifecycle stage</strong> · full-width horizontal stepper · 5 stages, current dot highlighted</li>
+      <li><strong>Touch cadence + Advocacy state</strong> · two-column paired row · same row height, glanceable comparison</li>
+      <li><strong>Open marketing actions</strong> · stacked action cards with per-card CTA</li>
+      <li><strong>NPS history</strong> · per-project NPS rows + trend summary</li>
+    </ul>
+    <p>Rationale: lifecycle answers "where?" Cadence + Advocacy answer "how fresh? how strong?" together at equal weight. Actions answer "what do I do?" NPS answers "how happy?" Each section is one operator question.</p>
+
+    <h4>Right rail composition</h4>
+    <ul>
+      <li><strong>What I'm watching</strong> · RH-toned card at top of rail · 4 monitors + canonical-record drill (the rail anchor)</li>
+      <li><strong>Referral attribution</strong> · per-referral rollup + LTV multiplier · success-specific data not in canonical</li>
+      <li><strong>Recent touches</strong> · last 3 comms summary only · drill to canonical Comms tab for full thread</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Sidebar · Marketing → F-MK2 Marketing home</li>
+      <li>Sidebar sub-items · Reviews & Referrals → F-MK3/MK4 (pending) · Outreach → F-MK5/MK6 (pending) · Attribution → F-MK7/MK8 (pending) · Success → F-MK2 Success list (or the dedicated F-MKS list pending)</li>
+      <li>Breadcrumb · Marketing → F-MK2 · Success → success-domain list · Moore Family → this surface</li>
+      <li>Header actions · Log touch (logs ad-hoc touch + updates cadence counter) · Ask for review (F-G1 Draft Review for platform pick) · Send anniversary (F-G1 Draft Review)</li>
+      <li>Lifecycle stage · any prior stage → that stage's milestone detail (closeout summary)</li>
+      <li>Touch cadence · Last touch → canonical record Comms tab filtered</li>
+      <li>Touch cadence · Next anniversary → F-G1 Draft Review for drafted note</li>
+      <li>Touch cadence · Holiday touch → Schedule pre-bound to December</li>
+      <li>Advocacy · Reviews → F-MK3/MK4 Reviews & Referrals queue filtered by Moore</li>
+      <li>Advocacy · Referrals → Wegrzyn / Patel canonical or success-lens records</li>
+      <li>Action card · Review draft → F-G1 Draft Review</li>
+      <li>Action card · View schedule → F-SC2 pre-bound to December</li>
+      <li>NPS row · any project → that project's closeout NPS detail</li>
+      <li>Watching · canonical drill → F-CL6 Moore Family</li>
+      <li>Recent touches · Open thread → canonical record Comms tab</li>
+      <li>Speak (SPEAK FAB) → Right Hand pre-bound to Moore success context</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>Not the canonical client record (that's F-CL5/CL6 with all projects + AR + files)</li>
+      <li>Not a CRM contact profile with editable fields</li>
+      <li>Not a campaign console with bulk-action toolbars</li>
+      <li>Not a Salesforce-style Success workstation</li>
+      <li>Not a per-client agent panel with named agents</li>
+      <li>Not a forensics console for individual messages</li>
+      <li>Not an attribution dashboard (that's F-MK7/MK8 across all clients)</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Marketing's third pillar · Client Success · post-close lifecycle</li>
+      <li><span class="badge canon">canon</span>Smart summary leads · RH sentence + main-col synthesis + RH watching rail</li>
+      <li><span class="badge canon">canon</span>3-color discipline · amber pending · green on-track / strong · cyan queued · muted scheduled · gold for Right Hand identity</li>
+      <li><span class="badge canon">canon</span>No auto-send · all marketing actions are drafts awaiting approval (Marketing canon · F-MK1/MK2)</li>
+      <li><span class="badge canon">canon</span>Trust surfaces stay exception-tier · no audit chrome · Watching drill routes to canonical for full audit context</li>
+      <li><span class="badge canon">canon</span>Money displayed dollars · stored cents per CLAUDE.md</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-CS1_mobile_client_success.html</code> · sibling mobile variant</li>
+      <li><code>F-CL6_desktop_client_record.html</code> · canonical client record · drill destination</li>
+      <li><code>F-MK2_desktop_marketing_home.html</code> · parent Marketing home</li>
+      <li><code>F-G1_desktop_draft_review.html</code> · destination for drafted anniversary / review ask / referral prompt</li>
+      <li><code>F-MK3/MK4</code> · Reviews & Referrals queue · F-MK5/MK6 Outreach · F-MK7/MK8 Attribution (all pending)</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> · Client Success domain (9-domain business graph) · Marketing pillars</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · doctrine: lead with synthesis</li>
+      <li><code>feedback_red_is_chip_tier_not_row_tier.md</code> · doctrine: calm UX</li>
+      <li><code>feedback_agent_names_not_in_operator_copy.md</code> · doctrine: name the work, not the agent</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> · doctrine: plainspoken operator copy</li>
+      <li><code>kerf_client_section_canonical.md</code> · success-lens is a projection of canonical client</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>F-MK3/MK4 Reviews & Referrals · F-MK5/MK6 Outreach · F-MK7/MK8 Attribution lists</li>
+      <li>Lapsed-stage variant of F-CS2 (this renders advocate; lapsed render queued)</li>
+      <li>Per-NPS-row drill-down (full survey feedback transcript)</li>
+      <li>Cadence engine configuration UI (Settings → Marketing → Cadence rules)</li>
+      <li>LTV multiplier methodology surface (how 2.41× is computed)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>Success is a lens, not a separate entity.</em> Same Moore Family as the canonical record at F-CL6, narrowly projected toward warranty / review / referral / anniversary / advocacy state. Lifecycle stepper answers "where are they?" in 2 seconds — completed stages carry amounts, current stage is the advocate dot, lapsed sits unreached. Touch cadence + Advocacy paired side-by-side answer "how fresh? how strong?" at equal visual weight. Watching rail anchors the rail with canonical-record drill — success-lens always routes back to source of truth.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not the canonical record. Not a CRM contact profile. Not a campaign console. Not a Salesforce-style Success workstation. Not a per-client agent panel. Not an attribution dashboard. <strong>F-CS2 is one client seen through the success lens — synthesis first, drafts surfaced, drill to canonical for the full ledger.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

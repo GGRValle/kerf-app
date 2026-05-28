@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-SC2 · Desktop Schedule home · time-axis truth at desktop density</title>
+<style>
+:root { --kerf-bg:#0A0D11;--kerf-bg-2:#14181F;--kerf-surface:#1A1F28;--kerf-surface-2:#232936;--kerf-border:#2A3140;--kerf-border-soft:#1F2530;--kerf-text:#E8ECF1;--kerf-text-dim:#98A1B3;--kerf-text-mute:#6A7282;--kerf-amber:#F5B544;--kerf-green:#4ADE80;--kerf-red:#F87171;--kerf-blue:#7BA8FF;--kerf-violet:#A78BFA;--kerf-magenta:#E879A8;--kerf-cyan:#67D6E0;--field-green:#38C977;--right-hand:#C9A961; }
+body.light-mode { --kerf-bg:#FFFFFF;--kerf-bg-2:#F4F6F9;--kerf-surface:#FFFFFF;--kerf-surface-2:#EBEEF2;--kerf-border:#C9D0D8;--kerf-border-soft:#DFE3E8;--kerf-text:#0A0D11;--kerf-text-dim:#4A5462;--kerf-text-mute:#7B8492; }
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9 0%,#FFFFFF 100%)!important;} body.light-mode .view-toggle-bar{background:rgba(255,255,255,0.92)!important;} body.light-mode .desktop-frame{box-shadow:0 8px 30px rgba(0,0,0,0.10);} body.light-mode .chrome-dots .d:nth-child(1){background:#FF5F57;opacity:1;} body.light-mode .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:1;} body.light-mode .chrome-dots .d:nth-child(3){background:#28C840;opacity:1;}
+*{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--kerf-bg);color:var(--kerf-text);line-height:1.5;font-size:13px;}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px;}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--kerf-border);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--kerf-text-dim);}
+.view-toggle-bar .vtb-label{font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;}
+.view-toggle-bar .vtb-options{display:flex;gap:2px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-radius:8px;padding:2px;}
+.view-toggle-bar .vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--kerf-text-mute);cursor:pointer;font-weight:600;}
+.view-toggle-bar .vtb-tab.active{background:var(--kerf-amber);color:#1A1300;}
+.view-toggle-bar .vtb-hint{margin-left:auto;font-size:10.5px;color:var(--kerf-text-mute);}
+body.presentation-mode .page{max-width:none;padding:0 24px 80px;} body.presentation-mode .frame{grid-template-columns:1fr;gap:14px;} body.presentation-mode .frame-spec{display:none;}
+.page-header{border-bottom:1px solid var(--kerf-border);padding-bottom:22px;margin-bottom:32px;}
+.page-header .crumb{font-size:11px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;}
+.page-header .crumb .step{color:var(--kerf-text-dim);} .page-header .crumb .step.current{color:var(--kerf-amber);} .page-header .crumb .sep{color:var(--kerf-border);margin:0 8px;}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px;} .page-header p{color:var(--kerf-text-dim);margin:0;font-size:13px;max-width:1080px;line-height:1.6;} .page-header p em{color:var(--right-hand);font-style:normal;}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px;align-items:start;}
+.frame-label{grid-column:1 / -1;font-size:13px;color:var(--kerf-amber);font-weight:600;margin-bottom:4px;}
+.frame-narr{grid-column:1 / -1;margin:0 0 14px;color:var(--kerf-text-dim);font-size:12.5px;line-height:1.7;max-width:1080px;} .frame-narr em{color:var(--right-hand);font-style:normal;}
+.frame-render{border:1px solid var(--kerf-border);border-radius:12px;background:linear-gradient(180deg,#14181F 0%,#0A0D11 100%);padding:28px;overflow:hidden;}
+.frame-spec{border:1px solid var(--kerf-border);border-radius:12px;background:var(--kerf-bg-2);padding:18px 16px;font-size:12px;color:var(--kerf-text-dim);height:fit-content;position:sticky;top:60px;}
+.frame-spec h3{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-text);font-weight:700;margin:0 0 10px;}
+.frame-spec h4{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin:14px 0 6px;}
+.frame-spec h4:first-of-type{margin-top:0;} .frame-spec ul{padding-left:16px;margin:0 0 8px;} .frame-spec li{margin-bottom:4px;line-height:1.55;}
+.frame-spec code{background:var(--kerf-surface);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--right-hand);}
+
+/* Desktop chrome + sidebar */
+.desktop-frame{background:var(--kerf-bg);border:1px solid var(--kerf-border);border-radius:12px;overflow:hidden;width:100%;display:flex;flex-direction:column;min-height:820px;}
+.app-chrome{background:var(--kerf-bg-2);border-bottom:1px solid var(--kerf-border);padding:9px 14px;display:flex;align-items:center;gap:10px;font-size:11px;}
+.chrome-dots{display:flex;gap:5px;} .chrome-dots .d{width:11px;height:11px;border-radius:50%;}
+.chrome-dots .d:nth-child(1){background:#FF5F57;opacity:0.7;} .chrome-dots .d:nth-child(2){background:#FEBC2E;opacity:0.7;} .chrome-dots .d:nth-child(3){background:#28C840;opacity:0.7;}
+.chrome-url{margin-left:14px;font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--kerf-text-mute);padding:4px 10px;background:var(--kerf-bg);border-radius:6px;}
+.chrome-spacer{flex:1;} .chrome-search{background:var(--kerf-bg);border:1px solid var(--kerf-border-soft);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--kerf-text-mute);width:220px;}
+.app-body{display:grid;grid-template-columns:232px 1fr;min-height:760px;}
+
+.sidebar{background:var(--kerf-bg-2);border-right:1px solid var(--kerf-border-soft);padding:14px 12px;display:flex;flex-direction:column;gap:4px;}
+.sb-logo{display:flex;align-items:center;gap:8px;padding:6px 8px 14px;margin-bottom:4px;border-bottom:1px solid var(--kerf-border-soft);}
+.sb-mark{width:24px;height:24px;background:var(--kerf-amber);color:#1A1300;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+.sb-brand{font-size:13px;color:var(--kerf-text);font-weight:700;} .sb-tenant{display:block;font-size:10px;color:var(--kerf-text-mute);font-weight:500;margin-top:1px;}
+.sb-section-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;padding:12px 8px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;font-size:12.5px;color:var(--kerf-text-dim);font-weight:500;position:relative;cursor:pointer;}
+.sb-item:hover{background:var(--kerf-surface);color:var(--kerf-text);}
+.sb-item.active{background:rgba(245,181,68,0.10);color:var(--kerf-amber);font-weight:600;}
+.sb-item.active::before{content:'';position:absolute;left:-12px;top:9px;bottom:9px;width:3px;background:var(--kerf-amber);border-radius:0 2px 2px 0;}
+.sb-item .sb-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;}
+.sb-item .sb-icon svg{width:18px;height:18px;fill:currentColor;}
+.sb-subitem{padding:5px 10px 5px 38px;font-size:11.5px;color:var(--kerf-text-mute);border-radius:7px;cursor:pointer;position:relative;font-weight:500;}
+.sb-subitem:hover{background:var(--kerf-surface);color:var(--kerf-text-dim);}
+.sb-subitem .sb-sub-tick{position:absolute;left:24px;top:5px;color:var(--kerf-text-mute);font-size:11px;opacity:0.55;}
+.sb-fab{margin:18px auto 14px;width:64px;height:64px;border-radius:50%;background:var(--kerf-amber);color:#1A1300;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(245,181,68,0.40);position:relative;}
+.sb-fab svg.mic-icon{width:26px;height:26px;fill:currentColor;}
+.sb-fab .sb-fab-label{font-size:8.5px;letter-spacing:0.06em;font-weight:700;margin-top:-2px;}
+.sb-divider{height:1px;background:var(--kerf-border-soft);margin:8px 0;}
+.sb-spacer{flex:1;}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-top:1px solid var(--kerf-border-soft);margin:8px -12px -14px;background:var(--kerf-bg-2);}
+.sb-user-avatar{width:28px;height:28px;border-radius:50%;background:rgba(201,169,97,0.20);color:var(--right-hand);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;}
+.sb-user-name{font-size:11.5px;color:var(--kerf-text);font-weight:600;} .sb-user-meta{font-size:9.5px;color:var(--kerf-text-mute);margin-top:1px;}
+
+.main{padding:0;display:flex;flex-direction:column;background:var(--kerf-bg);}
+.bc-bar{background:var(--kerf-bg);border-bottom:1px solid var(--kerf-border-soft);padding:11px 24px;display:flex;align-items:center;gap:10px;font-size:11.5px;}
+.bc-link{color:var(--kerf-text-dim);cursor:pointer;} .bc-link.active{color:var(--kerf-text);font-weight:600;} .bc-sep{color:var(--kerf-border);} .bc-spacer{flex:1;} .bc-meta{color:var(--kerf-text-mute);font-size:11.5px;}
+.main-header{padding:18px 24px 4px;}
+.main-title{font-size:22px;font-weight:600;color:var(--kerf-text);margin:0;letter-spacing:-0.01em;}
+.main-meta{font-size:12px;color:var(--kerf-text-mute);margin-top:4px;}
+.main-content{display:grid;grid-template-columns:1fr 340px;gap:22px;padding:14px 24px 24px;flex:1;}
+
+.sched-area{display:flex;flex-direction:column;gap:18px;}
+.section-label{font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;display:flex;align-items:baseline;gap:8px;margin-bottom:-4px;}
+.section-label .sl-count{color:var(--kerf-text-dim);font-weight:600;font-size:10px;letter-spacing:0.04em;}
+.sched-list{display:flex;flex-direction:column;gap:7px;}
+.sched-row{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:11px 14px;display:grid;grid-template-columns:60px 1fr 14px;gap:12px;align-items:center;}
+.sched-row.conflict{border-color:rgba(248,113,113,0.30);background:rgba(248,113,113,0.04);}
+.sched-day{text-align:center;}
+.sched-day .day-dow{font-size:9px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;font-weight:700;}
+.sched-day .day-num{font-size:18px;color:var(--kerf-text);font-weight:700;line-height:1;margin-top:1px;}
+.sched-day .day-time{font-size:9.5px;color:var(--kerf-text-mute);margin-top:3px;font-weight:500;}
+.sched-day.today .day-num{color:var(--kerf-amber);}
+.row-chip{display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;margin-bottom:4px;}
+.row-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .row-chip.red::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-red);}
+.row-chip.amber{background:rgba(245,181,68,0.14);color:var(--kerf-amber);} .row-chip.amber::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-amber);}
+.row-chip.green{background:rgba(56,201,119,0.14);color:var(--field-green);} .row-chip.green::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--field-green);}
+.row-chip.blue{background:rgba(123,168,255,0.14);color:var(--kerf-blue);} .row-chip.blue::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-blue);}
+.sched-text{font-size:12.5px;color:var(--kerf-text);line-height:1.4;font-weight:600;}
+.sched-text .sched-detail{display:block;color:var(--kerf-text-mute);font-size:10.5px;margin-top:2px;font-weight:500;}
+.sched-text .sched-amount{font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text-dim);font-size:11px;font-weight:600;}
+.sched-arrow{color:var(--kerf-text-mute);font-size:14px;}
+
+.rail{display:flex;flex-direction:column;gap:14px;}
+.rh-card{background:rgba(201,169,97,0.05);border-left:2px solid var(--right-hand);border-radius:4px;padding:11px 13px;}
+.rh-eyebrow{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--right-hand);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.rh-eyebrow .rh-dot{width:5px;height:5px;border-radius:50%;background:var(--right-hand);}
+.rh-text{font-size:12px;color:var(--kerf-text);line-height:1.55;} .rh-text strong{color:var(--kerf-text);font-weight:700;} .rh-text em{color:var(--kerf-red);font-style:normal;font-weight:600;} .rh-text .rh-amber{color:var(--kerf-amber);font-weight:600;}
+.rail-card{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:11px;padding:12px 14px;}
+.rail-card.conflict{background:rgba(248,113,113,0.05);border-color:rgba(248,113,113,0.30);}
+.rail-eyebrow{font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.rail-eyebrow.red{color:var(--kerf-red);} .rail-eyebrow.red::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--kerf-red);box-shadow:0 0 5px rgba(248,113,113,0.6);}
+.rail-title{font-size:13px;color:var(--kerf-text);font-weight:700;margin-bottom:4px;} .rail-detail{font-size:11.5px;color:var(--kerf-text-dim);line-height:1.5;}
+.rail-cta{margin-top:9px;font-size:11px;color:var(--kerf-red);font-weight:600;}
+.pf-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:6px 0;font-size:12px;color:var(--kerf-text-dim);border-bottom:1px solid var(--kerf-border-soft);}
+.pf-row:last-child{border-bottom:0;padding-bottom:0;} .pf-row:first-child{padding-top:0;}
+.pf-label{color:var(--kerf-text-mute);font-size:11px;} .pf-val{color:var(--kerf-text);font-weight:600;font-family:"SF Mono",Menlo,monospace;font-size:11.5px;} .pf-val.amber{color:var(--kerf-amber);} .pf-val.green{color:var(--field-green);}
+
+/* View mode toggle · canon 2026-05-18 PM late · List | Grid */
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; margin: 0 0 14px; width: fit-content; }
+.vmt-option { padding: 5px 12px; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+
+/* Schedule Grid view · full-week macro · canon 2026-05-18 PM late */
+.schedule-grid { display: flex; flex-direction: column; gap: 6px; }
+.sg-header { display: grid; grid-template-columns: 1.4fr repeat(7, 1fr); gap: 6px; padding: 0 14px 8px; align-items: center; border-bottom: 1px solid var(--kerf-border-soft); }
+.sg-header .sg-job-label { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; }
+.sg-header .sg-day-label { font-size: 9.5px; color: var(--kerf-text-mute); text-align: center; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; }
+.sg-row { display: grid; grid-template-columns: 1.4fr repeat(7, 1fr); gap: 6px; align-items: center; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 9px; padding: 10px 14px; min-height: 48px; }
+.sg-job { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sg-job-sub { display: block; font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; font-weight: 500; }
+.sg-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.sg-dot { width: 16px; height: 16px; border-radius: 5px; }
+.sg-dot.empty { background: var(--kerf-bg-2); border: 1px dashed var(--kerf-border-soft); }
+.sg-dot.green { background: rgba(56,201,119,0.85); }
+.sg-dot.cyan { background: rgba(103,214,224,0.85); }
+.sg-dot.amber { background: rgba(245,181,68,0.85); }
+.sg-dot.red { background: rgba(248,113,113,0.85); }
+.sg-dot.violet { background: rgba(167,139,250,0.85); }
+.sg-day-tag { font-size: 9px; color: var(--kerf-text-mute); font-weight: 600; letter-spacing: 0.02em; }
+.sg-legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 12px 4px 4px; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 500; }
+.sg-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.sg-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px;">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-SC1 · Schedule (mobile)</span><span class="sep">›</span><span class="step current">F-SC2 · Schedule (desktop)</span>
+  </div>
+  <h1>F-SC2 · Desktop Schedule home · time-axis truth at desktop density</h1>
+  <p>Desktop projection of F-SC1 at the 20-job GC archetype baseline. Portfolio Schedule with new sidebar IA. Left main = day-grouped schedule rows (Today · This week · Lookahead) · Right rail = at-risk Wegrzyn callout + portfolio summary stats. <em>No Gantt</em> · reschedule by action sheet only. <em>Service-trade stress test (50+ visits/calls):</em> same day-grouped sections, denser per-section row counts, time-sort drives default.</p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-SC2 · Desktop Schedule home · Owner view</div>
+  <p class="frame-narr">Owner clicked Schedule from sidebar. Left main lists day-grouped schedule items with chips (Conflict · Payment · Celebration · Bid visit). Right rail leads with RH synthesis, then Wegrzyn at-risk callout (the conflict to resolve today), then portfolio summary (deployments today · payments this week · celebrations this week). Same list-and-drill discipline as mobile.</p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/schedule</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find a project, deployment, or milestone</div></div>
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Home</span><span class="bc-sep">›</span><span class="bc-link active">Schedule</span><div class="bc-spacer"></div><span class="bc-meta">Wed May 20 · 9:43 am</span><span class="bc-action" title="Print weekly schedule"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print weekly</span><span class="bc-action" title="Export per-job schedule · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export per-job ▾</span></div>
+          <div class="main-header"><h2 class="main-title">Schedule</h2><div class="main-meta">28 items in flight across 20 projects · 2 conflicts this week · $68k receipts next week</div></div>
+
+          <div class="main-content">
+
+            <div class="sched-area">
+              <div class="view-mode-toggle">
+                <span class="vmt-option active">List</span>
+                <span class="vmt-option">Grid</span>
+              </div>
+              <div class="section-label">Today<span class="sl-count">· 8</span></div>
+              <div class="sched-list">
+                <div class="sched-row conflict">
+                  <div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">all day</div></div>
+                  <div><span class="row-chip red">Conflict tomorrow</span><div class="sched-text">Wegrzyn · resolve tile crew clearance<span class="sched-detail">Marcus on-site 1pm · framing must clear by 5pm or push tile to Thu</span></div></div>
+                  <span class="sched-arrow">›</span>
+                </div>
+                <div class="sched-row"><div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">8:04 in</div></div><div><div class="sched-text">Hernandez · framing day 2<span class="sched-detail">Carlos + Tito · pantry walls</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">7:42 in</div></div><div><div class="sched-text">Foster · drywall day 4<span class="sched-detail">Marcos + Hector · whole-house · taping today</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">9:18 in</div></div><div><div class="sched-text">Nakamura · electrical rough<span class="sched-detail">Volt Bros sub · garage conv · inspector Thu</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">8:12 in</div></div><div><div class="sched-text">Dunne · punch list day<span class="sched-detail">Tony · 3 items · final walk Fri</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">10am</div></div><div><span class="row-chip blue">Bid visit</span><div class="sched-text">Singh · outdoor kitchen site visit<span class="sched-detail">3107 Hillside Dr · 90min walk + measure</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">2pm</div></div><div><span class="row-chip blue">Bid visit</span><div class="sched-text">Martinez · detached studio walk<span class="sched-detail">2231 Sunset Cliffs · structural eng. joining</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day today"><div class="day-dow">Wed</div><div class="day-num">20</div><div class="day-time">4pm</div></div><div><span class="row-chip green">Warranty visit</span><div class="sched-text">Trang · ADU door alignment<span class="sched-detail">Sergio · 15min framing settle fix</span></div></div><span class="sched-arrow">›</span></div>
+              </div>
+
+              <div class="section-label">This week<span class="sl-count">· 10</span></div>
+              <div class="sched-list">
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Thu</div><div class="day-num">21</div></div><div><div class="sched-text">Hernandez · insulation<span class="sched-detail">Carlos lead · no conflicts</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Thu</div><div class="day-num">21</div><div class="day-time">7am</div></div><div><div class="sched-text">Wegrzyn · tile sub starts<span class="sched-detail">Hector's 4-man crew · pending today's resolution</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Thu</div><div class="day-num">21</div><div class="day-time">10am</div></div><div><span class="row-chip amber">Inspector</span><div class="sched-text">Nakamura · electrical rough inspection<span class="sched-detail">Garage conv · permit clears or red-tag</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Thu</div><div class="day-num">21</div><div class="day-time">1pm</div></div><div><div class="sched-text">Foster · drywall day 5 finish<span class="sched-detail">Texture spray Fri · primer Sat</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Thu</div><div class="day-num">21</div><div class="day-time">9am</div></div><div><div class="sched-text">Halverson · warranty plumber<span class="sched-detail">Kitchen water valve · 30min · no cost</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row conflict"><div class="sched-day"><div class="day-dow">Fri</div><div class="day-num">22</div><div class="day-time">7am</div></div><div><span class="row-chip red">Conflict</span><div class="sched-text">Patel · framing sub overlap with Cheng<span class="sched-detail">Same crew both jobs · ADU permit not yet cleared</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Fri</div><div class="day-num">22</div><div class="day-time">10am</div></div><div><span class="row-chip green">Celebration</span><div class="sched-text">Dunne · final walk<span class="sched-detail">Punch 90% · retainer release · client onsite</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Fri</div><div class="day-num">22</div><div class="day-time">2pm</div></div><div><span class="row-chip green">Celebration</span><div class="sched-text">Reyes · master bath final walk<span class="sched-detail">Invoice cleared · retainer $4,200 Mon</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Fri</div><div class="day-num">22</div><div class="day-time">3pm</div></div><div><span class="row-chip blue">Bid visit</span><div class="sched-text">Brennan · bath remodel walk<span class="sched-detail">718 Catalina · tile sub joining</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Sat</div><div class="day-num">23</div></div><div><div class="sched-text">O'Brien · cabinet install (OT)<span class="sched-detail">Mudroom + laundry · 1-day install · paid OT</span></div></div><span class="sched-arrow">›</span></div>
+              </div>
+
+              <div class="section-label">2-week lookahead<span class="sl-count">· 10</span></div>
+              <div class="sched-list">
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Mon</div><div class="day-num">25</div></div><div><span class="row-chip amber">Payment expected</span><div class="sched-text">Hernandez · invoice 2 receipt<span class="sched-detail">Net 30 from May 1 · <span class="sched-amount">$21,800</span></span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Mon</div><div class="day-num">25</div></div><div><span class="row-chip amber">Payment expected</span><div class="sched-text">Goldberg · invoice 3 receipt<span class="sched-detail">Net 15 from May 11 · <span class="sched-amount">$46,200</span></span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Mon</div><div class="day-num">25</div></div><div><div class="sched-text">Ault · tile sub decision<span class="sched-detail">3 candidates · awaiting your pick</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Tue</div><div class="day-num">26</div></div><div><span class="row-chip green">Celebration</span><div class="sched-text">Knight · retainer release<span class="sched-detail">Pantry + powder · <span class="sched-amount">$3,800</span></span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Wed</div><div class="day-num">27</div></div><div><span class="row-chip amber">Send trigger</span><div class="sched-text">Hernandez · invoice 3 due to send<span class="sched-detail">Framing milestone fires · <span class="sched-amount">$21,800</span></span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Thu</div><div class="day-num">28</div></div><div><div class="sched-text">Cheng · framing inspection<span class="sched-detail">Primary suite · 9am · permits cleared</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Fri</div><div class="day-num">29</div></div><div><span class="row-chip green">Celebration</span><div class="sched-text">Liu · CofO ceremony<span class="sched-detail">Primary bath · retainer Mon · $5,200</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Mon</div><div class="day-num">Jun 1</div></div><div><div class="sched-text">Hernandez · cabinet install<span class="sched-detail">Pending CO-002 + tape verify · holding</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Mon</div><div class="day-num">Jun 1</div></div><div><div class="sched-text">Park · 12-month warranty check-in<span class="sched-detail">Bath remodel · phone call · 15min</span></div></div><span class="sched-arrow">›</span></div>
+                <div class="sched-row"><div class="sched-day"><div class="day-dow">Tue</div><div class="day-num">Jun 2</div></div><div><div class="sched-text">Vega · proposal accept-or-revise<span class="sched-detail">$392k whole-house · 4d in review · Jamie owns</span></div></div><span class="sched-arrow">›</span></div>
+              </div>
+            </div>
+
+            <div class="rail">
+              <div class="rh-card"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · schedule</div><div class="rh-text"><strong>9 jobs deployed today.</strong> <em>2 conflicts this week (Wegrzyn tile · Patel-Cheng framing crew).</em> <span class="rh-amber">$68k receipts expected next week.</span> 2 walks Fri · 3 bid visits today · 1 warranty.</div></div>
+              <div class="rail-card conflict">
+                <div class="rail-eyebrow red">Conflict to resolve · today</div>
+                <div class="rail-title">Wegrzyn · tile crew tomorrow</div>
+                <div class="rail-detail">Carlos's framing won't clear kitchen by 7am when Hector arrives. Marcus on-site 1pm. Options: extend framing day · push tile Thu · split crews.</div>
+                <div class="rail-cta">Open Wegrzyn schedule →</div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">This week · summary</div>
+                <div class="pf-row"><span class="pf-label">Deployments today</span><span class="pf-val">9 sites</span></div>
+                <div class="pf-row"><span class="pf-label">Payments expected</span><span class="pf-val amber">$68k (2 invoices)</span></div>
+                <div class="pf-row"><span class="pf-label">Celebrations</span><span class="pf-val green">2 walks Fri + Knight retainer</span></div>
+                <div class="pf-row"><span class="pf-label">Conflicts</span><span class="pf-val amber">2 (Wegrzyn · Patel/Cheng)</span></div>
+                <div class="pf-row"><span class="pf-label">Bid visits</span><span class="pf-val">3 today + Brennan Fri</span></div>
+                <div class="pf-row"><span class="pf-label">Holding</span><span class="pf-val">1 (Hernandez cabinet)</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-SC2 · Spec</h3>
+    <h4>Schedule canon applied</h4>
+    <ul><li>Portfolio lens · per-project depth lives in Project Detail Schedule sub-tab</li><li>No Gantt · list-and-drill only</li><li>Payment milestones rendered as time-axis events (Money owns records)</li><li>Celebration milestones tagged for Marketing > Success hand-off</li></ul>
+    <h4>Right rail composition</h4>
+    <ul><li>RH synthesis · cyan-of-the-day if a conflict fires</li><li>At-risk callout · the single conflict to resolve today (red-tinted card · scoped not row-wide)</li><li>This-week summary · deployments · payments · celebrations · conflicts · holding</li></ul>
+    <h4>Cross-references</h4>
+    <ul><li><code>F-SC1_mobile_schedule_home.html</code> · mobile counterpart</li><li><code>Kerf_Layer_A_Subdomain_Map_2026-05-18.md</code> · Schedule canon</li></ul>
+      <h4>Export / Print affordances (Lane 7B)</h4>
+    <ul><li>Top-right bc-bar carries <code>Print weekly</code> + <code>Export per-job ▾</code> alongside the timestamp</li><li>Print = current week schedule · Export = per-job schedule (PDF · CSV · XLSX) · audit-logged</li></ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Grid view alternate · full-week macro view · canon 2026-05-18 PM late -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-SC2 · Grid view · full-week macro view at desktop density</div>
+  <p class="frame-narr">Operator clicks <em>Grid</em> in the view-mode toggle. Each <em>active job</em> renders as a horizontal strip with Sun–Sat dots. <strong>Cross-job comparison at desktop density</strong> · spot collisions, dark days, and milestone clusters across the whole portfolio in one viewport. Dot color encodes day state. Tap any dot for that-job/that-day drill. <em>Still not a Gantt.</em> Reschedule path is the same consequence-preview sheet.</p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome"><div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div><div class="chrome-url">kerf.app/schedule</div><div class="chrome-spacer"></div><div class="chrome-search">⌕ Find a project, deployment, or milestone</div></div>
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar"><span class="bc-link">Home</span><span class="bc-sep">›</span><span class="bc-link active">Schedule</span><div class="bc-spacer"></div><span class="bc-meta">Wed May 20 · 9:43 am</span><span class="bc-action" title="Print weekly schedule"><svg viewBox="0 0 24 24"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8v5zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-1-9H6v4h12V3z"/></svg>Print weekly</span><span class="bc-action" title="Export per-job schedule · PDF · CSV · XLSX · audit-logged"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v10m0 0l-4-4m4 4l4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>Export per-job ▾</span></div>
+          <div class="main-header"><h2 class="main-title">Schedule</h2><div class="main-meta">Macro week view · 20 active jobs · cross-job comparison</div></div>
+
+          <div class="main-content">
+
+            <div class="sched-area">
+              <div class="view-mode-toggle">
+                <span class="vmt-option">List</span>
+                <span class="vmt-option active">Grid</span>
+              </div>
+
+              <div class="section-label">This week<span class="sl-count">· May 18–24</span></div>
+
+              <div class="schedule-grid">
+                <div class="sg-header">
+                  <span class="sg-job-label">Job</span>
+                  <span class="sg-day-label">Sun 18</span>
+                  <span class="sg-day-label">Mon 19</span>
+                  <span class="sg-day-label">Tue 20</span>
+                  <span class="sg-day-label">Wed 21</span>
+                  <span class="sg-day-label">Thu 22</span>
+                  <span class="sg-day-label">Fri 23</span>
+                  <span class="sg-day-label">Sat 24</span>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Wegrzyn<span class="sg-job-sub">Kitchen · framing→tile</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">2 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot amber"></span><span class="sg-day-tag">conflict</span></div>
+                  <div class="sg-day"><span class="sg-dot red"></span><span class="sg-day-tag">blocked</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">tile sub</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">tile sub</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Hernandez<span class="sg-job-sub">Pantry · framing</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">2 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">2 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">insulation</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">insulation</span></div>
+                  <div class="sg-day"><span class="sg-dot cyan"></span><span class="sg-day-tag">CO due</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Dunne<span class="sg-job-sub">Bath · punch + walk</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">Tony</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">Tony</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">Tony</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">prep</span></div>
+                  <div class="sg-day"><span class="sg-dot cyan"></span><span class="sg-day-tag">final walk</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Williamson<span class="sg-job-sub">Bid · garage conversion</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot violet"></span><span class="sg-day-tag">site visit</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Ault<span class="sg-job-sub">Bid · vanity</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot amber"></span><span class="sg-day-tag">decision</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Patel<span class="sg-job-sub">ADU · framing</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot amber"></span><span class="sg-day-tag">sub bid</span></div>
+                  <div class="sg-day"><span class="sg-dot red"></span><span class="sg-day-tag">crew conflict</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Foster<span class="sg-job-sub">Whole-house · drywall</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">4 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">4 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">finish</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">texture</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">primer</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">primer</span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Nakamura<span class="sg-job-sub">Garage · electrical</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">Volt Bros</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">Volt Bros</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">Volt Bros</span></div>
+                  <div class="sg-day"><span class="sg-dot amber"></span><span class="sg-day-tag">inspector</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">cover-up</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Cheng<span class="sg-job-sub">Primary suite · framing</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">3 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">3 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">3 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">3 carp</span></div>
+                  <div class="sg-day"><span class="sg-dot red"></span><span class="sg-day-tag">crew conflict</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Goldberg<span class="sg-job-sub">Kitchen + island · closing</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">trim</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">trim</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">island</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">lighting</span></div>
+                  <div class="sg-day"><span class="sg-dot amber"></span><span class="sg-day-tag">CO sign</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Reyes<span class="sg-job-sub">Master bath · closing</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">grout</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot cyan"></span><span class="sg-day-tag">final walk</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">O'Brien<span class="sg-job-sub">Mudroom · cabinets</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">paint</span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">paint</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">cabinets OT</span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Knight<span class="sg-job-sub">Pantry · closeout</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">punch</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Singh<span class="sg-job-sub">Bid · outdoor kitchen</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot violet"></span><span class="sg-day-tag">site visit</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Martinez<span class="sg-job-sub">Bid · studio</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot violet"></span><span class="sg-day-tag">walk + eng</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+
+                <div class="sg-row">
+                  <div class="sg-job">Halverson<span class="sg-job-sub">Warranty · kitchen</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot green"></span><span class="sg-day-tag">plumber</span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                  <div class="sg-day"><span class="sg-dot empty"></span></div>
+                </div>
+              </div>
+
+              <div class="sg-legend">
+                <span class="sg-legend-item"><span class="sg-legend-dot" style="background:rgba(56,201,119,0.85);"></span>Active crew on-site</span>
+                <span class="sg-legend-item"><span class="sg-legend-dot" style="background:rgba(103,214,224,0.85);"></span>Milestone / celebration</span>
+                <span class="sg-legend-item"><span class="sg-legend-dot" style="background:rgba(245,181,68,0.85);"></span>At-risk / decision due</span>
+                <span class="sg-legend-item"><span class="sg-legend-dot" style="background:rgba(248,113,113,0.85);"></span>Blocked / conflict</span>
+                <span class="sg-legend-item"><span class="sg-legend-dot" style="background:rgba(167,139,250,0.85);"></span>Bid visit</span>
+              </div>
+            </div>
+
+            <div class="rail">
+              <div class="rh-card"><div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · macro week</div><div class="rh-text"><strong>20 jobs in flight this week.</strong> <em>2 conflicts (Wegrzyn tile + Patel/Cheng framing crew).</em> <span class="rh-amber">2 walks Fri · 2 inspector visits · 4 bid touches.</span> Cross-job comparison reveals 3 dark Sat slots for catch-up.</div></div>
+              <div class="rail-card conflict">
+                <div class="rail-eyebrow red">Cross-job pattern</div>
+                <div class="rail-title">Friday is the milestone wall</div>
+                <div class="rail-detail">3 cyan/amber dots all land Fri (Dunne walk · Hernandez CO · Ault decision). Mon receipt sets up the breath. Don't add Friday work.</div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">This week · summary</div>
+                <div class="pf-row"><span class="pf-label">Active jobs</span><span class="pf-val">6</span></div>
+                <div class="pf-row"><span class="pf-label">Crew-days</span><span class="pf-val">18</span></div>
+                <div class="pf-row"><span class="pf-label">Milestones</span><span class="pf-val green">2 cyan</span></div>
+                <div class="pf-row"><span class="pf-label">Conflicts</span><span class="pf-val amber">1 (Wegrzyn Wed→Thu)</span></div>
+                <div class="pf-row"><span class="pf-label">Empty Sat</span><span class="pf-val">6 jobs</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-SC2 Grid · Spec</h3>
+    <h4>Full-week macro view</h4>
+    <ul><li>Each row = one active job · 7-day strip (Sun–Sat)</li><li>Dot color = day state · small tag underneath for context</li><li>Cross-job pattern surfaces in rail (e.g., "Friday is the milestone wall")</li><li>Still not a Gantt · no drag-on-grid · same consequence-preview reschedule canon</li></ul>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('presentation-mode',tab.dataset.mode==='presentation');});});
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const next=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector(`[data-mode="${next}"]`).click();}});
+document.querySelectorAll('[data-theme]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('light-mode',tab.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',tab.dataset.theme);}catch(e){}});});
+try{const saved=localStorage.getItem('kerf_wf_theme');if(saved==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'));}}catch(e){}
+</script>
+</body>
+</html>

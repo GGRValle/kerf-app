@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-CL3 · Desktop Clients list · portfolio lens at desktop density</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+
+/* Sidebar */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main area */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-amber); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+.main-header { padding: 18px 24px 4px; }
+.main-title { font-size: 22px; font-weight: 600; color: var(--kerf-text); margin: 0; letter-spacing: -0.01em; }
+.main-meta { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+.main-content { display: grid; grid-template-columns: 1fr 320px; gap: 22px; padding: 14px 24px 24px; flex: 1; }
+
+/* Client list (left column) */
+.client-area { display: flex; flex-direction: column; gap: 18px; }
+.section-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; display: flex; align-items: baseline; gap: 8px; margin-bottom: -2px; }
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+.section-label .sl-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; }
+
+.client-list { display: flex; flex-direction: column; gap: 7px; }
+.client-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: grid; grid-template-columns: 1fr 220px 14px;
+  gap: 14px; align-items: center;
+  position: relative;
+  cursor: pointer;
+}
+.client-row.attention { border-left: 3px solid var(--kerf-amber); padding-left: 14px; }
+.client-row.happy { border-left: 3px solid var(--field-green); padding-left: 14px; }
+/* .client-row.risk treatment retired 2026-05-18 · chip carries the flag instead of a full-row outline */
+.row-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; padding: 2px 7px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.row-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.row-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.row-chip:hover { filter: brightness(1.15); }
+.cl-name-block {}
+.cl-name { font-size: 14px; color: var(--kerf-text); font-weight: 600; line-height: 1.3; }
+.cl-phase { font-size: 11px; color: var(--kerf-text-mute); margin-top: 2px; line-height: 1.4; }
+.cl-state-block { text-align: right; }
+.cl-state { font-size: 12px; color: var(--kerf-text-dim); font-weight: 500; line-height: 1.4; }
+.cl-state.amber { color: var(--kerf-amber); font-weight: 600; }
+.cl-state.red { color: var(--kerf-red); font-weight: 600; }
+.cl-state.green { color: var(--field-green); font-weight: 600; }
+.cl-state-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; }
+.cl-arrow { color: var(--kerf-text-mute); font-size: 14px; }
+
+/* Right rail */
+.portfolio-rail { display: flex; flex-direction: column; gap: 14px; }
+.rh-card {
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  padding: 11px 13px;
+}
+.rh-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-red); font-style: normal; font-weight: 600; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 9px; }
+.pipeline-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.pl-stage { text-align: center; padding: 7px 4px; background: var(--kerf-bg-2); border-radius: 6px; }
+.pl-count { font-size: 15px; color: var(--kerf-text); font-weight: 700; }
+.pl-stage.empty .pl-count { color: var(--kerf-text-mute); font-weight: 500; }
+.pl-label { font-size: 9px; color: var(--kerf-text-mute); margin-top: 2px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
+.at-risk-card {
+  background: rgba(248,113,113,0.05);
+  border: 1px solid rgba(248,113,113,0.30);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+.ar-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-red); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.ar-eyebrow .ar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); box-shadow: 0 0 5px rgba(248,113,113,0.6); }
+.ar-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; }
+.ar-detail { font-size: 11px; color: var(--kerf-text-dim); margin-top: 4px; line-height: 1.5; }
+.ar-cta { margin-top: 9px; font-size: 11px; color: var(--kerf-red); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+
+/* View mode toggle · canon 2026-05-18 PM late · List | Grid */
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; margin: 12px 4px 4px; width: fit-content; }
+.vmt-option { padding: 5px 12px; font-size: 10.5px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+.vmt-option.deferred { opacity: 0.4; font-size: 10px; }
+
+/* Grid view · 4-column desktop · canon 2026-05-18 PM late · scan not detail */
+.grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; padding: 14px 24px 24px; }
+.grid-tile { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; padding: 12px 14px; cursor: pointer; }
+.grid-tile:hover { border-color: var(--kerf-border); }
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip carries the flag */
+.grid-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 12px; }
+.grid-tile.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 12px; }
+.grid-tile.success { border-left: 3px solid var(--field-green); padding-left: 12px; }
+.gt-name { font-size: 13px; color: var(--kerf-text); font-weight: 700; line-height: 1.25; }
+.gt-phase { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.gt-chip-row { margin-top: 7px; }
+.gt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.gt-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); } .gt-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.gt-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); } .gt-chip.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.gt-chip.cyan { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); } .gt-chip.cyan::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-cyan); }
+.gt-chip.green { background: rgba(56,201,119,0.12); color: var(--field-green); } .gt-chip.green::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--field-green); }
+.gt-rhythm { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 7px; font-weight: 500; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-CL1 · Clients list (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-CL3 · Clients list (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step">F-CL4 · Client Detail (desktop · next)</span>
+  </div>
+  <h1>F-CL3 · Desktop Clients list · portfolio lens at desktop density</h1>
+  <p>
+    Desktop projection of F-CL1. Same lens-not-console discipline, denser presentation. Left sidebar carries all 9 business graph domains with Clients active. Main area is 2-column: <em>client list</em> on the left, <em>portfolio rail</em> on the right (RH synthesis + pipeline funnel + at-risk callout). Rows sort by attention-needed first (Wegrzyn drift → Hernandez CO pending → Ault sub bid late → Dunne closing → leads → repeat). Each row at desktop width carries name + phase + state inline. No filter bar. No alphabetical default. No CRM forensics console.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-CL3 · Desktop Clients list · default state · Owner role</div>
+  <p class="frame-narr">
+    Owner clicked Clients from sidebar. Right rail leads with RH synthesis (same one-sentence framing as F-CL1 mobile, denser presentation). Below that: pipeline funnel snapshot (2 leads · 1 qualified · 0 bid · 4 won) and an at-risk callout for Wegrzyn (the drift event surfaces here as a portfolio-level concern, not just a row decoration). The client list itself sections by Active / Leads / Repeat, attention-sorted within each section. The 80% scan case (state at a glance) is handled by the rail summary; the 20% drill case (find a specific client) by the list.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/clients</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+
+          <div class="sb-divider"></div>
+
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Clients</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action">
+              <svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>
+              Add client
+            </span>
+          </div>
+
+          <div class="main-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h2 class="main-title">Clients</h2>
+              <div class="main-meta">17 clients · sorted by stage (Active · Closing · Lead · Closed) then alphabetical · passive reference</div>
+            </div>
+            <div class="view-mode-toggle">
+              <span class="vmt-option active">List</span>
+              <span class="vmt-option">Grid</span>
+              <span class="vmt-option deferred">Map · V1.5+</span>
+            </div>
+          </div>
+
+          <div class="main-content">
+
+            <!-- LEFT · Client list -->
+            <div class="client-area">
+
+              <div class="section-label">Active <span class="sl-count">· 6</span></div>
+              <div class="client-list">
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Cheng, Wei</div>
+                    <div class="cl-phase">Active · primary suite addition · since Apr 2026</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Day 6 of 21 · framing</div>
+                    <div class="cl-state-meta">drill to Projects for daily log</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Foster, Joe</div>
+                    <div class="cl-phase">Active · whole-house remodel · since Mar 2026</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Day 22 of 90 · drywall</div>
+                    <div class="cl-state-meta">drill to Projects for daily log</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row attention">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Hernandez, Luis</div>
+                    <div class="cl-phase">Active · pantry conversion · since Mar 2026</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <span class="row-chip amber">CO pending</span>
+                    <div class="cl-state">$14,820 · CO-002 approval</div>
+                    <div class="cl-state-meta">drill to Project for the decision</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Nakamura, Sho</div>
+                    <div class="cl-phase">Active · garage conversion · since Apr 2026</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Day 12 of 28 · electrical rough</div>
+                    <div class="cl-state-meta">inspector Thu · drill to Project</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row attention">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Patel, Dev</div>
+                    <div class="cl-phase">Active · ADU build · since May 2026</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <span class="row-chip amber">Sub bid late</span>
+                    <div class="cl-state">Day 8 of 60 · framing sub 5d late</div>
+                    <div class="cl-state-meta">drill to Project for sub resolution</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Wegrzyn, Maria</div>
+                    <div class="cl-phase">Active · kitchen + primary bath · since Feb 2026</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <span class="row-chip red">At risk</span>
+                    <div class="cl-state">Day 4 of 11 · tile crew conflict</div>
+                    <div class="cl-state-meta">drift flagged · drill to Project</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+              </div>
+
+              <div class="section-label">Closing <span class="sl-count">· 4</span></div>
+              <div class="client-list">
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Ault, Sarah · Ault Design Studio</div>
+                    <div class="cl-phase">Closing · Coronado vanity (designer-led)</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Signoff due Tue</div>
+                    <div class="cl-state-meta">Valle dropship build</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row attention">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Goldberg, Aaron</div>
+                    <div class="cl-phase">Closing · kitchen + island</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <span class="row-chip amber">CO pending</span>
+                    <div class="cl-state">$8,420 · CO-003 approval</div>
+                    <div class="cl-state-meta">drill to Project for the decision</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">O'Brien, Patrick &amp; Liz</div>
+                    <div class="cl-phase">Closing · mudroom + laundry</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Cabinet install Mon</div>
+                    <div class="cl-state-meta">on schedule · paint dry</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Reyes, Elena</div>
+                    <div class="cl-phase">Closing · master bath</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Final walk Thu</div>
+                    <div class="cl-state-meta">invoice cleared · retainer $4,200</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+              </div>
+
+              <div class="section-label">Lead <span class="sl-count">· 4</span></div>
+              <div class="client-list">
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Avenida, Christine</div>
+                    <div class="cl-phase">Lead · kitchen remodel inquiry</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <span class="row-chip red">Stale 3d</span>
+                    <div class="cl-state">Pre-qual · no contact</div>
+                    <div class="cl-state-meta">drill to Sales for pipeline action</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Olsen, Brian</div>
+                    <div class="cl-phase">Lead · whole-house refresh · NextDoor inbound</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Intake call Fri</div>
+                    <div class="cl-state-meta">est $300-450k</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Vasquez, Maria</div>
+                    <div class="cl-phase">Lead · whole-home cosmetic · from Marketing</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Qual scheduled Thu 2pm</div>
+                    <div class="cl-state-meta">neighbor referral (Hernandez)</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Whitmore, Tess</div>
+                    <div class="cl-phase">Lead · bath remodel · from Marketing</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Qual due Thu</div>
+                    <div class="cl-state-meta">website form · auto-replied</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+              </div>
+
+              <div class="section-label">Closed <span class="sl-count">· 3 recent</span></div>
+              <div class="client-list">
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Dunne, James</div>
+                    <div class="cl-phase">Closed · master bath · final walk Fri</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Retainer release pending</div>
+                    <div class="cl-state-meta">$6,400 · 12mo follow-up in May 2027</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row happy">
+                  <div class="cl-name-block">
+                    <div class="cl-name">Hossini, Reza</div>
+                    <div class="cl-phase">Closed · last project Mar 2026 · paid in full</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <span class="row-chip green">Referral source</span>
+                    <div class="cl-state">5-star Google · 2 referrals last quarter</div>
+                    <div class="cl-state-meta">Goldberg-Lee active lead is one of his</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+                <div class="client-row">
+                  <div class="cl-name-block">
+                    <div class="cl-name">López, María Elena</div>
+                    <div class="cl-phase">Closed · last project Jan 2026</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Anniversary Jul 2026</div>
+                    <div class="cl-state-meta">referral source · 12mo check-in due</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+
+              </div>
+
+              <!-- Historical rollup -->
+              <div class="client-list" style="margin-top: 14px;">
+                <div class="client-row" style="border-style: dashed; opacity: 0.85;">
+                  <div class="cl-name-block">
+                    <div class="cl-name" style="font-weight: 500; color: var(--kerf-text-dim);">+ 47 historical clients</div>
+                    <div class="cl-phase">Closed &gt; 6mo · Lapsed · Archived</div>
+                  </div>
+                  <div class="cl-state-block">
+                    <div class="cl-state">Click to expand · search by name</div>
+                    <div class="cl-state-meta">re-engagement candidates flagged in rail</div>
+                  </div>
+                  <span class="cl-arrow">›</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT · Portfolio rail -->
+            <div class="portfolio-rail">
+
+              <div class="rh-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · clients</div>
+                <div class="rh-text">
+                  <strong>17 clients · 6 active · 4 closing · 4 lead · 3 closed.</strong> <em>Passive baseline</em> — operating signals visible, but the work itself lives in Projects. <span class="rh-amber">3 just closed-won this week</span> (from Sales pipeline).
+                </div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Segmentation · this snapshot</div>
+                <div class="pf-row"><span class="pf-label">Active operating</span><span class="pf-val">10 (Active + Closing)</span></div>
+                <div class="pf-row"><span class="pf-label">Net-new this month</span><span class="pf-val">5 (3 leads + 2 wins)</span></div>
+                <div class="pf-row"><span class="pf-label">Repeat clients</span><span class="pf-val green">8 in roster</span></div>
+                <div class="pf-row"><span class="pf-label">Referral sources</span><span class="pf-val green">3 (Hossini · López · Foster)</span></div>
+                <div class="pf-row"><span class="pf-label">Re-engagement candidates</span><span class="pf-val">4 (12mo anniversaries Jun-Aug)</span></div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Pipeline · funnel<span style="float: right; font-size: 9.5px; font-weight: 600; color: var(--kerf-amber);">FROM SALES ›</span></div>
+                <div class="pipeline-grid">
+                  <div class="pl-stage"><div class="pl-count">4</div><div class="pl-label">Lead</div></div>
+                  <div class="pl-stage"><div class="pl-count">3</div><div class="pl-label">Qual</div></div>
+                  <div class="pl-stage"><div class="pl-count">3</div><div class="pl-label">Proposed</div></div>
+                  <div class="pl-stage"><div class="pl-count">2</div><div class="pl-label">Neg</div></div>
+                  <div class="pl-stage"><div class="pl-count">3</div><div class="pl-label">Won 30d</div></div>
+                </div>
+                <div style="font-size: 10px; color: var(--kerf-text-mute); margin-top: 8px; line-height: 1.5;">
+                  <strong style="color: var(--field-green); font-weight: 600;">3 just closed-won</strong> — Yamamoto · O'Brien · Whitaker · auto-created as Active.
+                </div>
+              </div>
+
+              <div class="rail-card">
+                <div class="rail-eyebrow">Patterns flagged</div>
+                <div style="font-size: 11px; color: var(--kerf-text-dim); line-height: 1.55;">
+                  Hossini referral source warming — Goldberg-Lee lead came from him. <span style="color: var(--kerf-amber);">Worth a "thank you" touch.</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-CL3 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 2 · Clients desktop</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL1 · Mobile Clients list</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-CL2 · Mobile Client Detail</span></div>
+      <div class="sl-step current"><span class="sl-dot">3</span><span><span class="sl-name">F-CL3</span> · Desktop Clients list <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">4</span><span>F-CL4 · Desktop Client Detail (next)</span></div>
+    </div>
+
+    <h4>What desktop adds vs F-CL1 mobile</h4>
+    <ul>
+      <li><strong>Left sidebar always visible</strong> · all 9 domains accessible · Clients active</li>
+      <li><strong>Window chrome + breadcrumb + global search</strong></li>
+      <li><strong>2-column main</strong> · list left (wider, more state inline) + portfolio rail right</li>
+      <li><strong>Portfolio rail surfaces:</strong> RH synthesis · at-risk callout · pipeline funnel · referral-path card</li>
+      <li><strong>Rows show state inline</strong> rather than below name (more horizontal real estate)</li>
+      <li><strong>Add client</strong> as breadcrumb-bar action affordance (not bottom-right FAB on mobile · routes to F-S1 Start client intake)</li>
+    </ul>
+
+    <h4>What stays from F-CL1</h4>
+    <ul>
+      <li>Attention sort (not alphabetical)</li>
+      <li>Three sections: Active / Leads / Repeat</li>
+      <li>Phase shown as plain text, not status color</li>
+      <li>Status colors reserved for state (amber pending · red drift · green happy/referral)</li>
+      <li>Left-border accent on rows needing attention</li>
+      <li>No filter bar default</li>
+      <li>No tabs · single scannable list with sections</li>
+    </ul>
+
+    <h4>What this surface refuses</h4>
+    <ul>
+      <li>A grid of contact cards with avatars and metadata</li>
+      <li>A multi-tab CRM workstation (Active / Past / Leads as tabs)</li>
+      <li>A filter sidebar with 15 facets</li>
+      <li>A bulk-action toolbar</li>
+      <li>An alphabetical default sort</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Same lens-not-console discipline as mobile</li>
+      <li><span class="badge canon">canon</span>Smart summary leads (RH card)</li>
+      <li><span class="badge canon">canon</span>3-color discipline preserved</li>
+      <li><span class="badge canon">canon</span>Trust surfaces stay exception-tier (no transcript or audit nav here)</li>
+      <li><span class="badge canon">canon</span>Light + dark theme baked in</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-CL1_mobile_clients_list.html</code> · mobile sibling</li>
+      <li><code>F-CL4_desktop_client_detail.html</code> · drill destination (next)</li>
+      <li><code>F-A2_desktop_owner_home.html</code> · sidebar + chrome convention</li>
+      <li><code>kerf_client_section_canonical.md</code> · Clients first-class</li>
+      <li><code>feedback_business_brain_not_file_cabinet.md</code> · doctrine: smart summary leads</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Grid view alternate · canon 2026-05-18 PM late -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-CL3 · Grid view · big-picture client portfolio at desktop density</div>
+  <p class="frame-narr">
+    Operator toggles to <em>Grid</em>. 4-column grid · every client visible at once · no attention compression. Tile content disciplined: name + category + state chip + rhythm. Optimized for <strong>scan, not detail</strong>. Map view stays V1.5+ (third toggle option, deferred). Drill into any tile for full Client Detail.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/clients?view=grid</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+
+      <div class="app-body">
+
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-mark">K</div><div><div class="sb-brand">Kerf</div><span class="sb-tenant">GGR Design + Remodeling</span></div></div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab"><svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg><span class="sb-fab-label">SPEAK</span></div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem active"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user"><div class="sb-user-avatar">CA</div><div><div class="sb-user-name">Christian Asdal</div><div class="sb-user-meta">Owner · GGR</div></div></div>
+        </div>
+
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link">Home</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Clients</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action"><svg viewBox="0 0 24 24"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>Add client</span>
+          </div>
+
+          <div class="main-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h2 class="main-title">Clients</h2>
+              <div class="main-meta">17 clients · stage-grouped (Active · Closing · Lead · Closed) · passive lens · drill in for record · drill again for active work</div>
+            </div>
+            <div class="view-mode-toggle">
+              <span class="vmt-option">List</span>
+              <span class="vmt-option active">Grid</span>
+              <span class="vmt-option deferred">Map · V1.5+</span>
+            </div>
+          </div>
+
+          <!-- Active section · 6 tiles -->
+          <div class="section-label" style="margin: 14px 0 8px;">Active <span class="sl-count">· 6</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Cheng, Wei</div>
+              <div class="gt-phase">Active · primary suite</div>
+              <div class="gt-rhythm">Day 6 of 21 · framing</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Foster, Joe</div>
+              <div class="gt-phase">Active · whole-house</div>
+              <div class="gt-rhythm">Day 22 of 90 · drywall</div>
+            </div>
+            <div class="grid-tile attention">
+              <div class="gt-name">Hernandez, Luis</div>
+              <div class="gt-phase">Active · pantry</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">CO pending</span></div>
+              <div class="gt-rhythm">$14.8k · drill to Project</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Nakamura, Sho</div>
+              <div class="gt-phase">Active · garage conv.</div>
+              <div class="gt-rhythm">Day 12 of 28 · electrical</div>
+            </div>
+            <div class="grid-tile attention">
+              <div class="gt-name">Patel, Dev</div>
+              <div class="gt-phase">Active · ADU</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">Sub bid late</span></div>
+              <div class="gt-rhythm">Day 8 of 60 · drill to Project</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Wegrzyn, Maria</div>
+              <div class="gt-phase">Active · kitchen + bath</div>
+              <div class="gt-chip-row"><span class="gt-chip red">At risk</span></div>
+              <div class="gt-rhythm">Day 4 of 11 · drill to Project</div>
+            </div>
+          </div>
+
+          <!-- Closing section · 4 tiles -->
+          <div class="section-label" style="margin: 18px 0 8px;">Closing <span class="sl-count">· 4</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Ault, Sarah</div>
+              <div class="gt-phase">Closing · vanity</div>
+              <div class="gt-rhythm">Signoff due Tue · designer-led</div>
+            </div>
+            <div class="grid-tile attention">
+              <div class="gt-name">Goldberg, Aaron</div>
+              <div class="gt-phase">Closing · kitchen</div>
+              <div class="gt-chip-row"><span class="gt-chip amber">CO pending</span></div>
+              <div class="gt-rhythm">$8.4k · drill to Project</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">O'Brien, Patrick &amp; Liz</div>
+              <div class="gt-phase">Closing · mudroom</div>
+              <div class="gt-rhythm">Cabinet install Mon</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Reyes, Elena</div>
+              <div class="gt-phase">Closing · master bath</div>
+              <div class="gt-rhythm">Final walk Thu · paid</div>
+            </div>
+          </div>
+
+          <!-- Lead section · 4 tiles -->
+          <div class="section-label" style="margin: 18px 0 8px;">Lead <span class="sl-count">· 4</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Avenida, Christine</div>
+              <div class="gt-phase">Lead · kitchen</div>
+              <div class="gt-chip-row"><span class="gt-chip red">Stale 3d</span></div>
+              <div class="gt-rhythm">Pre-qual · drill to Sales</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Olsen, Brian</div>
+              <div class="gt-phase">Lead · whole-house</div>
+              <div class="gt-rhythm">Est $300-450k · call Fri</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Vasquez, Maria</div>
+              <div class="gt-phase">Lead · whole-home</div>
+              <div class="gt-chip-row"><span class="gt-chip blue">From Marketing 2h</span></div>
+              <div class="gt-rhythm">Qual Thu 2pm</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">Whitmore, Tess</div>
+              <div class="gt-phase">Lead · bath</div>
+              <div class="gt-chip-row"><span class="gt-chip blue">From Marketing</span></div>
+              <div class="gt-rhythm">Qual due Thu</div>
+            </div>
+          </div>
+
+          <!-- Closed section · 3 tiles + historical rollup ref -->
+          <div class="section-label" style="margin: 18px 0 8px;">Closed <span class="sl-count">· 3 recent · 47 historical</span></div>
+          <div class="grid-view">
+            <div class="grid-tile">
+              <div class="gt-name">Dunne, James</div>
+              <div class="gt-phase">Closed · master bath</div>
+              <div class="gt-rhythm">Retainer pending · $6.4k</div>
+            </div>
+            <div class="grid-tile success">
+              <div class="gt-name">Hossini, Reza</div>
+              <div class="gt-phase">Closed · Mar 2026</div>
+              <div class="gt-chip-row"><span class="gt-chip green">Referral source</span></div>
+              <div class="gt-rhythm">5-star · 2 referrals</div>
+            </div>
+            <div class="grid-tile">
+              <div class="gt-name">López, María Elena</div>
+              <div class="gt-phase">Closed · Jan 2026</div>
+              <div class="gt-rhythm">Anniv Jul · referral source</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-CL3 Grid · Spec</h3>
+    <h4>Big-picture canon applied</h4>
+    <ul>
+      <li><strong>Comparison view</strong> · every client visible at once</li>
+      <li>4-column desktop grid · no attention compression</li>
+      <li>Tile content disciplined: name + category + state chip + rhythm line · scan not detail</li>
+      <li>Map view (V1.5+) shown as third toggle option (deferred)</li>
+      <li>Drill into any tile → F-CL4 Client Detail</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What desktop preserves</span>
+    Attention sort · lens-not-console · 3-color discipline · no CRM forensics console · trust surfaces stay exception-tier. The 80% case (state at a glance) handled by the portfolio rail; the 20% drill case by the list itself. Same business-brain logic as mobile, denser presentation.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What desktop adds</span>
+    <strong>Portfolio rail.</strong> The mobile pipeline-footer becomes a right-rail card. The mobile drift-as-row-decoration becomes a portfolio-level at-risk callout. The referral path that lives implicit in mobile gets its own quiet card here. <em>Same data, surfaced for the more analytical posture an Owner takes at desktop.</em>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+</body>
+</html>

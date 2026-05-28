@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-AV1a · Mobile Audit portfolio · comparison · list + grid</title>
+<style>
+:root{--kerf-bg:#0A0D11;--kerf-bg-2:#14181F;--kerf-surface:#1A1F28;--kerf-surface-2:#232936;--kerf-border:#2A3140;--kerf-border-soft:#1F2530;--kerf-text:#E8ECF1;--kerf-text-dim:#98A1B3;--kerf-text-mute:#6A7282;--kerf-amber:#F5B544;--kerf-green:#4ADE80;--kerf-red:#F87171;--kerf-blue:#7BA8FF;--kerf-violet:#A78BFA;--kerf-cyan:#67D6E0;--field-green:#38C977;--right-hand:#C9A961;}
+body.light-mode{--kerf-bg:#FFF;--kerf-bg-2:#F4F6F9;--kerf-surface:#FFF;--kerf-surface-2:#EBEEF2;--kerf-border:#C9D0D8;--kerf-border-soft:#DFE3E8;--kerf-text:#0A0D11;--kerf-text-dim:#4A5462;--kerf-text-mute:#7B8492;}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9 0%,#FFF 100%)!important;}
+body.light-mode .view-toggle-bar{background:rgba(255,255,255,0.92)!important;}
+body.light-mode .phone{box-shadow:0 16px 50px rgba(0,0,0,0.15);}
+body.light-mode .phone-notch{background:#1a1a1d!important;}
+*{box-sizing:border-box;} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--kerf-bg);color:var(--kerf-text);line-height:1.5;font-size:13px;}
+.page{max-width:1500px;margin:0 auto;padding:32px 24px 80px;}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,0.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--kerf-border);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--kerf-text-dim);}
+.view-toggle-bar .vtb-label{font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;}
+.view-toggle-bar .vtb-options{display:flex;gap:2px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-radius:8px;padding:2px;}
+.view-toggle-bar .vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--kerf-text-mute);cursor:pointer;font-weight:600;}
+.view-toggle-bar .vtb-tab.active{background:var(--kerf-amber);color:#1A1300;}
+.view-toggle-bar .vtb-hint{margin-left:auto;font-size:10.5px;color:var(--kerf-text-mute);}
+body.presentation-mode .page{max-width:none;padding:0 24px 80px;} body.presentation-mode .frame{grid-template-columns:1fr;gap:14px;} body.presentation-mode .frame-spec{display:none;}
+.page-header{border-bottom:1px solid var(--kerf-border);padding-bottom:22px;margin-bottom:32px;}
+.page-header .crumb{font-size:11px;color:var(--kerf-text-mute);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;}
+.page-header .crumb .step{color:var(--kerf-text-dim);} .page-header .crumb .step.current{color:var(--kerf-amber);} .page-header .crumb .sep{color:var(--kerf-border);margin:0 8px;}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px;} .page-header p{color:var(--kerf-text-dim);margin:0;font-size:13px;max-width:1080px;line-height:1.6;} .page-header p em{color:var(--right-hand);font-style:normal;}
+.frame{display:grid;grid-template-columns:1fr 380px;gap:28px;margin-bottom:56px;align-items:start;}
+.frame-label{grid-column:1 / -1;font-size:13px;color:var(--kerf-amber);font-weight:600;margin-bottom:4px;}
+.frame-narr{grid-column:1 / -1;margin:0 0 14px;color:var(--kerf-text-dim);font-size:12.5px;line-height:1.7;max-width:1080px;} .frame-narr em{color:var(--right-hand);font-style:normal;}
+.frame-render{border:1px solid var(--kerf-border);border-radius:12px;background:linear-gradient(180deg,#14181F 0%,#0A0D11 100%);padding:32px;display:flex;justify-content:center;}
+.frame-spec{border:1px solid var(--kerf-border);border-radius:12px;background:var(--kerf-bg-2);padding:18px 16px;font-size:12px;color:var(--kerf-text-dim);height:fit-content;position:sticky;top:60px;}
+.frame-spec h3{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-text);font-weight:700;margin:0 0 10px;}
+.frame-spec h4{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin:14px 0 6px;} .frame-spec h4:first-of-type{margin-top:0;}
+.frame-spec ul{padding-left:16px;margin:0 0 8px;} .frame-spec li{margin-bottom:4px;line-height:1.55;} .frame-spec code{background:var(--kerf-surface);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--right-hand);}
+.phone{width:380px;background:var(--kerf-bg);border:1.5px solid var(--kerf-border);border-radius:42px;padding:14px;position:relative;box-shadow:0 16px 50px rgba(0,0,0,0.5);}
+.phone-notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:124px;height:26px;background:var(--kerf-bg);border-radius:0 0 16px 16px;z-index:5;}
+.phone-screen{background:var(--kerf-bg);border-radius:30px;overflow:hidden;height:740px;display:flex;flex-direction:column;position:relative;}
+.status-bar{display:flex;justify-content:space-between;padding:13px 24px 6px;font-size:11.5px;color:var(--kerf-text);font-weight:600;} .status-bar .right{color:var(--kerf-text-dim);}
+.top-chrome{padding:6px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--kerf-border-soft);}
+.tc-back{display:flex;align-items:center;gap:3px;color:var(--kerf-amber);font-size:12.5px;font-weight:600;} .tc-back svg{width:16px;height:16px;fill:currentColor;}
+.tc-title{flex:1;text-align:center;font-size:13px;color:var(--kerf-text-dim);font-weight:500;}
+.tc-action{font-size:12px;color:var(--kerf-amber);font-weight:600;}
+.body{flex:1;overflow-y:auto;padding:0 14px 14px;}
+.rh-summary{margin:12px 0 14px;padding:11px 12px;background:rgba(201,169,97,0.05);border-left:2px solid var(--right-hand);border-radius:4px;display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:flex-start;}
+.rh-avatar{width:24px;height:24px;border-radius:6px;background:rgba(201,169,97,0.16);color:var(--right-hand);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.rh-text{font-size:12px;color:var(--kerf-text);line-height:1.5;} .rh-text em{color:var(--kerf-red);font-style:normal;font-weight:600;} .rh-text strong{color:var(--kerf-text);font-weight:700;} .rh-text .rh-green{color:var(--field-green);font-weight:600;}.rh-text .rh-mute{color:var(--kerf-text-mute);}
+.section-label{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;display:flex;align-items:baseline;gap:8px;margin:14px 4px 8px;}
+.section-label .sl-count{color:var(--kerf-text-dim);font-weight:600;font-size:10px;}
+.section-label .sl-total{margin-left:auto;font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;letter-spacing:0;text-transform:none;}
+.money-list{display:flex;flex-direction:column;gap:6px;}
+.money-row{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:11px 13px;display:grid;grid-template-columns:1fr auto 14px;gap:11px;align-items:center;}
+.money-row.stack{grid-template-columns:1fr 14px;align-items:flex-start;}
+.row-chip{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;padding:2px 6px;border-radius:4px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;margin-bottom:3px;}
+.row-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .row-chip.red::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-red);}
+.row-chip.amber{background:rgba(245,181,68,0.14);color:var(--kerf-amber);}.row-chip.green{background:rgba(56,201,119,0.14);color:var(--field-green);} .row-chip.green::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--field-green);}
+.mr-text{font-size:12px;color:var(--kerf-text);line-height:1.4;font-weight:600;} .mr-text .mr-detail{display:block;color:var(--kerf-text-mute);font-size:10.5px;margin-top:2px;font-weight:500;}
+.mr-bidact{font-size:10.5px;color:var(--kerf-text-mute);margin-top:3px;font-weight:500;}
+.mr-amount{font-family:"SF Mono",Menlo,monospace;color:var(--kerf-text);font-weight:700;font-size:14px;text-align:right;} .mr-amount.red{color:var(--kerf-red);} .mr-amount.green{color:var(--field-green);}
+.money-arrow{color:var(--kerf-text-mute);font-size:13px;}
+.bottom-bar{background:var(--kerf-bg-2);border-top:1px solid var(--kerf-border);padding:8px 0 22px;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;flex-shrink:0;}
+.bb-tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--kerf-text-mute);font-weight:600;padding:5px 0;} .bb-tab.active{color:var(--kerf-amber);}
+.bb-icon{display:inline-flex;width:22px;height:22px;} .bb-icon svg{width:22px;height:22px;fill:currentColor;}
+.bb-fab-wrap{position:relative;} .bb-fab{width:52px;height:52px;border-radius:50%;background:var(--kerf-amber);color:#1A1300;display:flex;align-items:center;justify-content:center;position:absolute;bottom:2px;left:50%;transform:translateX(-50%);box-shadow:0 6px 18px rgba(245,181,68,0.40);border:3px solid var(--kerf-bg);} .bb-fab svg{width:24px;height:24px;fill:currentColor;}
+.bb-fab-label{font-size:10px;color:var(--kerf-text-mute);margin-top:32px;font-weight:600;text-align:center;}
+.view-mode-toggle{display:flex;gap:4px;padding:3px;background:var(--kerf-bg-2);border:1px solid var(--kerf-border-soft);border-radius:8px;margin:12px 4px 4px;width:fit-content;}
+.vmt-option{padding:5px 12px;font-size:10.5px;color:var(--kerf-text-mute);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;border-radius:5px;cursor:pointer;}
+.vmt-option.active{background:var(--kerf-amber);color:#1A1300;}
+.grid-view{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.grid-tile{background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);border-radius:10px;padding:10px 11px;cursor:pointer;}
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip carries the flag · F-AV1a CSS swept 2026-05-24 during Lane 1 rebuild */
+.grid-tile.success{border-left:3px solid var(--field-green);padding-left:9px;}
+.gt-name{font-size:12.5px;color:var(--kerf-text);font-weight:700;}
+.gt-phase{font-size:9.5px;color:var(--kerf-text-mute);margin-top:3px;text-transform:uppercase;font-weight:600;}
+.gt-chip-row{margin-top:6px;}
+.gt-chip{display:inline-flex;align-items:center;gap:3px;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:700;text-transform:uppercase;}
+.gt-chip.red{background:rgba(248,113,113,0.12);color:var(--kerf-red);} .gt-chip.red::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--kerf-red);}
+.gt-chip.amber{background:rgba(245,181,68,0.14);color:var(--kerf-amber);}.gt-chip.green{background:rgba(56,201,119,0.12);color:var(--field-green);} .gt-chip.green::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--field-green);}
+.gt-rhythm{font-size:9.5px;color:var(--kerf-text-mute);margin-top:6px;font-family:"SF Mono",Menlo,monospace;}
+.disclosure{font-size:11px;color:var(--kerf-text-mute);padding:8px 4px 0;text-align:center;}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.callout{background:var(--kerf-bg-2);border:1px solid var(--kerf-border);border-left:3px solid var(--kerf-amber);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--kerf-text-dim);line-height:1.55;}
+.callout strong{color:var(--kerf-text);font-weight:600;} .callout em{color:var(--right-hand);font-style:normal;}
+.callout .callout-title{display:block;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--kerf-amber);font-weight:700;margin-bottom:5px;}
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div>
+  <span class="vtb-label" style="margin-left:14px;">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb"><span class="step">Settings</span><span class="sep">›</span><span class="step current">Audit portfolio</span></div>
+  <h1>F-AV1a · Mobile Audit portfolio · trust comparison, not forensics console</h1>
+  <p>Tier 3 trust surface via <em>More → Settings → Audit</em> — not top nav. RH summary leads. Escalated first · auto-resolved compressed · reversed empty. Red chip-tier only. List default · Grid alternate.</p>
+</div>
+
+<!-- Frame 1 · List -->
+<div class="frame">
+  <div class="frame-label">Frame 1 · F-AV1a · List view · Settings-bound · 52 audit events this week</div>
+  <p class="frame-narr">More tab active. Top chrome <em>Settings › Audit</em>. RH: <em>52 audit events this week · 6 escalated · 45 auto-resolved · 1 reversed.</em> Escalated rows surface individually · auto-resolved compressed · reversed visible but small. <em>Service-trade stress test (200+/wk):</em> escalated stays the same scale-of-attention (rarely more than 8-10 rows) · auto-resolved rollup carries the volume · pattern holds.</p>
+  <div class="frame-render">
+    <div class="phone"><div class="phone-notch"></div><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><span class="right">●●● 86%</span></div>
+      <div class="top-chrome">
+        <div class="tc-back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Settings</div>
+        <div class="tc-title">Settings › Audit</div>
+        <div class="tc-action">···</div>
+      </div>
+      <div class="body">
+        <div class="rh-summary"><div class="rh-avatar">RH</div><div class="rh-text"><strong>52 audit events this week</strong> · <em>6 escalated</em> · <span class="rh-green">45 auto-resolved</span> · <span class="rh-mute">1 reversed</span></div></div>
+        <div class="view-mode-toggle"><span class="vmt-option active">List</span><span class="vmt-option">Grid</span></div>
+        <div class="section-label">Escalated<span class="sl-count">· 6</span></div>
+        <div class="money-list">
+          <div class="money-row stack"><div><div class="mr-text">Maria Wegrzyn · Kitchen + Primary bath<span class="mr-detail">Tue · 14:22</span><div class="mr-bidact">CO approval threshold exceeded</div><span class="row-chip red">Escalated</span></div></div><span class="money-arrow">›</span></div>
+          <div class="money-row stack"><div><div class="mr-text">Luis Hernandez · Pantry conversion<span class="mr-detail">Mon · 09:14</span><div class="mr-bidact">Margin drift · CO-002 path</div><span class="row-chip red">Escalated</span></div></div><span class="money-arrow">›</span></div>
+          <div class="money-row stack"><div><div class="mr-text">Aaron Goldberg · Kitchen + island<span class="mr-detail">Mon · 16:08</span><div class="mr-bidact">CO-003 over-threshold · $8,420</div><span class="row-chip red">Escalated</span></div></div><span class="money-arrow">›</span></div>
+          <div class="money-row stack"><div><div class="mr-text">Maria Wegrzyn · Kitchen + Primary bath<span class="mr-detail">Sun · 16:40</span><div class="mr-bidact">Schedule conflict · tile crew overlap</div><span class="row-chip amber">Escalated</span></div></div><span class="money-arrow">›</span></div>
+          <div class="money-row stack"><div><div class="mr-text">Dev Patel · ADU build<span class="mr-detail">Sat · 11:48</span><div class="mr-bidact">Framing sub bid 5d late · auto-rank skipped</div><span class="row-chip amber">Escalated</span></div></div><span class="money-arrow">›</span></div>
+          <div class="money-row stack"><div><div class="mr-text">Sarah Ault · Coronado vanity<span class="mr-detail">Fri · 11:02</span><div class="mr-bidact">Sub bid auto-rank · policy override</div><span class="row-chip amber">Escalated</span></div></div><span class="money-arrow">›</span></div>
+        </div>
+        <div class="section-label">Auto-resolved<span class="sl-count">· 45</span></div>
+        <div style="background:var(--kerf-bg-2);border:1px dashed var(--kerf-border);border-radius:10px;padding:12px;text-align:center;font-size:11.5px;color:var(--kerf-text-dim);margin-bottom:14px;"><strong style="color:var(--field-green)">+ 45 auto-resolved this week</strong><em style="display:block;font-size:10.5px;color:var(--kerf-text-mute);font-style:normal;margin-top:3px">tap to expand · COI checks · invoice sends · daily reconciliation · permit verifications</em></div>
+        <div class="section-label">Reversed<span class="sl-count">· 1</span></div>
+        <div class="money-list">
+          <div class="money-row stack"><div><div class="mr-text">Elena Reyes · Master bath<span class="mr-detail">Wed · 10:33</span><div class="mr-bidact">Invoice send unblocked by operator after auto-hold</div><span class="row-chip mute">Reversed</span></div></div><span class="money-arrow">›</span></div>
+        </div>
+        <div class="disclosure">AI-assisted by Kerf Right Hand · Settings › Audit</div>
+      </div>
+      <div class="bottom-bar">
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+        <div class="bb-fab-wrap"><div class="bb-fab"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div><div class="bb-fab-label">SPEAK</div></div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V20h14v-3.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V20h6v-3.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span>Clients</div>
+        <div class="bb-tab active"><span class="bb-icon"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More</div>
+      </div>
+    </div></div>
+  </div>
+  <div class="frame-spec">
+    <h3>F-AV1a · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul><li><strong>Macro / comparison / detail?</strong> · comparison (weekly audit events)</li><li><strong>List, grid, both?</strong> · BOTH · List default · Grid alternate</li><li><strong>Cognitive job?</strong> · what Kerf flagged · what needed me · what resolved without me</li><li><strong>What stays hidden?</strong> · validator chain · raw JSON until F-H1</li></ul>
+    <h4>Doctrine</h4>
+    <ul><li>Settings-bound via More · not top-nav Audit</li><li>Red chip-tier only · no full-row red borders</li><li>Grid on comparison surface only</li></ul>
+  </div>
+</div>
+
+<!-- Frame 2 · Grid -->
+<div class="frame">
+  <div class="frame-label">Frame 2 · F-AV1a · Grid view · weekly audit comparison · 52 events</div>
+  <p class="frame-narr">Grid replaces list for macro scan. <em>gt-name</em> = event + project · <em>gt-phase</em> = timestamp · <em>gt-chip</em> = state · <em>gt-rhythm</em> = source (Deterministic rule · Right Hand · Operator). All 6 escalated + sample of high-signal auto-resolved + the 1 reversed visible at 2-col density.</p>
+  <div class="frame-render">
+    <div class="phone"><div class="phone-notch"></div><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><span class="right">●●● 86%</span></div>
+      <div class="top-chrome"><div class="tc-back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>Settings</div><div class="tc-title">Settings › Audit</div><div class="tc-action">···</div></div>
+      <div class="body">
+        <div class="rh-summary"><div class="rh-avatar">RH</div><div class="rh-text"><strong>52 audit events this week</strong> · <em>6 escalated</em> · <span class="rh-green">45 auto-resolved</span> · <span class="rh-mute">1 reversed</span></div></div>
+        <div class="view-mode-toggle"><span class="vmt-option">List</span><span class="vmt-option active">Grid</span></div>
+        <div class="section-label">Escalated<span class="sl-count">· 6</span></div>
+        <div class="grid-view">
+          <div class="grid-tile"><div class="gt-name">CO threshold · Wegrzyn</div><div class="gt-phase">Tue 14:22</div><div class="gt-chip-row"><span class="gt-chip red">Escalated</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">Margin drift · Hernandez</div><div class="gt-phase">Mon 09:14</div><div class="gt-chip-row"><span class="gt-chip red">Escalated</span></div><div class="gt-rhythm">Right Hand</div></div>
+          <div class="grid-tile"><div class="gt-name">CO-003 over · Goldberg</div><div class="gt-phase">Mon 16:08</div><div class="gt-chip-row"><span class="gt-chip red">Escalated</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">Schedule conflict · Wegrzyn</div><div class="gt-phase">Sun 16:40</div><div class="gt-chip-row"><span class="gt-chip amber">Escalated</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">Sub bid late · Patel</div><div class="gt-phase">Sat 11:48</div><div class="gt-chip-row"><span class="gt-chip amber">Escalated</span></div><div class="gt-rhythm">Right Hand</div></div>
+          <div class="grid-tile"><div class="gt-name">Sub bid rank · Ault</div><div class="gt-phase">Fri 11:02</div><div class="gt-chip-row"><span class="gt-chip amber">Escalated</span></div><div class="gt-rhythm">Operator override</div></div>
+        </div>
+        <div class="section-label">Auto-resolved (sample · 10 of 45)<span class="sl-count">· 45</span></div>
+        <div class="grid-view">
+          <div class="grid-tile"><div class="gt-name">Invoice send · Dunne</div><div class="gt-phase">Thu 08:11</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">COI check · Pacific Tile</div><div class="gt-phase">Wed 17:44</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">Permit verify · Nakamura</div><div class="gt-phase">Wed 12:15</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">Daily recon · Bookkeeping</div><div class="gt-phase">Tue 23:01</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">Sub bid rank · Khan</div><div class="gt-phase">Tue 14:55</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Right Hand</div></div>
+          <div class="grid-tile"><div class="gt-name">CO threshold · O'Brien</div><div class="gt-phase">Tue 10:08</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">COI expiry · Coastal Elec</div><div class="gt-phase">Mon 19:22</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">PO match · KraftMaid</div><div class="gt-phase">Mon 11:40</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+          <div class="grid-tile"><div class="gt-name">Allowance variance · Coring</div><div class="gt-phase">Sun 09:30</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Right Hand</div></div>
+          <div class="grid-tile"><div class="gt-name">Schedule slot · Williamson</div><div class="gt-phase">Sat 15:14</div><div class="gt-chip-row"><span class="gt-chip green">Auto-resolved</span></div><div class="gt-rhythm">Deterministic rule</div></div>
+        </div>
+        <div class="section-label">Reversed<span class="sl-count">· 1</span></div>
+        <div class="grid-view">
+          <div class="grid-tile"><div class="gt-name">Invoice unblock · Reyes</div><div class="gt-phase">Wed 10:33</div><div class="gt-chip-row"><span class="gt-chip mute">Reversed</span></div><div class="gt-rhythm">Operator override</div></div>
+        </div>
+        <div class="disclosure">AI-assisted by Kerf Right Hand · Settings › Audit</div>
+      </div>
+      <div class="bottom-bar">
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+        <div class="bb-fab-wrap"><div class="bb-fab"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div><div class="bb-fab-label">SPEAK</div></div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V20h14v-3.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V20h6v-3.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span>Clients</div>
+        <div class="bb-tab"><span class="bb-icon"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg></span>More</div>
+      </div>
+    </div></div>
+  </div>
+  <div class="frame-spec">
+    <h3>F-AV1a Grid · Spec</h3>
+    <h4>4-question rule</h4>
+    <ul><li><strong>Macro / comparison / detail?</strong> Comparison (weekly audit posture at scan density)</li><li><strong>List / grid / both?</strong> Grid alternate to List (sibling toggle to Frame 1)</li><li><strong>Cognitive job?</strong> Scan 17 events by state × time × source — what Kerf caught, what needed me, who acted</li><li><strong>Hidden until drill?</strong> Validator chain · raw event JSON (lives in F-H1)</li></ul>
+    <h4>Grid anatomy · 17 tiles</h4>
+    <ul><li>2-column mobile · 6 escalated + 10 auto-resolved sample (of 45) + 1 reversed = 17 tiles</li><li>gt-name = event + project · gt-phase = day + timestamp · gt-chip = state · gt-rhythm = source</li><li>Red chip = escalated needs decision · amber chip = escalated context-dependent · green chip = auto-resolved · mute chip = reversed</li><li>Source attribution: Deterministic rule / Right Hand / Operator override (visible in gt-rhythm)</li><li>`.grid-tile.risk` class not used — Lane 3 doctrine: red is chip-tier only (CSS swept 2026-05-24)</li></ul>
+    <h4>Audit model</h4>
+    <ul><li>Settings-bound surface · accessed via More → Settings → Audit (exception-tier, not top nav)</li><li>Lifecycle states: <code>escalated</code> · <code>auto_resolved</code> · <code>reversed</code></li><li>Red is chip-tier only · no full-row red borders</li><li>Service-trade stress (200+/wk): escalated count rarely exceeds 8-10 · auto-resolved rollup carries volume · pattern holds</li></ul>
+    <h4>Bottom bar (3 + 1 + 1)</h4>
+    <ul><li>Mandatory: Home · Projects · Speak (FAB)</li><li>User-defined: Clients</li><li>Context-aware (slot 4): More (Audit accessed via More → Settings → Audit)</li></ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout"><span class="callout-title">What this surface enforces</span><em>Trust comparison, not forensics console.</em> Weekly posture in one RH sentence. Audit under Settings — exception-tier.</div>
+  <div class="callout"><span class="callout-title">What this surface refuses to be</span>Not raw event stream. Not top-nav Audit. Not full-row red borders. <strong>F-AV1a is weekly trust rollup with escalation-first drill.</strong></div>
+</div>
+
+</div>
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('presentation-mode',tab.dataset.mode==='presentation');});});
+document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){const next=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector(`[data-mode="${next}"]`).click();}});
+document.querySelectorAll('[data-theme]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(t=>t.classList.remove('active'));tab.classList.add('active');document.body.classList.toggle('light-mode',tab.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',tab.dataset.theme);}catch(e){}});});
+try{const saved=localStorage.getItem('kerf_wf_theme');if(saved==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'));}}catch(e){}
+</script>
+</body>
+</html>

@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-E1 · Mobile Field Capture · voice + photo + Daily Log anchor</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+.view-toggle-bar .vtb-hint kbd { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); padding: 1px 5px; border-radius: 3px; font-size: 10px; color: var(--kerf-text-dim); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--field-green); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--field-green); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--field-green); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--field-green); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; overflow: hidden; }
+@media (max-width: 1300px) { .frame-render { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) { .frame-render { grid-template-columns: 1fr; } }
+
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--field-green); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.field { background: rgba(56,201,119,0.16); color: var(--field-green); }
+
+/* Phone (smaller for 3-state grid) */
+.phone-wrap { display: flex; flex-direction: column; align-items: center; }
+.phone { width: 340px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 38px; padding: 12px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 110px; height: 22px; background: var(--kerf-bg); border-radius: 0 0 14px 14px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 28px; overflow: hidden; height: 720px; display: flex; flex-direction: column; position: relative; }
+
+.state-label { text-align: center; margin-top: 14px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.state-label .pill { background: var(--field-green); color: #0A1A0F; padding: 2px 8px; border-radius: 5px; margin-left: 6px; font-size: 9.5px; letter-spacing: 0.06em; }
+.state-label .pill.amber { background: var(--kerf-amber); color: #1A1300; }
+.state-label .pill.blue { background: var(--kerf-blue); color: #0A1428; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 11px 22px 4px; font-size: 11px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome */
+.top-chrome { padding: 6px 14px 12px; border-bottom: 1px solid var(--kerf-border-soft); }
+.tc-eyebrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 10px; }
+.tc-eyebrow .tc-mode { color: var(--field-green); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; }
+.tc-eyebrow .tc-user { color: var(--kerf-text-mute); }
+.tc-title { font-size: 17px; font-weight: 700; color: var(--kerf-text); letter-spacing: -0.01em; line-height: 1.2; }
+.tc-meta { display: flex; gap: 8px; font-size: 10.5px; color: var(--kerf-text-dim); margin-top: 4px; align-items: center; }
+.tc-meta svg { width: 12px; height: 12px; fill: currentColor; flex-shrink: 0; }
+
+/* Body */
+.body { flex: 1; overflow-y: auto; padding: 0 14px 12px; }
+
+/* Assignment card */
+.assign-card {
+  margin: 12px 0 0;
+  background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft);
+  border-radius: 12px; padding: 11px 13px;
+}
+.assign-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 7px; }
+.assign-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11.5px; }
+.assign-row:last-child { border-bottom: none; padding-bottom: 0; }
+.assign-row .ar-key { font-size: 9.5px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+.assign-row .ar-val { color: var(--kerf-text); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.assign-row .ar-val .ar-edit { color: var(--kerf-blue); font-size: 10px; font-weight: 500; }
+
+/* Daily Log anchor — canon-explicit */
+.dl-anchor {
+  margin: 10px 0 0;
+  background: rgba(56,201,119,0.04);
+  border: 1px solid rgba(56,201,119,0.25);
+  border-left: 3px solid var(--field-green);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.45;
+}
+.dl-anchor strong { color: var(--field-green); }
+.dl-anchor .dl-detail { color: var(--kerf-text-mute); display: block; margin-top: 2px; }
+
+/* Big record button */
+.record-area {
+  margin: 16px 0 0;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.record-button {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: var(--field-green);
+  display: flex; align-items: center; justify-content: center;
+  color: #0A1A0F;
+  box-shadow: 0 8px 22px rgba(56,201,119,0.30);
+  position: relative;
+}
+.record-button svg { width: 38px; height: 38px; fill: currentColor; }
+.record-button::after {
+  content: ""; position: absolute; inset: -8px; border-radius: 50%;
+  border: 2px solid rgba(56,201,119,0.30);
+}
+.record-label { font-size: 12px; color: var(--kerf-text); font-weight: 600; text-align: center; }
+.record-sublabel { font-size: 10.5px; color: var(--kerf-text-mute); text-align: center; line-height: 1.4; padding: 0 18px; }
+
+/* Secondary capture row */
+.cap-secondary {
+  margin: 14px 0 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.cap-button {
+  background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px; padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.cap-button svg { width: 18px; height: 18px; fill: var(--field-green); }
+.cap-button .cb-label { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.cap-button .cb-sub { font-size: 9.5px; color: var(--kerf-text-mute); }
+
+/* Live record bar */
+.live-record-bar {
+  margin: 12px 0 0;
+  background: rgba(56,201,119,0.06); border: 1px solid rgba(56,201,119,0.40);
+  border-radius: 10px; padding: 9px 11px;
+  display: flex; gap: 10px; align-items: center;
+}
+.live-rec-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--field-green);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 4px rgba(56,201,119,0.20);
+}
+.live-rec-body { flex: 1; }
+.live-rec-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--field-green); font-weight: 700; }
+.live-rec-time { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.live-rec-stop {
+  background: var(--field-green); color: #0A1A0F; font-weight: 700;
+  padding: 6px 12px; border-radius: 7px; font-size: 11px;
+  display: flex; align-items: center; gap: 4px;
+}
+.live-rec-stop svg { width: 10px; height: 10px; fill: currentColor; }
+
+/* Live transcript */
+.live-transcript {
+  margin: 10px 0 0;
+  background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px; padding: 9px 11px;
+  font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.5;
+  position: relative;
+}
+.live-transcript .lt-eyebrow { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 4px; }
+.live-transcript .lt-text { color: var(--kerf-text); font-size: 11.5px; line-height: 1.5; }
+.live-transcript .lt-text .lt-current { color: var(--field-green); font-weight: 500; }
+.live-transcript .lt-cursor { display: inline-block; width: 6px; height: 12px; background: var(--field-green); margin-left: 1px; vertical-align: -2px; }
+
+/* Captured items list */
+.captured-items {
+  margin: 12px 0 0;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.captured-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-dim); font-weight: 700; margin-bottom: 2px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.captured-eyebrow .ce-count { color: var(--kerf-text-mute); font-weight: 500; font-size: 9.5px; }
+
+.cap-item {
+  background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft);
+  border-radius: 8px; padding: 8px 10px;
+  display: grid; grid-template-columns: 26px 1fr auto auto; gap: 9px; align-items: center;
+}
+.cap-item-icon {
+  width: 26px; height: 26px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+.cap-item-icon svg { width: 14px; height: 14px; fill: currentColor; }
+.cap-item-icon.voice { background: rgba(56,201,119,0.14); color: var(--field-green); }
+.cap-item-icon.photo { background: rgba(123,168,255,0.14); color: var(--kerf-blue); }
+.cap-item-icon.note { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.cap-item-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cap-item-title { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.cap-item-sub { font-size: 10px; color: var(--kerf-text-mute); line-height: 1.4; }
+.cap-item-meta { font-size: 9.5px; color: var(--kerf-text-mute); font-variant-numeric: tabular-nums; }
+.cap-item-action {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: transparent; border: 1px solid var(--kerf-border-soft);
+  color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center;
+}
+.cap-item-action svg { width: 11px; height: 11px; fill: currentColor; }
+
+/* Pre-flight summary */
+.preflight-card {
+  margin: 12px 0 0;
+  background: linear-gradient(135deg, rgba(56,201,119,0.07), rgba(123,168,255,0.04));
+  border: 1px solid rgba(56,201,119,0.30);
+  border-radius: 12px; padding: 12px 13px;
+}
+.pf-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 5px; }
+.pf-title { font-size: 14px; font-weight: 700; color: var(--kerf-text); line-height: 1.3; margin-bottom: 4px; }
+.pf-meta { font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.4; }
+.pf-stats { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.pf-stat-chip {
+  font-size: 10px; padding: 3px 8px; border-radius: 10px;
+  background: var(--kerf-bg-2); color: var(--kerf-text-dim);
+  border: 1px solid var(--kerf-border-soft);
+  display: flex; align-items: center; gap: 4px;
+}
+.pf-stat-chip strong { color: var(--kerf-text); }
+.pf-stat-chip.field { color: var(--field-green); }
+
+/* Draft-intent picker */
+.draft-intent-card {
+  margin: 10px 0 0;
+  background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px; padding: 11px 13px;
+}
+.di-eyebrow { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 8px; }
+.di-options { display: flex; flex-direction: column; gap: 6px; }
+.di-option {
+  background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft);
+  border-radius: 8px; padding: 9px 10px;
+  display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: flex-start;
+}
+.di-option.selected { background: rgba(56,201,119,0.06); border-color: var(--field-green); }
+.di-radio {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--kerf-border); margin-top: 1px;
+}
+.di-option.selected .di-radio {
+  border-color: var(--field-green); background: var(--field-green);
+}
+.di-option.selected .di-radio::after {
+  content: ""; display: block; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--kerf-bg); margin: 2.5px auto;
+}
+.di-option-title { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.di-option-detail { font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; line-height: 1.4; }
+
+/* Transcript review */
+.final-transcript {
+  margin: 10px 0 0;
+  background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px; padding: 9px 11px;
+}
+.ft-eyebrow {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text-dim); font-weight: 700; margin-bottom: 6px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ft-eyebrow .ft-edit { color: var(--kerf-blue); font-size: 9.5px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.ft-eyebrow .ft-edit svg { width: 10px; height: 10px; fill: currentColor; }
+.ft-block { padding: 5px 0; border-bottom: 1px solid var(--kerf-border-soft); }
+.ft-block:last-child { border-bottom: none; }
+.ft-block-meta { font-size: 9px; color: var(--kerf-text-mute); margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+.ft-block-meta svg { width: 10px; height: 10px; fill: currentColor; }
+.ft-block-text { font-size: 10.5px; color: var(--kerf-text); line-height: 1.5; }
+
+/* Transcript canon hint */
+.transcript-canon-hint {
+  margin-top: 8px;
+  padding: 6px 9px;
+  background: rgba(123,168,255,0.05);
+  border-left: 2px solid var(--kerf-blue);
+  border-radius: 3px;
+  font-size: 9.5px; color: var(--kerf-text-mute); line-height: 1.4;
+}
+.transcript-canon-hint strong { color: var(--kerf-blue); }
+
+/* Photo grid */
+.photo-grid-mini {
+  margin: 10px 0 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+}
+.photo-tile-mini {
+  aspect-ratio: 1; border-radius: 6px;
+  background: linear-gradient(135deg, #2a3a4a, #1a2530);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(56,201,119,0.30);
+}
+.photo-tile-mini svg { width: 14px; height: 14px; fill: var(--field-green); }
+.photo-tile-mini.add { background: rgba(56,201,119,0.05); border-style: dashed; }
+.photo-tile-mini.add svg { fill: var(--field-green); opacity: 0.7; }
+
+/* AI disclosure */
+.ai-disclosure {
+  margin: 10px 0 0;
+  padding: 7px 11px;
+  background: rgba(201,169,97,0.04);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 3px;
+  font-size: 9.5px; color: var(--kerf-text-mute); line-height: 1.4;
+}
+.ai-disclosure strong { color: var(--right-hand); }
+
+/* Action ribbon */
+.action-ribbon {
+  flex-shrink: 0; background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border);
+  padding: 8px 10px; display: flex; gap: 6px; align-items: center;
+}
+.ar-btn {
+  flex: 1; padding: 10px 8px; text-align: center;
+  background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px; font-size: 11px; color: var(--kerf-text); font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer;
+}
+.ar-btn svg { width: 14px; height: 14px; fill: currentColor; }
+.ar-btn .ar-sub { font-size: 9px; color: var(--kerf-text-mute); margin-top: 1px; font-weight: 500; }
+.ar-btn.primary { background: var(--field-green); color: #0A1A0F; border-color: var(--field-green); }
+.ar-btn.primary .ar-sub { color: rgba(10,26,15,0.65); }
+.ar-btn.disabled { opacity: 0.45; }
+.ar-btn.cancel { color: var(--kerf-red); }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--field-green); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--field-green); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle · True scale hides the spec rail</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-A1 · Owner Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-C1 · Field Hand Home</span>
+    <span class="sep">›</span>
+    <span class="step">F-S1 · Start sheet</span>
+    <span class="sep">›</span>
+    <span class="step current">F-E1 · Mobile Field Capture</span>
+    <span class="sep">›</span>
+    <span class="step">F-F1 · Transcript Review</span>
+  </div>
+  <h1>F-E1 · Mobile Field Capture · voice + photo + Daily Log anchor</h1>
+  <p>
+    Rebuild of F-33 with v2 chrome conventions and tightened Daily Log canon. The entry point of the field-capture loop — operator opens the app on a jobsite, captures voice + photos, picks what Kerf should do with the result. <em>Every capture writes to the per-(tenant × project × day) Daily Log</em> regardless of draft intent, per <code>kerf_daily_log_canon.md</code>. Three states: <strong>pre-capture setup</strong> (assign client/project/location, start) → <strong>active capture</strong> (live transcript, accumulating items) → <strong>pre-flight + submit</strong> (review, pick intent, send). Apple's speech-to-text handles transcription; transcript follows the three-part canon (original immutable + edits overlay + current rendered) per <code>kerf_transcript_canon.md</code>. Plain English throughout; no agent names in operator copy.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-E1 · Mobile Field Capture · 3 states · Daniel · field lead at Wegrzyn jobsite</div>
+  <p class="frame-narr">
+    Three-state grid. State 1 starts with assignment (the capture has to know which Daily Log it lands in before anything else); the Daily Log anchor is canon-explicit on the surface so the operator sees <em>where this is going</em>. State 2 is the active recording session with live transcript streaming from Apple's speech-to-text; captured items accumulate as a list. State 3 is the pre-flight gate — operator reviews the transcript, picks what Kerf should do with the capture (draft a change-order · draft an estimate update · save to Daily Log only), and submits. The third option is the trust-discipline path — when the operator is unsure, no draft is forced.
+  </p>
+
+  <div class="frame-render">
+
+    <!-- ====================== STATE 1: PRE-CAPTURE ====================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+
+          <div class="status-bar"><span>10:42</span><span class="right">●●● 78%</span></div>
+
+          <!-- Top chrome -->
+          <div class="top-chrome">
+            <div class="tc-eyebrow">
+              <span class="tc-mode">New capture</span>
+              <span class="tc-user">Daniel · field lead</span>
+            </div>
+            <div class="tc-title">What are you capturing?</div>
+            <div class="tc-meta">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+              <span>Wegrzyn site · 4287 Pacifica Way</span>
+            </div>
+          </div>
+
+          <div class="body">
+
+            <!-- Assignment card -->
+            <div class="assign-card">
+              <div class="assign-eyebrow">Capture goes to</div>
+              <div class="assign-row">
+                <span class="ar-key">Client</span>
+                <span class="ar-val">Wegrzyn, Mark & Grace <span class="ar-edit">change</span></span>
+              </div>
+              <div class="assign-row">
+                <span class="ar-key">Project</span>
+                <span class="ar-val">Kitchen + Primary bath <span class="ar-edit">change</span></span>
+              </div>
+              <div class="assign-row">
+                <span class="ar-key">Location</span>
+                <span class="ar-val" style="font-weight:500; color:var(--kerf-text-dim);">Kitchen <span class="ar-edit">change</span></span>
+              </div>
+            </div>
+
+            <!-- Daily Log anchor -->
+            <div class="dl-anchor">
+              <strong>Writes to Wegrzyn · today's Daily Log.</strong>
+              <span class="dl-detail">Every capture lands in the project's Daily Log for this day — your voice, photos, and notes file together as one day's record.</span>
+            </div>
+
+            <!-- Big record button -->
+            <div class="record-area">
+              <div class="record-button">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+              </div>
+              <div class="record-label">Hold or tap to record</div>
+              <div class="record-sublabel">Describe scope, conditions, decisions, questions — long voice memos welcome</div>
+            </div>
+
+            <!-- Secondary capture -->
+            <div class="cap-secondary">
+              <div class="cap-button">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                <span class="cb-label">Add photo</span>
+                <span class="cb-sub">Camera or library</span>
+              </div>
+              <div class="cap-button">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v1.5H8zm0 3h8v1.5H8zm0 3h5v1.5H8z"/></svg>
+                <span class="cb-label">Type a note</span>
+                <span class="cb-sub">If voice isn't possible</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Action ribbon -->
+          <div class="action-ribbon">
+            <button class="ar-btn cancel">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+              Cancel
+            </button>
+            <button class="ar-btn primary disabled">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Submit
+              <span class="ar-sub">capture first</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+      <div class="state-label">State 1 · Pre-capture <span class="pill">assign · choose · start</span></div>
+    </div>
+
+
+    <!-- ====================== STATE 2: ACTIVE CAPTURE ====================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+
+          <div class="status-bar"><span>10:43</span><span class="right">●●● 76%</span></div>
+
+          <div class="top-chrome">
+            <div class="tc-eyebrow">
+              <span class="tc-mode">Capturing · Wegrzyn / Kitchen</span>
+              <span class="tc-user">3 items</span>
+            </div>
+            <div class="tc-title" style="font-size:14px;">Recording voice · accumulating evidence</div>
+          </div>
+
+          <div class="body">
+
+            <!-- Live record bar -->
+            <div class="live-record-bar">
+              <div class="live-rec-dot"></div>
+              <div class="live-rec-body">
+                <div class="live-rec-label">Recording</div>
+                <div class="live-rec-time">0:48</div>
+              </div>
+              <button class="live-rec-stop">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                Stop
+              </button>
+            </div>
+
+            <!-- Live transcript -->
+            <div class="live-transcript">
+              <div class="lt-eyebrow">Live transcript</div>
+              <div class="lt-text">
+                "OK so I'm standing in the kitchen at Wegrzyn. The plumbing rough-in for the island is in. Coastal Mech finished the gas line yesterday. I can see they ran the supply lines slightly different than what we'd planned — they came up through the floor instead of through the wall. <span class="lt-current">That's actually better for the way the cabinet runs are going to land</span><span class="lt-cursor"></span>"
+              </div>
+            </div>
+
+            <!-- Captured items -->
+            <div class="captured-items">
+              <div class="captured-eyebrow">
+                <span>Captured this session</span>
+                <span class="ce-count">2 voice · 1 photo</span>
+              </div>
+
+              <div class="cap-item">
+                <div class="cap-item-icon voice">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+                </div>
+                <div class="cap-item-body">
+                  <div class="cap-item-title">Voice memo · 0:32</div>
+                  <div class="cap-item-sub">"Heather wants to upgrade the tile spec…"</div>
+                </div>
+                <div class="cap-item-meta">10:42</div>
+                <button class="cap-item-action">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+                </button>
+              </div>
+
+              <div class="cap-item">
+                <div class="cap-item-icon photo">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                </div>
+                <div class="cap-item-body">
+                  <div class="cap-item-title">Photo · island plumbing</div>
+                  <div class="cap-item-sub">Tap to add caption</div>
+                </div>
+                <div class="cap-item-meta">10:42</div>
+                <button class="cap-item-action">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+                </button>
+              </div>
+
+              <div class="cap-item">
+                <div class="cap-item-icon photo">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+                </div>
+                <div class="cap-item-body">
+                  <div class="cap-item-title">Photo · gas line stub</div>
+                  <div class="cap-item-sub">Coastal Mech work · 2026-05-08</div>
+                </div>
+                <div class="cap-item-meta">10:42</div>
+                <button class="cap-item-action">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="action-ribbon">
+            <button class="ar-btn">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+              Add photo
+            </button>
+            <button class="ar-btn primary">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg>
+              Done capturing
+            </button>
+            <button class="ar-btn cancel">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+              Cancel
+            </button>
+          </div>
+
+        </div>
+      </div>
+      <div class="state-label">State 2 · Active <span class="pill">recording · transcript live</span></div>
+    </div>
+
+
+    <!-- ====================== STATE 3: PRE-FLIGHT + SUBMIT ====================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+
+          <div class="status-bar"><span>10:44</span><span class="right">●●● 75%</span></div>
+
+          <div class="top-chrome">
+            <div class="tc-eyebrow">
+              <span class="tc-mode">Pre-flight · review &amp; submit</span>
+              <span class="tc-user">‹ Back</span>
+            </div>
+            <div class="tc-title" style="font-size:15px;">Ready to send?</div>
+          </div>
+
+          <div class="body">
+
+            <!-- Pre-flight summary -->
+            <div class="preflight-card">
+              <div class="pf-eyebrow">Capture session · ready</div>
+              <div class="pf-title">Wegrzyn · kitchen plumbing rough done</div>
+              <div class="pf-meta">Daniel · 2:14 total · 2 voice + 3 photos · writes to Wegrzyn / today's Daily Log</div>
+            </div>
+
+            <!-- Draft-intent picker -->
+            <div class="draft-intent-card">
+              <div class="di-eyebrow">What should Kerf do with this?</div>
+              <div class="di-options">
+                <div class="di-option selected">
+                  <div class="di-radio"></div>
+                  <div>
+                    <div class="di-option-title">Draft a change-order</div>
+                    <div class="di-option-detail">Tile-spec change priced · CO drafted for owner approval.</div>
+                  </div>
+                </div>
+                <div class="di-option">
+                  <div class="di-radio"></div>
+                  <div>
+                    <div class="di-option-title">Draft an estimate update</div>
+                    <div class="di-option-detail">Line additions / edits for the active estimate.</div>
+                  </div>
+                </div>
+                <div class="di-option">
+                  <div class="di-radio"></div>
+                  <div>
+                    <div class="di-option-title">Save to Daily Log only</div>
+                    <div class="di-option-detail">Files as field evidence · no drafting · triage later if scope changes.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Final transcript -->
+            <div class="final-transcript">
+              <div class="ft-eyebrow">
+                <span>Transcript</span>
+                <span class="ft-edit">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zm17.71-10.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></svg>
+                  Edit
+                </span>
+              </div>
+              <div class="ft-block">
+                <div class="ft-block-meta">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg>
+                  0:32 · 10:42
+                </div>
+                <div class="ft-block-text">"Heather wants to upgrade the tile spec to the Carrara herringbone — I told her we'd need a change order for that since it's about double the per-square-foot cost."</div>
+              </div>
+              <div class="ft-block">
+                <div class="ft-block-meta">
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg>
+                  0:48 · 10:43
+                </div>
+                <div class="ft-block-text">"Standing in the kitchen at Wegrzyn. Plumbing rough-in for the island is in. Coastal Mech finished the gas line yesterday — supply lines came up through the floor instead of the wall, better for the cabinet runs."</div>
+              </div>
+              <div class="transcript-canon-hint">
+                <strong>Edits overlay the original.</strong> Your edits are saved as changes on top of what was recorded — the original transcript stays intact for audit.
+              </div>
+            </div>
+
+            <!-- Photos -->
+            <div class="photo-grid-mini">
+              <div class="photo-tile-mini">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+              </div>
+              <div class="photo-tile-mini">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+              </div>
+              <div class="photo-tile-mini">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+              </div>
+              <div class="photo-tile-mini add">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11 5v6H5v2h6v6h2v-6h6v-2h-6V5z"/></svg>
+              </div>
+            </div>
+
+            <!-- AI disclosure -->
+            <div class="ai-disclosure">
+              <strong>AI-assisted by Kerf Right Hand.</strong> Drafts are prepared from your capture; review before approval.
+            </div>
+
+          </div>
+
+          <div class="action-ribbon">
+            <button class="ar-btn">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Back
+            </button>
+            <button class="ar-btn primary">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Submit
+              <span class="ar-sub">draft ready in ~30s</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+      <div class="state-label">State 3 · Pre-flight <span class="pill blue">review · pick intent · send</span></div>
+    </div>
+
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-E1 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Tier 1 rebuild order</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-A1 · A2 · C1 · D1 · P1 · P2</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-B1 · B1b · B1c · B2</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-S1 (intent-first rebuild)</span></div>
+      <div class="sl-step current"><span class="sl-dot">14</span><span><span class="sl-name">F-E1</span> · Mobile Field Capture <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">15+</span><span>F-F1 · G1 · H1</span></div>
+    </div>
+
+    <h4>What changed from F-33 → F-E1</h4>
+    <ul>
+      <li><strong>All emoji icons replaced</strong> with silhouette SVGs (mic, camera, pin, document, etc.) per v2 chrome conventions</li>
+      <li><strong>Daily Log anchor banner added on State 1</strong> — canon-explicit visible to operator that every capture writes to the project's Daily Log per <code>kerf_daily_log_canon.md</code></li>
+      <li><strong>Transcript canon hint added on State 3</strong> — operator sees that edits overlay the original (original immutable + edits as overlay) per <code>kerf_transcript_canon.md</code></li>
+      <li><strong>Agent-name leaks removed</strong> from operator copy: "Estimator drafts faster" → "Kerf drafts faster"; "iOS speech-to-text" naming removed from operator-visible label (kept in spec); "the Estimator runs the workflow" → "a draft is prepared"</li>
+      <li><strong>AI disclosure §13 added</strong> on State 3 — *"AI-assisted by Kerf Right Hand · Review before approval"*</li>
+      <li><strong>Color discipline:</strong> record button uses field-green (capture is field-side work; matches F-C1 accent) instead of red (which is reserved for drift/blocker per the 3-color rule)</li>
+      <li><strong>Bilingual asymmetry preserved:</strong> single-language UI per tenant locale; agent identity bilingual on the Speak button (already canon)</li>
+    </ul>
+
+    <h4>Daily Log canon visible at the surface</h4>
+    <ul>
+      <li>State 1 shows the Daily Log anchor banner: <em>"Writes to Wegrzyn · today's Daily Log."</em></li>
+      <li>The operator sees this BEFORE recording, so the destination of the capture is never a mystery</li>
+      <li>Per <code>kerf_daily_log_canon.md</code>: per-(tenant × project × day) Daily Log. Captures don't float as orphan uploads.</li>
+      <li>Even "Save to Daily Log only" is the explicit third option — when an operator is unsure what the capture means, no draft is forced</li>
+    </ul>
+
+    <h4>Transcript canon visible at the surface</h4>
+    <ul>
+      <li>State 3 shows the transcript canon hint: <em>"Edits overlay the original. Your edits are saved as changes on top of what was recorded — the original transcript stays intact for audit."</em></li>
+      <li>Per <code>kerf_transcript_canon.md</code>: three-part schema — `transcript_original` (immutable Apple verbatim) + `transcript_edits` (operator overlay events) + `transcript_current` (rendered working version)</li>
+      <li>Operator never has the "did I overwrite my original?" anxiety — the canon makes it impossible</li>
+    </ul>
+
+    <h4>Three states · canon-anchored</h4>
+    <ul>
+      <li><strong>State 1 · Pre-capture.</strong> Assignment must be set first (client + project + location). Daily Log anchor explicit. Record button is the dominant action (field-green); photo and note as secondaries. Submit is disabled until at least one capture exists.</li>
+      <li><strong>State 2 · Active capture.</strong> Record-bar at top with timer and stop affordance. Live transcript card shows speech-to-text streaming (current word in field-green with cursor). Captured items list accumulates voice clips + photos + notes; each item has timestamp + remove affordance. Done button promotes to State 3.</li>
+      <li><strong>State 3 · Pre-flight + submit.</strong> Capture summary card with stats. Draft-intent picker (3 options: CO · estimate · Daily Log only) — the critical decision before AI does anything. Final transcript visible with edit affordance + canon hint. Photos in compressed grid. Submit indicates expected wait (~30s for CO/estimate paths).</li>
+    </ul>
+
+    <h4>The draft-intent picker is the critical gate</h4>
+    <p>Operator's choice in State 3 routes the capture through different downstream paths:</p>
+    <ul>
+      <li><strong>Draft a change-order</strong> → CO workflow runs · a CO draft is prepared (priced, routed for owner approval) · operator lands on F-G1 Draft Review with CO-shaped artifact</li>
+      <li><strong>Draft an estimate update</strong> → estimate workflow runs · line additions / edits proposed · operator lands on F-G1 Draft Review with estimate-shaped artifact</li>
+      <li><strong>Save to Daily Log only</strong> → no draft workflow · capture files as field evidence on the project · triage later if scope changes</li>
+    </ul>
+    <p>Default selection is operator-driven. The system may suggest based on voice content, but the operator confirms. <em>Trust-discipline:</em> when unsure, no draft is forced.</p>
+
+    <h4>Apple owns capture · Kerf wraps</h4>
+    <p>Same boundary as F-32 with RoomPlan and F-S1 takeoff routing. Apple's speech-to-text framework handles voice → text streaming. Kerf wraps:</p>
+    <ul>
+      <li>Voice clip storage (reference audio retained for re-transcription)</li>
+      <li>Transcript editing per canon (original immutable + edits overlay)</li>
+      <li>Background transcription (long memos process while operator continues)</li>
+      <li>Per <code>kerf_lidar_precision_limits_and_apple_wrap.md</code> — same Apple-wrap discipline applied here for speech</li>
+    </ul>
+
+    <h4>Doctrine bound</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Plain English at operator surface · zero agent-name leaks (Estimator agent never appears in operator copy)</li>
+      <li><span class="badge canon">canon</span>Daily Log anchor explicit on the surface — operator sees where capture lands</li>
+      <li><span class="badge canon">canon</span>Transcript canon explicit on the surface — operator sees that edits overlay, never replace</li>
+      <li><span class="badge canon">canon</span>AI disclosure §13 carried on the pre-flight gate</li>
+      <li><span class="badge canon">canon</span>Trust-first-precision-later · Save-to-Daily-Log-only is the operator's no-force-draft path</li>
+      <li><span class="badge canon">canon</span>Inputs once · the capture session writes to Daily Log; if drafting requested, the consequence propagates to estimate/CO automatically</li>
+      <li><span class="badge canon">canon</span>3-color discipline · field-green for capture · amber for pending · red reserved for drift/blocker (not used here)</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Open from Home: Field Hand bottom bar · Log (writes to today's Daily Log)</li>
+      <li>Open from F-S1 Start sheet: "Start field walk" routes here pre-bound to active project context</li>
+      <li>Submit (Draft CO) → F-G1 Desktop Draft Review with CO artifact (or mobile equivalent)</li>
+      <li>Submit (Draft estimate) → F-G1 Desktop Draft Review with estimate artifact</li>
+      <li>Submit (Save to Daily Log only) → Project > Field tab > today's Daily Log entry</li>
+      <li>Cancel → discards session cleanly (no partial-state corruption)</li>
+      <li>Back from State 3 → returns to State 2 with session intact</li>
+      <li>Long-hold Speak (long-press on phone hardware Speak button if installed) → opens RH conversation pre-bound to active capture context</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>proposal_review_phase2/F-33_mobile_field_capture.html</code> — superseded by this file</li>
+      <li><code>F-F1</code> · Desktop Transcript Review — post-capture editing surface (next)</li>
+      <li><code>F-G1</code> · Desktop Draft Review — downstream consumer of CO/estimate drafts</li>
+      <li><code>F-C1</code> · Field Hand Home — entry point for Field Hand role</li>
+      <li><code>F-S1</code> · Start sheet — alternate entry path via "Start field walk"</li>
+      <li><code>kerf_daily_log_canon.md</code> · Daily Log canon</li>
+      <li><code>kerf_transcript_canon.md</code> · transcript three-part schema</li>
+      <li><code>kerf_lidar_precision_limits_and_apple_wrap.md</code> · Apple-wrap boundary applied to speech</li>
+      <li><code>feedback_agent_names_not_in_operator_copy.md</code> · no agent-name leaks rule</li>
+      <li><code>kerf_ai_disclosure_pattern.md</code> · §13 disclosure on pre-flight gate</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> · canon (parent)</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Spanish-locale capture UI (V2.1 paid beta)</li>
+      <li>Speaker diarization (multi-voice capture)</li>
+      <li>Sub-self-serve capture (sub uploads voice/photos to a project they're working on)</li>
+      <li>Cross-day session continuation (Daily Log is per-day; cross-day is a different concept)</li>
+      <li>Rich annotation on photos (markup, arrows, callouts)</li>
+      <li>Capture from outside the app (e.g., import voice memo from Apple Voice Memos)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>Capture once · consequences propagate.</em> Every capture writes to the Daily Log regardless of draft intent. The draft-intent picker is the explicit gate where the operator chooses what Kerf does with the capture — not a silent inference. Trust-first: when unsure, no draft is forced (Save to Daily Log only is a first-class option).
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a record button on its own. Not a "tap to upload" file picker. Not an Estimator launcher. Not a chronological feed of past captures. <strong>F-E1 is the entry point where field reality lands in a Daily Log and the operator picks the consequence path.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+<script>
+// ===== Theme toggle (dark / light) =====
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>

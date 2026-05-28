@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-F1r · Desktop Transcript Review · lean exception-tier repair surface</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 860px; }
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+.top-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 12px 22px; display: flex; align-items: center; gap: 12px; }
+.tb-back { color: var(--kerf-amber); font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+.tb-back svg, .tb-link svg { width: 12px; height: 12px; fill: currentColor; }
+.tb-title { flex: 1; font-size: 15px; font-weight: 700; color: var(--kerf-text); }
+.tb-link { color: var(--kerf-blue); font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.hero { padding: 18px 22px 12px; border-bottom: 1px solid var(--kerf-border-soft); }
+.hero-eyebrow { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--field-green); font-weight: 700; margin-bottom: 6px; }
+.hero-title { font-size: 18px; color: var(--kerf-text); font-weight: 700; }
+.hero-meta { font-size: 11.5px; color: var(--kerf-text-dim); margin-top: 4px; }
+.hero-summary { font-size: 12px; color: var(--kerf-text-mute); margin-top: 8px; }
+.review-body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.text-card { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 12px; padding: 14px 15px; min-height: 420px; }
+.text-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--kerf-border-soft); }
+.text-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.text-tag { font-size: 10px; color: var(--kerf-text-dim); }
+.transcript { font-size: 14px; color: var(--kerf-text); line-height: 1.75; white-space: pre-wrap; }
+.edited-word { background: rgba(56,201,119,0.12); color: var(--kerf-text); padding: 0 3px; border-radius: 3px; }
+.edit-summary { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 12px; padding: 13px 14px; }
+.edit-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11px; }
+.edit-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.edit-time { color: var(--kerf-text-mute); font-family: "SF Mono", Menlo, monospace; }
+.edit-change { color: var(--kerf-text-dim); }
+.edit-who { color: var(--kerf-text); font-weight: 600; }
+.disclosure { font-size: 11px; color: var(--kerf-text-mute); padding: 0 2px; }
+.action-bar { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px solid var(--kerf-border-soft); }
+.action-left { display: flex; gap: 8px; }
+.btn { padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+.btn.primary { background: var(--kerf-amber); color: #1A1300; }
+.btn.secondary { background: var(--kerf-surface); color: var(--kerf-text-dim); border: 1px solid var(--kerf-border-soft); }
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="view-toggle-bar" id="vtb">
+    <span class="vtb-label">View</span>
+    <div class="vtb-options">
+      <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+      <span class="vtb-tab" data-mode="presentation">True scale</span>
+    </div>
+    <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+    <div class="vtb-options">
+      <span class="vtb-tab active" data-theme="dark">Dark</span>
+      <span class="vtb-tab" data-theme="light">Light</span>
+    </div>
+    <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+  </div>
+
+  <div class="page-header">
+    <div class="crumb">
+      <span class="step">Projects</span><span class="sep">›</span>
+      <span class="step">Wegrzyn kitchen</span><span class="sep">›</span>
+      <span class="step current">F-F1r · Transcript review</span>
+    </div>
+    <h1>F-F1r · Desktop Transcript Review · lean exception-tier repair surface</h1>
+    <p>
+      Rebuilt to honor the trust-surface doctrine: <em>verify meaning, edit if wrong, confirm</em>. This is not a daily stop and not a forensics console. It keeps the original immutable, shows the working overlay, and lets the operator finish quickly.
+    </p>
+  </div>
+
+  <div class="frame">
+    <div class="frame-label">Frame · F-F1r · Transcript Review · Wegrzyn kitchen voice capture</div>
+    <p class="frame-narr">
+      Christian opens this only because one scope line in Draft Review needs a source check. The page leads with the capture context, then puts <em>Original transcript</em> and <em>Current working</em> side by side. No confidence heat map, no side-panels, no validator theater. Confirm what was said and move on.
+    </p>
+
+    <div class="frame-render">
+      <div class="desktop-frame">
+        <div class="app-chrome">
+          <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+          <div class="chrome-url">kerf.app/projects/wegrzyn/transcript-review</div>
+          <div class="chrome-spacer"></div>
+          <div class="chrome-search">⌕ Find a line or edit</div>
+        </div>
+
+        <div class="top-bar">
+          <div class="tb-back"><svg viewBox="0 0 24 24"><path d="M15.5 19 8.5 12l7-7"/></svg>Back to Wegrzyn</div>
+          <div class="tb-title">Transcript review</div>
+          <div class="tb-link"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>View audit detail</div>
+        </div>
+
+        <div class="hero">
+          <div class="hero-eyebrow">Voice capture</div>
+          <div class="hero-title">Maria Wegrzyn · kitchen cabinetry walk</div>
+          <div class="hero-meta">Wegrzyn kitchen · Tue May 19 · 4m 12s · captured on site by Christian</div>
+          <div class="hero-summary">Voice capture · 4m 12s · Wegrzyn kitchen · cabinetry scope discussed.</div>
+        </div>
+
+        <div class="review-body">
+          <div class="compare-grid">
+            <div class="text-card">
+              <div class="text-head">
+                <div class="text-label">Original transcript</div>
+                <div class="text-tag">Immutable</div>
+              </div>
+              <div class="transcript">Maria wants the pantry wall opened up with full-height cabinet storage and floating shelves on the window side. She does not want us to release the cabinetry order until we verify the shelving width after tile because that left wall might lose a little space once the finish layer is in. She also wants the existing sconces reused if the electrician says the boxes can stay where they are.</div>
+            </div>
+
+            <div class="text-card">
+              <div class="text-head">
+                <div class="text-label">Current working</div>
+                <div class="text-tag">Edits overlay original</div>
+              </div>
+              <div class="transcript">Maria wants the pantry wall opened up with full-height cabinet storage and <span class="edited-word">custom</span> floating shelves on the window side. She does not want us to release the cabinetry order until we verify the shelving width after tile because that left wall might lose a little space once the finish layer is in. She also wants the existing sconces reused if the electrician says the boxes can stay where they are.</div>
+            </div>
+          </div>
+
+          <div class="edit-summary">
+            <div class="text-label" style="margin-bottom: 6px;">Edit summary</div>
+            <div class="edit-row">
+              <div class="edit-time">May 19 · 4:28p</div>
+              <div class="edit-change">Changed “floating shelves” to “custom floating shelves”</div>
+              <div class="edit-who">Christian</div>
+            </div>
+            <div class="edit-row">
+              <div class="edit-time">May 19 · 4:26p</div>
+              <div class="edit-change">Confirmed “do not release cabinetry order until verified after tile”</div>
+              <div class="edit-who">Right Hand</div>
+            </div>
+          </div>
+
+          <div class="disclosure">AI-assisted by Kerf Right Hand · transcript original immutable</div>
+
+          <div class="action-bar">
+            <div class="action-left">
+              <div class="btn secondary">Cancel</div>
+            </div>
+            <div class="action-left">
+              <div class="btn secondary">Save draft</div>
+              <div class="btn primary">Confirm transcript</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame-spec">
+      <h3>F-F1r · Spec</h3>
+      <h4>4-question rule</h4>
+      <ul>
+        <li><strong>Macro / comparison / detail?</strong> Detail.</li>
+        <li><strong>List / grid / both?</strong> Neither. Two-column document comparison only.</li>
+        <li><strong>Operator cognitive job?</strong> Verify what was said, edit if wrong, confirm.</li>
+        <li><strong>What stays hidden until drill-down?</strong> Original capture metadata, confidence internals, broader project context.</li>
+      </ul>
+      <h4>Trust-surface discipline</h4>
+      <ul>
+        <li>Exception-tier surface reached from draft/source review, not a default workflow stop.</li>
+        <li>No heat maps, no validator stack, no forensic side-panels.</li>
+        <li>Original stays immutable. Working version overlays edits.</li>
+      </ul>
+      <h4>Why this is lean</h4>
+      <ul>
+        <li>The operator already has a reason for opening the surface.</li>
+        <li>The page answers that reason immediately.</li>
+        <li>Audit remains one click away, not spread across the screen.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout-row">
+    <div class="callout">
+      <span class="callout-title">What this enforces</span>
+      Transcript Review verifies meaning only. It protects the immutable original, shows the current working text, and gives the operator a fast confirmation path.
+    </div>
+    <div class="callout">
+      <span class="callout-title">What this refuses to be</span>
+      Not a confidence console. Not a language-lab screen. Not a daily-use destination. Trust lives in the system; the experience stays light.
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const body = document.body;
+  const savedTheme = localStorage.getItem('kerf_wf_theme') || 'dark';
+  const savedMode = localStorage.getItem('kerf_wf_mode') || 'annotated';
+  const applyTheme = (theme) => {
+    body.classList.toggle('light-mode', theme === 'light');
+    document.querySelectorAll('[data-theme]').forEach(el => el.classList.toggle('active', el.dataset.theme === theme));
+    localStorage.setItem('kerf_wf_theme', theme);
+  };
+  const applyMode = (mode) => {
+    body.classList.toggle('presentation-mode', mode === 'presentation');
+    document.querySelectorAll('[data-mode]').forEach(el => el.classList.toggle('active', el.dataset.mode === mode));
+    localStorage.setItem('kerf_wf_mode', mode);
+  };
+  document.querySelectorAll('[data-theme]').forEach(el => el.addEventListener('click', () => applyTheme(el.dataset.theme)));
+  document.querySelectorAll('[data-mode]').forEach(el => el.addEventListener('click', () => applyMode(el.dataset.mode)));
+  document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'v') applyMode(body.classList.contains('presentation-mode') ? 'annotated' : 'presentation');
+  });
+  applyTheme(savedTheme);
+  applyMode(savedMode);
+})();
+</script>
+</body>
+</html>

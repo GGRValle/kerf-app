@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-ML2 · Desktop Project Media Library · Wegrzyn kitchen</title>
+<style>
+
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .desktop-frame { box-shadow: 0 8px 30px rgba(0,0,0,0.10); }
+body.light-mode .chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 1; }
+body.light-mode .chrome-dots .d:nth-child(3) { background: #28C840; opacity: 1; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1700px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 360px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 28px; overflow: hidden; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.doctrine { background: rgba(56,201,119,0.16); color: var(--field-green); }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+
+/* Desktop frame */
+.desktop-frame { background: var(--kerf-bg); border: 1px solid var(--kerf-border); border-radius: 12px; overflow: hidden; width: 100%; display: flex; flex-direction: column; min-height: 820px; }
+
+.app-chrome { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dots .d { width: 11px; height: 11px; border-radius: 50%; }
+.chrome-dots .d:nth-child(1) { background: #FF5F57; opacity: 0.7; }
+.chrome-dots .d:nth-child(2) { background: #FEBC2E; opacity: 0.7; }
+.chrome-dots .d:nth-child(3) { background: #28C840; opacity: 0.7; }
+.chrome-url { margin-left: 14px; font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--kerf-text-mute); padding: 4px 10px; background: var(--kerf-bg); border-radius: 6px; flex: 0 0 auto; }
+.chrome-spacer { flex: 1; }
+.chrome-search { background: var(--kerf-bg); border: 1px solid var(--kerf-border-soft); border-radius: 6px; padding: 5px 10px; font-size: 11px; color: var(--kerf-text-mute); width: 220px; }
+
+.app-body { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+
+/* Sidebar (identical to F-CL3 / F-CL4) */
+.sidebar { background: var(--kerf-bg-2); border-right: 1px solid var(--kerf-border-soft); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.sb-logo { display: flex; align-items: center; gap: 8px; padding: 6px 8px 14px; margin-bottom: 4px; border-bottom: 1px solid var(--kerf-border-soft); }
+.sb-mark { width: 24px; height: 24px; background: var(--kerf-amber); color: #1A1300; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.sb-brand { font-size: 13px; color: var(--kerf-text); font-weight: 700; }
+.sb-tenant { display: block; font-size: 10px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; }
+.sb-section-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; padding: 12px 8px 6px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; color: var(--kerf-text-dim); font-weight: 500; position: relative; cursor: pointer; }
+.sb-item:hover { background: var(--kerf-surface); color: var(--kerf-text); }
+.sb-item.active { background: rgba(245,181,68,0.10); color: var(--kerf-amber); font-weight: 600; }
+.sb-item.active::before { content: ''; position: absolute; left: -12px; top: 9px; bottom: 9px; width: 3px; background: var(--kerf-amber); border-radius: 0 2px 2px 0; }
+.sb-item .sb-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+.sb-item .sb-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.sb-subitem { padding: 5px 10px 5px 38px; font-size: 11.5px; color: var(--kerf-text-mute); border-radius: 7px; cursor: pointer; position: relative; font-weight: 500; }
+.sb-subitem:hover { background: var(--kerf-surface); color: var(--kerf-text-dim); }
+.sb-subitem.active { color: var(--kerf-amber); font-weight: 600; }
+.sb-subitem .sb-sub-tick { position: absolute; left: 24px; top: 5px; color: var(--kerf-text-mute); font-size: 11px; opacity: 0.55; }
+.sb-fab { margin: 14px auto; width: 64px; height: 64px; border-radius: 50%; background: var(--kerf-amber); color: #1A1300; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(245,181,68,0.40); position: relative; }
+.sb-fab svg.mic-icon { width: 26px; height: 26px; fill: currentColor; }
+.sb-fab .sb-fab-label { font-size: 8.5px; letter-spacing: 0.06em; font-weight: 700; margin-top: -2px; }
+.sb-divider { height: 1px; background: var(--kerf-border-soft); margin: 8px 0; }
+.sb-spacer { flex: 1; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--kerf-border-soft); margin: 8px -12px -14px; background: var(--kerf-bg-2); }
+.sb-user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,169,97,0.20); color: var(--right-hand); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.sb-user-name { font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.sb-user-meta { font-size: 9.5px; color: var(--kerf-text-mute); margin-top: 1px; }
+
+/* Main */
+.main { padding: 0; display: flex; flex-direction: column; background: var(--kerf-bg); }
+.bc-bar { background: var(--kerf-bg); border-bottom: 1px solid var(--kerf-border-soft); padding: 11px 24px; display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.bc-link { color: var(--kerf-text-dim); cursor: pointer; }
+.bc-link.active { color: var(--kerf-text); font-weight: 600; }
+.bc-sep { color: var(--kerf-border); }
+.bc-spacer { flex: 1; }
+.bc-action { color: var(--kerf-amber); font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.bc-action svg { width: 12px; height: 12px; fill: currentColor; }
+
+.main-header { padding: 18px 24px 4px; display: flex; align-items: center; justify-content: space-between; }
+/* View mode toggle · canon 2026-05-18 PM late */
+.view-mode-toggle { display: flex; gap: 4px; padding: 3px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border-soft); border-radius: 8px; }
+.vmt-option { padding: 6px 14px; font-size: 11px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 5px; cursor: pointer; }
+.vmt-option.active { background: var(--kerf-amber); color: #1A1300; }
+.vmt-option.deferred { opacity: 0.4; font-size: 10px; }
+/* Grid view · 4-column desktop */
+.grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 14px 24px 24px; }
+.grid-tile { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 11px; padding: 13px 15px; cursor: pointer; }
+.grid-tile:hover { border-color: var(--kerf-border); }
+/* .grid-tile.risk · red border-left removed 2026-05-19 per D-046 red-chip-tier-only doctrine · chip inside the tile carries the flag */
+.grid-tile.attention { border-left: 3px solid var(--kerf-amber); padding-left: 13px; }
+.grid-tile.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 13px; }
+.gt-name { font-size: 13.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.2; }
+.gt-phase { font-size: 10px; color: var(--kerf-text-mute); margin-top: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+.gt-client { font-size: 11px; color: var(--kerf-text-dim); margin-top: 6px; font-weight: 500; }
+.gt-chip-row { margin-top: 8px; }
+.gt-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
+.gt-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.gt-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.gt-chip.amber { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.gt-chip.amber::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-amber); }
+.gt-chip.cyan { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); }
+.gt-chip.cyan::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-cyan); }
+.gt-rhythm { font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 8px; font-weight: 500; }
+.main-title { font-size: 22px; font-weight: 600; color: var(--kerf-text); margin: 0; letter-spacing: -0.01em; }
+.main-meta { font-size: 12px; color: var(--kerf-text-mute); margin-top: 4px; }
+
+.main-content { display: grid; grid-template-columns: 1fr 340px; gap: 22px; padding: 14px 24px 24px; flex: 1; }
+
+/* LEFT · Project list */
+.project-area { display: flex; flex-direction: column; gap: 16px; }
+.section-label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; display: flex; align-items: baseline; gap: 8px; margin-bottom: -4px; }
+.section-label .sl-count { color: var(--kerf-text-dim); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; }
+
+.project-list { display: flex; flex-direction: column; gap: 8px; }
+
+.project-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px;
+  padding: 13px 16px;
+  display: grid; grid-template-columns: 1.6fr 1fr 220px 14px;
+  gap: 14px; align-items: center;
+  cursor: pointer;
+}
+.project-row.attention { border-left: 3px solid var(--kerf-amber); padding-left: 14px; }
+.project-row.closing { border-left: 3px solid var(--kerf-cyan); padding-left: 14px; }
+/* .project-row.risk treatment retired 2026-05-18 · chip carries the flag instead of a full-row outline */
+.row-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; padding: 2px 7px;
+  border-radius: 4px; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.row-chip.red { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+.row-chip.red::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); }
+.row-chip:hover { filter: brightness(1.15); }
+
+.pr-name-block {}
+.pr-name { font-size: 14px; color: var(--kerf-text); font-weight: 700; line-height: 1.3; display: flex; align-items: center; gap: 7px; }
+.pr-phase-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--kerf-bg-2); color: var(--kerf-text-dim); letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase; }
+.pr-phase-tag.active { background: rgba(56,201,119,0.12); color: var(--field-green); }
+.pr-phase-tag.bid { background: rgba(167,139,250,0.14); color: var(--kerf-violet); }
+.pr-phase-tag.closing { background: rgba(103,214,224,0.14); color: var(--kerf-cyan); }
+.pr-meta { font-size: 11px; color: var(--kerf-text-mute); margin-top: 3px; line-height: 1.4; }
+
+.pr-client { font-size: 12px; color: var(--kerf-text-dim); line-height: 1.4; }
+.pr-client strong { color: var(--kerf-text); font-weight: 600; }
+.pr-client-detail { display: block; font-size: 10.5px; color: var(--kerf-text-mute); margin-top: 2px; }
+
+.pr-state-block { text-align: right; }
+.pr-state { font-size: 12px; color: var(--kerf-text-dim); font-weight: 500; line-height: 1.4; }
+.pr-state.amber { color: var(--kerf-amber); font-weight: 600; }
+.pr-state.red { color: var(--kerf-red); font-weight: 600; }
+.pr-state.cyan { color: var(--kerf-cyan); font-weight: 600; }
+.pr-state.green { color: var(--field-green); font-weight: 600; }
+.pr-state-meta { font-size: 10px; color: var(--kerf-text-mute); margin-top: 2px; }
+.pr-arrow { color: var(--kerf-text-mute); font-size: 14px; }
+
+/* RIGHT RAIL */
+.portfolio-rail { display: flex; flex-direction: column; gap: 14px; }
+.rh-card {
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  padding: 11px 13px;
+}
+.rh-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.rh-eyebrow .rh-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--right-hand); }
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.55; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-red); font-style: normal; font-weight: 600; }
+.rh-text .rh-amber { color: var(--kerf-amber); font-weight: 600; }
+.rh-text .rh-cyan { color: var(--kerf-cyan); font-weight: 600; }
+
+.rail-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.rail-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.rail-eyebrow .re-action { margin-left: auto; color: var(--kerf-blue); font-weight: 700; font-size: 10.5px; text-transform: none; letter-spacing: 0; cursor: pointer; }
+
+/* Portfolio summary */
+.pf-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 6px 0; font-size: 12px; color: var(--kerf-text-dim); border-bottom: 1px solid var(--kerf-border-soft); }
+.pf-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.pf-row:first-child { padding-top: 0; }
+.pf-label { color: var(--kerf-text-mute); font-size: 11px; }
+.pf-val { color: var(--kerf-text); font-weight: 600; }
+.pf-val.amber { color: var(--kerf-amber); }
+.pf-val.green { color: var(--field-green); }
+
+/* Lookahead */
+.la-row { display: grid; grid-template-columns: 36px 1fr; gap: 9px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid var(--kerf-border-soft); font-size: 11.5px; }
+.la-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.la-row:first-child { padding-top: 0; }
+.la-day { font-size: 10px; color: var(--kerf-text-mute); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding-top: 2px; line-height: 1.3; }
+.la-day strong { display: block; font-size: 13px; color: var(--kerf-text); letter-spacing: 0; text-transform: none; font-weight: 700; margin-top: 1px; }
+.la-content { color: var(--kerf-text); line-height: 1.4; font-weight: 600; }
+.la-content .la-detail { display: block; color: var(--kerf-text-mute); font-size: 10.5px; margin-top: 2px; font-weight: 500; }
+
+/* At-risk */
+.at-risk-card {
+  background: rgba(248,113,113,0.05);
+  border: 1px solid rgba(248,113,113,0.30);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+.ar-eyebrow { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--kerf-red); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+.ar-eyebrow .ar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--kerf-red); box-shadow: 0 0 5px rgba(248,113,113,0.6); }
+.ar-name { font-size: 12.5px; color: var(--kerf-text); font-weight: 700; }
+.ar-detail { font-size: 11px; color: var(--kerf-text-dim); margin-top: 4px; line-height: 1.5; }
+.ar-cta { margin-top: 9px; font-size: 11px; color: var(--kerf-red); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-amber); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+
+
+/* Media library · F-ML2 */
+.filter-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.filter-chip{font-size:9.5px;padding:4px 9px;border-radius:6px;background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);color:var(--kerf-text-dim);font-weight:600;cursor:pointer}
+.filter-chip.active{background:rgba(245,181,68,0.14);border-color:rgba(245,181,68,0.35);color:var(--kerf-amber)}
+.filter-sort-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:0 24px 12px}
+.sort-picker{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sort-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-right:4px}
+.sort-option{font-size:10px;padding:4px 8px;border-radius:5px;color:var(--kerf-text-mute);font-weight:600;cursor:pointer;border:1px solid transparent}
+.sort-option.active{background:var(--kerf-bg-2);border-color:var(--kerf-border-soft);color:var(--kerf-text);font-weight:700}
+.media-area{display:flex;flex-direction:column;gap:0;min-width:0}
+.media-grid-wrap{padding:0 24px 8px;flex:1}
+.media-count-line{font-size:11px;color:var(--kerf-text-mute);padding:0 24px 10px;font-weight:500}
+.media-count-line strong{color:var(--kerf-text-dim);font-weight:600}
+.media-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.media-thumb{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--kerf-surface);border:1px solid var(--kerf-border-soft);cursor:pointer}
+.media-thumb:hover{border-color:var(--kerf-border)}
+.media-thumb.selected{border-color:var(--kerf-amber);box-shadow:0 0 0 2px rgba(245,181,68,0.35)}
+.media-thumb.flagged .mt-img{box-shadow:inset 0 0 0 2px rgba(248,113,113,0.5)}
+.mt-img{position:absolute;inset:0;background:linear-gradient(145deg,var(--kerf-surface-2) 0%,var(--kerf-bg-2) 100%)}
+.media-thumb:nth-child(6n+1) .mt-img{background:linear-gradient(145deg,#2a3140,#1a1f28)}
+.media-thumb:nth-child(6n+2) .mt-img{background:linear-gradient(145deg,#2d3545,#181d26)}
+.media-thumb:nth-child(6n+3) .mt-img{background:linear-gradient(145deg,#283040,#151920)}
+.media-thumb:nth-child(6n+4) .mt-img{background:linear-gradient(145deg,#303848,#1c212a)}
+.media-thumb:nth-child(6n+5) .mt-img{background:linear-gradient(145deg,#252d3a,#141820)}
+.media-thumb:nth-child(6n) .mt-img{background:linear-gradient(145deg,#2b3342,#171c24)}
+.mt-date{position:absolute;bottom:5px;left:5px;font-size:8px;padding:2px 5px;border-radius:3px;background:rgba(10,13,17,0.72);color:var(--kerf-text);font-weight:600}
+.mt-cap{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:rgba(10,13,17,0.75);color:var(--kerf-text-dim);font-size:7.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.mt-phase{position:absolute;top:5px;left:5px;font-size:7px;padding:2px 4px;border-radius:3px;background:rgba(10,13,17,0.65);color:var(--kerf-text-mute);letter-spacing:0.04em;text-transform:uppercase;font-weight:700}
+.mt-room{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--kerf-text-mute);font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
+.mt-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--kerf-text);opacity:0.85}
+.mt-type{position:absolute;bottom:5px;right:5px;font-size:7px;padding:2px 4px;border-radius:3px;background:rgba(123,168,255,0.2);color:var(--kerf-blue);font-weight:700;text-transform:uppercase}
+.mt-log-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0.7}
+.mt-flag-chip{position:absolute;bottom:5px;right:5px;display:inline-flex;align-items:center;gap:3px;font-size:7px;padding:2px 5px;border-radius:3px;background:rgba(248,113,113,0.85);color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:0.04em}
+.mt-flag-chip::before{content:'';width:4px;height:4px;border-radius:50%;background:#fff}
+.lazy-load-bar{margin:14px 24px 20px;padding:10px 14px;border:1px dashed var(--kerf-border);border-radius:8px;text-align:center;font-size:11px;color:var(--kerf-text-mute);background:var(--kerf-bg-2)}
+.lazy-load-bar strong{color:var(--kerf-text-dim);font-weight:600}
+.phase-scrubber{padding:4px 0 0}
+.ps-track{height:6px;background:var(--kerf-bg-2);border-radius:3px;position:relative;margin:8px 0 12px}
+.ps-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--field-green),var(--kerf-amber));border-radius:3px}
+.ps-marker{position:absolute;top:-5px;width:14px;height:14px;border-radius:50%;background:var(--kerf-amber);border:2px solid var(--kerf-bg);transform:translateX(-50%);box-shadow:0 0 8px rgba(245,181,68,0.5);cursor:grab}
+.ps-labels{display:flex;justify-content:space-between;gap:4px}
+.ps-label{font-size:9px;color:var(--kerf-text-mute);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;text-align:center;flex:1}
+.ps-label.done{color:var(--field-green)}
+.ps-label.active{color:var(--kerf-amber);font-weight:700}
+.ps-hint{font-size:10px;color:var(--kerf-text-mute);margin-top:10px;line-height:1.45}
+.viewer-layout{display:grid;grid-template-columns:1fr 380px;gap:0;min-height:520px;border-top:1px solid var(--kerf-border-soft)}
+.viewer-main{background:var(--kerf-bg-2);display:flex;align-items:center;justify-content:center;position:relative;min-height:480px}
+.viewer-main .vm-img{width:100%;max-width:640px;aspect-ratio:4/3;background:linear-gradient(145deg,#2a3140,#141820);border-radius:8px;border:1px solid var(--kerf-border-soft);position:relative}
+.viewer-main .vm-nav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(10,13,17,0.7);border:1px solid var(--kerf-border);color:var(--kerf-text);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
+.viewer-main .vm-nav.prev{left:16px}.viewer-main .vm-nav.next{right:16px}
+.viewer-panel{background:var(--kerf-surface);border-left:1px solid var(--kerf-border-soft);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.vp-title{font-size:15px;font-weight:700;color:var(--kerf-text);line-height:1.3}
+.vp-meta{font-size:11px;color:var(--kerf-text-mute);line-height:1.5}
+.vp-meta strong{color:var(--kerf-text-dim);font-weight:600}
+.vp-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.vp-btn{padding:7px 11px;border-radius:7px;font-size:11px;font-weight:600;border:1px solid var(--kerf-border-soft);background:var(--kerf-bg-2);color:var(--kerf-text-dim);cursor:pointer}
+.vp-btn.primary{background:var(--kerf-amber);color:#1A1300;border-color:var(--kerf-amber)}
+.vp-block-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--kerf-text-mute);font-weight:700;margin-top:6px}
+.vp-caption{font-size:12px;color:var(--kerf-text-dim);line-height:1.55;padding:10px 12px;background:var(--kerf-bg-2);border-radius:8px;border:1px solid var(--kerf-border-soft)}
+.vp-linked{font-size:11.5px;color:var(--kerf-blue);font-weight:600;cursor:pointer}
+@media print{.media-grid{grid-template-columns:repeat(6,1fr)!important}.media-thumb,.viewer-panel,.phase-scrubber{background:#FFF!important;border-color:#C9D0D8!important}}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-ML1 · Project Media (mobile)</span>
+    <span class="sep">›</span>
+    <span class="step current">F-ML2 · Project Media (desktop)</span>
+    <span class="sep">›</span>
+    <span class="step">F-PR4 · Project Detail · Media sub-tab</span>
+  </div>
+  <h1>F-ML2 · Desktop Project Media Library · Wegrzyn kitchen</h1>
+  <p>
+    Desktop sibling of F-ML1. Per-project drill only — reached from Project Detail → Media sub-tab or voice query (<em>"Right Hand, take me to Wegrzyn pictures"</em>). No top-level Media nav item in sidebar. <em>Business brain not file cabinet:</em> Right Hand summary leads in the rail; thumbnail grid underneath. 6-column grid · 30 thumbs default visible · lazy load for hundreds more. Phase timeline scrubber + capture rollup in rail. Red chip-tier only for flagged damage photos. Plain vocab · Right Hand named once.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame 1 · F-ML2 · Default · All media · 30 of 327 items</div>
+  <p class="frame-narr">
+    Owner drilled Projects → Wegrzyn kitchen → Media from F-PR4 sub-tab (or landed via voice: <em>"show me Wegrzyn kitchen photos"</em>). Breadcrumb confirms per-project path — sidebar stays on Projects, not a global Media destination. Main column: filter chips + sort (same set as F-ML1 mobile) · 6-col thumbnail grid with 30 most-recent items visible. Each thumb: preview · date overlay · capturer initial · subtle phase tag · red chip on 2 damage flags only. Right rail: RH synthesis · phase timeline scrubber (Demo → Framing → Rough-in active → Trim → Closeout) · capture rollup. Bottom: lazy-load sentinel for remaining 297 items.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/projects/PRJ-018/media</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link">Projects</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Wegrzyn kitchen</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Media</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+              Label with voice
+            </span>
+          </div>
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">Wegrzyn kitchen · Media</h2>
+              <div class="main-meta">PRJ-018 · day 4 of 11 · Rough-in · Maria Wegrzyn · 4287 Pacifica Way</div>
+            </div>
+          </div>
+          <div class="main-content">
+            <div class="media-area">
+              <div class="filter-sort-row">
+                <div class="filter-row">
+                  <span class="filter-chip active">All</span>
+                  <span class="filter-chip">Photos</span>
+                  <span class="filter-chip">Videos</span>
+                  <span class="filter-chip">Daily logs</span>
+                  <span class="filter-chip">By date</span>
+                  <span class="filter-chip">By phase</span>
+                  <span class="filter-chip">By capturer</span>
+                </div>
+                <div class="sort-picker">
+                  <span class="sort-label">Sort</span>
+                  <span class="sort-option active">Most recent</span>
+                  <span class="sort-option">Oldest first</span>
+                  <span class="sort-option">By phase</span>
+                </div>
+              </div>
+              <div class="media-count-line">Showing <strong>30</strong> of <strong>327</strong> items · most recent first</div>
+              <div class="media-grid-wrap">
+                <div class="media-grid">
+<div class="media-thumb" title="Jun 9 · Demo · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">Jun 9</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Demo</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Demo · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">Jun 9</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Demo</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Demo · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">Jun 8</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Demo</span>
+  
+</div>
+<div class="media-thumb" title="Jun 6 · Framing · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">Jun 7</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb flagged" title="Jun 5 · Framing · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">Jun 6</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Framing</span>
+  <span class="mt-flag-chip">Damage</span>
+</div>
+<div class="media-thumb" title="Jun 4 · Framing · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">Jun 5</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb" title="Jun 3 · Framing · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">Jun 4</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb" title="Jun 2 · Framing · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">Jun 3</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb" title="Jun 1 · Rough-in · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">Jun 2</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 9 · Rough-in · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">Jun 1</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Rough-in · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">May 31</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Rough-in · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">May 30</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 6 · Rough-in · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">May 29</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 5 · Rough-in · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">May 28</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 4 · Rough-in · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">May 27</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 3 · Trim · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">May 26</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 2 · Trim · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">May 25</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb flagged" title="Jun 1 · Trim · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">May 24</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Trim</span>
+  <span class="mt-flag-chip">Damage</span>
+</div>
+<div class="media-thumb" title="Jun 9 · Trim · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">May 23</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Trim · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">May 22</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Trim · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">May 21</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 6 · Trim · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">May 20</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 5 · Closeout · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">May 19</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 4 · Closeout · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">May 18</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 3 · Closeout · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">May 17</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 2 · Closeout · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">May 16</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 1 · Closeout · CM">
+  <div class="mt-img"></div>
+  <span class="mt-play">▶</span><span class="mt-type">Video</span>
+  <span class="mt-date">May 15</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 9 · Closeout · JT">
+  <div class="mt-img"></div>
+  <span class="mt-play">▶</span><span class="mt-type">Video</span>
+  <span class="mt-date">May 14</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Closeout · MR">
+  <div class="mt-img"></div>
+  <span class="mt-play">▶</span><span class="mt-type">Video</span>
+  <span class="mt-date">May 13</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Closeout · CM">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">May 12</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+                </div>
+              </div>
+              <div class="lazy-load-bar">Scroll to load more · <strong>297 remaining</strong> · batches of 30 · virtualized grid at 500+</div>
+            </div>
+            <div class="portfolio-rail">
+              <div class="rh-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · media</div>
+                <div class="rh-text">
+                  <strong>248 photos · 32 videos · 47 daily logs.</strong> Last captured 2h ago by Carlos. <span class="rh-amber">Most active week: Jun 3–9 framing.</span> <em>2 damage flags need review.</em>
+                </div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Phase timeline</div>
+                <div class="phase-scrubber">
+                  <div class="ps-track">
+                    <div class="ps-fill" style="width: 42%;"></div>
+                    <div class="ps-marker" style="left: 42%;"></div>
+                  </div>
+                  <div class="ps-labels">
+                    <span class="ps-label done">Demo</span>
+                    <span class="ps-label done">Framing</span>
+                    <span class="ps-label active">Rough-in</span>
+                    <span class="ps-label">Trim</span>
+                    <span class="ps-label">Closeout</span>
+                  </div>
+                  <div class="ps-hint">Drag to jump thumbs to a build period · active: Rough-in</div>
+                </div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Capture rollup</div>
+                <div class="pf-row"><span class="pf-label">Photos</span><span class="pf-val">248</span></div>
+                <div class="pf-row"><span class="pf-label">Videos</span><span class="pf-val">32</span></div>
+                <div class="pf-row"><span class="pf-label">Daily logs</span><span class="pf-val">47</span></div>
+                <div class="pf-row"><span class="pf-label">Most active week</span><span class="pf-val amber">Jun 3–9 · framing</span></div>
+                <div class="pf-row"><span class="pf-label">Last capture</span><span class="pf-val">2h ago · Carlos</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-ML2 · Spec</h3>
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Lane 6 · Project Media Library</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-ML1 · Mobile Project Media</span></div>
+      <div class="sl-step current"><span class="sl-dot">2</span><span><span class="sl-name">F-ML2</span> · Desktop Project Media <em>(this)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">3</span><span>F-PR2 / F-PR4 patch · Media sub-tab</span></div>
+    </div>
+    <h4>4-question rule (F-FD1 pattern)</h4>
+    <ul>
+      <li><strong>Macro / comparison / detail?</strong> Detail/browse — per-project media lens at desktop density, not portfolio comparison.</li>
+      <li><strong>List / grid / both?</strong> Thumbnail grid only · <strong>NO List/Grid toggle</strong> (detail surface · grid is primary · same canon as F-ML1).</li>
+      <li><strong>Cognitive job?</strong> See what was captured on this job at desktop scale · filter to photos/videos/dailies · jump to fullscreen viewer or daily log.</li>
+      <li><strong>Hidden until drill?</strong> Full history (lazy-load · virtualizes at 500+) · fullscreen viewer · daily log body (F-E1 anchor).</li>
+    </ul>
+    <h4>IA decision</h4>
+    <p><strong>Per-project drill only.</strong> Media is not a top-level sidebar destination. Route: Projects → [project] → Media sub-tab (or voice deep-link). Breadcrumb carries wayfinding.</p>
+    <h4>Desktop density</h4>
+    <ul>
+      <li><strong>6-column thumbnail grid</strong> · 30 items default visible (vs 3-col · 20–30 on mobile)</li>
+      <li><strong>Rail-led synthesis</strong> · RH summary + phase scrubber + rollup moved to right rail; grid dominates main column</li>
+      <li><strong>Same filter chips + sort as F-ML1</strong> · All · Photos · Videos · Daily logs · By date · By phase · By capturer · Sort: Most recent · Oldest first · By phase</li>
+      <li><strong>Lazy load / pagination</strong> · initial fetch 30 · infinite scroll loads next 30 · at 500+ switch to virtualized window (only DOM nodes in viewport)</li>
+    </ul>
+    <h4>Voice retrieval routing</h4>
+    <ul>
+      <li><code>"Wegrzyn kitchen photos"</code> → F-ML2 · project=Wegrzyn · filter=Photos</li>
+      <li><code>"Wegrzyn videos"</code> → F-ML2 · project=Wegrzyn · filter=Videos</li>
+      <li><code>"Most recent dailies from Hernandez"</code> → F-ML1/ML2 · project=Hernandez · filter=Daily logs · sort=Most recent</li>
+      <li><code>"Show me the pictures"</code> (project in context) → F-ML2 · filter=Photos · sort=Most recent</li>
+      <li><code>"Right Hand, label this framing day 3"</code> → voice caption on selected thumb (viewer open)</li>
+    </ul>
+    <h4>Doctrine</h4>
+    <ul>
+      <li><span class="badge doctrine">d-1</span><em>One cognitive job</em> — browse all project captures without scrolling daily logs</li>
+      <li><span class="badge doctrine">d-2</span><em>RH summary leads</em> — rail card opens synthesis before grid scan</li>
+      <li><span class="badge canon">canon</span>Red chip-tier only · no full-tile red borders on flagged photos</li>
+      <li><span class="badge canon">canon</span>Right Hand named once · no agent names elsewhere</li>
+      <li><span class="badge canon">canon</span>Single source of truth · same asset in Daily Log + Media Library</li>
+    </ul>
+    <h4>Routes</h4>
+    <ul>
+      <li>Thumb tap → Frame 2 viewer (or inline split at desktop width)</li>
+      <li>Open daily log → daily log for that capture date</li>
+      <li>Breadcrumb Wegrzyn → F-PR4 Project Detail</li>
+      <li>Phase scrubber drag → filter grid to date range for that phase</li>
+    </ul>
+  </div>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame 2 · Daily logs filter active · viewer panel at desktop width</div>
+  <p class="frame-narr">
+    Operator taps <em>Daily logs</em> filter chip — grid narrows to log-linked captures and log entry tiles. Selected thumb opens inline viewer: large preview left · metadata panel right (date · phase · capturer · caption · linked daily log · Share). Voice caption available via top-right action or mic FAB. Same rail persists for context.
+  </p>
+
+  <div class="frame-render">
+    <div class="desktop-frame">
+      <div class="app-chrome">
+        <div class="chrome-dots"><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="chrome-url">kerf.app/projects/PRJ-018/media?filter=daily-logs&amp;view=Jun-9-framing</div>
+        <div class="chrome-spacer"></div>
+        <div class="chrome-search">⌕ Find a client, project, or capture</div>
+      </div>
+      <div class="app-body">
+        <div class="sidebar">
+          <div class="sb-logo">
+            <div class="sb-mark">K</div>
+            <div>
+              <div class="sb-brand">Kerf</div>
+              <span class="sb-tenant">GGR Design + Remodeling</span>
+            </div>
+          </div>
+          <div class="sb-section-label">Primary</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg></span>Home</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>Start</div>
+          <div class="sb-fab">
+            <svg class="mic-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            <span class="sb-fab-label">SPEAK</span>
+          </div>
+          <div class="sb-section-label">All</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></span>Sales</div>
+          <div class="sb-item active"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg></span>Projects</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M7 3v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2V3h-2v2H9V3zM5 10h14v10H5z"/></svg></span>Schedule</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 5h13v2H4zm15 14H4V9h16v3h-3a3 3 0 0 0 0 6h3zm0-5v2h-2a1 1 0 1 1 0-2z"/></svg></span>Money</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20v-1a6.5 6.5 0 0 1 13 0v1zm14.5 0v-1a4.5 4.5 0 0 0-2-3.74A5 5 0 0 1 22 19.74V20z"/></svg></span>Team &amp; Ops</div>
+          <div class="sb-subitem"><span class="sb-sub-tick">&#x21B3;</span>Clients</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></span>Marketing</div>
+          <div class="sb-divider"></div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>Settings</div>
+          <div class="sb-item"><span class="sb-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM7 13h10v2H7zm0 4h10v2H7zm0-8h5v2H7z"/></svg></span>Audit</div>
+          <div class="sb-spacer"></div>
+          <div class="sb-user">
+            <div class="sb-user-avatar">CA</div>
+            <div>
+              <div class="sb-user-name">Christian Asdal</div>
+              <div class="sb-user-meta">Owner · GGR</div>
+            </div>
+          </div>
+        </div>
+        <div class="main">
+          <div class="bc-bar">
+            <span class="bc-link">Projects</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link">Wegrzyn kitchen</span>
+            <span class="bc-sep">›</span>
+            <span class="bc-link active">Media</span>
+            <div class="bc-spacer"></div>
+            <span class="bc-action">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+              Label with voice
+            </span>
+          </div>
+          <div class="main-header">
+            <div>
+              <h2 class="main-title">Wegrzyn kitchen · Media</h2>
+              <div class="main-meta">Daily logs filter · 47 logs · viewer open</div>
+            </div>
+          </div>
+          <div class="main-content">
+            <div class="media-area">
+              <div class="filter-sort-row">
+                <div class="filter-row">
+                  <span class="filter-chip">All</span>
+                  <span class="filter-chip">Photos</span>
+                  <span class="filter-chip">Videos</span>
+                  <span class="filter-chip active">Daily logs</span>
+                  <span class="filter-chip">By date</span>
+                  <span class="filter-chip">By phase</span>
+                  <span class="filter-chip">By capturer</span>
+                </div>
+                <div class="sort-picker">
+                  <span class="sort-label">Sort</span>
+                  <span class="sort-option active">Most recent</span>
+                  <span class="sort-option">Oldest first</span>
+                  <span class="sort-option">By phase</span>
+                </div>
+              </div>
+              <div class="media-count-line">Showing <strong>30</strong> of <strong>47</strong> daily logs · most recent first</div>
+              <div class="media-grid-wrap">
+                <div class="media-grid">
+<div class="media-thumb" title="Jun 9 · Demo · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">Jun 9</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Demo</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Demo · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">Jun 9</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Demo</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Demo · MR">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">Jun 8</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Demo</span>
+  
+</div>
+<div class="media-thumb" title="Jun 6 · Framing · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">Jun 7</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb flagged" title="Jun 5 · Framing · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">Jun 6</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Framing</span>
+  <span class="mt-flag-chip">Damage</span>
+</div>
+<div class="media-thumb" title="Jun 4 · Framing · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">Jun 5</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb" title="Jun 3 · Framing · CM">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">Jun 4</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb" title="Jun 2 · Framing · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">Jun 3</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Framing</span>
+  
+</div>
+<div class="media-thumb" title="Jun 1 · Rough-in · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">Jun 2</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 9 · Rough-in · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">Jun 1</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Rough-in · MR">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">May 31</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Rough-in · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">May 30</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 6 · Rough-in · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">May 29</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 5 · Rough-in · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">May 28</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 4 · Rough-in · CM">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">May 27</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Rough-in</span>
+  
+</div>
+<div class="media-thumb" title="Jun 3 · Trim · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">May 26</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 2 · Trim · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">May 25</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb flagged" title="Jun 1 · Trim · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Island</span>
+  <span class="mt-date">May 24</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Trim</span>
+  <span class="mt-flag-chip">Damage</span>
+</div>
+<div class="media-thumb" title="Jun 9 · Trim · JT">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">May 23</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Trim · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">May 22</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Trim · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">May 21</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 6 · Trim · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Bath</span>
+  <span class="mt-date">May 20</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Trim</span>
+  
+</div>
+<div class="media-thumb" title="Jun 5 · Closeout · MR">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">May 19</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 4 · Closeout · CM">
+  <div class="mt-img"></div>
+  <span class="mt-room">Pantry</span>
+  <span class="mt-date">May 18</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 3 · Closeout · JT">
+  <div class="mt-img"></div>
+  <span class="mt-room">Deck</span>
+  <span class="mt-date">May 17</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 2 · Closeout · MR">
+  <div class="mt-img"></div>
+  <span class="mt-room">Kitchen</span>
+  <span class="mt-date">May 16</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 1 · Closeout · CM">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">May 15</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 9 · Closeout · JT">
+  <div class="mt-img"></div>
+  <span class="mt-play">▶</span><span class="mt-type">Video</span>
+  <span class="mt-date">May 14</span>
+  <span class="mt-cap">JT</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 8 · Closeout · MR">
+  <div class="mt-img"></div>
+  <span class="mt-play">▶</span><span class="mt-type">Video</span>
+  <span class="mt-date">May 13</span>
+  <span class="mt-cap">MR</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+<div class="media-thumb" title="Jun 7 · Closeout · CM">
+  <div class="mt-img"></div>
+  <span class="mt-log-icon">📋</span><span class="mt-type">Daily log</span>
+  <span class="mt-date">May 12</span>
+  <span class="mt-cap">CM</span>
+  <span class="mt-phase">Closeout</span>
+  
+</div>
+                </div>
+              </div>
+              <div class="viewer-layout">
+                <div class="viewer-main">
+                  <span class="vm-nav prev">‹</span>
+                  <div class="vm-img"><span class="mt-room" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--kerf-text-mute)">Jun 9 · Framing · Kitchen north wall</span></div>
+                  <span class="vm-nav next">›</span>
+                </div>
+                <div class="viewer-panel">
+                  <div class="vp-title">Jun 9 daily log · Framing</div>
+                  <div class="vp-meta"><strong>Captured</strong> 2:14pm · Carlos Martinez<br><strong>Phase</strong> Framing · day 3<br><strong>Linked log</strong> DL-2026-06-09-PRJ018</div>
+                  <div class="vp-block-label">Caption</div>
+                  <div class="vp-caption">North wall framing complete. Tile layout conflict flagged for owner review tomorrow.</div>
+                  <div class="vp-block-label">Flags</div>
+                  <div><span class="row-chip red">Damage</span> <span style="font-size:11px;color:var(--kerf-text-dim)">Subfloor moisture · photo 4 of 12</span></div>
+                  <div class="vp-actions">
+                    <span class="vp-btn primary">Open daily log</span>
+                    <span class="vp-btn">Share</span>
+                    <span class="vp-btn">Label with voice</span>
+                  </div>
+                  <span class="vp-linked">← Back to grid</span>
+                </div>
+              </div>
+            </div>
+            <div class="portfolio-rail">
+              <div class="rh-card">
+                <div class="rh-eyebrow"><span class="rh-dot"></span>Right Hand · media</div>
+                <div class="rh-text">
+                  <strong>248 photos · 32 videos · 47 daily logs.</strong> Last captured 2h ago by Carlos. <span class="rh-amber">Most active week: Jun 3–9 framing.</span> <em>2 damage flags need review.</em>
+                </div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Phase timeline</div>
+                <div class="phase-scrubber">
+                  <div class="ps-track">
+                    <div class="ps-fill" style="width: 42%;"></div>
+                    <div class="ps-marker" style="left: 42%;"></div>
+                  </div>
+                  <div class="ps-labels">
+                    <span class="ps-label done">Demo</span>
+                    <span class="ps-label done">Framing</span>
+                    <span class="ps-label active">Rough-in</span>
+                    <span class="ps-label">Trim</span>
+                    <span class="ps-label">Closeout</span>
+                  </div>
+                  <div class="ps-hint">Drag to jump thumbs to a build period · active: Rough-in</div>
+                </div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-eyebrow">Capture rollup</div>
+                <div class="pf-row"><span class="pf-label">Photos</span><span class="pf-val">248</span></div>
+                <div class="pf-row"><span class="pf-label">Videos</span><span class="pf-val">32</span></div>
+                <div class="pf-row"><span class="pf-label">Daily logs</span><span class="pf-val">47</span></div>
+                <div class="pf-row"><span class="pf-label">Most active week</span><span class="pf-val amber">Jun 3–9 · framing</span></div>
+                <div class="pf-row"><span class="pf-label">Last capture</span><span class="pf-val">2h ago · Carlos</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-ML2 Frame 2 · Spec</h3>
+    <h4>Alternate states (either/or)</h4>
+    <ul>
+      <li><strong>Daily logs filter active</strong> — chip highlighted · grid shows log-linked items · count reflects log total</li>
+      <li><strong>Viewer panel at desktop width</strong> — split layout below grid · prev/next nav · metadata rail · no fullscreen takeover on desktop</li>
+    </ul>
+    <h4>Viewer actions</h4>
+    <ul>
+      <li>Open daily log → parent log for capture date</li>
+      <li>Share → standard share sheet (no auto-send)</li>
+      <li>Label with voice → caption edit via Right Hand · writes to metadata</li>
+    </ul>
+    <h4>Lazy load note</h4>
+    <p>At hundreds of items: intersection observer on sentinel row triggers next page fetch. Server returns cursor + next 30 IDs. Client merges into virtualized grid — no full reload.</p>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface proves</span>
+    A real kitchen remodel accumulates hundreds of photos over 11 weeks. Kerf does not bury them inside daily log scroll. <em>Flat browse + phase scrubber</em> lets the owner or Right Hand land on "all kitchen photos" in one gesture — voice or click. Same asset references Daily Log; no duplicate storage.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not CompanyCam's folder tree. Not a top-level "Media" nav item. Not a file cabinet with arbitrary albums. Not agent-named retrieval. <strong>F-ML2 is F-ML1 with desktop breathing room — 6 columns, rail synthesis, inline viewer.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+</script>
+</body>
+</html>
