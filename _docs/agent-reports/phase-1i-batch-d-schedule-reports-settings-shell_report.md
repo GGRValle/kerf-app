@@ -1,83 +1,149 @@
 # Phase 1I · Agent D — Schedule, Reports, Settings & Shell
 
-**Stacked on:** `phase-1i-batch-b-projects-audit-relay` @ `d5d9f13` (imports `ProjectTabContent.astro`)
-
-**Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
-**Head commit:** `5b75d4aca8c010c298ab3e6870ba6fe8d077e057`  
 **Agent:** D (Batch D)  
+**Branch:** `phase-1i-batch-d-schedule-reports-settings-shell`  
+**Head commit:** `72390331b213804f196033065f6fd22dd88054b2`  
 **Date:** 2026-05-28  
 **Merge:** Do not merge (gate branch only)
 
+---
+
+## Branch posture
+
+| Field | Value |
+|-------|--------|
+| **Mode** | **Stacked** (not independent on `origin/main`) |
+| **Stack base** | `phase-1i-batch-b-projects-audit-relay` @ `d5d9f13` (`3c7063b` — project tabs + relay) |
+| **Why stacked** | `src/app/pages/projects/[id]/[tab].astro` imports `ProjectTabContent.astro` from Batch B. That component does not exist on `origin/main`; an independent Batch D branch would fail build/typecheck. |
+
+Codex default is latest `origin/main` unless stacking is required — **stacking is required** for this batch.
+
+### Dependencies on other branches
+
+| Branch | Commit (merge-base) | What Batch D needs |
+|--------|---------------------|-------------------|
+| `phase-1i-batch-b-projects-audit-relay` | `d5d9f13` | `src/app/components/project/ProjectTabContent.astro`, `PreviewNotice.astro`, `projectAuditLinks.ts`, Batch B project/i18n strings, relay/audit page wiring |
+
+No dependency on Batch A (capture/draft) or Batch C (money) for shell surfaces.
+
+### Shared files touched (overlap risk)
+
+Batch D **also modifies** these Batch B files (coordinate at merge):
+
+- `src/app/pages/projects/[id]/index.astro` — `ActionsStrip` → wired `ExportPrintBar`
+- `src/app/pages/projects/[id]/[tab].astro` — same export bar; keeps `ProjectTabContent` import
+- `src/i18n/en.ts`, `src/i18n/es.ts`, `src/i18n/keys.ts` — Batch D keys appended; Batch B project/relay strings preserved
+
+Batch D–owned paths (safe for other agents to avoid):
+
+- `src/app/lib/shellRoutes.ts`, `src/app/lib/nav.ts` (schedule/reports/settings items)
+- `src/app/components/{HomeLoopGrid,MobileBottomNav,ExportPrintBar}.astro`, `SpeakFAB.astro`, `ActionsStrip.astro`
+- `src/app/layouts/Layout.astro`, `src/app/styles/shell.css`
+- `src/app/pages/{index,more,schedule,reports,settings}.astro`
+- `src/app/pages/{blackboard,decisions,kb-ingestion}/**` (preview shell normalization only)
+- `tests/phase-1i-batch-d-shell.test.ts`
+
+---
+
 ## Goal
 
-Make the operator shell coherent: home loops, mobile nav, schedule/reports/settings surfaces, Speak FAB, and export/print affordances route honestly (live or Preview). No dead primary buttons; no debug language in chrome.
+Shell feels like an app, not a sitemap: global actions route cleanly or Preview honestly.
 
-## Verification
+- No dead primary buttons  
+- Mobile nav routes cleanly  
+- Home → useful loops (Capture, Relay, Projects, Draft review)  
+- Schedule / Reports / Settings → Preview shells  
+- Speak FAB → F-E1 field capture (`/field-capture`)  
+- No debug language in operator chrome  
 
-| Check | Result |
-|-------|--------|
-| `npm run typecheck` | Pass |
-| `npm run build:astro` | Pass |
-| `node --import tsx --test tests/phase-1i-batch-d-shell.test.ts` | **10/10** pass |
-| `npm test` (full) | **1463/1463** pass |
+---
+
+## Clean-worktree proof
+
+**Worktree:** clean except untracked `node_modules/` (not committed).  
+**Branch tip:** `72390331b213804f196033065f6fd22dd88054b2` on `phase-1i-batch-d-schedule-reports-settings-shell`.
+
+```text
+$ git status --porcelain
+?? node_modules/
+
+$ npm run typecheck
+> tsc --noEmit
+(exit 0)
+
+$ npm run build:astro
+> [build] Complete!
+(exit 0)
+
+$ node --import tsx --test tests/phase-1i-batch-d-shell.test.ts
+ℹ tests 10
+ℹ pass 10
+ℹ fail 0
+(exit 0)
+```
+
+Proof run: 2026-05-28 (local gate).
+
+---
 
 ## Surface status
 
 | Surface | Status | Notes |
 |---------|--------|-------|
-| Home / dashboard (`/`) | **Ready** | `HomeLoopGrid` links Capture, Relay, Projects, Draft review |
-| Mobile bottom nav | **Ready** | Fixed bar: Home · Capture · Relay · Jobs · More; hidden ≥900px |
-| More (`/more`) | **Ready** | Preview card + link list to schedule, reports, settings, and secondary tools |
-| Schedule (`/schedule`) | **Preview** | `route_shell` card; no calendar API |
-| Reports (`/reports`) | **Preview** | `route_shell` card; audit domain in nav |
-| Settings (`/settings`) | **Ready** (shell) | Preview body; route exists for all role roots |
-| Role-root routing (`/role-routing`) | **Ready** | Existing F-RR1 matrix unchanged |
-| Primary top nav | **Ready** | `nav.ts` adds schedule / reports / settings with domain + role filters |
-| Speak FAB | **Ready** | `<a href="/field-capture">` — F-E1 capture entry; title "Opens field capture" |
-| Export / print | **Partial** | `ExportPrintBar` wired on project detail when `projectId` + `tenantId`; else preview notice |
-| Blackboard / Decisions / KB ingestion | **Preview** | Batch D normalized to `route_shell` eyebrow + domain preview copy |
-| Project detail export | **Ready** (fixture) | `ActionsStrip` → `ExportPrintBar` with `wired` + POST export API |
+| Home / dashboard (`/`) | **Ready** | `HomeLoopGrid` → Capture, Relay, Projects, Draft review |
+| Mobile bottom nav | **Ready** | Home · Capture · Relay · Jobs · More; fixed bar, hidden ≥900px |
+| More (`/more`) | **Ready** | Link hub via `MORE_NAV_LINKS` |
+| Schedule (`/schedule`) | **Preview** | `route_shell` card |
+| Reports (`/reports`) | **Preview** | `route_shell` card |
+| Settings (`/settings`) | **Preview** | `route_shell` card; nav link all role roots |
+| Role-root routing (`/role-routing`) | **Ready** | F-RR1 matrix (unchanged) |
+| Primary top nav | **Ready** | Schedule / Reports / Settings + role/domain filter |
+| Speak FAB | **Ready** | `<a href="/field-capture">`; title "Opens field capture" |
+| Export / print | **Partial** | Wired on project detail when `projectId` + `tenantId`; else preview notice |
+| Blackboard / Decisions / KB | **Preview** | `route_shell` eyebrow + honest preview copy |
+
+---
 
 ## Button / affordance matrix
 
 | Control | Target | Mode |
 |---------|--------|------|
-| Home loop: Field capture | `/field-capture` | Live |
-| Home loop: Relay | `/relay` | Live |
-| Home loop: Projects | `/projects` | Live |
-| Home loop: Draft review | `/draft-review` | Live |
+| Home loops | `/field-capture`, `/relay`, `/projects`, `/draft-review` | Live |
 | Mobile nav (5) | `/`, `/field-capture`, `/relay`, `/projects`, `/more` | Live |
-| More → Schedule / Reports / Settings | respective routes | Preview shells |
-| Top nav Schedule / Reports / Settings | same | Preview (role/domain filtered) |
-| Speak FAB | `/field-capture` | Live (capture, not voice session) |
-| Export Print / PDF (project detail) | `POST /api/v1/projects/:id/export` | Live when wired |
-| Export elsewhere | — | Preview notice via `shell.export.preview_notice` |
-
-## Files (Batch D commit + follow-up)
-
-**New:** `src/app/lib/shellRoutes.ts`, `HomeLoopGrid.astro`, `MobileBottomNav.astro`, `ExportPrintBar.astro`, `more.astro`, `schedule.astro`, `reports.astro`, `settings.astro`, `tests/phase-1i-batch-d-shell.test.ts`, `_scripts/apply_batch_d.py`
-
-**Updated:** `Layout.astro`, `SpeakFAB.astro`, `ActionsStrip.astro`, `index.astro`, `nav.ts`, `shell.css`, project `[id]/index.astro` & `[tab].astro`, `en.ts` / `es.ts` / `keys.ts`, preview pages (blackboard, decisions, kb-ingestion)
-
-**Follow-up (uncommitted):** `more.astro` uses `route_shell.body` (removed orphan `shell.more.body` key); `nav.ts` settings visible to all role roots; schedule nav limited to roles with `schedule` domain.
-
-## Limitations / deferrals
-
-- Schedule, reports, and global settings are **preview shells** only — no Gantt, ledger, or tenant prefs API.
-- Home grid always shows Draft review (not filtered per role on the grid; top nav still role-filters).
-- Speak FAB opens **field capture**, not a dedicated voice/E1 modal (honest per wireframe phase).
-- Spanish Batch D strings use `__pending_review__` where not yet translated.
-- Unrelated working-tree edits (relay API, project audit panels) are **out of scope** for this branch commit.
-
-## i18n keys added (Batch D)
-
-`nav.schedule`, `nav.reports`, `nav.settings`, `home.*`, `shell.nav.*`, `shell.mobile_nav.aria`, `shell.more.title`, `shell.export.preview_notice`, `schedule.title`, `reports.title`, `settings.title`, `layout.speak_fab.title` → "Opens field capture" (EN).
+| More menu links | schedule, reports, settings, secondary tools | Live links → Preview pages where noted |
+| Top nav Schedule / Reports / Settings | same routes | Preview shells |
+| Speak FAB | `/field-capture` | Live (F-E1 entry) |
+| Export (project detail) | `POST /api/v1/projects/:id/export` | Live when `wired` |
+| Export elsewhere | — | `shell.export.preview_notice` |
 
 ---
-*Gate: branch pushed when Christian adds to Phase 1I merge set. Do not merge to main without 1I sign-off.*
 
-## Commits on branch (after rebase onto Batch B)
+## Commits on branch (tip → stack base)
 
-- `3c7063b` — Batch B: relay, audit links, `ProjectTabContent.astro`
-- `6171e44` … `cd925ae` — Batch D shell, nav, i18n, report
-- `0914f65` — i18n parity (Batch B project strings, no preview duplicates)
+| SHA | Summary |
+|-----|---------|
+| `7239033` | docs: report head SHA |
+| `5b75d4a` | docs: stacked-on-B note |
+| `0914f65` | fix: i18n parity after rebase |
+| `cd925ae` | docs: verification SHAs |
+| `38c1f6c` | fix: Batch D i18n keys + preview copy |
+| `10ae5e3` | fix: schedule/settings nav role gates |
+| `ae2d420` | fix: more.astro + report |
+| `6171e44` | feat: Batch D shell (core) |
+| `d5d9f13` | Batch B stack base |
+| `3c7063b` | Batch B: `ProjectTabContent`, relay, audit |
+
+---
+
+## Limitations
+
+- Schedule / Reports / Settings are preview shells only.  
+- Speak FAB opens field capture, not a dedicated voice modal.  
+- Home loop grid does not filter Draft review by role (top nav does).  
+- Spanish: `__pending_review__` on some Batch D strings.  
+
+---
+
+## Remote
+
+`origin/phase-1i-batch-d-schedule-reports-settings-shell` — pushed; do not merge to `main` without Phase 1I sign-off.
