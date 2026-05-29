@@ -68,7 +68,7 @@ const checkLabelKeys: Record<string, I18nKey> = {
         </ul>
 
         <div class="lane6-paper-wrap lane6-desktop-only">
-          <div class="lane6-paper-html" set:html={paperHtml} />
+          <iframe class="lane6-paper-html" title={proposal.project_name} sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
         </div>
 
         {!gate.all_passed && gate.override_eligible && (
@@ -139,5 +139,20 @@ const checkLabelKeys: Record<string, I18nKey> = {
         btn!.textContent = confirmSent;
       }
     });
+  </script>
+
+  <script>
+    // Grow the sandboxed proposal-document iframe to its content height (same
+    // intent as the preview surface). srcdoc is same-origin; guard defensively.
+    for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.lane6-paper-html')) {
+      const fit = () => {
+        try {
+          const doc = frame.contentDocument;
+          if (doc?.documentElement) frame.style.height = doc.documentElement.scrollHeight + 'px';
+        } catch { /* cross-origin guard */ }
+      };
+      frame.addEventListener('load', fit);
+      fit();
+    }
   </script>
 </Layout>

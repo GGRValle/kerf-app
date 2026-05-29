@@ -55,7 +55,7 @@ const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, propos
         <p class="lane6-subtitle">{t('f_pv1.read_only_note')}</p>
         <CaptureOriginPanel origin={captureOrigin} />
         <div class="lane6-paper-wrap">
-          <div class="lane6-paper-html" set:html={paperHtml} />
+          <iframe class="lane6-paper-html" title={proposal.project_name} sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
         </div>
         <div slot="footer" class="lane6-actions">
           <a class="lane6-btn ghost" href="/draft-review">{t('f_pv1.back_draft')}</a>
@@ -67,3 +67,19 @@ const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, propos
     </SurfaceIrreversibilityWrap>
   </article>
 </Layout>
+
+<script>
+  // Grow the sandboxed proposal-document iframe to its content height so the
+  // paper reads inline instead of nested-scrolling. srcdoc is same-origin, so
+  // reading contentDocument is permitted; the try/guard is purely defensive.
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.lane6-paper-html')) {
+    const fit = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (doc?.documentElement) frame.style.height = doc.documentElement.scrollHeight + 'px';
+      } catch { /* cross-origin guard */ }
+    };
+    frame.addEventListener('load', fit);
+    fit();
+  }
+</script>
