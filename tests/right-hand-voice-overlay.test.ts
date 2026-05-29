@@ -275,7 +275,43 @@ test('overlay is realtime-first with Groq fallback, shares the gate, and leaks n
   // Committed transcript is stashed (sessionStorage), never put in a querystring.
   assert.match(src, /sessionStorage\.setItem\('kerf\.voiceCommit'/);
   assert.doesNotMatch(src, /\?[^'"`]*=\$\{[^}]*(transcript|caption|finalText|text)[^}]*\}/i);
-  // Bounded window teardown present (§4).
+  // Bounded window present (§4). The actual hard-cap/idle lifecycle paths are
+  // exercised path-specifically in the lifecycle test below — a global
+  // `getTracks().forEach` substring match here would pass even with the leak,
+  // because that release lives in teardown(), not the hard-cap path.
   assert.match(src, /hardCapMs/);
-  assert.match(src, /getTracks\(\)\.forEach/);
+});
+
+// Slice a top-level arrow/async declaration body: from `const <name>` up to the
+// next top-level `const <next>` declaration. Lets us assert against the ACTUAL
+// code path rather than a substring that may live in a different function.
+function sliceDecl(src: string, name: string, nextName: string): string {
+  const start = src.indexOf(`const ${name}`);
+  assert.ok(start >= 0, `expected declaration: const ${name}`);
+  const end = src.indexOf(`const ${nextName}`, start + 1);
+  assert.ok(end > start, `expected following declaration: const ${nextName}`);
+  return src.slice(start, end);
+}
+
+test('lifecycle: hard cap fully releases the mic and realtime silence re-arms idle close', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
+
+  // teardown() is the single source of truth for full mic + audio release.
+  const teardown = sliceDecl(src, 'teardown', 'closeOverlay');
+  assert.match(teardown, /getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+  assert.match(teardown, /audioCtx\?\.close\(\)/);
+
+  // Blocker 1: the hard-cap path must DELEGATE to teardown() (full release),
+  // not hand-roll a partial copy that leaves the mic + AudioContext open.
+  const armHardCap = sliceDecl(src, 'armHardCap', 'armIdleClose');
+  assert.match(armHardCap, /\bteardown\(\)/);
+  // Guard against the old partial cleanup (dc/pc/recorder only) regressing back.
+  assert.doesNotMatch(armHardCap, /recorder\.stop\(\)/);
+
+  // Blocker 2: realtime's startMeter silence callback must NOT be a no-op — it
+  // must re-arm idle close so a missing `completed` event closes at idle, not
+  // the 75s cap.
+  const startRealtime = sliceDecl(src, 'startRealtime', 'beginSession');
+  assert.doesNotMatch(startRealtime, /startMeter\(\s*\(\)\s*=>\s*\{\s*\}\s*\)/);
+  assert.match(startRealtime, /startMeter\(\s*\(\)\s*=>\s*\{[\s\S]*?armIdleClose\(\)[\s\S]*?\}\s*\)/);
 });
