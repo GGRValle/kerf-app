@@ -87,6 +87,7 @@
 /* The paper preview is a rendered document — it stays light on both themes. */
 .lane6-paper-wrap iframe,
 .lane6-paper-html {
+  display: block;
   width: 100%;
   min-height: 520px;
   border: none;
