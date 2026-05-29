@@ -184,6 +184,36 @@ node --import tsx --test \
 
 ## Clean-worktree proof
 
-Verification was also taken from a **fresh `git worktree` at the pushed remote
-tip** (not the agent's working tree). See the "Clean-worktree proof" appendix
-below for the exact commands, HEAD SHA, and gate output.
+Verification was taken from a **fresh `git worktree` checked out at the pushed
+remote tip** — not the agent's working tree.
+
+```bash
+git fetch origin phase-1j-d-money-proposal-clients-visual-fidelity
+git worktree add --detach /private/tmp/kerf-1j-d-clean \
+  origin/phase-1j-d-money-proposal-clients-visual-fidelity
+cd /private/tmp/kerf-1j-d-clean
+npm ci --ignore-scripts
+npm run typecheck
+npm run build:astro
+node --import tsx --test \
+  tests/phase1i-batch-c-money-proposal-client.test.ts \
+  tests/lane6-prep.test.ts \
+  tests/route-shell-smoke.test.ts
+```
+
+| Field | Value |
+|-------|--------|
+| Code commit verified | `543c1f616dc5f33708092f283e70fca4c6f6545e` |
+| Matches `origin/phase-1j-d-money-proposal-clients-visual-fidelity` | Yes |
+| `git status --porcelain` (excl. `node_modules/`) | clean |
+| `npm ci --ignore-scripts` | exit 0 |
+| `npm run typecheck` | exit 0 |
+| `npm run build:astro` | exit 0 |
+| focused tests (3 suites) | 15/15 pass · exit 0 |
+| Proof UTC | `2026-05-29T01:51Z` |
+
+`Chip.astro` and the report are present in the clean tree. Full log on the gate
+machine: `/private/tmp/kerf-1j-d-clean-proof-20260528-185111.txt`.
+
+> Note: the report-tip commit below adds only this appendix on top of the verified
+> code commit `543c1f6`; no source changed after clean verification.
