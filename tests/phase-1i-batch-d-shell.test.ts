@@ -11,11 +11,16 @@ test('shellRoutes exports home loops and mobile nav canon', () => {
   assert.match(src, /MOBILE_BOTTOM_NAV/);
   assert.match(src, /shell\.nav\.capture/);
 });
-test('SpeakFAB routes to field capture without debug handler', () => {
+test('SpeakFAB routes to Right Hand without debug handler', () => {
   const src = read('src/app/components/SpeakFAB.astro');
-  assert.match(src, /href="\/field-capture"/);
+  assert.match(src, /href="\/right-hand"/);
   assert.doesNotMatch(src, /console\.info/);
   assert.match(src, /5\.5rem/);
+});
+test('center Speak nav opens Right Hand instead of field capture', () => {
+  const src = read('src/app/lib/shellRoutes.ts');
+  assert.match(src, /href: '\/right-hand', labelKey: 'shell\.nav\.speak'/);
+  assert.doesNotMatch(src, /href: '\/field-capture', labelKey: 'shell\.nav\.speak'/);
 });
 test('Layout wires mobile bottom nav', () => {
   assert.match(read('src/app/layouts/Layout.astro'), /MobileBottomNav/);
@@ -48,5 +53,5 @@ test('project detail uses wired export bar without inline export script', () => 
 });
 test('i18n includes Batch D shell keys and speak fab title', () => {
   assert.match(read('src/i18n/keys.ts'), /'home\.title'/);
-  assert.match(read('src/i18n/en.ts'), /Opens field capture/);
+  assert.match(read('src/i18n/en.ts'), /Talk to Right Hand/);
 });

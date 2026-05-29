@@ -1,0 +1,125 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/Card.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+
+const { t } = createLayoutContext();
+const quickActions = [
+  { href: '/field-capture', label: t('right_hand.capture') },
+  { href: '/relay', label: t('right_hand.relay') },
+  { href: '/projects', label: t('right_hand.projects') },
+  { href: '/draft-review', label: t('right_hand.draft') },
+] as const;
+---
+
+<Layout titleKey="right_hand.title" activeHref="/right-hand">
+  <section class="rh-intake" aria-labelledby="rh-intake-title">
+    <p class="rh-intake__eyebrow">{t('right_hand.eyebrow')}</p>
+    <h1 id="rh-intake-title">{t('right_hand.title')}</h1>
+    <p class="rh-intake__lead">{t('right_hand.lead')}</p>
+
+    <Card>
+      <label class="rh-intake__label" for="rh-intake-note">{t('right_hand.input_label')}</label>
+      <textarea
+        id="rh-intake-note"
+        class="rh-intake__textarea"
+        rows="5"
+        placeholder={t('right_hand.input_placeholder')}
+      ></textarea>
+      <div class="rh-intake__actions" aria-label="Right Hand destinations">
+        {quickActions.map((action) => (
+          <a class="rh-intake__action" href={action.href}>{action.label}</a>
+        ))}
+      </div>
+      <p class="rh-intake__note">{t('right_hand.preview_note')}</p>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .rh-intake {
+    display: grid;
+    gap: 0.85rem;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .rh-intake__eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--right-hand);
+  }
+
+  .rh-intake h1 {
+    margin: 0;
+    font-size: clamp(2rem, 8vw, 3.2rem);
+    line-height: 0.95;
+    letter-spacing: 0;
+    color: var(--kerf-text);
+  }
+
+  .rh-intake__lead,
+  .rh-intake__note {
+    margin: 0;
+    color: var(--kerf-text-dim);
+    line-height: 1.5;
+  }
+
+  .rh-intake__label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    color: var(--kerf-text);
+  }
+
+  .rh-intake__textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 128px;
+    resize: vertical;
+    border: 1px solid var(--kerf-border);
+    border-radius: 10px;
+    padding: 0.85rem;
+    font: inherit;
+    font-size: 16px;
+    color: var(--kerf-text);
+    background: var(--kerf-bg-2);
+  }
+
+  .rh-intake__textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--right-hand) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  .rh-intake__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-top: 0.8rem;
+  }
+
+  .rh-intake__action {
+    border: 1px solid color-mix(in srgb, var(--right-hand) 35%, var(--kerf-border));
+    border-radius: 10px;
+    padding: 0.75rem 0.7rem;
+    text-decoration: none;
+    font-weight: 700;
+    text-align: center;
+    color: var(--right-hand);
+    background: color-mix(in srgb, var(--right-hand) 12%, transparent);
+  }
+
+  .rh-intake__note {
+    margin-top: 0.8rem;
+    font-size: 0.86rem;
+  }
+
+  @media (max-width: 520px) {
+    .rh-intake__actions {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
