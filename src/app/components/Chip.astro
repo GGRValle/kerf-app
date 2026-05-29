@@ -15,6 +15,11 @@ const { label, tone = 'neutral', variant = 'solid', title } = Astro.props;
   .chip {
     display: inline-flex;
     align-items: center;
+    /* Hug content even inside column-flex parents (e.g. money rows) so the
+     * chip stays a small pill instead of stretching into a full-width bar. */
+    align-self: flex-start;
+    width: fit-content;
+    max-width: 100%;
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
     font-size: 0.75rem;
@@ -22,15 +27,33 @@ const { label, tone = 'neutral', variant = 'solid', title } = Astro.props;
     line-height: 1.2;
     border: 1px solid transparent;
   }
-  .chip-solid,
-  .chip:not(.chip-outlined) {
+  /*
+   * Solid chips carry their own fill, so the chip reads identically across the
+   * light + dark theme cascade. Bright canon fills (amber/green/cyan) take a
+   * dark foreground (--on-accent); red keeps its white "block" foreground and
+   * neutral stays white on the muted slate fill. Foregrounds are set per tone
+   * (not via a blanket rule) so the outlined overrides below win on specificity.
+   */
+  .chip-red {
+    background: var(--chip-red, #f87171);
     color: #fff;
   }
-  .chip-red { background: var(--chip-red, #b42318); }
-  .chip-amber { background: var(--chip-amber, #b54708); }
-  .chip-green { background: var(--chip-green, #027a48); }
-  .chip-cyan { background: var(--chip-cyan, #026aa2); }
-  .chip-neutral { background: var(--chip-neutral, #667085); }
+  .chip-neutral {
+    background: var(--chip-neutral, #667085);
+    color: #fff;
+  }
+  .chip-amber {
+    background: var(--chip-amber, #f5b544);
+    color: var(--on-accent, #1a1300);
+  }
+  .chip-green {
+    background: var(--chip-green, #4ade80);
+    color: var(--on-accent, #1a1300);
+  }
+  .chip-cyan {
+    background: var(--chip-cyan, #7ba8ff);
+    color: var(--on-accent, #1a1300);
+  }
   .chip-outlined {
     background: transparent;
     color: var(--text, #1a2332);

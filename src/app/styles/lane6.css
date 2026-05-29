@@ -32,8 +32,9 @@
   gap: 0.5rem;
   align-items: center;
   padding: 0.65rem 0.75rem;
-  background: #14181f;
-  color: #e8ecf1;
+  background: var(--kerf-bg-2);
+  color: var(--text);
+  border: 1px solid var(--border-soft);
   border-radius: 8px;
   margin-bottom: 1rem;
 }
@@ -42,7 +43,7 @@
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #c9a961;
+  color: var(--right-hand);
   font-weight: 700;
   width: 100%;
 }
@@ -50,8 +51,8 @@
 .lane6-seg {
   display: inline-flex;
   gap: 2px;
-  background: #1a1f28;
-  border: 1px solid #2a3140;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 7px;
   padding: 2px;
 }
@@ -60,22 +61,30 @@
   padding: 0.35rem 0.65rem;
   font-size: 0.72rem;
   border-radius: 5px;
-  color: #6a7282;
+  color: var(--kerf-text-mute);
   font-weight: 600;
 }
 
 .lane6-seg span.active {
-  background: #f5b544;
-  color: #1a1300;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.lane6-seg span.lane6-preview-chip {
+  margin-left: auto;
+  color: var(--right-hand);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .lane6-paper-wrap {
-  background: linear-gradient(180deg, #1f2024 0%, #14181f 100%);
+  background: linear-gradient(180deg, var(--kerf-surface) 0%, var(--kerf-bg) 100%);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem;
 }
 
+/* The paper preview is a rendered document — it stays light on both themes. */
 .lane6-paper-wrap iframe,
 .lane6-paper-html {
   width: 100%;
@@ -83,6 +92,7 @@
   border: none;
   border-radius: 4px;
   background: #fcfcfa;
+  color: #1a1300;
 }
 
 .lane6-actions {
@@ -105,9 +115,9 @@
 }
 
 .lane6-btn.primary {
-  background: #f5b544;
-  border-color: #f5b544;
-  color: #1a1300;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 
 .lane6-btn.ghost {
@@ -130,15 +140,15 @@
   font-size: 0.85rem;
 }
 
-.lane6-gate-list li.pass { color: #027a48; }
-.lane6-gate-list li.fail { color: #b42318; }
+.lane6-gate-list li.pass { color: var(--field-green); }
+.lane6-gate-list li.fail { color: var(--kerf-red); }
 
 .lane6-override {
   margin-top: 1rem;
   padding: 0.75rem;
-  border: 1px solid #f5b544;
+  border: 1px solid var(--accent);
   border-radius: 8px;
-  background: rgba(245, 181, 68, 0.08);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .lane6-override label {
@@ -155,6 +165,8 @@
   border: 1px solid var(--border);
   padding: 0.5rem;
   font: inherit;
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .lane6-list {
@@ -164,6 +176,21 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.lane6-search {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+}
+
+.lane6-search::placeholder {
+  color: var(--kerf-text-mute);
 }
 
 .lane6-clients-grid {
@@ -185,7 +212,7 @@
 }
 
 .lane6-client-row:hover {
-  border-color: #0f766e;
+  border-color: var(--accent);
 }
 
 .lane6-client-meta {
@@ -211,6 +238,12 @@
   border-radius: 6px;
   border: 1px solid var(--border);
   font: inherit;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.lane6-form input::placeholder {
+  color: var(--kerf-text-mute);
 }
 
 .lane6-desktop-only { display: none; }
