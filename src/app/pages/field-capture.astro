@@ -1000,6 +1000,15 @@ const assignment = {
     void startRecording();
   });
   stopButton?.addEventListener('click', stopRecording);
+  window.addEventListener('kerf:rh-speak', (event) => {
+    event.preventDefault();
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      stopRecording();
+      return;
+    }
+    setState('active');
+    void startRecording();
+  });
   typeNoteButton?.addEventListener('click', () => setState('active'));
   photoButtons.forEach((button) => button?.addEventListener('click', openCamera));
   cameraInput?.addEventListener('change', handlePhotoPick);

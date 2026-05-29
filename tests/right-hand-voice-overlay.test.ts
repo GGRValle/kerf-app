@@ -263,6 +263,24 @@ test('Speak triggers open the overlay and keep the no-JS href fallback', () => {
   assert.match(layout, /RightHandVoiceOverlay/);
 });
 
+test('overlay has a Done path and lets the current page claim Speak context', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
+  assert.match(src, /id="rhvo-done"/);
+  assert.match(src, /rh_voice\.action_done/);
+  assert.match(src, /const finishCurrentTurn/);
+  assert.match(src, /doneBtn\?\.addEventListener\('click', finishCurrentTurn\)/);
+  assert.match(src, /new CustomEvent\('kerf:rh-speak', \{ cancelable: true \}\)/);
+  assert.match(src, /if \(!window\.dispatchEvent\(speakEvent\)\) return/);
+});
+
+test('Field Capture claims the bottom Speak button as its page recorder', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
+  assert.match(src, /addEventListener\('kerf:rh-speak'/);
+  assert.match(src, /event\.preventDefault\(\)/);
+  assert.match(src, /stopRecording\(\)/);
+  assert.match(src, /void startRecording\(\)/);
+});
+
 test('overlay is realtime-first with Groq fallback, shares the gate, and leaks no transcript to URLs', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
   // Uses the shared two-lane gate (same rule as the server).

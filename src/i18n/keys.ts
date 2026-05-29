@@ -507,6 +507,7 @@ export type I18nKey =
   | 'rh_voice.caption_label'
   | 'rh_voice.authority_deterministic'
   | 'rh_voice.action_cancel'
+  | 'rh_voice.action_done'
   | 'rh_voice.action_continue'
   | 'rh_voice.status_listening'
   | 'rh_voice.status_fallback'
