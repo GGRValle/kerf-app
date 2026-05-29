@@ -8,8 +8,9 @@ test('Phase 1G-a relay page applies global styles to JS-rendered cards', async (
   assert.match(source, /:global\(\.relay-card\)/);
   assert.match(source, /:global\(\.relay-card\[data-severity='block'\]\)/);
   assert.match(source, /:global\(\.relay-card\[data-severity='warn'\]\)/);
-  assert.match(source, /border-left: 4px solid #d92d20/);
-  assert.match(source, /border-left: 4px solid #f5b544/);
+  // Accept canon tokenized borders (1J-C visual fidelity) or the legacy literals.
+  assert.match(source, /border-left: 4px solid (?:var\(--kerf-red, #d92d20\)|#d92d20)/);
+  assert.match(source, /border-left: 4px solid (?:var\(--kerf-amber, #f5b544\)|#f5b544)/);
 });
 
 test('Phase 1G-a relay page improves card headline and severity timestamp spacing', async () => {
