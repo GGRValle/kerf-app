@@ -146,4 +146,26 @@ Adjacent suites (transcribe, route-shell-smoke, batch-d shell)
 
 ---
 
+---
+
+## Appendix · clean-worktree proof
+
+Verified tip: **`f5d32f1`** (code + tests) via a fresh `git worktree` + clean `npm ci`.
+The only commit above this tip is this report appendix (docs-only).
+
+```
+HEAD: f5d32f1d1c4878784b1b997648af4fe17da92727
+npm run typecheck    → OK (tsc --noEmit, no errors)
+npm run build:astro  → OK (server + client built; overlay client bundled)
+node --import tsx --test tests/right-hand-voice-overlay.test.ts → 14/14 pass
+Full suite (excluding pre-existing, untracked-bundle v15-vertical-slice):
+  tests 1474 · pass 1474 · fail 0
+```
+
+The `v15-vertical-slice-pages` suite is excluded — it fails on a fresh checkout
+because it reads an untracked generated bundle (`app.bundle.js`); pre-existing and
+unrelated to this lane.
+
+---
+
 *Lane built by Agent A · 2026-05-29 · pushed for Cowork iPhone verification + Christian merge. Not merged.*
