@@ -141,8 +141,8 @@
   margin: 0 0 1rem;
   padding: 0.55rem 0.7rem;
   border-radius: 8px;
-  border: 1px solid #7c5bd8;
-  background: color-mix(in srgb, #7c5bd8 12%, transparent);
+  border: 1px solid var(--kerf-violet);
+  background: color-mix(in srgb, var(--kerf-violet) 14%, transparent);
   font-size: 0.82rem;
 }
 
@@ -214,7 +214,7 @@
 .money-btn.primary {
   background: var(--accent, #d4923a);
   border-color: var(--accent, #d4923a);
-  color: #1a1300;
+  color: var(--on-accent, #1a1300);
 }
 
 .money-btn.ghost {

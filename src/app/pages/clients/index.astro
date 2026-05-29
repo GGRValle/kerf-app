@@ -31,7 +31,7 @@ function statusKey(status: 'active' | 'prospect' | 'archived') {
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
       <Card title={t('f_cl.list.title')}>
-        <input type="search" placeholder={t('f_cl.list.search_placeholder')} aria-label={t('f_cl.list.search_placeholder')} />
+        <input class="lane6-search" type="search" placeholder={t('f_cl.list.search_placeholder')} aria-label={t('f_cl.list.search_placeholder')} />
         {clients.length === 0 ? (
           <p>{t('f_cl.list.empty')}</p>
         ) : (

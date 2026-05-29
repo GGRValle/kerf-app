@@ -80,6 +80,8 @@
   border-radius: 8px;
   padding: 0.45rem 0.6rem;
   font: inherit;
+  background: var(--surface-2, #fff);
+  color: var(--text, #1a2332);
 }
 
 .lane23-followup {
