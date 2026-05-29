@@ -2,6 +2,7 @@
 import '../styles/shell.css';
 import SpeakFAB from '../components/SpeakFAB.astro';
 import MobileBottomNav from '../components/MobileBottomNav.astro';
+import RightHandVoiceOverlay from '../components/RightHandVoiceOverlay.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { navForContext } from '../lib/nav.js';
 import { DEFAULT_ROLE_ROOT_CONTEXT, type LayoutProps } from '../lib/layout-props.js';
@@ -65,6 +66,7 @@ const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
       </main>
       <MobileBottomNav activeHref={activeHref} roleRoot={context.roleRoot} />
       <SpeakFAB />
+      <RightHandVoiceOverlay />
     </div>
     <script>
       const activeNav = document.querySelector('.kerf-nav-link.active');

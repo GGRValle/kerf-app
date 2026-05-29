@@ -1,0 +1,563 @@
+---
+// Right Hand Voice Overlay — global listening overlay (the Speak front door).
+//
+// Spec: docs/architecture/right_hand_voice_overlay_spec_2026-05-29.md
+//   §0  Option B (live realtime caption) locked as V1.
+//   §4  bounded window (silence-commit / idle-close / hard-cap / teardown).
+//   §9  two-lane consequence gating (LIVE interim navigations · COMMIT durable).
+//   §10 consent gating (realtime for consenting tenants · Groq fallback else).
+//   §11 realtime safety guardrails.
+//
+// This component renders ONCE (in Layout.astro). Speak triggers carry
+// `data-rh-speak` and open this overlay; their `href="/right-hand"` remains the
+// no-JS fallback. The overlay produces the transcript that feeds the Phase 1H
+// draft path — it does not itself persist or synthesize anything.
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+const { t } = createLayoutContext();
+---
+
+<div
+  class="rhvo"
+  id="rh-voice-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="rhvo-title"
+  data-state="idle"
+  data-listening={t('rh_voice.status_listening')}
+  data-fallback={t('rh_voice.status_fallback')}
+  data-transcribing={t('rh_voice.status_transcribing')}
+  data-capped={t('rh_voice.status_capped')}
+  data-clarify={t('rh_voice.status_clarify')}
+  data-unavailable={t('rh_voice.status_unavailable')}
+  data-micdenied={t('rh_voice.status_mic_denied')}
+  hidden
+>
+  <div class="rhvo__backdrop" data-rhvo-dismiss></div>
+  <div class="rhvo__panel" role="document">
+    <div class="rhvo__indicator" aria-hidden="true">
+      <span class="rhvo__pulse"></span>
+      <span class="rhvo__mic">
+        <svg viewBox="0 0 24 24" aria-hidden="true"
+          ><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path><path
+            d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"
+          ></path></svg
+        >
+      </span>
+    </div>
+
+    <p class="rhvo__eyebrow" id="rhvo-title">{t('rh_voice.title')}</p>
+    <p class="rhvo__status" id="rhvo-status" aria-live="polite">{t('rh_voice.status_listening')}</p>
+
+    <div class="rhvo__meter" aria-hidden="true"><span class="rhvo__meter-fill" id="rhvo-meter"></span></div>
+
+    <div class="rhvo__caption" id="rhvo-caption" aria-live="polite" data-empty="true">
+      <span class="rhvo__caption-label">{t('rh_voice.caption_label')}</span>
+      <span class="rhvo__caption-text" id="rhvo-caption-text"></span>
+    </div>
+
+    <p class="rhvo__authority" id="rhvo-authority">{t('rh_voice.authority_deterministic')}</p>
+
+    <div class="rhvo__actions">
+      <button type="button" class="rhvo__btn rhvo__btn--ghost" data-rhvo-dismiss>
+        {t('rh_voice.action_cancel')}
+      </button>
+      <button type="button" class="rhvo__btn rhvo__btn--primary" id="rhvo-continue" hidden>
+        {t('rh_voice.action_continue')}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import {
+    canRouteFromInterim,
+    requiresCommittedTranscript,
+    classifyTranscriptIntent,
+    liveRouteFor,
+    type VoiceIntent,
+  } from '../../voice/realtime/voiceActionGate.js';
+
+  type OverlayState = 'idle' | 'listening' | 'committing' | 'fallback' | 'capped';
+
+  // Operator-facing copy is rendered into data-* on the overlay (resolved via
+  // t() at render) so the script stays i18n-correct. The inline English here is
+  // a last-resort default only — it is always status, never a fake transcript.
+  const overlay = document.getElementById('rh-voice-overlay');
+  if (overlay) {
+    const statusEl = document.getElementById('rhvo-status');
+    const captionWrap = document.getElementById('rhvo-caption');
+    const captionEl = document.getElementById('rhvo-caption-text');
+    const meterEl = document.getElementById('rhvo-meter');
+    const continueBtn = document.getElementById('rhvo-continue') as HTMLButtonElement | null;
+
+    // Bounded-window defaults (§4). Overwritten by the server response when a
+    // realtime session is minted, so client and session agree.
+    let silenceCommitMs = 2500;
+    let idleCloseMs = 12000;
+    let hardCapMs = 75000;
+
+    let state: OverlayState = 'idle';
+    let mediaStream: MediaStream | null = null;
+    let audioCtx: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let rafId = 0;
+    let pc: RTCPeerConnection | null = null;
+    let dc: RTCDataChannel | null = null;
+    let recorder: MediaRecorder | null = null;
+    let recChunks: Blob[] = [];
+    let silenceTimer = 0;
+    let idleTimer = 0;
+    let hardCapTimer = 0;
+    let routedLive = false; // a LIVE intent already navigated this turn
+    let lastInterim = '';
+
+    const setState = (next: OverlayState) => {
+      state = next;
+      overlay.dataset.state = next;
+    };
+    const setStatus = (text: string) => {
+      if (statusEl) statusEl.textContent = text;
+    };
+    const setCaption = (text: string) => {
+      // REAL transcript only — never invented. Empty until STT produces words.
+      if (captionEl) captionEl.textContent = text;
+      if (captionWrap) captionWrap.dataset.empty = text.trim().length === 0 ? 'true' : 'false';
+    };
+
+    const clearTimers = () => {
+      window.clearTimeout(silenceTimer);
+      window.clearTimeout(idleTimer);
+      window.clearTimeout(hardCapTimer);
+    };
+
+    const teardown = () => {
+      clearTimers();
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = 0;
+      try { dc?.close(); } catch { /* noop */ }
+      try { pc?.close(); } catch { /* noop */ }
+      try {
+        if (recorder && recorder.state !== 'inactive') recorder.stop();
+      } catch { /* noop */ }
+      try { void audioCtx?.close(); } catch { /* noop */ }
+      mediaStream?.getTracks().forEach((track) => track.stop());
+      mediaStream = null;
+      audioCtx = null;
+      analyser = null;
+      pc = null;
+      dc = null;
+      recorder = null;
+      recChunks = [];
+    };
+
+    const closeOverlay = () => {
+      teardown();
+      setState('idle');
+      overlay.hidden = true;
+    };
+
+    // ── Routing (no PII in URLs — enums/ids only; transcript stashed in
+    // sessionStorage for the downstream 1H surface to consume). ──────────────
+    const stashCommitted = (text: string) => {
+      try {
+        sessionStorage.setItem('kerf.voiceCommit', JSON.stringify({ text, at: Date.now() }));
+      } catch { /* storage may be unavailable; navigation still works */ }
+    };
+
+    const navigate = (href: string) => {
+      teardown();
+      window.location.href = href;
+    };
+
+    const routeLive = (intent: VoiceIntent): boolean => {
+      const route = liveRouteFor(intent);
+      if (route) {
+        navigate(`${route}?src=voice`);
+        return true;
+      }
+      if (intent === 'status_question') {
+        // No specific project bound from deterministic keywords — land on the
+        // real read-only projects surface rather than guess a project id.
+        navigate('/projects?src=voice');
+        return true;
+      }
+      return false;
+    };
+
+    const routeCommitted = (intent: VoiceIntent, text: string) => {
+      if (requiresCommittedTranscript(intent)) {
+        // Durable intent: carry the committed transcript to the capture surface
+        // that feeds synthesis (Phase 1H). The overlay persists nothing itself.
+        stashCommitted(text);
+        navigate('/field-capture?dest=this-job&intent=record&src=voice');
+        return;
+      }
+      if (canRouteFromInterim(intent)) {
+        if (!routedLive) routeLive(intent);
+        return;
+      }
+      // Unclassified — keep the overlay open and prompt once.
+      setCaption(text);
+      setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
+      armIdleClose();
+    };
+
+    // ── Interim words: may ONLY fire reversible LIVE navigations (§9). ───────
+    const onInterim = (text: string) => {
+      lastInterim = text;
+      setCaption(text);
+      armIdleClose();
+      if (routedLive) return;
+      const intent = classifyTranscriptIntent(text);
+      if (canRouteFromInterim(intent)) {
+        routedLive = routeLive(intent);
+      }
+    };
+
+    // ── Committed transcript: the only input allowed to drive durable actions.
+    const onCommitted = (text: string) => {
+      const finalText = text.trim().length > 0 ? text : lastInterim;
+      setCaption(finalText);
+      const intent = classifyTranscriptIntent(finalText);
+      routeCommitted(intent, finalText);
+    };
+
+    // ── Bounded window timers (§4) ──────────────────────────────────────────
+    const armHardCap = () => {
+      window.clearTimeout(hardCapTimer);
+      hardCapTimer = window.setTimeout(() => {
+        setState('capped');
+        setStatus(overlay.dataset.capped ?? 'Paused — tap Continue to keep going.');
+        if (continueBtn) continueBtn.hidden = false;
+        // Stop streaming but keep the overlay; teardown the live session only.
+        try { dc?.close(); } catch { /* noop */ }
+        try { pc?.close(); } catch { /* noop */ }
+        try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch { /* noop */ }
+        if (rafId) cancelAnimationFrame(rafId);
+      }, hardCapMs);
+    };
+    const armIdleClose = () => {
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(() => closeOverlay(), idleCloseMs);
+    };
+
+    // ── VAD via Web Audio AnalyserNode: drive the level meter + silence commit.
+    const SPEECH_RMS = 0.025;
+    let speaking = false;
+    const startMeter = (onSilenceCommit: () => void) => {
+      if (!mediaStream) return;
+      audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const src = audioCtx.createMediaStreamSource(mediaStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      src.connect(analyser);
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        if (!analyser) return;
+        analyser.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i += 1) {
+          const v = (buf[i]! - 128) / 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / buf.length);
+        if (meterEl) meterEl.style.transform = `scaleX(${Math.min(1, rms * 6)})`;
+        if (rms >= SPEECH_RMS) {
+          speaking = true;
+          window.clearTimeout(silenceTimer);
+          window.clearTimeout(idleTimer);
+        } else if (speaking) {
+          window.clearTimeout(silenceTimer);
+          silenceTimer = window.setTimeout(() => {
+            speaking = false;
+            onSilenceCommit();
+          }, silenceCommitMs);
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+    };
+
+    // ── Groq record-then-send fallback (no consent / realtime unavailable). ──
+    const chooseMime = () => {
+      if (!('MediaRecorder' in window)) return '';
+      const opts = ['audio/mp4', 'audio/aac', 'audio/webm;codecs=opus', 'audio/webm'];
+      return opts.find((o) => MediaRecorder.isTypeSupported(o)) ?? '';
+    };
+    const startFallback = () => {
+      setState('fallback');
+      setStatus(overlay.dataset.fallback ?? 'Listening — transcribes when you pause.');
+      if (!mediaStream || !('MediaRecorder' in window)) {
+        setStatus(overlay.dataset.unavailable ?? 'Voice isn’t available here — open Right Hand to type.');
+        return;
+      }
+      const mime = chooseMime();
+      recorder = new MediaRecorder(mediaStream, mime ? { mimeType: mime } : undefined);
+      recChunks = [];
+      recorder.addEventListener('dataavailable', (e) => {
+        if (e.data.size > 0) recChunks.push(e.data);
+      });
+      recorder.addEventListener('stop', async () => {
+        if (recChunks.length === 0) return;
+        const blob = new Blob(recChunks, { type: recorder?.mimeType || 'audio/webm' });
+        recChunks = [];
+        setStatus(overlay.dataset.transcribing ?? 'Transcribing…');
+        try {
+          const res = await fetch('/api/v1/transcribe', {
+            method: 'POST',
+            headers: { 'Content-Type': blob.type || 'audio/webm' },
+            body: blob,
+          });
+          if (!res.ok) {
+            setStatus(overlay.dataset.unavailable ?? 'Couldn’t transcribe — open Right Hand to type.');
+            return;
+          }
+          const data = (await res.json()) as { transcript?: string };
+          onCommitted(data.transcript ?? '');
+        } catch {
+          setStatus(overlay.dataset.unavailable ?? 'Couldn’t transcribe — open Right Hand to type.');
+        }
+      });
+      recorder.start();
+      startMeter(() => {
+        // On 2–3s silence: stop the clip → POST → committed transcript.
+        if (recorder && recorder.state !== 'inactive') recorder.stop();
+      });
+    };
+
+    // ── Realtime (consenting tenant): WebRTC transcription-only session. ─────
+    const startRealtime = async (clientSecret: string, model: string) => {
+      try {
+        pc = new RTCPeerConnection();
+        if (mediaStream) {
+          for (const track of mediaStream.getAudioTracks()) pc.addTrack(track, mediaStream);
+        }
+        dc = pc.createDataChannel('oai-events');
+        dc.addEventListener('message', (e) => {
+          try {
+            const evt = JSON.parse(e.data as string) as { type?: string; delta?: string; transcript?: string };
+            if (evt.type?.includes('input_audio_transcription') && typeof evt.delta === 'string') {
+              onInterim(`${lastInterim}${evt.delta}`);
+            } else if (
+              evt.type?.includes('input_audio_transcription') &&
+              evt.type.includes('completed') &&
+              typeof evt.transcript === 'string'
+            ) {
+              onCommitted(evt.transcript);
+              lastInterim = '';
+            }
+          } catch { /* ignore non-JSON frames */ }
+        });
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        const sdpRes = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${clientSecret}`, 'Content-Type': 'application/sdp' },
+          body: offer.sdp ?? '',
+        });
+        if (!sdpRes.ok) {
+          startFallback();
+          return;
+        }
+        const answer = { type: 'answer' as const, sdp: await sdpRes.text() };
+        await pc.setRemoteDescription(answer);
+        setState('listening');
+        startMeter(() => {
+          // Client-side commit nudge — the realtime server VAD also commits;
+          // whichever fires first surfaces the committed transcript.
+        });
+      } catch {
+        startFallback();
+      }
+    };
+
+    const beginSession = async () => {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        setStatus(overlay.dataset.micdenied ?? 'Microphone is off — enable it or open Right Hand to type.');
+        return;
+      }
+      armHardCap();
+      armIdleClose();
+      // Ask the server whether this tenant gets realtime. Consent + config are
+      // server-authoritative; 403/503 → honest Groq fallback.
+      try {
+        const res = await fetch('/api/v1/realtime/transcription-session', { method: 'POST' });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            client_secret?: string;
+            model?: string;
+            session?: { bounded_window?: { silenceCommitMs?: number; idleCloseMs?: number; hardCapMs?: number } };
+          };
+          const bw = data.session?.bounded_window;
+          if (bw) {
+            silenceCommitMs = bw.silenceCommitMs ?? silenceCommitMs;
+            idleCloseMs = bw.idleCloseMs ?? idleCloseMs;
+            hardCapMs = bw.hardCapMs ?? hardCapMs;
+            armHardCap();
+            armIdleClose();
+          }
+          if (data.client_secret && data.model) {
+            await startRealtime(data.client_secret, data.model);
+            return;
+          }
+        }
+        // 403 (no consent) / 503 (not configured) / malformed → fallback.
+        startFallback();
+      } catch {
+        startFallback();
+      }
+    };
+
+    const openOverlay = () => {
+      if (!overlay.hidden) return;
+      routedLive = false;
+      lastInterim = '';
+      setCaption('');
+      setState('listening');
+      setStatus(overlay.dataset.listening ?? 'Listening…');
+      if (continueBtn) continueBtn.hidden = true;
+      overlay.hidden = false;
+      void beginSession();
+    };
+
+    // Wire Speak triggers: intercept, open overlay; href is the no-JS fallback.
+    document.querySelectorAll<HTMLElement>('[data-rh-speak]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        openOverlay();
+      });
+    });
+
+    overlay.querySelectorAll('[data-rhvo-dismiss]').forEach((el) => {
+      el.addEventListener('click', () => closeOverlay());
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !overlay.hidden) closeOverlay();
+    });
+    continueBtn?.addEventListener('click', () => {
+      if (continueBtn) continueBtn.hidden = true;
+      void beginSession();
+    });
+  }
+</script>
+
+<style>
+  .rhvo {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .rhvo[hidden] { display: none; }
+  .rhvo__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 13, 17, 0.72);
+    backdrop-filter: blur(4px);
+  }
+  .rhvo__panel {
+    position: relative;
+    width: min(440px, 100%);
+    margin: 0 0 max(1rem, env(safe-area-inset-bottom, 0px));
+    padding: 1.4rem 1.25rem 1.1rem;
+    border: 1px solid var(--kerf-border);
+    border-radius: 20px 20px 0 0;
+    background: var(--kerf-surface);
+    color: var(--kerf-text);
+    display: grid;
+    gap: 0.6rem;
+    justify-items: center;
+    text-align: center;
+  }
+  @media (min-width: 600px) {
+    .rhvo { align-items: center; }
+    .rhvo__panel { border-radius: 20px; margin-bottom: 0; }
+  }
+  .rhvo__indicator { position: relative; width: 72px; height: 72px; }
+  .rhvo__pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--right-hand) 30%, transparent);
+    animation: rhvo-pulse 1.6s ease-out infinite;
+  }
+  .rhvo[data-state='fallback'] .rhvo__pulse { background: color-mix(in srgb, var(--kerf-blue) 30%, transparent); }
+  .rhvo[data-state='capped'] .rhvo__pulse { animation: none; opacity: 0.4; }
+  @keyframes rhvo-pulse {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  .rhvo__mic {
+    position: absolute;
+    inset: 14px;
+    border-radius: 50%;
+    background: var(--right-hand);
+    color: #0a0d11;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rhvo__mic :global(svg) { width: 26px; height: 26px; fill: currentColor; }
+  .rhvo__eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--right-hand);
+  }
+  .rhvo__status { margin: 0; font-size: 1rem; font-weight: 600; color: var(--kerf-text); }
+  .rhvo__meter {
+    width: 60%;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--kerf-border-soft);
+    overflow: hidden;
+  }
+  .rhvo__meter-fill {
+    display: block;
+    height: 100%;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left center;
+    background: var(--right-hand);
+    transition: transform 0.08s linear;
+  }
+  .rhvo__caption {
+    width: 100%;
+    min-height: 2.4rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 10px;
+    background: var(--kerf-bg-2);
+    border: 1px solid var(--kerf-border-soft);
+    text-align: left;
+  }
+  .rhvo__caption[data-empty='true'] { opacity: 0.55; }
+  .rhvo__caption-label {
+    display: block;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--kerf-text-mute);
+    margin-bottom: 0.15rem;
+  }
+  .rhvo__caption-text { font-size: 0.92rem; line-height: 1.4; color: var(--kerf-text); }
+  .rhvo__authority { margin: 0; font-size: 0.72rem; line-height: 1.4; color: var(--kerf-text-mute); }
+  .rhvo__actions { display: flex; gap: 0.6rem; width: 100%; margin-top: 0.2rem; }
+  .rhvo__btn {
+    flex: 1;
+    min-height: 44px;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--kerf-border);
+  }
+  .rhvo__btn--ghost { background: transparent; color: var(--kerf-text-dim); }
+  .rhvo__btn--primary { background: var(--right-hand); color: #0a0d11; border-color: var(--right-hand); }
+</style>
