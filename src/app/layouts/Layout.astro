@@ -63,7 +63,7 @@ const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
       <main class="kerf-main">
         <slot />
       </main>
-      <MobileBottomNav activeHref={activeHref} />
+      <MobileBottomNav activeHref={activeHref} roleRoot={context.roleRoot} />
       <SpeakFAB />
     </div>
     <script>

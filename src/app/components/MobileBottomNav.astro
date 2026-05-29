@@ -1,33 +1,46 @@
 ---
-import { MOBILE_BOTTOM_NAV } from '../lib/shellRoutes.js';
+import { bottomNavForRole, type ShellNavIcon } from '../lib/shellRoutes.js';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-export interface Props { activeHref?: string }
-const { activeHref = '/' } = Astro.props;
+import type { RoleRoot } from '../lib/layout-props.js';
+export interface Props { activeHref?: string; roleRoot?: RoleRoot }
+const { activeHref = '/', roleRoot = 'owner' } = Astro.props;
 const { t } = createLayoutContext();
+const slots = bottomNavForRole(roleRoot);
 const isActive = (href: string) =>
   href === '/' ? activeHref === '/' : activeHref === href || activeHref.startsWith(href + '/');
 
-// Monochrome silhouette icons (canon F-A1 system). `more` is the intentional
-// 4-color exception. Keyed by route href so the shared nav contract is untouched.
-const ICONS: Record<string, string> = {
-  '/': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg>',
-  '/field-capture':
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>',
-  '/relay':
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v9h-5l-1.5 2h-5L8 14H3z"/><path d="M3 16v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3h-4.2l-1.5 2H8.7L7.2 16z" opacity="0.55"/></svg>',
-  '/projects':
+// Canon F-A1 / F-C1 monochrome silhouette icons. `more` is the intentional
+// 4-color quad exception; `speak` uses the simple canon mic glyph.
+const ICONS: Record<ShellNavIcon, string> = {
+  home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z"/></svg>',
+  projects:
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-9l-2-2H4a1 1 0 0 0-1 1z"/></svg>',
-  '/more':
+  clients:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1z"/></svg>',
+  log:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 2h2v6l2-1 2 1V4h6v16H6zM10 13h8v2h-8zm0 4h6v2h-6z"/></svg>',
+  clock:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM13 7h-2v6l5 3 1-1.73L13 11.5z"/></svg>',
+  speak:
+    '<svg class="mbn-mic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>',
+  more:
     '<svg viewBox="0 0 24 24" class="icon-more" aria-hidden="true"><rect x="2" y="2" width="9" height="9" rx="1.5" fill="#A78BFA"/><rect x="13" y="2" width="9" height="9" rx="1.5" fill="#E879A8"/><rect x="2" y="13" width="9" height="9" rx="1.5" fill="#4ADE80"/><rect x="13" y="13" width="9" height="9" rx="1.5" fill="#67D6E0"/></svg>',
 };
 ---
 <nav class="mobile-bottom-nav" aria-label={t('shell.mobile_nav.aria')}>
-  {MOBILE_BOTTOM_NAV.map((item) => (
-    <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
-      <span class="mbn-icon" set:html={ICONS[item.href] ?? ICONS['/more']} />
-      <span class="mbn-label">{t(item.labelKey)}</span>
-    </a>
-  ))}
+  {slots.map((slot) =>
+    slot.speak ? (
+      <a class="mbn-speak" href={slot.href} aria-label={t(slot.labelKey)}>
+        <span class="mbn-fab" set:html={ICONS[slot.icon]} />
+        <span class="mbn-speak-label">{t(slot.labelKey)}</span>
+      </a>
+    ) : (
+      <a class="mbn-tab" href={slot.href} aria-current={isActive(slot.href) ? 'page' : undefined}>
+        <span class="mbn-icon" set:html={ICONS[slot.icon]} />
+        <span class="mbn-label">{t(slot.labelKey)}</span>
+      </a>
+    ),
+  )}
 </nav>
 <style>
   .mobile-bottom-nav {
@@ -38,11 +51,13 @@ const ICONS: Record<string, string> = {
     z-index: 15;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
+    align-items: end;
     background: var(--kerf-bg-2);
     border-top: 1px solid var(--kerf-border);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .mobile-bottom-nav a {
+  .mbn-tab,
+  .mbn-speak {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -66,8 +81,37 @@ const ICONS: Record<string, string> = {
   .mbn-icon :global(svg.icon-more) {
     fill: none;
   }
-  .mobile-bottom-nav a[aria-current='page'] {
+  .mobile-bottom-nav .mbn-tab[aria-current='page'] {
     color: var(--kerf-amber);
+  }
+
+  /* Center Speak slot — canon lifted mic FAB. */
+  .mbn-speak {
+    position: relative;
+  }
+  .mbn-fab {
+    position: absolute;
+    bottom: 0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--kerf-amber);
+    color: #1a1300;
+    border: 3px solid var(--kerf-bg);
+    box-shadow: 0 6px 18px rgba(245, 181, 68, 0.4);
+  }
+  .mbn-fab :global(svg.mbn-mic) {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+  }
+  .mbn-speak-label {
+    margin-top: 34px;
   }
   @media (min-width: 900px) {
     .mobile-bottom-nav {

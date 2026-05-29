@@ -27,6 +27,7 @@ const assignment = {
   location: 'Kitchen',
   tenant_id: 'tenant_ggr',
   project_id: 'proj_wegrzyn_kitchen',
+  matched_by: 'job-site GPS',
 };
 ---
 
@@ -58,24 +59,47 @@ const assignment = {
             </p>
           </header>
 
-          <div class="assign-card">
-            <p class="assign-eyebrow">Capture goes to</p>
+          <div class="dest-selector">
+            <label class="assign-eyebrow" for="f-e1-destination">Capture goes to</label>
+            <select
+              class="dest-select"
+              id="f-e1-destination"
+              data-active-project-id={assignment.project_id}
+              data-active-client={assignment.client}
+              data-active-project={assignment.project}
+              data-active-location={assignment.location}
+              data-matched-by={assignment.matched_by}
+            >
+              <option value="active" data-project-id={assignment.project_id} selected>
+                Active job · {assignment.client}
+              </option>
+              <option value="pick-project" data-project-id="">Pick a different project…</option>
+              <option value="pick-client" data-project-id="">Pick a different client…</option>
+              <option value="unassigned" data-project-id="">New client / unassigned note</option>
+            </select>
+            <p class="dest-hint" id="f-e1-dest-hint">
+              Matched to your active job by {assignment.matched_by}. Change it above if this
+              capture belongs elsewhere.
+            </p>
+          </div>
+
+          <div class="assign-card" id="f-e1-assign-card">
             <div class="assign-row">
               <span class="ar-key">Client</span>
-              <span class="ar-val">{assignment.client}</span>
+              <span class="ar-val" id="f-e1-dest-client">{assignment.client}</span>
             </div>
             <div class="assign-row">
               <span class="ar-key">Project</span>
-              <span class="ar-val">{assignment.project}</span>
+              <span class="ar-val" id="f-e1-dest-project">{assignment.project}</span>
             </div>
             <div class="assign-row">
               <span class="ar-key">Location</span>
-              <span class="ar-val ar-val-dim">{assignment.location}</span>
+              <span class="ar-val ar-val-dim" id="f-e1-dest-location">{assignment.location}</span>
             </div>
           </div>
 
           <aside class="dl-anchor" aria-label="Daily Log destination">
-            <strong>Writes to Wegrzyn · today's Daily Log.</strong>
+            <strong id="f-e1-dl-anchor">Writes to {assignment.client} · today's Daily Log.</strong>
             <span class="dl-detail">
               Every capture lands in the project's Daily Log for this day — your voice,
               photos, and notes file together as one day's record. Right Hand reviews
@@ -116,7 +140,7 @@ const assignment = {
         <section class="capture-state state-active" aria-label="Active capture">
           <header class="top-chrome">
             <div class="tc-eyebrow">
-              <span class="tc-mode">Capturing · Wegrzyn / Kitchen</span>
+              <span class="tc-mode" id="f-e1-active-mode">Capturing · {assignment.client} / {assignment.location}</span>
               <span class="tc-user" id="f-e1-active-count">0 items</span>
             </div>
             <h1 class="tc-title tc-title-sm">Recording voice · accumulating evidence</h1>
@@ -664,9 +688,14 @@ const assignment = {
       if (photos.length > 0) parts.push(`${photos.length} photo${photos.length === 1 ? '' : 's'}`);
       if (videos.length > 0) parts.push(`${videos.length} video${videos.length === 1 ? '' : 's'}`);
       if (transcript.length > 0) parts.push('typed summary');
+      const destClientNode = document.getElementById('f-e1-dest-client');
+      const destClient =
+        destClientNode instanceof HTMLElement && destClientNode.textContent
+          ? destClientNode.textContent.trim()
+          : 'this job';
       preflightMeta.textContent =
         parts.length > 0
-          ? `Daniel · writes to Wegrzyn / today's Daily Log · ${parts.join(' · ')}`
+          ? `Daniel · writes to ${destClient} / today's Daily Log · ${parts.join(' · ')}`
           : 'Daily Log · nothing captured yet';
     }
     if (photoCount instanceof HTMLElement) {
@@ -1003,6 +1032,53 @@ const assignment = {
   submitButton?.addEventListener('click', () => {
     void submitDailyLogEntry();
   });
+
+  // ---- Destination selector (1J-C) ----
+  // Capture is no longer hard-bound to one job. Default is the GPS/job-context
+  // matched active job (dogfood: proj_wegrzyn_kitchen); the worker can switch to
+  // pick-project / pick-client / unassigned. Non-active modes clear the project
+  // binding so the existing submit guard asks for a project before send.
+  const destSelect = document.getElementById('f-e1-destination');
+  const fieldShellEl = document.querySelector('.field-shell');
+  if (destSelect instanceof HTMLSelectElement) {
+    const destClientEl = document.getElementById('f-e1-dest-client');
+    const destProjectEl = document.getElementById('f-e1-dest-project');
+    const destLocationEl = document.getElementById('f-e1-dest-location');
+    const destHintEl = document.getElementById('f-e1-dest-hint');
+    const dlAnchorEl = document.getElementById('f-e1-dl-anchor');
+    const activeModeEl = document.getElementById('f-e1-active-mode');
+    const activeClient = destSelect.dataset.activeClient ?? 'this job';
+    const activeProject = destSelect.dataset.activeProject ?? '';
+    const activeLocation = destSelect.dataset.activeLocation ?? '';
+    const matchedBy = destSelect.dataset.matchedBy ?? 'job-site GPS';
+    const applyDestination = () => {
+      const option = destSelect.selectedOptions[0];
+      const projectId = option instanceof HTMLOptionElement ? option.dataset.projectId ?? '' : '';
+      if (fieldShellEl instanceof HTMLElement) fieldShellEl.dataset.projectId = projectId;
+      if (submitButton instanceof HTMLElement) submitButton.dataset.projectId = projectId;
+      const isActive = destSelect.value === 'active';
+      if (destClientEl) destClientEl.textContent = isActive ? activeClient : '—';
+      if (destProjectEl) destProjectEl.textContent = isActive ? activeProject : 'Choose a project';
+      if (destLocationEl) destLocationEl.textContent = isActive ? activeLocation : '—';
+      if (dlAnchorEl) {
+        dlAnchorEl.textContent = isActive
+          ? `Writes to ${activeClient} · today's Daily Log.`
+          : 'Pick a project to file this capture before submit.';
+      }
+      if (activeModeEl) {
+        activeModeEl.textContent = isActive
+          ? `Capturing · ${activeClient} / ${activeLocation}`
+          : 'Capturing · unassigned';
+      }
+      if (destHintEl) {
+        destHintEl.textContent = isActive
+          ? `Matched to your active job by ${matchedBy}. Change it above if this capture belongs elsewhere.`
+          : 'Project / client pickers arrive in a later release — for now, capture to your active job or save as an unassigned note.';
+      }
+    };
+    destSelect.addEventListener('change', applyDestination);
+  }
+
   renderCaptured();
 </script>
 
@@ -1118,6 +1194,32 @@ const assignment = {
   }
 
   /* ===== Assignment card ===== */
+  .dest-selector {
+    margin-bottom: 10px;
+  }
+  .dest-select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--kerf-surface);
+    color: var(--kerf-text);
+    border: 1px solid var(--kerf-border);
+    border-radius: 12px;
+    padding: 11px 13px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .dest-select:focus-visible {
+    outline: 2px solid var(--field-green);
+    outline-offset: 1px;
+  }
+  .dest-hint {
+    margin: 6px 2px 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--kerf-text-mute);
+  }
   .assign-card {
     background: var(--kerf-surface);
     border: 1px solid var(--kerf-border-soft);
@@ -1126,6 +1228,7 @@ const assignment = {
     margin-bottom: 10px;
   }
   .assign-eyebrow {
+    display: block;
     font-size: 0.58rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
