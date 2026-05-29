@@ -478,6 +478,7 @@ export const ES: TranslationMap = {
   'rh_voice.caption_label': 'Escuché',
   'rh_voice.authority_deterministic': 'Por ahora enruta por palabras clave — Mano Derecha te lleva a la pantalla correcta; no actúa por su cuenta.',
   'rh_voice.action_cancel': 'Cancelar',
+  'rh_voice.action_done': 'Listo',
   'rh_voice.action_continue': 'Continuar',
   'rh_voice.status_listening': 'Escuchando…',
   'rh_voice.status_fallback': 'Escuchando — transcribe cuando haces una pausa.',

@@ -61,6 +61,9 @@ const { t } = createLayoutContext();
       <button type="button" class="rhvo__btn rhvo__btn--ghost" data-rhvo-dismiss>
         {t('rh_voice.action_cancel')}
       </button>
+      <button type="button" class="rhvo__btn rhvo__btn--primary" id="rhvo-done">
+        {t('rh_voice.action_done')}
+      </button>
       <button type="button" class="rhvo__btn rhvo__btn--primary" id="rhvo-continue" hidden>
         {t('rh_voice.action_continue')}
       </button>
@@ -88,6 +91,7 @@ const { t } = createLayoutContext();
     const captionWrap = document.getElementById('rhvo-caption');
     const captionEl = document.getElementById('rhvo-caption-text');
     const meterEl = document.getElementById('rhvo-meter');
+    const doneBtn = document.getElementById('rhvo-done') as HTMLButtonElement | null;
     const continueBtn = document.getElementById('rhvo-continue') as HTMLButtonElement | null;
 
     // Bounded-window defaults (§4). Overwritten by the server response when a
@@ -222,12 +226,39 @@ const { t } = createLayoutContext();
       routeCommitted(intent, finalText);
     };
 
+    const finishCurrentTurn = () => {
+      if (recorder && recorder.state !== 'inactive') {
+        setStatus(overlay.dataset.transcribing ?? 'Transcribing…');
+        recorder.stop();
+        return;
+      }
+      const interim = lastInterim.trim();
+      if (interim.length === 0) {
+        setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
+        armIdleClose();
+        return;
+      }
+      const intent = classifyTranscriptIntent(interim);
+      if (canRouteFromInterim(intent)) {
+        routedLive = routeLive(intent);
+        return;
+      }
+      setCaption(interim);
+      if (requiresCommittedTranscript(intent)) {
+        setStatus(overlay.dataset.transcribing ?? 'Transcribing…');
+      } else {
+        setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
+      }
+      armIdleClose();
+    };
+
     // ── Bounded window timers (§4) ──────────────────────────────────────────
     const armHardCap = () => {
       window.clearTimeout(hardCapTimer);
       hardCapTimer = window.setTimeout(() => {
         setState('capped');
         setStatus(overlay.dataset.capped ?? 'Paused — tap Continue to keep going.');
+        if (doneBtn) doneBtn.hidden = true;
         if (continueBtn) continueBtn.hidden = false;
         // Hard cap reached: fully release the mic + audio graph (bounded-window /
         // privacy rule §4) by reusing the shared teardown() — not a hand-rolled
@@ -421,6 +452,7 @@ const { t } = createLayoutContext();
       setCaption('');
       setState('listening');
       setStatus(overlay.dataset.listening ?? 'Listening…');
+      if (doneBtn) doneBtn.hidden = false;
       if (continueBtn) continueBtn.hidden = true;
       overlay.hidden = false;
       void beginSession();
@@ -430,6 +462,8 @@ const { t } = createLayoutContext();
     document.querySelectorAll<HTMLElement>('[data-rh-speak]').forEach((el) => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
+        const speakEvent = new CustomEvent('kerf:rh-speak', { cancelable: true });
+        if (!window.dispatchEvent(speakEvent)) return;
         openOverlay();
       });
     });
@@ -440,8 +474,10 @@ const { t } = createLayoutContext();
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !overlay.hidden) closeOverlay();
     });
+    doneBtn?.addEventListener('click', finishCurrentTurn);
     continueBtn?.addEventListener('click', () => {
       if (continueBtn) continueBtn.hidden = true;
+      if (doneBtn) doneBtn.hidden = false;
       void beginSession();
     });
   }

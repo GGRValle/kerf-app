@@ -472,6 +472,7 @@ export const EN: TranslationMap = {
   'rh_voice.caption_label': 'Heard',
   'rh_voice.authority_deterministic': 'Routing on keywords for now — Right Hand sends you to the right surface; it doesn’t act on its own.',
   'rh_voice.action_cancel': 'Cancel',
+  'rh_voice.action_done': 'Done',
   'rh_voice.action_continue': 'Continue',
   'rh_voice.status_listening': 'Listening…',
   'rh_voice.status_fallback': 'Listening — transcribes when you pause.',
