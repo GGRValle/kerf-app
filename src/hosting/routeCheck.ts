@@ -83,6 +83,23 @@ export const APPROVED_HOSTING_ENDPOINTS = [
     approved_at: '2026-05-21T00:00:00.000Z',
     status: 'approved',
   },
+  // Right Hand Voice Overlay realtime transcription lane
+  // (right_hand_voice_overlay_spec_2026-05-29 §0 lock; D-049 consequence-gating).
+  // OpenAI realtime transcription-only session — gpt-4o-transcribe streams live
+  // interim + committed transcript for the bounded voice overlay window. Tier
+  // `frontier` because it is a paid realtime stream gated on
+  // `tenant_synthesis_consent` (D-049 §6); Groq Whisper turbo above is the
+  // record-then-send fallback for non-consenting tenants. The ephemeral session
+  // token is minted server-side (standing key never reaches the client).
+  {
+    endpoint: 'openai://gpt-4o-transcribe-realtime',
+    provider: 'openai',
+    model: 'gpt-4o-transcribe',
+    tier: 'frontier',
+    approved_by_decision: 'D-049',
+    approved_at: '2026-05-29T00:00:00.000Z',
+    status: 'approved',
+  },
 ] as const satisfies readonly ApprovedHostingEndpoint[];
 
 export interface HostingRouteCheckRequest {

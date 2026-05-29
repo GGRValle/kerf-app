@@ -10,6 +10,7 @@ import { relayRoutes } from './routes/relay.js';
 import { moneyRoutes } from './routes/money.js';
 import { reviewRoutes } from './routes/review.js';
 import { transcribeRoutes } from './routes/transcribe.js';
+import { realtimeRoutes } from './routes/realtime.js';
 
 export function createApiRouter(): Hono {
   const app = new Hono();
@@ -24,6 +25,7 @@ export function createApiRouter(): Hono {
   app.route('/', relayRoutes);
   app.route('/', reviewRoutes);
   app.route('/', transcribeRoutes);
+  app.route('/', realtimeRoutes);
   return app;
 }
 

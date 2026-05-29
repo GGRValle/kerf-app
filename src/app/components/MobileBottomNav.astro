@@ -33,6 +33,7 @@ const ICONS: Record<ShellNavIcon, string> = {
       <a
         class="mbn-speak"
         href={slot.href}
+        data-rh-speak
         aria-label={t(slot.labelKey)}
         aria-current={isActive(slot.href) ? 'page' : undefined}
       >
