@@ -58,11 +58,24 @@ test('approved hosting endpoint registry is seeded from D-023 (Tier 1) + D-047 (
       approved_at: '2026-05-21T00:00:00.000Z',
       status: 'approved',
     },
+    {
+      endpoint: 'openai://gpt-4o-transcribe-realtime',
+      provider: 'openai',
+      model: 'gpt-4o-transcribe',
+      tier: 'frontier',
+      approved_by_decision: 'D-049',
+      approved_at: '2026-05-29T00:00:00.000Z',
+      status: 'approved',
+    },
   ]);
   assert.equal(approvedHostingEndpoint('groq://llama-70b')?.approved_by_decision, 'D-023');
   assert.equal(approvedHostingEndpoint('groq://llama-4-scout')?.approved_by_decision, 'D-023');
   assert.equal(approvedHostingEndpoint('groq://whisper-large-v3-turbo')?.approved_by_decision, 'D-023');
   assert.equal(approvedHostingEndpoint('anthropic://claude-sonnet-4-6')?.approved_by_decision, 'D-047');
+  assert.equal(
+    approvedHostingEndpoint('openai://gpt-4o-transcribe-realtime')?.approved_by_decision,
+    'D-049',
+  );
 });
 
 test('checkHostingRoute allows approved hosted endpoints with adapter audit action', () => {
