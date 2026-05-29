@@ -229,11 +229,11 @@ const { t } = createLayoutContext();
         setState('capped');
         setStatus(overlay.dataset.capped ?? 'Paused — tap Continue to keep going.');
         if (continueBtn) continueBtn.hidden = false;
-        // Stop streaming but keep the overlay; teardown the live session only.
-        try { dc?.close(); } catch { /* noop */ }
-        try { pc?.close(); } catch { /* noop */ }
-        try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch { /* noop */ }
-        if (rafId) cancelAnimationFrame(rafId);
+        // Hard cap reached: fully release the mic + audio graph (bounded-window /
+        // privacy rule §4) by reusing the shared teardown() — not a hand-rolled
+        // partial copy. Keep the overlay + Continue button visible; Continue →
+        // beginSession() re-acquires the mic from scratch via getUserMedia.
+        teardown();
       }, hardCapMs);
     };
     const armIdleClose = () => {
@@ -363,8 +363,12 @@ const { t } = createLayoutContext();
         await pc.setRemoteDescription(answer);
         setState('listening');
         startMeter(() => {
-          // Client-side commit nudge — the realtime server VAD also commits;
-          // whichever fires first surfaces the committed transcript.
+          // Silence after speech: the realtime server VAD commits the final
+          // transcript over the data channel. Re-arm idle close so that if no
+          // `completed` event ever arrives, the session closes honestly at the
+          // idle window instead of sitting open to the hard cap.
+          setStatus(overlay.dataset.transcribing ?? 'Transcribing…');
+          armIdleClose();
         });
       } catch {
         startFallback();
