@@ -30,7 +30,12 @@ const ICONS: Record<ShellNavIcon, string> = {
 <nav class="mobile-bottom-nav" aria-label={t('shell.mobile_nav.aria')}>
   {slots.map((slot) =>
     slot.speak ? (
-      <a class="mbn-speak" href={slot.href} aria-label={t(slot.labelKey)}>
+      <a
+        class="mbn-speak"
+        href={slot.href}
+        aria-label={t(slot.labelKey)}
+        aria-current={isActive(slot.href) ? 'page' : undefined}
+      >
         <span class="mbn-fab" set:html={ICONS[slot.icon]} />
         <span class="mbn-speak-label">{t(slot.labelKey)}</span>
       </a>
@@ -48,7 +53,7 @@ const ICONS: Record<ShellNavIcon, string> = {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 15;
+    z-index: 80;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     align-items: end;
@@ -67,6 +72,12 @@ const ICONS: Record<ShellNavIcon, string> = {
     font-weight: 600;
     color: var(--kerf-text-mute);
     text-decoration: none;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   .mbn-icon {
     display: inline-flex;
@@ -82,6 +93,9 @@ const ICONS: Record<ShellNavIcon, string> = {
     fill: none;
   }
   .mobile-bottom-nav .mbn-tab[aria-current='page'] {
+    color: var(--kerf-amber);
+  }
+  .mobile-bottom-nav .mbn-speak[aria-current='page'] .mbn-speak-label {
     color: var(--kerf-amber);
   }
 
@@ -104,6 +118,7 @@ const ICONS: Record<ShellNavIcon, string> = {
     color: #1a1300;
     border: 3px solid var(--kerf-bg);
     box-shadow: 0 6px 18px rgba(245, 181, 68, 0.4);
+    pointer-events: none;
   }
   .mbn-fab :global(svg.mbn-mic) {
     width: 24px;

@@ -34,12 +34,12 @@ export interface ShellBottomNavSlot {
 
 /**
  * Canon F-A1 owner phone tab bar — Home · Projects · Speak · Clients · More.
- * The center slot is the Right Hand Speak mic (routes to field capture).
+ * The center slot is the global Right Hand intake, not field capture.
  */
 export const OWNER_BOTTOM_NAV: readonly ShellBottomNavSlot[] = [
   { href: '/', labelKey: 'shell.nav.home', icon: 'home' },
   { href: '/projects', labelKey: 'shell.nav.projects', icon: 'projects' },
-  { href: '/field-capture', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
+  { href: '/right-hand', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
   { href: '/clients', labelKey: 'shell.nav.clients', icon: 'clients' },
   { href: '/more', labelKey: 'shell.nav.more', icon: 'more' },
 ] as const;
@@ -52,7 +52,7 @@ export const OWNER_BOTTOM_NAV: readonly ShellBottomNavSlot[] = [
 export const FIELD_BOTTOM_NAV: readonly ShellBottomNavSlot[] = [
   { href: '/', labelKey: 'shell.nav.home', icon: 'home' },
   { href: '/field', labelKey: 'shell.nav.log', icon: 'log' },
-  { href: '/field-capture', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
+  { href: '/right-hand', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
   { href: '/schedule', labelKey: 'shell.nav.clock', icon: 'clock' },
   { href: '/more', labelKey: 'shell.nav.more', icon: 'more' },
 ] as const;

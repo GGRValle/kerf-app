@@ -16,6 +16,7 @@ const LEGACY_ROUTES = [
   '/',
   '/dashboard',
   '/field-capture',
+  '/right-hand',
   '/field',
   '/transcript-review',
   '/draft-review',
