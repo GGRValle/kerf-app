@@ -320,19 +320,27 @@ const { t } = createLayoutContext();
     };
 
     const routeCommitted = (intent: VoiceIntent, text: string) => {
+      const cleanText = text.trim();
       if (requiresCommittedTranscript(intent)) {
         // Durable intent: confirm in-overlay first (trust loop). No navigation,
         // no persistence here — that happens only on Save, via the existing
         // validated capture path.
-        enterSorting(text);
+        enterSorting(cleanText);
         return;
       }
       if (canRouteFromInterim(intent)) {
         if (!routedLive) routeLive(intent);
         return;
       }
+      if (cleanText.length > 0) {
+        // A useful field note does not need to contain a routing keyword to be
+        // worth saving. Default meaningful committed speech into the same
+        // operator-confirmed note path instead of dead-ending on "no action."
+        enterSorting(cleanText);
+        return;
+      }
       // Unclassified — keep the overlay open and prompt once.
-      setCaption(text);
+      setCaption(cleanText);
       setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
       armIdleClose();
     };
