@@ -375,6 +375,18 @@ test('trust loop: durable committed intent enters confirm and does NOT auto-navi
   assert.doesNotMatch(enterConfirm, /stashCommitted\(/);
 });
 
+test('trust loop: meaningful unclassified speech defaults to a saveable note', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
+  assert.match(routeCommitted, /const cleanText = text\.trim\(\)/);
+  assert.match(routeCommitted, /if \(cleanText\.length > 0\) \{/);
+  assert.match(routeCommitted, /enterSorting\(cleanText\)/);
+  assert.doesNotMatch(
+    routeCommitted,
+    /cleanText\.length > 0[\s\S]{0,180}setStatus\(overlay\.dataset\.clarify/,
+  );
+});
+
 test('Stop on an interim durable transcript enters the trust loop instead of freezing on Transcribing', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
@@ -460,6 +472,15 @@ test('fallback Stop cannot freeze forever on empty audio or hanging transcriptio
   assert.match(src, /signal: controller\.signal/);
   assert.match(src, /catch \{[\s\S]*?recoverVoiceTurn\(\)/);
   assert.match(src, /rh_voice\.status_retry/);
+});
+
+test('Right Hand action labels distinguish discard from adding more recording', () => {
+  const en = readFileSync(path.join(ROOT, 'src/i18n/en.ts'), 'utf8');
+  const es = readFileSync(path.join(ROOT, 'src/i18n/es.ts'), 'utf8');
+  assert.match(en, /'rh_voice\.action_cancel': "Don't save"/);
+  assert.match(en, /'rh_voice\.action_continue': 'Continue recording'/);
+  assert.match(es, /'rh_voice\.action_cancel': 'No guardar'/);
+  assert.match(es, /'rh_voice\.action_continue': 'Seguir grabando'/);
 });
 
 test('F-RH1 visual: elapsed timer + field-green VU bars + typing cursor + per-state headings', () => {
