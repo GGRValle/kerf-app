@@ -23,6 +23,8 @@ export const VOICE_INTENTS = [
   'open_lidar', // "open lidar" / "scan this room" → /room-capture
   'status_question', // "what's the status on this job?" → project status (read-only)
   'open_relay', // "show me what needs review" → /relay
+  'open_job_intake', // "input a job" / "start a project" → /projects/new
+  'open_money', // "check money" / "budget" / "margin" → /money
   'open_field_capture', // "take a job note" → /field-capture (carry context)
   // ── COMMIT lane · durable (consequence) ───────────────────────────────────
   'job_note', // persist a job note
@@ -46,6 +48,8 @@ const LIVE_LANE_INTENTS: ReadonlySet<VoiceIntent> = new Set<VoiceIntent>([
   'open_lidar',
   'status_question',
   'open_relay',
+  'open_job_intake',
+  'open_money',
   'open_field_capture',
 ]);
 
@@ -65,6 +69,8 @@ const COMMIT_LANE_INTENTS: ReadonlySet<VoiceIntent> = new Set<VoiceIntent>([
 const LIVE_LANE_ROUTES: Readonly<Record<string, string>> = {
   open_lidar: '/room-capture',
   open_relay: '/relay',
+  open_job_intake: '/projects/new',
+  open_money: '/money',
   open_field_capture: '/field-capture',
   // status_question routes to the active project's status surface; the concrete
   // project id is bound by the overlay from active-job context, not here.
@@ -146,6 +152,8 @@ interface IntentRule {
 const INTENT_RULES: readonly IntentRule[] = [
   { intent: 'open_lidar', pattern: /\b(lidar|scan (this|the) room|laser scan|measure the room)\b/i },
   { intent: 'open_relay', pattern: /\b(needs review|what needs|relay|what's waiting|show me .* review)\b/i },
+  { intent: 'open_job_intake', pattern: /\b(input|enter|start|create|set up|add) (a |the |new )?(job|project)\b|\b(new job|job intake|new project)\b/i },
+  { intent: 'open_money', pattern: /\b(money|budget|margin|allowance|allowances|invoice|invoices|accounts payable|accounts receivable|\bap\b|\bar\b|costs?|financials?|finance)\b/i },
   { intent: 'change_order', pattern: /\b(change order|change-order|\bc\.?o\.?\b|work on the change)\b/i },
   { intent: 'estimate_update', pattern: /\b(estimate|the bid|quote|add a line)\b/i },
   { intent: 'status_question', pattern: /\b(status|how('?s| is) .* (going|coming)|where (are|is)|on track)\b/i },

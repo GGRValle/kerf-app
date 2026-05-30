@@ -488,6 +488,7 @@ export const ES: TranslationMap = {
   'rh_voice.status_unavailable': 'No se pudo transcribir — abre Mano Derecha para escribir.',
   'rh_voice.status_mic_denied': 'El micrófono está apagado — actívalo o abre Mano Derecha para escribir.',
   'rh_voice.status_sorting': 'Entendido. Ordenando esto…',
+  'rh_voice.status_retry': 'No pude terminar eso. Toca Continuar y dilo otra vez.',
   'rh_voice.head_sorting': 'Te escuché',
   'rh_voice.head_confirm': 'Listo para ti',
   'rh_voice.confirm_routed_label': 'Enrutado',
