@@ -325,6 +325,11 @@ test('lifecycle: hard cap fully releases the mic and realtime silence re-arms id
   assert.match(teardown, /getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
   assert.match(teardown, /audioCtx\?\.close\(\)/);
 
+  const releaseListeningResources = sliceDecl(src, 'releaseListeningResources', 'closeOverlay');
+  assert.match(releaseListeningResources, /getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+  assert.match(releaseListeningResources, /audioCtx\?\.close\(\)/);
+  assert.doesNotMatch(releaseListeningResources, /recChunks = \[\]/);
+
   // Blocker 1: the hard-cap path must DELEGATE to teardown() (full release),
   // not hand-roll a partial copy that leaves the mic + AudioContext open.
   const armHardCap = sliceDecl(src, 'armHardCap', 'armIdleClose');
@@ -373,9 +378,31 @@ test('trust loop: durable committed intent enters confirm and does NOT auto-navi
 test('Stop on an interim durable transcript enters the trust loop instead of freezing on Transcribing', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
+  assert.match(finishCurrentTurn, /releaseListeningResources\(\)/);
   assert.match(finishCurrentTurn, /requiresCommittedTranscript\(intent\)/);
   assert.match(finishCurrentTurn, /enterSorting\(interim\)/);
   assert.doesNotMatch(finishCurrentTurn, /requiresCommittedTranscript\(intent\)[\s\S]{0,120}setStatus\(overlay\.dataset\.transcribing/);
+});
+
+test('Stop immediately releases the mic/session before any clarify or route decision', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
+  assert.match(
+    finishCurrentTurn,
+    /recorder\.stop\(\);\s*releaseListeningResources\(\);\s*return;/,
+  );
+  assert.match(
+    finishCurrentTurn,
+    /releaseListeningResources\(\);\s*const interim = lastInterim\.trim\(\);/,
+  );
+  assert.match(
+    finishCurrentTurn,
+    /interim\.length === 0[\s\S]*?setState\('capped'\)[\s\S]*?showActions\('capped'\)[\s\S]*?return;/,
+  );
+  assert.match(
+    finishCurrentTurn,
+    /else \{[\s\S]*?setState\('capped'\)[\s\S]*?showActions\('capped'\)[\s\S]*?\}/,
+  );
 });
 
 test('trust loop: Save stashes the transcript and navigates to /field-capture; persists nothing in-overlay', () => {
