@@ -263,12 +263,14 @@ test('Speak triggers open the overlay and keep the no-JS href fallback', () => {
   assert.match(layout, /RightHandVoiceOverlay/);
 });
 
-test('overlay has a Done path and lets the current page claim Speak context', () => {
+test('overlay has a Stop/commit path and lets the current page claim Speak context', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
   assert.match(src, /id="rhvo-done"/);
-  assert.match(src, /rh_voice\.action_done/);
+  // #rhvo-done is relabelled Stop (explicit commit) in listening per F-RH1.
+  assert.match(src, /rh_voice\.action_stop/);
   assert.match(src, /const finishCurrentTurn/);
   assert.match(src, /doneBtn\?\.addEventListener\('click', finishCurrentTurn\)/);
+  // PR #250 context-aware Speak hook stays intact: cancelable event before open.
   assert.match(src, /new CustomEvent\('kerf:rh-speak', \{ cancelable: true \}\)/);
   assert.match(src, /if \(!window\.dispatchEvent\(speakEvent\)\) return/);
 });
@@ -332,4 +334,122 @@ test('lifecycle: hard cap fully releases the mic and realtime silence re-arms id
   const startRealtime = sliceDecl(src, 'startRealtime', 'beginSession');
   assert.doesNotMatch(startRealtime, /startMeter\(\s*\(\)\s*=>\s*\{\s*\}\s*\)/);
   assert.match(startRealtime, /startMeter\(\s*\(\)\s*=>\s*\{[\s\S]*?armIdleClose\(\)[\s\S]*?\}\s*\)/);
+});
+
+// ── F-RH1 fidelity: trust loop + visual fidelity (source-level path slicing) ──
+// The overlay client script is a browser module (DOM / WebRTC / AudioContext),
+// not unit-runnable in node, so these assertions slice the ACTUAL function
+// bodies and the durable call path rather than greping global substrings.
+
+const OVERLAY = 'src/app/components/RightHandVoiceOverlay.astro';
+
+test('trust loop: durable committed intent enters confirm and does NOT auto-navigate', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+
+  // routeCommitted's durable branch hands off to the sorting→confirm loop; it
+  // must NOT navigate (the abrupt auto-nav is gone).
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
+  assert.match(routeCommitted, /requiresCommittedTranscript\(intent\)/);
+  assert.match(routeCommitted, /enterSorting\(/);
+  assert.doesNotMatch(routeCommitted, /navigate\(/);
+
+  // The sorting beat advances to confirm and persists nothing.
+  const enterSorting = sliceDecl(src, 'enterSorting', 'routeCommitted');
+  assert.match(enterSorting, /enterConfirm\(/);
+
+  // The confirm step parks the transcript but performs NO navigation and NO
+  // persistence — front-door only.
+  const enterConfirm = sliceDecl(src, 'enterConfirm', 'SORTING_BEAT_MS');
+  assert.match(enterConfirm, /awaitingConfirm = true/);
+  assert.match(enterConfirm, /parkedTranscript = text/);
+  assert.doesNotMatch(enterConfirm, /navigate\(/);
+  assert.doesNotMatch(enterConfirm, /stashCommitted\(/);
+});
+
+test('trust loop: Save stashes the transcript and navigates to /field-capture; persists nothing in-overlay', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  // The Save handler is the ONLY durable handoff: stash → navigate to the
+  // existing validated Field Capture path. No backend write in the overlay.
+  assert.match(
+    src,
+    /saveBtn\?\.addEventListener\('click', \(\) => \{[\s\S]*?stashCommitted\(parkedTranscript\)[\s\S]*?navigate\('\/field-capture\?dest=this-job&intent=record&src=voice'\)[\s\S]*?\}\)/,
+  );
+  // Overlay never persists/writes itself: no fetch POST to a write/persist route.
+  assert.doesNotMatch(src, /fetch\([^)]*(persist|eventlog|event-log|jobnote|job-note)/i);
+});
+
+test('trust loop: Not that returns to listening with NO navigation', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const returnToListening = sliceDecl(src, 'returnToListening', 'onInterim');
+  assert.match(returnToListening, /awaitingConfirm = false/);
+  assert.match(returnToListening, /beginSession\(\)/);
+  assert.doesNotMatch(returnToListening, /navigate\(/);
+  // Wired to the Not that button.
+  assert.match(src, /notThatBtn\?\.addEventListener\('click', returnToListening\)/);
+});
+
+test('reversible LIVE intent still routes immediately (unchanged)', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  // LIVE lane still navigates straight away from the live transcript.
+  const routeLive = sliceDecl(src, 'routeLive', 'enterConfirm');
+  assert.match(routeLive, /liveRouteFor\(intent\)/);
+  assert.match(routeLive, /navigate\(/);
+  // Interim words can still trigger that immediate LIVE route.
+  const onInterim = sliceDecl(src, 'onInterim', 'onCommitted');
+  assert.match(onInterim, /canRouteFromInterim\(intent\)/);
+  assert.match(onInterim, /routeLive\(intent\)/);
+});
+
+test('F-RH1 visual: elapsed timer + field-green VU bars + typing cursor + per-state headings', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+
+  // Elapsed timer: element renders, starts on open, ticks every second, clears
+  // in teardown.
+  assert.match(src, /id="rhvo-timer"/);
+  assert.match(src, /const startTimer = \(\) =>/);
+  assert.match(src, /window\.setInterval\(/);
+  const openOverlay = sliceDecl(src, 'openOverlay', 'speakEvent');
+  assert.match(openOverlay, /startTimer\(\)/);
+  const teardown = sliceDecl(src, 'teardown', 'closeOverlay');
+  assert.match(teardown, /stopTimer\(\)/);
+
+  // Discrete field-green VU bars (not a single fill), driven by the real rms.
+  const barCount = (src.match(/class="rhvo__bar"/g) ?? []).length;
+  assert.ok(barCount >= 5, `expected discrete VU bars, found ${barCount}`);
+  assert.match(src, /\.rhvo__bar\s*\{[\s\S]*?background:\s*var\(--field-green\)/);
+  assert.match(src, /meterBars\[b\]!\.style\.transform = `scaleY\(/);
+  assert.doesNotMatch(src, /rhvo__meter-fill/); // old single fill removed
+
+  // Typing cursor on the live caption, shown only while listening.
+  assert.match(src, /id="rhvo-cursor"/);
+  assert.match(src, /\.rhvo\[data-state='listening'\] \.rhvo__cursor/);
+
+  // Per-state headings wired via data-* (resolved through t()).
+  assert.match(src, /data-head-sorting=\{t\('rh_voice\.head_sorting'\)\}/);
+  assert.match(src, /data-head-confirm=\{t\('rh_voice\.head_confirm'\)\}/);
+  assert.match(src, /setHeading\(overlay\.dataset\.headConfirm/);
+});
+
+test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
+  const keys = readFileSync(path.join(ROOT, 'src/i18n/keys.ts'), 'utf8');
+  const en = readFileSync(path.join(ROOT, 'src/i18n/en.ts'), 'utf8');
+  const es = readFileSync(path.join(ROOT, 'src/i18n/es.ts'), 'utf8');
+  const newKeys = [
+    'rh_voice.status_sorting',
+    'rh_voice.head_sorting',
+    'rh_voice.head_confirm',
+    'rh_voice.confirm_routed_label',
+    'rh_voice.confirm_creating_label',
+    'rh_voice.confirm_creating',
+    'rh_voice.confirm_needs_label',
+    'rh_voice.confirm_prompt',
+    'rh_voice.action_save',
+    'rh_voice.action_not_that',
+    'rh_voice.action_stop',
+  ];
+  for (const key of newKeys) {
+    assert.ok(keys.includes(`'${key}'`), `keys.ts missing ${key}`);
+    assert.ok(en.includes(`'${key}'`), `en.ts missing ${key}`);
+    assert.ok(es.includes(`'${key}'`), `es.ts missing ${key}`);
+  }
 });

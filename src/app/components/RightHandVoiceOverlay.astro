@@ -23,6 +23,7 @@ const { t } = createLayoutContext();
   aria-modal="true"
   aria-labelledby="rhvo-title"
   data-state="idle"
+  data-title={t('rh_voice.title')}
   data-listening={t('rh_voice.status_listening')}
   data-fallback={t('rh_voice.status_fallback')}
   data-transcribing={t('rh_voice.status_transcribing')}
@@ -30,6 +31,9 @@ const { t } = createLayoutContext();
   data-clarify={t('rh_voice.status_clarify')}
   data-unavailable={t('rh_voice.status_unavailable')}
   data-micdenied={t('rh_voice.status_mic_denied')}
+  data-sorting={t('rh_voice.status_sorting')}
+  data-head-sorting={t('rh_voice.head_sorting')}
+  data-head-confirm={t('rh_voice.head_confirm')}
   hidden
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
@@ -45,27 +49,60 @@ const { t } = createLayoutContext();
       </span>
     </div>
 
-    <p class="rhvo__eyebrow" id="rhvo-title">{t('rh_voice.title')}</p>
+    <div class="rhvo__head">
+      <p class="rhvo__eyebrow" id="rhvo-title">{t('rh_voice.title')}</p>
+      <span class="rhvo__timer" id="rhvo-timer" aria-hidden="true">0:00</span>
+    </div>
     <p class="rhvo__status" id="rhvo-status" aria-live="polite">{t('rh_voice.status_listening')}</p>
 
-    <div class="rhvo__meter" aria-hidden="true"><span class="rhvo__meter-fill" id="rhvo-meter"></span></div>
+    <div class="rhvo__meter" id="rhvo-meter" aria-hidden="true">
+      <span class="rhvo__bar"></span><span class="rhvo__bar"></span><span class="rhvo__bar"></span
+      ><span class="rhvo__bar"></span><span class="rhvo__bar"></span><span class="rhvo__bar"></span
+      ><span class="rhvo__bar"></span>
+    </div>
 
     <div class="rhvo__caption" id="rhvo-caption" aria-live="polite" data-empty="true">
       <span class="rhvo__caption-label">{t('rh_voice.caption_label')}</span>
-      <span class="rhvo__caption-text" id="rhvo-caption-text"></span>
+      <span class="rhvo__caption-text" id="rhvo-caption-text"></span
+      ><span class="rhvo__cursor" id="rhvo-cursor" aria-hidden="true"></span>
+    </div>
+
+    <div class="rhvo__confirm" id="rhvo-confirm" hidden>
+      <div class="rhvo__row">
+        <span class="rhvo__k">{t('rh_voice.caption_label')}</span>
+        <span class="rhvo__v" id="rhvo-confirm-heard"></span>
+      </div>
+      <div class="rhvo__row">
+        <span class="rhvo__k">{t('rh_voice.confirm_routed_label')}</span>
+        <span class="rhvo__v" id="rhvo-confirm-routed">{t('rh_voice.confirm_routed')}</span>
+      </div>
+      <div class="rhvo__row">
+        <span class="rhvo__k">{t('rh_voice.confirm_creating_label')}</span>
+        <span class="rhvo__v">{t('rh_voice.confirm_creating')}</span>
+      </div>
+      <div class="rhvo__row">
+        <span class="rhvo__k">{t('rh_voice.confirm_needs_label')}</span>
+        <span class="rhvo__v rhvo__v--prompt">{t('rh_voice.confirm_prompt')}</span>
+      </div>
     </div>
 
     <p class="rhvo__authority" id="rhvo-authority">{t('rh_voice.authority_deterministic')}</p>
 
     <div class="rhvo__actions">
-      <button type="button" class="rhvo__btn rhvo__btn--ghost" data-rhvo-dismiss>
+      <button type="button" class="rhvo__btn rhvo__btn--ghost" id="rhvo-cancel" data-rhvo-dismiss>
         {t('rh_voice.action_cancel')}
       </button>
       <button type="button" class="rhvo__btn rhvo__btn--primary" id="rhvo-done">
-        {t('rh_voice.action_done')}
+        {t('rh_voice.action_stop')}
       </button>
       <button type="button" class="rhvo__btn rhvo__btn--primary" id="rhvo-continue" hidden>
         {t('rh_voice.action_continue')}
+      </button>
+      <button type="button" class="rhvo__btn rhvo__btn--ghost" id="rhvo-notthat" hidden>
+        {t('rh_voice.action_not_that')}
+      </button>
+      <button type="button" class="rhvo__btn rhvo__btn--save" id="rhvo-save" hidden>
+        {t('rh_voice.action_save')}
       </button>
     </div>
   </div>
@@ -80,19 +117,26 @@ const { t } = createLayoutContext();
     type VoiceIntent,
   } from '../../voice/realtime/voiceActionGate.js';
 
-  type OverlayState = 'idle' | 'listening' | 'committing' | 'fallback' | 'capped';
+  type OverlayState = 'idle' | 'listening' | 'sorting' | 'confirm' | 'fallback' | 'capped';
 
   // Operator-facing copy is rendered into data-* on the overlay (resolved via
   // t() at render) so the script stays i18n-correct. The inline English here is
   // a last-resort default only — it is always status, never a fake transcript.
   const overlay = document.getElementById('rh-voice-overlay');
   if (overlay) {
+    const titleEl = document.getElementById('rhvo-title');
+    const timerEl = document.getElementById('rhvo-timer');
     const statusEl = document.getElementById('rhvo-status');
     const captionWrap = document.getElementById('rhvo-caption');
     const captionEl = document.getElementById('rhvo-caption-text');
     const meterEl = document.getElementById('rhvo-meter');
+    const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
+    const confirmHeardEl = document.getElementById('rhvo-confirm-heard');
+    const cancelBtn = document.getElementById('rhvo-cancel') as HTMLButtonElement | null;
     const doneBtn = document.getElementById('rhvo-done') as HTMLButtonElement | null;
     const continueBtn = document.getElementById('rhvo-continue') as HTMLButtonElement | null;
+    const saveBtn = document.getElementById('rhvo-save') as HTMLButtonElement | null;
+    const notThatBtn = document.getElementById('rhvo-notthat') as HTMLButtonElement | null;
 
     // Bounded-window defaults (§4). Overwritten by the server response when a
     // realtime session is minted, so client and session agree.
@@ -114,10 +158,17 @@ const { t } = createLayoutContext();
     let hardCapTimer = 0;
     let routedLive = false; // a LIVE intent already navigated this turn
     let lastInterim = '';
+    let timerId = 0;
+    let elapsedSec = 0;
+    let awaitingConfirm = false; // durable confirm open — pause STT processing
+    let parkedTranscript = ''; // committed durable transcript awaiting Save
 
     const setState = (next: OverlayState) => {
       state = next;
       overlay.dataset.state = next;
+    };
+    const setHeading = (text: string) => {
+      if (titleEl) titleEl.textContent = text;
     };
     const setStatus = (text: string) => {
       if (statusEl) statusEl.textContent = text;
@@ -128,6 +179,33 @@ const { t } = createLayoutContext();
       if (captionWrap) captionWrap.dataset.empty = text.trim().length === 0 ? 'true' : 'false';
     };
 
+    // ── Elapsed timer (mm:ss) — starts on overlay open, ticks every second,
+    // cleared in teardown (§4 bounded window is the real guard; this is display).
+    const fmtClock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    const startTimer = () => {
+      window.clearInterval(timerId);
+      elapsedSec = 0;
+      if (timerEl) timerEl.textContent = fmtClock(0);
+      timerId = window.setInterval(() => {
+        elapsedSec += 1;
+        if (timerEl) timerEl.textContent = fmtClock(elapsedSec);
+      }, 1000);
+    };
+    const stopTimer = () => {
+      window.clearInterval(timerId);
+    };
+
+    // ── Action-button visibility per state. Stop is the explicit-commit primary
+    // while listening; Save/Not that own the confirm trust loop; Continue owns
+    // the capped state. (F-RH1.)
+    const showActions = (mode: 'listening' | 'confirm' | 'capped') => {
+      if (cancelBtn) cancelBtn.hidden = mode === 'confirm';
+      if (doneBtn) doneBtn.hidden = mode !== 'listening';
+      if (continueBtn) continueBtn.hidden = mode !== 'capped';
+      if (saveBtn) saveBtn.hidden = mode !== 'confirm';
+      if (notThatBtn) notThatBtn.hidden = mode !== 'confirm';
+    };
+
     const clearTimers = () => {
       window.clearTimeout(silenceTimer);
       window.clearTimeout(idleTimer);
@@ -136,6 +214,7 @@ const { t } = createLayoutContext();
 
     const teardown = () => {
       clearTimers();
+      stopTimer();
       if (rafId) cancelAnimationFrame(rafId);
       rafId = 0;
       try { dc?.close(); } catch { /* noop */ }
@@ -188,12 +267,41 @@ const { t } = createLayoutContext();
       return false;
     };
 
+    // ── Trust loop (F-RH1): durable intents NEVER auto-navigate. They surface a
+    // four-question confirmation (heard · routed · creating · needs you) and wait
+    // for the operator. The overlay persists NOTHING; Save only stashes the
+    // transcript and hands off to the validated Field Capture path. ────────────
+    const enterConfirm = (text: string) => {
+      awaitingConfirm = true;
+      parkedTranscript = text;
+      // Mic off while the operator decides (privacy / bounded window §4). Not that
+      // → beginSession() re-acquires from scratch, same as Continue.
+      teardown();
+      setState('confirm');
+      setHeading(overlay.dataset.headConfirm ?? 'Ready for you');
+      setStatus('');
+      if (timerEl) timerEl.textContent = '';
+      if (confirmHeardEl) confirmHeardEl.textContent = text;
+      showActions('confirm');
+    };
+
+    const SORTING_BEAT_MS = 700;
+    const enterSorting = (text: string) => {
+      // Guard immediately so the still-draining session can't re-commit mid-beat.
+      awaitingConfirm = true;
+      setState('sorting');
+      setHeading(overlay.dataset.headSorting ?? 'Heard you');
+      setStatus(overlay.dataset.sorting ?? 'Got it. Sorting this…');
+      setCaption(text);
+      window.setTimeout(() => enterConfirm(text), SORTING_BEAT_MS);
+    };
+
     const routeCommitted = (intent: VoiceIntent, text: string) => {
       if (requiresCommittedTranscript(intent)) {
-        // Durable intent: carry the committed transcript to the capture surface
-        // that feeds synthesis (Phase 1H). The overlay persists nothing itself.
-        stashCommitted(text);
-        navigate('/field-capture?dest=this-job&intent=record&src=voice');
+        // Durable intent: confirm in-overlay first (trust loop). No navigation,
+        // no persistence here — that happens only on Save, via the existing
+        // validated capture path.
+        enterSorting(text);
         return;
       }
       if (canRouteFromInterim(intent)) {
@@ -206,8 +314,24 @@ const { t } = createLayoutContext();
       armIdleClose();
     };
 
+    const returnToListening = () => {
+      // "Not that" — discard the parked transcript, resume listening. No nav.
+      awaitingConfirm = false;
+      parkedTranscript = '';
+      routedLive = false;
+      lastInterim = '';
+      setCaption('');
+      setHeading(overlay.dataset.title ?? 'Right Hand is listening');
+      setState('listening');
+      setStatus(overlay.dataset.listening ?? 'Listening…');
+      showActions('listening');
+      startTimer();
+      void beginSession();
+    };
+
     // ── Interim words: may ONLY fire reversible LIVE navigations (§9). ───────
     const onInterim = (text: string) => {
+      if (awaitingConfirm) return; // confirm trust loop owns the turn
       lastInterim = text;
       setCaption(text);
       armIdleClose();
@@ -220,6 +344,7 @@ const { t } = createLayoutContext();
 
     // ── Committed transcript: the only input allowed to drive durable actions.
     const onCommitted = (text: string) => {
+      if (awaitingConfirm) return; // already parked for confirm; ignore stragglers
       const finalText = text.trim().length > 0 ? text : lastInterim;
       setCaption(finalText);
       const intent = classifyTranscriptIntent(finalText);
@@ -258,8 +383,7 @@ const { t } = createLayoutContext();
       hardCapTimer = window.setTimeout(() => {
         setState('capped');
         setStatus(overlay.dataset.capped ?? 'Paused — tap Continue to keep going.');
-        if (doneBtn) doneBtn.hidden = true;
-        if (continueBtn) continueBtn.hidden = false;
+        showActions('capped');
         // Hard cap reached: fully release the mic + audio graph (bounded-window /
         // privacy rule §4) by reusing the shared teardown() — not a hand-rolled
         // partial copy. Keep the overlay + Continue button visible; Continue →
@@ -274,6 +398,7 @@ const { t } = createLayoutContext();
 
     // ── VAD via Web Audio AnalyserNode: drive the level meter + silence commit.
     const SPEECH_RMS = 0.025;
+    const BAR_WEIGHTS = [0.6, 0.82, 1, 1.18, 1, 0.82, 0.6]; // center-weighted VU
     let speaking = false;
     const startMeter = (onSilenceCommit: () => void) => {
       if (!mediaStream) return;
@@ -292,7 +417,14 @@ const { t } = createLayoutContext();
           sum += v * v;
         }
         const rms = Math.sqrt(sum / buf.length);
-        if (meterEl) meterEl.style.transform = `scaleX(${Math.min(1, rms * 6)})`;
+        // Discrete field-green VU bars driven by the real rms (F-RH1). Center
+        // bars weighted taller; floored so they read as present, not dead.
+        const level = Math.min(1, rms * 6);
+        for (let b = 0; b < meterBars.length; b += 1) {
+          const weight = BAR_WEIGHTS[b] ?? 1;
+          const h = Math.max(0.18, Math.min(1, level * weight));
+          meterBars[b]!.style.transform = `scaleY(${h})`;
+        }
         if (rms >= SPEECH_RMS) {
           speaking = true;
           window.clearTimeout(silenceTimer);
@@ -449,12 +581,15 @@ const { t } = createLayoutContext();
       if (!overlay.hidden) return;
       routedLive = false;
       lastInterim = '';
+      awaitingConfirm = false;
+      parkedTranscript = '';
       setCaption('');
+      setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
       setStatus(overlay.dataset.listening ?? 'Listening…');
-      if (doneBtn) doneBtn.hidden = false;
-      if (continueBtn) continueBtn.hidden = true;
+      showActions('listening');
       overlay.hidden = false;
+      startTimer();
       void beginSession();
     };
 
@@ -476,10 +611,21 @@ const { t } = createLayoutContext();
     });
     doneBtn?.addEventListener('click', finishCurrentTurn);
     continueBtn?.addEventListener('click', () => {
-      if (continueBtn) continueBtn.hidden = true;
-      if (doneBtn) doneBtn.hidden = false;
+      setHeading(overlay.dataset.title ?? 'Right Hand is listening');
+      setState('listening');
+      setStatus(overlay.dataset.listening ?? 'Listening…');
+      showActions('listening');
+      startTimer();
       void beginSession();
     });
+    // Save: durable confirm → existing validated Field Capture path. The overlay
+    // persists NOTHING — it only stashes the transcript (sessionStorage) and
+    // navigates, exactly as the pre-trust-loop durable path did.
+    saveBtn?.addEventListener('click', () => {
+      stashCommitted(parkedTranscript);
+      navigate('/field-capture?dest=this-job&intent=record&src=voice');
+    });
+    notThatBtn?.addEventListener('click', returnToListening);
   }
 </script>
 
@@ -542,6 +688,16 @@ const { t } = createLayoutContext();
     justify-content: center;
   }
   .rhvo__mic :global(svg) { width: 26px; height: 26px; fill: currentColor; }
+  /* Sorting/confirm are post-capture beats — the live mic indicator stands down. */
+  .rhvo[data-state='sorting'] .rhvo__indicator,
+  .rhvo[data-state='confirm'] .rhvo__indicator { display: none; }
+  .rhvo__head {
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.55rem;
+  }
   .rhvo__eyebrow {
     margin: 0;
     font-size: 0.72rem;
@@ -550,21 +706,32 @@ const { t } = createLayoutContext();
     text-transform: uppercase;
     color: var(--right-hand);
   }
-  .rhvo__status { margin: 0; font-size: 1rem; font-weight: 600; color: var(--kerf-text); }
-  .rhvo__meter {
-    width: 60%;
-    height: 4px;
-    border-radius: 999px;
-    background: var(--kerf-border-soft);
-    overflow: hidden;
+  .rhvo__timer {
+    font-size: 0.72rem;
+    color: var(--kerf-text-mute);
+    font-variant-numeric: tabular-nums;
   }
-  .rhvo__meter-fill {
-    display: block;
-    height: 100%;
+  .rhvo__status { margin: 0; font-size: 1rem; font-weight: 600; color: var(--kerf-text); }
+  .rhvo__status:empty { display: none; }
+  /* Discrete field-green VU bars — listening identity stays Right Hand gold,
+     capture/level reads field-green. Shown only while actively capturing. */
+  .rhvo__meter {
     width: 100%;
-    transform: scaleX(0);
-    transform-origin: left center;
-    background: var(--right-hand);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 30px;
+  }
+  .rhvo[data-state='listening'] .rhvo__meter,
+  .rhvo[data-state='fallback'] .rhvo__meter { display: flex; }
+  .rhvo__bar {
+    width: 4px;
+    height: 26px;
+    border-radius: 2px;
+    background: var(--field-green);
+    transform-origin: center;
+    transform: scaleY(0.18);
     transition: transform 0.08s linear;
   }
   .rhvo__caption {
@@ -576,6 +743,7 @@ const { t } = createLayoutContext();
     border: 1px solid var(--kerf-border-soft);
     text-align: left;
   }
+  .rhvo[data-state='confirm'] .rhvo__caption { display: none; }
   .rhvo__caption[data-empty='true'] { opacity: 0.55; }
   .rhvo__caption-label {
     display: block;
@@ -587,6 +755,43 @@ const { t } = createLayoutContext();
     margin-bottom: 0.15rem;
   }
   .rhvo__caption-text { font-size: 0.92rem; line-height: 1.4; color: var(--kerf-text); }
+  /* Typing cursor on the live caption — only while actively listening. */
+  .rhvo__cursor {
+    display: none;
+    width: 2px;
+    height: 1em;
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    background: var(--right-hand);
+  }
+  .rhvo[data-state='listening'] .rhvo__cursor {
+    display: inline-block;
+    animation: rhvo-blink 1s step-end infinite;
+  }
+  @keyframes rhvo-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+  /* Confirm trust loop — four-question rows (heard · routed · creating · needs you). */
+  .rhvo__confirm { display: none; width: 100%; text-align: left; }
+  .rhvo[data-state='confirm'] .rhvo__confirm { display: block; }
+  .rhvo[data-state='confirm'] .rhvo__authority { display: none; }
+  .rhvo__row {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.55rem 0;
+    border-top: 1px solid var(--kerf-border-soft);
+  }
+  .rhvo__row:first-child { border-top: none; }
+  .rhvo__k {
+    flex: none;
+    width: 64px;
+    padding-top: 0.15rem;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--kerf-text-mute);
+  }
+  .rhvo__v { font-size: 0.9rem; line-height: 1.4; color: var(--kerf-text); }
+  .rhvo__v--prompt { font-weight: 700; }
   .rhvo__authority { margin: 0; font-size: 0.72rem; line-height: 1.4; color: var(--kerf-text-mute); }
   .rhvo__actions { display: flex; gap: 0.6rem; width: 100%; margin-top: 0.2rem; }
   .rhvo__btn {
@@ -598,6 +803,8 @@ const { t } = createLayoutContext();
     cursor: pointer;
     border: 1px solid var(--kerf-border);
   }
+  .rhvo__btn[hidden] { display: none; }
   .rhvo__btn--ghost { background: transparent; color: var(--kerf-text-dim); }
   .rhvo__btn--primary { background: var(--right-hand); color: #0a0d11; border-color: var(--right-hand); }
+  .rhvo__btn--save { background: var(--field-green); color: #06231a; border-color: var(--field-green); }
 </style>
