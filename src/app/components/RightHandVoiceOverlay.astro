@@ -32,6 +32,7 @@ const { t } = createLayoutContext();
   data-unavailable={t('rh_voice.status_unavailable')}
   data-micdenied={t('rh_voice.status_mic_denied')}
   data-sorting={t('rh_voice.status_sorting')}
+  data-retry={t('rh_voice.status_retry')}
   data-head-sorting={t('rh_voice.head_sorting')}
   data-head-confirm={t('rh_voice.head_confirm')}
   hidden
@@ -143,6 +144,7 @@ const { t } = createLayoutContext();
     let silenceCommitMs = 2500;
     let idleCloseMs = 12000;
     let hardCapMs = 75000;
+    const TRANSCRIBE_TIMEOUT_MS = 12000;
 
     let state: OverlayState = 'idle';
     let mediaStream: MediaStream | null = null;
@@ -247,7 +249,12 @@ const { t } = createLayoutContext();
       } catch { /* storage may be unavailable; navigation still works */ }
     };
 
-    const navigate = (href: string) => {
+    const navigate = (href: string, options: { resume?: boolean } = {}) => {
+      if (options.resume) {
+        try {
+          sessionStorage.setItem('kerf.voiceResume', JSON.stringify({ at: Date.now(), href }));
+        } catch { /* storage may be unavailable; navigation still works */ }
+      }
       teardown();
       window.location.href = href;
     };
@@ -255,13 +262,13 @@ const { t } = createLayoutContext();
     const routeLive = (intent: VoiceIntent): boolean => {
       const route = liveRouteFor(intent);
       if (route) {
-        navigate(`${route}?src=voice`);
+        navigate(`${route}?src=voice`, { resume: intent !== 'open_field_capture' });
         return true;
       }
       if (intent === 'status_question') {
         // No specific project bound from deterministic keywords — land on the
         // real read-only projects surface rather than guess a project id.
-        navigate('/projects?src=voice');
+        navigate('/projects?src=voice', { resume: true });
         return true;
       }
       return false;
@@ -370,11 +377,11 @@ const { t } = createLayoutContext();
       }
       setCaption(interim);
       if (requiresCommittedTranscript(intent)) {
-        setStatus(overlay.dataset.transcribing ?? 'Transcribing…');
+        enterSorting(interim);
       } else {
         setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
+        armIdleClose();
       }
-      armIdleClose();
     };
 
     // ── Bounded window timers (§4) ──────────────────────────────────────────
@@ -394,6 +401,18 @@ const { t } = createLayoutContext();
     const armIdleClose = () => {
       window.clearTimeout(idleTimer);
       idleTimer = window.setTimeout(() => closeOverlay(), idleCloseMs);
+    };
+
+    const recoverVoiceTurn = (message?: string) => {
+      awaitingConfirm = false;
+      parkedTranscript = '';
+      lastInterim = '';
+      teardown();
+      setState('capped');
+      setHeading(overlay.dataset.title ?? 'Right Hand is listening');
+      setCaption('');
+      setStatus(message ?? overlay.dataset.retry ?? 'I couldn’t finish that. Tap Continue and say it again.');
+      showActions('capped');
     };
 
     // ── VAD via Web Audio AnalyserNode: drive the level meter + silence commit.
@@ -461,24 +480,37 @@ const { t } = createLayoutContext();
         if (e.data.size > 0) recChunks.push(e.data);
       });
       recorder.addEventListener('stop', async () => {
-        if (recChunks.length === 0) return;
+        if (recChunks.length === 0) {
+          recoverVoiceTurn();
+          return;
+        }
         const blob = new Blob(recChunks, { type: recorder?.mimeType || 'audio/webm' });
         recChunks = [];
         setStatus(overlay.dataset.transcribing ?? 'Transcribing…');
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), TRANSCRIBE_TIMEOUT_MS);
         try {
           const res = await fetch('/api/v1/transcribe', {
             method: 'POST',
             headers: { 'Content-Type': blob.type || 'audio/webm' },
             body: blob,
+            signal: controller.signal,
           });
           if (!res.ok) {
-            setStatus(overlay.dataset.unavailable ?? 'Couldn’t transcribe — open Right Hand to type.');
+            recoverVoiceTurn(overlay.dataset.unavailable ?? 'Couldn’t transcribe — open Right Hand to type.');
             return;
           }
           const data = (await res.json()) as { transcript?: string };
-          onCommitted(data.transcript ?? '');
+          const transcript = (data.transcript ?? '').trim();
+          if (transcript.length === 0) {
+            recoverVoiceTurn();
+            return;
+          }
+          onCommitted(transcript);
         } catch {
-          setStatus(overlay.dataset.unavailable ?? 'Couldn’t transcribe — open Right Hand to type.');
+          recoverVoiceTurn();
+        } finally {
+          window.clearTimeout(timeout);
         }
       });
       recorder.start();
@@ -611,6 +643,9 @@ const { t } = createLayoutContext();
     });
     doneBtn?.addEventListener('click', finishCurrentTurn);
     continueBtn?.addEventListener('click', () => {
+      awaitingConfirm = false;
+      parkedTranscript = '';
+      lastInterim = '';
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
       setStatus(overlay.dataset.listening ?? 'Listening…');
@@ -626,6 +661,15 @@ const { t } = createLayoutContext();
       navigate('/field-capture?dest=this-job&intent=record&src=voice');
     });
     notThatBtn?.addEventListener('click', returnToListening);
+    try {
+      const resumeRaw = sessionStorage.getItem('kerf.voiceResume');
+      if (resumeRaw) {
+        sessionStorage.removeItem('kerf.voiceResume');
+        window.setTimeout(() => {
+          if (overlay.hidden) openOverlay();
+        }, 450);
+      }
+    } catch { /* storage may be unavailable; user can tap Speak again */ }
   }
 </script>
 

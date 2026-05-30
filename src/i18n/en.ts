@@ -482,6 +482,7 @@ export const EN: TranslationMap = {
   'rh_voice.status_unavailable': 'Couldn’t transcribe — open Right Hand to type.',
   'rh_voice.status_mic_denied': 'Microphone is off — enable it or open Right Hand to type.',
   'rh_voice.status_sorting': 'Got it. Sorting this…',
+  'rh_voice.status_retry': 'I couldn’t finish that. Tap Continue and say it again.',
   'rh_voice.head_sorting': 'Heard you',
   'rh_voice.head_confirm': 'Ready for you',
   'rh_voice.confirm_routed_label': 'Routed',

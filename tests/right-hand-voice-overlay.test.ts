@@ -210,13 +210,15 @@ test('endpoint · 200 for consenting tenant returns ephemeral secret + bounded w
 // ── Two-lane consequence gate (§9) ───────────────────────────────────────────
 
 test('action gate · LIVE intents are reversible navigations · routable from interim', () => {
-  for (const intent of ['open_lidar', 'open_relay', 'open_field_capture', 'status_question'] as const) {
+  for (const intent of ['open_lidar', 'open_relay', 'open_job_intake', 'open_money', 'open_field_capture', 'status_question'] as const) {
     assert.equal(classifyVoiceActionLane(intent), 'live');
     assert.equal(canRouteFromInterim(intent), true);
     assert.equal(requiresCommittedTranscript(intent), false);
   }
   assert.equal(liveRouteFor('open_lidar'), '/room-capture');
   assert.equal(liveRouteFor('open_relay'), '/relay');
+  assert.equal(liveRouteFor('open_job_intake'), '/projects/new');
+  assert.equal(liveRouteFor('open_money'), '/money');
   assert.equal(liveRouteFor('open_field_capture'), '/field-capture');
 });
 
@@ -242,6 +244,8 @@ test('action gate · never persist from interim words (assertion throws)', () =>
 test('deterministic intent classifier maps keywords honestly', () => {
   assert.equal(classifyTranscriptIntent('open lidar and scan this room'), 'open_lidar');
   assert.equal(classifyTranscriptIntent('show me what needs review'), 'open_relay');
+  assert.equal(classifyTranscriptIntent('I want to input a job'), 'open_job_intake');
+  assert.equal(classifyTranscriptIntent('check on money'), 'open_money');
   assert.equal(classifyTranscriptIntent('work on the change order for Wegrzyn'), 'change_order');
   assert.equal(classifyTranscriptIntent('what is the status on the kitchen'), 'status_question');
   assert.equal(classifyTranscriptIntent('take a job note'), 'open_field_capture');
@@ -366,6 +370,14 @@ test('trust loop: durable committed intent enters confirm and does NOT auto-navi
   assert.doesNotMatch(enterConfirm, /stashCommitted\(/);
 });
 
+test('Stop on an interim durable transcript enters the trust loop instead of freezing on Transcribing', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
+  assert.match(finishCurrentTurn, /requiresCommittedTranscript\(intent\)/);
+  assert.match(finishCurrentTurn, /enterSorting\(interim\)/);
+  assert.doesNotMatch(finishCurrentTurn, /requiresCommittedTranscript\(intent\)[\s\S]{0,120}setStatus\(overlay\.dataset\.transcribing/);
+});
+
 test('trust loop: Save stashes the transcript and navigates to /field-capture; persists nothing in-overlay', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   // The Save handler is the ONLY durable handoff: stash → navigate to the
@@ -398,6 +410,29 @@ test('reversible LIVE intent still routes immediately (unchanged)', () => {
   const onInterim = sliceDecl(src, 'onInterim', 'onCommitted');
   assert.match(onInterim, /canRouteFromInterim\(intent\)/);
   assert.match(onInterim, /routeLive\(intent\)/);
+});
+
+test('LIVE frame shifts keep Right Hand in the conversation on the destination frame', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const navigate = sliceDecl(src, 'navigate', 'routeLive');
+  assert.match(navigate, /sessionStorage\.setItem\('kerf\.voiceResume'/);
+  const routeLive = sliceDecl(src, 'routeLive', 'enterConfirm');
+  assert.match(routeLive, /navigate\(`\$\{route\}\?src=voice`, \{ resume: intent !== 'open_field_capture' \}\)/);
+  assert.match(routeLive, /navigate\('\/projects\?src=voice', \{ resume: true \}\)/);
+  assert.match(src, /sessionStorage\.getItem\('kerf\.voiceResume'\)/);
+  assert.match(src, /if \(overlay\.hidden\) openOverlay\(\)/);
+});
+
+test('fallback Stop cannot freeze forever on empty audio or hanging transcription', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /TRANSCRIBE_TIMEOUT_MS = 12000/);
+  assert.match(src, /const recoverVoiceTurn/);
+  assert.match(src, /if \(recChunks\.length === 0\) \{[\s\S]*?recoverVoiceTurn\(\)/);
+  assert.match(src, /new AbortController\(\)/);
+  assert.match(src, /window\.setTimeout\(\(\) => controller\.abort\(\), TRANSCRIBE_TIMEOUT_MS\)/);
+  assert.match(src, /signal: controller\.signal/);
+  assert.match(src, /catch \{[\s\S]*?recoverVoiceTurn\(\)/);
+  assert.match(src, /rh_voice\.status_retry/);
 });
 
 test('F-RH1 visual: elapsed timer + field-green VU bars + typing cursor + per-state headings', () => {
@@ -436,6 +471,7 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
   const es = readFileSync(path.join(ROOT, 'src/i18n/es.ts'), 'utf8');
   const newKeys = [
     'rh_voice.status_sorting',
+    'rh_voice.status_retry',
     'rh_voice.head_sorting',
     'rh_voice.head_confirm',
     'rh_voice.confirm_routed_label',

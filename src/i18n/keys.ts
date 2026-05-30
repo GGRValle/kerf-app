@@ -517,6 +517,7 @@ export type I18nKey =
   | 'rh_voice.status_unavailable'
   | 'rh_voice.status_mic_denied'
   | 'rh_voice.status_sorting'
+  | 'rh_voice.status_retry'
   | 'rh_voice.head_sorting'
   | 'rh_voice.head_confirm'
   | 'rh_voice.confirm_routed_label'
