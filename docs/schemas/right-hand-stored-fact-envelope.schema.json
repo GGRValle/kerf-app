@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://right-hand.local/schemas/right-hand-stored-fact-envelope.schema.json",
+  "title": "Right Hand Stored Fact Envelope",
+  "description": "Universal envelope for load-bearing facts, claims, memory, embeddings, candidate Plays, and training examples.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract_version",
+    "fact_id",
+    "tenant_id",
+    "locality",
+    "field_path",
+    "value",
+    "value_type",
+    "state",
+    "source_class",
+    "source_refs",
+    "provenance",
+    "freshness",
+    "visibility",
+    "consequence_tier",
+    "training_eligibility",
+    "promotion_status",
+    "retention_policy_id",
+    "deletion_scope",
+    "audit_ids",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^right-hand-stored-fact-envelope-v[0-9]+\\.[0-9]+$"
+    },
+    "contract_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tenant_id": {
+      "type": "string",
+      "pattern": "^tenant_[a-z0-9_]+$"
+    },
+    "org_group_id": {
+      "type": "string",
+      "pattern": "^org_[a-z0-9_]+$"
+    },
+    "business_unit_id": {
+      "type": "string",
+      "pattern": "^bu_[a-z0-9_]+$"
+    },
+    "locality": {
+      "type": "string",
+      "enum": [
+        "tenant_private",
+        "org_shared",
+        "platform_structural",
+        "shared_corpus"
+      ]
+    },
+    "field_path": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)*$"
+    },
+    "value": {},
+    "value_type": {
+      "type": "string",
+      "enum": [
+        "string",
+        "integer",
+        "number",
+        "boolean",
+        "date",
+        "datetime",
+        "money_cents",
+        "enum",
+        "array",
+        "object",
+        "null"
+      ]
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "known",
+        "unknown",
+        "stale",
+        "conflicting",
+        "model_inferred",
+        "operator_confirmed",
+        "needs_verification"
+      ]
+    },
+    "source_class": {
+      "type": "string",
+      "enum": [
+        "PROJECT_ACTUAL",
+        "TENANT_MEMORY",
+        "PROJECT_EVIDENCE",
+        "ESTIMATE_OVERRIDE",
+        "SUPPLIER_OR_SUB_QUOTE",
+        "NETWORK_AGGREGATE",
+        "KERF_SEED",
+        "PUBLIC_GOVERNMENT_REFERENCE",
+        "INDUSTRY_BENCHMARK",
+        "CLASSIFICATION_STANDARD",
+        "MODEL_INFERENCE"
+      ]
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["kind", "uri"],
+        "properties": {
+          "kind": { "type": "string", "minLength": 1 },
+          "uri": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["created_by", "chain"],
+      "properties": {
+        "created_by": {
+          "type": "string",
+          "enum": ["operator", "right_hand", "field_hand", "sub_agent", "system", "import"]
+        },
+        "agent_id": { "type": "string" },
+        "model_id": { "type": "string" },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "claim_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "memory_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "chain": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["at", "step", "actor"],
+            "properties": {
+              "at": { "type": "string", "format": "date-time" },
+              "step": { "type": "string", "minLength": 1 },
+              "actor": { "type": "string", "minLength": 1 },
+              "event_id": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["fresh", "stale", "expired", "unknown", "not_applicable"]
+        },
+        "observed_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "stale_reason": { "type": "string" }
+      }
+    },
+    "visibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roles", "surfaces", "client_visible"],
+      "properties": {
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": ["owner", "admin_ops", "pm", "estimator", "foreman", "field_hand", "sub", "client", "system"]
+          }
+        },
+        "surfaces": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "client_visible": { "type": "boolean" },
+        "privilege_class": {
+          "type": ["string", "null"],
+          "enum": ["owner_private", "finance_privileged", "hr_privileged", "client_visible", "internal", null]
+        }
+      }
+    },
+    "consequence_tier": {
+      "type": "string",
+      "enum": [
+        "draft_only",
+        "can_route",
+        "can_estimate",
+        "can_price",
+        "can_send_after_review",
+        "can_write_memory_after_approval",
+        "blocked_until_verified"
+      ]
+    },
+    "training_eligibility": {
+      "type": "string",
+      "enum": [
+        "no_learn",
+        "tenant_private_only",
+        "org_shared_only",
+        "platform_structural_candidate",
+        "shared_corpus_candidate"
+      ]
+    },
+    "promotion_status": {
+      "type": "string",
+      "enum": [
+        "not_promotable",
+        "draft",
+        "candidate",
+        "queued_for_review",
+        "approved",
+        "rejected",
+        "superseded",
+        "unpublished"
+      ]
+    },
+    "retention_policy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deletion_scope": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "raw_object",
+          "transcript",
+          "embedding",
+          "vector_metadata",
+          "cache",
+          "blackboard",
+          "learning_signal",
+          "memory_record",
+          "logs",
+          "traces",
+          "eval_dataset",
+          "backup",
+          "derived_play"
+        ]
+      }
+    },
+    "audit_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "locality": { "const": "org_shared" } },
+        "required": ["locality"]
+      },
+      "then": {
+        "required": ["org_group_id"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": ["known", "operator_confirmed"]
+          }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {
+          "source_refs": { "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "training_eligibility": { "const": "shared_corpus_candidate" } },
+        "required": ["training_eligibility"]
+      },
+      "then": {
+        "properties": {
+          "locality": { "const": "shared_corpus" }
+        }
+      }
+    }
+  ]
+}
