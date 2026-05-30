@@ -235,6 +235,22 @@ const { t } = createLayoutContext();
       recChunks = [];
     };
 
+    const releaseListeningResources = () => {
+      clearTimers();
+      stopTimer();
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = 0;
+      try { dc?.close(); } catch { /* noop */ }
+      try { pc?.close(); } catch { /* noop */ }
+      try { void audioCtx?.close(); } catch { /* noop */ }
+      mediaStream?.getTracks().forEach((track) => track.stop());
+      mediaStream = null;
+      audioCtx = null;
+      analyser = null;
+      pc = null;
+      dc = null;
+    };
+
     const closeOverlay = () => {
       teardown();
       setState('idle');
@@ -362,12 +378,15 @@ const { t } = createLayoutContext();
       if (recorder && recorder.state !== 'inactive') {
         setStatus(overlay.dataset.transcribing ?? 'Transcribing…');
         recorder.stop();
+        releaseListeningResources();
         return;
       }
+      releaseListeningResources();
       const interim = lastInterim.trim();
       if (interim.length === 0) {
+        setState('capped');
         setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
-        armIdleClose();
+        showActions('capped');
         return;
       }
       const intent = classifyTranscriptIntent(interim);
@@ -379,8 +398,9 @@ const { t } = createLayoutContext();
       if (requiresCommittedTranscript(intent)) {
         enterSorting(interim);
       } else {
+        setState('capped');
         setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
-        armIdleClose();
+        showActions('capped');
       }
     };
 
