@@ -78,28 +78,44 @@ Deliberately **not** primitives — these are projections or enforcement edges o
 - **Navigation / intent routers** — projections/chrome that route Turns to surfaces.
 - **System Policy · Policy Gate · validators · permissions · consequence tier** — **enforcement edges.** They govern *transitions* between primitives (e.g., whether a `Decision` may become consequence, or whether a write is allowed). They are not objects the product is built from. Keeping them out of the primitive set is what stops the model from bloating.
 
-The matrix maps each existing surface to its primary and secondary owner object, plus the read/write-graph edge and a verdict.
+The matrix maps each existing surface to its primary and secondary owner object, plus the read/write-graph edge and two verdict axes (`structure`, `needs_rh_thread`).
 
-## 3.1 Ten-Screen Rubric Proof
+## 3.1 Boundary-Case Rubric Proof (10 screens)
 
-A spot-classification across families, to lock the column logic before reading all 109:
+A spot-classification skewed toward the *hard* cases — nav/chrome, settings, a role portal, a read-only reference, money, and an export — to prove the rubric survives more than the obvious center:
 
-| Surface | primary object | reads_graph | writes_graph | intended_write_gate | verdict |
+| Surface | primary object | writes_graph | intended_write_gate | structure | needs_rh_thread |
 |---|---|---|---|---|---|
-| F-E1 Field Capture | Turn | yes | durable | parser | RH-primitive |
-| F-G1 Draft Review | Work Artifact | yes | durable | operator_confirm | RH-primitive |
-| F-B1 Decision Card | Decision | yes | durable | policy_gate | RH-primitive |
-| F-MN1 Money Home | Business Graph Node | yes | money | money_guard | hybrid |
-| F-CL3 Clients List | Business Graph Node | yes | draft | operator_confirm | inherited-SaaS-risk |
-| F-PR2 Project Detail | Business Graph Node | yes | draft | operator_confirm | graph-view |
-| F-PV1 Proposal View | Work Artifact | yes | external | send_guard | hybrid |
-| F-H1 Audit Detail | Source / Evidence | yes | none | none | RH-primitive |
-| F-S1 Start Action Sheet | nav/intent router | no | none | none | RH-primitive |
-| **F-RH1 Voice Overlay** | **Turn / Resolution Packet** | yes | durable | parser → operator_confirm | **MISSING from app-vendored canon — must be mirrored** |
+| F-E1 Field Capture | Turn | durable | parser | RH-primitive | no |
+| F-B1 Decision Card | Decision | durable | policy_gate | RH-primitive | no |
+| F-H1 Audit Detail | Source / Evidence | none | none | RH-primitive | no |
+| F-D1 More Sidebar (nav/chrome) | Navigation | none | none | RH-primitive¹ | no |
+| F-MN1 Money Home | Business Graph Node | money | money_guard | hybrid | yes |
+| F-PV1 Proposal View | Work Artifact | external_send | send_guard | hybrid | yes |
+| F-RP1 Reports Center | Work Artifact | export | operator_confirm | hybrid | yes |
+| F-CL3 Clients List | Business Graph Node | draft | operator_confirm | graph-view | yes |
+| F-SH1 Sub Home | Role View | draft | operator_confirm | graph-view | yes |
+| F-SP1 Settings | System Policy | durable | policy_gate | graph-view | maybe |
+| **F-RH1 Voice Overlay** | **Turn / Resolution Packet** | durable | parser → operator_confirm | RH-primitive | no — **MISSING from canon (drift)** |
 
-`F-RH1` is the live Right Hand voice overlay (deployed on Fly v26) but is **not** in the app-vendored 109-file canon. It is the most Turn-native surface in the product and must be mirrored into canon so the build is audited against it.
+¹ *Navigation* is a projection/edge at the object level (§3), but at the **structure** level a nav router is an RH operating-layer surface (it is how Turns reach screens), not a business-graph projection — hence `RH-primitive`. The two axes answer different questions: *what RH layer is this?* vs *what object does it own?*
 
-> **Caveat — design classification, not runtime proof.** `reads_graph`, `writes_graph`, and especially `intended_write_gate` are the *intended* design edges read from the wireframes. They name which wall *should* protect each write (`parser`, `operator_confirm`, `policy_gate`, `money_guard`, `send_guard`). **Verifying that the running code actually enforces those gates is a separate code audit** — the tenant-isolation / guard CI lane — not this wireframe pass.
+The split axes resolve the Clients/Subs ambiguity cleanly: a clients list is a perfectly valid `graph-view` **and** `needs_rh_thread: yes` — its structural identity is not "inherited SaaS"; the risk is the missing thread, named on its own axis.
+
+## 3.2 Invariants (executable)
+
+The matrix is self-checking — `tests/wireframe-matrix-invariants.test.ts` enforces these on every CI run, so the taxonomy can't silently rot into prose:
+
+```text
+writes_graph != none         -> intended_write_gate != none
+writes_graph = money         -> intended_write_gate = money_guard
+writes_graph = external_send  -> intended_write_gate = send_guard
+writes_graph = export        -> intended_write_gate in { operator_confirm, egress_guard }
+writes_graph = durable       -> intended_write_gate in { parser, operator_confirm, policy_gate }
+structure   = RH-primitive   -> needs_rh_thread = no
+```
+
+> **Caveat — design intent, not runtime proof.** `writes_graph` and `intended_write_gate` are the *intended* consequence class and the wall that *should* protect it, read from the wireframes. **Whether the running code enforces that gate is a separate code audit** (the tenant-isolation / guard CI lane), tracked per-row in `runtime_write_gate_verified` (every row `pending` or `n/a` today). `egress_guard` is a reserved future gate for data egress; today `export` rows use `operator_confirm`.
 
 ## 4. What The 109 Screens Are Doing
 
@@ -138,6 +154,12 @@ Two recent surfaces discussed/built in the Canon-side work are not present in th
 | `F-FU1_mobile_field_updates_review.html` | Field Updates review for inbound crew/SMS evidence and filing disposition. This is the D-052 review surface. |
 
 This is not a runtime blocker, but it is a canon synchronization problem. The app's wireframe catalog should be updated so the build team evaluates the phone loop against the same surfaces Christian is reviewing.
+
+**This is drift, not cleanup.** A surface live in production but absent from app-vendored canon means the audit already trails production. Standing rule going forward:
+
+> **No new production surface lands without a canon source or a vendored canon mirror.**
+
+This parallels "no new screen without an owner object" (§7) and the repo's existing canon-drift-audit posture. It covers `F-RH1` (voice overlay, live on Fly v26) and `F-FU1` (field-updates / D-052 review surface).
 
 ## 6. Interpretation
 
@@ -198,9 +220,11 @@ Columns:
 - `decision_or_gate`: whether the surface includes a human decision/consequence gate
 - `consequence_tier`: rough consequence class
 - `reads_graph`: does the surface read from the business graph — `yes` / `no`
-- `writes_graph`: strongest write the surface *intends* — `none` / `draft` / `durable` / `external` / `money`
-- `intended_write_gate`: the wall that *should* protect that write — `none` / `parser` / `operator_confirm` / `policy_gate` / `money_guard` / `send_guard`. **Design intent; runtime enforcement is a separate code audit (§3.1 caveat).**
-- `verdict`: `RH-primitive` / `graph-view` / `hybrid` / `inherited-SaaS-risk`
+- `writes_graph`: strongest write the surface *intends* — `none` / `draft` / `durable` / `external_send` / `export` / `money`
+- `intended_write_gate`: the wall that *should* protect that write — `none` / `parser` / `operator_confirm` / `policy_gate` / `money_guard` / `send_guard` / `egress_guard` (reserved, future). **Design intent; runtime enforcement is a separate code audit (§3.2).**
+- `structure`: the screen's place in the RH model — `RH-primitive` / `graph-view` / `hybrid`
+- `needs_rh_thread`: does it need a Right Hand thread to avoid going generic — `yes` / `no` / `maybe`
+- `runtime_write_gate_verified`: has a code audit confirmed the gate is actually enforced — `pending` / `verified` / `n/a` (every row `pending` or `n/a` today)
 - `notes`: product interpretation
 
 This is a first-pass taxonomy, not a final schema. Its job is to reveal where the canon is Right Hand-native and where it is conventional business graph projection.
