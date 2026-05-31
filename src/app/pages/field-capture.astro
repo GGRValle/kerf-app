@@ -107,24 +107,34 @@ const assignment = {
             </span>
           </aside>
 
-          <div class="record-area">
-            <button class="record-button" id="f-e1-record" type="button" aria-label="Start voice capture">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
-            </button>
-            <p class="record-label">Hold or tap to record</p>
-            <p class="record-sublabel">Describe scope, conditions, decisions, questions — long voice memos welcome.</p>
+          <!-- Voice is the bottom-bar Right Hand mic (the one universal, context-aware
+               voice control). Field Capture no longer hosts a second giant recorder
+               on the page body — turn-resolution brief 2026-05-31 §2/§3. -->
+          <div class="fc-mic-hint" role="note">
+            <span class="fc-mic-hint-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
+            </span>
+            <div class="fc-mic-hint-body">
+              <strong>You're on Field Capture — speak to add a note to this capture.</strong>
+              <span>Tap the mic in the bottom bar for a voice note. Or use the tasks below to add a photo, attach a file, or edit the summary.</span>
+            </div>
           </div>
 
           <div class="cap-secondary">
             <button type="button" class="cap-button" id="f-e1-photo">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
-              <span class="cb-label">Photo / Video</span>
+              <span class="cb-label">Add photo</span>
               <span class="cb-sub">Camera or library</span>
+            </button>
+            <button type="button" class="cap-button" id="f-e1-attach-file">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5 8 15a3 3 0 1 0 4.24 4.24l8-8a5 5 0 0 0-7.07-7.07l-8.49 8.48a7 7 0 0 0 9.9 9.9L21 16.62l-1.41-1.41-6.42 6.41a5 5 0 0 1-7.07-7.07l8.48-8.49a3 3 0 0 1 4.24 4.24l-8 8a1 1 0 0 1-1.41-1.41L18 7.91z"/></svg>
+              <span class="cb-label">Attach file</span>
+              <span class="cb-sub">PDF, plans, docs</span>
             </button>
             <button type="button" class="cap-button" id="f-e1-type-note">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v1.5H8zm0 3h8v1.5H8zm0 3h5v1.5H8z"/></svg>
-              <span class="cb-label">Type a note</span>
-              <span class="cb-sub">If voice isn't possible</span>
+              <span class="cb-label">Edit summary</span>
+              <span class="cb-sub">Type the note</span>
             </button>
           </div>
 
@@ -184,10 +194,6 @@ const assignment = {
           </section>
 
           <div class="action-ribbon">
-            <button type="button" class="ar-btn" id="f-e1-record-active">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
-              Record more
-            </button>
             <button type="button" class="ar-btn" id="f-e1-photo-active">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
               Photo / Video
@@ -279,20 +285,8 @@ const assignment = {
           </section>
 
           <section class="continue-capture" aria-label="Add more capture before submit">
-            <div class="compact-record-zone">
-              <button
-                class="record-button compact-record-button"
-                id="f-e1-record-more"
-                type="button"
-                aria-label="Record more voice"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
-              </button>
-              <div>
-                <p class="record-label">Add more before submit</p>
-                <p class="record-sublabel">Record another note, add photo/video, or edit the summary.</p>
-              </div>
-            </div>
+            <p class="record-label">Add more before submit</p>
+            <p class="record-sublabel">Use the bottom Right Hand mic for voice, or add photo/video and edits here.</p>
             <div class="cap-secondary">
               <button type="button" class="cap-button cap-button-row" id="f-e1-photo-preflight">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
@@ -339,14 +333,12 @@ const assignment = {
         </nav>
       </section>
       <input id="f-e1-camera-input" type="file" accept="image/*,video/*" capture="environment" hidden />
+      <input id="f-e1-file-input" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,image/*" hidden />
     </section>
   </main>
 
   <script>
   const shell = document.querySelector('.field-shell');
-  const recordButton = document.querySelector('#f-e1-record');
-  const recordMoreButton = document.querySelector('#f-e1-record-more');
-  const recordActiveButton = document.querySelector('#f-e1-record-active');
   const stopButton = document.querySelector('#f-e1-stop');
   const photoButtons = [
     document.querySelector('#f-e1-photo'),
@@ -354,6 +346,8 @@ const assignment = {
     document.querySelector('#f-e1-photo-preflight'),
   ];
   const cameraInput = document.querySelector('#f-e1-camera-input');
+  const fileInput = document.querySelector('#f-e1-file-input');
+  const attachFileButton = document.querySelector('#f-e1-attach-file');
   const typeNoteButton = document.querySelector('#f-e1-type-note');
   const doneButton = document.querySelector('#f-e1-done');
   const backButton = document.querySelector('#f-e1-back-active');
@@ -528,7 +522,7 @@ const assignment = {
 
   function captureIconKind(item) {
     if (item.kind === 'photo' || item.kind === 'video') return { cls: 'photo', svg: ICON_PHOTO };
-    if (item.kind === 'note') return { cls: 'note', svg: ICON_NOTE };
+    if (item.kind === 'note' || item.kind === 'file') return { cls: 'note', svg: ICON_NOTE };
     return { cls: 'voice', svg: ICON_VOICE };
   }
 
@@ -907,6 +901,27 @@ const assignment = {
     if (cameraInput instanceof HTMLInputElement) cameraInput.click();
   }
 
+  function openFilePicker() {
+    if (fileInput instanceof HTMLInputElement) fileInput.click();
+  }
+
+  function handleFilePick() {
+    if (!(fileInput instanceof HTMLInputElement) || !fileInput.files?.length) return;
+    const file = fileInput.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    captured.push({
+      kind: 'file',
+      title: 'File',
+      detail: file.name || 'Attached file',
+      time: nowLabel(),
+      ref: { name: file.name || 'Attached file', url },
+    });
+    renderCaptured();
+    fileInput.value = '';
+    setState('active');
+  }
+
   function handlePhotoPick() {
     if (!(cameraInput instanceof HTMLInputElement) || !cameraInput.files?.length) return;
     const file = cameraInput.files[0];
@@ -990,15 +1005,6 @@ const assignment = {
     }
   }
 
-  recordButton?.addEventListener('click', () => {
-    void startRecording();
-  });
-  recordMoreButton?.addEventListener('click', () => {
-    void startRecording();
-  });
-  recordActiveButton?.addEventListener('click', () => {
-    void startRecording();
-  });
   stopButton?.addEventListener('click', stopRecording);
   window.addEventListener('kerf:rh-speak', (event) => {
     event.preventDefault();
@@ -1012,6 +1018,8 @@ const assignment = {
   typeNoteButton?.addEventListener('click', () => setState('active'));
   photoButtons.forEach((button) => button?.addEventListener('click', openCamera));
   cameraInput?.addEventListener('change', handlePhotoPick);
+  attachFileButton?.addEventListener('click', openFilePicker);
+  fileInput?.addEventListener('change', handleFilePick);
   doneButton?.addEventListener('click', () => {
     stopRecording();
     const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
@@ -1296,41 +1304,34 @@ const assignment = {
     display: block;
   }
 
-  /* ===== Record area ===== */
-  .record-area {
+  /* ===== Bottom-mic context hint (replaces the on-page giant recorder) ===== */
+  .fc-mic-hint {
     margin: 16px 0;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px;
+    border: 1px solid var(--kerf-border, #d8dee6);
+    border-radius: 14px;
+    background: var(--kerf-bg-2, #f6f8fa);
   }
-  .record-button {
-    width: 88px;
-    height: 88px;
-    border: 0;
+  .fc-mic-hint-icon {
+    flex: none;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: var(--field-green);
-    color: #0a1a0f;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 22px rgba(56, 201, 119, 0.3);
-    position: relative;
-    cursor: pointer;
+    background: color-mix(in srgb, var(--field-green, #38c977) 18%, transparent);
+    color: var(--field-green, #38c977);
   }
-  .record-button::after {
-    content: '';
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    border: 2px solid rgba(56, 201, 119, 0.3);
-  }
-  .record-button svg {
-    width: 38px;
-    height: 38px;
-    fill: currentColor;
-  }
+  .fc-mic-hint-icon svg { width: 22px; height: 22px; fill: currentColor; }
+  .fc-mic-hint-body { display: flex; flex-direction: column; gap: 3px; }
+  .fc-mic-hint-body strong { font-size: 0.92rem; line-height: 1.35; color: var(--kerf-text); }
+  .fc-mic-hint-body span { font-size: 0.8rem; line-height: 1.4; color: var(--kerf-text-mute, #5c6670); }
+
+  /* ===== Capture guidance ===== */
   .record-label {
     margin: 6px 0 0;
     font-size: 0.82rem;
@@ -1349,7 +1350,7 @@ const assignment = {
   .cap-secondary {
     margin: 12px 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
   .cap-button {
@@ -1871,33 +1872,6 @@ const assignment = {
   /* ===== Continue capture ===== */
   .continue-capture {
     border-color: rgba(56, 201, 119, 0.28);
-  }
-  .compact-record-zone {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .compact-record-button {
-    width: 58px;
-    height: 58px;
-    flex: 0 0 auto;
-    box-shadow: 0 6px 16px rgba(56, 201, 119, 0.26);
-  }
-  .compact-record-button::after {
-    inset: -5px;
-  }
-  .compact-record-button svg {
-    width: 24px;
-    height: 24px;
-  }
-  .compact-record-zone .record-label {
-    margin: 0;
-    text-align: left;
-  }
-  .compact-record-zone .record-sublabel {
-    padding: 0;
-    text-align: left;
   }
   .continue-capture .cap-secondary {
     margin: 0;
