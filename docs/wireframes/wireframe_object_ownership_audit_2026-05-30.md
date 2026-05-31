@@ -1,7 +1,7 @@
 # Wireframe Object Ownership Audit
 
 - **Date:** 2026-05-30
-- **Scope:** 109 app-vendored canon files at `docs/wireframes/canon/F-*.html`
+- **Scope:** 111 app-vendored canon files at `docs/wireframes/canon/F-*.html` (F-RH1 + F-FU1 vendored via #258 and added to the matrix)
 - **Matrix:** `docs/wireframes/wireframe_object_ownership_matrix_2026-05-30.csv`
 - **Status:** Architecture audit — revised pass. Adds the read/write-graph edge, intended write-gate, and verdict columns plus the 8-primitive model. This is an ownership map of **intended design**, not a visual-fidelity review and **not** runtime guard proof.
 
@@ -24,12 +24,12 @@ The existing app-vendored canon is heavily weighted toward **business graph proj
 | BusinessGraphNode | 52 |
 | AttentionArtifact | 24 |
 | WorkArtifact | 13 |
-| SourceEvidence | 7 |
+| SourceEvidence | 8 |
 | Decision | 4 |
 | NavigationPrimitive | 4 |
 | RoleView | 2 |
 | SystemPolicy | 2 |
-| Turn | 1 |
+| Turn | 2 |
 
 > Note: `NavigationPrimitive`, `RoleView`, and `SystemPolicy` in this column are **projections / enforcement edges**, not primitives (see §3). They are tallied here only because the first pass used them as owner labels.
 
@@ -117,7 +117,7 @@ structure   = RH-primitive   -> needs_rh_thread = no
 
 > **Caveat — design intent, not runtime proof.** `writes_graph` and `intended_write_gate` are the *intended* consequence class and the wall that *should* protect it, read from the wireframes. **Whether the running code enforces that gate is a separate code audit** (the tenant-isolation / guard CI lane), tracked per-row in `runtime_write_gate_verified` (every row `pending` or `n/a` today). `egress_guard` is a reserved future gate for data egress; today `export` rows use `operator_confirm`.
 
-## 4. What The 109 Screens Are Doing
+## 4. What The 111 Screens Are Doing
 
 ### Right Hand-native primitives already present
 
@@ -144,16 +144,16 @@ Most of the catalog is durable business graph:
 
 These should not disappear. They become Right Hand-native when they are reached from a Turn, populated by Work Artifacts, ranked by Attention Artifacts, and protected by role/consequence gates.
 
-## 5. Gap: Newer Right Hand Surfaces Are Missing From App-Vendored Canon
+## 5. Gap (RESOLVED): Newer Right Hand Surfaces Now Vendored
 
-Two recent surfaces discussed/built in the Canon-side work are not present in this app-vendored 109-file set:
+Two recent surfaces were built Canon-side but were missing from the app-vendored set. Both are **now vendored (#258) and added to the matrix** — the first enforcement of the drift rule below, applied one commit after it was created:
 
-| Missing surface | Why it matters |
-|---|---|
-| `F-RH1_mobile_right_hand_voice_overlay.html` | The live Right Hand voice overlay / conversation turn surface. This is now central to the phone dogfood loop. |
-| `F-FU1_mobile_field_updates_review.html` | Field Updates review for inbound crew/SMS evidence and filing disposition. This is the D-052 review surface. |
+| Surface | Status | Why it matters |
+|---|---|---|
+| `F-RH1_mobile_right_hand_voice_overlay.html` | ✅ vendored (#258) | The live Right Hand voice overlay / conversation turn surface; central to the phone dogfood loop. |
+| `F-FU1_mobile_field_updates_review.html` | ✅ vendored (#258) | Field Updates review for inbound crew/SMS evidence and filing disposition — the D-052 review surface. |
 
-This is not a runtime blocker, but it is a canon synchronization problem. The app's wireframe catalog should be updated so the build team evaluates the phone loop against the same surfaces Christian is reviewing.
+The catalog is now 111 surfaces, so the build team evaluates the phone loop against the same surfaces Christian reviews.
 
 **This is drift, not cleanup.** A surface live in production but absent from app-vendored canon means the audit already trails production. Standing rule going forward:
 

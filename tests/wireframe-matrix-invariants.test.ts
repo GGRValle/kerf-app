@@ -44,8 +44,8 @@ const RUNTIME = new Set(['pending', 'verified', 'n/a']);
 
 const rows = parseCsv(readFileSync(CSV, 'utf8'));
 
-test('matrix: 109 rows with the split-axis columns present', () => {
-  assert.equal(rows.length, 109);
+test('matrix: 111 rows with the split-axis columns present', () => {
+  assert.equal(rows.length, 111);
   const first = rows[0];
   assert.ok(first);
   for (const col of [
