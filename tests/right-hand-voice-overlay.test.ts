@@ -223,7 +223,7 @@ test('action gate · LIVE intents are reversible navigations · routable from in
 });
 
 test('action gate · durable intents require the committed transcript', () => {
-  for (const intent of ['job_note', 'change_order', 'estimate_update', 'job_log', 'memory_write'] as const) {
+  for (const intent of ['job_intake', 'job_note', 'change_order', 'estimate_update', 'job_log', 'memory_write'] as const) {
     assert.equal(classifyVoiceActionLane(intent), 'commit');
     assert.equal(requiresCommittedTranscript(intent), true);
     assert.equal(canRouteFromInterim(intent), false);
@@ -244,7 +244,9 @@ test('action gate · never persist from interim words (assertion throws)', () =>
 test('deterministic intent classifier maps keywords honestly', () => {
   assert.equal(classifyTranscriptIntent('open lidar and scan this room'), 'open_lidar');
   assert.equal(classifyTranscriptIntent('show me what needs review'), 'open_relay');
-  assert.equal(classifyTranscriptIntent('I want to input a job'), 'open_job_intake');
+  assert.equal(classifyTranscriptIntent('open job intake'), 'open_job_intake');
+  assert.equal(classifyTranscriptIntent('I want to input a job'), 'job_intake');
+  assert.equal(classifyTranscriptIntent('we are doing a job input and walking this kitchen for a new estimate'), 'job_intake');
   assert.equal(classifyTranscriptIntent('check on money'), 'open_money');
   assert.equal(classifyTranscriptIntent('work on the change order for Wegrzyn'), 'change_order');
   assert.equal(classifyTranscriptIntent('what is the status on the kitchen'), 'status_question');

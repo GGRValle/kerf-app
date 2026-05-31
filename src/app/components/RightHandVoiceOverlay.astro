@@ -81,11 +81,11 @@ const { t } = createLayoutContext();
       </div>
       <div class="rhvo__row">
         <span class="rhvo__k">{t('rh_voice.confirm_creating_label')}</span>
-        <span class="rhvo__v">{t('rh_voice.confirm_creating')}</span>
+        <span class="rhvo__v" id="rhvo-confirm-creating">{t('rh_voice.confirm_creating')}</span>
       </div>
       <div class="rhvo__row">
         <span class="rhvo__k">{t('rh_voice.confirm_needs_label')}</span>
-        <span class="rhvo__v rhvo__v--prompt">{t('rh_voice.confirm_prompt')}</span>
+        <span class="rhvo__v rhvo__v--prompt" id="rhvo-confirm-prompt">{t('rh_voice.confirm_prompt')}</span>
       </div>
     </div>
 
@@ -152,6 +152,9 @@ const { t } = createLayoutContext();
     const meterEl = document.getElementById('rhvo-meter');
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
     const confirmHeardEl = document.getElementById('rhvo-confirm-heard');
+    const confirmRoutedEl = document.getElementById('rhvo-confirm-routed');
+    const confirmCreatingEl = document.getElementById('rhvo-confirm-creating');
+    const confirmPromptEl = document.getElementById('rhvo-confirm-prompt');
     const cancelBtn = document.getElementById('rhvo-cancel') as HTMLButtonElement | null;
     const doneBtn = document.getElementById('rhvo-done') as HTMLButtonElement | null;
     const continueBtn = document.getElementById('rhvo-continue') as HTMLButtonElement | null;
@@ -320,6 +323,8 @@ const { t } = createLayoutContext();
     const enterConfirm = (text: string) => {
       awaitingConfirm = true;
       parkedTranscript = text;
+      const intent = classifyTranscriptIntent(text);
+      const trp = buildTurnResolutionPacket({ heardText: text, intent });
       // Mic off while the operator decides (privacy / bounded window §4). Not that
       // → beginSession() re-acquires from scratch, same as Continue.
       teardown();
@@ -328,6 +333,9 @@ const { t } = createLayoutContext();
       setStatus('');
       if (timerEl) timerEl.textContent = '';
       if (confirmHeardEl) confirmHeardEl.textContent = text;
+      if (confirmRoutedEl) confirmRoutedEl.textContent = trp.context_hypothesis.routed_label;
+      if (confirmCreatingEl) confirmCreatingEl.textContent = trp.context_hypothesis.preparing_label;
+      if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
       showActions('confirm');
     };
 
@@ -407,7 +415,7 @@ const { t } = createLayoutContext();
       setState('resolved');
       setHeading(overlay.dataset.headResolved ?? 'Here’s what’s next');
       // Honest result copy: session-backed, durable write not yet run.
-      setStatus(overlay.dataset.resolvedReady ?? 'Saved to this session as a job note.');
+      setStatus(trp.attention_artifact.why || overlay.dataset.resolvedReady || 'Ready to route.');
       if (timerEl) timerEl.textContent = '';
       showActions('resolved');
     };
