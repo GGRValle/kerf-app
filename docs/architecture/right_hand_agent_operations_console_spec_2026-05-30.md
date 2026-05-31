@@ -3,7 +3,7 @@
 - **Date:** 2026-05-30
 - **Status:** Draft architecture/product spec. Not customer-facing. Not yet scheduled.
 - **Working names:** Right Hand Studio, Agent Operations Console, Agent Ops.
-- **Related canon:** D-049 failure as training signal; D-051 four-locality memory axis; Right Hand Turn + Attention Manager draft; stored-fact envelope v1.1; multi-tenant isolation CI brief.
+- **Related canon:** D-049 failure as training signal; D-051 four-locality memory axis; Right Hand Turn + Attention Manager draft; stored-fact envelope v1.1; multi-tenant isolation CI brief; **Wireframe Object Ownership Audit (#257, merged)** and its **8-primitive object model** (Turn · Resolution Packet · Work Artifact · Attention Artifact · Decision · Business Graph Node · Agent · Source / Evidence; gates are enforcement edges, screens are projections).
 
 ## 0. Thesis
 
@@ -356,6 +356,8 @@ Before runtime build, wireframe these internal surfaces:
 
 5. **Promotion Gate**
    - tenant-private evidence on one side, content-free structural proposal on the other, with red/yellow/green gate checks
+
+> **Drift rule + object-model mapping.** These five are net-new internal surfaces. Under the rule merged in the ownership audit (#257) — *no new surface lands in production without a canon source or vendored mirror* — each must carry an owner object from the 8-primitive model: Agent Registry → **Agent**; Failure Inbox → **Attention Artifact** (a ranked queue over failure signatures); Learning Proposal Review → **Resolution Packet → Decision**; Replay/Eval Workbench → **Source / Evidence**; Promotion Gate → **Decision** (the gate itself is an enforcement edge, not a primitive). They are company-facing, so they live outside the customer-facing 109 but inherit the same object discipline and consequence/gate vocabulary.
 
 This UI should use internal/admin density, not phone-first contractor chrome. It is for company operators.
 
