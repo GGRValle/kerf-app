@@ -89,6 +89,28 @@ test('configured model resolver returns llm-inferred estimate walk TRP', async (
   assert.match(result.trp.attention_artifact.why, /Nothing has been filed yet/);
 });
 
+test('model resolver sanitizes active-work copy before it reaches the operator', async () => {
+  const result = await resolveTurnWithModel(
+    BASE_INPUT,
+    successClient({
+      intent: 'job_intake',
+      frame: 'estimate_walk',
+      label: 'New Estimate',
+      confidence: 'high',
+      likely_entity: null,
+      routed_label: 'New Job Intake',
+      preparing_label: 'Drafting Estimate',
+      prompt: 'Ready to capture room details?',
+      missing_facts: [],
+    }),
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.trp.context_hypothesis.preparing_label, 'Estimate-start packet ready');
+  assert.doesNotMatch(result.trp.attention_artifact.why, /Drafting Estimate/i);
+  assert.match(result.trp.attention_artifact.why, /Nothing has been filed yet/);
+});
+
 test('model failure falls back to deterministic resolver without throwing', async () => {
   const client: TurnResolverLlmClient = {
     tenantId: 'tenant_ggr',
@@ -195,4 +217,3 @@ test('turn resolver LLM endpoint/model pair is approved', () => {
   });
   assert.equal(result.allowed, true);
 });
-

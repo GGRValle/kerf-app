@@ -143,6 +143,27 @@ function cleanLikelyEntity(value: unknown): TurnContextHypothesis['likely_entity
   };
 }
 
+function safePreparingLabel(
+  value: unknown,
+  frame: TurnFrame,
+  fallback: string,
+): string {
+  const cleaned = cleanText(value, fallback, 96);
+  // The model may choose active-work phrasing ("Drafting Estimate") even though
+  // this resolver only prepares a session-backed TRP. Never let model copy imply
+  // a durable write, a sent message, or completed draft exists.
+  if (/\b(saved|filed|created|logged|sent|submitted|drafting|creating|generated|wrote)\b/i.test(cleaned)) {
+    if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate-start packet ready';
+    if (frame === 'change_order') return 'Change-order note ready';
+    if (frame === 'money_check') return 'Money review ready';
+    if (frame === 'status_check') return 'Project review ready';
+    if (frame === 'room_scan') return 'Room-scan handoff ready';
+    if (frame === 'media_capture') return 'Capture handoff ready';
+    return fallback;
+  }
+  return cleaned;
+}
+
 function parseJsonObject(content: string): Record<string, unknown> | null {
   try {
     const cleaned = content
@@ -174,7 +195,7 @@ function hypothesisFromModel(
       confidence,
       likely_entity: cleanLikelyEntity(parsed['likely_entity']),
       routed_label: cleanText(parsed['routed_label'], fallback.routed_label, 96),
-      preparing_label: cleanText(parsed['preparing_label'], fallback.preparing_label, 96),
+      preparing_label: safePreparingLabel(parsed['preparing_label'], frame, fallback.preparing_label),
       prompt: cleanText(parsed['prompt'], fallback.prompt, 96),
       missing_facts: Array.isArray(parsed['missing_facts'])
         ? parsed['missing_facts']
@@ -264,4 +285,3 @@ export async function resolveTurnWithModel(
   });
   return { trp, authority: 'llm_inferred' };
 }
-
