@@ -157,12 +157,12 @@ export function inferTurnContext(
     const explicit = /\b(job input|job intake|new estimate|estimate walk|job walk|start (a |the )?(estimate|job|project))\b/i.test(text);
     return {
       frame: 'estimate_walk',
-      label: 'Estimate walk',
+      label: 'Estimate intake',
       confidence: explicit ? 'high' : 'medium',
       likely_entity: null,
-      routed_label: 'Estimate walk → intake packet',
-      preparing_label: 'Session note + estimate-start packet',
-      prompt: 'Start this estimate intake?',
+      routed_label: 'Estimate walk → estimate intake',
+      preparing_label: 'Estimate intake ready',
+      prompt: 'Create estimate from this?',
       missing_facts: [],
       hypothesis_authority: 'deterministic_fallback',
     };
@@ -320,6 +320,22 @@ export interface NextMove {
   readonly route: string;
 }
 
+function estimateRouteFor(trp: TurnResolutionPacket): string {
+  const artifact = trp.work_artifact;
+  if (artifact?.startsWith('proposal:')) {
+    const draftId = artifact.slice('proposal:'.length).trim();
+    if (draftId.length > 0) return `/draft-review/${encodeURIComponent(draftId)}?src=voice`;
+  }
+  if (artifact?.startsWith('draft:')) {
+    const draftId = artifact.slice('draft:'.length).trim();
+    if (draftId.length > 0) return `/draft-review/${encodeURIComponent(draftId)}?src=voice`;
+  }
+
+  // No durable estimate draft exists yet. Keep the next move honest and route to
+  // a real starting surface instead of the old dead `/proposals` index.
+  return '/projects/new?src=voice&intent=estimate_walk';
+}
+
 /**
  * The four-question next-move set (brief §1). "Add a photo" is the ONLY move
  * that routes to Field Capture — and only because the user explicitly chose it.
@@ -330,14 +346,10 @@ export function nextMovesFor(trp: TurnResolutionPacket): readonly NextMove[] {
     frame === 'estimate_walk' || frame === 'job_intake'
       ? '/projects/new?src=voice&intent=estimate_walk'
       : '/projects?src=voice';
-  const estimateRoute =
-    frame === 'estimate_walk' || frame === 'job_intake'
-      ? '/proposals?src=voice&intent=estimate_walk'
-      : '/proposals?src=voice';
   return [
     { id: 'add_photo', route: '/field-capture?dest=this-job&intent=record&src=voice' },
     { id: 'open_job', route: openJobRoute },
-    { id: 'review_estimate', route: estimateRoute },
+    { id: 'review_estimate', route: estimateRouteFor(trp) },
     { id: 'go_home', route: TURN_HOME_SURFACE },
   ];
 }

@@ -93,6 +93,7 @@ Operating rule:
 - Ask only when the answer changes the action, money, client communication, or durable record.
 - Infer and move for reversible navigation/draft setup.
 - Never claim a durable write happened. Use "prepare", "start", "ready", or "draft" language only.
+- Use plain contractor-facing words like job, note, estimate, change order, photo, and room scan. Do not use internal words like "packet".
 - Confidence speeds reversible routing; it never bypasses durable/money/send confirmation.
 - Do not invent tenant facts. Use likely_entity only from transcript or the provided tenant-scoped context.`;
 
@@ -152,8 +153,8 @@ function safePreparingLabel(
   // The model may choose active-work phrasing ("Drafting Estimate") even though
   // this resolver only prepares a session-backed TRP. Never let model copy imply
   // a durable write, a sent message, or completed draft exists.
-  if (/\b(saved|filed|created|logged|sent|submitted|drafting|creating|generated|wrote)\b/i.test(cleaned)) {
-    if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate-start packet ready';
+  if (/\b(saved|filed|created|logged|sent|submitted|drafting|creating|generated|wrote|packet)\b/i.test(cleaned)) {
+    if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate intake ready';
     if (frame === 'change_order') return 'Change-order note ready';
     if (frame === 'money_check') return 'Money review ready';
     if (frame === 'status_check') return 'Project review ready';
