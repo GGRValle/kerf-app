@@ -22,8 +22,9 @@ test('Phase 1G hotfix · F-E1 keeps capture controls available through preflight
     path.join(process.cwd(), 'src/app/pages/field-capture.astro'),
     'utf8',
   );
-  assert.match(source, /id="f-e1-record-more"/);
-  assert.match(source, /id="f-e1-record-active"/);
+  assert.doesNotMatch(source, /id="f-e1-record-more"/);
+  assert.doesNotMatch(source, /id="f-e1-record-active"/);
+  assert.match(source, /Use the bottom Right Hand mic for voice/);
   assert.match(source, /id="f-e1-photo-preflight"/);
   assert.match(source, /accept="image\/\*,video\/\*"/);
   assert.match(source, /Photo \/ Video/);

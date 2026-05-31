@@ -591,6 +591,9 @@ test('Field Capture: no second primary mic; task buttons + bottom-mic context hi
   // The State-1 giant green recorder is gone (no competing primary voice entry).
   assert.doesNotMatch(src, /id="f-e1-record"[^-]/); // exact pre-capture record button id
   assert.doesNotMatch(src, /class="record-button" id="f-e1-record"/);
+  assert.doesNotMatch(src, /id="f-e1-record-more"/);
+  assert.doesNotMatch(src, /id="f-e1-record-active"/);
+  assert.doesNotMatch(src, /compact-record/);
   // Replaced by an explicit bottom-mic context hint.
   assert.match(src, /class="fc-mic-hint"/);
   assert.match(src, /speak to add a note to this capture/i);

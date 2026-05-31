@@ -194,10 +194,6 @@ const assignment = {
           </section>
 
           <div class="action-ribbon">
-            <button type="button" class="ar-btn" id="f-e1-record-active">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
-              Record more
-            </button>
             <button type="button" class="ar-btn" id="f-e1-photo-active">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
               Photo / Video
@@ -289,20 +285,8 @@ const assignment = {
           </section>
 
           <section class="continue-capture" aria-label="Add more capture before submit">
-            <div class="compact-record-zone">
-              <button
-                class="record-button compact-record-button"
-                id="f-e1-record-more"
-                type="button"
-                aria-label="Record more voice"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
-              </button>
-              <div>
-                <p class="record-label">Add more before submit</p>
-                <p class="record-sublabel">Record another note, add photo/video, or edit the summary.</p>
-              </div>
-            </div>
+            <p class="record-label">Add more before submit</p>
+            <p class="record-sublabel">Use the bottom Right Hand mic for voice, or add photo/video and edits here.</p>
             <div class="cap-secondary">
               <button type="button" class="cap-button cap-button-row" id="f-e1-photo-preflight">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
@@ -355,9 +339,6 @@ const assignment = {
 
   <script>
   const shell = document.querySelector('.field-shell');
-  const recordButton = document.querySelector('#f-e1-record');
-  const recordMoreButton = document.querySelector('#f-e1-record-more');
-  const recordActiveButton = document.querySelector('#f-e1-record-active');
   const stopButton = document.querySelector('#f-e1-stop');
   const photoButtons = [
     document.querySelector('#f-e1-photo'),
@@ -1024,15 +1005,6 @@ const assignment = {
     }
   }
 
-  recordButton?.addEventListener('click', () => {
-    void startRecording();
-  });
-  recordMoreButton?.addEventListener('click', () => {
-    void startRecording();
-  });
-  recordActiveButton?.addEventListener('click', () => {
-    void startRecording();
-  });
   stopButton?.addEventListener('click', stopRecording);
   window.addEventListener('kerf:rh-speak', (event) => {
     event.preventDefault();
@@ -1359,41 +1331,7 @@ const assignment = {
   .fc-mic-hint-body strong { font-size: 0.92rem; line-height: 1.35; color: var(--kerf-text); }
   .fc-mic-hint-body span { font-size: 0.8rem; line-height: 1.4; color: var(--kerf-text-mute, #5c6670); }
 
-  /* ===== Record area ===== */
-  .record-area {
-    margin: 16px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-  }
-  .record-button {
-    width: 88px;
-    height: 88px;
-    border: 0;
-    border-radius: 50%;
-    background: var(--field-green);
-    color: #0a1a0f;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 22px rgba(56, 201, 119, 0.3);
-    position: relative;
-    cursor: pointer;
-  }
-  .record-button::after {
-    content: '';
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    border: 2px solid rgba(56, 201, 119, 0.3);
-  }
-  .record-button svg {
-    width: 38px;
-    height: 38px;
-    fill: currentColor;
-  }
+  /* ===== Capture guidance ===== */
   .record-label {
     margin: 6px 0 0;
     font-size: 0.82rem;
@@ -1934,33 +1872,6 @@ const assignment = {
   /* ===== Continue capture ===== */
   .continue-capture {
     border-color: rgba(56, 201, 119, 0.28);
-  }
-  .compact-record-zone {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .compact-record-button {
-    width: 58px;
-    height: 58px;
-    flex: 0 0 auto;
-    box-shadow: 0 6px 16px rgba(56, 201, 119, 0.26);
-  }
-  .compact-record-button::after {
-    inset: -5px;
-  }
-  .compact-record-button svg {
-    width: 24px;
-    height: 24px;
-  }
-  .compact-record-zone .record-label {
-    margin: 0;
-    text-align: left;
-  }
-  .compact-record-zone .record-sublabel {
-    padding: 0;
-    text-align: left;
   }
   .continue-capture .cap-secondary {
     margin: 0;

@@ -130,7 +130,7 @@ export function buildTurnResolutionPacket(input: BuildTurnInput): TurnResolution
     kind === 'handled'
       ? 'Filed through the validated path and folded into your queue.'
       : kind === 'ready_to_save'
-        ? 'Captured and ready to file — open the job to save it for good.'
+        ? 'Captured and ready to file — choose where it belongs.'
         : 'Right Hand did not catch an action — say it once more.';
 
   return {
