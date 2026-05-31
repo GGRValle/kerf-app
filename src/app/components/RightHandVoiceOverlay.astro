@@ -131,10 +131,12 @@ const { t } = createLayoutContext();
   } from '../../voice/realtime/voiceActionGate.js';
   import {
     buildTurnResolutionPacket,
+    parseTurnResolution,
     serializeTurnResolution,
     nextMovesFor,
     TURN_RESOLUTION_SESSION_KEY,
     type NextMove,
+    type TurnResolutionPacket,
   } from '../../voice/realtime/turnResolution.js';
 
   type OverlayState = 'idle' | 'listening' | 'sorting' | 'confirm' | 'resolved' | 'fallback' | 'capped';
@@ -186,6 +188,7 @@ const { t } = createLayoutContext();
     let elapsedSec = 0;
     let awaitingConfirm = false; // durable confirm open — pause STT processing
     let parkedTranscript = ''; // committed durable transcript awaiting Save
+    let parkedTurnResolution: TurnResolutionPacket | null = null;
     let currentMoves: readonly NextMove[] = []; // resolved-state next moves
     let resolvedSurface = '/'; // default landing after a resolved turn
 
@@ -316,6 +319,35 @@ const { t } = createLayoutContext();
       return false;
     };
 
+    const renderConfirmTurn = (trp: TurnResolutionPacket) => {
+      if (confirmRoutedEl) confirmRoutedEl.textContent = trp.context_hypothesis.routed_label;
+      if (confirmCreatingEl) confirmCreatingEl.textContent = trp.context_hypothesis.preparing_label;
+      if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
+    };
+
+    const resolveTurnServerSide = async (text: string, fallback: TurnResolutionPacket): Promise<TurnResolutionPacket> => {
+      try {
+        const res = await fetch('/api/v1/right-hand/resolve-turn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            heardText: text,
+            currentPath: window.location.pathname,
+            userRole: 'owner',
+            // V1 personalization hook: tenant/user preference orders what Right
+            // Hand offers next, but never bypasses durable/money/send gates.
+            userPreferenceSummary: 'Owner dogfood prefers estimate impact after a job-walk note.',
+          }),
+        });
+        if (!res.ok) return fallback;
+        const body = await res.json() as { trp?: unknown };
+        const parsed = parseTurnResolution(JSON.stringify(body.trp ?? null));
+        return parsed ?? fallback;
+      } catch {
+        return fallback;
+      }
+    };
+
     // ── Trust loop (F-RH1): durable intents NEVER auto-navigate. They surface a
     // four-question confirmation (heard · routed · creating · needs you) and wait
     // for the operator. The overlay persists NOTHING; Save only stashes the
@@ -325,6 +357,7 @@ const { t } = createLayoutContext();
       parkedTranscript = text;
       const intent = classifyTranscriptIntent(text);
       const trp = buildTurnResolutionPacket({ heardText: text, intent });
+      parkedTurnResolution = trp;
       // Mic off while the operator decides (privacy / bounded window §4). Not that
       // → beginSession() re-acquires from scratch, same as Continue.
       teardown();
@@ -333,10 +366,14 @@ const { t } = createLayoutContext();
       setStatus('');
       if (timerEl) timerEl.textContent = '';
       if (confirmHeardEl) confirmHeardEl.textContent = text;
-      if (confirmRoutedEl) confirmRoutedEl.textContent = trp.context_hypothesis.routed_label;
-      if (confirmCreatingEl) confirmCreatingEl.textContent = trp.context_hypothesis.preparing_label;
-      if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
+      renderConfirmTurn(trp);
       showActions('confirm');
+      void resolveTurnServerSide(text, trp).then((serverTrp) => {
+        // Only update if the operator is still deciding on the same turn.
+        if (!awaitingConfirm || parkedTranscript !== text || state !== 'confirm') return;
+        parkedTurnResolution = serverTrp;
+        renderConfirmTurn(serverTrp);
+      });
     };
 
     const SORTING_BEAT_MS = 700;
@@ -380,6 +417,7 @@ const { t } = createLayoutContext();
       // "Not that" — discard the parked transcript, resume listening. No nav.
       awaitingConfirm = false;
       parkedTranscript = '';
+      parkedTurnResolution = null;
       routedLive = false;
       lastInterim = '';
       setCaption('');
@@ -400,7 +438,9 @@ const { t } = createLayoutContext();
     const resolveTurn = (text: string) => {
       const clean = text.trim();
       const intent = classifyTranscriptIntent(clean);
-      const trp = buildTurnResolutionPacket({ heardText: clean, intent });
+      const trp = parkedTurnResolution?.heard_text === clean
+        ? parkedTurnResolution
+        : buildTurnResolutionPacket({ heardText: clean, intent });
       try {
         sessionStorage.setItem(TURN_RESOLUTION_SESSION_KEY, serializeTurnResolution(trp));
       } catch { /* storage may be unavailable; the next-step buttons still work */ }
@@ -412,6 +452,7 @@ const { t } = createLayoutContext();
       teardown();
       awaitingConfirm = false;
       parkedTranscript = '';
+      parkedTurnResolution = null;
       setState('resolved');
       setHeading(overlay.dataset.headResolved ?? 'Here’s what’s next');
       // Honest result copy: session-backed, durable write not yet run.
