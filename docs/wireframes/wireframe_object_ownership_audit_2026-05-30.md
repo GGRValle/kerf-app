@@ -3,7 +3,7 @@
 - **Date:** 2026-05-30
 - **Scope:** 109 app-vendored canon files at `docs/wireframes/canon/F-*.html`
 - **Matrix:** `docs/wireframes/wireframe_object_ownership_matrix_2026-05-30.csv`
-- **Status:** First-pass architecture audit. This is an ownership map, not a visual-fidelity review.
+- **Status:** Architecture audit — revised pass. Adds the read/write-graph edge, intended write-gate, and verdict columns plus the 8-primitive model. This is an ownership map of **intended design**, not a visual-fidelity review and **not** runtime guard proof.
 
 ## 0. Why This Audit Exists
 
@@ -31,7 +31,11 @@ The existing app-vendored canon is heavily weighted toward **business graph proj
 | SystemPolicy | 2 |
 | Turn | 1 |
 
+> Note: `NavigationPrimitive`, `RoleView`, and `SystemPolicy` in this column are **projections / enforcement edges**, not primitives (see §3). They are tallied here only because the first pass used them as owner labels.
+
 That does **not** mean the wireframes are wrong. It means most existing surfaces are specialized views of durable business reality: projects, clients, money, schedule, people, procurement, sales, reports.
+
+**Business-graph views are valid, not suspicious.** Projects, Clients, Money, Schedule, People, Procurement, Sales, and Reports legitimately need screens. The audit's job is not to delete them — it is to flag which ones risk becoming *generic contractor SaaS* (`inherited-SaaS-risk`) unless they connect back to a Turn, Work Artifact, Attention Artifact, or Decision.
 
 The newer Right Hand product spine needs explicit surfaces/contracts for the conversational layer that sits above those graph views.
 
@@ -53,9 +57,11 @@ Attention Artifact = what comes back to the person
 Role View = how each person sees it
 ```
 
-## 3. Core Primitive Set
+## 3. Core Primitive Set (8)
 
-The wireframe set should be evaluated against these primitives:
+> **Primitives are objects. Gates are enforcement edges. Screens are projections.**
+
+The wireframe set is evaluated against eight primitives:
 
 1. **Turn**
 2. **Resolution Packet**
@@ -65,10 +71,35 @@ The wireframe set should be evaluated against these primitives:
 6. **Business Graph Node**
 7. **Agent**
 8. **Source / Evidence**
-9. **Role View**
-10. **System Policy**
 
-The matrix maps each existing surface to its primary and secondary owner object.
+Deliberately **not** primitives — these are projections or enforcement edges over the eight:
+
+- **Role View** — a *projection* (how each person sees the graph + attention).
+- **Navigation / intent routers** — projections/chrome that route Turns to surfaces.
+- **System Policy · Policy Gate · validators · permissions · consequence tier** — **enforcement edges.** They govern *transitions* between primitives (e.g., whether a `Decision` may become consequence, or whether a write is allowed). They are not objects the product is built from. Keeping them out of the primitive set is what stops the model from bloating.
+
+The matrix maps each existing surface to its primary and secondary owner object, plus the read/write-graph edge and a verdict.
+
+## 3.1 Ten-Screen Rubric Proof
+
+A spot-classification across families, to lock the column logic before reading all 109:
+
+| Surface | primary object | reads_graph | writes_graph | intended_write_gate | verdict |
+|---|---|---|---|---|---|
+| F-E1 Field Capture | Turn | yes | durable | parser | RH-primitive |
+| F-G1 Draft Review | Work Artifact | yes | durable | operator_confirm | RH-primitive |
+| F-B1 Decision Card | Decision | yes | durable | policy_gate | RH-primitive |
+| F-MN1 Money Home | Business Graph Node | yes | money | money_guard | hybrid |
+| F-CL3 Clients List | Business Graph Node | yes | draft | operator_confirm | inherited-SaaS-risk |
+| F-PR2 Project Detail | Business Graph Node | yes | draft | operator_confirm | graph-view |
+| F-PV1 Proposal View | Work Artifact | yes | external | send_guard | hybrid |
+| F-H1 Audit Detail | Source / Evidence | yes | none | none | RH-primitive |
+| F-S1 Start Action Sheet | nav/intent router | no | none | none | RH-primitive |
+| **F-RH1 Voice Overlay** | **Turn / Resolution Packet** | yes | durable | parser → operator_confirm | **MISSING from app-vendored canon — must be mirrored** |
+
+`F-RH1` is the live Right Hand voice overlay (deployed on Fly v26) but is **not** in the app-vendored 109-file canon. It is the most Turn-native surface in the product and must be mirrored into canon so the build is audited against it.
+
+> **Caveat — design classification, not runtime proof.** `reads_graph`, `writes_graph`, and especially `intended_write_gate` are the *intended* design edges read from the wireframes. They name which wall *should* protect each write (`parser`, `operator_confirm`, `policy_gate`, `money_guard`, `send_guard`). **Verifying that the running code actually enforces those gates is a separate code audit** — the tenant-isolation / guard CI lane — not this wireframe pass.
 
 ## 4. What The 109 Screens Are Doing
 
@@ -166,6 +197,10 @@ Columns:
 - `displays_attention_artifact`: whether the surface presents "what needs you"
 - `decision_or_gate`: whether the surface includes a human decision/consequence gate
 - `consequence_tier`: rough consequence class
+- `reads_graph`: does the surface read from the business graph — `yes` / `no`
+- `writes_graph`: strongest write the surface *intends* — `none` / `draft` / `durable` / `external` / `money`
+- `intended_write_gate`: the wall that *should* protect that write — `none` / `parser` / `operator_confirm` / `policy_gate` / `money_guard` / `send_guard`. **Design intent; runtime enforcement is a separate code audit (§3.1 caveat).**
+- `verdict`: `RH-primitive` / `graph-view` / `hybrid` / `inherited-SaaS-risk`
 - `notes`: product interpretation
 
 This is a first-pass taxonomy, not a final schema. Its job is to reveal where the canon is Right Hand-native and where it is conventional business graph projection.
