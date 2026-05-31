@@ -51,6 +51,13 @@ export interface TurnContextHypothesis {
   readonly label: string;
   /** Confidence in the business frame, not a claim of durable completion. */
   readonly confidence: TurnConfidence;
+  /** Likely business entity, when the resolver has enough tenant-scoped context. */
+  readonly likely_entity: {
+    readonly type: 'project' | 'client' | 'site' | 'lead' | 'unknown';
+    readonly label: string | null;
+    readonly id?: string | null;
+    readonly confidence: TurnConfidence;
+  } | null;
   /** Confirm-card row: where this turn appears to belong. */
   readonly routed_label: string;
   /** Confirm-card row: what Right Hand can prepare before a durable write. */
@@ -59,6 +66,8 @@ export interface TurnContextHypothesis {
   readonly prompt: string;
   /** Facts that would improve routing; empty means no blocking question yet. */
   readonly missing_facts: readonly string[];
+  /** Model-led target vs V1 fallback. This is audit copy, not operator jargon. */
+  readonly hypothesis_authority: 'llm_inferred' | 'deterministic_fallback';
 }
 
 export interface AttentionArtifact {
@@ -150,10 +159,12 @@ export function inferTurnContext(
       frame: 'estimate_walk',
       label: 'Estimate walk',
       confidence: explicit ? 'high' : 'medium',
+      likely_entity: null,
       routed_label: 'Estimate walk → intake packet',
       preparing_label: 'Session note + estimate-start packet',
       prompt: 'Start this estimate intake?',
       missing_facts: [],
+      hypothesis_authority: 'deterministic_fallback',
     };
   }
 
@@ -162,10 +173,12 @@ export function inferTurnContext(
       frame: 'change_order',
       label: 'Change order note',
       confidence: 'high',
+      likely_entity: null,
       routed_label: 'Change order → draft review',
       preparing_label: 'Session note + change-order prompt',
       prompt: 'Prepare this change-order note?',
       missing_facts: [],
+      hypothesis_authority: 'deterministic_fallback',
     };
   }
 
@@ -174,10 +187,12 @@ export function inferTurnContext(
       frame: 'money_check',
       label: 'Money question',
       confidence: 'high',
+      likely_entity: null,
       routed_label: 'Money → read-only review',
       preparing_label: 'Opening the money surface',
       prompt: 'Go there?',
       missing_facts: [],
+      hypothesis_authority: 'deterministic_fallback',
     };
   }
 
@@ -186,10 +201,12 @@ export function inferTurnContext(
       frame: 'status_check',
       label: 'Project status question',
       confidence: 'high',
+      likely_entity: null,
       routed_label: 'Project status → active project review',
       preparing_label: 'Opening the project surface',
       prompt: 'Go there?',
       missing_facts: ['active project'],
+      hypothesis_authority: 'deterministic_fallback',
     };
   }
 
@@ -198,10 +215,12 @@ export function inferTurnContext(
       frame: 'room_scan',
       label: 'Room scan',
       confidence: 'high',
+      likely_entity: null,
       routed_label: 'Room scan → LiDAR capture',
       preparing_label: 'Opening room capture',
       prompt: 'Open LiDAR?',
       missing_facts: [],
+      hypothesis_authority: 'deterministic_fallback',
     };
   }
 
@@ -210,10 +229,12 @@ export function inferTurnContext(
       frame: 'media_capture',
       label: 'Media capture',
       confidence: 'high',
+      likely_entity: null,
       routed_label: 'Media → Field Capture',
       preparing_label: 'Opening capture tools',
       prompt: 'Add media?',
       missing_facts: [],
+      hypothesis_authority: 'deterministic_fallback',
     };
   }
 
@@ -222,10 +243,12 @@ export function inferTurnContext(
       frame: 'field_note',
       label: 'Job note',
       confidence: intent === 'unclassified' ? 'low' : 'high',
+      likely_entity: null,
       routed_label: 'Job note → session review',
       preparing_label: 'Session note ready to file',
       prompt: 'Save this session note?',
       missing_facts: [],
+      hypothesis_authority: 'deterministic_fallback',
     };
   }
 
@@ -233,10 +256,12 @@ export function inferTurnContext(
     frame: 'unknown',
     label: 'Unclear turn',
     confidence: 'low',
+    likely_entity: null,
     routed_label: 'Needs clarification',
     preparing_label: 'No action prepared yet',
     prompt: 'Say it once more?',
     missing_facts: ['intent'],
+    hypothesis_authority: 'deterministic_fallback',
   };
 }
 
@@ -247,6 +272,7 @@ export interface BuildTurnInput {
   readonly workArtifact?: string | null;
   readonly sourceRefs?: readonly string[];
   readonly memoryCandidates?: readonly string[];
+  readonly contextHypothesis?: TurnContextHypothesis;
   readonly now?: number;
 }
 
@@ -256,7 +282,7 @@ export function buildTurnResolutionPacket(input: BuildTurnInput): TurnResolution
   const kind = attentionKindFor(work_artifact, heard_text);
   const consequence_tier = consequenceTierFor(input.intent);
   const next_surface = nextSurfaceFor(input.intent);
-  const context_hypothesis = inferTurnContext(heard_text, input.intent);
+  const context_hypothesis = input.contextHypothesis ?? inferTurnContext(heard_text, input.intent);
 
   const headline =
     kind === 'handled'
