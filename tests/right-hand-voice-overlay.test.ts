@@ -248,7 +248,13 @@ test('deterministic intent classifier maps keywords honestly', () => {
   assert.equal(classifyTranscriptIntent('check on money'), 'open_money');
   assert.equal(classifyTranscriptIntent('work on the change order for Wegrzyn'), 'change_order');
   assert.equal(classifyTranscriptIntent('what is the status on the kitchen'), 'status_question');
-  assert.equal(classifyTranscriptIntent('take a job note'), 'open_field_capture');
+  // Note dictation is now DURABLE (turn-resolution brief §4): "take a job note"
+  // must NOT live-route to /field-capture — it waits for commit + resolves the
+  // turn. Explicit media/destination phrasing keeps the live Field Capture route.
+  assert.equal(classifyTranscriptIntent('take a job note'), 'job_note');
+  assert.equal(classifyTranscriptIntent('make a note about the tile'), 'job_note');
+  assert.equal(classifyTranscriptIntent('add a photo'), 'open_field_capture');
+  assert.equal(classifyTranscriptIntent('open field capture'), 'open_field_capture');
   assert.equal(classifyTranscriptIntent('mmhmm uh'), 'unclassified');
 });
 
@@ -387,13 +393,16 @@ test('trust loop: meaningful unclassified speech defaults to a saveable note', (
   );
 });
 
-test('Stop on an interim durable transcript enters the trust loop instead of freezing on Transcribing', () => {
+test('stale trap gone: Stop on useful interim speech enters the trust loop, not a capped dead-end', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
   assert.match(finishCurrentTurn, /releaseListeningResources\(\)/);
-  assert.match(finishCurrentTurn, /requiresCommittedTranscript\(intent\)/);
+  // Useful interim (durable OR unclassified) → Save/Not-that trust loop.
   assert.match(finishCurrentTurn, /enterSorting\(interim\)/);
-  assert.doesNotMatch(finishCurrentTurn, /requiresCommittedTranscript\(intent\)[\s\S]{0,120}setStatus\(overlay\.dataset\.transcribing/);
+  // The OLD "unclassified-but-useful → capped clarify" dead-end is GONE: there is
+  // no second capped branch after the empty-interim early return.
+  assert.doesNotMatch(finishCurrentTurn, /else \{[\s\S]*?setState\('capped'\)/);
+  assert.doesNotMatch(finishCurrentTurn, /requiresCommittedTranscript\(intent\)[\s\S]{0,120}setState\('capped'\)/);
 });
 
 test('Stop immediately releases the mic/session before any clarify or route decision', () => {
@@ -407,31 +416,53 @@ test('Stop immediately releases the mic/session before any clarify or route deci
     finishCurrentTurn,
     /releaseListeningResources\(\);\s*const interim = lastInterim\.trim\(\);/,
   );
+  // Empty audio still parks on capped (Continue) — the one legitimate capped use.
   assert.match(
     finishCurrentTurn,
     /interim\.length === 0[\s\S]*?setState\('capped'\)[\s\S]*?showActions\('capped'\)[\s\S]*?return;/,
   );
-  assert.match(
-    finishCurrentTurn,
-    /else \{[\s\S]*?setState\('capped'\)[\s\S]*?showActions\('capped'\)[\s\S]*?\}/,
-  );
 });
 
-test('trust loop: Save stashes the transcript and navigates to /field-capture; persists nothing in-overlay', () => {
+test('turn resolution: Save RESOLVES the turn (TRP + result), does NOT auto-dump into /field-capture', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  // The Save handler is the ONLY durable handoff: stash → navigate to the
-  // existing validated Field Capture path. No backend write in the overlay.
-  assert.match(
-    src,
-    /saveBtn\?\.addEventListener\('click', \(\) => \{[\s\S]*?stashCommitted\(parkedTranscript\)[\s\S]*?navigate\('\/field-capture\?dest=this-job&intent=record&src=voice'\)[\s\S]*?\}\)/,
-  );
-  // Overlay never persists/writes itself: no fetch POST to a write/persist route.
+  // Save now calls resolveTurn — it must NOT navigate to /field-capture (the
+  // brief kills the auto-dump into a second mic-first page).
+  assert.match(src, /saveBtn\?\.addEventListener\('click', \(\) => \{\s*resolveTurn\(parkedTranscript\);\s*\}\)/);
+
+  // resolveTurn builds + stashes a TRP, enters the resolved state, and never
+  // auto-navigates to Field Capture.
+  const resolveTurn = sliceDecl(src, 'resolveTurn', 'routeMove');
+  assert.match(resolveTurn, /buildTurnResolutionPacket\(/);
+  assert.match(resolveTurn, /TURN_RESOLUTION_SESSION_KEY/);
+  assert.match(resolveTurn, /serializeTurnResolution\(/);
+  assert.match(resolveTurn, /setState\('resolved'\)/);
+  assert.doesNotMatch(resolveTurn, /\/field-capture/);
+
+  // Honesty (#10): the overlay performs no durable write, so the resolved copy
+  // is the session-backed `ready_to_save` line, never a fake "handled".
+  assert.match(resolveTurn, /overlay\.dataset\.resolvedReady/);
+
+  // Overlay still never persists/writes itself: no fetch POST to a write route.
   assert.doesNotMatch(src, /fetch\([^)]*(persist|eventlog|event-log|jobnote|job-note)/i);
+});
+
+test('turn resolution: next moves — only "Add a photo" routes to Field Capture (explicit choice)', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  // The resolved next-move buttons exist and are wired through routeMove.
+  assert.match(src, /data-move="add_photo"/);
+  assert.match(src, /data-move="open_job"/);
+  assert.match(src, /data-move="review_estimate"/);
+  assert.match(src, /data-move="go_home"/);
+  assert.match(src, /\[data-move\]'\)\.forEach\(\(el\) => \{[\s\S]*?routeMove\(el\.getAttribute\('data-move'\)\)/);
+  // Backdrop/Escape in the resolved state lands Home, not a dead stay-on-page.
+  const dismissOverlay = sliceDecl(src, 'dismissOverlay', 'onInterim');
+  assert.match(dismissOverlay, /state === 'resolved'/);
+  assert.match(dismissOverlay, /navigate\(resolvedSurface\)/);
 });
 
 test('trust loop: Not that returns to listening with NO navigation', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  const returnToListening = sliceDecl(src, 'returnToListening', 'onInterim');
+  const returnToListening = sliceDecl(src, 'returnToListening', 'resolveTurn');
   assert.match(returnToListening, /awaitingConfirm = false/);
   assert.match(returnToListening, /beginSession\(\)/);
   assert.doesNotMatch(returnToListening, /navigate\(/);
@@ -530,10 +561,62 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.action_save',
     'rh_voice.action_not_that',
     'rh_voice.action_stop',
+    // Turn-resolution additions (brief 2026-05-31).
+    'rh_voice.head_resolved',
+    'rh_voice.resolved_ready_to_save',
+    'rh_voice.resolved_prompt',
+    'rh_voice.move_add_photo',
+    'rh_voice.move_open_job',
+    'rh_voice.move_review_estimate',
+    'rh_voice.move_go_home',
+    'home.result.ready_to_save',
+    'home.result.heard_label',
+    'home.result.prompt',
+    'home.result.add_photo',
+    'home.result.open_job',
+    'home.result.review_estimate',
+    'home.result.dismiss',
   ];
   for (const key of newKeys) {
     assert.ok(keys.includes(`'${key}'`), `keys.ts missing ${key}`);
     assert.ok(en.includes(`'${key}'`), `en.ts missing ${key}`);
     assert.ok(es.includes(`'${key}'`), `es.ts missing ${key}`);
   }
+});
+
+// ── Field Capture: giant mic demoted; Home fold-in card ──────────────────────
+
+test('Field Capture: no second primary mic; task buttons + bottom-mic context hint', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
+  // The State-1 giant green recorder is gone (no competing primary voice entry).
+  assert.doesNotMatch(src, /id="f-e1-record"[^-]/); // exact pre-capture record button id
+  assert.doesNotMatch(src, /class="record-button" id="f-e1-record"/);
+  // Replaced by an explicit bottom-mic context hint.
+  assert.match(src, /class="fc-mic-hint"/);
+  assert.match(src, /speak to add a note to this capture/i);
+  // Task buttons present and wired (no dead buttons).
+  assert.match(src, /id="f-e1-photo"/);
+  assert.match(src, /id="f-e1-attach-file"/);
+  assert.match(src, /id="f-e1-type-note"/);
+  assert.match(src, /attachFileButton\?\.addEventListener\('click', openFilePicker\)/);
+  assert.match(src, /fileInput\?\.addEventListener\('change', handleFilePick\)/);
+  // Bottom mic still claimed by the page (context-aware voice control).
+  assert.match(src, /addEventListener\('kerf:rh-speak'/);
+});
+
+test('Home folds in the resolved-turn result card (honest, generated from the real TRP)', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandResultCard.astro'), 'utf8');
+  const home = readFileSync(path.join(ROOT, 'src/app/pages/index.astro'), 'utf8');
+  // Mounted on Home above the loop grid.
+  assert.match(home, /RightHandResultCard/);
+  // Reads the stashed TRP (never fabricated) and only shows when one exists.
+  assert.match(src, /TURN_RESOLUTION_SESSION_KEY/);
+  assert.match(src, /parseTurnResolution\(/);
+  assert.match(src, /card\.hidden = false/);
+  // Badge text is driven by the real attention kind/headline — no hardcoded
+  // "handled" claim baked into the script.
+  assert.match(src, /trp\.attention_artifact\.headline/);
+  assert.match(src, /trp\.heard_text/);
+  // Dismiss clears the session key.
+  assert.match(src, /removeItem\(TURN_RESOLUTION_SESSION_KEY\)/);
 });

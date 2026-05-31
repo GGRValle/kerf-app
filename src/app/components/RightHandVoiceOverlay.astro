@@ -35,6 +35,8 @@ const { t } = createLayoutContext();
   data-retry={t('rh_voice.status_retry')}
   data-head-sorting={t('rh_voice.head_sorting')}
   data-head-confirm={t('rh_voice.head_confirm')}
+  data-head-resolved={t('rh_voice.head_resolved')}
+  data-resolved-ready={t('rh_voice.resolved_ready_to_save')}
   hidden
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
@@ -87,6 +89,16 @@ const { t } = createLayoutContext();
       </div>
     </div>
 
+    <div class="rhvo__resolution" id="rhvo-resolution" hidden>
+      <p class="rhvo__resolution-prompt">{t('rh_voice.resolved_prompt')}</p>
+      <div class="rhvo__moves">
+        <button type="button" class="rhvo__move" data-move="add_photo">{t('rh_voice.move_add_photo')}</button>
+        <button type="button" class="rhvo__move" data-move="open_job">{t('rh_voice.move_open_job')}</button>
+        <button type="button" class="rhvo__move" data-move="review_estimate">{t('rh_voice.move_review_estimate')}</button>
+        <button type="button" class="rhvo__move rhvo__move--primary" data-move="go_home">{t('rh_voice.move_go_home')}</button>
+      </div>
+    </div>
+
     <p class="rhvo__authority" id="rhvo-authority">{t('rh_voice.authority_deterministic')}</p>
 
     <div class="rhvo__actions">
@@ -117,8 +129,15 @@ const { t } = createLayoutContext();
     liveRouteFor,
     type VoiceIntent,
   } from '../../voice/realtime/voiceActionGate.js';
+  import {
+    buildTurnResolutionPacket,
+    serializeTurnResolution,
+    nextMovesFor,
+    TURN_RESOLUTION_SESSION_KEY,
+    type NextMove,
+  } from '../../voice/realtime/turnResolution.js';
 
-  type OverlayState = 'idle' | 'listening' | 'sorting' | 'confirm' | 'fallback' | 'capped';
+  type OverlayState = 'idle' | 'listening' | 'sorting' | 'confirm' | 'resolved' | 'fallback' | 'capped';
 
   // Operator-facing copy is rendered into data-* on the overlay (resolved via
   // t() at render) so the script stays i18n-correct. The inline English here is
@@ -164,6 +183,8 @@ const { t } = createLayoutContext();
     let elapsedSec = 0;
     let awaitingConfirm = false; // durable confirm open — pause STT processing
     let parkedTranscript = ''; // committed durable transcript awaiting Save
+    let currentMoves: readonly NextMove[] = []; // resolved-state next moves
+    let resolvedSurface = '/'; // default landing after a resolved turn
 
     const setState = (next: OverlayState) => {
       state = next;
@@ -200,8 +221,10 @@ const { t } = createLayoutContext();
     // ── Action-button visibility per state. Stop is the explicit-commit primary
     // while listening; Save/Not that own the confirm trust loop; Continue owns
     // the capped state. (F-RH1.)
-    const showActions = (mode: 'listening' | 'confirm' | 'capped') => {
-      if (cancelBtn) cancelBtn.hidden = mode === 'confirm';
+    const showActions = (mode: 'listening' | 'confirm' | 'capped' | 'resolved') => {
+      // Resolved owns its own next-move buttons (.rhvo__moves); every standard
+      // action button is hidden so there is no competing primary.
+      if (cancelBtn) cancelBtn.hidden = mode === 'confirm' || mode === 'resolved';
       if (doneBtn) doneBtn.hidden = mode !== 'listening';
       if (continueBtn) continueBtn.hidden = mode !== 'capped';
       if (saveBtn) saveBtn.hidden = mode !== 'confirm';
@@ -360,6 +383,50 @@ const { t } = createLayoutContext();
       void beginSession();
     };
 
+    // ── Turn resolution (brief 2026-05-31): Save does NOT dump the user into a
+    // fresh Field Capture mic page. It closes the turn into a Turn Resolution
+    // Packet, shows an honest next-step response, and lands the operator on Home
+    // (the attention queue, with the result folded in). The overlay performs NO
+    // durable write — so the TRP is `ready_to_save` (session-backed), never a
+    // false `handled` (non-negotiable #10). ────────────────────────────────────
+    const resolveTurn = (text: string) => {
+      const clean = text.trim();
+      const intent = classifyTranscriptIntent(clean);
+      const trp = buildTurnResolutionPacket({ heardText: clean, intent });
+      try {
+        sessionStorage.setItem(TURN_RESOLUTION_SESSION_KEY, serializeTurnResolution(trp));
+      } catch { /* storage may be unavailable; the next-step buttons still work */ }
+      // Stash the transcript too so an explicit "Add a photo" hand-off to Field
+      // Capture can pick the note up. This is NOT a durable write.
+      stashCommitted(clean);
+      currentMoves = nextMovesFor(trp);
+      resolvedSurface = trp.next_surface;
+      teardown();
+      awaitingConfirm = false;
+      parkedTranscript = '';
+      setState('resolved');
+      setHeading(overlay.dataset.headResolved ?? 'Here’s what’s next');
+      // Honest result copy: session-backed, durable write not yet run.
+      setStatus(overlay.dataset.resolvedReady ?? 'Saved to this session as a job note.');
+      if (timerEl) timerEl.textContent = '';
+      showActions('resolved');
+    };
+
+    const routeMove = (id: string | null) => {
+      const move = currentMoves.find((m) => m.id === id) ?? null;
+      navigate(move ? move.route : resolvedSurface);
+    };
+
+    // Backdrop / Escape: in the resolved state this lands Home (the default
+    // landing with the result folded in), never a dead stay-on-page.
+    const dismissOverlay = () => {
+      if (state === 'resolved') {
+        navigate(resolvedSurface);
+        return;
+      }
+      closeOverlay();
+    };
+
     // ── Interim words: may ONLY fire reversible LIVE navigations (§9). ───────
     const onInterim = (text: string) => {
       if (awaitingConfirm) return; // confirm trust loop owns the turn
@@ -403,13 +470,10 @@ const { t } = createLayoutContext();
         return;
       }
       setCaption(interim);
-      if (requiresCommittedTranscript(intent)) {
-        enterSorting(interim);
-      } else {
-        setState('capped');
-        setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
-        showActions('capped');
-      }
+      // Durable OR unclassified-but-useful speech → confirm trust loop (Save /
+      // Not that), never a Cancel/Stop dead-end. This closes the stale
+      // "I didn't catch an action" trap on the Stop path (brief stale-screen fix).
+      enterSorting(interim);
     };
 
     // ── Bounded window timers (§4) ──────────────────────────────────────────
@@ -664,10 +728,10 @@ const { t } = createLayoutContext();
     });
 
     overlay.querySelectorAll('[data-rhvo-dismiss]').forEach((el) => {
-      el.addEventListener('click', () => closeOverlay());
+      el.addEventListener('click', () => dismissOverlay());
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !overlay.hidden) closeOverlay();
+      if (e.key === 'Escape' && !overlay.hidden) dismissOverlay();
     });
     doneBtn?.addEventListener('click', finishCurrentTurn);
     continueBtn?.addEventListener('click', () => {
@@ -681,14 +745,17 @@ const { t } = createLayoutContext();
       startTimer();
       void beginSession();
     });
-    // Save: durable confirm → existing validated Field Capture path. The overlay
-    // persists NOTHING — it only stashes the transcript (sessionStorage) and
-    // navigates, exactly as the pre-trust-loop durable path did.
+    // Save: RESOLVE the turn (TRP + honest result + next moves) — it does NOT
+    // dump the user onto the Field Capture mic page (brief non-negotiables #1/#2).
     saveBtn?.addEventListener('click', () => {
-      stashCommitted(parkedTranscript);
-      navigate('/field-capture?dest=this-job&intent=record&src=voice');
+      resolveTurn(parkedTranscript);
     });
     notThatBtn?.addEventListener('click', returnToListening);
+    // Resolved-state next moves: "Add a photo" is the ONLY one that goes to Field
+    // Capture, and only because the operator explicitly chose it (brief §8).
+    overlay.querySelectorAll<HTMLElement>('[data-move]').forEach((el) => {
+      el.addEventListener('click', () => routeMove(el.getAttribute('data-move')));
+    });
     try {
       const resumeRaw = sessionStorage.getItem('kerf.voiceResume');
       if (resumeRaw) {
@@ -845,6 +912,41 @@ const { t } = createLayoutContext();
   .rhvo__confirm { display: none; width: 100%; text-align: left; }
   .rhvo[data-state='confirm'] .rhvo__confirm { display: block; }
   .rhvo[data-state='confirm'] .rhvo__authority { display: none; }
+  /* Resolved state — the turn is closed; show the next-step response + moves,
+     never the live capture chrome or a competing primary action. */
+  .rhvo__resolution { display: none; width: 100%; }
+  .rhvo[data-state='resolved'] .rhvo__resolution { display: block; }
+  .rhvo[data-state='resolved'] .rhvo__indicator,
+  .rhvo[data-state='resolved'] .rhvo__meter,
+  .rhvo[data-state='resolved'] .rhvo__caption,
+  .rhvo[data-state='resolved'] .rhvo__authority,
+  .rhvo[data-state='resolved'] .rhvo__actions { display: none; }
+  .rhvo__resolution-prompt {
+    margin: 0 0 0.7rem;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--kerf-text-dim);
+    text-align: left;
+  }
+  .rhvo__moves { display: grid; gap: 0.5rem; }
+  .rhvo__move {
+    min-height: 44px;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    padding: 0 0.9rem;
+    border: 1px solid var(--kerf-border);
+    background: var(--kerf-surface-2);
+    color: var(--kerf-text);
+  }
+  .rhvo__move--primary {
+    background: var(--right-hand);
+    color: #0a0d11;
+    border-color: var(--right-hand);
+    text-align: center;
+  }
   .rhvo__row {
     display: flex;
     gap: 0.7rem;

@@ -1,0 +1,119 @@
+/**
+ * Turn Resolution Packet (TRP) — pure-module tests.
+ *
+ * Source: src/voice/realtime/turnResolution.ts
+ * Brief:  Right Hand Turn Resolution + Field Capture Voice Cleanup (2026-05-31).
+ *
+ * The load-bearing property is HONESTY (brief non-negotiable #10): the overlay
+ * resolves a turn WITHOUT a durable write, so it may only ever emit
+ * `ready_to_save` — never a fake `handled`. `handled` is unreachable without a
+ * real `work_artifact`. We also lock that a resolved turn never lands the user
+ * on the Field Capture mic page.
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  buildTurnResolutionPacket,
+  attentionKindFor,
+  nextSurfaceFor,
+  nextMovesFor,
+  consequenceTierFor,
+  serializeTurnResolution,
+  parseTurnResolution,
+  TURN_RESOLUTION_SESSION_KEY,
+  TURN_HOME_SURFACE,
+  FORBIDDEN_AUTO_LANDINGS,
+} from '../src/voice/realtime/turnResolution.js';
+
+test('honesty: `handled` is unreachable without a real work_artifact', () => {
+  // No work artifact → ready_to_save (session-backed), regardless of useful text.
+  assert.equal(attentionKindFor(null, 'tile changed to Carrara, needs CO pricing'), 'ready_to_save');
+  // A confirmed durable write → handled.
+  assert.equal(attentionKindFor('daily_log:abc123', 'tile changed'), 'handled');
+  // Nothing useful captured → needs_you.
+  assert.equal(attentionKindFor(null, '   '), 'needs_you');
+});
+
+test('overlay-resolved turn is ready_to_save (never a false handled)', () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Plumbing rough-in is done at the Wegrzyn kitchen.',
+    intent: 'job_note',
+  });
+  assert.equal(trp.attention_artifact.kind, 'ready_to_save');
+  assert.equal(trp.work_artifact, null);
+  assert.equal(trp.needs_user, true);
+  // Honest copy — never claims it was saved/handled.
+  assert.doesNotMatch(trp.attention_artifact.headline, /\bhandled\b|\bsaved\b(?!\s+to\s+this\s+session)/i);
+  assert.match(trp.attention_artifact.headline, /session/i);
+});
+
+test('a real work_artifact licenses handled + settles the turn', () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Logged the inspection pass.',
+    intent: 'job_log',
+    workArtifact: 'daily_log:entry_42',
+  });
+  assert.equal(trp.attention_artifact.kind, 'handled');
+  assert.equal(trp.needs_user, false);
+});
+
+test('a resolved turn never auto-lands on the Field Capture mic page', () => {
+  assert.equal(TURN_HOME_SURFACE, '/');
+  assert.ok(FORBIDDEN_AUTO_LANDINGS.includes('/field-capture'));
+  for (const intent of ['job_note', 'change_order', 'estimate_update', 'memory_write', 'unclassified'] as const) {
+    const surface = nextSurfaceFor(intent);
+    assert.equal(surface, '/');
+    assert.ok(!FORBIDDEN_AUTO_LANDINGS.includes(surface));
+  }
+  const trp = buildTurnResolutionPacket({ heardText: 'note', intent: 'job_note' });
+  assert.equal(trp.next_surface, '/');
+});
+
+test('only the explicit "Add a photo" next move routes to Field Capture', () => {
+  const trp = buildTurnResolutionPacket({ heardText: 'note', intent: 'job_note' });
+  const moves = nextMovesFor(trp);
+  const ids = moves.map((m) => m.id);
+  assert.deepEqual(ids, ['add_photo', 'open_job', 'review_estimate', 'go_home']);
+  const photo = moves.find((m) => m.id === 'add_photo');
+  assert.match(photo!.route, /^\/field-capture/);
+  // No OTHER move may point at Field Capture.
+  for (const move of moves.filter((m) => m.id !== 'add_photo')) {
+    assert.doesNotMatch(move.route, /\/field-capture/);
+  }
+  assert.equal(moves.find((m) => m.id === 'go_home')!.route, '/');
+});
+
+test('consequence tier maps reversible (live) vs durable (commit/clarify)', () => {
+  assert.equal(consequenceTierFor('open_field_capture'), 'reversible');
+  assert.equal(consequenceTierFor('open_money'), 'reversible');
+  assert.equal(consequenceTierFor('job_note'), 'durable');
+  assert.equal(consequenceTierFor('change_order'), 'durable');
+  assert.equal(consequenceTierFor('unclassified'), 'durable');
+});
+
+test('TRP confidence is honest about the deterministic keyword floor', () => {
+  assert.equal(buildTurnResolutionPacket({ heardText: 'x', intent: 'job_note' }).confidence, 'high');
+  assert.equal(buildTurnResolutionPacket({ heardText: 'x', intent: 'unclassified' }).confidence, 'low');
+});
+
+test('serialize/parse round-trips; parse rejects junk', () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Carrara tile swap',
+    intent: 'job_note',
+    now: 1_700_000_000_000,
+  });
+  const round = parseTurnResolution(serializeTurnResolution(trp));
+  assert.ok(round);
+  assert.equal(round!.heard_text, 'Carrara tile swap');
+  assert.equal(round!.attention_artifact.kind, 'ready_to_save');
+  assert.equal(round!.created_at, 1_700_000_000_000);
+  // Junk / empty → null (Home stays empty, never renders a fabricated card).
+  assert.equal(parseTurnResolution(null), null);
+  assert.equal(parseTurnResolution('not json'), null);
+  assert.equal(parseTurnResolution('{"heard_text":"x"}'), null);
+});
+
+test('session key is the shared overlay↔Home contract', () => {
+  assert.equal(TURN_RESOLUTION_SESSION_KEY, 'kerf.turnResolution');
+});

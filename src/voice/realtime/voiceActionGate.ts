@@ -159,11 +159,14 @@ const INTENT_RULES: readonly IntentRule[] = [
   { intent: 'status_question', pattern: /\b(status|how('?s| is) .* (going|coming)|where (are|is)|on track)\b/i },
   { intent: 'job_log', pattern: /\b(log this for|log it under|add to the (daily )?log)\b/i },
   { intent: 'memory_write', pattern: /\b(remember (that|this)|note for later|keep in mind|for the record)\b/i },
-  // Front-door capture phrasing routes to the capture surface (reversible
-  // navigation). The durable `job_note` persist intent lives in the §9 taxonomy
-  // / gate but is not produced by the front-door classifier — persistence
-  // happens downstream after operator review.
-  { intent: 'open_field_capture', pattern: /\b(take (this|a) (job )?note|job note|take this down|capture (this|a)|jot (this )?down)\b/i },
+  // Note dictation is a DURABLE turn (turn-resolution brief 2026-05-31 §4): "add a
+  // job note" must NOT live-navigate to /field-capture (the dump the brief kills).
+  // It waits for the committed transcript, runs the confirm trust loop, and on
+  // Save resolves the turn into a TRP (result + Home) — no fresh intake form.
+  { intent: 'job_note', pattern: /\b(take (this|a) (job )?note|job note|take this down|jot (this )?down|make a note|add a note|note this|capture this note)\b/i },
+  // EXPLICIT "go to Field Capture" / media phrasing is the reversible live route
+  // to the capture surface (brief §8: add photo/video → Field Capture).
+  { intent: 'open_field_capture', pattern: /\b(open (field )?capture|field capture|add (a )?(photo|video|picture)|attach (a )?(photo|file|video)|take (a )?(photo|picture|video))\b/i },
 ];
 
 /**
