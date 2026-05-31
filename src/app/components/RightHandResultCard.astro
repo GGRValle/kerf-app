@@ -23,7 +23,7 @@ const { t } = createLayoutContext();
     <span class="rh-result__heard-label">{t('home.result.heard_label')}</span>
     <span class="rh-result__heard-text" id="rh-result-heard"></span>
   </p>
-  <p class="rh-result__prompt">{t('home.result.prompt')}</p>
+  <p class="rh-result__prompt" id="rh-result-prompt">{t('home.result.prompt')}</p>
   <div class="rh-result__moves">
     <button type="button" class="rh-result__move" data-move="add_photo">{t('home.result.add_photo')}</button>
     <button type="button" class="rh-result__move" data-move="open_job">{t('home.result.open_job')}</button>
@@ -48,6 +48,7 @@ const { t } = createLayoutContext();
     if (trp) {
       const badge = document.getElementById('rh-result-badge');
       const heard = document.getElementById('rh-result-heard');
+      const prompt = document.getElementById('rh-result-prompt');
       // HONEST: badge text is driven by the real attention kind. The overlay
       // only ever emits `ready_to_save` (no overlay-side durable write), so the
       // card never claims "handled" unless a real work_artifact backs it.
@@ -55,6 +56,9 @@ const { t } = createLayoutContext();
         badge.textContent = trp.attention_artifact.headline;
       }
       if (heard) heard.textContent = trp.heard_text;
+      if (prompt && trp.attention_artifact?.why) {
+        prompt.textContent = trp.attention_artifact.why;
+      }
       const moves = nextMovesFor(trp);
       card.querySelectorAll<HTMLElement>('[data-move]').forEach((el) => {
         el.addEventListener('click', () => {

@@ -31,6 +31,36 @@ export type AttentionKind = 'handled' | 'ready_to_save' | 'needs_you';
 /** Reversible (live-routed) vs durable (consequence) — maps to the §9 lanes. */
 export type ConsequenceTier = 'reversible' | 'durable';
 
+export type TurnFrame =
+  | 'estimate_walk'
+  | 'job_intake'
+  | 'field_note'
+  | 'change_order'
+  | 'status_check'
+  | 'money_check'
+  | 'room_scan'
+  | 'media_capture'
+  | 'unknown';
+
+export type TurnConfidence = 'high' | 'medium' | 'low';
+
+export interface TurnContextHypothesis {
+  /** What Right Hand thinks the operator is doing, in business language. */
+  readonly frame: TurnFrame;
+  /** Operator-facing frame label used by result cards. */
+  readonly label: string;
+  /** Confidence in the business frame, not a claim of durable completion. */
+  readonly confidence: TurnConfidence;
+  /** Confirm-card row: where this turn appears to belong. */
+  readonly routed_label: string;
+  /** Confirm-card row: what Right Hand can prepare before a durable write. */
+  readonly preparing_label: string;
+  /** Confirm-card prompt. Ask only at the consequence point. */
+  readonly prompt: string;
+  /** Facts that would improve routing; empty means no blocking question yet. */
+  readonly missing_facts: readonly string[];
+}
+
 export interface AttentionArtifact {
   readonly kind: AttentionKind;
   /** Operator-voice headline. Honest about what actually happened. */
@@ -49,6 +79,7 @@ export interface TurnResolutionPacket {
    * thing that licenses an `handled` attention kind.
    */
   readonly work_artifact: string | null;
+  readonly context_hypothesis: TurnContextHypothesis;
   readonly attention_artifact: AttentionArtifact;
   /** Where the operator lands after the turn. Never a dead-end, never the mic page. */
   readonly next_surface: string;
@@ -103,6 +134,112 @@ export function nextSurfaceFor(_intent: VoiceIntent): string {
   return TURN_HOME_SURFACE;
 }
 
+function textLooksLikeEstimateWalk(text: string): boolean {
+  return /\b(estimate walk|new estimate|job walk|job input|walk this|walked into|12\s*(foot|feet|ft)|16\s*(foot|feet|ft)|countertop|countertops|cabinets?|uppers|lowers|range|sink|appliances?|island|pantry|refrigerator|hood|linear feet|quartz|quartzite)\b/i.test(text);
+}
+
+export function inferTurnContext(
+  heardText: string,
+  intent: VoiceIntent,
+): TurnContextHypothesis {
+  const text = heardText.trim();
+
+  if (intent === 'job_intake' || intent === 'estimate_update' || textLooksLikeEstimateWalk(text)) {
+    const explicit = /\b(job input|job intake|new estimate|estimate walk|job walk|start (a |the )?(estimate|job|project))\b/i.test(text);
+    return {
+      frame: 'estimate_walk',
+      label: 'Estimate walk',
+      confidence: explicit ? 'high' : 'medium',
+      routed_label: 'Estimate walk → intake packet',
+      preparing_label: 'Session note + estimate-start packet',
+      prompt: 'Start this estimate intake?',
+      missing_facts: [],
+    };
+  }
+
+  if (intent === 'change_order') {
+    return {
+      frame: 'change_order',
+      label: 'Change order note',
+      confidence: 'high',
+      routed_label: 'Change order → draft review',
+      preparing_label: 'Session note + change-order prompt',
+      prompt: 'Prepare this change-order note?',
+      missing_facts: [],
+    };
+  }
+
+  if (intent === 'open_money') {
+    return {
+      frame: 'money_check',
+      label: 'Money question',
+      confidence: 'high',
+      routed_label: 'Money → read-only review',
+      preparing_label: 'Opening the money surface',
+      prompt: 'Go there?',
+      missing_facts: [],
+    };
+  }
+
+  if (intent === 'status_question') {
+    return {
+      frame: 'status_check',
+      label: 'Project status question',
+      confidence: 'high',
+      routed_label: 'Project status → active project review',
+      preparing_label: 'Opening the project surface',
+      prompt: 'Go there?',
+      missing_facts: ['active project'],
+    };
+  }
+
+  if (intent === 'open_lidar') {
+    return {
+      frame: 'room_scan',
+      label: 'Room scan',
+      confidence: 'high',
+      routed_label: 'Room scan → LiDAR capture',
+      preparing_label: 'Opening room capture',
+      prompt: 'Open LiDAR?',
+      missing_facts: [],
+    };
+  }
+
+  if (intent === 'open_field_capture') {
+    return {
+      frame: 'media_capture',
+      label: 'Media capture',
+      confidence: 'high',
+      routed_label: 'Media → Field Capture',
+      preparing_label: 'Opening capture tools',
+      prompt: 'Add media?',
+      missing_facts: [],
+    };
+  }
+
+  if (intent === 'job_note' || intent === 'job_log' || text.length > 0) {
+    return {
+      frame: 'field_note',
+      label: 'Job note',
+      confidence: intent === 'unclassified' ? 'low' : 'high',
+      routed_label: 'Job note → session review',
+      preparing_label: 'Session note ready to file',
+      prompt: 'Save this session note?',
+      missing_facts: [],
+    };
+  }
+
+  return {
+    frame: 'unknown',
+    label: 'Unclear turn',
+    confidence: 'low',
+    routed_label: 'Needs clarification',
+    preparing_label: 'No action prepared yet',
+    prompt: 'Say it once more?',
+    missing_facts: ['intent'],
+  };
+}
+
 export interface BuildTurnInput {
   readonly heardText: string;
   readonly intent: VoiceIntent;
@@ -119,18 +256,19 @@ export function buildTurnResolutionPacket(input: BuildTurnInput): TurnResolution
   const kind = attentionKindFor(work_artifact, heard_text);
   const consequence_tier = consequenceTierFor(input.intent);
   const next_surface = nextSurfaceFor(input.intent);
+  const context_hypothesis = inferTurnContext(heard_text, input.intent);
 
   const headline =
     kind === 'handled'
-      ? 'Saved as a job note'
+      ? `${context_hypothesis.label} saved`
       : kind === 'ready_to_save'
-        ? 'Saved to this session as a job note'
+        ? `${context_hypothesis.label} ready`
         : 'This needs you';
   const why =
     kind === 'handled'
       ? 'Filed through the validated path and folded into your queue.'
       : kind === 'ready_to_save'
-        ? 'Captured and ready to file — choose where it belongs.'
+        ? `${context_hypothesis.preparing_label}. Nothing has been filed yet.`
         : 'Right Hand did not catch an action — say it once more.';
 
   return {
@@ -139,6 +277,7 @@ export function buildTurnResolutionPacket(input: BuildTurnInput): TurnResolution
     // Deterministic keyword classifier (V1) → high only when it matched a rule.
     confidence: input.intent === 'unclassified' ? 'low' : 'high',
     work_artifact,
+    context_hypothesis,
     attention_artifact: { kind, headline, why },
     next_surface,
     // `handled` is settled; everything else still needs the human to act.
@@ -159,11 +298,20 @@ export interface NextMove {
  * The four-question next-move set (brief §1). "Add a photo" is the ONLY move
  * that routes to Field Capture — and only because the user explicitly chose it.
  */
-export function nextMovesFor(_trp: TurnResolutionPacket): readonly NextMove[] {
+export function nextMovesFor(trp: TurnResolutionPacket): readonly NextMove[] {
+  const frame = trp.context_hypothesis?.frame;
+  const openJobRoute =
+    frame === 'estimate_walk' || frame === 'job_intake'
+      ? '/projects/new?src=voice&intent=estimate_walk'
+      : '/projects?src=voice';
+  const estimateRoute =
+    frame === 'estimate_walk' || frame === 'job_intake'
+      ? '/proposals?src=voice&intent=estimate_walk'
+      : '/proposals?src=voice';
   return [
     { id: 'add_photo', route: '/field-capture?dest=this-job&intent=record&src=voice' },
-    { id: 'open_job', route: '/projects?src=voice' },
-    { id: 'review_estimate', route: '/proposals?src=voice' },
+    { id: 'open_job', route: openJobRoute },
+    { id: 'review_estimate', route: estimateRoute },
     { id: 'go_home', route: TURN_HOME_SURFACE },
   ];
 }

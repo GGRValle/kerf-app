@@ -23,10 +23,11 @@ export const VOICE_INTENTS = [
   'open_lidar', // "open lidar" / "scan this room" → /room-capture
   'status_question', // "what's the status on this job?" → project status (read-only)
   'open_relay', // "show me what needs review" → /relay
-  'open_job_intake', // "input a job" / "start a project" → /projects/new
+  'open_job_intake', // explicit "open job intake" navigation → /projects/new
   'open_money', // "check money" / "budget" / "margin" → /money
   'open_field_capture', // "take a job note" → /field-capture (carry context)
   // ── COMMIT lane · durable (consequence) ───────────────────────────────────
+  'job_intake', // start/prepare a job or estimate intake from committed speech
   'job_note', // persist a job note
   'change_order', // draft → execution change order
   'estimate_update', // estimate line additions/edits
@@ -58,6 +59,7 @@ const LIVE_LANE_INTENTS: ReadonlySet<VoiceIntent> = new Set<VoiceIntent>([
  * of the draft; it may fire ONLY on the committed transcript.
  */
 const COMMIT_LANE_INTENTS: ReadonlySet<VoiceIntent> = new Set<VoiceIntent>([
+  'job_intake',
   'job_note',
   'change_order',
   'estimate_update',
@@ -152,8 +154,12 @@ interface IntentRule {
 const INTENT_RULES: readonly IntentRule[] = [
   { intent: 'open_lidar', pattern: /\b(lidar|scan (this|the) room|laser scan|measure the room)\b/i },
   { intent: 'open_relay', pattern: /\b(needs review|what needs|relay|what's waiting|show me .* review)\b/i },
-  { intent: 'open_job_intake', pattern: /\b(input|enter|start|create|set up|add) (a |the |new )?(job|project)\b|\b(new job|job intake|new project)\b/i },
+  // Natural "we are doing a job input / estimate walk" language is a durable
+  // turn to resolve, not an interim navigation to a form. Keep the live route
+  // for explicit navigation commands only.
+  { intent: 'open_job_intake', pattern: /\b(open|show me|go to|take me to) (the )?(job intake|new job|new project|project setup|job setup)\b/i },
   { intent: 'open_money', pattern: /\b(money|budget|margin|allowance|allowances|invoice|invoices|accounts payable|accounts receivable|\bap\b|\bar\b|costs?|financials?|finance)\b/i },
+  { intent: 'job_intake', pattern: /\b(job input|job intake|input (a |the |new )?job|new estimate|estimate walk|job walk|site walk|walk this (kitchen|bath|room|site)|walked into this (kitchen|bath|room|site)|start (a |the )?(job|project|estimate)|create (a |the )?(job|project|estimate)|set up (a |the )?(job|project|estimate))\b/i },
   { intent: 'change_order', pattern: /\b(change order|change-order|\bc\.?o\.?\b|work on the change)\b/i },
   { intent: 'estimate_update', pattern: /\b(estimate|the bid|quote|add a line)\b/i },
   { intent: 'status_question', pattern: /\b(status|how('?s| is) .* (going|coming)|where (are|is)|on track)\b/i },

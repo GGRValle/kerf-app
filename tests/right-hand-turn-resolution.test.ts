@@ -18,6 +18,7 @@ import {
   attentionKindFor,
   nextSurfaceFor,
   nextMovesFor,
+  inferTurnContext,
   consequenceTierFor,
   serializeTurnResolution,
   parseTurnResolution,
@@ -43,9 +44,26 @@ test('overlay-resolved turn is ready_to_save (never a false handled)', () => {
   assert.equal(trp.attention_artifact.kind, 'ready_to_save');
   assert.equal(trp.work_artifact, null);
   assert.equal(trp.needs_user, true);
+  assert.equal(trp.context_hypothesis.frame, 'field_note');
   // Honest copy — never claims it was saved/handled.
   assert.doesNotMatch(trp.attention_artifact.headline, /\bhandled\b|\bsaved\b(?!\s+to\s+this\s+session)/i);
-  assert.match(trp.attention_artifact.headline, /session/i);
+  assert.match(trp.attention_artifact.why, /Nothing has been filed yet/i);
+});
+
+test('context resolver infers estimate walks without asking a form question', () => {
+  const text =
+    'Hey, we are doing a job input and walking this kitchen for a new estimate. It is 12 feet by 16 feet with new cabinets and countertops.';
+  const hypothesis = inferTurnContext(text, 'job_intake');
+  assert.equal(hypothesis.frame, 'estimate_walk');
+  assert.equal(hypothesis.confidence, 'high');
+  assert.match(hypothesis.routed_label, /Estimate walk/);
+  assert.match(hypothesis.prompt, /estimate intake/i);
+
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  assert.equal(trp.context_hypothesis.frame, 'estimate_walk');
+  assert.equal(trp.attention_artifact.headline, 'Estimate walk ready');
+  assert.match(trp.attention_artifact.why, /estimate-start packet/i);
+  assert.doesNotMatch(trp.attention_artifact.why, /Daily-log entry/i);
 });
 
 test('a real work_artifact licenses handled + settles the turn', () => {
@@ -61,7 +79,7 @@ test('a real work_artifact licenses handled + settles the turn', () => {
 test('a resolved turn never auto-lands on the Field Capture mic page', () => {
   assert.equal(TURN_HOME_SURFACE, '/');
   assert.ok(FORBIDDEN_AUTO_LANDINGS.includes('/field-capture'));
-  for (const intent of ['job_note', 'change_order', 'estimate_update', 'memory_write', 'unclassified'] as const) {
+  for (const intent of ['job_intake', 'job_note', 'change_order', 'estimate_update', 'memory_write', 'unclassified'] as const) {
     const surface = nextSurfaceFor(intent);
     assert.equal(surface, '/');
     assert.ok(!FORBIDDEN_AUTO_LANDINGS.includes(surface));
@@ -87,6 +105,7 @@ test('only the explicit "Add a photo" next move routes to Field Capture', () => 
 test('consequence tier maps reversible (live) vs durable (commit/clarify)', () => {
   assert.equal(consequenceTierFor('open_field_capture'), 'reversible');
   assert.equal(consequenceTierFor('open_money'), 'reversible');
+  assert.equal(consequenceTierFor('job_intake'), 'durable');
   assert.equal(consequenceTierFor('job_note'), 'durable');
   assert.equal(consequenceTierFor('change_order'), 'durable');
   assert.equal(consequenceTierFor('unclassified'), 'durable');
