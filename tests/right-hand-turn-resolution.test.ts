@@ -57,12 +57,12 @@ test('context resolver infers estimate walks without asking a form question', ()
   assert.equal(hypothesis.frame, 'estimate_walk');
   assert.equal(hypothesis.confidence, 'high');
   assert.match(hypothesis.routed_label, /Estimate walk/);
-  assert.match(hypothesis.prompt, /estimate intake/i);
+  assert.match(hypothesis.prompt, /Create estimate from this/i);
 
   const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
   assert.equal(trp.context_hypothesis.frame, 'estimate_walk');
-  assert.equal(trp.attention_artifact.headline, 'Estimate walk ready');
-  assert.match(trp.attention_artifact.why, /estimate-start packet/i);
+  assert.equal(trp.attention_artifact.headline, 'Estimate intake ready');
+  assert.match(trp.attention_artifact.why, /Estimate intake ready/i);
   assert.doesNotMatch(trp.attention_artifact.why, /Daily-log entry/i);
 });
 
@@ -100,6 +100,27 @@ test('only the explicit "Add a photo" next move routes to Field Capture', () => 
     assert.doesNotMatch(move.route, /\/field-capture/);
   }
   assert.equal(moves.find((m) => m.id === 'go_home')!.route, '/');
+});
+
+test('estimate next move never routes to a dead proposals index', () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'New estimate walk for this kitchen with cabinets and countertops.',
+    intent: 'job_intake',
+  });
+  const estimate = nextMovesFor(trp).find((m) => m.id === 'review_estimate');
+  assert.ok(estimate);
+  assert.equal(estimate!.route, '/projects/new?src=voice&intent=estimate_walk');
+  assert.doesNotMatch(estimate!.route, /^\/proposals(?:\?|$)/);
+});
+
+test('estimate next move opens a real draft when a durable draft exists', () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'New estimate walk for this kitchen.',
+    intent: 'job_intake',
+    workArtifact: 'draft:draft_123',
+  });
+  const estimate = nextMovesFor(trp).find((m) => m.id === 'review_estimate');
+  assert.equal(estimate?.route, '/draft-review/draft_123?src=voice');
 });
 
 test('consequence tier maps reversible (live) vs durable (commit/clarify)', () => {
