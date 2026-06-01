@@ -18,6 +18,7 @@ import {
   type GroqChatResult,
 } from '../../altitude/modelAdapter/index.js';
 import type { EntityId } from '../../blackboard/types.js';
+import { hasSynthesisConsent } from '../../tenant/synthesisConsent.js';
 import {
   resolveTurnWithModel,
   type KnownEntityContext,
@@ -116,7 +117,13 @@ rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
   const baseUrl = deps.env.GROQ_BASE_URL || DEFAULT_GROQ_BASE_URL;
   let result: ResolveTurnResult;
 
-  if (!GROQ_API_KEY) {
+  if (!hasSynthesisConsent(tenantId)) {
+    // Consent parity with the realtime transcription path: a non-consenting
+    // tenant's committed transcript must not leave the app for model-led
+    // resolution. Keep the operator moving with the deterministic floor.
+    const deterministic = await resolveTurnWithModel(baseInput);
+    result = { ...deterministic, fallback_reason: 'synthesis_consent_required' };
+  } else if (!GROQ_API_KEY) {
     result = await resolveTurnWithModel(baseInput);
   } else {
     const depsFactory = deps.groqDepsFactory ?? defaultGroqClientDeps;
@@ -134,4 +141,3 @@ rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
     ...(result.fallback_reason ? { fallback_reason: result.fallback_reason } : {}),
   });
 });
-

@@ -150,6 +150,45 @@ test('route uses deterministic fallback when GROQ is not configured', async () =
   assert.equal(body.trp.context_hypothesis.frame, 'estimate_walk');
 });
 
+test('route blocks hosted resolver for tenants without synthesis consent', async () => {
+  let groqFactoryCalled = false;
+  let groqChatCalled = false;
+  __setRightHandTurnDepsForTests({
+    env: { GROQ_API_KEY: 'gsk-test-secret', GROQ_BASE_URL: 'https://groq.invalid/openai/v1' },
+    now: () => new Date('2026-05-31T12:00:00.000Z'),
+    groqDepsFactory: () => {
+      groqFactoryCalled = true;
+      return {} as never;
+    },
+    groqChatFn: async () => {
+      groqChatCalled = true;
+      throw new Error('non-consenting tenant must not reach Groq');
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-turn', {
+    method: 'POST',
+    headers: {
+      authorization: authHeader(),
+      'content-type': 'application/json',
+      'x-kerf-tenant': 'tenant_valle',
+    },
+    body: JSON.stringify({ heardText: BASE_INPUT.heardText, currentPath: '/' }),
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json() as {
+    authority: string;
+    fallback_reason?: string;
+    trp: { context_hypothesis: { frame: string; hypothesis_authority: string } };
+  };
+  assert.equal(body.authority, 'deterministic_fallback');
+  assert.equal(body.fallback_reason, 'synthesis_consent_required');
+  assert.equal(body.trp.context_hypothesis.frame, 'estimate_walk');
+  assert.equal(body.trp.context_hypothesis.hypothesis_authority, 'deterministic_fallback');
+  assert.equal(groqFactoryCalled, false);
+  assert.equal(groqChatCalled, false);
+});
+
 test('route invokes configured model server-side and returns client-safe TRP', async () => {
   let capturedAuth = '';
   let capturedBody: GroqChatRequest | null = null;
