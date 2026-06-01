@@ -1,7 +1,121 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
-import { createLayoutContext } from '../lib/createLayoutContext.js';
-const { t } = createLayoutContext();
+import RhSummary from '../components/RhSummary.astro';
+
+const scheduleActions = [
+  {
+    href: '/projects/proj_wegrzyn_kitchen',
+    title: 'Open Wegrzyn project',
+    detail: 'Review the active project before changing a schedule call.',
+  },
+  {
+    href: '/relay',
+    title: 'Open office cards',
+    detail: 'Check field captures that may change scope, time, or money.',
+  },
+  {
+    href: '/field',
+    title: 'Open Field Hand',
+    detail: 'Return to the field-side work surface.',
+  },
+] as const;
 ---
-<Layout titleKey="schedule.title" activeHref="/schedule"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('schedule.title')}><p>{t('route_shell.body')}</p></Card></Layout>
+
+<Layout titleKey="schedule.title" activeHref="/schedule">
+  <section class="schedule-page" aria-labelledby="schedule-title">
+    <RhSummary
+      headline="Schedule"
+      detail="Scheduling is a preview surface today. It points you to the project and relay paths that are already wired."
+      tone="green"
+    />
+
+    <Card eyebrow="Today" title="Schedule checkpoint">
+      <dl class="schedule-page__facts">
+        <div>
+          <dt>Active job</dt>
+          <dd>Wegrzyn kitchen + primary bath</dd>
+        </div>
+        <div>
+          <dt>Watch item</dt>
+          <dd>Field notes that mention blockers, scope shifts, or missing selections.</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>Preview only. No calendar or crew assignment is written from this page.</dd>
+        </div>
+      </dl>
+    </Card>
+
+    <Card eyebrow="Next move" title="Where to go now">
+      <div class="schedule-page__actions">
+        {scheduleActions.map((action) => (
+          <a class="schedule-page__action" href={action.href}>
+            <span>{action.title}</span>
+            <small>{action.detail}</small>
+          </a>
+        ))}
+      </div>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .schedule-page {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .schedule-page__facts {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .schedule-page__facts div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .schedule-page__facts dt {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted, #5c6670);
+  }
+
+  .schedule-page__facts dd {
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .schedule-page__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .schedule-page__action {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface, #fff);
+  }
+
+  .schedule-page__action:hover {
+    border-color: color-mix(in srgb, var(--field-green, #38c977) 45%, var(--border, #d8dee6));
+  }
+
+  .schedule-page__action span {
+    font-weight: 700;
+  }
+
+  .schedule-page__action small {
+    color: var(--text-muted, #5c6670);
+    line-height: 1.35;
+  }
+</style>
