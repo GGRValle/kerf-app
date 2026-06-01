@@ -141,11 +141,40 @@ function knownProjectForInput(input: ResolveTurnInput): KnownEntityContext | nul
   return projects.find((project) => textMentionsKnownEntity(input.heardText, project.label)) ?? null;
 }
 
+function knownProjectById(input: ResolveTurnInput, id: string | null | undefined): KnownEntityContext | null {
+  if (!id) return null;
+  return (input.knownEntities ?? []).find((entity) => entity.type === 'project' && entity.id === id) ?? null;
+}
+
+function projectEntityIsSupported(input: ResolveTurnInput, entity: NonNullable<TurnContextHypothesis['likely_entity']>): boolean {
+  if (entity.type !== 'project' || !entity.id) return true;
+  const pathProjectId = projectIdFromPath(input.currentPath);
+  if (pathProjectId && pathProjectId === entity.id) return true;
+
+  const knownProject = knownProjectById(input, entity.id);
+  if (!knownProject) return false;
+  return textMentionsKnownEntity(input.heardText, knownProject.label);
+}
+
+function resetUnsupportedProjectCopy(hypothesis: TurnContextHypothesis): TurnContextHypothesis {
+  const frame = hypothesis.frame;
+  return {
+    ...hypothesis,
+    likely_entity: null,
+    routed_label: contractorSafeFallback(frame, 'routed', hypothesis.routed_label),
+    prompt: contractorSafeFallback(frame, 'prompt', hypothesis.prompt),
+  };
+}
+
 function contextWithKnownEntity(
   input: ResolveTurnInput,
   hypothesis: TurnContextHypothesis,
 ): TurnContextHypothesis {
-  if (hypothesis.likely_entity?.id) return hypothesis;
+  if (hypothesis.likely_entity?.id) {
+    return projectEntityIsSupported(input, hypothesis.likely_entity)
+      ? hypothesis
+      : resetUnsupportedProjectCopy(hypothesis);
+  }
   const knownProject = knownProjectForInput(input);
   if (!knownProject) return hypothesis;
 

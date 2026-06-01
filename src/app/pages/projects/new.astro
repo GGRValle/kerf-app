@@ -80,10 +80,18 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
   </article>
 
   <script define:vars={{ tenantId: context.tenantId, successMsg: 'Project created — opens in Projects.', errorMsg: 'Could not create project.' }}>
-    import {
-      parseTurnResolution,
-      TURN_RESOLUTION_SESSION_KEY,
-    } from '../../../voice/realtime/turnResolution.js';
+    const TURN_RESOLUTION_SESSION_KEY = 'kerf.turnResolution';
+
+    const parseTurnResolution = (raw) => {
+      try {
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (typeof parsed.heard_text !== 'string') return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    };
 
     const inferProjectName = (trp) => {
       const likely = trp.context_hypothesis?.likely_entity;
@@ -105,31 +113,52 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
     const hydrateRightHandHandoff = () => {
       const params = new URLSearchParams(window.location.search);
       if (params.get('src') !== 'voice') return;
+      const archetypeHint = ['kitchen_remodel', 'bath_refresh', 'adu'].includes(params.get('archetype') ?? '')
+        ? params.get('archetype')
+        : '';
       let raw = null;
       try {
         raw = sessionStorage.getItem(TURN_RESOLUTION_SESSION_KEY);
       } catch {
-        return;
+        raw = null;
       }
       const trp = parseTurnResolution(raw);
-      if (!trp) return;
-
       const handoff = document.getElementById('rh-project-handoff');
       const heard = document.getElementById('rh-project-handoff-heard');
       const contextEl = document.getElementById('rh-project-handoff-context');
-      if (heard) heard.textContent = trp.heard_text;
-      if (contextEl) {
+      if (!trp && !archetypeHint) return;
+
+      if (heard) {
+        heard.textContent = trp?.heard_text || 'Right Hand started this from your last conversation.';
+      }
+      if (contextEl && trp) {
         contextEl.textContent = trp.context_hypothesis?.routed_label ?? 'Estimate walk → estimate intake';
+      } else if (contextEl) {
+        contextEl.textContent = archetypeHint === 'bath_refresh'
+          ? 'New bathroom estimate intake'
+          : archetypeHint === 'kitchen_remodel'
+            ? 'New kitchen estimate intake'
+            : archetypeHint === 'adu'
+              ? 'New addition estimate intake'
+              : 'Estimate walk → estimate intake';
       }
       if (handoff) handoff.hidden = false;
 
       const form = document.getElementById('new-project-form');
-      const projectName = form?.querySelector<HTMLInputElement>('[name="project_name"]');
-      const clientName = form?.querySelector<HTMLInputElement>('[name="client_name"]');
-      const archetype = form?.querySelector<HTMLSelectElement>('[name="archetype_hint"]');
-      const likely = trp.context_hypothesis?.likely_entity;
-      const projectSuggestion = inferProjectName(trp);
-      const archetypeSuggestion = inferArchetype(trp);
+      const projectName = form?.querySelector('[name="project_name"]');
+      const clientName = form?.querySelector('[name="client_name"]');
+      const archetype = form?.querySelector('[name="archetype_hint"]');
+      const likely = trp?.context_hypothesis?.likely_entity;
+      const projectSuggestion = trp
+        ? inferProjectName(trp)
+        : archetypeHint === 'bath_refresh'
+          ? 'Bath estimate walk'
+          : archetypeHint === 'kitchen_remodel'
+            ? 'Kitchen estimate walk'
+            : archetypeHint === 'adu'
+              ? 'Addition estimate walk'
+              : '';
+      const archetypeSuggestion = trp ? inferArchetype(trp) : archetypeHint;
 
       if (projectName && !projectName.value && projectSuggestion) projectName.value = projectSuggestion;
       if (clientName && !clientName.value && likely?.type === 'client' && likely.label) clientName.value = likely.label;

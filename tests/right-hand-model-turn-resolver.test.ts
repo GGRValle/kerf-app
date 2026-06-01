@@ -65,7 +65,13 @@ const BASE_INPUT: ResolveTurnInput = {
 
 test('configured model resolver returns llm-inferred estimate walk TRP', async () => {
   const result = await resolveTurnWithModel(
-    BASE_INPUT,
+    {
+      ...BASE_INPUT,
+      currentPath: '/projects/proj_wegrzyn_kitchen',
+      knownEntities: [
+        { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen' },
+      ],
+    },
     successClient({
       intent: 'job_intake',
       frame: 'estimate_walk',
@@ -113,6 +119,38 @@ test('model resolver sanitizes active-work copy before it reaches the operator',
   assert.doesNotMatch(result.trp.context_hypothesis.prompt, /packet|estimate-start/i);
   assert.doesNotMatch(result.trp.attention_artifact.why, /Drafting Estimate/i);
   assert.match(result.trp.attention_artifact.why, /Nothing has been filed yet/);
+});
+
+test('model resolver rejects unsupported project guesses for new work', async () => {
+  const result = await resolveTurnWithModel(
+    {
+      ...BASE_INPUT,
+      heardText:
+        'This is a new bathroom remodel project. It is not an existing job yet. We need an estimate for a tub shower, tile floor, and new vanity.',
+      currentPath: '/',
+      knownEntities: [
+        { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
+      ],
+    },
+    successClient({
+      intent: 'job_intake',
+      frame: 'estimate_walk',
+      label: 'Estimate walk',
+      confidence: 'high',
+      likely_entity: { type: 'project', label: 'Wegrzyn kitchen + primary bath', id: 'proj_wegrzyn_kitchen', confidence: 'medium' },
+      routed_label: 'Wegrzyn kitchen + primary bath → estimate intake',
+      preparing_label: 'Estimate intake ready',
+      prompt: 'Create estimate from this for Wegrzyn kitchen + primary bath?',
+      missing_facts: [],
+    }),
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.trp.context_hypothesis.frame, 'estimate_walk');
+  assert.equal(result.trp.context_hypothesis.likely_entity, null);
+  assert.doesNotMatch(result.trp.context_hypothesis.routed_label, /Wegrzyn/i);
+  assert.doesNotMatch(result.trp.context_hypothesis.prompt, /Wegrzyn/i);
+  assert.match(result.trp.context_hypothesis.prompt, /Create estimate from this/i);
 });
 
 test('model failure falls back to deterministic resolver without throwing', async () => {

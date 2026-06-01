@@ -144,7 +144,7 @@ export function nextSurfaceFor(_intent: VoiceIntent): string {
 }
 
 function textLooksLikeEstimateWalk(text: string): boolean {
-  return /\b(estimate walk|new estimate|job walk|job input|walk this|walked into|12\s*(foot|feet|ft)|16\s*(foot|feet|ft)|countertop|countertops|cabinets?|uppers|lowers|range|sink|appliances?|island|pantry|refrigerator|hood|linear feet|quartz|quartzite)\b/i.test(text);
+  return /\b(estimate walk|new estimate|new (bathroom|bath|kitchen|remodel|addition|adu|project)|bathroom remodel|bath remodel|job walk|job input|walk this|walked into|12\s*(foot|feet|ft)|16\s*(foot|feet|ft)|countertop|countertops|cabinets?|uppers|lowers|range|sink|appliances?|island|pantry|refrigerator|hood|linear feet|quartz|quartzite|vanity|shower|tub)\b/i.test(text);
 }
 
 export function inferTurnContext(

@@ -247,6 +247,7 @@ test('deterministic intent classifier maps keywords honestly', () => {
   assert.equal(classifyTranscriptIntent('open job intake'), 'open_job_intake');
   assert.equal(classifyTranscriptIntent('I want to input a job'), 'job_intake');
   assert.equal(classifyTranscriptIntent('we are doing a job input and walking this kitchen for a new estimate'), 'job_intake');
+  assert.equal(classifyTranscriptIntent('this is a new bathroom remodel project'), 'job_intake');
   assert.equal(classifyTranscriptIntent('check on money'), 'open_money');
   assert.equal(classifyTranscriptIntent('work on the change order for Wegrzyn'), 'change_order');
   assert.equal(classifyTranscriptIntent('what is the status on the kitchen'), 'status_question');
@@ -493,6 +494,30 @@ test('turn resolution: Save COMMITS the turn before showing a handled result', (
   assert.match(src, /data-action-tell-job/);
 });
 
+test('turn resolution: new estimate turns start intake instead of filing to a guessed job', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /data-action-start-intake=\{t\('rh_voice\.action_start_intake'\)\}/);
+  assert.match(src, /const projectEntityHasContextSupport/);
+  assert.match(src, /projectIdFromPath\(\) === id/);
+  assert.match(src, /textMentionsEntity\(text, knownProject\.label\)/);
+
+  const withKnownEntity = sliceDecl(src, 'withKnownEntity', 'resolveTurnServerSide');
+  assert.match(withKnownEntity, /likely\?\.type === 'project' && likely\.id/);
+  assert.match(withKnownEntity, /projectEntityHasContextSupport\(likely\.id, likely\.label, trp\.heard_text\)/);
+  assert.match(withKnownEntity, /likely_entity: null/);
+  assert.match(withKnownEntity, /New project → estimate intake/);
+
+  const renderConfirmTurn = sliceDecl(src, 'renderConfirmTurn', 'currentTenantId');
+  assert.match(renderConfirmTurn, /startNewIntakeTurn\(trp\)/);
+  assert.match(renderConfirmTurn, /actionStartIntake/);
+
+  const resolveTurn = sliceDecl(src, 'resolveTurn', 'routeMove');
+  assert.match(resolveTurn, /startNewIntakeTurn\(baseTrp\)/);
+  assert.match(resolveTurn, /routeToNewProjectIntake\(baseTrp\)/);
+  assert.doesNotMatch(resolveTurn, /commitTurnServerSide\(baseTrp\)[\s\S]{0,80}startNewIntakeTurn/);
+  assert.match(src, /const archetypeParam = archetype \? `&archetype=\$\{archetype\}` : ''/);
+});
+
 test('turn resolution: next moves — only "Add a photo" routes to Field Capture (explicit choice)', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   // The resolved next-move buttons exist and are wired through routeMove.
@@ -509,7 +534,7 @@ test('turn resolution: next moves — only "Add a photo" routes to Field Capture
 
 test('trust loop: Keep talking returns to listening with the original note preserved', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  const returnToListening = sliceDecl(src, 'returnToListening', 'resolveTurn');
+  const returnToListening = sliceDecl(src, 'returnToListening', 'currentProjectId');
   assert.match(returnToListening, /awaitingConfirm = false/);
   assert.match(returnToListening, /correctionBaseTrp = parkedTurnResolution/);
   assert.match(returnToListening, /beginSession\(\)/);
@@ -620,6 +645,7 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.action_correct',
     'rh_voice.action_keep_talking',
     'rh_voice.action_tell_job',
+    'rh_voice.action_start_intake',
     'rh_voice.correction_prompt',
     'rh_voice.correction_routed',
     'rh_voice.correction_creating',
@@ -746,6 +772,11 @@ test('New Project keeps the Right Hand voice handoff visible and prefilled', () 
   assert.match(src, /id="rh-project-handoff"/);
   assert.match(src, /TURN_RESOLUTION_SESSION_KEY/);
   assert.match(src, /parseTurnResolution\(raw\)/);
+  assert.doesNotMatch(src, /from '..\/..\/..\/voice\/realtime\/turnResolution\.js'/);
+  assert.doesNotMatch(src, /querySelector<[^>]+>/);
+  assert.match(src, /params\.get\('archetype'\)/);
+  assert.match(src, /Bath estimate walk/);
+  assert.match(src, /New bathroom estimate intake/);
   assert.match(src, /src'\) !== 'voice'/);
   assert.match(src, /projectName\.value = projectSuggestion/);
   assert.match(src, /archetype\.value = archetypeSuggestion/);
