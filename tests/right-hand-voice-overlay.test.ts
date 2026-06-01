@@ -635,3 +635,14 @@ test('Home folds in the resolved-turn result card (honest, generated from the re
   // Dismiss clears the session key.
   assert.match(src, /removeItem\(TURN_RESOLUTION_SESSION_KEY\)/);
 });
+
+test('New Project keeps the Right Hand voice handoff visible and prefilled', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/pages/projects/new.astro'), 'utf8');
+  assert.match(src, /id="rh-project-handoff"/);
+  assert.match(src, /TURN_RESOLUTION_SESSION_KEY/);
+  assert.match(src, /parseTurnResolution\(raw\)/);
+  assert.match(src, /src'\) !== 'voice'/);
+  assert.match(src, /projectName\.value = projectSuggestion/);
+  assert.match(src, /archetype\.value = archetypeSuggestion/);
+  assert.doesNotMatch(src, /Saved to today's Daily Log|filed for good|handled/i);
+});

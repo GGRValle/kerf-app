@@ -679,6 +679,10 @@ export type I18nKey =
   | 'f_pr.new.client_name'
   | 'f_pr.new.archetype'
   | 'f_pr.new.archetype_none'
+  | 'f_pr.new.handoff_title'
+  | 'f_pr.new.handoff_body'
+  | 'f_pr.new.handoff_heard'
+  | 'f_pr.new.handoff_context'
   | 'f_pr.new.submit';
 
 export type Locale = 'en' | 'es';

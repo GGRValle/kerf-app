@@ -23,6 +23,26 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
     </header>
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <section
+        class="money-card rh-project-handoff"
+        id="rh-project-handoff"
+        aria-label={t('f_pr.new.handoff_title')}
+        hidden
+      >
+        <p class="rh-project-handoff__eyebrow">{t('f_pr.new.handoff_title')}</p>
+        <p class="rh-project-handoff__body">{t('f_pr.new.handoff_body')}</p>
+        <dl class="rh-project-handoff__facts">
+          <div>
+            <dt>{t('f_pr.new.handoff_heard')}</dt>
+            <dd id="rh-project-handoff-heard"></dd>
+          </div>
+          <div>
+            <dt>{t('f_pr.new.handoff_context')}</dt>
+            <dd id="rh-project-handoff-context"></dd>
+          </div>
+        </dl>
+      </section>
+
       <Card title={t('f_pr.new.title')}>
         <form class="money-form" id="new-project-form">
           <label>
@@ -60,6 +80,64 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
   </article>
 
   <script define:vars={{ tenantId: context.tenantId, successMsg: 'Project created — opens in Projects.', errorMsg: 'Could not create project.' }}>
+    import {
+      parseTurnResolution,
+      TURN_RESOLUTION_SESSION_KEY,
+    } from '../../../voice/realtime/turnResolution.js';
+
+    const inferProjectName = (trp) => {
+      const likely = trp.context_hypothesis?.likely_entity;
+      if (likely?.type === 'project' && likely.label) return likely.label;
+      const text = `${trp.heard_text} ${trp.context_hypothesis?.label ?? ''}`.toLowerCase();
+      if (/\bkitchen|cabinet|countertop|appliance|island|pantry\b/.test(text)) return 'Kitchen estimate walk';
+      if (/\bbath|bathroom|shower|tub|vanity\b/.test(text)) return 'Bath estimate walk';
+      return trp.context_hypothesis?.label ? `${trp.context_hypothesis.label} follow-up` : '';
+    };
+
+    const inferArchetype = (trp) => {
+      const text = `${trp.heard_text} ${trp.context_hypothesis?.label ?? ''}`.toLowerCase();
+      if (/\bkitchen|cabinet|countertop|appliance|island|pantry\b/.test(text)) return 'kitchen_remodel';
+      if (/\bbath|bathroom|shower|tub|vanity\b/.test(text)) return 'bath_refresh';
+      if (/\badu|addition\b/.test(text)) return 'adu';
+      return '';
+    };
+
+    const hydrateRightHandHandoff = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('src') !== 'voice') return;
+      let raw = null;
+      try {
+        raw = sessionStorage.getItem(TURN_RESOLUTION_SESSION_KEY);
+      } catch {
+        return;
+      }
+      const trp = parseTurnResolution(raw);
+      if (!trp) return;
+
+      const handoff = document.getElementById('rh-project-handoff');
+      const heard = document.getElementById('rh-project-handoff-heard');
+      const contextEl = document.getElementById('rh-project-handoff-context');
+      if (heard) heard.textContent = trp.heard_text;
+      if (contextEl) {
+        contextEl.textContent = trp.context_hypothesis?.routed_label ?? 'Estimate walk → estimate intake';
+      }
+      if (handoff) handoff.hidden = false;
+
+      const form = document.getElementById('new-project-form');
+      const projectName = form?.querySelector<HTMLInputElement>('[name="project_name"]');
+      const clientName = form?.querySelector<HTMLInputElement>('[name="client_name"]');
+      const archetype = form?.querySelector<HTMLSelectElement>('[name="archetype_hint"]');
+      const likely = trp.context_hypothesis?.likely_entity;
+      const projectSuggestion = inferProjectName(trp);
+      const archetypeSuggestion = inferArchetype(trp);
+
+      if (projectName && !projectName.value && projectSuggestion) projectName.value = projectSuggestion;
+      if (clientName && !clientName.value && likely?.type === 'client' && likely.label) clientName.value = likely.label;
+      if (archetype && !archetype.value && archetypeSuggestion) archetype.value = archetypeSuggestion;
+    };
+
+    hydrateRightHandHandoff();
+
     document.getElementById('new-project-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const form = ev.target;
@@ -84,4 +162,47 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
       status.textContent = errorMsg;
     });
   </script>
+
+  <style>
+    .rh-project-handoff[hidden] { display: none; }
+    .rh-project-handoff {
+      margin-bottom: 0.85rem;
+      border-color: color-mix(in srgb, var(--field-green, #38c977) 34%, var(--border, #d8dee6));
+      background: color-mix(in srgb, var(--field-green, #38c977) 7%, var(--surface, #fff));
+    }
+    .rh-project-handoff__eyebrow {
+      margin: 0 0 0.35rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: var(--field-green, #38c977);
+    }
+    .rh-project-handoff__body {
+      margin: 0 0 0.7rem;
+      color: var(--text-muted, #6a7282);
+      line-height: 1.45;
+    }
+    .rh-project-handoff__facts {
+      display: grid;
+      gap: 0.55rem;
+      margin: 0;
+    }
+    .rh-project-handoff__facts div {
+      display: grid;
+      gap: 0.12rem;
+    }
+    .rh-project-handoff__facts dt {
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: var(--text-muted, #6a7282);
+    }
+    .rh-project-handoff__facts dd {
+      margin: 0;
+      color: var(--text, #1a1f24);
+      line-height: 1.4;
+    }
+  </style>
 </Layout>
