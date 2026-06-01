@@ -331,9 +331,23 @@ function estimateRouteFor(trp: TurnResolutionPacket): string {
     if (draftId.length > 0) return `/draft-review/${encodeURIComponent(draftId)}?src=voice`;
   }
 
+  const projectRoute = likelyProjectRouteFor(trp);
+  if (projectRoute) return `${projectRoute}&intent=estimate_walk`;
+
   // No durable estimate draft exists yet. Keep the next move honest and route to
   // a real starting surface instead of the old dead `/proposals` index.
   return '/projects/new?src=voice&intent=estimate_walk';
+}
+
+function likelyProjectRouteFor(trp: TurnResolutionPacket): string | null {
+  const likely = trp.context_hypothesis?.likely_entity;
+  if (likely?.type !== 'project' || !likely.id) return null;
+  const id = likely.id.trim();
+  // Route only tenant-scoped project ids we can represent as a path segment.
+  // Anything else falls back to the general Projects surface instead of
+  // smuggling arbitrary model output into a URL.
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) return null;
+  return `/projects/${encodeURIComponent(id)}?src=voice`;
 }
 
 /**
@@ -342,10 +356,12 @@ function estimateRouteFor(trp: TurnResolutionPacket): string {
  */
 export function nextMovesFor(trp: TurnResolutionPacket): readonly NextMove[] {
   const frame = trp.context_hypothesis?.frame;
+  const likelyProjectRoute = likelyProjectRouteFor(trp);
   const openJobRoute =
-    frame === 'estimate_walk' || frame === 'job_intake'
+    likelyProjectRoute ??
+    (frame === 'estimate_walk' || frame === 'job_intake'
       ? '/projects/new?src=voice&intent=estimate_walk'
-      : '/projects?src=voice';
+      : '/projects?src=voice');
   return [
     { id: 'add_photo', route: '/field-capture?dest=this-job&intent=record&src=voice' },
     { id: 'open_job', route: openJobRoute },
