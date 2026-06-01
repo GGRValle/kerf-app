@@ -41,6 +41,7 @@ const entryId = Astro.url.searchParams.get('entry_id');
 const transcriptCaptureId = 'cap_lane23_wegrzyn_001';
 const projectId = 'proj_wegrzyn_kitchen';
 const transcriptHref = `/transcript-review?capture_id=${encodeURIComponent(transcriptCaptureId)}`;
+const auditHref = `/projects/${projectId}/audit`;
 
 const copy = {
   saved: t('f_fd.override.saved'),
@@ -173,7 +174,7 @@ const copy = {
           <Card eyebrow={t('f_fd.deeplinks.eyebrow')}>
             <nav class="deeplinks">
               <a class="deeplink" href={transcriptHref}>{t('f_fd.deeplinks.transcript_review')}</a>
-              <a class="deeplink" href="/audit">{t('f_fd.deeplinks.audit_detail')}</a>
+              <a class="deeplink" href={auditHref}>{t('f_fd.deeplinks.audit_detail')}</a>
             </nav>
           </Card>
 
