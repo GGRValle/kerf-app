@@ -39,6 +39,17 @@ const { t } = createLayoutContext();
   data-resolved-ready={t('rh_voice.resolved_ready_to_save')}
   data-commit-pending={t('rh_voice.commit_pending')}
   data-commit-failed={t('rh_voice.commit_failed')}
+  data-commit-project-needed={t('rh_voice.commit_project_needed')}
+  data-commit-project-not-found={t('rh_voice.commit_project_not_found')}
+  data-commit-project-mismatch={t('rh_voice.commit_project_mismatch')}
+  data-commit-workspace-needed={t('rh_voice.commit_workspace_needed')}
+  data-action-correct={t('rh_voice.action_correct')}
+  data-action-tell-job={t('rh_voice.action_tell_job')}
+  data-action-save={t('rh_voice.action_save')}
+  data-correction-prompt={t('rh_voice.correction_prompt')}
+  data-correction-routed={t('rh_voice.correction_routed')}
+  data-correction-creating={t('rh_voice.correction_creating')}
+  data-correction-needs={t('rh_voice.correction_needs')}
   hidden
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
@@ -191,6 +202,7 @@ const { t } = createLayoutContext();
     let awaitingConfirm = false; // durable confirm open — pause STT processing
     let parkedTranscript = ''; // committed durable transcript awaiting Save
     let parkedTurnResolution: TurnResolutionPacket | null = null;
+    let correctionBaseTrp: TurnResolutionPacket | null = null; // original turn while collecting a correction
     let currentMoves: readonly NextMove[] = []; // resolved-state next moves
     let resolvedSurface = '/'; // default landing after a resolved turn
 
@@ -232,11 +244,19 @@ const { t } = createLayoutContext();
     const showActions = (mode: 'listening' | 'confirm' | 'capped' | 'resolved') => {
       // Resolved owns its own next-move buttons (.rhvo__moves); every standard
       // action button is hidden so there is no competing primary.
-      if (cancelBtn) cancelBtn.hidden = mode === 'confirm' || mode === 'resolved';
+      if (cancelBtn) cancelBtn.hidden = mode === 'resolved';
       if (doneBtn) doneBtn.hidden = mode !== 'listening';
       if (continueBtn) continueBtn.hidden = mode !== 'capped';
       if (saveBtn) saveBtn.hidden = mode !== 'confirm';
       if (notThatBtn) notThatBtn.hidden = mode !== 'confirm';
+    };
+
+    const resetConfirmActionCopy = () => {
+      if (notThatBtn) notThatBtn.textContent = overlay.dataset.actionCorrect ?? 'Correct it';
+      if (saveBtn) {
+        saveBtn.textContent = overlay.dataset.actionSave ?? 'Save';
+        saveBtn.disabled = false;
+      }
     };
 
     const clearTimers = () => {
@@ -416,6 +436,7 @@ const { t } = createLayoutContext();
       setStatus('');
       if (timerEl) timerEl.textContent = '';
       if (confirmHeardEl) confirmHeardEl.textContent = text;
+      resetConfirmActionCopy();
       renderConfirmTurn(trp);
       showActions('confirm');
       void resolveTurnServerSide(text, trp).then((serverTrp) => {
@@ -439,6 +460,12 @@ const { t } = createLayoutContext();
 
     const routeCommitted = (intent: VoiceIntent, text: string) => {
       const cleanText = text.trim();
+      if (correctionBaseTrp && cleanText.length > 0) {
+        const correctedText = `${correctionBaseTrp.heard_text}\n\nCorrection: ${cleanText}`;
+        correctionBaseTrp = null;
+        enterSorting(correctedText);
+        return;
+      }
       if (requiresCommittedTranscript(intent)) {
         // Durable intent: confirm in-overlay first (trust loop). No navigation,
         // no persistence here — that happens only on Save, via the existing
@@ -464,8 +491,15 @@ const { t } = createLayoutContext();
     };
 
     const returnToListening = () => {
-      // "Not that" — discard the parked transcript, resume listening. No nav.
+      // "Correct it" — keep the original turn in memory, resume listening, and
+      // merge the next spoken correction into the committed transcript. This
+      // lets the operator say "that's the Clem job" without losing the note.
       awaitingConfirm = false;
+      correctionBaseTrp = parkedTurnResolution?.heard_text === parkedTranscript
+        ? parkedTurnResolution
+        : parkedTranscript.trim().length > 0
+          ? buildTurnResolutionPacket({ heardText: parkedTranscript, intent: classifyTranscriptIntent(parkedTranscript) })
+          : null;
       parkedTranscript = '';
       parkedTurnResolution = null;
       routedLive = false;
@@ -473,7 +507,7 @@ const { t } = createLayoutContext();
       setCaption('');
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
-      setStatus(overlay.dataset.listening ?? 'Listening…');
+      setStatus(overlay.dataset.correctionPrompt ?? 'Tell me the job or what to change.');
       showActions('listening');
       startTimer();
       void beginSession();
@@ -484,13 +518,37 @@ const { t } = createLayoutContext();
       trp?: unknown;
       error?: string;
       reason?: string;
+      operator_message?: string;
     };
 
     const currentProjectId = (): string | undefined => (
       document.querySelector<HTMLElement>('[data-project-id]')?.dataset.projectId?.trim() || undefined
     );
 
-    const commitTurnServerSide = async (trp: TurnResolutionPacket): Promise<{ ok: true; trp: TurnResolutionPacket } | { ok: false; message: string }> => {
+    const friendlyCommitFailure = (body: CommitTurnResponse, status: number): { message: string; projectCorrection: boolean } => {
+      const code = body.error ?? `request_failed_${status}`;
+      if (body.operator_message && !/tenant-scoped/i.test(body.operator_message)) {
+        return {
+          message: body.operator_message,
+          projectCorrection: code === 'project_required' || code === 'project_not_found' || code === 'tenant_mismatch',
+        };
+      }
+      if (code === 'project_required') {
+        return { message: overlay.dataset.commitProjectNeeded ?? 'I need to know which job this belongs to. Tell me the job name. Nothing was filed.', projectCorrection: true };
+      }
+      if (code === 'project_not_found') {
+        return { message: overlay.dataset.commitProjectNotFound ?? 'I couldn’t find that job yet. Tell me the job name again. Nothing was filed.', projectCorrection: true };
+      }
+      if (code === 'tenant_mismatch') {
+        return { message: overlay.dataset.commitProjectMismatch ?? 'I can’t file that to this job from the current workspace. Tell me the right job. Nothing was filed.', projectCorrection: true };
+      }
+      if (code === 'tenant_required') {
+        return { message: overlay.dataset.commitWorkspaceNeeded ?? 'I need your workspace loaded before I can file that. Reload and try again. Nothing was filed.', projectCorrection: false };
+      }
+      return { message: `${overlay.dataset.commitFailed ?? 'I could not file that yet.'} I kept the note here so you can try again. Nothing was filed.`, projectCorrection: false };
+    };
+
+    const commitTurnServerSide = async (trp: TurnResolutionPacket): Promise<{ ok: true; trp: TurnResolutionPacket } | { ok: false; message: string; projectCorrection: boolean }> => {
       try {
         const tenantId = currentTenantId();
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -509,16 +567,15 @@ const { t } = createLayoutContext();
         });
         const body = await res.json() as CommitTurnResponse;
         if (!res.ok || body.ok !== true) {
-          const reason = body.reason || body.error || `request_failed_${res.status}`;
-          return { ok: false, message: reason };
+          return { ok: false, ...friendlyCommitFailure(body, res.status) };
         }
         const parsed = parseTurnResolution(JSON.stringify(body.trp ?? null));
         if (!parsed || !parsed.work_artifact || parsed.attention_artifact.kind !== 'handled') {
-          return { ok: false, message: 'durable_artifact_missing' };
+          return { ok: false, message: `${overlay.dataset.commitFailed ?? 'I could not file that yet.'} I kept the note here so you can try again. Nothing was filed.`, projectCorrection: false };
         }
         return { ok: true, trp: parsed };
       } catch {
-        return { ok: false, message: 'network_or_server_error' };
+        return { ok: false, message: `${overlay.dataset.commitFailed ?? 'I could not file that yet.'} I could not reach the filing service. Nothing was filed.`, projectCorrection: false };
       }
     };
 
@@ -536,9 +593,17 @@ const { t } = createLayoutContext();
       setStatus(overlay.dataset.commitPending ?? 'Saving through the validated path…');
       const committed = await commitTurnServerSide(baseTrp);
       if (!committed.ok) {
-        if (saveBtn) saveBtn.disabled = false;
+        if (saveBtn) saveBtn.disabled = committed.projectCorrection;
         if (notThatBtn) notThatBtn.disabled = false;
-        setStatus(`${overlay.dataset.commitFailed ?? 'I could not file that yet.'} ${committed.message}. Nothing was filed.`);
+        if (notThatBtn && committed.projectCorrection) {
+          notThatBtn.textContent = overlay.dataset.actionTellJob ?? 'Tell me job';
+        }
+        if (committed.projectCorrection) {
+          if (confirmRoutedEl) confirmRoutedEl.textContent = overlay.dataset.correctionRouted ?? 'Needs job';
+          if (confirmCreatingEl) confirmCreatingEl.textContent = overlay.dataset.correctionCreating ?? 'Job note ready once I know where it belongs';
+          if (confirmPromptEl) confirmPromptEl.textContent = overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
+        }
+        setStatus(committed.message);
         return;
       }
       const trp = committed.trp;

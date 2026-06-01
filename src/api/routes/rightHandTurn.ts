@@ -168,7 +168,15 @@ function resolveProjectIdForCommit(
 async function projectBelongsToTenant(
   tenant: PersistenceTenantId,
   projectId: string,
-): Promise<{ ok: true } | { ok: false; status: 403 | 404; error: string; reason: string }> {
+): Promise<{
+  ok: true;
+} | {
+  ok: false;
+  status: 403 | 404;
+  error: string;
+  reason: string;
+  operator_message: string;
+}> {
   const { tenantReader } = getApiDeps();
   const events = await tenantReader.readEventsForProject(tenant, projectId);
   if (events.length > 0) return { ok: true };
@@ -180,7 +188,8 @@ async function projectBelongsToTenant(
       ok: false,
       status: 403,
       error: 'tenant_mismatch',
-      reason: 'project exists under a different tenant',
+      reason: 'that project belongs to a different workspace',
+      operator_message: 'I can’t file that to this job from the current workspace. Tell me the right job, or choose it from Projects. Nothing was filed.',
     };
   }
 
@@ -188,7 +197,8 @@ async function projectBelongsToTenant(
     ok: false,
     status: 404,
     error: 'project_not_found',
-    reason: 'no tenant-scoped project matched the turn',
+    reason: 'no matching job was found',
+    operator_message: 'I couldn’t find that job yet. Tell me the job name again, or choose it from Projects. Nothing was filed.',
   };
 }
 
@@ -375,7 +385,8 @@ rightHandTurnRoutes.post('/right-hand/commit-turn', async (c) => {
     return c.json(
       {
         error: 'project_required',
-        reason: 'Right Hand needs a tenant-scoped project before it can file this turn',
+        reason: 'I need to know which job this belongs to before I file it.',
+        operator_message: 'I need to know which job this belongs to before I file it. Tell me the job name, or choose it from Projects. Nothing was filed.',
       },
       422,
     );
@@ -388,6 +399,7 @@ rightHandTurnRoutes.post('/right-hand/commit-turn', async (c) => {
         error: projectCheck.error,
         project_id: projectId,
         reason: projectCheck.reason,
+        operator_message: projectCheck.operator_message,
       },
       projectCheck.status,
     );

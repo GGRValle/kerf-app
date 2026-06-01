@@ -204,6 +204,26 @@ test('commit-turn rejects missing tenant before any durable write', async () => 
   }
 });
 
+test('commit-turn asks for the job in operator language when no project resolves', async () => {
+  const store = await withStore();
+  try {
+    const trp = buildTurnResolutionPacket({
+      heardText: 'The uppers are installed and we are ready for template.',
+      intent: 'job_note',
+      now: 1_780_000_020_000,
+    });
+    const res = await postCommit({ trp, idempotency_key: 'missing-project' });
+    assert.equal(res.status, 422);
+    const body = await res.json() as { error: string; reason: string; operator_message: string };
+    assert.equal(body.error, 'project_required');
+    assert.match(body.operator_message, /which job this belongs to/i);
+    assert.doesNotMatch(`${body.reason} ${body.operator_message}`, /tenant-scoped|turn/i);
+    assert.deepEqual(await readEvents(store.dir), []);
+  } finally {
+    await store.close();
+  }
+});
+
 test('commit-turn rejects tenant mismatch before any durable write', async () => {
   const store = await withStore();
   try {

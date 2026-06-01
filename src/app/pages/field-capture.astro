@@ -568,7 +568,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
         const icon = captureIconKind(item);
         const iconWrap = document.createElement('div');
         iconWrap.className = `cap-item-icon ${icon.cls}`;
-        iconWrap.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon.svg}</svg>`;
+        if (item.kind === 'photo' && item.ref?.url) {
+          const img = document.createElement('img');
+          img.className = 'cap-item-thumb';
+          img.src = item.ref.url;
+          img.alt = item.ref.name || 'Captured photo';
+          iconWrap.append(img);
+        } else {
+          iconWrap.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon.svg}</svg>`;
+        }
 
         const bodyWrap = document.createElement('div');
         bodyWrap.className = 'cap-item-body';
@@ -1609,6 +1617,102 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     height: 11px;
     fill: currentColor;
   }
+  /*
+   * Runtime-captured rows are created by client JS, so they do not receive
+   * Astro's scoped style attribute. Keep these global duplicates tight or the
+   * raw SVG/photo can balloon into a full-screen artifact on iOS.
+   */
+  :global(.field-shell .cap-list) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  :global(.field-shell .cap-item) {
+    background: var(--kerf-surface);
+    border: 1px solid var(--kerf-border-soft);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto auto;
+    gap: 9px;
+    align-items: center;
+  }
+  :global(.field-shell .cap-item-icon) {
+    width: 28px;
+    height: 28px;
+    max-width: 28px;
+    max-height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  :global(.field-shell .cap-item-icon svg) {
+    width: 14px !important;
+    height: 14px !important;
+    max-width: 14px;
+    max-height: 14px;
+    fill: currentColor;
+  }
+  :global(.field-shell .cap-item-thumb) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  :global(.field-shell .cap-item-icon.voice) {
+    background: rgba(56, 201, 119, 0.14);
+    color: var(--field-green);
+  }
+  :global(.field-shell .cap-item-icon.photo) {
+    background: rgba(123, 168, 255, 0.14);
+    color: var(--kerf-blue);
+  }
+  :global(.field-shell .cap-item-icon.note) {
+    background: rgba(245, 181, 68, 0.14);
+    color: var(--kerf-amber);
+  }
+  :global(.field-shell .cap-item-body) {
+    min-width: 0;
+  }
+  :global(.field-shell .cap-item-title) {
+    font-size: 0.76rem;
+    color: var(--kerf-text);
+    font-weight: 700;
+  }
+  :global(.field-shell .cap-item-sub) {
+    font-size: 0.66rem;
+    color: var(--kerf-text-mute);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  :global(.field-shell .cap-item-meta) {
+    font-size: 0.62rem;
+    color: var(--kerf-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+  :global(.field-shell .cap-item-action) {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: transparent;
+    border: 1px solid var(--kerf-border-soft);
+    color: var(--kerf-text-mute);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  :global(.field-shell .cap-item-action svg) {
+    width: 11px !important;
+    height: 11px !important;
+    fill: currentColor;
+  }
 
   /* ===== Pre-flight summary ===== */
   .preflight-status {
@@ -1681,6 +1785,24 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .readout-warning[hidden] {
     display: none;
+  }
+  :global(.field-shell .readout-list li) {
+    border: 1px solid var(--kerf-border-soft);
+    border-radius: 8px;
+    padding: 9px 10px;
+    background: var(--kerf-bg-2);
+  }
+  :global(.field-shell .readout-list strong),
+  :global(.field-shell .readout-list span) {
+    display: block;
+  }
+  :global(.field-shell .readout-list strong) {
+    font-size: 0.76rem;
+  }
+  :global(.field-shell .readout-list span) {
+    color: var(--kerf-text-mute);
+    font-size: 0.68rem;
+    margin-top: 2px;
   }
 
   /* ===== Draft-intent picker (canon radio cards) ===== */
@@ -1875,6 +1997,34 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .photo-tile-mini.add svg {
     opacity: 0.75;
+  }
+  :global(.field-shell .photo-tile-mini) {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #2a3a4a, #1a2530);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(56, 201, 119, 0.3);
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+    color: var(--field-green);
+  }
+  :global(.field-shell .photo-tile-mini img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  :global(.field-shell .photo-tile-mini svg) {
+    width: 14px !important;
+    height: 14px !important;
+    fill: var(--field-green);
+  }
+  :global(.field-shell .photo-tile-mini.add svg) {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   /* ===== Continue capture ===== */
