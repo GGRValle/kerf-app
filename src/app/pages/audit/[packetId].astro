@@ -1,15 +1,57 @@
 ---
-import RouteShellPage from '../../components/RouteShellPage.astro';
+import Layout from '../../layouts/Layout.astro';
+import '../../../examples/v15-vertical-slice/f37-embed.css';
+import {
+  buildF37AuditPageHtml,
+  buildF37Timeline,
+  buildF37UnknownPacketHtml,
+  resolveF37Packet,
+} from '../../../examples/audit-f37/f37-audit-view-html.js';
+import { verticalSliceFieldCaptureDemoFixture } from '../../../demo/index.js';
 
 const { packetId } = Astro.params;
+const safePacketId = packetId ?? verticalSliceFieldCaptureDemoFixture.decision_packet_raw.packet_id;
+const packet =
+  safePacketId === verticalSliceFieldCaptureDemoFixture.decision_packet_raw.packet_id
+    ? verticalSliceFieldCaptureDemoFixture.decision_packet_raw
+    : resolveF37Packet(safePacketId);
+
+const auditHtml = packet
+  ? buildF37AuditPageHtml(
+      packet,
+      buildF37Timeline(packet, packet === verticalSliceFieldCaptureDemoFixture.decision_packet_raw ? verticalSliceFieldCaptureDemoFixture : undefined)[0]
+        ?.id ?? '',
+      'embedded',
+      packet === verticalSliceFieldCaptureDemoFixture.decision_packet_raw ? verticalSliceFieldCaptureDemoFixture : undefined,
+    )
+  : buildF37UnknownPacketHtml(safePacketId);
 ---
 
-<RouteShellPage
-  title={`Audit ${packetId}`}
-  routeName="audit-detail"
-  phase="audit"
-  irreversibility
-  actionContext={`audit packet ${packetId}`}
->
-  <p>F-37 audit packet shell for <code>{packetId}</code>.</p>
-</RouteShellPage>
+<Layout title={`Audit ${safePacketId}`} activeHref="/reports">
+  <section class="audit-page" aria-labelledby="audit-page-title">
+    <p class="audit-page__crumb"><a href="/reports">Back to reports</a></p>
+    <div class="audit-page__body" set:html={auditHtml} />
+  </section>
+</Layout>
+
+<style>
+  .audit-page {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .audit-page__crumb {
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  .audit-page__crumb a {
+    color: var(--accent, #0f766e);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .audit-page__body :global(.kerf-f37) {
+    margin: 0;
+  }
+</style>
