@@ -145,7 +145,14 @@ test('route uses deterministic fallback when GROQ is not configured', async () =
   const res = await apiRouter.request('/right-hand/resolve-turn', {
     method: 'POST',
     headers: { authorization: authHeader(), 'content-type': 'application/json' },
-    body: JSON.stringify({ heardText: BASE_INPUT.heardText, currentPath: '/' }),
+    body: JSON.stringify({
+      heardText: BASE_INPUT.heardText,
+      currentPath: '/',
+      knownEntities: [
+        { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
+        { type: 'client', id: 'client_wegrzyn', label: 'Wegrzyn, Mark & Grace' },
+      ],
+    }),
   });
   assert.equal(res.status, 200);
   const body = await res.json() as { authority: string; fallback_reason?: string; trp: { context_hypothesis: { frame: string } } };
@@ -236,7 +243,14 @@ test('route invokes configured model server-side and returns client-safe TRP', a
   const res = await apiRouter.request('/right-hand/resolve-turn', {
     method: 'POST',
     headers: { authorization: authHeader(), 'content-type': 'application/json' },
-    body: JSON.stringify({ heardText: BASE_INPUT.heardText, currentPath: '/' }),
+    body: JSON.stringify({
+      heardText: BASE_INPUT.heardText,
+      currentPath: '/',
+      knownEntities: [
+        { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
+        { type: 'client', id: 'client_wegrzyn', label: 'Wegrzyn, Mark & Grace' },
+      ],
+    }),
   });
   const raw = await res.text();
   assert.equal(res.status, 200);
@@ -249,6 +263,8 @@ test('route invokes configured model server-side and returns client-safe TRP', a
   assert.equal(capturedAuth, 'gsk-test-secret');
   assert.equal(capturedBody?.endpoint, TURN_RESOLVER_LLM_ENDPOINT);
   assert.equal(capturedBody?.model, TURN_RESOLVER_LLM_MODEL);
+  assert.match(capturedBody?.messages.at(-1)?.content ?? '', /project:proj_wegrzyn_kitchen:Wegrzyn kitchen \+ primary bath/);
+  assert.match(capturedBody?.messages.at(-1)?.content ?? '', /client:client_wegrzyn:Wegrzyn, Mark & Grace/);
 });
 
 test('turn resolver LLM endpoint/model pair is approved', () => {

@@ -325,11 +325,58 @@ const { t } = createLayoutContext();
       if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
     };
 
+    type KnownEntityPayload = {
+      type: 'project' | 'client' | 'site' | 'lead';
+      id?: string;
+      label: string;
+    };
+
+    const currentTenantId = (): string | undefined => (
+      document.querySelector<HTMLElement>('.kerf-shell')?.dataset.tenant?.trim() || undefined
+    );
+
+    const collectKnownEntities = (): KnownEntityPayload[] => {
+      const byKey = new Map<string, KnownEntityPayload>();
+      const add = (entity: KnownEntityPayload) => {
+        const label = entity.label.replace(/\s+/g, ' ').trim();
+        if (!label) return;
+        const id = entity.id?.trim();
+        byKey.set(`${entity.type}:${id ?? label}`, { ...entity, ...(id ? { id } : {}), label });
+      };
+
+      if (currentTenantId() === 'tenant_ggr') {
+        // Dogfood context visible throughout the current GGR shell. This is
+        // tenant-scoped fixture data, not shared platform memory; it gives the
+        // model-led resolver the same active-job context the operator sees.
+        add({ type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' });
+        add({ type: 'client', id: 'client_wegrzyn', label: 'Wegrzyn, Mark & Grace' });
+        add({ type: 'site', id: 'site_wegrzyn_pacifica', label: 'Wegrzyn site · 4287 Pacifica Way' });
+      }
+
+      const fieldShell = document.querySelector<HTMLElement>('.field-shell');
+      const projectId = fieldShell?.dataset.projectId;
+      const destination = document.querySelector<HTMLSelectElement>('#f-e1-destination');
+      const selected = destination?.selectedOptions?.[0];
+      const activeProject = destination?.dataset.activeProject;
+      const activeClient = destination?.dataset.activeClient;
+      const activeLocation = destination?.dataset.activeLocation;
+      if (projectId && (activeProject || selected?.textContent)) {
+        add({ type: 'project', id: projectId, label: activeProject ?? selected?.textContent ?? projectId });
+      }
+      if (activeClient) add({ type: 'client', label: activeClient });
+      if (activeLocation) add({ type: 'site', label: activeLocation });
+
+      return [...byKey.values()].slice(0, 8);
+    };
+
     const resolveTurnServerSide = async (text: string, fallback: TurnResolutionPacket): Promise<TurnResolutionPacket> => {
       try {
+        const tenantId = currentTenantId();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (tenantId) headers['x-kerf-tenant'] = tenantId;
         const res = await fetch('/api/v1/right-hand/resolve-turn', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             heardText: text,
             currentPath: window.location.pathname,
@@ -337,6 +384,7 @@ const { t } = createLayoutContext();
             // V1 personalization hook: tenant/user preference orders what Right
             // Hand offers next, but never bypasses durable/money/send gates.
             userPreferenceSummary: 'Owner dogfood prefers estimate impact after a job-walk note.',
+            knownEntities: collectKnownEntities(),
           }),
         });
         if (!res.ok) return fallback;
