@@ -122,7 +122,7 @@ function driftDetected(
 describe('v15 relay surface (B.5)', () => {
   test('list view shape: brand header + list container', () => {
     const html = buildRelayListPageHtml('en');
-    assert.match(html, /Right Hand · Relay/);
+    assert.match(html, /Right Hand · Office Review/);
     assert.match(html, /id="kerf-v15-relay-list"/);
     assert.match(html, /data-voice-canon-pending/);
   });

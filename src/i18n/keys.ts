@@ -37,7 +37,9 @@ export type I18nKey =
   | 'error.validation'
   | 'error.contract'
 
-  // Right Hand — Field Daily relay (/relay) — B.5
+  // Right Hand — Field Daily review surface (/relay) — B.5.
+  // "Office review" is operator-facing copy only. The durable model remains
+  // Turn -> Resolution Packet -> Work Artifact + Attention Artifact -> Role View.
   | 'rh.relay.brand.title'
   | 'rh.relay.list.subtitle'
   | 'rh.relay.list.loading'

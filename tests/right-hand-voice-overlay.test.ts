@@ -609,6 +609,10 @@ test('Field Capture: no second primary mic; task buttons + bottom-mic context hi
   // Replaced by an explicit bottom-mic context hint.
   assert.match(src, /class="fc-mic-hint"/);
   assert.match(src, /speak to add a note to this capture/i);
+  // A capture reached from a known job has a visible way back to that job.
+  assert.match(src, /project_id/);
+  assert.match(src, /captureReturnHref/);
+  assert.match(src, /Back to job/);
   // Task buttons present and wired (no dead buttons).
   assert.match(src, /id="f-e1-photo"/);
   assert.match(src, /id="f-e1-attach-file"/);
@@ -634,6 +638,38 @@ test('Home folds in the resolved-turn result card (honest, generated from the re
   assert.match(src, /trp\.heard_text/);
   // Dismiss clears the session key.
   assert.match(src, /removeItem\(TURN_RESOLUTION_SESSION_KEY\)/);
+});
+
+test('operator-facing review links use contractor language instead of Relay jargon', () => {
+  const en = readFileSync(path.join(ROOT, 'src/i18n/en.ts'), 'utf8');
+  const es = readFileSync(path.join(ROOT, 'src/i18n/es.ts'), 'utf8');
+  const keys = readFileSync(path.join(ROOT, 'src/i18n/keys.ts'), 'utf8');
+  assert.match(en, /'nav\.relay': 'Office review'/);
+  assert.match(en, /'project\.field\.link_relay': 'Office review cards'/);
+  assert.match(en, /'home\.loop\.relay\.title': 'Office review'/);
+  assert.doesNotMatch(en, /'[^']+': '[^']*\bRelay\b/);
+  assert.match(es, /'nav\.relay': 'Revisión de oficina'/);
+  assert.match(es, /'project\.field\.link_relay': 'Tarjetas de revisión de oficina'/);
+  assert.doesNotMatch(es, /'[^']+': '[^']*\bRelay\b/);
+  assert.match(keys, /Office review.*operator-facing copy only/s);
+});
+
+test('Office Review stays presentation copy, not a second attention primitive', () => {
+  const files = [
+    'src/app/pages/relay/index.astro',
+    'src/i18n/en.ts',
+    'src/i18n/es.ts',
+    'src/i18n/keys.ts',
+    'src/voice/realtime/turnResolution.ts',
+  ];
+  for (const file of files) {
+    const src = readFileSync(path.join(ROOT, file), 'utf8');
+    assert.doesNotMatch(
+      src,
+      /\b(?:office_review|OfficeReview|officeReview)\b/,
+      `${file} must not introduce Office Review as an identifier, event, schema, or primitive`,
+    );
+  }
 });
 
 test('New Project keeps the Right Hand voice handoff visible and prefilled', () => {

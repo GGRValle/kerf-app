@@ -29,6 +29,14 @@ const assignment = {
   project_id: 'proj_wegrzyn_kitchen',
   matched_by: 'job-site GPS',
 };
+
+const projectIdParam = Astro.url.searchParams.get('project_id');
+const safeReturnProjectId =
+  projectIdParam && /^[A-Za-z0-9_-]+$/.test(projectIdParam) ? projectIdParam : '';
+const captureReturnHref = safeReturnProjectId
+  ? `/projects/${encodeURIComponent(safeReturnProjectId)}?src=voice`
+  : '/';
+const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 ---
 
 <Layout title="Field Capture" activeHref={Astro.url.pathname}>
@@ -50,7 +58,7 @@ const assignment = {
           <header class="top-chrome">
             <div class="tc-eyebrow">
               <span class="tc-mode">New capture</span>
-              <a class="tc-back" href="/">Back</a>
+              <a class="tc-back" href={captureReturnHref}>{captureReturnLabel}</a>
             </div>
             <h1 class="tc-title">What are you capturing?</h1>
             <p class="tc-meta">
@@ -139,9 +147,9 @@ const assignment = {
           </div>
 
           <div class="action-ribbon">
-            <a class="ar-btn cancel" href="/">
+            <a class="ar-btn cancel" href={captureReturnHref}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
-              Cancel
+              {captureReturnLabel}
             </a>
           </div>
         </section>
@@ -241,7 +249,7 @@ const assignment = {
               <span class="di-radio" aria-hidden="true"></span>
               <span class="di-body">
                 <span class="di-option-title">Watch for change-order or scope drift</span>
-                <span class="di-option-detail">Right Hand reads the capture for pricing or scope changes and surfaces a relay card if it finds one.</span>
+                <span class="di-option-detail">Right Hand reads the capture for pricing or scope changes and brings an office review card forward if it finds one.</span>
               </span>
             </label>
             <label class="di-option">
@@ -325,7 +333,7 @@ const assignment = {
       <section class="submit-outcome" id="f-e1-submit-outcome" aria-live="polite" hidden>
         <p class="submit-status" id="f-e1-submit-status" role="status"></p>
         <p class="submit-play-error" id="f-e1-play-error" role="alert" hidden></p>
-        <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open Relay →</a>
+        <a class="relay-link" id="f-e1-relay-link" href="/relay" hidden>Open office review →</a>
         <nav class="loop-links" id="f-e1-loop-links" aria-label="Capture review loop" hidden>
           <a class="loop-link" href="/transcript-review?capture_id=cap_lane23_wegrzyn_001">Transcript review →</a>
           <a class="loop-link" href={fixtureDraftHref}>{t('f_e1.loop.draft_preview')}</a>
@@ -482,14 +490,14 @@ const assignment = {
     setPlayError('');
 
     if (surfaced) {
-      setStatus('Saved to Daily Log. Right Hand flagged this for office review. Open Relay.', 'success');
+      setStatus('Saved to Daily Log. Right Hand flagged this for office review.', 'success');
       setRelayLinkVisible(true);
       return;
     }
 
     if (driftSeverity) {
       setStatus(
-        'Saved to Daily Log. Right Hand noted something to watch but did not open a new Relay card for this entry.',
+        'Saved to Daily Log. Right Hand noted something to watch but did not open a new office review card for this entry.',
         'success',
       );
       setRelayLinkVisible(false);
@@ -506,7 +514,7 @@ const assignment = {
     }
 
     setStatus(
-      'Saved to Daily Log. Right Hand is reviewing — open Relay only if something needs your attention.',
+      'Saved to Daily Log. Right Hand is reviewing — open office review only if something needs your attention.',
       'success',
     );
     setRelayLinkVisible(false);
