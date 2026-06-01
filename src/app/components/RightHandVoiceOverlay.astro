@@ -45,9 +45,11 @@ const { t } = createLayoutContext();
   data-commit-workspace-needed={t('rh_voice.commit_workspace_needed')}
   data-action-correct={t('rh_voice.action_correct')}
   data-action-keep-talking={t('rh_voice.action_keep_talking')}
+  data-action-back={t('rh_voice.action_back')}
   data-action-tell-job={t('rh_voice.action_tell_job')}
   data-action-save={t('rh_voice.action_save')}
   data-action-start-intake={t('rh_voice.action_start_intake')}
+  data-mic-toggle-label={t('rh_voice.mic_toggle_label')}
   data-correction-prompt={t('rh_voice.correction_prompt')}
   data-correction-routed={t('rh_voice.correction_routed')}
   data-correction-creating={t('rh_voice.correction_creating')}
@@ -64,11 +66,14 @@ const { t } = createLayoutContext();
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
   <div class="rhvo__panel" role="document">
+    <button type="button" class="rhvo__close" data-rhvo-dismiss aria-label={t('rh_voice.action_back')}>
+      <span aria-hidden="true">‹</span>
+    </button>
     <button
       type="button"
       class="rhvo__indicator"
       id="rhvo-mic-button"
-      aria-label={t('rh_voice.action_keep_talking')}
+      aria-label={t('rh_voice.mic_toggle_label')}
     >
       <span class="rhvo__pulse"></span>
       <span class="rhvo__mic">
@@ -133,9 +138,6 @@ const { t } = createLayoutContext();
       <button type="button" class="rhvo__btn rhvo__btn--ghost" id="rhvo-cancel" data-rhvo-dismiss>
         {t('rh_voice.action_cancel')}
       </button>
-      <button type="button" class="rhvo__btn rhvo__btn--primary" id="rhvo-done">
-        {t('rh_voice.action_stop')}
-      </button>
       <button type="button" class="rhvo__btn rhvo__btn--primary" id="rhvo-continue" hidden>
         {t('rh_voice.action_continue')}
       </button>
@@ -188,7 +190,6 @@ const { t } = createLayoutContext();
     const confirmReplyEl = document.getElementById('rhvo-confirm-reply');
     const confirmPromptEl = document.getElementById('rhvo-confirm-prompt');
     const cancelBtn = document.getElementById('rhvo-cancel') as HTMLButtonElement | null;
-    const doneBtn = document.getElementById('rhvo-done') as HTMLButtonElement | null;
     const continueBtn = document.getElementById('rhvo-continue') as HTMLButtonElement | null;
     const saveBtn = document.getElementById('rhvo-save') as HTMLButtonElement | null;
     const notThatBtn = document.getElementById('rhvo-notthat') as HTMLButtonElement | null;
@@ -258,14 +259,12 @@ const { t } = createLayoutContext();
       window.clearInterval(timerId);
     };
 
-    // ── Action-button visibility per state. Stop is the explicit-commit primary
-    // while listening; Save/Not that own the confirm trust loop; Continue owns
-    // the capped state. (F-RH1.)
+    // ── Action-button visibility per state. The mic itself is the start/finish
+    // control while listening; Save/Keep talking own the confirm trust loop.
     const showActions = (mode: 'listening' | 'confirm' | 'capped' | 'resolved') => {
       // Resolved owns its own next-move buttons (.rhvo__moves); every standard
       // action button is hidden so there is no competing primary.
-      if (cancelBtn) cancelBtn.hidden = mode === 'resolved';
-      if (doneBtn) doneBtn.hidden = mode !== 'listening';
+      if (cancelBtn) cancelBtn.hidden = mode === 'listening' || mode === 'resolved';
       if (continueBtn) continueBtn.hidden = mode !== 'capped';
       if (saveBtn) saveBtn.hidden = mode !== 'confirm';
       if (notThatBtn) notThatBtn.hidden = mode !== 'confirm';
@@ -456,12 +455,27 @@ const { t } = createLayoutContext();
     };
 
     const normalizeMatchText = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const ENTITY_TOKEN_STOP_WORDS = new Set(['kitchen', 'primary', 'bath', 'project', 'job', 'site']);
+    const entityMatchTokens = (label: string): string[] => normalizeMatchText(label)
+      .split(' ')
+      .filter((token) => (token.length >= 4 || /^\d{3,}$/.test(token)) && !ENTITY_TOKEN_STOP_WORDS.has(token));
+    const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const textRejectsEntityAssignment = (text: string, label: string): boolean => {
+      const source = normalizeMatchText(text);
+      const rejectionCue = '(?:not|wrong|don t|do not|instead of|rather than|isn t|is not|isnt)';
+      return entityMatchTokens(label).some((token) => {
+        const escaped = escapeRegExp(token);
+        const cueBeforeEntity = new RegExp(`\\b${rejectionCue}\\b(?:\\s+[a-z0-9]+){0,8}\\s+${escaped}\\b`);
+        const entityBeforeWrong = new RegExp(`\\b${escaped}\\b(?:\\s+[a-z0-9]+){0,5}\\s+\\b(?:wrong|not it|not right)\\b`);
+        return cueBeforeEntity.test(source) || entityBeforeWrong.test(source);
+      });
+    };
 
     const textMentionsEntity = (text: string, label: string): boolean => {
       const source = normalizeMatchText(text);
-      const tokens = normalizeMatchText(label)
-        .split(' ')
-        .filter((token) => (token.length >= 4 || /^\d{3,}$/.test(token)) && !['kitchen', 'primary', 'bath', 'project', 'job', 'site'].includes(token));
+      if (textRejectsEntityAssignment(text, label)) return false;
+      const tokens = entityMatchTokens(label);
       return tokens.some((token) => source.includes(token));
     };
 
@@ -589,7 +603,7 @@ const { t } = createLayoutContext();
       // → beginSession() re-acquires from scratch, same as Continue.
       teardown();
       setState('confirm');
-      setHeading(overlay.dataset.headConfirm ?? 'Ready for you');
+      setHeading(template(overlay.dataset.headConfirm ?? 'Ready for {operator}', { operator: operatorName() }));
       setStatus('');
       if (timerEl) timerEl.textContent = '';
       if (confirmHeardEl) confirmHeardEl.textContent = text;
@@ -868,8 +882,8 @@ const { t } = createLayoutContext();
       }
       setCaption(interim);
       // Durable OR unclassified-but-useful speech → confirm trust loop (Save /
-      // Not that), never a Cancel/Stop dead-end. This closes the stale
-      // "I didn't catch an action" trap on the Stop path (brief stale-screen fix).
+      // Keep talking), never a dead-end. This closes the stale
+      // "I didn't catch an action" trap on the mic-off path.
       enterSorting(interim);
     };
 
@@ -1130,9 +1144,26 @@ const { t } = createLayoutContext();
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !overlay.hidden) dismissOverlay();
     });
-    doneBtn?.addEventListener('click', finishCurrentTurn);
     micButton?.addEventListener('click', () => {
-      if (state === 'confirm') returnToListening();
+      if (state === 'listening' || state === 'fallback') {
+        finishCurrentTurn();
+        return;
+      }
+      if (state === 'confirm' || state === 'resolved') {
+        returnToListening();
+        return;
+      }
+      if (state === 'capped') {
+        awaitingConfirm = false;
+        parkedTranscript = '';
+        lastInterim = '';
+        setHeading(overlay.dataset.title ?? 'Right Hand is listening');
+        setState('listening');
+        setStatus(overlay.dataset.listening ?? 'Listening…');
+        showActions('listening');
+        startTimer();
+        void beginSession();
+      }
     });
     continueBtn?.addEventListener('click', () => {
       awaitingConfirm = false;
@@ -1198,6 +1229,8 @@ const { t } = createLayoutContext();
     width: min(440px, 100%);
     margin: 0 0 max(1rem, env(safe-area-inset-bottom, 0px));
     padding: 1.4rem 1.25rem 1.1rem;
+    max-height: min(75dvh, 720px);
+    overflow: auto;
     border: 1px solid var(--kerf-border);
     border-radius: 20px 20px 0 0;
     background: var(--kerf-surface);
@@ -1206,6 +1239,23 @@ const { t } = createLayoutContext();
     gap: 0.6rem;
     justify-items: center;
     text-align: center;
+  }
+  .rhvo__close {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--kerf-border-soft);
+    border-radius: 999px;
+    background: var(--kerf-surface-2);
+    color: var(--kerf-text-dim);
+    font: inherit;
+    font-size: 1.45rem;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
   }
   @media (min-width: 600px) {
     .rhvo { align-items: center; }
@@ -1244,11 +1294,13 @@ const { t } = createLayoutContext();
     justify-content: center;
   }
   .rhvo__mic :global(svg) { width: 26px; height: 26px; fill: currentColor; }
-  /* Sorting is a post-capture beat. Confirm keeps the mic visible so the
-     conversation can continue without switching interfaces. */
-  .rhvo[data-state='sorting'] .rhvo__indicator { display: none; }
-  .rhvo[data-state='confirm'] .rhvo__indicator { cursor: pointer; }
-  .rhvo[data-state='confirm'] .rhvo__pulse { animation: none; opacity: 0.35; }
+  /* The same mic stays visible across the turn. Listening pulses; confirm and
+     resolved are quiet but tappable so the conversation can continue. */
+  .rhvo[data-state='confirm'] .rhvo__indicator,
+  .rhvo[data-state='resolved'] .rhvo__indicator,
+  .rhvo[data-state='capped'] .rhvo__indicator { cursor: pointer; }
+  .rhvo[data-state='confirm'] .rhvo__pulse,
+  .rhvo[data-state='resolved'] .rhvo__pulse { animation: none; opacity: 0.22; }
   .rhvo__head {
     width: 100%;
     display: flex;
@@ -1351,7 +1403,6 @@ const { t } = createLayoutContext();
      never the live capture chrome or a competing primary action. */
   .rhvo__resolution { display: none; width: 100%; }
   .rhvo[data-state='resolved'] .rhvo__resolution { display: block; }
-  .rhvo[data-state='resolved'] .rhvo__indicator,
   .rhvo[data-state='resolved'] .rhvo__meter,
   .rhvo[data-state='resolved'] .rhvo__caption,
   .rhvo[data-state='resolved'] .rhvo__authority,

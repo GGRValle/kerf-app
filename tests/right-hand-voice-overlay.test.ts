@@ -276,13 +276,14 @@ test('Speak triggers open the overlay and keep the no-JS href fallback', () => {
   assert.match(layout, /RightHandVoiceOverlay/);
 });
 
-test('overlay has a Stop/commit path and lets the current page claim Speak context', () => {
+test('overlay uses the mic as the finish control and lets the current page claim Speak context', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
-  assert.match(src, /id="rhvo-done"/);
-  // #rhvo-done is relabelled Stop (explicit commit) in listening per F-RH1.
-  assert.match(src, /rh_voice\.action_stop/);
+  assert.doesNotMatch(src, /id="rhvo-done"/);
+  assert.match(src, /data-mic-toggle-label=\{t\('rh_voice\.mic_toggle_label'\)\}/);
   assert.match(src, /const finishCurrentTurn/);
-  assert.match(src, /doneBtn\?\.addEventListener\('click', finishCurrentTurn\)/);
+  assert.match(src, /micButton\?\.addEventListener\('click'/);
+  assert.match(src, /state === 'listening' \|\| state === 'fallback'[\s\S]*?finishCurrentTurn\(\)/);
+  assert.doesNotMatch(src, /doneBtn/);
   assert.match(src, /id="rhvo-caption-input"/);
   assert.match(src, /const currentCaptionText/);
   assert.match(src, /captionInputEl\?\.addEventListener\('input'/);
@@ -403,7 +404,8 @@ test('trust loop: durable committed intent enters confirm and does NOT auto-navi
 test('trust loop: confirm projects the TRP as a Right Hand conversation, not audit rows', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const layout = readFileSync(path.join(ROOT, 'src/app/layouts/Layout.astro'), 'utf8');
-  assert.match(layout, /data-operator-name=\{operatorName\}/);
+  assert.match(layout, /const conversationOperatorName/);
+  assert.match(layout, /data-operator-name=\{conversationOperatorName\}/);
   assert.match(src, /id="rhvo-confirm-reply"/);
   assert.match(src, /id="rhvo-speaker-operator"/);
   assert.match(src, /class="rhvo__turn rhvo__turn--right-hand"/);
@@ -433,7 +435,7 @@ test('trust loop: meaningful unclassified speech defaults to a saveable note', (
   );
 });
 
-test('stale trap gone: Stop on useful interim speech enters the trust loop, not a capped dead-end', () => {
+test('stale trap gone: mic-off on useful interim speech enters the trust loop, not a capped dead-end', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
   assert.match(finishCurrentTurn, /releaseListeningResources\(\)/);
@@ -445,7 +447,7 @@ test('stale trap gone: Stop on useful interim speech enters the trust loop, not 
   assert.doesNotMatch(finishCurrentTurn, /requiresCommittedTranscript\(intent\)[\s\S]{0,120}setState\('capped'\)/);
 });
 
-test('Stop immediately releases the mic/session before any clarify or route decision', () => {
+test('mic-off immediately releases the mic/session before any clarify or route decision', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
   assert.match(
@@ -499,6 +501,9 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   assert.match(src, /data-action-start-intake=\{t\('rh_voice\.action_start_intake'\)\}/);
   assert.match(src, /const projectEntityHasContextSupport/);
   assert.match(src, /projectIdFromPath\(\) === id/);
+  assert.match(src, /const textRejectsEntityAssignment/);
+  assert.match(src, /if \(textRejectsEntityAssignment\(text, label\)\) return false/);
+  assert.match(src, /instead of\|rather than/);
   assert.match(src, /textMentionsEntity\(text, knownProject\.label\)/);
 
   const withKnownEntity = sliceDecl(src, 'withKnownEntity', 'resolveTurnServerSide');
@@ -572,7 +577,7 @@ test('LIVE frame shifts keep Right Hand in the conversation on the destination f
   assert.match(src, /if \(overlay\.hidden\) openOverlay\(\)/);
 });
 
-test('fallback Stop cannot freeze forever on empty audio or hanging transcription', () => {
+test('fallback mic-off cannot freeze forever on empty audio or hanging transcription', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /TRANSCRIBE_TIMEOUT_MS = 12000/);
   assert.match(src, /const recoverVoiceTurn/);
@@ -620,7 +625,8 @@ test('F-RH1 visual: elapsed timer + field-green VU bars + typing cursor + per-st
   // Per-state headings wired via data-* (resolved through t()).
   assert.match(src, /data-head-sorting=\{t\('rh_voice\.head_sorting'\)\}/);
   assert.match(src, /data-head-confirm=\{t\('rh_voice\.head_confirm'\)\}/);
-  assert.match(src, /setHeading\(overlay\.dataset\.headConfirm/);
+  assert.match(src, /template\(overlay\.dataset\.headConfirm/);
+  assert.match(src, /\{ operator: operatorName\(\) \}/);
 });
 
 test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
@@ -642,6 +648,8 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.action_save',
     'rh_voice.action_not_that',
     'rh_voice.action_stop',
+    'rh_voice.action_back',
+    'rh_voice.mic_toggle_label',
     'rh_voice.action_correct',
     'rh_voice.action_keep_talking',
     'rh_voice.action_tell_job',
@@ -677,6 +685,8 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'home.result.open_job',
     'home.result.review_estimate',
     'home.result.dismiss',
+    'shell.nav.create',
+    'shell.nav.camera',
   ];
   for (const key of newKeys) {
     assert.ok(keys.includes(`'${key}'`), `keys.ts missing ${key}`);
@@ -721,8 +731,13 @@ test('Field Capture: no second primary mic; task buttons + bottom-mic context hi
 test('Home folds in the resolved-turn result card (honest, generated from the real TRP)', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandResultCard.astro'), 'utf8');
   const home = readFileSync(path.join(ROOT, 'src/app/pages/index.astro'), 'utf8');
-  // Mounted on Home above the loop grid.
-  assert.match(home, /RightHandResultCard/);
+  const surface = readFileSync(path.join(ROOT, 'src/app/components/RightHandHomeSurface.astro'), 'utf8');
+  // Mounted on the Right Hand home surface.
+  assert.match(home, /RightHandHomeSurface/);
+  assert.match(surface, /RightHandResultCard/);
+  assert.match(surface, /The one thing/);
+  assert.match(surface, /On deck/);
+  assert.match(surface, /The pulse/);
   // Reads the stashed TRP (never fabricated) and only shows when one exists.
   assert.match(src, /TURN_RESOLUTION_SESSION_KEY/);
   assert.match(src, /parseTurnResolution\(/);

@@ -17,9 +17,11 @@ test('SpeakFAB routes to Right Hand without debug handler', () => {
   assert.doesNotMatch(src, /console\.info/);
   assert.match(src, /5\.5rem/);
 });
-test('center Speak nav opens Right Hand instead of field capture', () => {
+test('center Speak nav opens Right Hand and the phone bar uses Create/Camera', () => {
   const src = read('src/app/lib/shellRoutes.ts');
   assert.match(src, /href: '\/right-hand', labelKey: 'shell\.nav\.speak'/);
+  assert.match(src, /href: '\/create', labelKey: 'shell\.nav\.create'/);
+  assert.match(src, /href: '\/camera', labelKey: 'shell\.nav\.camera'/);
   assert.doesNotMatch(src, /href: '\/field-capture', labelKey: 'shell\.nav\.speak'/);
 });
 test('Layout wires mobile bottom nav', () => {
@@ -28,9 +30,9 @@ test('Layout wires mobile bottom nav', () => {
 test('shell.css reserves space for mobile bottom nav', () => {
   assert.match(read('src/app/styles/shell.css'), /5\.5rem/);
 });
-test('home index uses HomeLoopGrid and operator loops', () => {
+test('home index uses the Right Hand home surface', () => {
   const src = read('src/app/pages/index.astro');
-  assert.match(src, /HomeLoopGrid/);
+  assert.match(src, /RightHandHomeSurface/);
   assert.match(src, /home\.title/);
 });
 test('nav includes schedule, reports, and settings', () => {
@@ -38,8 +40,8 @@ test('nav includes schedule, reports, and settings', () => {
   assert.match(src, /\/schedule/);
   assert.match(src, /domain: 'audit'/);
 });
-test('preview pages exist for schedule, reports, settings, more', () => {
-  for (const page of ['schedule.astro', 'reports.astro', 'settings.astro', 'more.astro']) {
+test('preview pages exist for schedule, reports, settings, more, create, camera', () => {
+  for (const page of ['schedule.astro', 'reports.astro', 'settings.astro', 'more.astro', 'create.astro', 'camera.astro']) {
     assert.ok(existsSync(path.join(ROOT, 'src/app/pages', page)), page);
   }
 });

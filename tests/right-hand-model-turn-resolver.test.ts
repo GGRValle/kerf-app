@@ -153,6 +153,37 @@ test('model resolver rejects unsupported project guesses for new work', async ()
   assert.match(result.trp.context_hypothesis.prompt, /Create estimate from this/i);
 });
 
+test('model resolver does not ground a project that the transcript rejects', async () => {
+  const result = await resolveTurnWithModel(
+    {
+      ...BASE_INPUT,
+      heardText:
+        "We're starting a new bathroom remodel for Clem. Start the estimate intake instead of filing this under Wegrzyn.",
+      currentPath: '/',
+      knownEntities: [
+        { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
+      ],
+    },
+    successClient({
+      intent: 'job_intake',
+      frame: 'estimate_walk',
+      label: 'Estimate walk',
+      confidence: 'high',
+      likely_entity: { type: 'project', label: 'Wegrzyn kitchen + primary bath', id: 'proj_wegrzyn_kitchen', confidence: 'medium' },
+      routed_label: 'Wegrzyn kitchen + primary bath → estimate intake',
+      preparing_label: 'Estimate intake ready',
+      prompt: 'Create estimate from this for Wegrzyn kitchen + primary bath?',
+      missing_facts: [],
+    }),
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.trp.context_hypothesis.frame, 'estimate_walk');
+  assert.equal(result.trp.context_hypothesis.likely_entity, null);
+  assert.equal(result.trp.context_hypothesis.routed_label, 'Estimate walk → estimate intake');
+  assert.equal(result.trp.context_hypothesis.prompt, 'Create estimate from this?');
+});
+
 test('model failure falls back to deterministic resolver without throwing', async () => {
   const client: TurnResolverLlmClient = {
     tenantId: 'tenant_ggr',

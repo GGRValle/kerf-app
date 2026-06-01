@@ -1,0 +1,81 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const actions = [
+  { href: '/projects/new?src=create', title: 'New job intake', detail: 'Start a lead, site walk, or estimate packet.' },
+  { href: '/field-capture?src=create', title: 'Daily log note', detail: 'Add a job note, photo, or site condition.' },
+  { href: '/draft-review?src=create', title: 'Change order', detail: 'Collect scope changes before pricing or sending.' },
+  { href: '/money?src=create', title: 'Invoice', detail: 'Start from the money lane; no money posts without review.' },
+  { href: '/room-capture?src=create', title: 'Room scan / LiDAR', detail: 'Capture a room, then let Right Hand summarize it.' },
+  { href: '/right-hand', title: 'Ask Right Hand', detail: 'Use the conversation when you are not sure what to start.' },
+];
+---
+
+<Layout title="Create" activeHref="/create">
+  <section class="create-sheet" aria-labelledby="create-title">
+    <p class="create-sheet__eyebrow">Start something</p>
+    <h1 id="create-title">Create</h1>
+    <p class="create-sheet__lede">Use this when speaking is not convenient. Right Hand still handles the routing and review behind the scenes.</p>
+    <div class="create-sheet__list">
+      {actions.map((action) => (
+        <a class="create-action" href={action.href}>
+          <span>{action.title}</span>
+          <small>{action.detail}</small>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .create-sheet {
+    display: grid;
+    gap: 0.8rem;
+  }
+  .create-sheet__eyebrow {
+    margin: 0;
+    color: var(--right-hand);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .create-sheet h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    line-height: 1;
+  }
+  .create-sheet__lede {
+    margin: 0;
+    color: var(--kerf-text-dim);
+    line-height: 1.45;
+  }
+  .create-sheet__list {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .create-action {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.95rem;
+    border: 1px solid var(--kerf-border);
+    border-radius: 14px;
+    background: var(--kerf-surface);
+    color: inherit;
+    text-decoration: none;
+  }
+  .create-action span {
+    font-weight: 800;
+    font-size: 1.02rem;
+  }
+  .create-action small {
+    color: var(--kerf-text-dim);
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+  @media (min-width: 760px) {
+    .create-sheet__list {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
