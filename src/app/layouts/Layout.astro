@@ -25,6 +25,12 @@ const {
 const { t } = createLayoutContext({ username, locale: context.locale });
 const navItems = navForContext(context);
 const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
+const rawOperatorName =
+  username?.trim() ||
+  (context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'christian' : context.roleRoot);
+const operatorName = rawOperatorName
+  .replace(/[_-]+/g, ' ')
+  .replace(/\b\w/g, (char) => char.toUpperCase());
 ---
 
 <!doctype html>
@@ -35,7 +41,13 @@ const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
     <title>{pageTitle}</title>
   </head>
   <body>
-    <div class="kerf-shell" data-role-root={context.roleRoot} data-locale={context.locale} data-tenant={context.tenantId}>
+    <div
+      class="kerf-shell"
+      data-role-root={context.roleRoot}
+      data-locale={context.locale}
+      data-tenant={context.tenantId}
+      data-operator-name={operatorName}
+    >
       <header class="kerf-topbar">
         <div class="kerf-topbar-lead">
           <a class="kerf-brand" href="/">{t('layout.brand')}</a>

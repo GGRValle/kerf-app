@@ -57,10 +57,10 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
         <section class="capture-state state-pre" aria-label="Start field capture">
           <header class="top-chrome">
             <div class="tc-eyebrow">
-              <span class="tc-mode">New capture</span>
+              <span class="tc-mode">Add to job</span>
               <a class="tc-back" href={captureReturnHref}>{captureReturnLabel}</a>
             </div>
-            <h1 class="tc-title">What are you capturing?</h1>
+            <h1 class="tc-title">What should Right Hand keep?</h1>
             <p class="tc-meta">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
               <span>Wegrzyn site · 4287 Pacifica Way</span>
@@ -68,7 +68,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           </header>
 
           <div class="dest-selector">
-            <label class="assign-eyebrow" for="f-e1-destination">Capture goes to</label>
+            <label class="assign-eyebrow" for="f-e1-destination">Goes to</label>
             <select
               class="dest-select"
               id="f-e1-destination"
@@ -107,11 +107,10 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           </div>
 
           <aside class="dl-anchor" aria-label="Daily Log destination">
-            <strong id="f-e1-dl-anchor">Writes to {assignment.client} · today's Daily Log.</strong>
+            <strong id="f-e1-dl-anchor">Right Hand keeps this with {assignment.client} · today's job notes.</strong>
             <span class="dl-detail">
-              Every capture lands in the project's Daily Log for this day — your voice,
-              photos, and notes file together as one day's record. Right Hand reviews
-              after submit.
+              Notes, photos, and files stay together so the office can review the job
+              without digging through separate places.
             </span>
           </aside>
 
@@ -123,8 +122,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
               <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
             </span>
             <div class="fc-mic-hint-body">
-              <strong>You're on Field Capture — speak to add a note to this capture.</strong>
-              <span>Tap the mic in the bottom bar for a voice note. Or use the tasks below to add a photo, attach a file, or edit the summary.</span>
+              <strong>You're on this job — speak to add a note here.</strong>
+              <span>Tap the mic in the bottom bar for a voice note. Or add a photo, attach a file, or edit the summary below.</span>
             </div>
           </div>
 
@@ -158,10 +157,10 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
         <section class="capture-state state-active" aria-label="Active capture">
           <header class="top-chrome">
             <div class="tc-eyebrow">
-              <span class="tc-mode" id="f-e1-active-mode">Capturing · {assignment.client} / {assignment.location}</span>
+              <span class="tc-mode" id="f-e1-active-mode">Adding · {assignment.client} / {assignment.location}</span>
               <span class="tc-user" id="f-e1-active-count">0 items</span>
             </div>
-            <h1 class="tc-title tc-title-sm">Recording voice · accumulating evidence</h1>
+            <h1 class="tc-title tc-title-sm">Recording voice</h1>
           </header>
 
           <div class="live-record-bar">
@@ -179,7 +178,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           <label class="note-card" for="f-e1-note">
             <span class="card-eyebrow">Typed summary</span>
             <p class="note-helper">
-              Voice is saved for this capture. Until transcription is wired, type a short summary before submit.
+              Voice stays with this job note. Until transcription is wired here, type a short summary before filing.
             </p>
             <textarea
               id="f-e1-note"
@@ -193,11 +192,11 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 
           <section class="captured-items">
             <div class="captured-eyebrow">
-              <span>Captured this session</span>
+              <span>Added so far</span>
               <span class="ce-count" id="f-e1-captured-count">0 items</span>
             </div>
             <ul id="f-e1-captured-list" class="cap-list">
-              <li class="cap-empty">Voice memos, photos, and videos will show here.</li>
+              <li class="cap-empty">Notes, photos, and videos will show here.</li>
             </ul>
           </section>
 
@@ -208,7 +207,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </button>
             <button type="button" class="ar-btn primary" id="f-e1-done">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg>
-              Done capturing
+              Done adding
             </button>
           </div>
         </section>
@@ -222,22 +221,22 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
         <section class="capture-state state-preflight" aria-label="Review and submit field capture">
           <header class="top-chrome">
             <div class="tc-eyebrow">
-              <span class="tc-mode">Pre-flight · review &amp; submit</span>
+              <span class="tc-mode">Review before filing</span>
               <button type="button" class="tc-back tc-back-btn" id="f-e1-back-active">‹ Back</button>
             </div>
-            <h1 class="tc-title tc-title-sm">Ready to send?</h1>
+            <h1 class="tc-title tc-title-sm">Ready to file?</h1>
           </header>
 
           <p class="preflight-status" id="f-e1-preflight-status" role="status"></p>
 
           <div class="preflight-card">
-            <p class="pf-eyebrow">Capture session · ready</p>
+            <p class="pf-eyebrow">Ready for job notes</p>
             <p class="pf-title">{assignment.location} update</p>
-            <p class="pf-meta" id="f-e1-preflight-meta">Daily Log · review what you captured below</p>
+            <p class="pf-meta" id="f-e1-preflight-meta">Daily Log · review what Right Hand has below</p>
           </div>
 
           <section class="capture-readout" id="f-e1-capture-readout" aria-label="Captured items readout">
-            <p class="card-eyebrow">What you captured</p>
+            <p class="card-eyebrow">What Right Hand has</p>
             <ul class="readout-list" id="f-e1-readout-list"></ul>
             <p class="readout-warning" id="f-e1-transcript-warning" hidden></p>
           </section>
@@ -635,7 +634,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     if (videos.length > 0) {
       rows.push({
         title: `${videos.length} video${videos.length === 1 ? '' : 's'}`,
-        detail: 'Attached to this capture session · durable upload ships with media library',
+        detail: 'Attached here · durable upload ships with media library',
       });
     }
     if (transcript.length > 0) {
@@ -647,7 +646,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     if (rows.length === 0) {
       const li = document.createElement('li');
       li.className = 'cap-empty';
-      li.textContent = 'Nothing captured yet.';
+      li.textContent = 'Nothing added yet.';
       readoutList.append(li);
     } else {
       for (const row of rows) {
@@ -666,7 +665,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       if (needsSummary) {
         transcriptWarning.hidden = false;
         transcriptWarning.textContent =
-          'Voice captured, but not transcribed yet. Type a short summary so Right Hand can extract facts.';
+          'Voice added, but not transcribed yet. Type a short summary so Right Hand can extract facts.';
       } else {
         transcriptWarning.hidden = true;
         transcriptWarning.textContent = '';
@@ -690,7 +689,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     if (reviewText instanceof HTMLElement) {
       reviewText.textContent =
         transcript ||
-        'No typed summary yet. Voice is not transcribed yet — type a short summary before submit.';
+        'No typed summary yet. Voice is not transcribed yet — type a short summary before filing.';
     }
     if (preflightMeta instanceof HTMLElement) {
       const parts = [];
@@ -706,7 +705,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       preflightMeta.textContent =
         parts.length > 0
           ? `Daniel · writes to ${destClient} / today's Daily Log · ${parts.join(' · ')}`
-          : 'Daily Log · nothing captured yet';
+          : 'Daily Log · nothing added yet';
     }
     if (photoCount instanceof HTMLElement) {
       const mediaCount = photos.length + videos.length;
@@ -1040,14 +1039,14 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     stopRecording();
     const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
     if (transcript.length === 0 && photos.length === 0 && videos.length === 0 && audioUri === null) {
-      setStatus('Add a voice memo, typed note, photo, or video, then tap Done capturing again.', 'error');
+      setStatus('Add a voice memo, typed note, photo, or video, then tap Done adding again.', 'error');
       return;
     }
     renderPreflight();
     setState('preflight');
     if (preflightStatus instanceof HTMLElement) {
       preflightStatus.textContent =
-        'Captured items moved here for review. Check voice, media, and typed summary before submit.';
+        'Everything you added is here for review. Check voice, media, and typed summary before filing.';
     }
     if (transcript.length === 0 && (audioUri !== null || photos.length > 0 || videos.length > 0)) {
       setStatus(
@@ -1095,18 +1094,18 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       if (destLocationEl) destLocationEl.textContent = isActive ? activeLocation : '—';
       if (dlAnchorEl) {
         dlAnchorEl.textContent = isActive
-          ? `Writes to ${activeClient} · today's Daily Log.`
-          : 'Pick a project to file this capture before submit.';
+          ? `Right Hand keeps this with ${activeClient} · today's job notes.`
+          : 'Pick a project to file this note before submit.';
       }
       if (activeModeEl) {
         activeModeEl.textContent = isActive
-          ? `Capturing · ${activeClient} / ${activeLocation}`
-          : 'Capturing · unassigned';
+          ? `Adding · ${activeClient} / ${activeLocation}`
+          : 'Adding · unassigned';
       }
       if (destHintEl) {
         destHintEl.textContent = isActive
-          ? `Matched to your active job by ${matchedBy}. Change it above if this capture belongs elsewhere.`
-          : 'Project / client pickers arrive in a later release — for now, capture to your active job or save as an unassigned note.';
+          ? `Matched to your active job by ${matchedBy}. Change it above if this belongs elsewhere.`
+          : 'Project / client pickers arrive in a later release — for now, add it to your active job or save as an unassigned note.';
       }
     };
     destSelect.addEventListener('change', applyDestination);

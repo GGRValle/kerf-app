@@ -44,17 +44,31 @@ const { t } = createLayoutContext();
   data-commit-project-mismatch={t('rh_voice.commit_project_mismatch')}
   data-commit-workspace-needed={t('rh_voice.commit_workspace_needed')}
   data-action-correct={t('rh_voice.action_correct')}
+  data-action-keep-talking={t('rh_voice.action_keep_talking')}
   data-action-tell-job={t('rh_voice.action_tell_job')}
   data-action-save={t('rh_voice.action_save')}
   data-correction-prompt={t('rh_voice.correction_prompt')}
   data-correction-routed={t('rh_voice.correction_routed')}
   data-correction-creating={t('rh_voice.correction_creating')}
   data-correction-needs={t('rh_voice.correction_needs')}
+  data-speaker-you={t('rh_voice.speaker_you')}
+  data-speaker-right-hand={t('rh_voice.speaker_right_hand')}
+  data-reply-job-note-known={t('rh_voice.reply_job_note_known')}
+  data-reply-job-note-unknown={t('rh_voice.reply_job_note_unknown')}
+  data-reply-estimate-known={t('rh_voice.reply_estimate_known')}
+  data-reply-estimate-unknown={t('rh_voice.reply_estimate_unknown')}
+  data-reply-generic={t('rh_voice.reply_generic')}
+  data-reply-correction-needed={t('rh_voice.reply_correction_needed')}
   hidden
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
   <div class="rhvo__panel" role="document">
-    <div class="rhvo__indicator" aria-hidden="true">
+    <button
+      type="button"
+      class="rhvo__indicator"
+      id="rhvo-mic-button"
+      aria-label={t('rh_voice.action_keep_talking')}
+    >
       <span class="rhvo__pulse"></span>
       <span class="rhvo__mic">
         <svg viewBox="0 0 24 24" aria-hidden="true"
@@ -63,7 +77,7 @@ const { t } = createLayoutContext();
           ></path></svg
         >
       </span>
-    </div>
+    </button>
 
     <div class="rhvo__head">
       <p class="rhvo__eyebrow" id="rhvo-title">{t('rh_voice.title')}</p>
@@ -81,25 +95,25 @@ const { t } = createLayoutContext();
       <span class="rhvo__caption-label">{t('rh_voice.caption_label')}</span>
       <span class="rhvo__caption-text" id="rhvo-caption-text"></span
       ><span class="rhvo__cursor" id="rhvo-cursor" aria-hidden="true"></span>
+      <textarea
+        class="rhvo__caption-input"
+        id="rhvo-caption-input"
+        rows="3"
+        aria-label={t('rh_voice.typed_input_label')}
+        placeholder={t('rh_voice.typed_input_placeholder')}
+      ></textarea>
     </div>
 
     <div class="rhvo__confirm" id="rhvo-confirm" hidden>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.caption_label')}</span>
-        <span class="rhvo__v" id="rhvo-confirm-heard"></span>
+      <div class="rhvo__turn rhvo__turn--operator">
+        <span class="rhvo__speaker" id="rhvo-speaker-operator">{t('rh_voice.speaker_you')}</span>
+        <p class="rhvo__said" id="rhvo-confirm-heard"></p>
       </div>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.confirm_routed_label')}</span>
-        <span class="rhvo__v" id="rhvo-confirm-routed">{t('rh_voice.confirm_routed')}</span>
+      <div class="rhvo__turn rhvo__turn--right-hand">
+        <span class="rhvo__speaker">{t('rh_voice.speaker_right_hand')}</span>
+        <p class="rhvo__reply" id="rhvo-confirm-reply">{t('rh_voice.reply_generic')}</p>
       </div>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.confirm_creating_label')}</span>
-        <span class="rhvo__v" id="rhvo-confirm-creating">{t('rh_voice.confirm_creating')}</span>
-      </div>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.confirm_needs_label')}</span>
-        <span class="rhvo__v rhvo__v--prompt" id="rhvo-confirm-prompt">{t('rh_voice.confirm_prompt')}</span>
-      </div>
+      <p class="rhvo__confirm-prompt" id="rhvo-confirm-prompt">{t('rh_voice.confirm_prompt')}</p>
     </div>
 
     <div class="rhvo__resolution" id="rhvo-resolution" hidden>
@@ -164,11 +178,13 @@ const { t } = createLayoutContext();
     const statusEl = document.getElementById('rhvo-status');
     const captionWrap = document.getElementById('rhvo-caption');
     const captionEl = document.getElementById('rhvo-caption-text');
+    const captionInputEl = document.getElementById('rhvo-caption-input') as HTMLTextAreaElement | null;
+    const micButton = document.getElementById('rhvo-mic-button') as HTMLButtonElement | null;
     const meterEl = document.getElementById('rhvo-meter');
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
+    const confirmSpeakerEl = document.getElementById('rhvo-speaker-operator');
     const confirmHeardEl = document.getElementById('rhvo-confirm-heard');
-    const confirmRoutedEl = document.getElementById('rhvo-confirm-routed');
-    const confirmCreatingEl = document.getElementById('rhvo-confirm-creating');
+    const confirmReplyEl = document.getElementById('rhvo-confirm-reply');
     const confirmPromptEl = document.getElementById('rhvo-confirm-prompt');
     const cancelBtn = document.getElementById('rhvo-cancel') as HTMLButtonElement | null;
     const doneBtn = document.getElementById('rhvo-done') as HTMLButtonElement | null;
@@ -219,8 +235,11 @@ const { t } = createLayoutContext();
     const setCaption = (text: string) => {
       // REAL transcript only — never invented. Empty until STT produces words.
       if (captionEl) captionEl.textContent = text;
-      if (captionWrap) captionWrap.dataset.empty = text.trim().length === 0 ? 'true' : 'false';
+      if (captionInputEl && document.activeElement !== captionInputEl) captionInputEl.value = text;
+      const visibleText = captionInputEl?.value ?? text;
+      if (captionWrap) captionWrap.dataset.empty = visibleText.trim().length === 0 ? 'true' : 'false';
     };
+    const currentCaptionText = () => (captionInputEl?.value.trim() || lastInterim.trim());
 
     // ── Elapsed timer (mm:ss) — starts on overlay open, ticks every second,
     // cleared in teardown (§4 bounded window is the real guard; this is display).
@@ -252,7 +271,7 @@ const { t } = createLayoutContext();
     };
 
     const resetConfirmActionCopy = () => {
-      if (notThatBtn) notThatBtn.textContent = overlay.dataset.actionCorrect ?? 'Correct it';
+      if (notThatBtn) notThatBtn.textContent = overlay.dataset.actionKeepTalking ?? 'Keep talking';
       if (saveBtn) {
         saveBtn.textContent = overlay.dataset.actionSave ?? 'Save';
         saveBtn.disabled = false;
@@ -341,9 +360,42 @@ const { t } = createLayoutContext();
       return false;
     };
 
+    const template = (text: string | undefined, vars: Record<string, string>) => {
+      let out = text ?? '';
+      for (const [key, value] of Object.entries(vars)) {
+        out = out.replaceAll(`{${key}}`, value);
+      }
+      return out;
+    };
+
+    const likelyEntityLabel = (trp: TurnResolutionPacket): string => {
+      const label = trp.context_hypothesis.likely_entity?.label?.trim();
+      if (label) return label;
+      const routedParts = trp.context_hypothesis.routed_label.split('→');
+      const routed = routedParts[routedParts.length - 1]?.trim() ?? '';
+      if (/session review|draft review|daily log|estimate intake|field capture|read-only review/i.test(routed)) return '';
+      return routed;
+    };
+
+    const replyForTurn = (trp: TurnResolutionPacket): string => {
+      const entity = likelyEntityLabel(trp);
+      const frame = trp.context_hypothesis.frame;
+      if (trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note') {
+        return entity
+          ? template(overlay.dataset.replyJobNoteKnown, { entity })
+          : (overlay.dataset.replyJobNoteUnknown ?? 'Got it — this looks like a job note. Tell me the job and I’ll file it there.');
+      }
+      if (trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk') {
+        return entity
+          ? template(overlay.dataset.replyEstimateKnown, { entity })
+          : (overlay.dataset.replyEstimateUnknown ?? 'Got it — this looks like an estimate walk. Tell me the job and I’ll start the draft.');
+      }
+      return template(overlay.dataset.replyGeneric, { action: trp.context_hypothesis.preparing_label });
+    };
+
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
-      if (confirmRoutedEl) confirmRoutedEl.textContent = trp.context_hypothesis.routed_label;
-      if (confirmCreatingEl) confirmCreatingEl.textContent = trp.context_hypothesis.preparing_label;
+      if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
+      if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
       if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
     };
 
@@ -355,6 +407,12 @@ const { t } = createLayoutContext();
 
     const currentTenantId = (): string | undefined => (
       document.querySelector<HTMLElement>('.kerf-shell')?.dataset.tenant?.trim() || undefined
+    );
+
+    const operatorName = (): string => (
+      document.querySelector<HTMLElement>('.kerf-shell')?.dataset.operatorName?.trim() ||
+      overlay.dataset.speakerYou ||
+      'You'
     );
 
     const collectKnownEntities = (): KnownEntityPayload[] => {
@@ -391,6 +449,49 @@ const { t } = createLayoutContext();
       return [...byKey.values()].slice(0, 8);
     };
 
+    const normalizeMatchText = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const textMentionsEntity = (text: string, label: string): boolean => {
+      const source = normalizeMatchText(text);
+      const tokens = normalizeMatchText(label)
+        .split(' ')
+        .filter((token) => (token.length >= 4 || /^\d{3,}$/.test(token)) && !['kitchen', 'primary', 'bath', 'project', 'job', 'site'].includes(token));
+      return tokens.some((token) => source.includes(token));
+    };
+
+    const withKnownEntity = (trp: TurnResolutionPacket): TurnResolutionPacket => {
+      if (trp.context_hypothesis.likely_entity?.id) return trp;
+      const project = collectKnownEntities().find((entity) => entity.type === 'project' && textMentionsEntity(trp.heard_text, entity.label));
+      if (!project) return trp;
+      const frame = trp.context_hypothesis.frame;
+      const entity = {
+        type: 'project' as const,
+        id: project.id ?? null,
+        label: project.label,
+        confidence: 'high' as const,
+      };
+      const contextHypothesis = {
+        ...trp.context_hypothesis,
+        likely_entity: entity,
+        routed_label: frame === 'estimate_walk' || frame === 'job_intake'
+          ? `${project.label} → estimate intake`
+          : `${project.label} → job notes`,
+        prompt: frame === 'estimate_walk' || frame === 'job_intake'
+          ? `Create estimate from this for ${project.label}?`
+          : `Save this note to ${project.label}?`,
+        missing_facts: trp.context_hypothesis.missing_facts.filter((fact) => !/\b(job|project|active project)\b/i.test(fact)),
+      };
+      return buildTurnResolutionPacket({
+        heardText: trp.heard_text,
+        intent: trp.intent,
+        workArtifact: trp.work_artifact,
+        sourceRefs: trp.source_refs,
+        memoryCandidates: trp.memory_candidates,
+        contextHypothesis,
+        now: trp.created_at,
+      });
+    };
+
     const resolveTurnServerSide = async (text: string, fallback: TurnResolutionPacket): Promise<TurnResolutionPacket> => {
       try {
         const tenantId = currentTenantId();
@@ -412,7 +513,7 @@ const { t } = createLayoutContext();
         if (!res.ok) return fallback;
         const body = await res.json() as { trp?: unknown };
         const parsed = parseTurnResolution(JSON.stringify(body.trp ?? null));
-        return parsed ?? fallback;
+        return parsed ? withKnownEntity(parsed) : fallback;
       } catch {
         return fallback;
       }
@@ -426,7 +527,7 @@ const { t } = createLayoutContext();
       awaitingConfirm = true;
       parkedTranscript = text;
       const intent = classifyTranscriptIntent(text);
-      const trp = buildTurnResolutionPacket({ heardText: text, intent });
+      const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: text, intent }));
       parkedTurnResolution = trp;
       // Mic off while the operator decides (privacy / bounded window §4). Not that
       // → beginSession() re-acquires from scratch, same as Continue.
@@ -442,8 +543,9 @@ const { t } = createLayoutContext();
       void resolveTurnServerSide(text, trp).then((serverTrp) => {
         // Only update if the operator is still deciding on the same turn.
         if (!awaitingConfirm || parkedTranscript !== text || state !== 'confirm') return;
-        parkedTurnResolution = serverTrp;
-        renderConfirmTurn(serverTrp);
+        const resolvedTrp = withKnownEntity(serverTrp);
+        parkedTurnResolution = resolvedTrp;
+        renderConfirmTurn(resolvedTrp);
       });
     };
 
@@ -491,7 +593,7 @@ const { t } = createLayoutContext();
     };
 
     const returnToListening = () => {
-      // "Correct it" — keep the original turn in memory, resume listening, and
+      // Keep talking — keep the original turn in memory, resume listening, and
       // merge the next spoken correction into the committed transcript. This
       // lets the operator say "that's the Clem job" without losing the note.
       awaitingConfirm = false;
@@ -599,8 +701,10 @@ const { t } = createLayoutContext();
           notThatBtn.textContent = overlay.dataset.actionTellJob ?? 'Tell me job';
         }
         if (committed.projectCorrection) {
-          if (confirmRoutedEl) confirmRoutedEl.textContent = overlay.dataset.correctionRouted ?? 'Needs job';
-          if (confirmCreatingEl) confirmCreatingEl.textContent = overlay.dataset.correctionCreating ?? 'Job note ready once I know where it belongs';
+          if (confirmReplyEl) {
+            confirmReplyEl.textContent = overlay.dataset.replyCorrectionNeeded
+              ?? 'I have the note. Tell me the job and I’ll file it there.';
+          }
           if (confirmPromptEl) confirmPromptEl.textContent = overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
         }
         setStatus(committed.message);
@@ -673,7 +777,7 @@ const { t } = createLayoutContext();
         return;
       }
       releaseListeningResources();
-      const interim = lastInterim.trim();
+      const interim = currentCaptionText();
       if (interim.length === 0) {
         setState('capped');
         setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
@@ -950,6 +1054,9 @@ const { t } = createLayoutContext();
       if (e.key === 'Escape' && !overlay.hidden) dismissOverlay();
     });
     doneBtn?.addEventListener('click', finishCurrentTurn);
+    micButton?.addEventListener('click', () => {
+      if (state === 'confirm') returnToListening();
+    });
     continueBtn?.addEventListener('click', () => {
       awaitingConfirm = false;
       parkedTranscript = '';
@@ -960,6 +1067,15 @@ const { t } = createLayoutContext();
       showActions('listening');
       startTimer();
       void beginSession();
+    });
+    captionInputEl?.addEventListener('input', () => {
+      const typed = captionInputEl.value;
+      lastInterim = typed;
+      if (captionEl) captionEl.textContent = typed;
+      if (captionWrap) captionWrap.dataset.empty = typed.trim().length === 0 ? 'true' : 'false';
+      if (typed.trim().length > 0) {
+        window.clearTimeout(idleTimer);
+      }
     });
     // Save: commit the turn through the durable backend path, then render the
     // handled TRP returned by the server. No server artifact, no "saved" state.
@@ -1018,7 +1134,15 @@ const { t } = createLayoutContext();
     .rhvo { align-items: center; }
     .rhvo__panel { border-radius: 20px; margin-bottom: 0; }
   }
-  .rhvo__indicator { position: relative; width: 72px; height: 72px; }
+  .rhvo__indicator {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
   .rhvo__pulse {
     position: absolute;
     inset: 0;
@@ -1043,9 +1167,11 @@ const { t } = createLayoutContext();
     justify-content: center;
   }
   .rhvo__mic :global(svg) { width: 26px; height: 26px; fill: currentColor; }
-  /* Sorting/confirm are post-capture beats — the live mic indicator stands down. */
-  .rhvo[data-state='sorting'] .rhvo__indicator,
-  .rhvo[data-state='confirm'] .rhvo__indicator { display: none; }
+  /* Sorting is a post-capture beat. Confirm keeps the mic visible so the
+     conversation can continue without switching interfaces. */
+  .rhvo[data-state='sorting'] .rhvo__indicator { display: none; }
+  .rhvo[data-state='confirm'] .rhvo__indicator { cursor: pointer; }
+  .rhvo[data-state='confirm'] .rhvo__pulse { animation: none; opacity: 0.35; }
   .rhvo__head {
     width: 100%;
     display: flex;
@@ -1110,6 +1236,21 @@ const { t } = createLayoutContext();
     margin-bottom: 0.15rem;
   }
   .rhvo__caption-text { font-size: 0.92rem; line-height: 1.4; color: var(--kerf-text); }
+  .rhvo__caption-input {
+    display: block;
+    width: 100%;
+    min-height: 4.5rem;
+    padding: 0.2rem 0 0;
+    border: 0;
+    outline: 0;
+    resize: vertical;
+    background: transparent;
+    color: var(--kerf-text);
+    font: inherit;
+    font-size: 0.96rem;
+    line-height: 1.42;
+  }
+  .rhvo__caption-input::placeholder { color: var(--kerf-text-mute); }
   /* Typing cursor on the live caption — only while actively listening. */
   .rhvo__cursor {
     display: none;
@@ -1124,7 +1265,8 @@ const { t } = createLayoutContext();
     animation: rhvo-blink 1s step-end infinite;
   }
   @keyframes rhvo-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
-  /* Confirm trust loop — four-question rows (heard · routed · creating · needs you). */
+  /* Confirm trust loop — conversational projection of the TRP. The TRP still
+     exists underneath; the operator sees Right Hand reply in plain language. */
   .rhvo__confirm { display: none; width: 100%; text-align: left; }
   .rhvo[data-state='confirm'] .rhvo__confirm { display: block; }
   .rhvo[data-state='confirm'] .rhvo__authority { display: none; }
@@ -1163,25 +1305,45 @@ const { t } = createLayoutContext();
     border-color: var(--right-hand);
     text-align: center;
   }
-  .rhvo__row {
-    display: flex;
-    gap: 0.7rem;
-    padding: 0.55rem 0;
+  .rhvo__turn {
+    display: grid;
+    gap: 0.28rem;
+    padding: 0.72rem 0;
     border-top: 1px solid var(--kerf-border-soft);
   }
-  .rhvo__row:first-child { border-top: none; }
-  .rhvo__k {
-    flex: none;
-    width: 64px;
-    padding-top: 0.15rem;
+  .rhvo__turn:first-child { border-top: none; padding-top: 0; }
+  .rhvo__turn--right-hand {
+    margin-top: 0.15rem;
+    padding: 0.8rem 0.85rem;
+    border: 1px solid var(--kerf-border-soft);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--right-hand) 10%, var(--kerf-surface));
+  }
+  .rhvo__speaker {
     font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 700;
+    letter-spacing: 0.12em;
+    font-weight: 800;
     color: var(--kerf-text-mute);
   }
-  .rhvo__v { font-size: 0.9rem; line-height: 1.4; color: var(--kerf-text); }
-  .rhvo__v--prompt { font-weight: 700; }
+  .rhvo__said,
+  .rhvo__reply,
+  .rhvo__confirm-prompt {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.45;
+    color: var(--kerf-text);
+  }
+  .rhvo__said {
+    max-height: 10.5rem;
+    overflow: auto;
+    color: var(--kerf-text-dim);
+  }
+  .rhvo__reply { font-weight: 700; }
+  .rhvo__confirm-prompt {
+    margin-top: 0.74rem;
+    font-weight: 800;
+  }
   .rhvo__authority { margin: 0; font-size: 0.72rem; line-height: 1.4; color: var(--kerf-text-mute); }
   .rhvo__actions { display: flex; gap: 0.6rem; width: 100%; margin-top: 0.2rem; }
   .rhvo__btn {
