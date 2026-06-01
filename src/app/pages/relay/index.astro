@@ -124,7 +124,7 @@ const relayCopy = {
     try {
       const res = await fetch('/api/v1/field-daily/relay-feed?tenant_id=tenant_ggr');
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? `office_review_failed_${res.status}`);
+      if (!res.ok) throw new Error(body.error ?? `relay_failed_${res.status}`);
       renderItems(Array.isArray(body.items) ? body.items : []);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

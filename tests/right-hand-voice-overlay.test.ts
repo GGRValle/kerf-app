@@ -643,6 +643,7 @@ test('Home folds in the resolved-turn result card (honest, generated from the re
 test('operator-facing review links use contractor language instead of Relay jargon', () => {
   const en = readFileSync(path.join(ROOT, 'src/i18n/en.ts'), 'utf8');
   const es = readFileSync(path.join(ROOT, 'src/i18n/es.ts'), 'utf8');
+  const keys = readFileSync(path.join(ROOT, 'src/i18n/keys.ts'), 'utf8');
   assert.match(en, /'nav\.relay': 'Office review'/);
   assert.match(en, /'project\.field\.link_relay': 'Office review cards'/);
   assert.match(en, /'home\.loop\.relay\.title': 'Office review'/);
@@ -650,6 +651,25 @@ test('operator-facing review links use contractor language instead of Relay jarg
   assert.match(es, /'nav\.relay': 'Revisión de oficina'/);
   assert.match(es, /'project\.field\.link_relay': 'Tarjetas de revisión de oficina'/);
   assert.doesNotMatch(es, /'[^']+': '[^']*\bRelay\b/);
+  assert.match(keys, /Office review.*operator-facing copy only/s);
+});
+
+test('Office Review stays presentation copy, not a second attention primitive', () => {
+  const files = [
+    'src/app/pages/relay/index.astro',
+    'src/i18n/en.ts',
+    'src/i18n/es.ts',
+    'src/i18n/keys.ts',
+    'src/voice/realtime/turnResolution.ts',
+  ];
+  for (const file of files) {
+    const src = readFileSync(path.join(ROOT, file), 'utf8');
+    assert.doesNotMatch(
+      src,
+      /\b(?:office_review|OfficeReview|officeReview)\b/,
+      `${file} must not introduce Office Review as an identifier, event, schema, or primitive`,
+    );
+  }
 });
 
 test('New Project keeps the Right Hand voice handoff visible and prefilled', () => {
