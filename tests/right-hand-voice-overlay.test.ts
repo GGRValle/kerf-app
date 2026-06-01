@@ -459,6 +459,9 @@ test('turn resolution: Save COMMITS the turn before showing a handled result', (
   assert.match(resolveTurn, /saveBtn\.disabled = true/);
   assert.match(resolveTurn, /commitFailed/);
   assert.match(resolveTurn, /Nothing was filed/);
+  assert.match(resolveTurn, /projectCorrection/);
+  assert.match(src, /data-commit-project-needed/);
+  assert.match(src, /data-action-tell-job/);
 });
 
 test('turn resolution: next moves — only "Add a photo" routes to Field Capture (explicit choice)', () => {
@@ -475,13 +478,17 @@ test('turn resolution: next moves — only "Add a photo" routes to Field Capture
   assert.match(dismissOverlay, /navigate\(resolvedSurface\)/);
 });
 
-test('trust loop: Not that returns to listening with NO navigation', () => {
+test('trust loop: Correct it returns to listening with the original note preserved', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const returnToListening = sliceDecl(src, 'returnToListening', 'resolveTurn');
   assert.match(returnToListening, /awaitingConfirm = false/);
+  assert.match(returnToListening, /correctionBaseTrp = parkedTurnResolution/);
   assert.match(returnToListening, /beginSession\(\)/);
   assert.doesNotMatch(returnToListening, /navigate\(/);
-  // Wired to the Not that button.
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
+  assert.match(routeCommitted, /correctionBaseTrp/);
+  assert.match(routeCommitted, /Correction: \$\{cleanText\}/);
+  // Wired to the correction button.
   assert.match(src, /notThatBtn\?\.addEventListener\('click', returnToListening\)/);
 });
 
@@ -576,6 +583,16 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.action_save',
     'rh_voice.action_not_that',
     'rh_voice.action_stop',
+    'rh_voice.action_correct',
+    'rh_voice.action_tell_job',
+    'rh_voice.correction_prompt',
+    'rh_voice.correction_routed',
+    'rh_voice.correction_creating',
+    'rh_voice.correction_needs',
+    'rh_voice.commit_project_needed',
+    'rh_voice.commit_project_not_found',
+    'rh_voice.commit_project_mismatch',
+    'rh_voice.commit_workspace_needed',
     // Turn-resolution additions (brief 2026-05-31).
     'rh_voice.head_resolved',
     'rh_voice.resolved_ready_to_save',
@@ -624,6 +641,12 @@ test('Field Capture: no second primary mic; task buttons + bottom-mic context hi
   assert.match(src, /fileInput\?\.addEventListener\('change', handleFilePick\)/);
   // Bottom mic still claimed by the page (context-aware voice control).
   assert.match(src, /addEventListener\('kerf:rh-speak'/);
+  // Runtime JS-created evidence rows need global styles; otherwise iOS renders
+  // raw SVG/photo artifacts at page scale because Astro scoped selectors miss
+  // client-created nodes.
+  assert.match(src, /:global\(\.field-shell \.cap-item-icon svg\)/);
+  assert.match(src, /:global\(\.field-shell \.cap-item-thumb\)/);
+  assert.match(src, /:global\(\.field-shell \.photo-tile-mini img\)/);
 });
 
 test('Home folds in the resolved-turn result card (honest, generated from the real TRP)', () => {
