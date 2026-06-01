@@ -1,7 +1,136 @@
 ---
-import RouteShellPage from '../components/RouteShellPage.astro';
+import Layout from '../layouts/Layout.astro';
+import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
+import RhSummary from '../components/RhSummary.astro';
+import Card from '../components/Card.astro';
+
+const fieldActions = [
+  {
+    href: '/field-capture',
+    title: 'Add a note or photo',
+    detail: 'Use the bottom mic for Right Hand, or add media and typed notes.',
+  },
+  {
+    href: '/relay',
+    title: 'Office cards',
+    detail: 'Review field captures that need a quick office decision.',
+  },
+  {
+    href: '/field-detail',
+    title: 'Review latest capture',
+    detail: 'See what was heard, what Right Hand found, and where it routes.',
+  },
+  {
+    href: '/room-capture',
+    title: 'Room scan',
+    detail: 'Open the post-scan room review and measurement labels.',
+  },
+] as const;
 ---
 
-<RouteShellPage title="Field Daily" routeName="field-daily" phase="capture">
-  <p>Daily log entry shell · POST /api/projects/:id/daily-log/entries in spine lane.</p>
-</RouteShellPage>
+<Layout title="Field Hand" activeHref="/field">
+  <article class="field-home">
+    <RhSummary
+      headline="Field Hand"
+      detail="Start from the bottom mic, add evidence when needed, and let Right Hand bring office follow-up back to the queue."
+      tone="green"
+    />
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <Card eyebrow="Today" title="What do you need to do next?">
+        <p class="field-home__copy">
+          This is the field-side landing page for the phone test. It uses the
+          existing capture, relay, field detail, and room scan surfaces; nothing
+          files permanently until a validated path says so.
+        </p>
+        <div class="field-home__actions">
+          {fieldActions.map((action) => (
+            <a class="field-home__action" href={action.href}>
+              <span>{action.title}</span>
+              <small>{action.detail}</small>
+            </a>
+          ))}
+        </div>
+      </Card>
+
+      <Card eyebrow="Current job" title="Wegrzyn kitchen">
+        <dl class="field-home__facts">
+          <div>
+            <dt>Work order</dt>
+            <dd>Kitchen + primary bath</dd>
+          </div>
+          <div>
+            <dt>Right Hand is watching</dt>
+            <dd>Notes, photos, scope changes, and anything that should become a relay card.</dd>
+          </div>
+        </dl>
+      </Card>
+    </SurfaceIrreversibilityWrap>
+  </article>
+</Layout>
+
+<style>
+  .field-home {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .field-home__copy {
+    margin: 0 0 0.85rem;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.45;
+  }
+
+  .field-home__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .field-home__action {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface, #fff);
+  }
+
+  .field-home__action:hover {
+    border-color: color-mix(in srgb, var(--field-green, #38c977) 45%, var(--border, #d8dee6));
+  }
+
+  .field-home__action span {
+    font-weight: 700;
+  }
+
+  .field-home__action small {
+    color: var(--text-muted, #5c6670);
+    line-height: 1.35;
+  }
+
+  .field-home__facts {
+    display: grid;
+    gap: 0.7rem;
+    margin: 0;
+  }
+
+  .field-home__facts div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .field-home__facts dt {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted, #5c6670);
+  }
+
+  .field-home__facts dd {
+    margin: 0;
+    font-weight: 600;
+  }
+</style>
