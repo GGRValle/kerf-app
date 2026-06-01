@@ -1,4 +1,121 @@
 ---
-import Layout from '../layouts/Layout.astro';import Card from '../components/Card.astro';import { createLayoutContext } from '../lib/createLayoutContext.js';const { t } = createLayoutContext();
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/Card.astro';
+import RhSummary from '../components/RhSummary.astro';
+
+const blackboardLinks = [
+  {
+    href: '/decisions',
+    title: 'Decision queue',
+    detail: 'See what needs review before action.',
+  },
+  {
+    href: '/relay',
+    title: 'Relay cards',
+    detail: 'Open field findings that Right Hand surfaced to the office.',
+  },
+  {
+    href: '/transcript-review',
+    title: 'Transcript review',
+    detail: 'Inspect the captured source text before it becomes a draft.',
+  },
+] as const;
 ---
-<Layout titleKey="blackboard.title" activeHref="/blackboard"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('blackboard.title')}><p>{t('blackboard.preview.body')}</p></Card></Layout>
+
+<Layout titleKey="blackboard.title" activeHref="/blackboard">
+  <section class="blackboard-page" aria-labelledby="blackboard-title">
+    <RhSummary
+      headline="Blackboard"
+      detail="This is the memory inspection surface for the phone pass. It shows where evidence, decisions, and corrections are visible today."
+      tone="green"
+    />
+
+    <Card eyebrow="Memory posture" title="What is visible now">
+      <dl class="blackboard-page__facts">
+        <div>
+          <dt>Evidence</dt>
+          <dd>Field captures, transcripts, relay cards, and project audit trails.</dd>
+        </div>
+        <div>
+          <dt>Corrections</dt>
+          <dd>Transcript, draft, and field-detail review surfaces keep correction paths inspectable.</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>Read-only preview. This page does not promote memory or train anything.</dd>
+        </div>
+      </dl>
+    </Card>
+
+    <Card eyebrow="Open related surfaces" title="Where to inspect">
+      <div class="blackboard-page__actions">
+        {blackboardLinks.map((link) => (
+          <a class="blackboard-page__action" href={link.href}>
+            <span>{link.title}</span>
+            <small>{link.detail}</small>
+          </a>
+        ))}
+      </div>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .blackboard-page {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .blackboard-page__facts {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .blackboard-page__facts div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .blackboard-page__facts dt {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted, #5c6670);
+  }
+
+  .blackboard-page__facts dd {
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .blackboard-page__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .blackboard-page__action {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface, #fff);
+  }
+
+  .blackboard-page__action:hover {
+    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
+  }
+
+  .blackboard-page__action span {
+    font-weight: 700;
+  }
+
+  .blackboard-page__action small {
+    color: var(--text-muted, #5c6670);
+    line-height: 1.35;
+  }
+</style>

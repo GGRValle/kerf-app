@@ -1,4 +1,104 @@
 ---
-import Layout from '../../layouts/Layout.astro';import Card from '../../components/Card.astro';import { createLayoutContext } from '../../lib/createLayoutContext.js';const { id } = Astro.params;const { t } = createLayoutContext();
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/Card.astro';
+import Chip from '../../components/Chip.astro';
+
+const { id } = Astro.params;
+const packetId = id ?? 'sample-decision-packet';
 ---
-<Layout titleKey="decisions.detail.title" activeHref="/decisions"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('decisions.detail.title')}><p>{t('decisions.preview.detail_body')}</p></Card></Layout>
+
+<Layout titleKey="decisions.detail.title" activeHref="/decisions">
+  <section class="decision-detail" aria-labelledby="decision-detail-title">
+    <p class="decision-detail__crumb"><a href="/decisions">Back to decisions</a></p>
+
+    <Card eyebrow="Decision packet" title={packetId}>
+      <div class="decision-detail__status">
+        <Chip label="Preview" tone="amber" />
+        <span>Review shape only. No approval is recorded from this page.</span>
+      </div>
+      <dl class="decision-detail__facts">
+        <div>
+          <dt>What this represents</dt>
+          <dd>A future queue item that needs a human before the system acts.</dd>
+        </div>
+        <div>
+          <dt>Where to inspect the live gates</dt>
+          <dd>Proposal send, relay cards, and project audit are wired now.</dd>
+        </div>
+      </dl>
+    </Card>
+
+    <Card eyebrow="Next move" title="Open a wired review path">
+      <div class="decision-detail__actions">
+        <a href="/proposals/prop_lane6_pass/send">Proposal send gate</a>
+        <a href="/relay">Office cards</a>
+        <a href="/projects/proj_wegrzyn_kitchen/audit">Project audit</a>
+      </div>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .decision-detail {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .decision-detail__crumb {
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  .decision-detail__crumb a,
+  .decision-detail__actions a {
+    color: var(--accent, #0f766e);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .decision-detail__status {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.85rem;
+    color: var(--text-muted, #5c6670);
+  }
+
+  .decision-detail__facts {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .decision-detail__facts div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .decision-detail__facts dt {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted, #5c6670);
+  }
+
+  .decision-detail__facts dd {
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .decision-detail__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .decision-detail__actions a {
+    display: block;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 10px;
+    color: inherit;
+    background: var(--surface, #fff);
+  }
+</style>
