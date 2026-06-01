@@ -98,15 +98,19 @@ test('model resolver sanitizes active-work copy before it reaches the operator',
       label: 'New Estimate',
       confidence: 'high',
       likely_entity: null,
-      routed_label: 'New Job Intake',
+      routed_label: 'New job packet → estimate-start packet',
       preparing_label: 'Drafting Estimate',
-      prompt: 'Ready to capture room details?',
+      prompt: 'Create the estimate-start packet?',
       missing_facts: [],
     }),
   );
 
   assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.trp.context_hypothesis.routed_label, 'Estimate walk → estimate intake');
   assert.equal(result.trp.context_hypothesis.preparing_label, 'Estimate intake ready');
+  assert.equal(result.trp.context_hypothesis.prompt, 'Create estimate from this?');
+  assert.doesNotMatch(result.trp.context_hypothesis.routed_label, /packet|estimate-start/i);
+  assert.doesNotMatch(result.trp.context_hypothesis.prompt, /packet|estimate-start/i);
   assert.doesNotMatch(result.trp.attention_artifact.why, /Drafting Estimate/i);
   assert.match(result.trp.attention_artifact.why, /Nothing has been filed yet/);
 });
@@ -237,10 +241,11 @@ test('route invokes configured model server-side and returns client-safe TRP', a
   const raw = await res.text();
   assert.equal(res.status, 200);
   assert.equal(raw.includes('gsk-test-secret'), false);
-  const body = JSON.parse(raw) as { authority: string; trp: { context_hypothesis: { prompt: string; preparing_label: string } } };
+  const body = JSON.parse(raw) as { authority: string; trp: { context_hypothesis: { prompt: string; preparing_label: string; routed_label: string } } };
   assert.equal(body.authority, 'llm_inferred');
   assert.equal(body.trp.context_hypothesis.prompt, 'Start this estimate intake?');
   assert.equal(body.trp.context_hypothesis.preparing_label, 'Estimate intake ready');
+  assert.equal(body.trp.context_hypothesis.routed_label, 'Estimate walk → estimate intake');
   assert.equal(capturedAuth, 'gsk-test-secret');
   assert.equal(capturedBody?.endpoint, TURN_RESOLVER_LLM_ENDPOINT);
   assert.equal(capturedBody?.model, TURN_RESOLVER_LLM_MODEL);

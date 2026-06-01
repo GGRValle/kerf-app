@@ -165,6 +165,41 @@ function safePreparingLabel(
   return cleaned;
 }
 
+function contractorSafeFallback(frame: TurnFrame, slot: 'routed' | 'prompt', fallback: string): string {
+  if (slot === 'prompt') {
+    if (frame === 'estimate_walk' || frame === 'job_intake') return 'Create estimate from this?';
+    if (frame === 'change_order') return 'Prepare this change-order note?';
+    if (frame === 'money_check') return 'Go to money?';
+    if (frame === 'status_check') return 'Open project status?';
+    if (frame === 'room_scan') return 'Open LiDAR?';
+    if (frame === 'media_capture') return 'Add media?';
+    return fallback;
+  }
+
+  if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate walk → estimate intake';
+  if (frame === 'change_order') return 'Change order → draft review';
+  if (frame === 'money_check') return 'Money → read-only review';
+  if (frame === 'status_check') return 'Project status → active project review';
+  if (frame === 'room_scan') return 'Room scan → LiDAR capture';
+  if (frame === 'media_capture') return 'Media → Field Capture';
+  return fallback;
+}
+
+function safeOperatorCopy(
+  value: unknown,
+  frame: TurnFrame,
+  slot: 'routed' | 'prompt',
+  fallback: string,
+): string {
+  const cleaned = cleanText(value, fallback, 96);
+  // Model copy can still drift into internal build language. Keep that language
+  // out of operator-facing rows; the audit/debug layer can carry packets.
+  if (/\b(packet|estimate-start|trp|artifact|turn resolution|work artifact|attention artifact)\b/i.test(cleaned)) {
+    return contractorSafeFallback(frame, slot, fallback);
+  }
+  return cleaned;
+}
+
 function parseJsonObject(content: string): Record<string, unknown> | null {
   try {
     const cleaned = content
@@ -195,9 +230,9 @@ function hypothesisFromModel(
       label: cleanText(parsed['label'], fallback.label, 48),
       confidence,
       likely_entity: cleanLikelyEntity(parsed['likely_entity']),
-      routed_label: cleanText(parsed['routed_label'], fallback.routed_label, 96),
+      routed_label: safeOperatorCopy(parsed['routed_label'], frame, 'routed', fallback.routed_label),
       preparing_label: safePreparingLabel(parsed['preparing_label'], frame, fallback.preparing_label),
-      prompt: cleanText(parsed['prompt'], fallback.prompt, 96),
+      prompt: safeOperatorCopy(parsed['prompt'], frame, 'prompt', fallback.prompt),
       missing_facts: Array.isArray(parsed['missing_facts'])
         ? parsed['missing_facts']
           .filter((item): item is string => typeof item === 'string')
