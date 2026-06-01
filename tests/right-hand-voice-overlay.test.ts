@@ -435,27 +435,30 @@ test('Stop immediately releases the mic/session before any clarify or route deci
   );
 });
 
-test('turn resolution: Save RESOLVES the turn (TRP + result), does NOT auto-dump into /field-capture', () => {
+test('turn resolution: Save COMMITS the turn before showing a handled result', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  // Save now calls resolveTurn — it must NOT navigate to /field-capture (the
-  // brief kills the auto-dump into a second mic-first page).
-  assert.match(src, /saveBtn\?\.addEventListener\('click', \(\) => \{\s*resolveTurn\(parkedTranscript\);\s*\}\)/);
+  // Save now calls the async commit path — it must NOT navigate to
+  // /field-capture or mark handled from local/session state.
+  assert.match(src, /saveBtn\?\.addEventListener\('click', \(\) => \{\s*void resolveTurn\(parkedTranscript\);\s*\}\)/);
 
-  // resolveTurn builds + stashes a TRP, enters the resolved state, and never
-  // auto-navigates to Field Capture.
+  // resolveTurn builds the pending TRP, calls the durable backend, stashes only
+  // the returned handled TRP, enters resolved, and never auto-navigates.
   const resolveTurn = sliceDecl(src, 'resolveTurn', 'routeMove');
   assert.match(resolveTurn, /buildTurnResolutionPacket\(/);
+  assert.match(resolveTurn, /commitTurnServerSide\(baseTrp\)/);
+  assert.match(src, /fetch\('\/api\/v1\/right-hand\/commit-turn'/);
+  assert.match(src, /parsed\.work_artifact/);
+  assert.match(src, /parsed\.attention_artifact\.kind !== 'handled'/);
   assert.match(resolveTurn, /TURN_RESOLUTION_SESSION_KEY/);
   assert.match(resolveTurn, /serializeTurnResolution\(/);
   assert.match(resolveTurn, /setState\('resolved'\)/);
   assert.doesNotMatch(resolveTurn, /\/field-capture/);
 
-  // Honesty (#10): the overlay performs no durable write, so the resolved copy
-  // is the session-backed `ready_to_save` line, never a fake "handled".
-  assert.match(resolveTurn, /overlay\.dataset\.resolvedReady/);
-
-  // Overlay still never persists/writes itself: no fetch POST to a write route.
-  assert.doesNotMatch(src, /fetch\([^)]*(persist|eventlog|event-log|jobnote|job-note)/i);
+  // Honesty (#10): failure stays visible and does not fall through to a saved
+  // state. The UI disables buttons while the validator-wall request is pending.
+  assert.match(resolveTurn, /saveBtn\.disabled = true/);
+  assert.match(resolveTurn, /commitFailed/);
+  assert.match(resolveTurn, /Nothing was filed/);
 });
 
 test('turn resolution: next moves — only "Add a photo" routes to Field Capture (explicit choice)', () => {
