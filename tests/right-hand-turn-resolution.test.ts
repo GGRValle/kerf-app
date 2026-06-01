@@ -129,6 +129,10 @@ test('known project context routes next moves to that job instead of cold setup'
     },
   });
   const moves = nextMovesFor(trp);
+  assert.equal(
+    moves.find((m) => m.id === 'add_photo')?.route,
+    '/field-capture?dest=this-job&intent=record&src=voice&project_id=proj_wegrzyn_kitchen',
+  );
   assert.equal(moves.find((m) => m.id === 'open_job')?.route, '/projects/proj_wegrzyn_kitchen?src=voice');
   assert.equal(moves.find((m) => m.id === 'review_estimate')?.route, '/projects/proj_wegrzyn_kitchen?src=voice&intent=estimate_walk');
 });

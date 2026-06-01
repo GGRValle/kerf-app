@@ -339,7 +339,7 @@ function estimateRouteFor(trp: TurnResolutionPacket): string {
   return '/projects/new?src=voice&intent=estimate_walk';
 }
 
-function likelyProjectRouteFor(trp: TurnResolutionPacket): string | null {
+function likelyProjectIdFor(trp: TurnResolutionPacket): string | null {
   const likely = trp.context_hypothesis?.likely_entity;
   if (likely?.type !== 'project' || !likely.id) return null;
   const id = likely.id.trim();
@@ -347,7 +347,19 @@ function likelyProjectRouteFor(trp: TurnResolutionPacket): string | null {
   // Anything else falls back to the general Projects surface instead of
   // smuggling arbitrary model output into a URL.
   if (!/^[A-Za-z0-9_-]+$/.test(id)) return null;
+  return id;
+}
+
+function likelyProjectRouteFor(trp: TurnResolutionPacket): string | null {
+  const id = likelyProjectIdFor(trp);
+  if (!id) return null;
   return `/projects/${encodeURIComponent(id)}?src=voice`;
+}
+
+function addPhotoRouteFor(trp: TurnResolutionPacket): string {
+  const id = likelyProjectIdFor(trp);
+  const projectParam = id ? `&project_id=${encodeURIComponent(id)}` : '';
+  return `/field-capture?dest=this-job&intent=record&src=voice${projectParam}`;
 }
 
 /**
@@ -363,7 +375,7 @@ export function nextMovesFor(trp: TurnResolutionPacket): readonly NextMove[] {
       ? '/projects/new?src=voice&intent=estimate_walk'
       : '/projects?src=voice');
   return [
-    { id: 'add_photo', route: '/field-capture?dest=this-job&intent=record&src=voice' },
+    { id: 'add_photo', route: addPhotoRouteFor(trp) },
     { id: 'open_job', route: openJobRoute },
     { id: 'review_estimate', route: estimateRouteFor(trp) },
     { id: 'go_home', route: TURN_HOME_SURFACE },
