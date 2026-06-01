@@ -1,4 +1,93 @@
 ---
-import Layout from '../../layouts/Layout.astro';import Card from '../../components/Card.astro';import { createLayoutContext } from '../../lib/createLayoutContext.js';const { t } = createLayoutContext();
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/Card.astro';
+import RhSummary from '../../components/RhSummary.astro';
+
+const kbLinks = [
+  {
+    href: '/kb-ingestion/cost-kb-preview',
+    title: 'Sample ingestion batch',
+    detail: 'Inspect the validation shape without promoting costs.',
+  },
+  {
+    href: '/projects',
+    title: 'Projects using cost context',
+    detail: 'Open the project graph where estimate context is reviewed.',
+  },
+  {
+    href: '/proposals/prop_lane6_pass/preview',
+    title: 'Proposal preview',
+    detail: 'See the proposal surface that would consume approved cost knowledge.',
+  },
+] as const;
 ---
-<Layout titleKey="kb.ingestion.title" activeHref="/kb-ingestion"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('kb.ingestion.title')}><p>{t('kb.ingestion.preview.body')}</p></Card></Layout>
+
+<Layout titleKey="kb.ingestion.title" activeHref="/kb-ingestion">
+  <section class="kb-page" aria-labelledby="kb-title">
+    <RhSummary
+      headline="Cost knowledge review"
+      detail="This is the review surface for future cost-knowledge ingestion. It is read-only in the phone pass."
+      tone="green"
+    />
+
+    <Card eyebrow="Review queue" title="What can be inspected now">
+      <div class="kb-page__actions">
+        {kbLinks.map((link) => (
+          <a class="kb-page__action" href={link.href}>
+            <span>{link.title}</span>
+            <small>{link.detail}</small>
+          </a>
+        ))}
+      </div>
+    </Card>
+
+    <Card eyebrow="Boundary" title="No cost promotion from this page">
+      <p class="kb-page__copy">
+        This page does not add pricing data, train a model, or change estimate
+        costs. It only points to the review surfaces already wired.
+      </p>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .kb-page {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .kb-page__copy {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.45;
+  }
+
+  .kb-page__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .kb-page__action {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface, #fff);
+  }
+
+  .kb-page__action:hover {
+    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
+  }
+
+  .kb-page__action span {
+    font-weight: 700;
+  }
+
+  .kb-page__action small {
+    color: var(--text-muted, #5c6670);
+    line-height: 1.35;
+  }
+</style>
