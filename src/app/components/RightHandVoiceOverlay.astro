@@ -47,6 +47,7 @@ const { t } = createLayoutContext();
   data-action-keep-talking={t('rh_voice.action_keep_talking')}
   data-action-tell-job={t('rh_voice.action_tell_job')}
   data-action-save={t('rh_voice.action_save')}
+  data-action-start-intake={t('rh_voice.action_start_intake')}
   data-correction-prompt={t('rh_voice.correction_prompt')}
   data-correction-routed={t('rh_voice.correction_routed')}
   data-correction-creating={t('rh_voice.correction_creating')}
@@ -397,6 +398,11 @@ const { t } = createLayoutContext();
       if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
       if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
       if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
+      if (saveBtn) {
+        saveBtn.textContent = startNewIntakeTurn(trp)
+          ? overlay.dataset.actionStartIntake ?? 'Start intake'
+          : overlay.dataset.actionSave ?? 'Save';
+      }
     };
 
     type KnownEntityPayload = {
@@ -459,8 +465,58 @@ const { t } = createLayoutContext();
       return tokens.some((token) => source.includes(token));
     };
 
+    const projectIdFromPath = (): string | null => {
+      const match = window.location.pathname.match(/^\/projects\/([A-Za-z0-9_-]+)(?:\/|$)/);
+      return match?.[1] ?? null;
+    };
+
+    const knownProjectById = (id: string | null | undefined): KnownEntityPayload | null => {
+      if (!id) return null;
+      return collectKnownEntities().find((entity) => entity.type === 'project' && entity.id === id) ?? null;
+    };
+
+    const likelyProjectIdFor = (trp: TurnResolutionPacket | null): string | null => {
+      const likely = trp?.context_hypothesis?.likely_entity;
+      if (likely?.type !== 'project' || !likely.id) return null;
+      return /^[A-Za-z0-9_-]+$/.test(likely.id) ? likely.id : null;
+    };
+
+    const projectEntityHasContextSupport = (id: string, label: string | null | undefined, text: string): boolean => {
+      if (projectIdFromPath() === id) return true;
+      const knownProject = knownProjectById(id);
+      if (knownProject) return textMentionsEntity(text, knownProject.label);
+      return Boolean(label && textMentionsEntity(text, label));
+    };
+
+    const startNewIntakeTurn = (trp: TurnResolutionPacket | null): boolean => {
+      const frame = trp?.context_hypothesis?.frame;
+      return (frame === 'estimate_walk' || frame === 'job_intake') && likelyProjectIdFor(trp) === null;
+    };
+
     const withKnownEntity = (trp: TurnResolutionPacket): TurnResolutionPacket => {
-      if (trp.context_hypothesis.likely_entity?.id) return trp;
+      const likely = trp.context_hypothesis.likely_entity;
+      if (likely?.type === 'project' && likely.id) {
+        if (projectEntityHasContextSupport(likely.id, likely.label, trp.heard_text)) return trp;
+        return buildTurnResolutionPacket({
+          heardText: trp.heard_text,
+          intent: trp.intent,
+          workArtifact: trp.work_artifact,
+          sourceRefs: trp.source_refs,
+          memoryCandidates: trp.memory_candidates,
+          contextHypothesis: {
+            ...trp.context_hypothesis,
+            likely_entity: null,
+            routed_label: trp.context_hypothesis.frame === 'estimate_walk' || trp.context_hypothesis.frame === 'job_intake'
+              ? 'New project → estimate intake'
+              : 'Job note → session review',
+            prompt: trp.context_hypothesis.frame === 'estimate_walk' || trp.context_hypothesis.frame === 'job_intake'
+              ? 'Start a new estimate intake from this?'
+              : 'Save this session note?',
+          },
+          now: trp.created_at,
+        });
+      }
+      if (likely?.id) return trp;
       const project = collectKnownEntities().find((entity) => entity.type === 'project' && textMentionsEntity(trp.heard_text, entity.label));
       if (!project) return trp;
       const frame = trp.context_hypothesis.frame;
@@ -681,6 +737,23 @@ const { t } = createLayoutContext();
       }
     };
 
+    const routeToNewProjectIntake = (trp: TurnResolutionPacket) => {
+      try {
+        sessionStorage.setItem(TURN_RESOLUTION_SESSION_KEY, serializeTurnResolution(trp));
+      } catch { /* storage may be unavailable; the route still works */ }
+      stashCommitted(trp.heard_text);
+      const text = trp.heard_text.toLowerCase();
+      const archetype = /\b(bath|bathroom|shower|tub|vanity)\b/.test(text)
+        ? 'bath_refresh'
+        : /\b(kitchen|cabinet|countertop|appliance|island|pantry)\b/.test(text)
+          ? 'kitchen_remodel'
+          : /\b(adu|addition)\b/.test(text)
+            ? 'adu'
+            : '';
+      const archetypeParam = archetype ? `&archetype=${archetype}` : '';
+      navigate(`/projects/new?src=voice&intent=estimate_walk${archetypeParam}`);
+    };
+
     // ── Turn commit (Packet #27): Save asks the server to create a durable
     // artifact through the validator wall. The UI only shows `handled` after the
     // API returns a TRP whose work_artifact came from real persistence.
@@ -690,6 +763,10 @@ const { t } = createLayoutContext();
       const baseTrp = parkedTurnResolution?.heard_text === clean
         ? parkedTurnResolution
         : buildTurnResolutionPacket({ heardText: clean, intent });
+      if (startNewIntakeTurn(baseTrp)) {
+        routeToNewProjectIntake(baseTrp);
+        return;
+      }
       if (saveBtn) saveBtn.disabled = true;
       if (notThatBtn) notThatBtn.disabled = true;
       setStatus(overlay.dataset.commitPending ?? 'Saving through the validated path…');
@@ -1314,10 +1391,8 @@ const { t } = createLayoutContext();
   .rhvo__turn:first-child { border-top: none; padding-top: 0; }
   .rhvo__turn--right-hand {
     margin-top: 0.15rem;
-    padding: 0.8rem 0.85rem;
-    border: 1px solid var(--kerf-border-soft);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--right-hand) 10%, var(--kerf-surface));
+    padding: 0.72rem 0;
+    border-top: 1px solid var(--kerf-border-soft);
   }
   .rhvo__speaker {
     font-size: 0.6rem;

@@ -551,6 +551,7 @@ export type I18nKey =
   | 'rh_voice.action_correct'
   | 'rh_voice.action_keep_talking'
   | 'rh_voice.action_tell_job'
+  | 'rh_voice.action_start_intake'
   | 'rh_voice.correction_prompt'
   | 'rh_voice.correction_routed'
   | 'rh_voice.correction_creating'

@@ -159,7 +159,7 @@ const INTENT_RULES: readonly IntentRule[] = [
   // for explicit navigation commands only.
   { intent: 'open_job_intake', pattern: /\b(open|show me|go to|take me to) (the )?(job intake|new job|new project|project setup|job setup)\b/i },
   { intent: 'open_money', pattern: /\b(money|budget|margin|allowance|allowances|invoice|invoices|accounts payable|accounts receivable|\bap\b|\bar\b|costs?|financials?|finance)\b/i },
-  { intent: 'job_intake', pattern: /\b(job input|job intake|input (a |the |new )?job|new estimate|estimate walk|job walk|site walk|walk this (kitchen|bath|room|site)|walked into this (kitchen|bath|room|site)|start (a |the )?(job|project|estimate)|create (a |the )?(job|project|estimate)|set up (a |the )?(job|project|estimate))\b/i },
+  { intent: 'job_intake', pattern: /\b(job input|job intake|input (a |the |new )?job|new estimate|new (bathroom|bath|kitchen|remodel|addition|adu|project)|estimate walk|job walk|site walk|walk this (kitchen|bath|room|site)|walked into this (kitchen|bath|room|site)|start (a |the )?(job|project|estimate)|create (a |the )?(job|project|estimate)|set up (a |the )?(job|project|estimate))\b/i },
   { intent: 'change_order', pattern: /\b(change order|change-order|\bc\.?o\.?\b|work on the change)\b/i },
   { intent: 'estimate_update', pattern: /\b(estimate|the bid|quote|add a line)\b/i },
   { intent: 'status_question', pattern: /\b(status|how('?s| is) .* (going|coming)|where (are|is)|on track)\b/i },

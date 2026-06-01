@@ -66,6 +66,18 @@ test('context resolver infers estimate walks without asking a form question', ()
   assert.doesNotMatch(trp.attention_artifact.why, /Daily-log entry/i);
 });
 
+test('context resolver treats new bathroom remodel language as a new estimate intake', () => {
+  const text = 'This is a new bathroom remodel project with a tub shower, tile floor, and new vanity.';
+  const hypothesis = inferTurnContext(text, 'job_intake');
+  assert.equal(hypothesis.frame, 'estimate_walk');
+  assert.equal(hypothesis.likely_entity, null);
+  assert.match(hypothesis.prompt, /Create estimate from this/i);
+
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  const openJob = nextMovesFor(trp).find((m) => m.id === 'open_job');
+  assert.equal(openJob?.route, '/projects/new?src=voice&intent=estimate_walk');
+});
+
 test('a real work_artifact licenses handled + settles the turn', () => {
   const trp = buildTurnResolutionPacket({
     heardText: 'Logged the inspection pass.',
