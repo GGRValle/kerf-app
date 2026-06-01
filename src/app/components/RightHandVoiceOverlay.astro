@@ -50,6 +50,14 @@ const { t } = createLayoutContext();
   data-correction-routed={t('rh_voice.correction_routed')}
   data-correction-creating={t('rh_voice.correction_creating')}
   data-correction-needs={t('rh_voice.correction_needs')}
+  data-speaker-you={t('rh_voice.speaker_you')}
+  data-speaker-right-hand={t('rh_voice.speaker_right_hand')}
+  data-reply-job-note-known={t('rh_voice.reply_job_note_known')}
+  data-reply-job-note-unknown={t('rh_voice.reply_job_note_unknown')}
+  data-reply-estimate-known={t('rh_voice.reply_estimate_known')}
+  data-reply-estimate-unknown={t('rh_voice.reply_estimate_unknown')}
+  data-reply-generic={t('rh_voice.reply_generic')}
+  data-reply-correction-needed={t('rh_voice.reply_correction_needed')}
   hidden
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
@@ -84,22 +92,15 @@ const { t } = createLayoutContext();
     </div>
 
     <div class="rhvo__confirm" id="rhvo-confirm" hidden>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.caption_label')}</span>
-        <span class="rhvo__v" id="rhvo-confirm-heard"></span>
+      <div class="rhvo__turn rhvo__turn--operator">
+        <span class="rhvo__speaker">{t('rh_voice.speaker_you')}</span>
+        <p class="rhvo__said" id="rhvo-confirm-heard"></p>
       </div>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.confirm_routed_label')}</span>
-        <span class="rhvo__v" id="rhvo-confirm-routed">{t('rh_voice.confirm_routed')}</span>
+      <div class="rhvo__turn rhvo__turn--right-hand">
+        <span class="rhvo__speaker">{t('rh_voice.speaker_right_hand')}</span>
+        <p class="rhvo__reply" id="rhvo-confirm-reply">{t('rh_voice.reply_generic')}</p>
       </div>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.confirm_creating_label')}</span>
-        <span class="rhvo__v" id="rhvo-confirm-creating">{t('rh_voice.confirm_creating')}</span>
-      </div>
-      <div class="rhvo__row">
-        <span class="rhvo__k">{t('rh_voice.confirm_needs_label')}</span>
-        <span class="rhvo__v rhvo__v--prompt" id="rhvo-confirm-prompt">{t('rh_voice.confirm_prompt')}</span>
-      </div>
+      <p class="rhvo__confirm-prompt" id="rhvo-confirm-prompt">{t('rh_voice.confirm_prompt')}</p>
     </div>
 
     <div class="rhvo__resolution" id="rhvo-resolution" hidden>
@@ -167,8 +168,7 @@ const { t } = createLayoutContext();
     const meterEl = document.getElementById('rhvo-meter');
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
     const confirmHeardEl = document.getElementById('rhvo-confirm-heard');
-    const confirmRoutedEl = document.getElementById('rhvo-confirm-routed');
-    const confirmCreatingEl = document.getElementById('rhvo-confirm-creating');
+    const confirmReplyEl = document.getElementById('rhvo-confirm-reply');
     const confirmPromptEl = document.getElementById('rhvo-confirm-prompt');
     const cancelBtn = document.getElementById('rhvo-cancel') as HTMLButtonElement | null;
     const doneBtn = document.getElementById('rhvo-done') as HTMLButtonElement | null;
@@ -341,9 +341,41 @@ const { t } = createLayoutContext();
       return false;
     };
 
+    const template = (text: string | undefined, vars: Record<string, string>) => {
+      let out = text ?? '';
+      for (const [key, value] of Object.entries(vars)) {
+        out = out.replaceAll(`{${key}}`, value);
+      }
+      return out;
+    };
+
+    const likelyEntityLabel = (trp: TurnResolutionPacket): string => {
+      const label = trp.context_hypothesis.likely_entity?.label?.trim();
+      if (label) return label;
+      const routedParts = trp.context_hypothesis.routed_label.split('→');
+      const routed = routedParts[routedParts.length - 1]?.trim() ?? '';
+      if (/session review|draft review|daily log|estimate intake|field capture|read-only review/i.test(routed)) return '';
+      return routed;
+    };
+
+    const replyForTurn = (trp: TurnResolutionPacket): string => {
+      const entity = likelyEntityLabel(trp);
+      const frame = trp.context_hypothesis.frame;
+      if (trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note') {
+        return entity
+          ? template(overlay.dataset.replyJobNoteKnown, { entity })
+          : (overlay.dataset.replyJobNoteUnknown ?? 'Got it — this looks like a job note. Tell me the job and I’ll file it there.');
+      }
+      if (trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk') {
+        return entity
+          ? template(overlay.dataset.replyEstimateKnown, { entity })
+          : (overlay.dataset.replyEstimateUnknown ?? 'Got it — this looks like an estimate walk. Tell me the job and I’ll start the draft.');
+      }
+      return template(overlay.dataset.replyGeneric, { action: trp.context_hypothesis.preparing_label });
+    };
+
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
-      if (confirmRoutedEl) confirmRoutedEl.textContent = trp.context_hypothesis.routed_label;
-      if (confirmCreatingEl) confirmCreatingEl.textContent = trp.context_hypothesis.preparing_label;
+      if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
       if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
     };
 
@@ -599,8 +631,10 @@ const { t } = createLayoutContext();
           notThatBtn.textContent = overlay.dataset.actionTellJob ?? 'Tell me job';
         }
         if (committed.projectCorrection) {
-          if (confirmRoutedEl) confirmRoutedEl.textContent = overlay.dataset.correctionRouted ?? 'Needs job';
-          if (confirmCreatingEl) confirmCreatingEl.textContent = overlay.dataset.correctionCreating ?? 'Job note ready once I know where it belongs';
+          if (confirmReplyEl) {
+            confirmReplyEl.textContent = overlay.dataset.replyCorrectionNeeded
+              ?? 'I have the note. Tell me the job and I’ll file it there.';
+          }
           if (confirmPromptEl) confirmPromptEl.textContent = overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
         }
         setStatus(committed.message);
@@ -1124,7 +1158,8 @@ const { t } = createLayoutContext();
     animation: rhvo-blink 1s step-end infinite;
   }
   @keyframes rhvo-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
-  /* Confirm trust loop — four-question rows (heard · routed · creating · needs you). */
+  /* Confirm trust loop — conversational projection of the TRP. The TRP still
+     exists underneath; the operator sees Right Hand reply in plain language. */
   .rhvo__confirm { display: none; width: 100%; text-align: left; }
   .rhvo[data-state='confirm'] .rhvo__confirm { display: block; }
   .rhvo[data-state='confirm'] .rhvo__authority { display: none; }
@@ -1163,25 +1198,45 @@ const { t } = createLayoutContext();
     border-color: var(--right-hand);
     text-align: center;
   }
-  .rhvo__row {
-    display: flex;
-    gap: 0.7rem;
-    padding: 0.55rem 0;
+  .rhvo__turn {
+    display: grid;
+    gap: 0.28rem;
+    padding: 0.72rem 0;
     border-top: 1px solid var(--kerf-border-soft);
   }
-  .rhvo__row:first-child { border-top: none; }
-  .rhvo__k {
-    flex: none;
-    width: 64px;
-    padding-top: 0.15rem;
+  .rhvo__turn:first-child { border-top: none; padding-top: 0; }
+  .rhvo__turn--right-hand {
+    margin-top: 0.15rem;
+    padding: 0.8rem 0.85rem;
+    border: 1px solid var(--kerf-border-soft);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--right-hand) 10%, var(--kerf-surface));
+  }
+  .rhvo__speaker {
     font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 700;
+    letter-spacing: 0.12em;
+    font-weight: 800;
     color: var(--kerf-text-mute);
   }
-  .rhvo__v { font-size: 0.9rem; line-height: 1.4; color: var(--kerf-text); }
-  .rhvo__v--prompt { font-weight: 700; }
+  .rhvo__said,
+  .rhvo__reply,
+  .rhvo__confirm-prompt {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.45;
+    color: var(--kerf-text);
+  }
+  .rhvo__said {
+    max-height: 10.5rem;
+    overflow: auto;
+    color: var(--kerf-text-dim);
+  }
+  .rhvo__reply { font-weight: 700; }
+  .rhvo__confirm-prompt {
+    margin-top: 0.74rem;
+    font-weight: 800;
+  }
   .rhvo__authority { margin: 0; font-size: 0.72rem; line-height: 1.4; color: var(--kerf-text-mute); }
   .rhvo__actions { display: flex; gap: 0.6rem; width: 100%; margin-top: 0.2rem; }
   .rhvo__btn {

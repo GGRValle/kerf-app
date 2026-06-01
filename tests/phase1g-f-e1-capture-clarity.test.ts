@@ -11,7 +11,7 @@ test('Phase 1G hotfix · F-E1 uses truthful capture copy', async () => {
   assert.doesNotMatch(source, /Live note/);
   assert.match(source, /Typed summary/);
   assert.match(source, /not transcribed yet/);
-  assert.match(source, /Voice captured, but not transcribed yet/);
+  assert.match(source, /Voice added, but not transcribed yet/);
   assert.match(source, /Submit media only/);
   assert.match(source, /Saved to Daily Log as media-only/);
   assert.match(source, /id="f-e1-capture-readout"|id="f-e1-readout-list"/);
@@ -24,7 +24,7 @@ test('Phase 1G hotfix · F-E1 keeps capture controls available through preflight
   );
   assert.doesNotMatch(source, /id="f-e1-record-more"/);
   assert.doesNotMatch(source, /id="f-e1-record-active"/);
-  assert.match(source, /Use the bottom Right Hand mic for voice/);
+  assert.match(source, /Tap the mic in the bottom bar for a voice note/);
   assert.match(source, /id="f-e1-photo-preflight"/);
   assert.match(source, /accept="image\/\*,video\/\*"/);
   assert.match(source, /Photo \/ Video/);

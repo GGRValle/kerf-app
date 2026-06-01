@@ -393,6 +393,22 @@ test('trust loop: durable committed intent enters confirm and does NOT auto-navi
   assert.doesNotMatch(enterConfirm, /stashCommitted\(/);
 });
 
+test('trust loop: confirm projects the TRP as a Right Hand conversation, not audit rows', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /id="rhvo-confirm-reply"/);
+  assert.match(src, /class="rhvo__turn rhvo__turn--right-hand"/);
+  assert.match(src, /rh_voice\.speaker_right_hand/);
+  assert.match(src, /const replyForTurn/);
+  assert.match(src, /confirmReplyEl\.textContent = replyForTurn\(trp\)/);
+  assert.doesNotMatch(src, /id="rhvo-confirm-routed"/);
+  assert.doesNotMatch(src, /id="rhvo-confirm-creating"/);
+  assert.doesNotMatch(src, /class="rhvo__row"/);
+
+  const resolveTurn = sliceDecl(src, 'resolveTurn', 'routeMove');
+  assert.match(resolveTurn, /replyCorrectionNeeded/);
+  assert.doesNotMatch(resolveTurn, /confirmRoutedEl|confirmCreatingEl/);
+});
+
 test('trust loop: meaningful unclassified speech defaults to a saveable note', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
@@ -589,6 +605,14 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.correction_routed',
     'rh_voice.correction_creating',
     'rh_voice.correction_needs',
+    'rh_voice.speaker_you',
+    'rh_voice.speaker_right_hand',
+    'rh_voice.reply_job_note_known',
+    'rh_voice.reply_job_note_unknown',
+    'rh_voice.reply_estimate_known',
+    'rh_voice.reply_estimate_unknown',
+    'rh_voice.reply_generic',
+    'rh_voice.reply_correction_needed',
     'rh_voice.commit_project_needed',
     'rh_voice.commit_project_not_found',
     'rh_voice.commit_project_mismatch',
@@ -628,7 +652,7 @@ test('Field Capture: no second primary mic; task buttons + bottom-mic context hi
   assert.doesNotMatch(src, /compact-record/);
   // Replaced by an explicit bottom-mic context hint.
   assert.match(src, /class="fc-mic-hint"/);
-  assert.match(src, /speak to add a note to this capture/i);
+  assert.match(src, /speak to add a note here/i);
   // A capture reached from a known job has a visible way back to that job.
   assert.match(src, /project_id/);
   assert.match(src, /captureReturnHref/);
