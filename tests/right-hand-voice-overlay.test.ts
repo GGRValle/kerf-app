@@ -646,3 +646,12 @@ test('New Project keeps the Right Hand voice handoff visible and prefilled', () 
   assert.match(src, /archetype\.value = archetypeSuggestion/);
   assert.doesNotMatch(src, /Saved to today's Daily Log|filed for good|handled/i);
 });
+
+test('Project detail keeps a known-job Right Hand handoff visible without claiming a write', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/pages/projects/[id]/index.astro'), 'utf8');
+  assert.match(src, /id="rh-project-detail-handoff"/);
+  assert.match(src, /TURN_RESOLUTION_SESSION_KEY/);
+  assert.match(src, /likelyProjectMatches/);
+  assert.match(src, /Nothing has been filed yet/);
+  assert.doesNotMatch(src, /filed for good|handled/i);
+});

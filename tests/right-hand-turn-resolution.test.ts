@@ -113,6 +113,26 @@ test('estimate next move never routes to a dead proposals index', () => {
   assert.doesNotMatch(estimate!.route, /^\/proposals(?:\?|$)/);
 });
 
+test('known project context routes next moves to that job instead of cold setup', () => {
+  const context = inferTurnContext('Wegrzyn kitchen estimate walk.', 'job_intake');
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Wegrzyn kitchen estimate walk.',
+    intent: 'job_intake',
+    contextHypothesis: {
+      ...context,
+      likely_entity: {
+        type: 'project',
+        id: 'proj_wegrzyn_kitchen',
+        label: 'Wegrzyn kitchen + primary bath',
+        confidence: 'high',
+      },
+    },
+  });
+  const moves = nextMovesFor(trp);
+  assert.equal(moves.find((m) => m.id === 'open_job')?.route, '/projects/proj_wegrzyn_kitchen?src=voice');
+  assert.equal(moves.find((m) => m.id === 'review_estimate')?.route, '/projects/proj_wegrzyn_kitchen?src=voice&intent=estimate_walk');
+});
+
 test('estimate next move opens a real draft when a durable draft exists', () => {
   const trp = buildTurnResolutionPacket({
     heardText: 'New estimate walk for this kitchen.',
