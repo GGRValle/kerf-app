@@ -27,10 +27,25 @@ const navItems = navForContext(context);
 const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
 const rawOperatorName =
   username?.trim() ||
-  (context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'christian' : context.roleRoot);
-const operatorName = rawOperatorName
+  (context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian Asdal' : context.roleRoot);
+const accountOperatorName =
+  context.tenantId === 'tenant_ggr' && /^christian$/i.test(rawOperatorName)
+    ? 'Christian Asdal'
+    : rawOperatorName;
+const operatorName = accountOperatorName
   .replace(/[_-]+/g, ' ')
   .replace(/\b\w/g, (char) => char.toUpperCase());
+const conversationOperatorName = operatorName.split(/\s+/).filter(Boolean)[0] ?? operatorName;
+const operatorInitials =
+  context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner'
+    ? 'CA'
+    : operatorName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'CA';
 ---
 
 <!doctype html>
@@ -46,11 +61,11 @@ const operatorName = rawOperatorName
       data-role-root={context.roleRoot}
       data-locale={context.locale}
       data-tenant={context.tenantId}
-      data-operator-name={operatorName}
+      data-operator-name={conversationOperatorName}
     >
       <header class="kerf-topbar">
         <div class="kerf-topbar-lead">
-          <a class="kerf-brand" href="/">{t('layout.brand')}</a>
+          <a class="kerf-brand" href="/">{t('right_hand.title')}</a>
         </div>
         <nav class="kerf-nav" aria-label={t('layout.nav.primary')} id="kerf-primary-nav">
           {navItems.map((item) => {
@@ -69,8 +84,8 @@ const operatorName = rawOperatorName
             );
           })}
         </nav>
-        <a class="kerf-topbar-rh" href="/right-hand" aria-label={t('layout.speak_fab.label')}>
-          <span aria-hidden="true">RH</span>
+        <a class="kerf-topbar-rh" href="/more" aria-label={`${operatorName} settings`}>
+          <span aria-hidden="true">{operatorInitials}</span>
         </a>
       </header>
       <main class="kerf-main">

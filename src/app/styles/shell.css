@@ -149,7 +149,7 @@ body {
   display: none;
 }
 
-/* Canon phone-app chrome (Right Hand avatar) — only meaningful on mobile. */
+/* Canon phone-app chrome (operator avatar/settings) — only meaningful on mobile. */
 .kerf-topbar-rh {
   margin-left: auto;
   flex-shrink: 0;
@@ -162,7 +162,7 @@ body {
   font-weight: 700;
   text-decoration: none;
   color: var(--right-hand, #c9a961);
-  background: color-mix(in srgb, var(--right-hand, #c9a961) 20%, transparent);
+  background: color-mix(in srgb, var(--right-hand, #c9a961) 18%, var(--kerf-surface));
 }
 
 .kerf-nav-link {

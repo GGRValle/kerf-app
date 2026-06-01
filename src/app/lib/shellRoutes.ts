@@ -22,7 +22,7 @@ export const MOBILE_BOTTOM_NAV = [
   { href: '/more', labelKey: 'shell.nav.more' },
 ] as const;
 
-export type ShellNavIcon = 'home' | 'projects' | 'clients' | 'log' | 'clock' | 'speak' | 'more';
+export type ShellNavIcon = 'home' | 'create' | 'camera' | 'projects' | 'clients' | 'log' | 'clock' | 'speak' | 'more';
 
 /** A single slot in the canon 5-slot phone tab bar. `speak` marks the center mic FAB. */
 export interface ShellBottomNavSlot {
@@ -33,27 +33,27 @@ export interface ShellBottomNavSlot {
 }
 
 /**
- * Canon F-A1 owner phone tab bar — Home · Projects · Speak · Clients · More.
+ * Canon F-A1b owner phone tab bar — Home · Create · Speak · Camera · More.
  * The center slot is the global Right Hand intake, not field capture.
  */
 export const OWNER_BOTTOM_NAV: readonly ShellBottomNavSlot[] = [
   { href: '/', labelKey: 'shell.nav.home', icon: 'home' },
-  { href: '/projects', labelKey: 'shell.nav.projects', icon: 'projects' },
+  { href: '/create', labelKey: 'shell.nav.create', icon: 'create' },
   { href: '/right-hand', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
-  { href: '/clients', labelKey: 'shell.nav.clients', icon: 'clients' },
+  { href: '/camera', labelKey: 'shell.nav.camera', icon: 'camera' },
   { href: '/more', labelKey: 'shell.nav.more', icon: 'more' },
 ] as const;
 
 /**
- * Canon F-C1 field-hand phone tab bar — Home · Log · Speak/Habla · Clock · More.
- * Field-default swaps: Log replaces Projects (pos 2), Clock replaces Clients (pos 4).
- * Log → field daily-log surface; Clock → time/schedule surface (nearest live route in V1).
+ * Canon F-A1b field-hand phone tab bar — Home · Create · Speak/Habla · Camera · More.
+ * Role-specific shortcuts move into the Create/Camera sheets so the bottom bar
+ * stays stable across roles.
  */
 export const FIELD_BOTTOM_NAV: readonly ShellBottomNavSlot[] = [
   { href: '/', labelKey: 'shell.nav.home', icon: 'home' },
-  { href: '/field', labelKey: 'shell.nav.log', icon: 'log' },
+  { href: '/create', labelKey: 'shell.nav.create', icon: 'create' },
   { href: '/right-hand', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
-  { href: '/schedule', labelKey: 'shell.nav.clock', icon: 'clock' },
+  { href: '/camera', labelKey: 'shell.nav.camera', icon: 'camera' },
   { href: '/more', labelKey: 'shell.nav.more', icon: 'more' },
 ] as const;
 

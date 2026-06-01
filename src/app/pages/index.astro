@@ -1,9 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import HomeLoopGrid from '../components/HomeLoopGrid.astro';
-import RhSummary from '../components/RhSummary.astro';
-import RightHandResultCard from '../components/RightHandResultCard.astro';
-import { createLayoutContext } from '../lib/createLayoutContext.js';
-const { t } = createLayoutContext();
+import RightHandHomeSurface from '../components/RightHandHomeSurface.astro';
 ---
-<Layout titleKey="home.title" activeHref="/"><RhSummary headline={t('home.title')} detail={t('home.subtitle')} /><RightHandResultCard /><HomeLoopGrid /></Layout>
+<Layout titleKey="home.title" activeHref="/">
+  <RightHandHomeSurface />
+</Layout>

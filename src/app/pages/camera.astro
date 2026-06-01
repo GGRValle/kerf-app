@@ -1,0 +1,74 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const actions = [
+  { href: '/field-capture?src=camera&mode=photo', title: 'Photo', detail: 'Attach a photo to the current job or a new note.' },
+  { href: '/field-capture?src=camera&mode=video', title: 'Video', detail: 'Capture a walkthrough clip and keep it with the job.' },
+  { href: '/field-capture?src=camera&mode=walkthrough', title: 'AI-assisted walkthrough', detail: 'Talk while you capture; Right Hand turns it into organized notes.' },
+  { href: '/room-capture?src=camera', title: 'Room scan', detail: 'Use the LiDAR path when measurements matter.' },
+];
+---
+
+<Layout title="Camera" activeHref="/camera">
+  <section class="camera-sheet" aria-labelledby="camera-title">
+    <p class="camera-sheet__eyebrow">Capture with context</p>
+    <h1 id="camera-title">Camera</h1>
+    <p class="camera-sheet__lede">Photos and video stay lightweight in the conversation. Open the asset only when you need to inspect it.</p>
+    <div class="camera-sheet__list">
+      {actions.map((action) => (
+        <a class="camera-action" href={action.href}>
+          <span>{action.title}</span>
+          <small>{action.detail}</small>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .camera-sheet {
+    display: grid;
+    gap: 0.8rem;
+  }
+  .camera-sheet__eyebrow {
+    margin: 0;
+    color: var(--right-hand);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .camera-sheet h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    line-height: 1;
+  }
+  .camera-sheet__lede {
+    margin: 0;
+    color: var(--kerf-text-dim);
+    line-height: 1.45;
+  }
+  .camera-sheet__list {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .camera-action {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.95rem;
+    border: 1px solid var(--kerf-border);
+    border-radius: 14px;
+    background: var(--kerf-surface);
+    color: inherit;
+    text-decoration: none;
+  }
+  .camera-action span {
+    font-weight: 800;
+    font-size: 1.02rem;
+  }
+  .camera-action small {
+    color: var(--kerf-text-dim);
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+</style>

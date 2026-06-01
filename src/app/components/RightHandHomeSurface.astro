@@ -1,0 +1,223 @@
+---
+import RightHandResultCard from './RightHandResultCard.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+
+const { context } = createLayoutContext();
+const operatorName = context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian' : 'there';
+
+const onDeck = [
+  { tone: 'project', label: 'Wegrzyn', title: 'Estimate walk needs a draft packet', detail: 'Kitchen notes are ready to shape into scope, selections, and questions.' },
+  { tone: 'money', label: 'Money', title: 'Two invoices need a quick look', detail: 'One payment landed; one vendor bill is missing job context.' },
+  { tone: 'team', label: 'Team', title: 'Ricardo needs template timing', detail: 'Cabinets are in. Right Hand is holding the follow-up.' },
+  { tone: 'selection', label: 'Selections', title: 'Paint color needs confirmation', detail: 'Smoky Blue SW 7604 was mentioned, but not approved yet.' },
+  { tone: 'client', label: 'Client', title: 'Clem update is ready to clean up', detail: 'The job note needs the right project before it can file.' },
+];
+
+const pulse = [
+  { tone: 'team', meta: 'Team', text: 'Painters scheduled for tomorrow at 7:00 AM.' },
+  { tone: 'project', meta: 'Project', text: 'Wegrzyn schedule may gain a day if template moves up.' },
+  { tone: 'money', meta: 'Money', text: 'AP review has two items waiting for job match.' },
+  { tone: 'selection', meta: 'Selections', text: 'Bathroom fixtures need final owner approval.' },
+  { tone: 'client', meta: 'Client', text: 'Draft homeowner update is ready after the job note files.' },
+  { tone: 'project', meta: 'Project', text: 'Field photos are attached to the latest walk.' },
+  { tone: 'team', meta: 'Team', text: 'Subplan still needs color confirmation.' },
+  { tone: 'money', meta: 'Money', text: 'Cash pulse is stable; no red-margin alerts.' },
+  { tone: 'client', meta: 'RFI', text: 'One open question can wait until the estimate draft.' },
+  { tone: 'project', meta: 'Schedule', text: 'No critical path item has slipped today.' },
+];
+---
+
+<section class="rh-home" aria-label="Right Hand home">
+  <div class="rh-home__hello">
+    <p class="rh-home__eyebrow">Good morning, {operatorName}</p>
+    <h1>The one thing</h1>
+  </div>
+
+  <a class="rh-one" href="/projects/proj_wegrzyn_kitchen?src=home">
+    <span class="rh-one__tag">Right Hand says</span>
+    <strong>Decide whether the Wegrzyn walk becomes an estimate draft.</strong>
+    <span>The note is captured. The next useful move is scope, selections, and the few questions that affect price.</span>
+  </a>
+
+  <RightHandResultCard />
+
+  <section class="rh-home__section" aria-labelledby="rh-on-deck-title">
+    <div class="rh-home__section-head">
+      <h2 id="rh-on-deck-title">On deck</h2>
+      <span>Next 5</span>
+    </div>
+    <div class="rh-deck">
+      {onDeck.map((item) => (
+        <a class:list={['rh-deck__item', `rh-tone-${item.tone}`]} href={item.tone === 'project' ? '/projects/proj_wegrzyn_kitchen' : '/right-hand'}>
+          <span>{item.label}</span>
+          <strong>{item.title}</strong>
+          <small>{item.detail}</small>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="rh-home__section" aria-labelledby="rh-pulse-title">
+    <div class="rh-home__section-head">
+      <h2 id="rh-pulse-title">The pulse</h2>
+      <span>Company status</span>
+    </div>
+    <div class="rh-pulse">
+      {pulse.map((item) => (
+        <a class:list={['rh-pulse__row', `rh-tone-${item.tone}`]} href="/right-hand">
+          <span>{item.meta}</span>
+          <p>{item.text}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+</section>
+
+<style>
+  .rh-home {
+    display: grid;
+    gap: 1rem;
+  }
+  .rh-home__hello {
+    display: grid;
+    gap: 0.2rem;
+  }
+  .rh-home__eyebrow {
+    margin: 0;
+    color: var(--right-hand);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .rh-home h1,
+  .rh-home h2 {
+    margin: 0;
+    color: var(--kerf-text);
+    letter-spacing: 0;
+  }
+  .rh-home h1 {
+    font-size: 2.2rem;
+    line-height: 0.98;
+  }
+  .rh-home h2 {
+    font-size: 1.35rem;
+    line-height: 1.05;
+  }
+  .rh-one {
+    display: grid;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 18px;
+    border: 1px solid color-mix(in srgb, var(--right-hand) 34%, var(--kerf-border));
+    background: color-mix(in srgb, var(--right-hand) 10%, var(--kerf-surface));
+    color: inherit;
+    text-decoration: none;
+  }
+  .rh-one__tag {
+    color: var(--right-hand);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .rh-one strong {
+    font-size: 1.24rem;
+    line-height: 1.15;
+  }
+  .rh-one span:last-child {
+    color: var(--kerf-text-dim);
+    line-height: 1.42;
+  }
+  .rh-home__section {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .rh-home__section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .rh-home__section-head span {
+    color: var(--kerf-text-mute);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .rh-deck,
+  .rh-pulse {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .rh-deck__item,
+  .rh-pulse__row {
+    position: relative;
+    display: grid;
+    gap: 0.18rem;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid var(--kerf-border-soft);
+    background: var(--kerf-surface);
+  }
+  .rh-deck__item {
+    padding: 0.85rem 0.9rem 0.85rem 1rem;
+    border-radius: 14px;
+  }
+  .rh-deck__item::before,
+  .rh-pulse__row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.8rem;
+    bottom: 0.8rem;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--tone);
+  }
+  .rh-deck__item span,
+  .rh-pulse__row span {
+    color: var(--tone);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .rh-deck__item strong {
+    font-size: 0.98rem;
+    line-height: 1.2;
+  }
+  .rh-deck__item small {
+    color: var(--kerf-text-dim);
+    font-size: 0.83rem;
+    line-height: 1.35;
+  }
+  .rh-pulse {
+    max-height: 28rem;
+    overflow: auto;
+    padding-bottom: 0.2rem;
+  }
+  .rh-pulse__row {
+    min-height: 58px;
+    padding: 0.7rem 0.8rem 0.7rem 1rem;
+    border-radius: 12px;
+  }
+  .rh-pulse__row p {
+    margin: 0;
+    color: var(--kerf-text-dim);
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+  .rh-tone-team { --tone: var(--field-green); }
+  .rh-tone-project { --tone: var(--kerf-blue); }
+  .rh-tone-money { --tone: var(--kerf-amber); }
+  .rh-tone-selection { --tone: var(--kerf-violet); }
+  .rh-tone-client { --tone: #67D6E0; }
+  @media (min-width: 760px) {
+    .rh-deck {
+      grid-template-columns: 1fr 1fr;
+    }
+    .rh-one {
+      padding: 1.15rem 1.25rem;
+    }
+  }
+</style>

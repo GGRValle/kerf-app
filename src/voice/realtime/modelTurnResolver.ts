@@ -101,6 +101,10 @@ function normalized(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const GENERIC_ENTITY_TOKENS = new Set([
   'bath',
   'field',
@@ -114,14 +118,31 @@ const GENERIC_ENTITY_TOKENS = new Set([
   'work',
 ]);
 
-function textMentionsKnownEntity(text: string, label: string): boolean {
-  const source = normalized(text);
+function entityMatchTokens(label: string): string[] {
   const candidate = normalized(label);
-  if (!source || !candidate) return false;
-  const tokens = candidate
+  if (!candidate) return [];
+  return candidate
     .split(' ')
     .filter((token) => token.length >= 4 || /^\d{3,}$/.test(token))
     .filter((token) => !GENERIC_ENTITY_TOKENS.has(token));
+}
+
+function textRejectsKnownEntityAssignment(text: string, label: string): boolean {
+  const source = normalized(text);
+  if (!source) return false;
+  const rejectionCue = '(?:not|wrong|don t|do not|instead of|rather than|isn t|is not|isnt)';
+  return entityMatchTokens(label).some((token) => {
+    const escaped = escapeRegExp(token);
+    const cueBeforeEntity = new RegExp(`\\b${rejectionCue}\\b(?:\\s+[a-z0-9]+){0,8}\\s+${escaped}\\b`);
+    const entityBeforeWrong = new RegExp(`\\b${escaped}\\b(?:\\s+[a-z0-9]+){0,5}\\s+\\b(?:wrong|not it|not right)\\b`);
+    return cueBeforeEntity.test(source) || entityBeforeWrong.test(source);
+  });
+}
+
+function textMentionsKnownEntity(text: string, label: string): boolean {
+  const source = normalized(text);
+  if (!source || textRejectsKnownEntityAssignment(text, label)) return false;
+  const tokens = entityMatchTokens(label);
   return tokens.some((token) => source.includes(token));
 }
 
