@@ -314,6 +314,16 @@ test('overlay is realtime-first with Groq fallback, shares the gate, and leaks n
   assert.match(src, /hardCapMs/);
 });
 
+test('overlay sends tenant-scoped known entities to the model resolver', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
+  const collectKnownEntities = sliceDecl(src, 'collectKnownEntities', 'resolveTurnServerSide');
+  assert.match(collectKnownEntities, /currentTenantId\(\) === 'tenant_ggr'/);
+  assert.match(collectKnownEntities, /proj_wegrzyn_kitchen/);
+  assert.match(collectKnownEntities, /dataset\.activeProject/);
+  assert.match(src, /headers\['x-kerf-tenant'\] = tenantId/);
+  assert.match(src, /knownEntities: collectKnownEntities\(\)/);
+});
+
 // Slice a top-level arrow/async declaration body: from `const <name>` up to the
 // next top-level `const <next>` declaration. Lets us assert against the ACTUAL
 // code path rather than a substring that may live in a different function.
