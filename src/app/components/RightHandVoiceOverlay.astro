@@ -37,6 +37,8 @@ const { t } = createLayoutContext();
   data-head-confirm={t('rh_voice.head_confirm')}
   data-head-resolved={t('rh_voice.head_resolved')}
   data-resolved-ready={t('rh_voice.resolved_ready_to_save')}
+  data-commit-pending={t('rh_voice.commit_pending')}
+  data-commit-failed={t('rh_voice.commit_failed')}
   hidden
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
@@ -477,18 +479,69 @@ const { t } = createLayoutContext();
       void beginSession();
     };
 
-    // ── Turn resolution (brief 2026-05-31): Save does NOT dump the user into a
-    // fresh Field Capture mic page. It closes the turn into a Turn Resolution
-    // Packet, shows an honest next-step response, and lands the operator on Home
-    // (the attention queue, with the result folded in). The overlay performs NO
-    // durable write — so the TRP is `ready_to_save` (session-backed), never a
-    // false `handled` (non-negotiable #10). ────────────────────────────────────
-    const resolveTurn = (text: string) => {
+    type CommitTurnResponse = {
+      ok?: boolean;
+      trp?: unknown;
+      error?: string;
+      reason?: string;
+    };
+
+    const currentProjectId = (): string | undefined => (
+      document.querySelector<HTMLElement>('[data-project-id]')?.dataset.projectId?.trim() || undefined
+    );
+
+    const commitTurnServerSide = async (trp: TurnResolutionPacket): Promise<{ ok: true; trp: TurnResolutionPacket } | { ok: false; message: string }> => {
+      try {
+        const tenantId = currentTenantId();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (tenantId) headers['x-kerf-tenant'] = tenantId;
+        const res = await fetch('/api/v1/right-hand/commit-turn', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            trp,
+            tenant_id: tenantId,
+            project_id: currentProjectId(),
+            currentPath: window.location.pathname,
+            knownEntities: collectKnownEntities(),
+            idempotency_key: `${trp.created_at}:${trp.intent}:${trp.heard_text}`,
+          }),
+        });
+        const body = await res.json() as CommitTurnResponse;
+        if (!res.ok || body.ok !== true) {
+          const reason = body.reason || body.error || `request_failed_${res.status}`;
+          return { ok: false, message: reason };
+        }
+        const parsed = parseTurnResolution(JSON.stringify(body.trp ?? null));
+        if (!parsed || !parsed.work_artifact || parsed.attention_artifact.kind !== 'handled') {
+          return { ok: false, message: 'durable_artifact_missing' };
+        }
+        return { ok: true, trp: parsed };
+      } catch {
+        return { ok: false, message: 'network_or_server_error' };
+      }
+    };
+
+    // ── Turn commit (Packet #27): Save asks the server to create a durable
+    // artifact through the validator wall. The UI only shows `handled` after the
+    // API returns a TRP whose work_artifact came from real persistence.
+    const resolveTurn = async (text: string) => {
       const clean = text.trim();
       const intent = classifyTranscriptIntent(clean);
-      const trp = parkedTurnResolution?.heard_text === clean
+      const baseTrp = parkedTurnResolution?.heard_text === clean
         ? parkedTurnResolution
         : buildTurnResolutionPacket({ heardText: clean, intent });
+      if (saveBtn) saveBtn.disabled = true;
+      if (notThatBtn) notThatBtn.disabled = true;
+      setStatus(overlay.dataset.commitPending ?? 'Saving through the validated path…');
+      const committed = await commitTurnServerSide(baseTrp);
+      if (!committed.ok) {
+        if (saveBtn) saveBtn.disabled = false;
+        if (notThatBtn) notThatBtn.disabled = false;
+        setStatus(`${overlay.dataset.commitFailed ?? 'I could not file that yet.'} ${committed.message}. Nothing was filed.`);
+        return;
+      }
+      const trp = committed.trp;
       try {
         sessionStorage.setItem(TURN_RESOLUTION_SESSION_KEY, serializeTurnResolution(trp));
       } catch { /* storage may be unavailable; the next-step buttons still work */ }
@@ -501,9 +554,10 @@ const { t } = createLayoutContext();
       awaitingConfirm = false;
       parkedTranscript = '';
       parkedTurnResolution = null;
+      if (saveBtn) saveBtn.disabled = false;
+      if (notThatBtn) notThatBtn.disabled = false;
       setState('resolved');
       setHeading(overlay.dataset.headResolved ?? 'Here’s what’s next');
-      // Honest result copy: session-backed, durable write not yet run.
       setStatus(trp.attention_artifact.why || overlay.dataset.resolvedReady || 'Ready to route.');
       if (timerEl) timerEl.textContent = '';
       showActions('resolved');
@@ -842,10 +896,10 @@ const { t } = createLayoutContext();
       startTimer();
       void beginSession();
     });
-    // Save: RESOLVE the turn (TRP + honest result + next moves) — it does NOT
-    // dump the user onto the Field Capture mic page (brief non-negotiables #1/#2).
+    // Save: commit the turn through the durable backend path, then render the
+    // handled TRP returned by the server. No server artifact, no "saved" state.
     saveBtn?.addEventListener('click', () => {
-      resolveTurn(parkedTranscript);
+      void resolveTurn(parkedTranscript);
     });
     notThatBtn?.addEventListener('click', returnToListening);
     // Resolved-state next moves: "Add a photo" is the ONLY one that goes to Field

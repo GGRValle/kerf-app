@@ -10,21 +10,50 @@ import {
   formatCentsDisplay,
   LANE23_DRAFT_REVIEW,
   LANE23_FIXTURE_DRAFT_ID,
+  getLane23Project,
+  type Lane23DraftReview,
 } from '../../lib/lane23Fixtures.js';
+import { getApiDeps } from '../../../api/lib/deps.js';
+import type { ProposalDraftedEvent } from '../../../persistence/events.js';
 import '../../styles/lane23.css';
 
 const { t, context } = createLayoutContext();
 const { draft_id: draftIdParam } = Astro.params;
 const draftId = draftIdParam ?? '';
 const isFixtureDraft = draftId === LANE23_FIXTURE_DRAFT_ID;
-const draft = isFixtureDraft ? LANE23_DRAFT_REVIEW : null;
+let eventDraftEvent: ProposalDraftedEvent | null = null;
+if (!isFixtureDraft && draftId) {
+  const { tenantReader } = getApiDeps();
+  const proposalEvents = await tenantReader.readEventsByTypeForTenant(context.tenantId, 'proposal.drafted');
+  eventDraftEvent =
+    proposalEvents.find((event): event is ProposalDraftedEvent =>
+      event.type === 'proposal.drafted' && event.proposal_id === draftId,
+    ) ?? null;
+}
+const eventProject = eventDraftEvent ? getLane23Project(eventDraftEvent.correlation_id) : null;
+const eventDraft: Lane23DraftReview | null = eventDraftEvent
+  ? {
+    proposal_id: eventDraftEvent.proposal_id,
+    project_id: eventDraftEvent.correlation_id,
+    tenant_id: eventDraftEvent.tenant_id,
+    project_label: eventProject?.project_name ?? eventDraftEvent.correlation_id,
+    client_label: eventProject?.client_name ?? 'Client pending',
+    draft_type: 'estimate_draft',
+    status: 'needs_review',
+    title: 'Estimate draft started',
+    scope_summary: 'Right Hand created a durable draft shell from the job note. Pricing lines are still pending.',
+    lines: [],
+  }
+  : null;
+const draft = isFixtureDraft ? LANE23_DRAFT_REVIEW : eventDraft;
+const canReviewDraft = !!draft && draft.lines.length > 0;
 const draftReviewHref = `/draft-review/${encodeURIComponent(draftId)}`;
 const loopPhases = [
   { id: 'capture', label: 'Capture', href: '/field-capture' },
   { id: 'review', label: 'Review', href: '/transcript-review' },
   { id: 'draft', label: 'Draft', active: true, href: draftReviewHref },
 ];
-const previewHref = draft ? `/proposals/${draft.proposal_id}/preview` : null;
+const previewHref = canReviewDraft ? `/proposals/${draft.proposal_id}/preview` : null;
 
 const copy = {
   saved: t('review.draft.saved'),
@@ -47,7 +76,7 @@ const copy = {
         </div>
       </div>
 
-      {!isFixtureDraft && (
+      {draft === null && (
         <Card title={t('review.draft.not_found_title')}>
           <p class="lane23-notice">{t('review.draft.not_found_body')}</p>
           <div class="lane23-loop-actions">
@@ -61,12 +90,19 @@ const copy = {
 
       {draft && (
         <>
-          <p class="lane23-notice">{t('review.draft.fixture_notice')}</p>
+          {isFixtureDraft ? (
+            <p class="lane23-notice">{t('review.draft.fixture_notice')}</p>
+          ) : (
+            <p class="lane23-notice">{t('review.draft.event_notice')}</p>
+          )}
           <p class="lane23-notice">{t('review.draft.notice')}</p>
 
           <Card eyebrow={draft.project_label} title={draft.title}>
             <p class="lane23-notice">{draft.scope_summary}</p>
             <SectionLabel label={t('review.draft.lines')} />
+            {draft.lines.length === 0 && (
+              <p class="lane23-notice">{t('review.draft.lines_pending')}</p>
+            )}
             {draft.lines.map((line) => (
               <div class="lane23-edit-row" data-line-id={line.line_id}>
                 <label>
@@ -99,11 +135,16 @@ const copy = {
             <p id="lane23-draft-status" class="lane23-notice" role="status"></p>
             <div class="lane23-loop-actions">
               <a class="lane23-btn" href="/transcript-review">{t('review.transcript.title')}</a>
+              <a class="lane23-btn" href={`/projects/${draft.project_id}?src=voice`}>{t('rh_voice.move_open_job')}</a>
               {previewHref && (
                 <a class="lane23-btn primary" href={previewHref}>{t('review.draft.preview_cta')}</a>
               )}
-              <button type="button" class="lane23-btn primary" id="lane23-draft-accept">{t('review.draft.accept')}</button>
-              <button type="button" class="lane23-btn" id="lane23-draft-reject">{t('review.draft.reject')}</button>
+              {canReviewDraft && (
+                <>
+                  <button type="button" class="lane23-btn primary" id="lane23-draft-accept">{t('review.draft.accept')}</button>
+                  <button type="button" class="lane23-btn" id="lane23-draft-reject">{t('review.draft.reject')}</button>
+                </>
+              )}
             </div>
           </Card>
         </>

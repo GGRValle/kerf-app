@@ -104,7 +104,9 @@ const project = id ? getLane23Project(id) : null;
         const context = document.getElementById('rh-project-detail-handoff-context');
         if (heard) heard.textContent = trp.heard_text;
         if (context) {
-          context.textContent = `${trp.context_hypothesis?.preparing_label ?? 'Session note ready'}. Nothing has been filed yet.`;
+          context.textContent = trp.work_artifact
+            ? `${trp.attention_artifact.headline}. ${trp.attention_artifact.why}`
+            : `${trp.context_hypothesis?.preparing_label ?? 'Session note ready'}. Nothing has been filed yet.`;
         }
         if (handoff) handoff.hidden = false;
       }
