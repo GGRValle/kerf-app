@@ -1,7 +1,93 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
-import { createLayoutContext } from '../lib/createLayoutContext.js';
-const { t } = createLayoutContext();
+import RhSummary from '../components/RhSummary.astro';
+
+const reportLinks = [
+  {
+    href: '/projects/proj_wegrzyn_kitchen/audit',
+    title: 'Project audit',
+    detail: 'Open the Wegrzyn audit posture and source trail.',
+  },
+  {
+    href: '/money',
+    title: 'Money queue',
+    detail: 'Review AR, AP, allowance risk, and bookkeeping previews.',
+  },
+  {
+    href: '/proposals/prop_lane6_pass/preview',
+    title: 'Proposal preview',
+    detail: 'Inspect the current proposal preview without sending anything.',
+  },
+] as const;
 ---
-<Layout titleKey="reports.title" activeHref="/reports"><Card eyebrow={t('route_shell.card_eyebrow')} title={t('reports.title')}><p>{t('route_shell.body')}</p></Card></Layout>
+
+<Layout titleKey="reports.title" activeHref="/reports">
+  <section class="reports-page" aria-labelledby="reports-title">
+    <RhSummary
+      headline="Reports"
+      detail="Reports are consolidated previews today. They open real inspection paths and do not export or send from this page."
+      tone="green"
+    />
+
+    <Card eyebrow="Available reports" title="Inspect what is wired">
+      <div class="reports-page__actions">
+        {reportLinks.map((link) => (
+          <a class="reports-page__action" href={link.href}>
+            <span>{link.title}</span>
+            <small>{link.detail}</small>
+          </a>
+        ))}
+      </div>
+    </Card>
+
+    <Card eyebrow="Status" title="What this page does">
+      <p class="reports-page__copy">
+        This page is a safe hub for the phone test. It routes to existing audit,
+        money, and proposal surfaces; it does not create a report export yet.
+      </p>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .reports-page {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .reports-page__copy {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.45;
+  }
+
+  .reports-page__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .reports-page__action {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface, #fff);
+  }
+
+  .reports-page__action:hover {
+    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
+  }
+
+  .reports-page__action span {
+    font-weight: 700;
+  }
+
+  .reports-page__action small {
+    color: var(--text-muted, #5c6670);
+    line-height: 1.35;
+  }
+</style>

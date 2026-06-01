@@ -14,8 +14,28 @@ const workOrder = project?.work_orders.find((wo) => wo.work_order_id === wid) ??
 ---
 
 <Layout titleKey="project.work_order.title" activeHref="/projects">
-  {project === null || workOrder === null ? (
-    <p>{t('project.not_found')}</p>
+  {project === null ? (
+    <div class="lane23-page">
+      <Card title="Project unavailable" eyebrow="Check the job">
+        <p class="lane23-notice">That project is not available in this phone-test data set.</p>
+        <a class="lane23-btn-link" href="/projects">Back to projects</a>
+      </Card>
+    </div>
+  ) : workOrder === null ? (
+    <div class="lane23-page">
+      <p class="lane23-crumb"><a href={`/projects/${project.project_id}`}>{t('project.work_order.back')}</a></p>
+      <ProjectTabStrip projectId={project.project_id} activeTab="field" labelFor={t} />
+      <Card title="Work order unavailable" eyebrow={project.project_name}>
+        <p class="lane23-notice">
+          This work order is not in the current project fixture. Open one of the
+          available work orders from the field tab.
+        </p>
+        <div class="lane23-action-links">
+          <a class="lane23-btn-link" href={`/projects/${project.project_id}/field`}>Open field tab</a>
+          <a class="lane23-btn-link" href="/field">Open Field Hand</a>
+        </div>
+      </Card>
+    </div>
   ) : (
     <div class="lane23-page">
       <p class="lane23-crumb"><a href={`/projects/${project.project_id}`}>{t('project.work_order.back')}</a></p>
@@ -28,3 +48,22 @@ const workOrder = project?.work_orders.find((wo) => wo.work_order_id === wid) ??
     </div>
   )}
 </Layout>
+
+<style>
+  .lane23-action-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .lane23-btn-link {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #d8dee6);
+    color: var(--accent, #0f766e);
+    font-weight: 600;
+    text-decoration: none;
+  }
+</style>
