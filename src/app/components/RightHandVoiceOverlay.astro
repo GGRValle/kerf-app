@@ -44,6 +44,7 @@ const { t } = createLayoutContext();
   data-commit-project-mismatch={t('rh_voice.commit_project_mismatch')}
   data-commit-workspace-needed={t('rh_voice.commit_workspace_needed')}
   data-action-correct={t('rh_voice.action_correct')}
+  data-action-keep-talking={t('rh_voice.action_keep_talking')}
   data-action-tell-job={t('rh_voice.action_tell_job')}
   data-action-save={t('rh_voice.action_save')}
   data-correction-prompt={t('rh_voice.correction_prompt')}
@@ -62,7 +63,12 @@ const { t } = createLayoutContext();
 >
   <div class="rhvo__backdrop" data-rhvo-dismiss></div>
   <div class="rhvo__panel" role="document">
-    <div class="rhvo__indicator" aria-hidden="true">
+    <button
+      type="button"
+      class="rhvo__indicator"
+      id="rhvo-mic-button"
+      aria-label={t('rh_voice.action_keep_talking')}
+    >
       <span class="rhvo__pulse"></span>
       <span class="rhvo__mic">
         <svg viewBox="0 0 24 24" aria-hidden="true"
@@ -71,7 +77,7 @@ const { t } = createLayoutContext();
           ></path></svg
         >
       </span>
-    </div>
+    </button>
 
     <div class="rhvo__head">
       <p class="rhvo__eyebrow" id="rhvo-title">{t('rh_voice.title')}</p>
@@ -89,11 +95,18 @@ const { t } = createLayoutContext();
       <span class="rhvo__caption-label">{t('rh_voice.caption_label')}</span>
       <span class="rhvo__caption-text" id="rhvo-caption-text"></span
       ><span class="rhvo__cursor" id="rhvo-cursor" aria-hidden="true"></span>
+      <textarea
+        class="rhvo__caption-input"
+        id="rhvo-caption-input"
+        rows="3"
+        aria-label={t('rh_voice.typed_input_label')}
+        placeholder={t('rh_voice.typed_input_placeholder')}
+      ></textarea>
     </div>
 
     <div class="rhvo__confirm" id="rhvo-confirm" hidden>
       <div class="rhvo__turn rhvo__turn--operator">
-        <span class="rhvo__speaker">{t('rh_voice.speaker_you')}</span>
+        <span class="rhvo__speaker" id="rhvo-speaker-operator">{t('rh_voice.speaker_you')}</span>
         <p class="rhvo__said" id="rhvo-confirm-heard"></p>
       </div>
       <div class="rhvo__turn rhvo__turn--right-hand">
@@ -165,8 +178,11 @@ const { t } = createLayoutContext();
     const statusEl = document.getElementById('rhvo-status');
     const captionWrap = document.getElementById('rhvo-caption');
     const captionEl = document.getElementById('rhvo-caption-text');
+    const captionInputEl = document.getElementById('rhvo-caption-input') as HTMLTextAreaElement | null;
+    const micButton = document.getElementById('rhvo-mic-button') as HTMLButtonElement | null;
     const meterEl = document.getElementById('rhvo-meter');
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
+    const confirmSpeakerEl = document.getElementById('rhvo-speaker-operator');
     const confirmHeardEl = document.getElementById('rhvo-confirm-heard');
     const confirmReplyEl = document.getElementById('rhvo-confirm-reply');
     const confirmPromptEl = document.getElementById('rhvo-confirm-prompt');
@@ -219,8 +235,11 @@ const { t } = createLayoutContext();
     const setCaption = (text: string) => {
       // REAL transcript only — never invented. Empty until STT produces words.
       if (captionEl) captionEl.textContent = text;
-      if (captionWrap) captionWrap.dataset.empty = text.trim().length === 0 ? 'true' : 'false';
+      if (captionInputEl && document.activeElement !== captionInputEl) captionInputEl.value = text;
+      const visibleText = captionInputEl?.value ?? text;
+      if (captionWrap) captionWrap.dataset.empty = visibleText.trim().length === 0 ? 'true' : 'false';
     };
+    const currentCaptionText = () => (captionInputEl?.value.trim() || lastInterim.trim());
 
     // ── Elapsed timer (mm:ss) — starts on overlay open, ticks every second,
     // cleared in teardown (§4 bounded window is the real guard; this is display).
@@ -252,7 +271,7 @@ const { t } = createLayoutContext();
     };
 
     const resetConfirmActionCopy = () => {
-      if (notThatBtn) notThatBtn.textContent = overlay.dataset.actionCorrect ?? 'Correct it';
+      if (notThatBtn) notThatBtn.textContent = overlay.dataset.actionKeepTalking ?? 'Keep talking';
       if (saveBtn) {
         saveBtn.textContent = overlay.dataset.actionSave ?? 'Save';
         saveBtn.disabled = false;
@@ -375,6 +394,7 @@ const { t } = createLayoutContext();
     };
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
+      if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
       if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
       if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
     };
@@ -387,6 +407,12 @@ const { t } = createLayoutContext();
 
     const currentTenantId = (): string | undefined => (
       document.querySelector<HTMLElement>('.kerf-shell')?.dataset.tenant?.trim() || undefined
+    );
+
+    const operatorName = (): string => (
+      document.querySelector<HTMLElement>('.kerf-shell')?.dataset.operatorName?.trim() ||
+      overlay.dataset.speakerYou ||
+      'You'
     );
 
     const collectKnownEntities = (): KnownEntityPayload[] => {
@@ -423,6 +449,49 @@ const { t } = createLayoutContext();
       return [...byKey.values()].slice(0, 8);
     };
 
+    const normalizeMatchText = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const textMentionsEntity = (text: string, label: string): boolean => {
+      const source = normalizeMatchText(text);
+      const tokens = normalizeMatchText(label)
+        .split(' ')
+        .filter((token) => (token.length >= 4 || /^\d{3,}$/.test(token)) && !['kitchen', 'primary', 'bath', 'project', 'job', 'site'].includes(token));
+      return tokens.some((token) => source.includes(token));
+    };
+
+    const withKnownEntity = (trp: TurnResolutionPacket): TurnResolutionPacket => {
+      if (trp.context_hypothesis.likely_entity?.id) return trp;
+      const project = collectKnownEntities().find((entity) => entity.type === 'project' && textMentionsEntity(trp.heard_text, entity.label));
+      if (!project) return trp;
+      const frame = trp.context_hypothesis.frame;
+      const entity = {
+        type: 'project' as const,
+        id: project.id ?? null,
+        label: project.label,
+        confidence: 'high' as const,
+      };
+      const contextHypothesis = {
+        ...trp.context_hypothesis,
+        likely_entity: entity,
+        routed_label: frame === 'estimate_walk' || frame === 'job_intake'
+          ? `${project.label} → estimate intake`
+          : `${project.label} → job notes`,
+        prompt: frame === 'estimate_walk' || frame === 'job_intake'
+          ? `Create estimate from this for ${project.label}?`
+          : `Save this note to ${project.label}?`,
+        missing_facts: trp.context_hypothesis.missing_facts.filter((fact) => !/\b(job|project|active project)\b/i.test(fact)),
+      };
+      return buildTurnResolutionPacket({
+        heardText: trp.heard_text,
+        intent: trp.intent,
+        workArtifact: trp.work_artifact,
+        sourceRefs: trp.source_refs,
+        memoryCandidates: trp.memory_candidates,
+        contextHypothesis,
+        now: trp.created_at,
+      });
+    };
+
     const resolveTurnServerSide = async (text: string, fallback: TurnResolutionPacket): Promise<TurnResolutionPacket> => {
       try {
         const tenantId = currentTenantId();
@@ -444,7 +513,7 @@ const { t } = createLayoutContext();
         if (!res.ok) return fallback;
         const body = await res.json() as { trp?: unknown };
         const parsed = parseTurnResolution(JSON.stringify(body.trp ?? null));
-        return parsed ?? fallback;
+        return parsed ? withKnownEntity(parsed) : fallback;
       } catch {
         return fallback;
       }
@@ -458,7 +527,7 @@ const { t } = createLayoutContext();
       awaitingConfirm = true;
       parkedTranscript = text;
       const intent = classifyTranscriptIntent(text);
-      const trp = buildTurnResolutionPacket({ heardText: text, intent });
+      const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: text, intent }));
       parkedTurnResolution = trp;
       // Mic off while the operator decides (privacy / bounded window §4). Not that
       // → beginSession() re-acquires from scratch, same as Continue.
@@ -474,8 +543,9 @@ const { t } = createLayoutContext();
       void resolveTurnServerSide(text, trp).then((serverTrp) => {
         // Only update if the operator is still deciding on the same turn.
         if (!awaitingConfirm || parkedTranscript !== text || state !== 'confirm') return;
-        parkedTurnResolution = serverTrp;
-        renderConfirmTurn(serverTrp);
+        const resolvedTrp = withKnownEntity(serverTrp);
+        parkedTurnResolution = resolvedTrp;
+        renderConfirmTurn(resolvedTrp);
       });
     };
 
@@ -523,7 +593,7 @@ const { t } = createLayoutContext();
     };
 
     const returnToListening = () => {
-      // "Correct it" — keep the original turn in memory, resume listening, and
+      // Keep talking — keep the original turn in memory, resume listening, and
       // merge the next spoken correction into the committed transcript. This
       // lets the operator say "that's the Clem job" without losing the note.
       awaitingConfirm = false;
@@ -707,7 +777,7 @@ const { t } = createLayoutContext();
         return;
       }
       releaseListeningResources();
-      const interim = lastInterim.trim();
+      const interim = currentCaptionText();
       if (interim.length === 0) {
         setState('capped');
         setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
@@ -984,6 +1054,9 @@ const { t } = createLayoutContext();
       if (e.key === 'Escape' && !overlay.hidden) dismissOverlay();
     });
     doneBtn?.addEventListener('click', finishCurrentTurn);
+    micButton?.addEventListener('click', () => {
+      if (state === 'confirm') returnToListening();
+    });
     continueBtn?.addEventListener('click', () => {
       awaitingConfirm = false;
       parkedTranscript = '';
@@ -994,6 +1067,15 @@ const { t } = createLayoutContext();
       showActions('listening');
       startTimer();
       void beginSession();
+    });
+    captionInputEl?.addEventListener('input', () => {
+      const typed = captionInputEl.value;
+      lastInterim = typed;
+      if (captionEl) captionEl.textContent = typed;
+      if (captionWrap) captionWrap.dataset.empty = typed.trim().length === 0 ? 'true' : 'false';
+      if (typed.trim().length > 0) {
+        window.clearTimeout(idleTimer);
+      }
     });
     // Save: commit the turn through the durable backend path, then render the
     // handled TRP returned by the server. No server artifact, no "saved" state.
@@ -1052,7 +1134,15 @@ const { t } = createLayoutContext();
     .rhvo { align-items: center; }
     .rhvo__panel { border-radius: 20px; margin-bottom: 0; }
   }
-  .rhvo__indicator { position: relative; width: 72px; height: 72px; }
+  .rhvo__indicator {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+  }
   .rhvo__pulse {
     position: absolute;
     inset: 0;
@@ -1077,9 +1167,11 @@ const { t } = createLayoutContext();
     justify-content: center;
   }
   .rhvo__mic :global(svg) { width: 26px; height: 26px; fill: currentColor; }
-  /* Sorting/confirm are post-capture beats — the live mic indicator stands down. */
-  .rhvo[data-state='sorting'] .rhvo__indicator,
-  .rhvo[data-state='confirm'] .rhvo__indicator { display: none; }
+  /* Sorting is a post-capture beat. Confirm keeps the mic visible so the
+     conversation can continue without switching interfaces. */
+  .rhvo[data-state='sorting'] .rhvo__indicator { display: none; }
+  .rhvo[data-state='confirm'] .rhvo__indicator { cursor: pointer; }
+  .rhvo[data-state='confirm'] .rhvo__pulse { animation: none; opacity: 0.35; }
   .rhvo__head {
     width: 100%;
     display: flex;
@@ -1144,6 +1236,21 @@ const { t } = createLayoutContext();
     margin-bottom: 0.15rem;
   }
   .rhvo__caption-text { font-size: 0.92rem; line-height: 1.4; color: var(--kerf-text); }
+  .rhvo__caption-input {
+    display: block;
+    width: 100%;
+    min-height: 4.5rem;
+    padding: 0.2rem 0 0;
+    border: 0;
+    outline: 0;
+    resize: vertical;
+    background: transparent;
+    color: var(--kerf-text);
+    font: inherit;
+    font-size: 0.96rem;
+    line-height: 1.42;
+  }
+  .rhvo__caption-input::placeholder { color: var(--kerf-text-mute); }
   /* Typing cursor on the live caption — only while actively listening. */
   .rhvo__cursor {
     display: none;

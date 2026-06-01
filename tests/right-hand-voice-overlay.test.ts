@@ -282,6 +282,9 @@ test('overlay has a Stop/commit path and lets the current page claim Speak conte
   assert.match(src, /rh_voice\.action_stop/);
   assert.match(src, /const finishCurrentTurn/);
   assert.match(src, /doneBtn\?\.addEventListener\('click', finishCurrentTurn\)/);
+  assert.match(src, /id="rhvo-caption-input"/);
+  assert.match(src, /const currentCaptionText/);
+  assert.match(src, /captionInputEl\?\.addEventListener\('input'/);
   // PR #250 context-aware Speak hook stays intact: cancelable event before open.
   assert.match(src, /new CustomEvent\('kerf:rh-speak', \{ cancelable: true \}\)/);
   assert.match(src, /if \(!window\.dispatchEvent\(speakEvent\)\) return/);
@@ -320,6 +323,9 @@ test('overlay sends tenant-scoped known entities to the model resolver', () => {
   assert.match(collectKnownEntities, /currentTenantId\(\) === 'tenant_ggr'/);
   assert.match(collectKnownEntities, /proj_wegrzyn_kitchen/);
   assert.match(collectKnownEntities, /dataset\.activeProject/);
+  assert.match(src, /const withKnownEntity/);
+  assert.match(src, /textMentionsEntity\(trp\.heard_text, entity\.label\)/);
+  assert.match(src, /const trp = withKnownEntity\(buildTurnResolutionPacket/);
   assert.match(src, /headers\['x-kerf-tenant'\] = tenantId/);
   assert.match(src, /knownEntities: collectKnownEntities\(\)/);
 });
@@ -395,9 +401,14 @@ test('trust loop: durable committed intent enters confirm and does NOT auto-navi
 
 test('trust loop: confirm projects the TRP as a Right Hand conversation, not audit rows', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const layout = readFileSync(path.join(ROOT, 'src/app/layouts/Layout.astro'), 'utf8');
+  assert.match(layout, /data-operator-name=\{operatorName\}/);
   assert.match(src, /id="rhvo-confirm-reply"/);
+  assert.match(src, /id="rhvo-speaker-operator"/);
   assert.match(src, /class="rhvo__turn rhvo__turn--right-hand"/);
   assert.match(src, /rh_voice\.speaker_right_hand/);
+  assert.match(src, /const operatorName/);
+  assert.match(src, /confirmSpeakerEl\.textContent = operatorName\(\)/);
   assert.match(src, /const replyForTurn/);
   assert.match(src, /confirmReplyEl\.textContent = replyForTurn\(trp\)/);
   assert.doesNotMatch(src, /id="rhvo-confirm-routed"/);
@@ -442,8 +453,10 @@ test('Stop immediately releases the mic/session before any clarify or route deci
   );
   assert.match(
     finishCurrentTurn,
-    /releaseListeningResources\(\);\s*const interim = lastInterim\.trim\(\);/,
+    /releaseListeningResources\(\);\s*const interim = currentCaptionText\(\);/,
   );
+  const currentCaptionText = sliceDecl(src, 'currentCaptionText', 'clearTimers');
+  assert.match(currentCaptionText, /captionInputEl\?\.value\.trim\(\) \|\| lastInterim\.trim\(\)/);
   // Empty audio still parks on capped (Continue) — the one legitimate capped use.
   assert.match(
     finishCurrentTurn,
@@ -494,7 +507,7 @@ test('turn resolution: next moves — only "Add a photo" routes to Field Capture
   assert.match(dismissOverlay, /navigate\(resolvedSurface\)/);
 });
 
-test('trust loop: Correct it returns to listening with the original note preserved', () => {
+test('trust loop: Keep talking returns to listening with the original note preserved', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const returnToListening = sliceDecl(src, 'returnToListening', 'resolveTurn');
   assert.match(returnToListening, /awaitingConfirm = false/);
@@ -504,7 +517,10 @@ test('trust loop: Correct it returns to listening with the original note preserv
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
   assert.match(routeCommitted, /correctionBaseTrp/);
   assert.match(routeCommitted, /Correction: \$\{cleanText\}/);
-  // Wired to the correction button.
+  // Wired to the same visible mic and the Keep talking button.
+  assert.match(src, /micButton\?\.addEventListener\('click'/);
+  assert.match(src, /state === 'confirm'[\s\S]*?returnToListening\(\)/);
+  assert.match(src, /overlay\.dataset\.actionKeepTalking/);
   assert.match(src, /notThatBtn\?\.addEventListener\('click', returnToListening\)/);
 });
 
@@ -589,6 +605,8 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
   const newKeys = [
     'rh_voice.status_sorting',
     'rh_voice.status_retry',
+    'rh_voice.typed_input_label',
+    'rh_voice.typed_input_placeholder',
     'rh_voice.head_sorting',
     'rh_voice.head_confirm',
     'rh_voice.confirm_routed_label',
@@ -600,6 +618,7 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.action_not_that',
     'rh_voice.action_stop',
     'rh_voice.action_correct',
+    'rh_voice.action_keep_talking',
     'rh_voice.action_tell_job',
     'rh_voice.correction_prompt',
     'rh_voice.correction_routed',

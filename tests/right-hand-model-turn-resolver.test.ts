@@ -136,7 +136,7 @@ test('model failure falls back to deterministic resolver without throwing', asyn
   assert.equal(result.trp.context_hypothesis.frame, 'estimate_walk');
 });
 
-test('route uses deterministic fallback when GROQ is not configured', async () => {
+test('route uses deterministic fallback when GROQ is not configured and still applies known job context', async () => {
   __setRightHandTurnDepsForTests({
     env: { GROQ_API_KEY: undefined },
     now: () => new Date('2026-05-31T12:00:00.000Z'),
@@ -146,7 +146,8 @@ test('route uses deterministic fallback when GROQ is not configured', async () =
     method: 'POST',
     headers: { authorization: authHeader(), 'content-type': 'application/json' },
     body: JSON.stringify({
-      heardText: BASE_INPUT.heardText,
+      heardText:
+        'We are at the Wegrzyn kitchen. Uppers and lowers are installed, and counters are ready for template.',
       currentPath: '/',
       knownEntities: [
         { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
@@ -155,10 +156,23 @@ test('route uses deterministic fallback when GROQ is not configured', async () =
     }),
   });
   assert.equal(res.status, 200);
-  const body = await res.json() as { authority: string; fallback_reason?: string; trp: { context_hypothesis: { frame: string } } };
+  const body = await res.json() as {
+    authority: string;
+    fallback_reason?: string;
+    trp: {
+      context_hypothesis: {
+        frame: string;
+        likely_entity: null | { id: string | null; label: string | null };
+        prompt: string;
+      };
+    };
+  };
   assert.equal(body.authority, 'deterministic_fallback');
   assert.equal(body.fallback_reason, 'model_not_configured');
   assert.equal(body.trp.context_hypothesis.frame, 'estimate_walk');
+  assert.equal(body.trp.context_hypothesis.likely_entity?.id, 'proj_wegrzyn_kitchen');
+  assert.equal(body.trp.context_hypothesis.likely_entity?.label, 'Wegrzyn kitchen + primary bath');
+  assert.match(body.trp.context_hypothesis.prompt, /Wegrzyn kitchen \+ primary bath/);
 });
 
 test('route blocks hosted resolver for tenants without synthesis consent', async () => {
@@ -244,7 +258,7 @@ test('route invokes configured model server-side and returns client-safe TRP', a
     method: 'POST',
     headers: { authorization: authHeader(), 'content-type': 'application/json' },
     body: JSON.stringify({
-      heardText: BASE_INPUT.heardText,
+      heardText: 'We are at the Wegrzyn kitchen doing a new estimate walk with white oak cabinets.',
       currentPath: '/',
       knownEntities: [
         { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
@@ -255,11 +269,22 @@ test('route invokes configured model server-side and returns client-safe TRP', a
   const raw = await res.text();
   assert.equal(res.status, 200);
   assert.equal(raw.includes('gsk-test-secret'), false);
-  const body = JSON.parse(raw) as { authority: string; trp: { context_hypothesis: { prompt: string; preparing_label: string; routed_label: string } } };
+  const body = JSON.parse(raw) as {
+    authority: string;
+    trp: {
+      context_hypothesis: {
+        prompt: string;
+        preparing_label: string;
+        routed_label: string;
+        likely_entity: null | { id: string | null; label: string | null };
+      };
+    };
+  };
   assert.equal(body.authority, 'llm_inferred');
-  assert.equal(body.trp.context_hypothesis.prompt, 'Start this estimate intake?');
+  assert.equal(body.trp.context_hypothesis.prompt, 'Create estimate from this for Wegrzyn kitchen + primary bath?');
   assert.equal(body.trp.context_hypothesis.preparing_label, 'Estimate intake ready');
-  assert.equal(body.trp.context_hypothesis.routed_label, 'Estimate walk → estimate intake');
+  assert.equal(body.trp.context_hypothesis.routed_label, 'Wegrzyn kitchen + primary bath → estimate intake');
+  assert.equal(body.trp.context_hypothesis.likely_entity?.id, 'proj_wegrzyn_kitchen');
   assert.equal(capturedAuth, 'gsk-test-secret');
   assert.equal(capturedBody?.endpoint, TURN_RESOLVER_LLM_ENDPOINT);
   assert.equal(capturedBody?.model, TURN_RESOLVER_LLM_MODEL);

@@ -97,10 +97,98 @@ Operating rule:
 - Confidence speeds reversible routing; it never bypasses durable/money/send confirmation.
 - Do not invent tenant facts. Use likely_entity only from transcript or the provided tenant-scoped context.`;
 
+function normalized(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+const GENERIC_ENTITY_TOKENS = new Set([
+  'bath',
+  'field',
+  'home',
+  'house',
+  'job',
+  'kitchen',
+  'primary',
+  'project',
+  'site',
+  'work',
+]);
+
+function textMentionsKnownEntity(text: string, label: string): boolean {
+  const source = normalized(text);
+  const candidate = normalized(label);
+  if (!source || !candidate) return false;
+  const tokens = candidate
+    .split(' ')
+    .filter((token) => token.length >= 4 || /^\d{3,}$/.test(token))
+    .filter((token) => !GENERIC_ENTITY_TOKENS.has(token));
+  return tokens.some((token) => source.includes(token));
+}
+
+function projectIdFromPath(path: string | undefined): string | null {
+  if (!path) return null;
+  const match = path.match(/^\/projects\/([A-Za-z0-9_-]+)(?:\/|$)/);
+  return match?.[1] ?? null;
+}
+
+function knownProjectForInput(input: ResolveTurnInput): KnownEntityContext | null {
+  const projects = (input.knownEntities ?? []).filter((entity) => entity.type === 'project');
+  const pathProjectId = projectIdFromPath(input.currentPath);
+  if (pathProjectId) {
+    const fromPath = projects.find((project) => project.id === pathProjectId);
+    if (fromPath) return fromPath;
+  }
+  return projects.find((project) => textMentionsKnownEntity(input.heardText, project.label)) ?? null;
+}
+
+function contextWithKnownEntity(
+  input: ResolveTurnInput,
+  hypothesis: TurnContextHypothesis,
+): TurnContextHypothesis {
+  if (hypothesis.likely_entity?.id) return hypothesis;
+  const knownProject = knownProjectForInput(input);
+  if (!knownProject) return hypothesis;
+
+  const entity = {
+    type: 'project' as const,
+    label: knownProject.label,
+    id: knownProject.id ?? null,
+    confidence: textMentionsKnownEntity(input.heardText, knownProject.label) ? 'high' as const : 'medium' as const,
+  };
+
+  if (hypothesis.frame === 'estimate_walk' || hypothesis.frame === 'job_intake') {
+    return {
+      ...hypothesis,
+      likely_entity: entity,
+      routed_label: `${knownProject.label} → estimate intake`,
+      prompt: `Create estimate from this for ${knownProject.label}?`,
+      missing_facts: hypothesis.missing_facts.filter((fact) => !/\b(job|project|active project)\b/i.test(fact)),
+    };
+  }
+
+  if (hypothesis.frame === 'field_note') {
+    return {
+      ...hypothesis,
+      likely_entity: entity,
+      routed_label: `${knownProject.label} → job notes`,
+      prompt: `Save this note to ${knownProject.label}?`,
+      missing_facts: hypothesis.missing_facts.filter((fact) => !/\b(job|project|active project)\b/i.test(fact)),
+    };
+  }
+
+  return { ...hypothesis, likely_entity: entity };
+}
+
 function deterministicResult(input: ResolveTurnInput, fallbackReason?: string): ResolveTurnResult {
   const intent = classifyTranscriptIntent(input.heardText);
+  const contextHypothesis = contextWithKnownEntity(input, inferTurnContext(input.heardText, intent));
   return {
-    trp: buildTurnResolutionPacket({ heardText: input.heardText, intent, now: input.now?.().getTime() }),
+    trp: buildTurnResolutionPacket({
+      heardText: input.heardText,
+      intent,
+      contextHypothesis,
+      now: input.now?.().getTime(),
+    }),
     authority: 'deterministic_fallback',
     ...(fallbackReason ? { fallback_reason: fallbackReason } : {}),
   };
@@ -313,10 +401,11 @@ export async function resolveTurnWithModel(
   }
 
   const { intent, hypothesis } = hypothesisFromModel(parsed, fallbackHypothesis);
+  const contextHypothesis = contextWithKnownEntity(input, hypothesis);
   const trp = buildTurnResolutionPacket({
     heardText: input.heardText,
     intent,
-    contextHypothesis: hypothesis,
+    contextHypothesis,
     now: now.getTime(),
   });
   return { trp, authority: 'llm_inferred' };
