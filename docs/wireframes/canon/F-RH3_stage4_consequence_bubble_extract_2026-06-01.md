@@ -80,5 +80,20 @@ Right Hand:  ✓ Filed to Wegrzyn · Daily Log · via voice
 
 ---
 
+## V1 scope (founder ruling · 2026-06-01)
+
+**"One growing surface" for V1** means exactly what the overlay implements today:
+
+- One **persistent bottom-sheet** on the blurred host page.
+- The **mic stays available** the entire turn.
+- Right Hand's reply **appends in place** below the operator's words — **no component swap** to a separate card or route.
+- Confirm affordances appear **only at the consequence point** (stage 4).
+
+**Within the active turn**, the operator's words and Right Hand's reply remain **visible above the consequence bubble**, stacked — not replaced. A **state projection** of the current turn (You said · Right Hand reply · where-it-goes prompt · Save to `<job>` / Change job / Keep talking) **satisfies this spec for V1**.
+
+**Not V1:** a literal **scroll-back log of prior turns** (multi-bubble conversation history across sessions or across earlier turns in the same session). That is a richer conversation-history feature — **V1.1+**. Do not re-architect the overlay for it.
+
+---
+
 *Extract 2026-06-01 from F-RH3. Authoritative for stage 4 until the full F-RH3 lands in the repo.
 One surface, consequence-gated confirm, honest "Filed."*
