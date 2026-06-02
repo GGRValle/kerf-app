@@ -68,7 +68,7 @@ export interface Tier2RowReviewRequest {
 }
 
 function isPersistenceTenantId(v: unknown): v is PersistenceTenantId {
-  return v === 'tenant_ggr' || v === 'tenant_valle' || v === 'tenant_hpg';
+  return v === 'tenant_ggr' || v === 'tenant_valle' || v === 'tenant_hpg' || v === 'tenant_other';
 }
 
 function nonEmptyString(v: unknown): v is string {

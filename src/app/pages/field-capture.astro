@@ -988,7 +988,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       const synthesizedVideoUris = videos.map(
         (_, index) => `kerf://field-capture/video-${Date.now()}-${index + 1}`,
       );
-      const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
+      const res = await fetch(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries?tenant_id=${encodeURIComponent(tenantId)}`,
+        {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

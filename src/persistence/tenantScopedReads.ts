@@ -58,6 +58,8 @@ import type {
   PersistenceTenantId,
 } from './events.js';
 import type { PersistenceEventStore } from './eventStore.js';
+import { recordTenantDataAccess } from '../tenant/tenantAccessAudit.js';
+import { getRequestTenant } from '../tenant/requestTenantContext.js';
 
 /**
  * Sanctioned reasons for a cross-tenant read. Every cross-tenant read
@@ -96,6 +98,22 @@ const VALID_CROSS_TENANT_REASONS: ReadonlySet<CrossTenantRationale['reason']> = 
   'admin_diagnostic',
   'eval_replay_or_test_fixture',
 ]);
+
+function auditTenantRead(
+  accessedTenant: PersistenceTenantId,
+  operation: string,
+  authorized = false,
+  meta?: Readonly<Record<string, string>>,
+): void {
+  const requester = getRequestTenant() ?? accessedTenant;
+  recordTenantDataAccess({
+    requester_tenant_id: requester,
+    accessed_tenant_id: accessedTenant,
+    operation,
+    authorized,
+    meta,
+  });
+}
 
 function isCrossTenantRationale(v: unknown): v is CrossTenantRationale {
   if (typeof v !== 'object' || v === null) return false;
@@ -154,7 +172,9 @@ export function createTenantScopedEventReader(
     // leave this module, (c) the returned array contains only events
     // where `tenant_id === tenant`.
     const all = await store.readAll();
-    return all.filter((e) => e.tenant_id === tenant);
+    const scoped = all.filter((e) => e.tenant_id === tenant);
+    auditTenantRead(tenant, 'readEventsForTenant');
+    return scoped;
   }
 
   async function readEventsForProject(
@@ -162,7 +182,9 @@ export function createTenantScopedEventReader(
     projectId: string,
   ): Promise<readonly PersistenceEvent[]> {
     const projectEvents = await store.readByCorrelation(projectId);
-    return projectEvents.filter((e) => e.tenant_id === tenant);
+    const scoped = projectEvents.filter((e) => e.tenant_id === tenant);
+    auditTenantRead(tenant, 'readEventsForProject');
+    return scoped;
   }
 
   async function readEventsByTypeForTenant(
@@ -170,7 +192,9 @@ export function createTenantScopedEventReader(
     type: PersistenceEventType,
   ): Promise<readonly PersistenceEvent[]> {
     const events = await store.readByType(type);
-    return events.filter((e) => e.tenant_id === tenant);
+    const scoped = events.filter((e) => e.tenant_id === tenant);
+    auditTenantRead(tenant, 'readEventsByTypeForTenant');
+    return scoped;
   }
 
   async function readEventsAcrossTenants(
@@ -183,7 +207,16 @@ export function createTenantScopedEventReader(
           'D-048 architectural constraint: every cross-tenant read is audit-bearing by construction.',
       );
     }
-    return store.readAll();
+    const all = await store.readAll();
+    const requester = getRequestTenant();
+    const tenantsSeen = new Set(all.map((e) => e.tenant_id));
+    for (const t of tenantsSeen) {
+      auditTenantRead(t, 'readEventsAcrossTenants', true, {
+        reason: rationale.reason,
+        ...(requester !== undefined ? { requester } : {}),
+      });
+    }
+    return all;
   }
 
   return {

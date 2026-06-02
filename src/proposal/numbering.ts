@@ -36,6 +36,7 @@ export const TENANT_NUMBER_PREFIX: Readonly<Record<ProposalTenantId, string>> = 
   tenant_ggr: 'GGR',
   tenant_valle: 'V',
   tenant_hpg: 'HPG',
+  tenant_other: 'OTH',
 };
 
 /**

@@ -132,7 +132,9 @@ test('GET /projects/:id/audit-events returns tenant-scoped audit payload', async
 
 test('loadProjectAuditTrail · F-E1 Henderson submit projects capture chain on audit tab', async () => {
   await withIsolatedApp(async (dir, app) => {
-    const submitRes = await app.request(`/projects/${PROJECT_ID}/daily-log/entries`, {
+    const submitRes = await app.request(
+      `/projects/${PROJECT_ID}/daily-log/entries?tenant_id=tenant_ggr`,
+      {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -169,7 +171,9 @@ test('loadProjectAuditTrail · F-E1 Henderson submit projects capture chain on a
 
 test('GET /projects/:id/audit-events includes F-E1 capture chain after submit', async () => {
   await withIsolatedApp(async (_dir, app) => {
-    const submitRes = await app.request(`/projects/${PROJECT_ID}/daily-log/entries`, {
+    const submitRes = await app.request(
+      `/projects/${PROJECT_ID}/daily-log/entries?tenant_id=tenant_ggr`,
+      {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

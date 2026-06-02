@@ -398,7 +398,13 @@ test('rejects missing tenant_id', () => {
   );
 });
 
-test('rejects unrecognized tenant_id (not tenant_ggr / tenant_valle / tenant_hpg)', () => {
+test('accepts tenant_other (isolation control tenant · 2026-05-30)', () => {
+  const r = validatePersistenceEvent(projectCreated({ tenant_id: 'tenant_other' }));
+  assert.equal(r.ok, true);
+  assert.ok(r.ok && r.event.tenant_id === 'tenant_other');
+});
+
+test('rejects unrecognized tenant_id (not tenant_ggr / tenant_valle / tenant_hpg / tenant_other)', () => {
   const r = validatePersistenceEvent(projectCreated({ tenant_id: 'tenant_acme' as never }));
   assert.equal(r.ok, false);
   assert.ok(!r.ok && r.errors.some((e) => e.includes('tenant_id')));

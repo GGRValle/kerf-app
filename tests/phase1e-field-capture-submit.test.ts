@@ -17,7 +17,9 @@ test('Phase 1F F-E1 submit endpoint emits the full Right Hand chain', async () =
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
   try {
-    const res = await apiRouter.request('/projects/proj_wegrzyn_kitchen/daily-log/entries', {
+    const res = await apiRouter.request(
+      '/projects/proj_wegrzyn_kitchen/daily-log/entries?tenant_id=tenant_ggr',
+      {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -106,7 +108,9 @@ test('Phase 1G-a photo-only capture persists without surfacing a relay card', as
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
   try {
-    const res = await apiRouter.request('/projects/proj_wegrzyn_kitchen/daily-log/entries', {
+    const res = await apiRouter.request(
+      '/projects/proj_wegrzyn_kitchen/daily-log/entries?tenant_id=tenant_ggr',
+      {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

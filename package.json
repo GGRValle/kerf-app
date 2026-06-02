@@ -14,6 +14,7 @@
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
+    "test:isolation": "node --import tsx --test --test-name-pattern '@isolation' tests/isolation/*.test.ts",
     "smoke": "tsx src/examples/smoke.ts",
     "smoke:proposal-ff": "tsx src/examples/proposal-ff-smoke.ts",
     "smoke:groq-tier1": "node --env-file=.env.local --import tsx src/examples/groq-tier1-smoke.ts",

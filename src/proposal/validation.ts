@@ -98,6 +98,7 @@ const VALID_TENANT_IDS: ReadonlySet<ProposalTenantId> = new Set([
   'tenant_ggr',
   'tenant_valle',
   'tenant_hpg',
+  'tenant_other',
 ]);
 
 const VALID_ACTOR_ROLES: ReadonlySet<ProposalActor['role']> = new Set([

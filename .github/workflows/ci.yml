@@ -58,6 +58,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Adversarial tenant isolation (@isolation)
+        run: npm run test:isolation
+
       - name: Type check
         run: npm run typecheck
 

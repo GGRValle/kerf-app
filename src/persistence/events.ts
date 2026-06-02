@@ -194,7 +194,11 @@ export type EvidenceSourceClass =
  * in V1, not a policy — no cross-tenant query can cross the boundary by
  * design).
  */
-export type PersistenceTenantId = 'tenant_ggr' | 'tenant_valle' | 'tenant_hpg';
+export type PersistenceTenantId =
+  | 'tenant_ggr'
+  | 'tenant_valle'
+  | 'tenant_hpg'
+  | 'tenant_other';
 
 /** Operator actor metadata. Always present on operator-driven events. */
 export interface PersistenceActor {
@@ -839,6 +843,7 @@ const VALID_TENANT_IDS: ReadonlySet<PersistenceTenantId> = new Set([
   'tenant_ggr',
   'tenant_valle',
   'tenant_hpg',
+  'tenant_other',
 ]);
 
 const VALID_ACTOR_ROLES: ReadonlySet<PersistenceActor['role']> = new Set([
@@ -1097,7 +1102,9 @@ function validateBase(input: Record<string, unknown>): readonly string[] {
   if (!nonEmptyString(input['tenant_id'])) {
     errors.push('tenant_id must be a non-empty string');
   } else if (!VALID_TENANT_IDS.has(input['tenant_id'] as PersistenceTenantId)) {
-    errors.push(`tenant_id "${input['tenant_id']}" is not a recognized tenant (expected tenant_ggr, tenant_valle, or tenant_hpg)`);
+    errors.push(
+      `tenant_id "${input['tenant_id']}" is not a recognized tenant (expected tenant_ggr, tenant_valle, tenant_hpg, or tenant_other)`,
+    );
   }
   if (!nonEmptyString(input['correlation_id'])) errors.push('correlation_id must be a non-empty string');
   if (typeof input['actor'] !== 'object' || input['actor'] === null) {

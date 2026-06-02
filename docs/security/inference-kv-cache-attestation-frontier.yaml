@@ -1,0 +1,11 @@
+provider: anthropic_via_abstraction
+model: claude-sonnet (model-agnostic adapter)
+endpoint: env ANTHROPIC_API_KEY / abstraction layer
+cross_tenant_prompt_sharing: disabled
+cross_tenant_prefix_cache_sharing: disabled
+cross_tenant_kv_cache_sharing: partitioned_per_request
+attestation_date: 2026-05-30
+owner: christian@ggrremodel.com
+notes: >
+  Each Right Hand turn builds a fresh message list scoped to request tenant context.
+  Re-verify when enabling provider prompt caching with shared workers.
