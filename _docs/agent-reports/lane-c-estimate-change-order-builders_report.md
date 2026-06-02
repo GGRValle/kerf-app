@@ -120,4 +120,13 @@ Estimate Send — consequence-gated signature confirm (F-RH3 stage-4 style, answ
 
 ![Estimate signature gate](assets/lane-c/estimate-signature-gate.png)
 
-*A clean-worktree re-verification of the pushed tip is appended below after push.*
+### Clean-worktree re-verification (pushed tip)
+
+Re-verified from a **fresh detached worktree** of `origin/lane-c-estimate-change-order-builders` @ `51d0485` (independent `npm ci`; no tracked `node_modules`):
+
+- `npx tsc --noEmit` → **exit 0**.
+- `npm run build:astro` → **exit 0** ("Complete!").
+- `node --import tsx --test tests/lane-c-builder-engine.test.ts` → **15 tests / 15 pass / 0 fail**.
+- Regression check — `tests/lane6-prep.test.ts` + `tests/route-shell-smoke.test.ts` → **11 tests / 11 pass / 0 fail**.
+
+Lane C is complete and verified from a clean checkout of the pushed branch.
