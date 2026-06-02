@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-RC1 · Mobile Room Capture · Apple wrap · use-labels</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+body.light-mode .room-plan-svg { background: #EBEEF2; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-blue); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--kerf-blue); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-blue); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--kerf-blue); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-blue); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--kerf-blue); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.apple { background: rgba(123,168,255,0.14); color: var(--kerf-blue); }
+
+/* Phone */
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome */
+.top-chrome {
+  padding: 6px 14px 10px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.tc-back {
+  display: flex; align-items: center; gap: 3px;
+  color: var(--kerf-blue); font-size: 12.5px; font-weight: 600;
+}
+.tc-back svg { width: 16px; height: 16px; fill: currentColor; }
+.tc-title { flex: 1; text-align: center; font-size: 13px; color: var(--kerf-text-dim); font-weight: 500; }
+.tc-action { color: var(--kerf-text-mute); }
+.tc-action svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Body */
+.body { flex: 1; overflow-y: auto; padding: 0 14px 14px; }
+
+/* HEADER */
+.scan-header { padding: 14px 4px 8px; }
+.sh-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-blue); font-weight: 700; margin-bottom: 5px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sh-eyebrow .sh-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--kerf-blue); box-shadow: 0 0 8px rgba(123,168,255,0.6); }
+.sh-title {
+  font-size: 19px; font-weight: 700; color: var(--kerf-text);
+  letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 3px;
+}
+.sh-meta {
+  font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.45;
+}
+.sh-meta strong { color: var(--kerf-text); font-weight: 600; }
+
+/* RH summary */
+.rh-summary {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  background: rgba(201,169,97,0.05);
+  border-left: 2px solid var(--right-hand);
+  border-radius: 4px;
+  display: grid; grid-template-columns: 24px 1fr;
+  gap: 9px; align-items: flex-start;
+}
+.rh-avatar {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: rgba(201,169,97,0.16); color: var(--right-hand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.rh-text { font-size: 12px; color: var(--kerf-text); line-height: 1.5; }
+.rh-text strong { color: var(--kerf-text); font-weight: 700; }
+.rh-text em { color: var(--kerf-amber); font-style: normal; font-weight: 600; }
+.rh-text .rh-blue { color: var(--kerf-blue); font-weight: 600; }
+
+/* Apple disclosure */
+.apple-disclosure {
+  padding: 8px 11px;
+  background: rgba(123,168,255,0.04);
+  border-left: 2px solid var(--kerf-blue);
+  border-radius: 3px;
+  margin-bottom: 12px;
+  font-size: 10.5px; color: var(--kerf-text-mute); line-height: 1.5;
+}
+.apple-disclosure strong { color: var(--kerf-blue); font-weight: 600; }
+
+/* Room plan visualization */
+.room-plan-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 13px;
+  margin-bottom: 12px;
+}
+.rp-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700; margin-bottom: 9px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.rp-eyebrow .rp-dims {
+  color: var(--kerf-text); font-weight: 700;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10.5px; letter-spacing: 0.02em; text-transform: none;
+}
+.room-plan-svg {
+  background: var(--kerf-bg-2);
+  border-radius: 8px;
+  width: 100%;
+  height: 180px;
+  position: relative;
+}
+
+/* Measurements list */
+.section-eyebrow {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--kerf-text-mute); font-weight: 700;
+  margin: 6px 4px 8px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.section-eyebrow .se-count {
+  color: var(--kerf-text-dim); font-weight: 600;
+  font-size: 9.5px; letter-spacing: 0.04em;
+}
+
+.measurement-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.measurement-row {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 9px;
+  padding: 9px 11px;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 10px; align-items: center;
+}
+.measurement-row.verify {
+  border-left: 3px solid var(--kerf-amber);
+  padding-left: 9px;
+}
+.m-text { line-height: 1.4; }
+.m-name { font-size: 12px; color: var(--kerf-text); font-weight: 600; }
+.m-value {
+  font-size: 11px; color: var(--kerf-text-dim); margin-top: 2px;
+  font-family: "SF Mono", Menlo, monospace; letter-spacing: 0.02em;
+}
+.use-label {
+  font-size: 9px; padding: 2px 7px; border-radius: 4px;
+  letter-spacing: 0.06em; font-weight: 700; text-transform: uppercase;
+  flex-shrink: 0;
+}
+.use-label.estimate-safe { background: rgba(56,201,119,0.12); color: var(--field-green); }
+.use-label.verify { background: rgba(245,181,68,0.14); color: var(--kerf-amber); }
+.use-label.manual { background: rgba(248,113,113,0.12); color: var(--kerf-red); }
+
+/* Don't-release banner */
+.dont-release {
+  margin-bottom: 14px;
+  background: rgba(245,181,68,0.06);
+  border: 1px solid rgba(245,181,68,0.30);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid; grid-template-columns: 22px 1fr;
+  gap: 11px; align-items: flex-start;
+}
+.dr-icon {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(245,181,68,0.18); color: var(--kerf-amber);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.dr-icon svg { width: 12px; height: 12px; fill: currentColor; }
+.dr-title { font-size: 11.5px; color: var(--kerf-text); font-weight: 700; line-height: 1.35; margin-bottom: 3px; }
+.dr-text { font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.5; }
+.dr-text strong { color: var(--kerf-amber); font-weight: 700; }
+
+/* Cross-scope metrics card */
+.cross-scope-card {
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 11px;
+  padding: 12px 13px;
+  margin-bottom: 12px;
+}
+.cs-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 9px;
+}
+.cs-title {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--kerf-text); font-weight: 700;
+}
+.cs-action {
+  font-size: 10.5px; color: var(--kerf-blue); font-weight: 600;
+}
+.cs-rows { display: flex; flex-direction: column; gap: 4px; }
+.cs-row {
+  display: grid; grid-template-columns: 90px 1fr;
+  gap: 10px; padding: 5px 0;
+  border-bottom: 1px solid var(--kerf-border-soft);
+  font-size: 11px;
+}
+.cs-row:last-child { border-bottom: none; }
+.cs-key { color: var(--kerf-text-mute); font-size: 10.5px; }
+.cs-val { color: var(--kerf-text); font-weight: 600; }
+.cs-val .cs-sub { color: var(--kerf-text-mute); font-weight: 500; font-size: 10px; margin-left: 5px; }
+
+/* Tenant Room Memory anchor */
+.memory-anchor {
+  background: rgba(167,139,250,0.05);
+  border: 1px dashed rgba(167,139,250,0.40);
+  border-radius: 9px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  font-size: 10.5px; color: var(--kerf-text-dim); line-height: 1.5;
+}
+.memory-anchor .ma-eyebrow {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--kerf-violet); font-weight: 700; margin-bottom: 3px;
+}
+.memory-anchor strong { color: var(--kerf-text); font-weight: 600; }
+
+/* Action ribbon */
+.action-ribbon {
+  flex-shrink: 0; background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border);
+  padding: 8px 10px; display: flex; gap: 6px; align-items: center;
+}
+.ar-btn {
+  flex: 1; padding: 10px 8px; text-align: center;
+  background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px; font-size: 11px; color: var(--kerf-text); font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer;
+}
+.ar-btn svg { width: 14px; height: 14px; fill: currentColor; }
+.ar-btn.primary { background: var(--kerf-blue); color: #0A1428; border-color: var(--kerf-blue); }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--kerf-blue); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--kerf-blue); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-blue); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-blue); color: #0A1428; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-E1 · Field Capture</span>
+    <span class="sep">›</span>
+    <span class="step">F-S1 · Start → Start takeoff</span>
+    <span class="sep">›</span>
+    <span class="step current">F-RC1 · Room Capture · post-scan</span>
+    <span class="sep">›</span>
+    <span class="step">F-G1 · Draft Review (measurements feed pricing)</span>
+  </div>
+  <h1>F-RC1 · Mobile Room Capture · Apple wrap · use-labels visible</h1>
+  <p>
+    Tier 2 operational rebuild of F-32. Post-scan results surface. Per <code>kerf_lidar_precision_limits_and_apple_wrap.md</code>: <em>Apple owns capture · Kerf wraps the results.</em> The scan itself happens in Apple's RoomCaptureView — Kerf does not reskin that experience. Kerf's value lands here, post-scan: the cross-scope metrics extracted from one scan (HVAC + tile + plumbing + electrical + cabinetry takeoff per <code>kerf_lidar_day_one_substrate.md</code> D-043), the use-labels on each measurement (estimate-safe · verify before release · manual required) that block downstream fab release until verified, and the Tenant Room Memory anchor that saves the scan for future remarketing.
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-RC1 · Mobile Room Capture · post-scan results · Hernandez pantry · scanned today 14:18</div>
+  <p class="frame-narr">
+    Christian scanned the pantry during his Hernandez field walk this afternoon (the same field walk that produced the transcript and seeded CO-002). Apple's RoomCaptureView captured the 3D geometry in ~30 seconds; Kerf landed on this post-scan surface to surface what's usable. Top: room plan visualization (simple 2D outline) + room name + dimensions. Below: RH synthesis (5 measurements estimate-safe, 1 needs verify before fab — same shelving line that's already flagged on F-W1 and F-G1). Apple disclosure renders quietly. Measurements list shows each captured dimension with its use-label tag. A <em>don't release before verify</em> banner enforces the cabinetry rule. Cross-scope metrics card folds 5 takeoffs from one scan. Tenant Room Memory anchor notes the scan saves to the tenant library for future similar rooms. Action ribbon: re-scan · add to project · save to memory.
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>14:19</span><span class="right">●●● 78%</span></div>
+
+        <!-- Top chrome -->
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Hernandez
+          </div>
+          <div class="tc-title">Room scan</div>
+          <div class="tc-action">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="body">
+
+          <!-- HEADER -->
+          <div class="scan-header">
+            <div class="sh-eyebrow"><span class="sh-dot"></span> Captured today 14:18</div>
+            <div class="sh-title">Hernandez · pantry</div>
+            <div class="sh-meta">
+              <strong>1247 Marlborough Ave</strong> · scanned 0:34 · 72 sqft footprint
+            </div>
+          </div>
+
+          <!-- RH synthesis -->
+          <div class="rh-summary">
+            <div class="rh-avatar">RH</div>
+            <div class="rh-text">
+              <strong>5 measurements estimate-safe · 1 needs verify.</strong> 5 cross-scope takeoffs from this one scan.
+            </div>
+          </div>
+
+          <!-- Apple disclosure -->
+          <div class="apple-disclosure">
+            <strong>Captured by Apple RoomCapture.</strong> Kerf wraps the results — the scan experience itself is iOS-native. Re-scan opens RoomCapture again.
+          </div>
+
+          <!-- Room plan card -->
+          <div class="room-plan-card">
+            <div class="rp-eyebrow">
+              <span>Floor plan</span>
+              <span class="rp-dims">11'8″ × 6'2″ × 8'0″h</span>
+            </div>
+            <svg class="room-plan-svg" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+              <!-- Pantry outline (rectangle) -->
+              <rect x="40" y="30" width="240" height="120" fill="none" stroke="#7BA8FF" stroke-width="2.5" stroke-linejoin="round"/>
+
+              <!-- Door (north wall, swing into hallway) -->
+              <line x1="40" y1="30" x2="80" y2="30" stroke="#0A0D11" stroke-width="6"/>
+              <path d="M 80 30 A 30 30 0 0 1 80 60" fill="none" stroke="#98A1B3" stroke-width="1" stroke-dasharray="2,2"/>
+              <text x="60" y="22" font-size="9" fill="#98A1B3" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="600">DOOR</text>
+
+              <!-- Window (south wall, over washer) -->
+              <line x1="150" y1="150" x2="210" y2="150" stroke="#67D6E0" stroke-width="6"/>
+              <text x="180" y="170" font-size="9" fill="#67D6E0" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="600">WINDOW</text>
+
+              <!-- Outlet markers -->
+              <circle cx="270" cy="90" r="3" fill="#F5B544"/>
+              <text x="270" y="80" font-size="8" fill="#F5B544" text-anchor="middle" font-family="-apple-system, sans-serif">outlet</text>
+
+              <!-- Plumbing rough -->
+              <circle cx="50" cy="90" r="4" fill="#38C977" stroke="#38C977" stroke-width="1" opacity="0.7"/>
+              <text x="50" y="105" font-size="8" fill="#38C977" text-anchor="middle" font-family="-apple-system, sans-serif">plumb</text>
+
+              <!-- Long wall callout (the shelving wall) -->
+              <line x1="40" y1="160" x2="280" y2="160" stroke="#F5B544" stroke-width="1.5" stroke-dasharray="3,3"/>
+              <text x="160" y="178" font-size="9" fill="#F5B544" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">11'8″ shelving wall</text>
+            </svg>
+          </div>
+
+          <!-- Measurements list -->
+          <div class="section-eyebrow">
+            Measurements <span class="se-count">· 6 captured</span>
+          </div>
+          <div class="measurement-list">
+
+            <div class="measurement-row verify">
+              <div class="m-text">
+                <div class="m-name">Long wall · shelving run</div>
+                <div class="m-value">11'8″ ± 0.5″</div>
+              </div>
+              <span class="use-label verify">Verify</span>
+            </div>
+
+            <div class="measurement-row">
+              <div class="m-text">
+                <div class="m-name">Short wall · counter wall</div>
+                <div class="m-value">6'2″</div>
+              </div>
+              <span class="use-label estimate-safe">Estimate-safe</span>
+            </div>
+
+            <div class="measurement-row">
+              <div class="m-text">
+                <div class="m-name">Ceiling height</div>
+                <div class="m-value">8'0″</div>
+              </div>
+              <span class="use-label estimate-safe">Estimate-safe</span>
+            </div>
+
+            <div class="measurement-row">
+              <div class="m-text">
+                <div class="m-name">Door opening</div>
+                <div class="m-value">36″ × 80″</div>
+              </div>
+              <span class="use-label estimate-safe">Estimate-safe</span>
+            </div>
+
+            <div class="measurement-row">
+              <div class="m-text">
+                <div class="m-name">Window opening</div>
+                <div class="m-value">48″ × 36″</div>
+              </div>
+              <span class="use-label estimate-safe">Estimate-safe</span>
+            </div>
+
+            <div class="measurement-row">
+              <div class="m-text">
+                <div class="m-name">Floor area</div>
+                <div class="m-value">72 sqft</div>
+              </div>
+              <span class="use-label estimate-safe">Estimate-safe</span>
+            </div>
+
+          </div>
+
+          <!-- Don't release without verify -->
+          <div class="dont-release">
+            <div class="dr-icon">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z"/></svg>
+            </div>
+            <div>
+              <div class="dr-title">Verify long-wall before cabinetry release</div>
+              <div class="dr-text">
+                Room-scan accuracy is fine for estimates and shop drawings. <strong>Cabinetry shop release blocks until tape-verify is logged</strong> · same for stone, glass, millwork. Marcus will assign the verify task during framing close-out.
+              </div>
+            </div>
+          </div>
+
+          <!-- Cross-scope metrics (the D-043 win — one scan, multiple takeoffs) -->
+          <div class="cross-scope-card">
+            <div class="cs-head">
+              <span class="cs-title">Takeoffs from this scan</span>
+              <span class="cs-action">See all →</span>
+            </div>
+            <div class="cs-rows">
+              <div class="cs-row">
+                <span class="cs-key">HVAC</span>
+                <span class="cs-val">576 cuft <span class="cs-sub">Manual J input ready</span></span>
+              </div>
+              <div class="cs-row">
+                <span class="cs-key">Tile / floor</span>
+                <span class="cs-val">72 sqft <span class="cs-sub">+ 8 sqft waste factor</span></span>
+              </div>
+              <div class="cs-row">
+                <span class="cs-key">Cabinetry</span>
+                <span class="cs-val">~11'8″ linear <span class="cs-sub">verify required</span></span>
+              </div>
+              <div class="cs-row">
+                <span class="cs-key">Electrical</span>
+                <span class="cs-val">1 outlet, 1 switch <span class="cs-sub">existing</span></span>
+              </div>
+              <div class="cs-row">
+                <span class="cs-key">Plumbing</span>
+                <span class="cs-val">1 rough · north wall <span class="cs-sub">to cap</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tenant Room Memory anchor -->
+          <div class="memory-anchor">
+            <div class="ma-eyebrow">Saves to Tenant Room Memory</div>
+            <strong>Future similar rooms (small pantry · 60–80 sqft · single long wall)</strong> will reference this scan as a comparable. Builds your room library over time · pre-bid moat per Kerf canon.
+          </div>
+
+        </div>
+
+        <!-- Action ribbon -->
+        <div class="action-ribbon">
+          <button class="ar-btn">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.65 6.35A8 8 0 0 0 6.34 6.35l-2.12-2.12v6h6l-2.46-2.46a6 6 0 1 1 1.43 6.78l-1.41 1.41a8 8 0 0 0 13.27-3.95l-2.0-2.05"/></svg>
+            Re-scan
+          </button>
+          <button class="ar-btn primary">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2 5.5 12.7 4.1 14l5 5L21 7.1 19.6 5.7z"/></svg>
+            Save to project
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-RC1 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Path B · operational rebuilds</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-W1 · Mobile Work Order</span></div>
+      <div class="sl-step current"><span class="sl-dot">2</span><span><span class="sl-name">F-RC1</span> · Mobile Room Capture <em>(this · Apple wrap)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">3</span><span>F-PV1 · Mobile Proposal View (next)</span></div>
+    </div>
+
+    <h4>Apple owns capture · Kerf wraps</h4>
+    <ul>
+      <li><span class="badge apple">apple</span>Scan UI = Apple RoomCaptureView · iOS-native · Kerf doesn't reskin</li>
+      <li><span class="badge apple">apple</span>F-RC1 renders the POST-SCAN surface only · pre-scan setup is part of the Start sheet route (Start takeoff → Apple's capture → land here)</li>
+      <li><span class="badge apple">apple</span>Apple disclosure visible: <em>"Captured by Apple RoomCapture. Kerf wraps the results."</em></li>
+      <li><span class="badge apple">apple</span>Re-scan opens Apple RoomCapture again (no Kerf-built rescan UI)</li>
+      <li>Per <code>kerf_lidar_precision_limits_and_apple_wrap.md</code> — boundary discipline locked</li>
+    </ul>
+
+    <h4>Use-label discipline</h4>
+    <ul>
+      <li><strong>Estimate-safe</strong> (green) · room dimensions for estimating, schematic, shop drawings · OK to use immediately</li>
+      <li><strong>Verify before release</strong> (amber) · cabinetry, stone, glass, millwork · tape-verify required before fab/shop release · blocks downstream</li>
+      <li><strong>Manual required</strong> (red) · scan unreliable here · take a hand measurement</li>
+      <li>Per the LiDAR precision canon · the use-label is on the measurement itself · downstream consumers (F-G1 Draft, fab orders) inherit the discipline</li>
+    </ul>
+
+    <h4>Cross-scope takeoffs (D-043 win)</h4>
+    <p>One scan → multiple downstream estimates · per <code>kerf_lidar_day_one_substrate.md</code>:</p>
+    <ul>
+      <li><strong>HVAC</strong> · room volume feeds Manual J load calculation</li>
+      <li><strong>Tile / flooring</strong> · square footage + waste factor</li>
+      <li><strong>Cabinetry</strong> · linear feet (with verify required)</li>
+      <li><strong>Electrical</strong> · existing fixtures detected</li>
+      <li><strong>Plumbing</strong> · rough-in locations</li>
+    </ul>
+    <p>The contractor doesn't have to take 5 separate measurements for 5 estimates. One scan, 5 takeoffs, all use-label tagged.</p>
+
+    <h4>Tenant Room Memory</h4>
+    <ul>
+      <li>Every scan saves to the tenant's room library</li>
+      <li>Future similar rooms (matched by archetype + dimensions) reference past scans as comparables</li>
+      <li>The 5-year remarketing pre-bid moat — over time, the tenant builds an unfair memory advantage</li>
+      <li>Per <code>kerf_lidar_day_one_substrate.md</code> · D-043 §9 · second layer of the LiDAR substrate</li>
+    </ul>
+
+    <h4>Continuity with the rest of the loop</h4>
+    <ul>
+      <li>The 11'8″ long-wall measurement feeds the CO-002 shelving line on F-G1 Draft Review · marked "verify required"</li>
+      <li>The same measurement appears on F-PR2 Project Detail Scope tab's CO-002 continuity callout: <em>"priced against your past 11 pantry/cabinetry jobs"</em></li>
+      <li>Carlos sees the don't-release warning on F-W1 Work Order during framing</li>
+      <li>If/when Christian releases shelving for fab, F-H1 Audit Detail will show the use-label transition (estimate-safe → tape-verified) in the approval chain</li>
+      <li>Same measurement · five surfaces · one canonical truth · use-label preserved at every step</li>
+    </ul>
+
+    <h4>Doctrine applied</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>One primary cognitive job · review what got captured, see what's usable</li>
+      <li><span class="badge canon">canon</span>Smart summary leads · RH synthesis line + Apple disclosure before detail</li>
+      <li><span class="badge canon">canon</span>3-color discipline · green estimate-safe · amber verify-required · red manual-only</li>
+      <li><span class="badge canon">canon</span>Blue accent for LiDAR/measurement surfaces · matches room-plan content semantics</li>
+      <li><span class="badge canon">canon</span>Don't-release banner enforces trust-first · same pattern as F-W1's verify-before-fab warning</li>
+      <li><span class="badge canon">canon</span>No transcript or audit nav · exception-tier · operator only drills if something looks wrong</li>
+      <li><span class="badge canon">canon</span>Light + dark theme · toggle from start (no retrofit)</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Back → Hernandez project (or wherever drilled from)</li>
+      <li>Top-right ⋯ → action sheet (rename · delete · export · share)</li>
+      <li>RH synthesis tap → expand RH conversation pre-bound to this scan</li>
+      <li>Floor plan tap → 3D view (Apple RoomCapture re-open in viewer mode)</li>
+      <li>Measurement row tap → measurement detail · use-label explanation · verify task assign</li>
+      <li>Don't-release tap → expand to full use-label canon explanation</li>
+      <li>Cross-scope "See all" → full takeoff sheet · each row feeds its respective domain (HVAC → equipment selection · Tile → material order · etc.)</li>
+      <li>Re-scan → Apple RoomCaptureView reopens</li>
+      <li>Save to project → confirms attachment to active project · routes back to Hernandez</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>A reskinned LiDAR capture UI (Apple owns capture, period)</li>
+      <li>A 3D model viewer/editor (operators aren't 3D modelers)</li>
+      <li>A measurement-by-measurement entry form (Apple captured it; we surface it)</li>
+      <li>A precision-only display (use-labels embed the precision discipline · not "11.6789′ ± something" but plain English "verify before release")</li>
+      <li>A standalone capture tool (it's part of the loop · feeds F-G1 / F-PR2 / F-W1 / F-H1)</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>proposal_review_phase2/F-32_mobile_room_capture.html</code> · superseded</li>
+      <li><code>F-S1_mobile_start_action_sheet.html</code> · entry path via Start takeoff</li>
+      <li><code>F-E1_mobile_field_capture.html</code> · sibling capture surface (voice + photo)</li>
+      <li><code>F-G1_desktop_draft_review.html</code> · downstream consumer of measurements + use-labels</li>
+      <li><code>F-W1_mobile_work_order.html</code> · field-side use-label warning continuation</li>
+      <li><code>F-PR2_mobile_project_detail.html</code> · scan referenced in CO-002 continuity callout</li>
+      <li><code>kerf_lidar_day_one_substrate.md</code> · D-043 · cross-scope metrics + Tenant Room Memory</li>
+      <li><code>kerf_lidar_precision_limits_and_apple_wrap.md</code> · D-043 §9 · Apple wrap + use-labels</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Pre-scan setup surface (handled in Start sheet → Start takeoff routing)</li>
+      <li>Mid-scan UX (= Apple RoomCaptureView · not Kerf's to design)</li>
+      <li>3D model viewer (operators rarely need · post-V1)</li>
+      <li>Multi-room scans (one scan per session for V1 · multi-room is V2)</li>
+      <li>Desktop counterpart F-RC2 (room scan review on desktop) · later if needed</li>
+      <li>Cross-scope takeoff detail surfaces (HVAC Manual J flow · tile order flow · etc.) · separate Tier 3 destinations</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>One scan, multiple takeoffs, use-labels preserved end-to-end.</em> Apple captures the geometry; Kerf surfaces the value — 5 cross-scope takeoffs from one 30-second scan, each tagged with what it's safe to use for. The don't-release warning carries forward to F-W1 (field) and F-G1 (draft). The Tenant Room Memory anchor turns this scan into compounding advantage for the next similar room.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a reskinned LiDAR UI (Apple owns capture). Not a 3D modeling tool. Not a measurement entry form. Not a precision-display dashboard with seven decimal places. <strong>F-RC1 is the wrapper that turns one Apple scan into a use-label-tagged measurement set feeding the rest of the loop.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+// Mode toggle (annotated / presentation)
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+
+// Theme toggle (dark / light)
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+
+// Restore saved theme
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+</body>
+</html>

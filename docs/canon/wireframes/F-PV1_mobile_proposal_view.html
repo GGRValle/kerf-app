@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-PV1 · Mobile Proposal View · pre-contract client preview</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+
+  --paper-bg: #FCFCFA;
+  --paper-text: #1A1A1A;
+  --paper-text-dim: #555555;
+  --paper-text-mute: #888888;
+  --paper-border: #DDD8CC;
+  --paper-accent: #8B6F1E;
+  --paper-rule: #C9C2B0;
+}
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.client { background: rgba(201,169,97,0.16); color: var(--right-hand); }
+
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+.top-chrome { padding: 6px 14px 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--kerf-border-soft); }
+.tc-back { display: flex; align-items: center; gap: 3px; color: var(--kerf-amber); font-size: 12.5px; font-weight: 600; }
+.tc-back svg { width: 16px; height: 16px; fill: currentColor; }
+.tc-title { flex: 1; text-align: center; font-size: 13px; color: var(--kerf-text); font-weight: 600; }
+.tc-title .tc-sub { display: block; font-size: 9.5px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; letter-spacing: 0.04em; }
+.tc-action { color: var(--kerf-text-mute); }
+.tc-action svg { width: 16px; height: 16px; fill: currentColor; }
+
+.operator-controls { background: var(--kerf-bg-2); border-bottom: 1px solid var(--kerf-border-soft); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.op-eyebrow { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.op-eyebrow .op-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--right-hand); }
+.op-controls-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.op-segmented { display: flex; gap: 2px; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 7px; padding: 2px; }
+.op-seg-tab { padding: 5px 10px; font-size: 10.5px; border-radius: 5px; color: var(--kerf-text-mute); font-weight: 600; cursor: pointer; }
+.op-seg-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.op-toggle { display: flex; align-items: center; gap: 7px; margin-left: auto; font-size: 10.5px; color: var(--kerf-text-dim); font-weight: 600; }
+.op-toggle-switch { width: 28px; height: 16px; background: var(--kerf-surface-2); border-radius: 9px; position: relative; cursor: pointer; }
+.op-toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--kerf-text-dim); border-radius: 50%; transition: all 0.18s ease; }
+
+.paper-area { flex: 1; overflow-y: auto; background: linear-gradient(180deg, #1f2024 0%, #14181F 100%); padding: 16px 14px; }
+.paper { background: var(--paper-bg); color: var(--paper-text); border-radius: 4px; padding: 22px 22px 24px; font-family: "Times New Roman", Georgia, serif; box-shadow: 0 4px 16px rgba(0,0,0,0.30), 0 0 0 1px rgba(0,0,0,0.08); line-height: 1.55; }
+
+.letterhead { border-bottom: 2px solid var(--paper-accent); padding-bottom: 12px; margin-bottom: 16px; }
+.letterhead-row { display: flex; justify-content: space-between; align-items: baseline; }
+.letterhead-brand { font-family: "Times New Roman", Georgia, serif; font-size: 16px; color: var(--paper-text); font-weight: 700; letter-spacing: 0.02em; }
+.letterhead-license { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; color: var(--paper-text-mute); letter-spacing: 0.06em; }
+.letterhead-meta { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; color: var(--paper-text-mute); margin-top: 4px; letter-spacing: 0.04em; }
+
+.proposal-title-block { margin-bottom: 18px; }
+.proposal-eyebrow { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-accent); font-weight: 700; margin-bottom: 4px; }
+.proposal-title { font-family: "Times New Roman", Georgia, serif; font-size: 19px; color: var(--paper-text); line-height: 1.3; margin-bottom: 6px; }
+.proposal-meta { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9.5px; color: var(--paper-text-dim); line-height: 1.55; }
+.proposal-meta strong { color: var(--paper-text); }
+
+.paper-section { margin-bottom: 18px; }
+.paper-section-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper-accent); font-weight: 700; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--paper-rule); }
+
+.scope-line { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: grid; grid-template-columns: 1fr auto; gap: 14px; padding: 6px 0; border-bottom: 1px dotted var(--paper-rule); font-size: 11px; align-items: baseline; }
+.scope-line:last-child { border-bottom: none; }
+.scope-line .sl-name { color: var(--paper-text); }
+.scope-line .sl-name strong { font-weight: 600; }
+.scope-line .sl-name .sl-meta { display: block; font-size: 9.5px; color: var(--paper-text-mute); margin-top: 1px; font-style: italic; }
+.scope-line .sl-amount { color: var(--paper-text); font-weight: 600; font-family: "SF Mono", Menlo, monospace; font-size: 11px; letter-spacing: 0.02em; }
+
+.investment-block { background: rgba(139,111,30,0.05); border: 1px solid var(--paper-rule); border-radius: 4px; padding: 12px 14px; margin: 14px 0 4px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.inv-row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 11px; color: var(--paper-text-dim); }
+.inv-row.total { padding-top: 8px; margin-top: 4px; border-top: 2px solid var(--paper-accent); font-size: 13px; color: var(--paper-text); font-weight: 700; }
+.inv-row .inv-amount { font-family: "SF Mono", Menlo, monospace; font-weight: 600; }
+.inv-row.total .inv-amount { font-size: 14px; }
+
+.paper-list { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 10.5px; color: var(--paper-text-dim); line-height: 1.6; }
+.paper-list li { padding: 2px 0 2px 14px; position: relative; }
+.paper-list li::before { content: '·'; position: absolute; left: 4px; color: var(--paper-accent); font-weight: 700; }
+
+/* Signature block · pre-contract proposal only */
+.signature-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 2px solid var(--paper-accent);
+}
+.sig-eyebrow {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-accent);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.sig-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.sig-cell { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.sig-line {
+  border-bottom: 1px solid var(--paper-text-dim);
+  height: 22px;
+  margin-bottom: 4px;
+}
+.sig-label {
+  font-size: 9px;
+  color: var(--paper-text-mute);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.built-from-footer { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--paper-rule); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; color: var(--paper-text-mute); line-height: 1.55; letter-spacing: 0.02em; }
+.built-from-footer strong { color: var(--paper-text-dim); font-weight: 600; }
+
+.action-ribbon { flex-shrink: 0; background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border); padding: 8px 10px; display: flex; gap: 6px; align-items: center; }
+.ar-btn { flex: 1; padding: 10px 8px; text-align: center; background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 10px; font-size: 11px; color: var(--kerf-text); font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+.ar-btn svg { width: 14px; height: 14px; fill: currentColor; }
+.ar-btn .ar-sub { font-size: 9px; color: var(--kerf-text-mute); margin-top: 1px; font-weight: 500; }
+.ar-btn.primary { background: var(--kerf-amber); color: #1A1300; border-color: var(--kerf-amber); }
+.ar-btn.primary .ar-sub { color: rgba(26,19,0,0.65); }
+
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--right-hand); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-CL2 · Patel client detail</span>
+    <span class="sep">›</span>
+    <span class="step">F-G1 · Draft Review · "Preview client view"</span>
+    <span class="sep">›</span>
+    <span class="step current">F-PV1 · Proposal Preview · pre-contract</span>
+  </div>
+  <h1>F-PV1 · Mobile Proposal Preview · pre-contract · client-facing artifact</h1>
+  <p>
+    Tier 2 surface. The TRUE proposal preview — what the client sees BEFORE signing. <em>No change orders, no revisions, no contract status</em> — just the proposal-to-sign. Anjali Patel · ADU pre-design · qualified lead. Christian drafted EST-020 after Anjali's initial consultation and today's site survey; F-PV1 is the preview before he sends it to her for signature. The signature block at the bottom of the paper makes the pre-contract intent explicit: this becomes a contract WHEN signed. Same convention as F-PS1 (Project Status · post-contract): dark phone chrome wraps a light paper artifact. Per <code>kerf_ai_disclosure_pattern.md</code>: client artifacts say <em>"contractor-reviewed and approved"</em>, never Right Hand-branded. Canon distinction made explicit: <strong>proposal = pre-contract (this surface · revisions modify it) · contract = post-signing (F-PS1 covers it · change orders modify it).</strong>
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-PV1 · Mobile Proposal Preview · Patel ADU pre-design · summary itemization · margin hidden</div>
+  <p class="frame-narr">
+    Christian drafted EST-020 for Anjali Patel after their initial consultation and today's site survey. F-PV1 shows him the document Anjali will receive — full proposal with scope-of-work by phase, investment summary, allowances, exclusions, terms, and a signature block at the bottom. <em>No CO references because no contract exists yet</em>; if Anjali asks for changes before signing, those are revisions, not change orders. Operator controls let Christian switch itemization detail and toggle margin visibility (margin OFF by default = exactly what Anjali sees). Built-from footer translates the trust chain to plain client English: <em>"Christian's review of past ADU projects, your initial consultation, and today's site survey."</em> Action ribbon: <em>Edit</em> (returns to F-G1) · <em>Export PDF</em> · <em>Send for signature</em> (triggers V18 send gate).
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>16:24</span><span class="right">●●● 58%</span></div>
+
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back
+          </div>
+          <div class="tc-title">
+            Proposal preview
+            <span class="tc-sub">pre-contract · before signature</span>
+          </div>
+          <div class="tc-action">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 8a3 3 0 0 0-2.74 1.79l-7.34-4.16a3 3 0 1 0-1.13 2.04l7.55 4.27a2.99 2.99 0 0 0 0 1.92l-7.55 4.27a3 3 0 1 0 1.13 2.04l7.34-4.16A3 3 0 1 0 18 8z"/></svg>
+          </div>
+        </div>
+
+        <div class="operator-controls">
+          <div class="op-eyebrow"><span class="op-dot"></span> Operator controls (not visible to client)</div>
+          <div class="op-controls-row">
+            <div class="op-segmented">
+              <span class="op-seg-tab">Detailed</span>
+              <span class="op-seg-tab active">Summary</span>
+              <span class="op-seg-tab">Lump sum</span>
+            </div>
+            <div class="op-toggle">
+              <span>Show margin</span>
+              <div class="op-toggle-switch"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="paper-area">
+          <div class="paper">
+
+            <div class="letterhead">
+              <div class="letterhead-row">
+                <div class="letterhead-brand">GGR Design + Remodeling</div>
+                <div class="letterhead-license">CSLB #1054872</div>
+              </div>
+              <div class="letterhead-meta">San Diego, California · ggrremodel.com · (619) 555-0142</div>
+            </div>
+
+            <div class="proposal-title-block">
+              <div class="proposal-eyebrow">Proposal · for your review &amp; signature</div>
+              <div class="proposal-title">Detached ADU · Patel Residence</div>
+              <div class="proposal-meta">
+                <strong>Anjali Patel</strong><br/>
+                3422 Adams Ave · San Diego CA 92116<br/>
+                Proposal # EST-020 · prepared 2026-05-17 · valid 30 days
+              </div>
+            </div>
+
+            <!-- Scope of work -->
+            <div class="paper-section">
+              <div class="paper-section-title">Scope of work</div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Design &amp; permits</strong>
+                  <span class="sl-meta">Schematic design · construction docs · city + utility permits · structural review</span>
+                </div>
+                <div class="sl-amount">$18,400</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Site prep &amp; foundation</strong>
+                  <span class="sl-meta">Excavation · concrete footings + slab · utility trenching from main</span>
+                </div>
+                <div class="sl-amount">$24,800</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Framing &amp; envelope</strong>
+                  <span class="sl-meta">Wall + roof framing · sheathing · roofing · siding · windows · exterior doors</span>
+                </div>
+                <div class="sl-amount">$42,600</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Mechanical · electrical · plumbing</strong>
+                  <span class="sl-meta">HVAC mini-split · panel + circuits · water + waste rough-in · gas line</span>
+                </div>
+                <div class="sl-amount">$32,200</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Interior buildout</strong>
+                  <span class="sl-meta">Drywall · flooring · cabinetry · countertops · appliances · trim · paint</span>
+                </div>
+                <div class="sl-amount">$48,900</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Project management &amp; general</strong>
+                  <span class="sl-meta">Supervision · scheduling · trash · final inspection · closeout</span>
+                </div>
+                <div class="sl-amount">$20,600</div>
+              </div>
+
+            </div>
+
+            <!-- Investment summary -->
+            <div class="paper-section">
+              <div class="paper-section-title">Investment summary</div>
+              <div class="investment-block">
+                <div class="inv-row">
+                  <span>Scope of work</span>
+                  <span class="inv-amount">$187,500.00</span>
+                </div>
+                <div class="inv-row total">
+                  <span>Total proposal</span>
+                  <span class="inv-amount">$187,500.00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Allowances -->
+            <div class="paper-section">
+              <div class="paper-section-title">Allowances included</div>
+              <ul class="paper-list">
+                <li>Cabinetry · $18,000 (selections by Anjali · GGR procures + installs)</li>
+                <li>Appliances · $8,000 (refrigerator · range · dishwasher · stacked washer/dryer)</li>
+                <li>Finishes · $12,000 (flooring · counters · tile · paint)</li>
+                <li>Hardware &amp; fixtures · $3,500</li>
+              </ul>
+            </div>
+
+            <!-- Exclusions -->
+            <div class="paper-section">
+              <div class="paper-section-title">Exclusions</div>
+              <ul class="paper-list">
+                <li>Utility hookup fees beyond standard (SDG&amp;E + Water Authority pass-through)</li>
+                <li>Landscape work · hardscape · fencing · plantings</li>
+                <li>Furniture · window treatments · décor</li>
+                <li>Solar PV (separate proposal available if interested)</li>
+                <li>Soils report · geotechnical review (if required by city)</li>
+              </ul>
+            </div>
+
+            <!-- Terms -->
+            <div class="paper-section">
+              <div class="paper-section-title">Terms</div>
+              <ul class="paper-list">
+                <li>Deposit · 10% on contract signing ($18,750)</li>
+                <li>Design phase payment · 15% on construction docs complete</li>
+                <li>Construction draws · 5 progress payments tied to inspection milestones</li>
+                <li>Final payment · 10% retention released at substantial completion</li>
+                <li>Schedule · 8–10 months from permit issuance, weather and inspection availability permitting</li>
+                <li>Warranty · 1 year workmanship from substantial completion · 10 year structural</li>
+                <li>Valid 30 days · price adjustments after 30 days subject to material market</li>
+              </ul>
+            </div>
+
+            <!-- Signature block · pre-contract gate -->
+            <div class="signature-block">
+              <div class="sig-eyebrow">Acceptance — this proposal becomes a contract when signed</div>
+              <div class="sig-row">
+                <div class="sig-cell">
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Anjali Patel · client</div>
+                </div>
+                <div class="sig-cell">
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Date</div>
+                </div>
+              </div>
+              <div class="sig-row">
+                <div class="sig-cell">
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Christian Asdal · GGR Design + Remodeling</div>
+                </div>
+                <div class="sig-cell">
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Date</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Built-from footer -->
+            <div class="built-from-footer">
+              <strong>Contractor-reviewed and approved.</strong> Prepared with Kerf. Numbers reflect Christian Asdal's review of past ADU projects (3 builds 2024–25), your initial consultation, and today's site survey. Questions, revisions, or clarifications before signing: call (619) 555-0142 or reply to this proposal.
+            </div>
+
+          </div>
+        </div>
+
+        <div class="action-ribbon">
+          <button class="ar-btn">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zm17.71-10.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></svg>
+            Edit
+          </button>
+          <button class="ar-btn">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 12v7H5v-7H3v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7zm-6-2v-7h-2v7H8l4 4 4-4z"/></svg>
+            Export PDF
+          </button>
+          <button class="ar-btn primary">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            Send
+            <span class="ar-sub">for signature</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-spec">
+    <h3>F-PV1 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Client-facing artifact surfaces</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-B1c · Decision Card client preview (CO-level)</span></div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-PS1 · Project Status · client view (post-contract)</span></div>
+      <div class="sl-step current"><span class="sl-dot">PV</span><span><span class="sl-name">F-PV1</span> · Proposal Preview · pre-contract <em>(this)</em></span></div>
+    </div>
+
+    <h4>Canon distinction · why this surface exists separately</h4>
+    <ul>
+      <li><strong>Proposal</strong> · unsigned · pre-contract · <em>revisions</em> modify it · client previews via <strong>F-PV1 (this surface)</strong></li>
+      <li><strong>Contract</strong> · signed proposal · post-signing · <em>change orders</em> modify it · client status views via <strong>F-PS1</strong></li>
+      <li><strong>Change order</strong> · scope modification to an executed contract · CO previews via <strong>F-B1c</strong></li>
+      <li>F-PV1 has NO CO references because no contract exists yet</li>
+      <li>Signature block at the bottom is the canonical pre-contract marker — "this proposal becomes a contract when signed"</li>
+    </ul>
+
+    <h4>Patel ADU scenario</h4>
+    <ul>
+      <li>Anjali Patel · qualified lead from F-CL1 · ADU pre-design status</li>
+      <li>EST-020 · $187,500 detached ADU build · prepared 2026-05-17 · valid 30 days</li>
+      <li>Source chain: initial consultation 2 weeks ago + site survey today + 3 past GGR ADU projects (2024-25)</li>
+      <li>If Anjali asks for changes before signing → revisions (not COs)</li>
+      <li>If Anjali signs → becomes contract → future changes are COs (visible via F-PS1 if she opens her client view)</li>
+    </ul>
+
+    <h4>Paper structure (pre-contract specific)</h4>
+    <ul>
+      <li><strong>Letterhead</strong> · GGR brand</li>
+      <li><strong>Proposal title block</strong> · "for your review &amp; signature" eyebrow makes pre-contract intent explicit · proposal # · prepared date · validity window (30 days)</li>
+      <li><strong>Scope of work</strong> · 6 phase categories with amounts</li>
+      <li><strong>Investment summary</strong> · single total (no CO breakdown · no contract+pending math)</li>
+      <li><strong>Allowances · Exclusions · Terms</strong> · standard</li>
+      <li><strong>Signature block</strong> · <em>unique to F-PV1 · marks pre-contract</em> · client signature line + contractor signature line + dates · explicit gate: "this proposal becomes a contract when signed"</li>
+      <li><strong>Built-from footer</strong> · "Christian's review of past ADU projects, your initial consultation, and today's site survey"</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>A surface that shows COs (those require a signed contract · F-PS1 covers post-contract)</li>
+      <li>A Kerf-branded artifact (GGR-branded · Kerf is the tool · "prepared with Kerf" is the only attribution)</li>
+      <li>A document that exposes margin to the client (margin toggle OFF by default · operator-only)</li>
+      <li>A document that names internal mechanics (no AltitudePacket · no cohort · no validator IDs · just plain English)</li>
+      <li>An "AI-assisted" artifact (client artifacts say "contractor-reviewed and approved" · per §13)</li>
+    </ul>
+
+    <h4>Doctrine applied</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>One primary cognitive job · operator previews what client will see before signing</li>
+      <li><span class="badge canon">canon</span>Paper artifact stays light regardless of operator theme · matches F-PS1 + F-B1c convention</li>
+      <li><span class="badge canon">canon</span>Client-facing AI disclosure rule · contractor is accountable party</li>
+      <li><span class="badge canon">canon</span>Money displayed dollars · stored cents per CLAUDE.md</li>
+      <li><span class="badge canon">canon</span>Operator controls clearly separated from client artifact</li>
+      <li><span class="badge client">client</span>Field → past jobs → pricing chain rendered as plain English on the artifact ("Christian's review of past ADU projects, your initial consultation, and today's site survey") — same chain as F-PS1, scenario-appropriate wording</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Back → F-G1 Draft Review (where the proposal was assembled) · or F-CL2 Patel Client Detail</li>
+      <li>Share icon → action sheet (export PDF · email link · copy proposal text)</li>
+      <li>Itemization control → re-render scope-of-work at different granularity</li>
+      <li>Show margin toggle → adds operator-only margin annotation per line</li>
+      <li>Edit → F-G1 Draft Review (revise scope, pricing, terms before sending)</li>
+      <li>Export PDF → generates client-ready PDF</li>
+      <li>Send → V18 external send gate · separate confirmation flow · once Anjali signs the returned proposal, it becomes contract EST-020-executed and routes into F-PR2 as a new active project</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>F-CPS1_mobile_client_project_status.html</code> · sibling · post-contract counterpart</li>
+      <li><code>F-B1c_mobile_decision_card_client_preview.html</code> · sibling · CO-level preview</li>
+      <li><code>F-CL2_mobile_client_detail.html</code> · upstream · Patel client lens</li>
+      <li><code>F-G1_desktop_draft_review.html</code> · upstream · operator-internal scope/pricing assembly</li>
+      <li><code>kerf_ai_disclosure_pattern.md</code> · §13 disclosure rule</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> · plain English on client artifact</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Detailed itemization render (15-25 line items at full granularity)</li>
+      <li>Lump sum render (single total + narrative scope-of-work)</li>
+      <li>Show-margin operator annotation</li>
+      <li>V18 send confirmation flow</li>
+      <li>E-signature flow (client signs in-app)</li>
+      <li>Desktop variant F-PV2</li>
+      <li>Revision tracking (versioning the proposal pre-signing if Anjali asks for changes)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>Pre-contract intent explicit.</em> The "for your review &amp; signature" eyebrow at the top and the signature block at the bottom mark the surface as proposal-before-it-becomes-contract. No CO references. No contract status. Just a clean proposal that becomes binding when Anjali signs.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a project status view (that's F-PS1, post-contract). Not a CO preview (that's F-B1c). Not a Kerf-branded artifact. Not an AI-attributed document. <strong>F-PV1 is the pre-contract proposal preview · what Anjali sees before signing · what Christian double-checks before sending.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+</body>
+</html>

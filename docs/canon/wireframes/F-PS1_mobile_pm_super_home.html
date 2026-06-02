@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-PS1 · Mobile PM / Super Home (command grammar · two lenses)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--amber:#F5B544;--green:#38C977;--blue:#7BA8FF;--cyan:#67D6E0;--violet:#A78BFA;--red:#F87171;--rh:#C9A961}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--amber:#9A6B12;--blue:#185FA5;--cyan:#0E6E78;--violet:#6B4FBF}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}body.light-mode .phone-notch{background:#1a1a1d!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--amber);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:32px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--blue)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px}.frame-label{grid-column:1/-1;color:var(--blue);font-weight:600;font-size:13px;margin-bottom:4px}.frame-narr{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin:0 0 14px;max-width:1080px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:30px;display:grid;grid-template-columns:repeat(2,1fr);gap:26px;justify-items:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--blue);margin:14px 0 6px}.frame-spec h4.su{color:var(--cyan)}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.state-cap{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;text-align:center;margin-bottom:8px}.state-cap.pm{color:var(--blue)}.state-cap.su{color:var(--cyan)}
+.phone{width:300px;border:1.5px solid var(--bd);border-radius:38px;padding:11px;background:var(--bg);box-shadow:0 16px 50px rgba(0,0,0,.5);position:relative}
+.phone-notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:104px;height:22px;background:var(--bg);border-radius:0 0 14px 14px}
+.scr{border-radius:27px;overflow:hidden;height:610px;display:flex;flex-direction:column;background:var(--bg)}
+.status-bar{display:flex;justify-content:space-between;padding:11px 18px 4px;font-size:11px;font-weight:600}
+.apphdr{display:flex;align-items:center;padding:5px 16px 7px}.apphdr .wm{font-size:14px;font-weight:700;color:var(--rh)}.apphdr .role{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-left:8px;border-radius:20px;padding:1px 8px;border:1px solid}.role.pm{color:var(--blue);border-color:var(--blue)}.role.su{color:var(--cyan);border-color:var(--cyan)}
+.apphdr .av{margin-left:auto;width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}.av.pm{background:rgba(123,168,255,.2);color:var(--blue)}.av.su{background:rgba(103,214,224,.2);color:var(--cyan)}
+.body{flex:1;overflow-y:auto;padding:6px 14px 14px}
+.sec{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:13px 2px 7px}.sec .ct{color:var(--dim);font-weight:600;letter-spacing:0;text-transform:none;margin-left:6px}
+.onething{background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:13px;border-left:4px solid}.ot-pm{border-left-color:var(--blue)}.ot-su{border-left-color:var(--cyan)}
+.onething .lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}.lbl-pm{color:var(--blue)}.lbl-su{color:var(--cyan)}
+.onething .ttl{font-size:15px;font-weight:600;margin-top:5px;line-height:1.35}.onething .sub{font-size:10.5px;color:var(--mute);margin-top:6px}
+.deck{background:var(--s);border:1px solid var(--bds);border-radius:9px;padding:9px 11px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:11.5px}.dot{width:12px;height:12px;border-radius:50%;flex:none}.deck .meta{color:var(--mute);font-size:10px;margin-left:auto;flex:none}
+.pulse{background:var(--bg2);border:1px solid var(--bds);border-radius:10px;padding:3px 11px}
+.pcat{padding:9px 0 9px 11px;border-bottom:1px solid var(--bds);border-left:3px solid var(--bd)}.pcat:last-child{border-bottom:none}.pcat .ph{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px}.pcat .ph .pd{width:8px;height:8px;border-radius:50%;flex:none}
+.pl{font-size:11px;color:var(--dim);line-height:1.5;padding:2px 0}.pl b{color:var(--t);font-weight:600}
+.botbar{display:flex;justify-content:space-around;align-items:flex-end;padding:7px 4px 11px;border-top:1px solid var(--bds);background:var(--bg)}.nav{font-size:9px;color:var(--mute);text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}.nav.pm{color:var(--blue)}.nav.su{color:var(--cyan)}.bi{width:24px;height:24px;display:block}
+.micwrap{flex:1;display:flex;flex-direction:column;align-items:center}.mic{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-19px;box-shadow:0 0 0 5px var(--bg);color:#0A0D11}.mic.pm{background:var(--blue)}.mic.su{background:var(--cyan)}.mic .bi{width:25px;height:25px}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}.callout{background:var(--bg2);border:1px solid var(--bd);border-left:3px solid var(--blue);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--dim)}.callout.su{border-left-color:var(--cyan)}.callout .ct{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;display:block;margin-bottom:5px;color:var(--blue)}.callout.su .ct{color:var(--cyan)}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.phone{background:#FFF!important;border-color:#999!important;box-shadow:none!important}@page{size:letter;margin:.5in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · two lenses · icons inline</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Right Hand · role homes</span><span class="sep">›</span><span class="step current">F-PS1 · PM / Super home (mobile)</span></div>
+<h1>F-PS1 · Mobile PM / Super Home · same shape, two lenses</h1>
+<p>Both run the work, but at different altitudes — so two projections of the command grammar, not one home. <strong>PM (blue)</strong> sees coordination: blockers, selections, RFIs, schedule drift, subs, budget, client. <strong>Super (cyan)</strong> sees execution: today's site issue, crews, work orders, inspections, punch, quality, safety. PM sees money and client; Super sees crew and quality.</p></div>
+<div class="frame"><div class="frame-label">Frame · F-PS1 · PM lens + Super lens</div>
+<p class="frame-narr">Left: the PM's Right Hand leads with a job blocker and surfaces what's holding each job up. Right: the Super's leads with today's site problem and where the crews are. Same One Thing → On Deck → Pulse skeleton, different content and accent per role-root.</p>
+<div class="frame-render">
+
+<div><div class="state-cap pm">PM lens · coordination</div><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>9:41</span><span>●●● 88%</span></div>
+<div class="apphdr"><span class="wm">Right Hand</span><span class="role pm">PM</span><span class="av pm">DK</span></div>
+<div class="body">
+<div class="sec">The one thing</div>
+<div class="onething ot-pm"><div class="lbl lbl-pm">Blocking a job</div><div class="ttl">Dunne tile blocked — no grout selection</div><div class="sub">Crew sets Thursday · client hasn't picked · 1 day of drift if unresolved</div></div>
+<div class="sec">On deck <span class="ct">6</span></div>
+<div class="deck"><span class="dot" style="background:var(--violet)"></span>Wegrzyn — 2 selections still open<span class="meta">cabinets</span></div>
+<div class="deck"><span class="dot" style="background:var(--cyan)"></span>Coring RFI — tile layout, unanswered<span class="meta">2 days</span></div>
+<div class="deck"><span class="dot" style="background:var(--amber)"></span>Moore schedule drift — inspector slip<span class="meta">+1 day</span></div>
+<div class="deck"><span class="dot" style="background:var(--green)"></span>3 field notes need review<span class="meta">Wegrzyn</span></div>
+<div class="deck"><span class="dot" style="background:var(--blue)"></span>Plumbing sub — confirm Friday<span class="meta">coordinate</span></div>
+<div class="deck"><span class="dot" style="background:var(--amber)"></span>Hernández CO — client decision<span class="meta">$14.8k</span></div>
+<div class="sec">The pulse</div>
+<div class="pulse">
+<div class="pcat" style="border-left-color:var(--blue)"><div class="ph" style="color:var(--blue)"><span class="pd" style="background:var(--blue)"></span>Jobs · 4 running</div><div class="pl"><b>Wegrzyn</b> 60% · <b>Dunne</b> 35% · <b>Moore</b> 95% · <b>Coring</b> Mon</div></div>
+<div class="pcat" style="border-left-color:var(--amber)"><div class="ph" style="color:var(--amber)"><span class="pd" style="background:var(--amber)"></span>Budget</div><div class="pl">Wegrzyn margin <b>34%</b> · Moore tracking · Dunne 2 COs</div></div>
+<div class="pcat" style="border-left-color:var(--green)"><div class="ph" style="color:var(--green)"><span class="pd" style="background:var(--green)"></span>Client</div><div class="pl">Dunne waiting on you · Coring happy · Moore closeout call due</div></div>
+</div>
+</div>
+<div class="botbar"><div class="nav pm"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Create</div><div class="micwrap"><div class="mic pm"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div></div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Camera</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>More</div></div>
+</div></div></div>
+
+<div><div class="state-cap su">Super lens · execution</div><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>9:41</span><span>●●● 88%</span></div>
+<div class="apphdr"><span class="wm">Right Hand</span><span class="role su">Super</span><span class="av su">AN</span></div>
+<div class="body">
+<div class="sec">The one thing</div>
+<div class="onething ot-su"><div class="lbl lbl-su">On site today</div><div class="ttl">Wegrzyn short a man — Jake out</div><div class="sub">Rough plumbing pressure test needs 2 · pull Mike from Moore punch?</div></div>
+<div class="sec">On deck <span class="ct">6</span></div>
+<div class="deck"><span class="dot" style="background:var(--cyan)"></span>Inspection — Wegrzyn, 1:00 today<span class="meta">be ready</span></div>
+<div class="deck"><span class="dot" style="background:var(--green)"></span>Today's work orders — 3 crews out<span class="meta">view</span></div>
+<div class="deck"><span class="dot" style="background:var(--red)"></span>Quality flag — Dunne tile lippage<span class="meta">check</span></div>
+<div class="deck"><span class="dot" style="background:var(--amber)"></span>Moore punch — 6 items left<span class="meta">closeout</span></div>
+<div class="deck"><span class="dot" style="background:var(--violet)"></span>Material — Wegrzyn valve boxes short<span class="meta">order</span></div>
+<div class="deck"><span class="dot" style="background:var(--green)"></span>Carlos flagged uneven slab<span class="meta">review</span></div>
+<div class="sec">The pulse</div>
+<div class="pulse">
+<div class="pcat" style="border-left-color:var(--green)"><div class="ph" style="color:var(--green)"><span class="pd" style="background:var(--green)"></span>Crews · 4 on, 1 out</div><div class="pl"><b>Carlos</b> Wegrzyn · <b>Ana's crew</b> Dunne · <b>Mike</b> Moore · Jake out</div></div>
+<div class="pcat" style="border-left-color:var(--cyan)"><div class="ph" style="color:var(--cyan)"><span class="pd" style="background:var(--cyan)"></span>Site readiness</div><div class="pl">Wegrzyn ready · Dunne tile staged · Moore inspect Thu</div></div>
+<div class="pcat" style="border-left-color:var(--amber)"><div class="ph" style="color:var(--amber)"><span class="pd" style="background:var(--amber)"></span>Safety</div><div class="pl">All hard-hatted · no incidents · ladder check due</div></div>
+</div>
+</div>
+<div class="botbar"><div class="nav su"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Create</div><div class="micwrap"><div class="mic su"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div></div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Camera</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>More</div></div>
+</div></div></div>
+
+</div>
+<div class="frame-spec"><h3>F-PS1 · Spec</h3>
+<h4>PM lens (blue)</h4><ul>
+<li>One Thing = a job blocker (a selection/decision holding work up).</li>
+<li>On Deck = missing selections · RFIs · schedule drift · field notes to review · subs to coordinate · client decisions.</li>
+<li>Pulse = jobs %, budget/margin per job, client state.</li>
+<li>Sees money + client.</li>
+</ul>
+<h4 class="su">Super lens (cyan)</h4><ul>
+<li>One Thing = today's site problem (crew short, sequencing, quality gate).</li>
+<li>On Deck = inspections · today's work orders · quality flags · punch · material gaps · crew flags.</li>
+<li>Pulse = crews/where, site readiness, safety.</li>
+<li>Sees crew + quality (not margin).</li>
+</ul>
+<h4 style="color:var(--mute)">Both</h4><ul><li>Command grammar, same skeleton. Bar: Home · Create · Mic · Camera · More.</li></ul></div>
+</div>
+<div class="callout-row"><div class="callout"><span class="ct">PM = coordination</span>What's holding each job up — selections, RFIs, drift, subs, client decisions. The One Thing is always a blocker to clear.</div><div class="callout su"><span class="ct">Super = execution</span>What's happening on the ground today — crews, work orders, inspections, quality, safety. The One Thing is always today's site problem.</div></div>
+</div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

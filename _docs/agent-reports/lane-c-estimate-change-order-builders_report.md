@@ -10,15 +10,17 @@
 
 Vendored into the repo before writing code, and built from their **Annotated** panels (wireframe wins on layout/behavior; brief wins on floor/safety/acceptance):
 
-- `docs/wireframes/canon/F-CHG1_mobile_change_order_builder.html`
-- `docs/wireframes/canon/F-EST1_mobile_estimate_builder.html`
+- `docs/canon/wireframes/F-CHG1_mobile_change_order_builder.html`
+- `docs/canon/wireframes/F-EST1_mobile_estimate_builder.html`
+
+Full build-lane canon bundle (2026-06-01): `docs/canon/` — briefs · contracts · wireframes. Source of truth remains kerf-cos `_docs/`; this is the working copy per D-057.
 
 ## Canon files used
 
-- **F-CHG1 / F-EST1** (vendored above) — layout + behavior source of truth.
-- `_docs/product/RightHand_Estimate_Contract_and_Consult_v1_2026-05-30.md` — the `line_type` discriminator (§2.3: `labor · material · product · allowance · subcontract · equipment · markup · fee`), money-as-cents, margin-never-a-client-line, and the Selections-promotion rule (only `material · product · equipment · subcontract` promote; `labor` never; `allowance` has its own behavior).
-- `docs/wireframes/canon/F-RH3_stage4_consequence_bubble_extract_2026-06-01.md` — the consequence-gated confirm (answers the real question, never a generic Save/Don't-save box).
-- `docs/wireframes/canon/F-PV1_mobile_proposal_view.html` — pre-contract canon (a signed estimate becomes a contract).
+- **F-CHG1 / F-EST1** (`docs/canon/wireframes/`) — layout + behavior source of truth.
+- `docs/canon/contracts/RightHand_Estimate_Contract_and_Consult_v1_2026-05-30.md` — the `line_type` discriminator (§2.3: `labor · material · product · allowance · subcontract · equipment · markup · fee`), money-as-cents, margin-never-a-client-line, and the Selections-promotion rule (only `material · product · equipment · subcontract` promote; `labor` never; `allowance` has its own behavior).
+- `docs/canon/briefs/RightHand_Stage4_Consequence_Bubble_Spec_2026-06-01.md` — the consequence-gated confirm (answers the real question, never a generic Save/Don't-save box).
+- `docs/canon/wireframes/F-PV1_mobile_proposal_view.html` — pre-contract canon (a signed estimate becomes a contract).
 
 ---
 
