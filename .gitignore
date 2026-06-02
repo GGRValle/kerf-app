@@ -1,5 +1,6 @@
 .astro/
 dist/
+node_modules
 .DS_Store
 src/examples/w1-decision-queue-demo.bundle.js
 src/examples/v15-vertical-slice/app.bundle.js

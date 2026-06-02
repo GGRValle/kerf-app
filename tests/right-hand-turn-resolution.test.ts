@@ -61,12 +61,12 @@ test('context resolver infers estimate walks without asking a form question', ()
 
   const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
   assert.equal(trp.context_hypothesis.frame, 'estimate_walk');
-  assert.equal(trp.attention_artifact.headline, 'Estimate intake ready');
-  assert.match(trp.attention_artifact.why, /Estimate intake ready/i);
+  assert.equal(trp.attention_artifact.headline, 'Estimate ready');
+  assert.match(trp.attention_artifact.why, /Estimate ready to start/i);
   assert.doesNotMatch(trp.attention_artifact.why, /Daily-log entry/i);
 });
 
-test('context resolver treats new bathroom remodel language as a new estimate intake', () => {
+test('context resolver treats new bathroom remodel language as a new estimate', () => {
   const text = 'This is a new bathroom remodel project with a tub shower, tile floor, and new vanity.';
   const hypothesis = inferTurnContext(text, 'job_intake');
   assert.equal(hypothesis.frame, 'estimate_walk');
@@ -100,15 +100,16 @@ test('a resolved turn never auto-lands on the Field Capture mic page', () => {
   assert.equal(trp.next_surface, '/');
 });
 
-test('only the explicit "Add a photo" next move routes to Field Capture', () => {
+test('only the explicit "Add a photo" next move routes to Camera', () => {
   const trp = buildTurnResolutionPacket({ heardText: 'note', intent: 'job_note' });
   const moves = nextMovesFor(trp);
   const ids = moves.map((m) => m.id);
   assert.deepEqual(ids, ['add_photo', 'open_job', 'review_estimate', 'go_home']);
   const photo = moves.find((m) => m.id === 'add_photo');
-  assert.match(photo!.route, /^\/field-capture/);
-  // No OTHER move may point at Field Capture.
+  assert.match(photo!.route, /^\/camera\?src=voice&mode=photo&return_to=\//);
+  // No OTHER move may point at Camera or Field Capture.
   for (const move of moves.filter((m) => m.id !== 'add_photo')) {
+    assert.doesNotMatch(move.route, /\/camera/);
     assert.doesNotMatch(move.route, /\/field-capture/);
   }
   assert.equal(moves.find((m) => m.id === 'go_home')!.route, '/');
@@ -143,7 +144,7 @@ test('known project context routes next moves to that job instead of cold setup'
   const moves = nextMovesFor(trp);
   assert.equal(
     moves.find((m) => m.id === 'add_photo')?.route,
-    '/field-capture?dest=this-job&intent=record&src=voice&project_id=proj_wegrzyn_kitchen',
+    '/camera?src=voice&mode=photo&return_to=/&project_id=proj_wegrzyn_kitchen',
   );
   assert.equal(moves.find((m) => m.id === 'open_job')?.route, '/projects/proj_wegrzyn_kitchen?src=voice');
   assert.equal(moves.find((m) => m.id === 'review_estimate')?.route, '/projects/proj_wegrzyn_kitchen?src=voice&intent=estimate_walk');

@@ -105,8 +105,8 @@ export const TURN_RESOLUTION_SESSION_KEY = 'kerf.turnResolution';
 /**
  * Default landing after a resolved turn. The brief forbids dumping the user on
  * the Field Capture mic page after Save — durable/note turns land on Home (the
- * attention queue, with the result folded in). Field Capture is reachable only
- * as an EXPLICIT next move ("Add a photo"), never the automatic destination.
+ * attention queue, with the result folded in). Camera/media capture is reachable
+ * only as an EXPLICIT next move ("Add a photo"), never the automatic destination.
  */
 export const TURN_HOME_SURFACE = '/';
 
@@ -157,11 +157,11 @@ export function inferTurnContext(
     const explicit = /\b(job input|job intake|new estimate|estimate walk|job walk|start (a |the )?(estimate|job|project))\b/i.test(text);
     return {
       frame: 'estimate_walk',
-      label: 'Estimate intake',
+      label: 'Estimate',
       confidence: explicit ? 'high' : 'medium',
       likely_entity: null,
-      routed_label: 'Estimate walk → estimate intake',
-      preparing_label: 'Estimate intake ready',
+      routed_label: 'Estimate walk → estimate',
+      preparing_label: 'Estimate ready to start',
       prompt: 'Create estimate from this?',
       missing_facts: [],
       hypothesis_authority: 'deterministic_fallback',
@@ -230,7 +230,7 @@ export function inferTurnContext(
       label: 'Media capture',
       confidence: 'high',
       likely_entity: null,
-      routed_label: 'Media → Field Capture',
+      routed_label: 'Media → Camera',
       preparing_label: 'Opening capture tools',
       prompt: 'Add media?',
       missing_facts: [],
@@ -244,9 +244,9 @@ export function inferTurnContext(
       label: 'Job note',
       confidence: intent === 'unclassified' ? 'low' : 'high',
       likely_entity: null,
-      routed_label: 'Job note → session review',
-      preparing_label: 'Session note ready to file',
-      prompt: 'Save this session note?',
+      routed_label: 'Job note → choose job',
+      preparing_label: 'Job note ready',
+      prompt: 'Which job should I attach this to?',
       missing_facts: [],
       hypothesis_authority: 'deterministic_fallback',
     };
@@ -359,12 +359,12 @@ function likelyProjectRouteFor(trp: TurnResolutionPacket): string | null {
 function addPhotoRouteFor(trp: TurnResolutionPacket): string {
   const id = likelyProjectIdFor(trp);
   const projectParam = id ? `&project_id=${encodeURIComponent(id)}` : '';
-  return `/field-capture?dest=this-job&intent=record&src=voice${projectParam}`;
+  return `/camera?src=voice&mode=photo&return_to=/${projectParam}`;
 }
 
 /**
  * The four-question next-move set (brief §1). "Add a photo" is the ONLY move
- * that routes to Field Capture — and only because the user explicitly chose it.
+ * that routes to the universal Camera — and only because the user explicitly chose it.
  */
 export function nextMovesFor(trp: TurnResolutionPacket): readonly NextMove[] {
   const frame = trp.context_hypothesis?.frame;

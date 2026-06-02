@@ -13,6 +13,11 @@ healthRoutes.get('/health', (c) =>
     auth_enabled:
       typeof process.env['BASIC_AUTH_USER'] === 'string' &&
       process.env['BASIC_AUTH_USER'].length > 0,
+    build: {
+      commit: process.env['KERF_BUILD_COMMIT'] ?? 'unknown',
+      dirty: process.env['KERF_BUILD_DIRTY'] ?? 'unknown',
+      source: process.env['KERF_BUILD_SOURCE'] ?? 'unknown',
+    },
   }),
 );
 

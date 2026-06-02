@@ -47,9 +47,9 @@ const { t } = createLayoutContext();
   data-action-keep-talking={t('rh_voice.action_keep_talking')}
   data-action-back={t('rh_voice.action_back')}
   data-action-tell-job={t('rh_voice.action_tell_job')}
+  data-action-change-job={t('rh_voice.action_change_job')}
   data-action-save={t('rh_voice.action_save')}
   data-action-save-to={t('rh_voice.action_save_to')}
-  data-action-change-job={t('rh_voice.action_change_job')}
   data-action-start-intake={t('rh_voice.action_start_intake')}
   data-head-filed={t('rh_voice.head_filed')}
   data-head-filed-generic={t('rh_voice.head_filed_generic')}
@@ -104,7 +104,7 @@ const { t } = createLayoutContext();
     </div>
 
     <div class="rhvo__caption" id="rhvo-caption" aria-live="polite" data-empty="true">
-      <span class="rhvo__caption-label">{t('rh_voice.caption_label')}</span>
+      <span class="rhvo__caption-label" id="rhvo-caption-label">{t('rh_voice.caption_label')}</span>
       <span class="rhvo__caption-text" id="rhvo-caption-text"></span
       ><span class="rhvo__cursor" id="rhvo-cursor" aria-hidden="true"></span>
       <textarea
@@ -189,6 +189,7 @@ const { t } = createLayoutContext();
     const timerEl = document.getElementById('rhvo-timer');
     const statusEl = document.getElementById('rhvo-status');
     const captionWrap = document.getElementById('rhvo-caption');
+    const captionLabelEl = document.getElementById('rhvo-caption-label');
     const captionEl = document.getElementById('rhvo-caption-text');
     const captionInputEl = document.getElementById('rhvo-caption-input') as HTMLTextAreaElement | null;
     const micButton = document.getElementById('rhvo-mic-button') as HTMLButtonElement | null;
@@ -233,6 +234,7 @@ const { t } = createLayoutContext();
     let correctionBaseTrp: TurnResolutionPacket | null = null; // original turn while collecting a correction
     let currentMoves: readonly NextMove[] = []; // resolved-state next moves
     let resolvedSurface = '/'; // default landing after a resolved turn
+    let confirmSaveNeedsMoreContext = false;
 
     const setState = (next: OverlayState) => {
       state = next;
@@ -270,7 +272,8 @@ const { t } = createLayoutContext();
     };
 
     // ── Action-button visibility per state. The mic itself is the start/finish
-    // control while listening; Save/Keep talking own the confirm trust loop.
+    // control while listening. Confirm keeps at most one consequence button plus
+    // a quiet "keep talking" escape; the back/close affordance owns don't-save.
     const showActions = (mode: 'listening' | 'confirm' | 'capped' | 'resolved') => {
       // Stage-4 consequence bubble (F-RH3): the affordances answer the real
       // question — Save to <job> · Change job · Keep talking. The generic
@@ -279,7 +282,7 @@ const { t } = createLayoutContext();
       // Resolved owns its own next-move buttons (.rhvo__moves).
       if (cancelBtn) cancelBtn.hidden = mode !== 'capped';
       if (continueBtn) continueBtn.hidden = mode !== 'capped';
-      if (saveBtn) saveBtn.hidden = mode !== 'confirm';
+      if (saveBtn) saveBtn.hidden = mode !== 'confirm' || confirmSaveNeedsMoreContext;
       if (changeJobBtn) changeJobBtn.hidden = mode !== 'confirm';
       if (notThatBtn) notThatBtn.hidden = mode !== 'confirm';
     };
@@ -293,6 +296,7 @@ const { t } = createLayoutContext();
       if (saveBtn) {
         saveBtn.textContent = overlay.dataset.actionSave ?? 'Save';
         saveBtn.disabled = false;
+        saveBtn.hidden = true;
       }
     };
 
@@ -391,7 +395,7 @@ const { t } = createLayoutContext();
       if (label) return label;
       const routedParts = trp.context_hypothesis.routed_label.split('→');
       const routed = routedParts[routedParts.length - 1]?.trim() ?? '';
-      if (/session review|draft review|daily log|estimate intake|field capture|read-only review/i.test(routed)) return '';
+      if (/session review|draft review|daily log|estimate intake|estimate|field capture|read-only review/i.test(routed)) return '';
       return routed;
     };
 
@@ -412,19 +416,27 @@ const { t } = createLayoutContext();
     };
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
+      confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave(trp);
+      const entity = likelyEntityLabel(trp);
       if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
       if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
-      if (confirmPromptEl) confirmPromptEl.textContent = trp.context_hypothesis.prompt;
+      if (confirmPromptEl) confirmPromptEl.textContent = promptForTurn(trp);
+      if (notThatBtn) {
+        notThatBtn.textContent = entity && !confirmSaveNeedsMoreContext
+          ? overlay.dataset.actionChangeJob ?? 'Change job'
+          : overlay.dataset.actionKeepTalking ?? 'Keep talking';
+      }
       // Primary affordance is the answer to where-it-goes: "Save to <job>" when
       // the destination is known (F-RH3 stage 4), "Start intake" for a brand-new
       // estimate walk, plain "Save" only when no job is bound yet.
-      const entity = likelyEntityLabel(trp);
       if (saveBtn) {
         saveBtn.textContent = startNewIntakeTurn(trp)
           ? overlay.dataset.actionStartIntake ?? 'Start intake'
           : entity
             ? template(overlay.dataset.actionSaveTo ?? 'Save to {job}', { job: entity })
             : overlay.dataset.actionSave ?? 'Save';
+        saveBtn.hidden = confirmSaveNeedsMoreContext;
+        saveBtn.disabled = false;
       }
       // Change job only makes sense once a destination is on the table; with no
       // job bound the operator should Keep talking to name one instead.
@@ -534,6 +546,30 @@ const { t } = createLayoutContext();
       return (frame === 'estimate_walk' || frame === 'job_intake') && likelyProjectIdFor(trp) === null;
     };
 
+    const turnNeedsProjectBeforeSave = (trp: TurnResolutionPacket | null): boolean => {
+      if (!trp || likelyProjectIdFor(trp) !== null || startNewIntakeTurn(trp)) return false;
+      const frame = trp.context_hypothesis?.frame;
+      return trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note';
+    };
+
+    const promptForTurn = (trp: TurnResolutionPacket): string => {
+      if (turnNeedsProjectBeforeSave(trp)) {
+        return overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
+      }
+      const entity = likelyEntityLabel(trp);
+      const frame = trp.context_hypothesis?.frame;
+      if (entity && (trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note')) {
+        return `I'll save this to ${entity} → today's Daily Log. Good there?`;
+      }
+      if (entity && (trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk')) {
+        return `Create estimate from this for ${entity}?`;
+      }
+      if (!entity && (trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk')) {
+        return 'Start a new estimate from this?';
+      }
+      return trp.context_hypothesis.prompt;
+    };
+
     const withKnownEntity = (trp: TurnResolutionPacket): TurnResolutionPacket => {
       const likely = trp.context_hypothesis.likely_entity;
       if (likely?.type === 'project' && likely.id) {
@@ -548,11 +584,11 @@ const { t } = createLayoutContext();
             ...trp.context_hypothesis,
             likely_entity: null,
             routed_label: trp.context_hypothesis.frame === 'estimate_walk' || trp.context_hypothesis.frame === 'job_intake'
-              ? 'New project → estimate intake'
-              : 'Job note → session review',
+              ? 'New project → estimate'
+              : 'Job note → choose job',
             prompt: trp.context_hypothesis.frame === 'estimate_walk' || trp.context_hypothesis.frame === 'job_intake'
-              ? 'Start a new estimate intake from this?'
-              : 'Save this session note?',
+              ? 'Start a new estimate from this?'
+              : 'Which job should I attach this to?',
           },
           now: trp.created_at,
         });
@@ -571,11 +607,11 @@ const { t } = createLayoutContext();
         ...trp.context_hypothesis,
         likely_entity: entity,
         routed_label: frame === 'estimate_walk' || frame === 'job_intake'
-          ? `${project.label} → estimate intake`
+          ? `${project.label} → estimate`
           : `${project.label} → job notes`,
         prompt: frame === 'estimate_walk' || frame === 'job_intake'
           ? `Create estimate from this for ${project.label}?`
-          : `Save this note to ${project.label}?`,
+          : `I'll save this to ${project.label} → today's Daily Log. Good there?`,
         missing_facts: trp.context_hypothesis.missing_facts.filter((fact) => !/\b(job|project|active project)\b/i.test(fact)),
       };
       return buildTurnResolutionPacket({
@@ -628,7 +664,7 @@ const { t } = createLayoutContext();
       const intent = classifyTranscriptIntent(text);
       const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: text, intent }));
       parkedTurnResolution = trp;
-      // Mic off while the operator decides (privacy / bounded window §4). Not that
+      // Mic off while the operator decides (privacy / bounded window §4). Change
       // → beginSession() re-acquires from scratch, same as Continue.
       teardown();
       setState('confirm');
@@ -699,6 +735,7 @@ const { t } = createLayoutContext();
     // more). The mic comes back; nothing is persisted or discarded.
     const resumeListeningWithCorrection = (statusText: string) => {
       awaitingConfirm = false;
+      confirmSaveNeedsMoreContext = false;
       correctionBaseTrp = parkedTurnResolution?.heard_text === parkedTranscript
         ? parkedTurnResolution
         : parkedTranscript.trim().length > 0
@@ -709,6 +746,7 @@ const { t } = createLayoutContext();
       routedLive = false;
       lastInterim = '';
       setCaption('');
+      if (captionLabelEl) captionLabelEl.textContent = operatorName();
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
       setStatus(statusText);
@@ -824,6 +862,10 @@ const { t } = createLayoutContext();
       const baseTrp = parkedTurnResolution?.heard_text === clean
         ? parkedTurnResolution
         : buildTurnResolutionPacket({ heardText: clean, intent });
+      if (turnNeedsProjectBeforeSave(baseTrp)) {
+        returnToListening();
+        return;
+      }
       if (startNewIntakeTurn(baseTrp)) {
         routeToNewProjectIntake(baseTrp);
         return;
@@ -1182,14 +1224,16 @@ const { t } = createLayoutContext();
       void beginSession();
     };
 
-    // Wire Speak triggers: intercept, open overlay; href is the no-JS fallback.
-    document.querySelectorAll<HTMLElement>('[data-rh-speak]').forEach((el) => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        const speakEvent = new CustomEvent('kerf:rh-speak', { cancelable: true });
-        if (!window.dispatchEvent(speakEvent)) return;
-        openOverlay();
-      });
+    // Wire Speak triggers through delegation. Astro can execute component
+    // scripts before route chrome finishes hydrating; delegation keeps the
+    // universal bottom mic alive on every surface without page-level recorders.
+    document.addEventListener('click', (e) => {
+      const target = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-rh-speak]') : null;
+      if (!target) return;
+      e.preventDefault();
+      const speakEvent = new CustomEvent('kerf:rh-speak', { cancelable: true });
+      window.dispatchEvent(speakEvent);
+      openOverlay();
     });
 
     overlay.querySelectorAll('[data-rhvo-dismiss]').forEach((el) => {
@@ -1247,8 +1291,8 @@ const { t } = createLayoutContext();
     notThatBtn?.addEventListener('click', returnToListening);
     // Change job: re-route the parked note to a different job, same turn.
     changeJobBtn?.addEventListener('click', changeJob);
-    // Resolved-state next moves: "Add a photo" is the ONLY one that goes to Field
-    // Capture, and only because the operator explicitly chose it (brief §8).
+    // Resolved-state next moves: "Add a photo" is the ONLY one that goes to Camera,
+    // and only because the operator explicitly chose it (F-CAM1).
     overlay.querySelectorAll<HTMLElement>('[data-move]').forEach((el) => {
       el.addEventListener('click', () => routeMove(el.getAttribute('data-move')));
     });
@@ -1272,29 +1316,41 @@ const { t } = createLayoutContext();
     display: flex;
     align-items: flex-end;
     justify-content: center;
+    --rhvo-bg: rgba(20, 24, 31, 0.9);
+    --rhvo-surface: #232936;
+    --rhvo-surface-soft: #1a1f28;
+    --rhvo-border: rgba(255, 255, 255, 0.09);
+    --rhvo-border-soft: rgba(255, 255, 255, 0.12);
+    --rhvo-text: #e8ecf1;
+    --rhvo-dim: #98a1b3;
+    --rhvo-mute: #6a7282;
   }
   .rhvo[hidden] { display: none; }
   .rhvo__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(10, 13, 17, 0.72);
-    backdrop-filter: blur(4px);
+    background: rgba(6, 8, 11, 0.5);
+    backdrop-filter: blur(16px) saturate(0.85);
   }
   .rhvo__panel {
     position: relative;
-    width: min(440px, 100%);
-    margin: 0 0 max(1rem, env(safe-area-inset-bottom, 0px));
-    padding: 1.4rem 1.25rem 1.1rem;
-    max-height: min(75dvh, 720px);
+    width: min(520px, calc(100% - 1rem));
+    margin: 0 0 max(0.85rem, env(safe-area-inset-bottom, 0px));
+    padding: 0.92rem 0.85rem 0.8rem;
+    max-height: min(76dvh, 720px);
     overflow: auto;
-    border: 1px solid var(--kerf-border);
-    border-radius: 20px 20px 0 0;
-    background: var(--kerf-surface);
-    color: var(--kerf-text);
+    border: 1px solid var(--rhvo-border);
+    border-top-color: var(--rhvo-border-soft);
+    border-radius: 22px 22px 24px 24px;
+    background: var(--rhvo-bg);
+    backdrop-filter: blur(14px);
+    color: var(--rhvo-text);
     display: grid;
-    gap: 0.6rem;
-    justify-items: center;
-    text-align: center;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.56rem 0.62rem;
+    justify-items: stretch;
+    text-align: left;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
   }
   .rhvo__close {
     position: absolute;
@@ -1302,10 +1358,10 @@ const { t } = createLayoutContext();
     top: 0.75rem;
     width: 34px;
     height: 34px;
-    border: 1px solid var(--kerf-border-soft);
+    border: 1px solid var(--rhvo-border-soft);
     border-radius: 999px;
-    background: var(--kerf-surface-2);
-    color: var(--kerf-text-dim);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--rhvo-dim);
     font: inherit;
     font-size: 1.45rem;
     line-height: 1;
@@ -1314,26 +1370,29 @@ const { t } = createLayoutContext();
     cursor: pointer;
   }
   @media (min-width: 600px) {
-    .rhvo { align-items: center; }
-    .rhvo__panel { border-radius: 20px; margin-bottom: 0; }
+    .rhvo__panel { width: min(520px, calc(100% - 2rem)); }
   }
   .rhvo__indicator {
     position: relative;
-    width: 72px;
-    height: 72px;
+    order: 90;
+    grid-column: 1;
+    width: 48px;
+    height: 48px;
     padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
+    justify-self: start;
+    align-self: center;
   }
   .rhvo__pulse {
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--right-hand) 30%, transparent);
+    background: rgba(245, 181, 68, 0.24);
     animation: rhvo-pulse 1.6s ease-out infinite;
   }
-  .rhvo[data-state='fallback'] .rhvo__pulse { background: color-mix(in srgb, var(--kerf-blue) 30%, transparent); }
+  .rhvo[data-state='fallback'] .rhvo__pulse { background: rgba(123, 168, 255, 0.24); }
   .rhvo[data-state='capped'] .rhvo__pulse { animation: none; opacity: 0.4; }
   @keyframes rhvo-pulse {
     0% { transform: scale(0.8); opacity: 0.7; }
@@ -1341,15 +1400,15 @@ const { t } = createLayoutContext();
   }
   .rhvo__mic {
     position: absolute;
-    inset: 14px;
+    inset: 7px;
     border-radius: 50%;
-    background: var(--right-hand);
-    color: #0a0d11;
+    background: #f5b544;
+    color: #241b07;
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .rhvo__mic :global(svg) { width: 26px; height: 26px; fill: currentColor; }
+  .rhvo__mic :global(svg) { width: 22px; height: 22px; fill: currentColor; }
   /* The same mic stays visible across the turn. Listening pulses; confirm and
      resolved are quiet but tappable so the conversation can continue. */
   .rhvo[data-state='confirm'] .rhvo__indicator,
@@ -1358,6 +1417,8 @@ const { t } = createLayoutContext();
   .rhvo[data-state='confirm'] .rhvo__pulse,
   .rhvo[data-state='resolved'] .rhvo__pulse { animation: none; opacity: 0.22; }
   .rhvo__head {
+    order: 1;
+    grid-column: 1 / -1;
     width: 100%;
     display: flex;
     align-items: baseline;
@@ -1370,30 +1431,40 @@ const { t } = createLayoutContext();
     font-weight: 800;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--right-hand);
+    color: #f5b544;
   }
   .rhvo__timer {
     font-size: 0.72rem;
-    color: var(--kerf-text-mute);
+    color: var(--rhvo-mute);
     font-variant-numeric: tabular-nums;
   }
-  .rhvo__status { margin: 0; font-size: 1rem; font-weight: 600; color: var(--kerf-text); }
+  .rhvo__status { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--rhvo-text); }
+  .rhvo__status {
+    order: 2;
+    grid-column: 1 / -1;
+    text-align: center;
+  }
   .rhvo__status:empty { display: none; }
+  .rhvo[data-state='confirm'] .rhvo__head,
+  .rhvo[data-state='confirm'] .rhvo__status,
+  .rhvo[data-state='resolved'] .rhvo__head { display: none; }
   /* Discrete field-green VU bars — listening identity stays Right Hand gold,
      capture/level reads field-green. Shown only while actively capturing. */
   .rhvo__meter {
+    order: 3;
+    grid-column: 1 / -1;
     width: 100%;
     display: none;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    height: 30px;
+    gap: 4px;
+    height: 22px;
   }
   .rhvo[data-state='listening'] .rhvo__meter,
   .rhvo[data-state='fallback'] .rhvo__meter { display: flex; }
   .rhvo__bar {
     width: 4px;
-    height: 26px;
+    height: 18px;
     border-radius: 2px;
     background: var(--field-green);
     transform-origin: center;
@@ -1401,41 +1472,45 @@ const { t } = createLayoutContext();
     transition: transform 0.08s linear;
   }
   .rhvo__caption {
+    order: 4;
+    grid-column: 1 / -1;
     width: 100%;
-    min-height: 2.4rem;
-    padding: 0.6rem 0.7rem;
-    border-radius: 10px;
-    background: var(--kerf-bg-2);
-    border: 1px solid var(--kerf-border-soft);
+    min-height: 2.2rem;
+    max-width: 92%;
+    justify-self: end;
+    padding: 0.62rem 0.72rem;
+    border-radius: 12px 12px 4px 12px;
+    background: var(--rhvo-surface);
+    border: 1px solid var(--rhvo-border);
     text-align: left;
   }
   .rhvo[data-state='confirm'] .rhvo__caption { display: none; }
-  .rhvo__caption[data-empty='true'] { opacity: 0.55; }
+  .rhvo__caption[data-empty='true'] { opacity: 0.72; }
   .rhvo__caption-label {
     display: block;
     font-size: 0.62rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     font-weight: 700;
-    color: var(--kerf-text-mute);
+    color: var(--rhvo-mute);
     margin-bottom: 0.15rem;
   }
-  .rhvo__caption-text { font-size: 0.92rem; line-height: 1.4; color: var(--kerf-text); }
+  .rhvo__caption-text { font-size: 0.95rem; line-height: 1.42; color: var(--rhvo-text); }
   .rhvo__caption-input {
     display: block;
     width: 100%;
-    min-height: 4.5rem;
+    min-height: 3.05rem;
     padding: 0.2rem 0 0;
     border: 0;
     outline: 0;
     resize: vertical;
     background: transparent;
-    color: var(--kerf-text);
+    color: var(--rhvo-text);
     font: inherit;
     font-size: 0.96rem;
     line-height: 1.42;
   }
-  .rhvo__caption-input::placeholder { color: var(--kerf-text-mute); }
+  .rhvo__caption-input::placeholder { color: var(--rhvo-mute); }
   /* Typing cursor on the live caption — only while actively listening. */
   .rhvo__cursor {
     display: none;
@@ -1443,7 +1518,7 @@ const { t } = createLayoutContext();
     height: 1em;
     margin-left: 1px;
     vertical-align: text-bottom;
-    background: var(--right-hand);
+    background: #f5b544;
   }
   .rhvo[data-state='listening'] .rhvo__cursor {
     display: inline-block;
@@ -1453,11 +1528,18 @@ const { t } = createLayoutContext();
   /* Confirm trust loop — conversational projection of the TRP. The TRP still
      exists underneath; the operator sees Right Hand reply in plain language. */
   .rhvo__confirm { display: none; width: 100%; text-align: left; }
-  .rhvo[data-state='confirm'] .rhvo__confirm { display: block; }
-  .rhvo[data-state='confirm'] .rhvo__authority { display: none; }
+  .rhvo__confirm {
+    order: 5;
+    grid-column: 1 / -1;
+  }
+  .rhvo[data-state='confirm'] .rhvo__confirm { display: grid; gap: 0.55rem; }
   /* Resolved state — the turn is closed; show the next-step response + moves,
      never the live capture chrome or a competing primary action. */
   .rhvo__resolution { display: none; width: 100%; }
+  .rhvo__resolution {
+    order: 5;
+    grid-column: 1 / -1;
+  }
   .rhvo[data-state='resolved'] .rhvo__resolution { display: block; }
   .rhvo[data-state='resolved'] .rhvo__meter,
   .rhvo[data-state='resolved'] .rhvo__caption,
@@ -1492,21 +1574,32 @@ const { t } = createLayoutContext();
   .rhvo__turn {
     display: grid;
     gap: 0.28rem;
-    padding: 0.72rem 0;
-    border-top: 1px solid var(--kerf-border-soft);
+    padding: 0.62rem 0.72rem;
+    border: 1px solid var(--rhvo-border);
+    border-radius: 12px;
+    background: var(--rhvo-surface);
   }
-  .rhvo__turn:first-child { border-top: none; padding-top: 0; }
+  .rhvo__turn:first-child { border-top: 1px solid var(--rhvo-border); padding-top: 0.62rem; }
+  .rhvo__turn--operator {
+    max-width: 92%;
+    justify-self: end;
+    border-radius: 12px 12px 4px 12px;
+  }
   .rhvo__turn--right-hand {
+    max-width: 94%;
+    justify-self: start;
     margin-top: 0.15rem;
-    padding: 0.72rem 0;
-    border-top: 1px solid var(--kerf-border-soft);
+    padding: 0.78rem 0.86rem;
+    border: 1px solid rgba(201, 169, 97, 0.32);
+    border-radius: 12px 12px 12px 4px;
+    background: rgba(201, 169, 97, 0.14);
   }
   .rhvo__speaker {
     font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: 800;
-    color: var(--kerf-text-mute);
+    color: var(--rhvo-mute);
   }
   .rhvo__said,
   .rhvo__reply,
@@ -1514,20 +1607,55 @@ const { t } = createLayoutContext();
     margin: 0;
     font-size: 0.98rem;
     line-height: 1.45;
-    color: var(--kerf-text);
+    color: var(--rhvo-text);
   }
   .rhvo__said {
     max-height: 10.5rem;
     overflow: auto;
-    color: var(--kerf-text-dim);
+    color: var(--rhvo-dim);
   }
   .rhvo__reply { font-weight: 700; }
   .rhvo__confirm-prompt {
-    margin-top: 0.74rem;
-    font-weight: 800;
+    max-width: 96%;
+    justify-self: start;
+    margin-top: 0;
+    padding: 0.72rem 0.78rem 0.65rem;
+    border: 1px solid rgba(56, 201, 119, 0.4);
+    border-radius: 12px 12px 12px 4px;
+    background: rgba(56, 201, 119, 0.13);
+    font-weight: 700;
+    color: var(--rhvo-text);
   }
-  .rhvo__authority { margin: 0; font-size: 0.72rem; line-height: 1.4; color: var(--kerf-text-mute); }
-  .rhvo__actions { display: flex; gap: 0.6rem; width: 100%; margin-top: 0.2rem; }
+  .rhvo__authority {
+    order: 90;
+    grid-column: 2;
+    margin: 0;
+    align-self: center;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: var(--rhvo-dim);
+  }
+  .rhvo__actions {
+    order: 6;
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.6rem;
+    width: 100%;
+    margin-top: 0.1rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--rhvo-border);
+  }
+  .rhvo[data-state='confirm'] .rhvo__actions {
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+    width: min(96%, 100%);
+    justify-self: start;
+    margin-top: -0.35rem;
+    padding: 0 0 0.04rem 0.72rem;
+    border-top: 0;
+  }
   .rhvo__btn {
     flex: 1;
     min-height: 44px;
@@ -1535,10 +1663,26 @@ const { t } = createLayoutContext();
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    border: 1px solid var(--kerf-border);
+    border: 1px solid var(--rhvo-border-soft);
   }
   .rhvo__btn[hidden] { display: none; }
-  .rhvo__btn--ghost { background: transparent; color: var(--kerf-text-dim); }
-  .rhvo__btn--primary { background: var(--right-hand); color: #0a0d11; border-color: var(--right-hand); }
+  .rhvo__btn--ghost { background: transparent; color: var(--rhvo-dim); }
+  .rhvo__btn--primary { background: #f5b544; color: #241b07; border-color: #f5b544; }
   .rhvo__btn--save { background: var(--field-green); color: #06231a; border-color: var(--field-green); }
+  .rhvo[data-state='confirm'] .rhvo__btn {
+    flex: 0 0 auto;
+    min-height: 36px;
+    border-radius: 999px;
+    font-size: 0.84rem;
+  }
+  .rhvo[data-state='confirm'] .rhvo__btn--ghost {
+    padding: 0 0.85rem;
+    border-color: var(--rhvo-border-soft);
+    background: transparent;
+    font-weight: 700;
+  }
+  .rhvo[data-state='confirm'] .rhvo__btn--save {
+    min-width: 132px;
+    padding: 0 1.05rem;
+  }
 </style>

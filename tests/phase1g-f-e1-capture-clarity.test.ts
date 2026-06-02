@@ -24,7 +24,8 @@ test('Phase 1G hotfix · F-E1 keeps capture controls available through preflight
   );
   assert.doesNotMatch(source, /id="f-e1-record-more"/);
   assert.doesNotMatch(source, /id="f-e1-record-active"/);
-  assert.match(source, /Tap the mic in the bottom bar for a voice note/);
+  assert.doesNotMatch(source, /class="fc-mic-hint"/);
+  assert.match(source, /Use the bottom mic to keep talking/);
   assert.match(source, /id="f-e1-photo-preflight"/);
   assert.match(source, /accept="image\/\*,video\/\*"/);
   assert.match(source, /Photo \/ Video/);

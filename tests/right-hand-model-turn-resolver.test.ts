@@ -78,9 +78,9 @@ test('configured model resolver returns llm-inferred estimate walk TRP', async (
       label: 'Estimate walk',
       confidence: 'high',
       likely_entity: { type: 'project', label: 'Wegrzyn kitchen', id: 'proj_wegrzyn_kitchen', confidence: 'medium' },
-      routed_label: 'Estimate walk → Wegrzyn kitchen intake',
-      preparing_label: 'Intake packet + estimate-start note',
-      prompt: 'Start this estimate intake?',
+      routed_label: 'Estimate walk → Wegrzyn kitchen',
+      preparing_label: 'Estimate draft ready',
+      prompt: 'Start this estimate?',
       missing_facts: [],
     }),
   );
@@ -112,11 +112,11 @@ test('model resolver sanitizes active-work copy before it reaches the operator',
   );
 
   assert.equal(result.authority, 'llm_inferred');
-  assert.equal(result.trp.context_hypothesis.routed_label, 'Estimate walk → estimate intake');
-  assert.equal(result.trp.context_hypothesis.preparing_label, 'Estimate intake ready');
+  assert.equal(result.trp.context_hypothesis.routed_label, 'Estimate walk → estimate');
+  assert.equal(result.trp.context_hypothesis.preparing_label, 'Estimate ready to start');
   assert.equal(result.trp.context_hypothesis.prompt, 'Create estimate from this?');
-  assert.doesNotMatch(result.trp.context_hypothesis.routed_label, /packet|estimate-start/i);
-  assert.doesNotMatch(result.trp.context_hypothesis.prompt, /packet|estimate-start/i);
+  assert.doesNotMatch(result.trp.context_hypothesis.routed_label, /packet|estimate-start|intake/i);
+  assert.doesNotMatch(result.trp.context_hypothesis.prompt, /packet|estimate-start|intake/i);
   assert.doesNotMatch(result.trp.attention_artifact.why, /Drafting Estimate/i);
   assert.match(result.trp.attention_artifact.why, /Nothing has been filed yet/);
 });
@@ -138,8 +138,8 @@ test('model resolver rejects unsupported project guesses for new work', async ()
       label: 'Estimate walk',
       confidence: 'high',
       likely_entity: { type: 'project', label: 'Wegrzyn kitchen + primary bath', id: 'proj_wegrzyn_kitchen', confidence: 'medium' },
-      routed_label: 'Wegrzyn kitchen + primary bath → estimate intake',
-      preparing_label: 'Estimate intake ready',
+      routed_label: 'Wegrzyn kitchen + primary bath → estimate',
+      preparing_label: 'Estimate ready to start',
       prompt: 'Create estimate from this for Wegrzyn kitchen + primary bath?',
       missing_facts: [],
     }),
@@ -158,7 +158,7 @@ test('model resolver does not ground a project that the transcript rejects', asy
     {
       ...BASE_INPUT,
       heardText:
-        "We're starting a new bathroom remodel for Clem. Start the estimate intake instead of filing this under Wegrzyn.",
+        "We're starting a new bathroom remodel for Clem. Start the estimate instead of filing this under Wegrzyn.",
       currentPath: '/',
       knownEntities: [
         { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
@@ -170,8 +170,8 @@ test('model resolver does not ground a project that the transcript rejects', asy
       label: 'Estimate walk',
       confidence: 'high',
       likely_entity: { type: 'project', label: 'Wegrzyn kitchen + primary bath', id: 'proj_wegrzyn_kitchen', confidence: 'medium' },
-      routed_label: 'Wegrzyn kitchen + primary bath → estimate intake',
-      preparing_label: 'Estimate intake ready',
+      routed_label: 'Wegrzyn kitchen + primary bath → estimate',
+      preparing_label: 'Estimate ready to start',
       prompt: 'Create estimate from this for Wegrzyn kitchen + primary bath?',
       missing_facts: [],
     }),
@@ -180,7 +180,7 @@ test('model resolver does not ground a project that the transcript rejects', asy
   assert.equal(result.authority, 'llm_inferred');
   assert.equal(result.trp.context_hypothesis.frame, 'estimate_walk');
   assert.equal(result.trp.context_hypothesis.likely_entity, null);
-  assert.equal(result.trp.context_hypothesis.routed_label, 'Estimate walk → estimate intake');
+  assert.equal(result.trp.context_hypothesis.routed_label, 'Estimate walk → estimate');
   assert.equal(result.trp.context_hypothesis.prompt, 'Create estimate from this?');
 });
 
@@ -351,8 +351,8 @@ test('route invokes configured model server-side and returns client-safe TRP', a
   };
   assert.equal(body.authority, 'llm_inferred');
   assert.equal(body.trp.context_hypothesis.prompt, 'Create estimate from this for Wegrzyn kitchen + primary bath?');
-  assert.equal(body.trp.context_hypothesis.preparing_label, 'Estimate intake ready');
-  assert.equal(body.trp.context_hypothesis.routed_label, 'Wegrzyn kitchen + primary bath → estimate intake');
+  assert.equal(body.trp.context_hypothesis.preparing_label, 'Estimate ready to start');
+  assert.equal(body.trp.context_hypothesis.routed_label, 'Wegrzyn kitchen + primary bath → estimate');
   assert.equal(body.trp.context_hypothesis.likely_entity?.id, 'proj_wegrzyn_kitchen');
   assert.equal(capturedAuth, 'gsk-test-secret');
   assert.equal(capturedBody?.endpoint, TURN_RESOLVER_LLM_ENDPOINT);

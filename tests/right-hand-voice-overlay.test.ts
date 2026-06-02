@@ -219,7 +219,7 @@ test('action gate · LIVE intents are reversible navigations · routable from in
   assert.equal(liveRouteFor('open_relay'), '/relay');
   assert.equal(liveRouteFor('open_job_intake'), '/projects/new');
   assert.equal(liveRouteFor('open_money'), '/money');
-  assert.equal(liveRouteFor('open_field_capture'), '/field-capture');
+  assert.equal(liveRouteFor('open_field_capture'), '/camera');
 });
 
 test('action gate · durable intents require the committed transcript', () => {
@@ -253,7 +253,7 @@ test('deterministic intent classifier maps keywords honestly', () => {
   assert.equal(classifyTranscriptIntent('what is the status on the kitchen'), 'status_question');
   // Note dictation is now DURABLE (turn-resolution brief §4): "take a job note"
   // must NOT live-route to /field-capture — it waits for commit + resolves the
-  // turn. Explicit media/destination phrasing keeps the live Field Capture route.
+  // turn. Explicit media/destination phrasing keeps the live Camera route.
   assert.equal(classifyTranscriptIntent('take a job note'), 'job_note');
   assert.equal(classifyTranscriptIntent('make a note about the tile'), 'job_note');
   assert.equal(classifyTranscriptIntent('add a photo'), 'open_field_capture');
@@ -276,7 +276,7 @@ test('Speak triggers open the overlay and keep the no-JS href fallback', () => {
   assert.match(layout, /RightHandVoiceOverlay/);
 });
 
-test('overlay uses the mic as the finish control and lets the current page claim Speak context', () => {
+test('overlay uses the mic as the finish control and offers a cancelable Speak hook', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
   assert.doesNotMatch(src, /id="rhvo-done"/);
   assert.match(src, /data-mic-toggle-label=\{t\('rh_voice\.mic_toggle_label'\)\}/);
@@ -287,17 +287,22 @@ test('overlay uses the mic as the finish control and lets the current page claim
   assert.match(src, /id="rhvo-caption-input"/);
   assert.match(src, /const currentCaptionText/);
   assert.match(src, /captionInputEl\?\.addEventListener\('input'/);
-  // PR #250 context-aware Speak hook stays intact: cancelable event before open.
+  // Pages may observe Speak context, but they cannot claim the mic away from
+  // the universal Right Hand overlay.
+  assert.match(src, /document\.addEventListener\('click'/);
+  assert.match(src, /closest<HTMLElement>\('\[data-rh-speak\]'\)/);
   assert.match(src, /new CustomEvent\('kerf:rh-speak', \{ cancelable: true \}\)/);
-  assert.match(src, /if \(!window\.dispatchEvent\(speakEvent\)\) return/);
+  assert.match(src, /window\.dispatchEvent\(speakEvent\);\s*openOverlay\(\)/);
+  assert.doesNotMatch(src, /if \(!window\.dispatchEvent\(speakEvent\)\) return/);
 });
 
-test('Field Capture claims the bottom Speak button as its page recorder', () => {
+test('Field Capture does not claim the bottom Speak button as a second recorder', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
-  assert.match(src, /addEventListener\('kerf:rh-speak'/);
-  assert.match(src, /event\.preventDefault\(\)/);
-  assert.match(src, /stopRecording\(\)/);
-  assert.match(src, /void startRecording\(\)/);
+  assert.doesNotMatch(src, /addEventListener\('kerf:rh-speak'/);
+  assert.doesNotMatch(src, /event\.preventDefault\(\)/);
+  assert.doesNotMatch(src, /void startRecording\(\)/);
+  assert.doesNotMatch(src, /Recording voice/);
+  assert.doesNotMatch(src, /id="f-e1-stop"/);
 });
 
 test('overlay is realtime-first with Groq fallback, shares the gate, and leaks no transcript to URLs', () => {
@@ -510,7 +515,7 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   assert.match(withKnownEntity, /likely\?\.type === 'project' && likely\.id/);
   assert.match(withKnownEntity, /projectEntityHasContextSupport\(likely\.id, likely\.label, trp\.heard_text\)/);
   assert.match(withKnownEntity, /likely_entity: null/);
-  assert.match(withKnownEntity, /New project → estimate intake/);
+  assert.match(withKnownEntity, /New project → estimate/);
 
   const renderConfirmTurn = sliceDecl(src, 'renderConfirmTurn', 'currentTenantId');
   assert.match(renderConfirmTurn, /startNewIntakeTurn\(trp\)/);
@@ -528,7 +533,20 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   assert.match(src, /const archetypeParam = archetype \? `&archetype=\$\{archetype\}` : ''/);
 });
 
-test('turn resolution: next moves — only "Add a photo" routes to Field Capture (explicit choice)', () => {
+test('trust loop: missing job context keeps the conversation open instead of trying a failed save', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /let confirmSaveNeedsMoreContext = false/);
+  assert.match(src, /const turnNeedsProjectBeforeSave/);
+  assert.match(src, /trp\.intent === 'job_note'/);
+  assert.match(src, /confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave\(trp\)/);
+  assert.match(src, /saveBtn\.hidden = confirmSaveNeedsMoreContext/);
+  const resolveTurn = sliceDecl(src, 'resolveTurn', 'routeMove');
+  assert.match(resolveTurn, /turnNeedsProjectBeforeSave\(baseTrp\)/);
+  assert.match(resolveTurn, /returnToListening\(\)/);
+  assert.doesNotMatch(resolveTurn, /commitTurnServerSide\(baseTrp\)[\s\S]{0,120}turnNeedsProjectBeforeSave/);
+});
+
+test('turn resolution: next moves — only "Add a photo" routes to Camera (explicit choice)', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   // The resolved next-move buttons exist and are wired through routeMove.
   assert.match(src, /data-move="add_photo"/);
@@ -646,9 +664,9 @@ test('fallback mic-off cannot freeze forever on empty audio or hanging transcrip
 test('Right Hand action labels distinguish discard from adding more recording', () => {
   const en = readFileSync(path.join(ROOT, 'src/i18n/en.ts'), 'utf8');
   const es = readFileSync(path.join(ROOT, 'src/i18n/es.ts'), 'utf8');
-  assert.match(en, /'rh_voice\.action_cancel': "Don't save"/);
+  assert.match(en, /'rh_voice\.action_cancel': 'Close'/);
   assert.match(en, /'rh_voice\.action_continue': 'Continue recording'/);
-  assert.match(es, /'rh_voice\.action_cancel': 'No guardar'/);
+  assert.match(es, /'rh_voice\.action_cancel': 'Cerrar'/);
   assert.match(es, /'rh_voice\.action_continue': 'Seguir grabando'/);
 });
 
@@ -757,7 +775,7 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
 
 // ── Field Capture: giant mic demoted; Home fold-in card ──────────────────────
 
-test('Field Capture: no second primary mic; task buttons + bottom-mic context hint', () => {
+test('Field Capture: no second primary mic; task buttons + quiet context note', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
   // The State-1 giant green recorder is gone (no competing primary voice entry).
   assert.doesNotMatch(src, /id="f-e1-record"[^-]/); // exact pre-capture record button id
@@ -765,9 +783,10 @@ test('Field Capture: no second primary mic; task buttons + bottom-mic context hi
   assert.doesNotMatch(src, /id="f-e1-record-more"/);
   assert.doesNotMatch(src, /id="f-e1-record-active"/);
   assert.doesNotMatch(src, /compact-record/);
-  // Replaced by an explicit bottom-mic context hint.
-  assert.match(src, /class="fc-mic-hint"/);
-  assert.match(src, /speak to add a note here/i);
+  // Replaced by a quiet context note; the bottom mic owns voice.
+  assert.match(src, /class="fc-context-note"/);
+  assert.match(src, /Right Hand brought you here with the job context/i);
+  assert.doesNotMatch(src, /class="fc-mic-hint"/);
   // A capture reached from a known job has a visible way back to that job.
   assert.match(src, /project_id/);
   assert.match(src, /captureReturnHref/);
@@ -778,8 +797,9 @@ test('Field Capture: no second primary mic; task buttons + bottom-mic context hi
   assert.match(src, /id="f-e1-type-note"/);
   assert.match(src, /attachFileButton\?\.addEventListener\('click', openFilePicker\)/);
   assert.match(src, /fileInput\?\.addEventListener\('change', handleFilePick\)/);
-  // Bottom mic still claimed by the page (context-aware voice control).
-  assert.match(src, /addEventListener\('kerf:rh-speak'/);
+  // Bottom mic stays owned by the Right Hand overlay.
+  assert.doesNotMatch(src, /addEventListener\('kerf:rh-speak'/);
+  assert.match(src, /Use the bottom mic to keep talking/);
   // Runtime JS-created evidence rows need global styles; otherwise iOS renders
   // raw SVG/photo artifacts at page scale because Astro scoped selectors miss
   // client-created nodes.
@@ -851,7 +871,8 @@ test('New Project keeps the Right Hand voice handoff visible and prefilled', () 
   assert.doesNotMatch(src, /querySelector<[^>]+>/);
   assert.match(src, /params\.get\('archetype'\)/);
   assert.match(src, /Bath estimate walk/);
-  assert.match(src, /New bathroom estimate intake/);
+  assert.match(src, /New bathroom estimate/);
+  assert.doesNotMatch(src, /New bathroom estimate intake/);
   assert.match(src, /src'\) !== 'voice'/);
   assert.match(src, /projectName\.value = projectSuggestion/);
   assert.match(src, /archetype\.value = archetypeSuggestion/);

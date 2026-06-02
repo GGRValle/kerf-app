@@ -69,9 +69,46 @@ function useLabelToChipProps(label: UseLabel): { labelKey: 'f_rc1.use_label.esti
 }
 
 const hasVerifyOrManual = measurements.some((m) => m.use_label !== 'estimate_safe');
+const source = Astro.url.searchParams.get('src') ?? '';
+const scanId = Astro.url.searchParams.get('scan_id') ?? '';
+const freshScan =
+  Astro.url.searchParams.get('mode') === 'start' ||
+  ((source === 'create' || source === 'camera') && scanId.length === 0);
 ---
 
-<Layout titleKey="f_rc1.title" activeHref="/field-capture">
+<Layout titleKey="f_rc1.title" activeHref={freshScan ? '/camera' : '/field-capture'}>
+  {freshScan ? (
+    <article class="f-rc1 f-rc1-start">
+      <a class="room-back" href={source === 'create' ? '/create' : source === 'camera' ? '/camera' : '/'}>‹ Back</a>
+      <header class="f-rc1-header">
+        <div class="crumb">Room scan</div>
+        <h1>Start room scan</h1>
+        <p class="subtitle">
+          On iPhone, this opens Apple RoomCapture so you can scan the room. In this web preview,
+          native room scanning is not wired yet.
+        </p>
+      </header>
+
+      <Card>
+        <div class="room-start-card">
+          <div class="room-start-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 4h7v2H6v5H4zm9 0h7v7h-2V6h-5zM6 13v5h5v2H4v-7zm12 0h2v7h-7v-2h5z"/></svg>
+          </div>
+          <div class="room-start-copy">
+            <strong>RoomCapture opens here in the native app.</strong>
+            <span>Right Hand will summarize measurements after the scan and block anything that needs tape verification.</span>
+          </div>
+        </div>
+        <div class="action-ribbon room-start-actions">
+          <button type="button" class="ar-btn primary" disabled aria-disabled="true">
+            Open iPhone room scan
+            <span class="ar-preview">Native capture not available in this web build</span>
+          </button>
+          <a class="ar-btn" href="/room-capture?scan_id=demo_last">View demo scan</a>
+        </div>
+      </Card>
+    </article>
+  ) : (
   <article class="f-rc1">
 
     <header class="f-rc1-header">
@@ -210,6 +247,7 @@ const hasVerifyOrManual = measurements.some((m) => m.use_label !== 'estimate_saf
     )}
 
   </article>
+  )}
 </Layout>
 
 <style>
@@ -221,12 +259,54 @@ const hasVerifyOrManual = measurements.some((m) => m.use_label !== 'estimate_saf
   }
 
   .f-rc1-header { margin-bottom: 1.25rem; }
+  .room-back {
+    display: inline-block;
+    margin-bottom: 0.85rem;
+    color: var(--kerf-text-dim, #4a5462);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
   .crumb {
     font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--text-muted, #6a7282); margin-bottom: 0.5rem;
   }
   .f-rc1-header h1 { font-size: 1.4rem; margin: 0 0 0.4rem; font-weight: 600; }
   .subtitle { color: var(--text-muted, #4a5462); font-size: 0.95rem; line-height: 1.55; margin: 0; }
+  .room-start-card {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+  }
+  .room-start-icon {
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: rgba(123, 168, 255, 0.12);
+    color: var(--blue, #7ba8ff);
+    display: grid;
+    place-items: center;
+  }
+  .room-start-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+  }
+  .room-start-copy {
+    display: grid;
+    gap: 0.25rem;
+    color: var(--text-muted, #4a5462);
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+  .room-start-copy strong {
+    color: var(--text, #0a0d11);
+    font-size: 1rem;
+  }
+  .room-start-actions {
+    margin-top: 1rem;
+  }
 
   .room-summary { margin-bottom: 0.75rem; }
   .rs-eyebrow {
