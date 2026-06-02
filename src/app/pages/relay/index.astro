@@ -20,6 +20,7 @@ const relayCopy = {
     review: t('rh.relay.severity.review'),
   },
 };
+const relayCopyJson = JSON.stringify(relayCopy).replace(/</g, '\\u003c');
 ---
 
 <Layout titleKey="rh.relay.list.title" activeHref={Astro.url.pathname}>
@@ -36,34 +37,13 @@ const relayCopy = {
     </section>
   </main>
 
-  <script define:vars={{ relayCopy }}>
+  <script id="relay-copy-json" type="application/json" set:html={relayCopyJson}></script>
+  <script>
+  import { attentionFromRelayCard } from '../../../attention/attentionArtifact.js';
+
+  const copyNode = document.querySelector('#relay-copy-json');
+  const relayCopy = copyNode?.textContent ? JSON.parse(copyNode.textContent) : {};
   const list = document.querySelector('#relay-list');
-
-  function severityLabel(severity) {
-    if (severity === 'block') return relayCopy.severity.block;
-    if (severity === 'warn') return relayCopy.severity.warn;
-    if (severity === 'info') return relayCopy.severity.info;
-    return relayCopy.severity.review;
-  }
-
-  function cardHeadline(item) {
-    const summary = typeof item.summary === 'string' ? item.summary.trim() : '';
-    const description = typeof item.description === 'string' ? item.description.trim() : '';
-    const transcript = typeof item.transcript_text === 'string' ? item.transcript_text.trim() : '';
-    if (description.length > 0 && summary.length < 16) return description;
-    if (summary.length > 0) return summary;
-    if (transcript.length > 0) {
-      const sentence = transcript.split(/[.!?]/)[0]?.trim() ?? transcript;
-      return sentence.length > 72 ? `${sentence.slice(0, 69)}…` : sentence;
-    }
-    return relayCopy.fallbackHeadline;
-  }
-
-  function cardBody(item, headline) {
-    const description = typeof item.description === 'string' ? item.description.trim() : '';
-    if (description.length > 0 && description !== headline) return description;
-    return relayCopy.fallbackBody;
-  }
 
   function renderEmpty(message) {
     if (!(list instanceof HTMLElement)) return;
@@ -84,33 +64,33 @@ const relayCopy = {
     }
     list.innerHTML = '';
     for (const item of items) {
+      const artifact = attentionFromRelayCard(item, relayCopy);
       const card = document.createElement('a');
       card.className = 'relay-card';
-      card.href = `/relay/${encodeURIComponent(item.entry_id)}`;
+      card.href = artifact.href;
       card.dataset.severity = item.severity ?? 'review';
       const top = document.createElement('div');
       top.className = 'relay-card-top';
       const severity = document.createElement('span');
       severity.className = 'relay-card-severity';
-      severity.textContent = severityLabel(item.severity);
+      severity.textContent = artifact.label;
       const separator = document.createElement('span');
       separator.className = 'relay-card-sep';
       separator.setAttribute('aria-hidden', 'true');
       separator.textContent = '·';
       const surfacedAt = document.createElement('time');
       surfacedAt.dateTime = item.surfaced_at ?? '';
-      surfacedAt.textContent = new Date(item.surfaced_at).toLocaleString();
+      surfacedAt.textContent = artifact.createdAt ? new Date(artifact.createdAt).toLocaleString() : '';
       top.append(severity, separator, surfacedAt);
-      const headline = cardHeadline(item);
       const title = document.createElement('h2');
-      title.textContent = headline;
+      title.textContent = artifact.headline;
       const description = document.createElement('p');
-      description.textContent = cardBody(item, headline);
+      description.textContent = artifact.detail;
       const details = document.createElement('details');
       const summary = document.createElement('summary');
       summary.textContent = relayCopy.transcript;
       const transcript = document.createElement('p');
-      transcript.textContent = item.transcript_text ?? '—';
+      transcript.textContent = typeof item.transcript_text === 'string' ? item.transcript_text : '—';
       details.append(summary, transcript);
       const cta = document.createElement('span');
       cta.className = 'relay-card-cta';
@@ -120,9 +100,13 @@ const relayCopy = {
     }
   }
 
+  function apiUrl(path) {
+    return new URL(path, window.location.origin).toString();
+  }
+
   async function loadRelay() {
     try {
-      const res = await fetch('/api/v1/field-daily/relay-feed?tenant_id=tenant_ggr');
+      const res = await fetch(apiUrl('/api/v1/field-daily/relay-feed?tenant_id=tenant_ggr'));
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `relay_failed_${res.status}`);
       renderItems(Array.isArray(body.items) ? body.items : []);

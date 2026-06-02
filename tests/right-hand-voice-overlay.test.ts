@@ -824,7 +824,8 @@ test('Home folds in the resolved-turn result card (honest, generated from the re
   assert.match(src, /card\.hidden = false/);
   // Badge text is driven by the real attention kind/headline — no hardcoded
   // "handled" claim baked into the script.
-  assert.match(src, /trp\.attention_artifact\.headline/);
+  assert.match(src, /attentionFromTurnResolution/);
+  assert.match(src, /artifact\.headline/);
   assert.match(src, /trp\.heard_text/);
   // Dismiss clears the session key.
   assert.match(src, /removeItem\(TURN_RESOLUTION_SESSION_KEY\)/);
@@ -847,6 +848,7 @@ test('operator-facing review links use contractor language instead of Relay jarg
 test('Office Review stays presentation copy, not a second attention primitive', () => {
   const files = [
     'src/app/pages/relay/index.astro',
+    'src/attention/attentionArtifact.ts',
     'src/i18n/en.ts',
     'src/i18n/es.ts',
     'src/i18n/keys.ts',

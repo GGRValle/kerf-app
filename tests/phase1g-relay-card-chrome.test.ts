@@ -15,7 +15,7 @@ test('Phase 1G-a relay page applies global styles to JS-rendered cards', async (
 
 test('Phase 1G-a relay page improves card headline and severity timestamp spacing', async () => {
   const source = await readFile(path.join(process.cwd(), 'src/app/pages/relay/index.astro'), 'utf8');
-  assert.match(source, /function cardHeadline/);
+  assert.match(source, /attentionFromRelayCard/);
   assert.match(source, /relay-card-sep/);
   assert.match(source, /separator\.textContent = '·'/);
 });

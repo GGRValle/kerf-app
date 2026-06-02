@@ -1,30 +1,18 @@
 ---
 import RightHandResultCard from './RightHandResultCard.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
+import {
+  attentionForPlacement,
+  demoHomeAttentionArtifacts,
+  topAttentionForPlacement,
+} from '../../attention/attentionArtifact.js';
 
 const { context } = createLayoutContext();
 const operatorName = context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian' : 'there';
-
-const onDeck = [
-  { tone: 'project', label: 'Wegrzyn', title: 'Estimate walk needs a draft', detail: 'Kitchen notes are ready to shape into scope, selections, and questions.' },
-  { tone: 'money', label: 'Money', title: 'Two invoices need a quick look', detail: 'One payment landed; one vendor bill is missing job context.' },
-  { tone: 'team', label: 'Team', title: 'Ricardo needs template timing', detail: 'Cabinets are in. Right Hand is holding the follow-up.' },
-  { tone: 'selection', label: 'Selections', title: 'Paint color needs confirmation', detail: 'Smoky Blue SW 7604 was mentioned, but not approved yet.' },
-  { tone: 'client', label: 'Client', title: 'Clem update is ready to clean up', detail: 'The job note needs the right project before it can file.' },
-];
-
-const pulse = [
-  { tone: 'team', meta: 'Team', text: 'Painters scheduled for tomorrow at 7:00 AM.' },
-  { tone: 'project', meta: 'Project', text: 'Wegrzyn schedule may gain a day if template moves up.' },
-  { tone: 'money', meta: 'Money', text: 'AP review has two items waiting for job match.' },
-  { tone: 'selection', meta: 'Selections', text: 'Bathroom fixtures need final owner approval.' },
-  { tone: 'client', meta: 'Client', text: 'Draft homeowner update is ready after the job note files.' },
-  { tone: 'project', meta: 'Project', text: 'Field photos are attached to the latest walk.' },
-  { tone: 'team', meta: 'Team', text: 'Subplan still needs color confirmation.' },
-  { tone: 'money', meta: 'Money', text: 'Cash pulse is stable; no red-margin alerts.' },
-  { tone: 'client', meta: 'RFI', text: 'One open question can wait until the estimate draft.' },
-  { tone: 'project', meta: 'Schedule', text: 'No critical path item has slipped today.' },
-];
+const attentionArtifacts = demoHomeAttentionArtifacts();
+const oneThing = topAttentionForPlacement(attentionArtifacts, 'one_thing');
+const onDeck = attentionForPlacement(attentionArtifacts, 'on_deck', 5);
+const pulse = attentionForPlacement(attentionArtifacts, 'pulse', 12);
 ---
 
 <section class="rh-home" aria-label="Right Hand home">
@@ -33,11 +21,13 @@ const pulse = [
     <h1>The one thing</h1>
   </div>
 
-  <a class="rh-one" href="/projects/proj_wegrzyn_kitchen?src=home">
-    <span class="rh-one__tag">Right Hand says</span>
-    <strong>Decide whether the Wegrzyn walk becomes an estimate draft.</strong>
-    <span>The note is captured. The next useful move is scope, selections, and the few questions that affect price.</span>
-  </a>
+  {oneThing && (
+    <a class:list={['rh-one', `rh-tone-${oneThing.tone}`]} href={oneThing.href}>
+      <span class="rh-one__tag">{oneThing.label}</span>
+      <strong>{oneThing.headline}</strong>
+      <span>{oneThing.detail}</span>
+    </a>
+  )}
 
   <RightHandResultCard />
 
@@ -48,9 +38,9 @@ const pulse = [
     </div>
     <div class="rh-deck">
       {onDeck.map((item) => (
-        <a class:list={['rh-deck__item', `rh-tone-${item.tone}`]} href={item.tone === 'project' ? '/projects/proj_wegrzyn_kitchen' : '/right-hand'}>
+        <a class:list={['rh-deck__item', `rh-tone-${item.tone}`]} href={item.href}>
           <span>{item.label}</span>
-          <strong>{item.title}</strong>
+          <strong>{item.headline}</strong>
           <small>{item.detail}</small>
         </a>
       ))}
@@ -64,9 +54,9 @@ const pulse = [
     </div>
     <div class="rh-pulse">
       {pulse.map((item) => (
-        <a class:list={['rh-pulse__row', `rh-tone-${item.tone}`]} href="/right-hand">
-          <span>{item.meta}</span>
-          <p>{item.text}</p>
+        <a class:list={['rh-pulse__row', `rh-tone-${item.tone}`]} href={item.href}>
+          <span>{item.label}</span>
+          <p>{item.headline}</p>
         </a>
       ))}
     </div>
