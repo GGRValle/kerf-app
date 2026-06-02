@@ -756,13 +756,6 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.move_open_job',
     'rh_voice.move_review_estimate',
     'rh_voice.move_go_home',
-    'home.result.ready_to_save',
-    'home.result.heard_label',
-    'home.result.prompt',
-    'home.result.add_photo',
-    'home.result.open_job',
-    'home.result.review_estimate',
-    'home.result.dismiss',
     'shell.nav.create',
     'shell.nav.camera',
   ];
@@ -808,27 +801,27 @@ test('Field Capture: no second primary mic; task buttons + quiet context note', 
   assert.match(src, /:global\(\.field-shell \.photo-tile-mini img\)/);
 });
 
-test('Home folds in the resolved-turn result card (honest, generated from the real TRP)', () => {
-  const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandResultCard.astro'), 'utf8');
+test('Home folds the resolved turn into the shared Attention Artifact queue', () => {
   const home = readFileSync(path.join(ROOT, 'src/app/pages/index.astro'), 'utf8');
   const surface = readFileSync(path.join(ROOT, 'src/app/components/RightHandHomeSurface.astro'), 'utf8');
+  const card = readFileSync(path.join(ROOT, 'src/app/lib/attentionArtifactCard.ts'), 'utf8');
   // Mounted on the Right Hand home surface.
   assert.match(home, /RightHandHomeSurface/);
-  assert.match(surface, /RightHandResultCard/);
+  assert.doesNotMatch(surface, /RightHandResultCard/);
   assert.match(surface, /The one thing/);
   assert.match(surface, /On deck/);
   assert.match(surface, /The pulse/);
-  // Reads the stashed TRP (never fabricated) and only shows when one exists.
-  assert.match(src, /TURN_RESOLUTION_SESSION_KEY/);
-  assert.match(src, /parseTurnResolution\(/);
-  assert.match(src, /card\.hidden = false/);
-  // Badge text is driven by the real attention kind/headline — no hardcoded
-  // "handled" claim baked into the script.
-  assert.match(src, /attentionFromTurnResolution/);
-  assert.match(src, /artifact\.headline/);
-  assert.match(src, /trp\.heard_text/);
-  // Dismiss clears the session key.
-  assert.match(src, /removeItem\(TURN_RESOLUTION_SESSION_KEY\)/);
+  // Reads the stashed TRP and projects it through the same card used by review.
+  assert.match(surface, /TURN_RESOLUTION_SESSION_KEY/);
+  assert.match(surface, /parseTurnResolution\(/);
+  assert.match(surface, /attentionFromTurnResolution/);
+  assert.match(surface, /createAttentionArtifactCard/);
+  assert.match(surface, /data-attention-state/);
+  assert.match(surface, /data-consequence-tier/);
+  assert.match(card, /dataset\.attentionState/);
+  assert.match(card, /dataset\.consequenceTier/);
+  // No demo fixtures on the live Home path.
+  assert.doesNotMatch(surface, /demoHomeAttentionArtifacts/);
 });
 
 test('operator-facing review links use contractor language instead of Relay jargon', () => {

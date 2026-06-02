@@ -40,6 +40,7 @@ const relayCopyJson = JSON.stringify(relayCopy).replace(/</g, '\\u003c');
   <script id="relay-copy-json" type="application/json" set:html={relayCopyJson}></script>
   <script>
   import { attentionFromRelayCard } from '../../../attention/attentionArtifact.js';
+  import { createAttentionArtifactCard } from '../../lib/attentionArtifactCard.js';
 
   const copyNode = document.querySelector('#relay-copy-json');
   const relayCopy = copyNode?.textContent ? JSON.parse(copyNode.textContent) : {};
@@ -65,37 +66,16 @@ const relayCopyJson = JSON.stringify(relayCopy).replace(/</g, '\\u003c');
     list.innerHTML = '';
     for (const item of items) {
       const artifact = attentionFromRelayCard(item, relayCopy);
-      const card = document.createElement('a');
-      card.className = 'relay-card';
-      card.href = artifact.href;
+      const card = createAttentionArtifactCard(artifact, { variant: 'review' });
+      card.classList.add('relay-card');
       card.dataset.severity = item.severity ?? 'review';
-      const top = document.createElement('div');
-      top.className = 'relay-card-top';
-      const severity = document.createElement('span');
-      severity.className = 'relay-card-severity';
-      severity.textContent = artifact.label;
-      const separator = document.createElement('span');
-      separator.className = 'relay-card-sep';
-      separator.setAttribute('aria-hidden', 'true');
-      separator.textContent = '·';
-      const surfacedAt = document.createElement('time');
-      surfacedAt.dateTime = item.surfaced_at ?? '';
-      surfacedAt.textContent = artifact.createdAt ? new Date(artifact.createdAt).toLocaleString() : '';
-      top.append(severity, separator, surfacedAt);
-      const title = document.createElement('h2');
-      title.textContent = artifact.headline;
-      const description = document.createElement('p');
-      description.textContent = artifact.detail;
       const details = document.createElement('details');
       const summary = document.createElement('summary');
       summary.textContent = relayCopy.transcript;
       const transcript = document.createElement('p');
       transcript.textContent = typeof item.transcript_text === 'string' ? item.transcript_text : '—';
       details.append(summary, transcript);
-      const cta = document.createElement('span');
-      cta.className = 'relay-card-cta';
-      cta.textContent = relayCopy.openCard;
-      card.append(top, title, description, details, cta);
+      card.append(details);
       list.append(card);
     }
   }
@@ -147,7 +127,6 @@ const relayCopyJson = JSON.stringify(relayCopy).replace(/</g, '\\u003c');
       gap: 0.8rem;
     }
 
-    :global(.relay-card),
     :global(.relay-empty) {
       border: 1px solid var(--border-soft, #d7dde6);
       border-radius: 8px;
@@ -155,73 +134,15 @@ const relayCopyJson = JSON.stringify(relayCopy).replace(/</g, '\\u003c');
       padding: 1rem;
     }
 
-    :global(a.relay-card) {
-      display: block;
-      color: inherit;
-      text-decoration: none;
+    :global(.relay-card details) {
+      grid-column: 2;
+      color: var(--text-muted, #4f5966);
     }
 
-    :global(.relay-card-cta) {
-      display: inline-block;
-      margin-top: 0.25rem;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--accent, #0f766e);
-    }
-
-    :global(.relay-card[data-severity='block']) {
-      border-left: 4px solid var(--kerf-red, #d92d20);
-    }
-
-    :global(.relay-card[data-severity='warn']) {
-      border-left: 4px solid var(--kerf-amber, #f5b544);
-    }
-
-    :global(.relay-card[data-severity='info']) {
-      border-left: 4px solid var(--kerf-blue, #026aa2);
-    }
-
-    :global(.relay-card-top) {
-      display: flex;
-      align-items: baseline;
-      flex-wrap: wrap;
-      gap: 0.35rem 0.5rem;
-      color: var(--text-muted, #5c6670);
-      font-size: 0.78rem;
-      margin-bottom: 0.45rem;
-    }
-
-    :global(.relay-card-severity) {
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    :global(.relay-card-sep) {
-      color: var(--text-muted, #5c6670);
-      font-weight: 700;
-    }
-
-    :global(.relay-card-top time) {
-      margin-left: auto;
-      text-align: right;
-    }
-
-    :global(.relay-card h2) {
-      margin: 0 0 0.4rem;
-      font-size: 1rem;
-      letter-spacing: 0;
-      line-height: 1.35;
-    }
-
-    :global(.relay-card p) {
+    :global(.relay-card details p) {
       margin: 0 0 0.65rem;
       color: var(--text-muted, #4f5966);
       line-height: 1.45;
-    }
-
-    :global(.relay-card details) {
-      color: var(--text-muted, #4f5966);
     }
 
     :global(.relay-card summary) {

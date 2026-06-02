@@ -12,8 +12,10 @@ import { auditEntryLink } from "../src/app/lib/projectAuditLinks.js";
 
 test("relay list links cards", async () => {
   const s = await readFile("src/app/pages/relay/index.astro", "utf8");
+  const card = await readFile("src/app/lib/attentionArtifactCard.ts", "utf8");
   assert.match(s, /attentionFromRelayCard/);
-  assert.match(s, /card\.href = artifact\.href/);
+  assert.match(s, /createAttentionArtifactCard/);
+  assert.match(card, /card\.href = item\.href/);
 });
 
 test("relay pages build API URLs from origin so basic-auth URLs do not poison fetch", async () => {
