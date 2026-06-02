@@ -1,0 +1,65 @@
+---
+/**
+ * Lane B · JobNoteList — section container for one or more `JobNote`s.
+ *
+ * Owns the SECTION-LEVEL AI disclosure (kerf_ai_disclosure_pattern): the
+ * "AI-assisted by Right Hand · review before approval" line is rendered ONCE
+ * here, where the component is mounted — never stamped per row inside `JobNote`.
+ *
+ * Consumers (Camera, Daily Log, Pulse, Field Updates) drop `JobNote`s into the
+ * default slot. Pass `disclosure={false}` to suppress (e.g. when a parent
+ * surface already carries the disclosure for the whole screen), or pass a
+ * custom string to override the copy.
+ */
+import { JOB_NOTE_DISCLOSURE } from '../lib/jobNote.js';
+
+export interface Props {
+  /** Section-level disclosure copy. `false` suppresses it. */
+  disclosure?: string | false;
+  /** Optional small section eyebrow above the notes. */
+  label?: string;
+}
+
+const { disclosure = JOB_NOTE_DISCLOSURE, label } = Astro.props;
+const showDisclosure = disclosure !== false;
+const disclosureText = typeof disclosure === 'string' ? disclosure : JOB_NOTE_DISCLOSURE;
+---
+
+<section class="job-note-list">
+  {label ? <p class="job-note-list__label">{label}</p> : null}
+  <div class="job-note-list__items">
+    <slot />
+  </div>
+  {showDisclosure ? (
+    <p class="job-note-list__disclosure">{disclosureText}</p>
+  ) : null}
+</section>
+
+<style>
+  .job-note-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .job-note-list__label {
+    margin: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted, #5c6670);
+  }
+  .job-note-list__items {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Disclosure sits at the section level, quietly — once, under the notes. */
+  .job-note-list__disclosure {
+    margin: 0.15rem 0 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--text-muted, #5c6670);
+    border-left: 2px solid var(--right-hand, #c9a961);
+    padding-left: 0.55rem;
+  }
+</style>

@@ -1,0 +1,197 @@
+---
+/**
+ * Lane B · JobNote — the shared friendly job-note leaf.
+ *
+ * One renderer, many mounts. Camera (Lane A), Daily Log, the Pulse, and Field
+ * Updates pass a `JobNoteView` and this component renders it identically:
+ * thumbnail + plain summary line + quiet source chip + honest filing line, with
+ * `needsReview` as a CHIP (never a row treatment) and the whole row tapping
+ * through to `expandHref`.
+ *
+ * Honesty enforced HERE, not just upstream:
+ *   - "Filed" renders only from a `filed` filing (via `jobNoteFilingLabel`,
+ *     which switches on the discriminator). A `ready_to_save` view reads
+ *     "Ready to file".
+ *   - The row stays visually neutral; only the chip carries color (red-is-chip).
+ *   - The AI disclosure is NOT rendered here — it belongs at the section level
+ *     (see `JobNoteList`). Mounting many notes must not stamp it per row.
+ */
+import Chip from './Chip.astro';
+import {
+  jobNoteFilingLabel,
+  jobNoteSourceLabel,
+  type JobNoteView,
+} from '../lib/jobNote.js';
+
+export interface Props {
+  view: JobNoteView;
+}
+
+const { view } = Astro.props;
+
+const firstMedia = view.media?.[0];
+const hasImageThumb = firstMedia?.kind === 'photo' || firstMedia?.kind === 'video';
+const isVideo = firstMedia?.kind === 'video';
+
+// Thumbnail glyph when there is no image crop: photo-crop / ▶ waveform / doc.
+const thumbGlyph: 'voice' | 'doc' | 'photo' | 'note' = hasImageThumb
+  ? 'photo'
+  : view.source === 'voice'
+    ? 'voice'
+    : view.source === 'scan'
+      ? 'doc'
+      : view.source === 'photo'
+        ? 'photo'
+        : 'note';
+
+const sourceLabel = jobNoteSourceLabel(view.source);
+const filingLabel = jobNoteFilingLabel(view.filing);
+const filed = view.filing.state === 'filed';
+---
+
+<a
+  class="job-note"
+  href={view.expandHref}
+  data-source={view.source}
+  data-filing={view.filing.state}
+  aria-label={`${view.summary} — ${filingLabel}`}
+>
+  <span class="job-note__thumb" data-thumb={thumbGlyph} aria-hidden="true">
+    {hasImageThumb && firstMedia ? (
+      <img class="job-note__thumb-img" src={firstMedia.thumbUri} alt="" loading="lazy" />
+    ) : thumbGlyph === 'voice' ? (
+      <svg viewBox="0 0 24 24"><path d="M4 12v0a1 1 0 0 1 2 0zm3-4a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0zm3-3a1 1 0 0 1 2 0v14a1 1 0 0 1-2 0zm3 2a1 1 0 0 1 2 0v10a1 1 0 0 1-2 0zm3 1a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0zm3 3a1 1 0 0 1 2 0v2a1 1 0 0 1-2 0z"/></svg>
+    ) : thumbGlyph === 'doc' ? (
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v1.5H8zm0 3h8v1.5H8zm0 3h5v1.5H8z"/></svg>
+    ) : thumbGlyph === 'photo' ? (
+      <svg viewBox="0 0 24 24"><path d="M9 2 7 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3l-2-2zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
+    ) : (
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm-1 7V3.5L18.5 9zM8 13h8v1.5H8zm0 3h8v1.5H8zm0 3h5v1.5H8z"/></svg>
+    )}
+    {isVideo ? <span class="job-note__play" aria-hidden="true">▶</span> : null}
+  </span>
+
+  <span class="job-note__body">
+    <span class="job-note__summary">{view.summary}</span>
+    <span class="job-note__meta">
+      <Chip label={sourceLabel} tone="neutral" variant="outlined" />
+      <span class="job-note__filing" data-state={view.filing.state}>
+        {filed ? <span class="job-note__filing-dot" aria-hidden="true"></span> : null}
+        {filingLabel}
+      </span>
+      {view.needsReview ? (
+        <Chip label="Needs review" tone="amber" title={view.needsReview.reason} />
+      ) : null}
+    </span>
+  </span>
+
+  <span class="job-note__arrow" aria-hidden="true">›</span>
+</a>
+
+<style>
+  /* Row stays visually neutral (red-is-chip-tier-not-row-tier). The only color
+     lives in chips + the filed dot. */
+  .job-note {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0.6rem 0.65rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 12px;
+    background: var(--surface, #fff);
+    color: var(--text, #1a2332);
+    text-decoration: none;
+  }
+  .job-note + .job-note {
+    margin-top: 0.4rem;
+  }
+  .job-note:hover {
+    border-color: color-mix(in srgb, var(--accent, #f5b544) 45%, var(--border, #d8dee6));
+  }
+  .job-note:focus-visible {
+    outline: 2px solid var(--accent, #f5b544);
+    outline-offset: 2px;
+  }
+
+  .job-note__thumb {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 9px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg, #14181f);
+    border: 1px solid var(--border, #2a3140);
+    color: var(--text-muted, #98a1b3);
+  }
+  .job-note__thumb[data-thumb='voice'] {
+    color: var(--field-green, #38c977);
+  }
+  .job-note__thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .job-note__thumb svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
+  .job-note__play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: #fff;
+    background: rgba(10, 13, 17, 0.42);
+  }
+
+  .job-note__body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .job-note__summary {
+    font-weight: 600;
+    line-height: 1.35;
+    /* keep the note a single friendly line; depth lives under expandHref */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .job-note__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+  .job-note__filing {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--text-muted, #5c6670);
+    font-variant-numeric: tabular-nums;
+  }
+  .job-note__filing[data-state='filed'] {
+    color: var(--field-green, #027a48);
+  }
+  .job-note__filing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .job-note__arrow {
+    color: var(--text-muted, #5c6670);
+    font-size: 1.1rem;
+  }
+</style>

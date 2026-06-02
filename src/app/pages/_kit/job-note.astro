@@ -1,0 +1,198 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import JobNote from '../../components/JobNote.astro';
+import JobNoteList from '../../components/JobNoteList.astro';
+import {
+  toJobNoteView,
+  capturedEventToPayload,
+  type JobNoteCapturePayload,
+  type JobNoteJobContext,
+} from '../../lib/jobNote.js';
+import type { DailyLogEntryCapturedEvent } from '../../../persistence/events.js';
+
+// Demo/storybook mount for Lane B. Shows every JobNoteView state so consumers
+// (Camera, Daily Log, Pulse, Field Updates) and Cowork can verify without
+// wiring a full surface. All views go through the real mapper — nothing is
+// hand-built — so the demo also exercises the pipeline.
+
+const job: JobNoteJobContext = {
+  id: 'proj_wegrzyn_kitchen',
+  name: 'Wegrzyn · Kitchen + Primary bath',
+  tenant_id: 'tenant_ggr',
+};
+
+const payloads: ReadonlyArray<{ caption: string; payload: JobNoteCapturePayload }> = [
+  {
+    caption: 'voice · ready_to_save (synthesized, not yet written)',
+    payload: {
+      id: 'cap_voice_1',
+      tenant_id: 'tenant_ggr',
+      channel: 'voice',
+      summary: 'Island plumbing rough-in is in; gas line came up through the floor — better for cabinet runs.',
+      durable_write: null,
+    },
+  },
+  {
+    caption: 'voice · filed (durable write returned)',
+    payload: {
+      id: 'cap_voice_2',
+      tenant_id: 'tenant_ggr',
+      channel: 'voice',
+      summary: 'Confirmed the tile change with Heather — wants Carrara herringbone, needs a change order.',
+      durable_write: { at: '2026-06-01T09:24:00-07:00' },
+    },
+  },
+  {
+    caption: 'photo · filed · with media thumbnail',
+    payload: {
+      id: 'cap_photo_1',
+      tenant_id: 'tenant_ggr',
+      channel: 'photo',
+      summary: 'Gas line stub photographed at the island after Coastal Mech finished.',
+      media: [
+        {
+          kind: 'photo',
+          thumbUri:
+            'data:image/svg+xml;utf8,' +
+            encodeURIComponent(
+              '<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88"><rect width="88" height="88" fill="%232a3a4a"/><circle cx="44" cy="44" r="16" fill="%2338c977"/></svg>',
+            ),
+          fullUri: 'kerf://field-capture/photo-demo-1',
+        },
+      ],
+      durable_write: { at: '2026-06-01T10:02:00-07:00' },
+    },
+  },
+  {
+    caption: 'photo · ready_to_save · needsReview chip',
+    payload: {
+      id: 'cap_photo_2',
+      tenant_id: 'tenant_ggr',
+      channel: 'photo',
+      summary: 'Possible water staining behind the range — flagging before it gets closed up.',
+      needs_review_reason: 'Right Hand could not tell if this is active or old water damage.',
+      durable_write: null,
+    },
+  },
+  {
+    caption: 'scan · filed',
+    payload: {
+      id: 'cap_scan_1',
+      tenant_id: 'tenant_ggr',
+      channel: 'scan',
+      summary: 'Room scan of the primary bath captured for the takeoff.',
+      durable_write: { at: '2026-06-01T11:15:00-07:00' },
+    },
+  },
+  {
+    caption: 'note · ready_to_save · summary falls back to transcript',
+    payload: {
+      id: 'cap_note_1',
+      tenant_id: 'tenant_ggr',
+      channel: 'note',
+      summary: null,
+      transcript_text:
+        '   Need to confirm the   outlet height with the   electrician before drywall   ',
+      durable_write: null,
+    },
+  },
+  {
+    caption: 'text_in · filed (SMS daily_log_ingest)',
+    payload: {
+      id: 'cap_text_1',
+      tenant_id: 'tenant_ggr',
+      channel: 'text_in',
+      summary:
+        'Sub texted: running 30 min late, will still finish the gas line connection today no problem at all and will send photos when wrapped up tonight after cleanup is done.',
+      durable_write: { at: '2026-06-01T07:48:00-07:00' },
+    },
+  },
+];
+
+const mappedViews = payloads.map(({ caption, payload }) => ({
+  caption,
+  view: toJobNoteView(payload, job),
+}));
+
+// Prove the no-false-persistence rule end to end: a persisted
+// daily_log.entry_captured event IS the durable write → filed from its `at`.
+const persistedEvent: DailyLogEntryCapturedEvent = {
+  event_id: 'evt_demo_1',
+  type: 'daily_log.entry_captured',
+  tenant_id: 'tenant_ggr',
+  correlation_id: 'proj_wegrzyn_kitchen',
+  actor: { id: 'browser_operator', role: 'field_super' },
+  at: '2026-06-01T14:05:00-07:00',
+  source_refs: [{ kind: 'transcript', excerpt: 'demoffffffffffff' }],
+  entry_id: 'dle_demo_1',
+  entry_kind: 'progress_update',
+  transcript_text: 'Drywall is hung in the kitchen; ready for tape and mud tomorrow.',
+  audio_uri: null,
+  photo_uris: [],
+  clock_sub_kind: null,
+};
+const fromEventView = toJobNoteView(
+  capturedEventToPayload(persistedEvent, {
+    summary: 'Drywall is hung in the kitchen; ready for tape and mud tomorrow.',
+  }),
+  job,
+);
+---
+
+<Layout title="Kit · JobNote">
+  <h1>JobNote</h1>
+  <p style="color: var(--text-muted); max-width: 48ch;">
+    One renderer, many mounts. Every card below is produced by the real
+    <code>toJobNoteView</code> mapper. The AI disclosure is rendered once at the
+    section level (not per row). A <code>ready_to_save</code> note reads
+    <strong>Ready to file</strong>; only a durable write flips it to
+    <strong>Filed · &lt;time&gt;</strong>.
+  </p>
+
+  <!-- Phone viewport: states render correctly at mobile width (Bar 3). -->
+  <div class="kit-phone">
+    <JobNoteList label="Recent field captures">
+      {mappedViews.map(({ caption, view }) => (
+        <div class="kit-state">
+          <p class="kit-state__caption">{caption}</p>
+          <JobNote view={view} />
+        </div>
+      ))}
+      <div class="kit-state">
+        <p class="kit-state__caption">from persisted daily_log.entry_captured → filed</p>
+        <JobNote view={fromEventView} />
+      </div>
+    </JobNoteList>
+  </div>
+
+  <p style="color: var(--text-muted); margin-top: 1.5rem;">
+    With <code>disclosure={false}</code> the section omits the line (parent surface
+    carries it):
+  </p>
+  <div class="kit-phone">
+    <JobNoteList disclosure={false}>
+      <JobNote view={mappedViews[0]!.view} />
+      <JobNote view={mappedViews[3]!.view} />
+    </JobNoteList>
+  </div>
+</Layout>
+
+<style>
+  .kit-phone {
+    width: min(100%, 390px);
+    margin-top: 1rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border, #2a3140);
+    border-radius: 18px;
+    background: var(--bg, #0a0d11);
+  }
+  .kit-state + .kit-state {
+    margin-top: 0.85rem;
+  }
+  .kit-state__caption {
+    margin: 0 0 0.3rem;
+    font-size: 0.68rem;
+    color: var(--text-muted, #6a7282);
+    font-family: "SF Mono", Menlo, monospace;
+  }
+</style>
