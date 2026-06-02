@@ -18,3 +18,4 @@ samples/voice-memos/
 # Runner CLI persistence — JSONL event log for `npm run estimate` /
 # `npm run estimate-voice` runs. Local-only operator history; never canon.
 .kerf/
+node_modules
