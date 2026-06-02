@@ -1,18 +1,13 @@
 ---
-import RightHandResultCard from './RightHandResultCard.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-import {
-  attentionForPlacement,
-  demoHomeAttentionArtifacts,
-  topAttentionForPlacement,
-} from '../../attention/attentionArtifact.js';
+import { composeHomeAttentionSections } from '../../attention/attentionArtifact.js';
 
 const { context } = createLayoutContext();
 const operatorName = context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian' : 'there';
-const attentionArtifacts = demoHomeAttentionArtifacts();
-const oneThing = topAttentionForPlacement(attentionArtifacts, 'one_thing');
-const onDeck = attentionForPlacement(attentionArtifacts, 'on_deck', 5);
-const pulse = attentionForPlacement(attentionArtifacts, 'pulse', 12);
+const homeSections = composeHomeAttentionSections();
+const oneThing = homeSections.oneThing;
+const onDeck = homeSections.onDeck;
+const pulse = homeSections.pulse;
 ---
 
 <section class="rh-home" aria-label="Right Hand home">
@@ -21,29 +16,63 @@ const pulse = attentionForPlacement(attentionArtifacts, 'pulse', 12);
     <h1>The one thing</h1>
   </div>
 
-  {oneThing && (
-    <a class:list={['rh-one', `rh-tone-${oneThing.tone}`]} href={oneThing.href}>
-      <span class="rh-one__tag">{oneThing.label}</span>
-      <strong>{oneThing.headline}</strong>
-      <span>{oneThing.detail}</span>
+  {oneThing ? (
+    <a
+      id="rh-one-slot"
+      class:list={['aa-card', 'aa-card--one', `aa-tone-${oneThing.tone}`]}
+      href={oneThing.href}
+      data-attention-id={oneThing.id}
+      data-attention-source={oneThing.source}
+      data-attention-state={oneThing.state ?? oneThing.kind}
+      data-consequence-tier={oneThing.consequenceTier}
+    >
+      <span class="aa-card__rail" aria-hidden="true"></span>
+      <span class="aa-card__body">
+        <span class="aa-card__top">
+          <span class="aa-card__domain">{oneThing.domain ?? oneThing.label}</span>
+          <span class="aa-card__state">{oneThing.label}</span>
+        </span>
+        <strong class="aa-card__headline">{oneThing.headline}</strong>
+        <span class="aa-card__because">{oneThing.because ?? oneThing.detail}</span>
+      </span>
     </a>
+  ) : (
+    <div id="rh-one-empty" class="rh-empty">
+      <strong>Nothing needs you right now.</strong>
+      <span>New captures, decisions, and changes will land here.</span>
+    </div>
   )}
-
-  <RightHandResultCard />
 
   <section class="rh-home__section" aria-labelledby="rh-on-deck-title">
     <div class="rh-home__section-head">
       <h2 id="rh-on-deck-title">On deck</h2>
       <span>Next 5</span>
     </div>
-    <div class="rh-deck">
-      {onDeck.map((item) => (
-        <a class:list={['rh-deck__item', `rh-tone-${item.tone}`]} href={item.href}>
-          <span>{item.label}</span>
-          <strong>{item.headline}</strong>
-          <small>{item.detail}</small>
-        </a>
-      ))}
+    <div class="rh-deck" id="rh-deck-list">
+      {onDeck.length > 0 ? (
+        onDeck.map((item) => (
+          <a
+            class:list={['aa-card', 'aa-card--deck', `aa-tone-${item.tone}`]}
+            href={item.href}
+            data-attention-id={item.id}
+            data-attention-source={item.source}
+            data-attention-state={item.state ?? item.kind}
+            data-consequence-tier={item.consequenceTier}
+          >
+            <span class="aa-card__rail" aria-hidden="true"></span>
+            <span class="aa-card__body">
+              <span class="aa-card__top">
+                <span class="aa-card__domain">{item.domain ?? item.label}</span>
+                <span class="aa-card__state">{item.label}</span>
+              </span>
+              <strong class="aa-card__headline">{item.headline}</strong>
+              <span class="aa-card__because">{item.because ?? item.detail}</span>
+            </span>
+          </a>
+        ))
+      ) : (
+        <div class="rh-empty rh-empty--small">No queued decisions.</div>
+      )}
     </div>
   </section>
 
@@ -52,16 +81,129 @@ const pulse = attentionForPlacement(attentionArtifacts, 'pulse', 12);
       <h2 id="rh-pulse-title">The pulse</h2>
       <span>Company status</span>
     </div>
-    <div class="rh-pulse">
-      {pulse.map((item) => (
-        <a class:list={['rh-pulse__row', `rh-tone-${item.tone}`]} href={item.href}>
-          <span>{item.label}</span>
-          <p>{item.headline}</p>
-        </a>
-      ))}
+    <div class="rh-pulse" id="rh-pulse-list">
+      {pulse.length > 0 ? (
+        pulse.map((item) => (
+          <a
+            class:list={['aa-card', 'aa-card--pulse', `aa-tone-${item.tone}`]}
+            href={item.href}
+            data-attention-id={item.id}
+            data-attention-source={item.source}
+            data-attention-state={item.state ?? item.kind}
+            data-consequence-tier={item.consequenceTier}
+          >
+            <span class="aa-card__rail" aria-hidden="true"></span>
+            <span class="aa-card__body">
+              <span class="aa-card__top">
+                <span class="aa-card__domain">{item.domain ?? item.label}</span>
+                <span class="aa-card__state">{item.label}</span>
+              </span>
+              <strong class="aa-card__headline">{item.headline}</strong>
+              <span class="aa-card__because">{item.because ?? item.detail}</span>
+            </span>
+          </a>
+        ))
+      ) : (
+        <div class="rh-empty rh-empty--small">No company pulse items yet.</div>
+      )}
     </div>
   </section>
 </section>
+
+<script>
+  import {
+    attentionFromRelayCard,
+    attentionFromTurnResolution,
+    composeHomeAttentionSections,
+  } from '../../attention/attentionArtifact.js';
+  import { createAttentionArtifactCard } from '../lib/attentionArtifactCard.js';
+  import {
+    parseTurnResolution,
+    TURN_RESOLUTION_SESSION_KEY,
+  } from '../../voice/realtime/turnResolution.js';
+
+  const deckList = document.getElementById('rh-deck-list');
+  const pulseList = document.getElementById('rh-pulse-list');
+
+  function apiUrl(path: string): string {
+    return new URL(path, window.location.origin).toString();
+  }
+
+  function oneThingEmpty(): HTMLElement {
+    const empty = document.createElement('div');
+    empty.id = 'rh-one-empty';
+    empty.className = 'rh-empty';
+    const title = document.createElement('strong');
+    title.textContent = 'Nothing needs you right now.';
+    const body = document.createElement('span');
+    body.textContent = 'New captures, decisions, and changes will land here.';
+    empty.append(title, body);
+    return empty;
+  }
+
+  function listEmpty(message: string): HTMLElement {
+    const empty = document.createElement('div');
+    empty.className = 'rh-empty rh-empty--small';
+    empty.textContent = message;
+    return empty;
+  }
+
+  function renderOne(item: ReturnType<typeof attentionFromTurnResolution> | null) {
+    const existing = document.getElementById('rh-one-slot') ?? document.getElementById('rh-one-empty');
+    const next = item
+      ? createAttentionArtifactCard(item, { variant: 'one' })
+      : oneThingEmpty();
+    next.id = item ? 'rh-one-slot' : 'rh-one-empty';
+    existing?.replaceWith(next);
+  }
+
+  function renderList(
+    container: Element | null,
+    items: ReturnType<typeof attentionFromTurnResolution>[],
+    variant: 'deck' | 'pulse',
+    emptyMessage: string,
+  ) {
+    if (!(container instanceof HTMLElement)) return;
+    container.innerHTML = '';
+    if (items.length === 0) {
+      container.append(listEmpty(emptyMessage));
+      return;
+    }
+    items.forEach((item) => container.append(createAttentionArtifactCard(item, { variant })));
+  }
+
+  function renderHomeAttention(live: ReturnType<typeof attentionFromTurnResolution>[]) {
+    const sections = composeHomeAttentionSections({
+      live,
+    });
+    renderOne(sections.oneThing);
+    renderList(deckList, [...sections.onDeck], 'deck', 'No queued decisions.');
+    renderList(pulseList, [...sections.pulse], 'pulse', 'No company pulse items yet.');
+  }
+
+  async function loadRelayAttention() {
+    try {
+      const res = await fetch(apiUrl('/api/v1/field-daily/relay-feed?tenant_id=tenant_ggr'));
+      const body = await res.json();
+      if (!res.ok || !Array.isArray(body.items)) return [];
+      return body.items.map((item: unknown) => attentionFromRelayCard(item));
+    } catch {
+      return [];
+    }
+  }
+
+  async function hydrateHomeAttention() {
+    const live = [];
+    try {
+      const trp = parseTurnResolution(sessionStorage.getItem(TURN_RESOLUTION_SESSION_KEY));
+      if (trp) live.push(attentionFromTurnResolution(trp, trp.work_artifact ? 'pulse' : 'one_thing'));
+    } catch { /* storage unavailable — keep the honest empty state */ }
+    live.push(...await loadRelayAttention());
+    if (live.length > 0) renderHomeAttention(live);
+  }
+
+  void hydrateHomeAttention();
+</script>
 
 <style>
   .rh-home {
@@ -93,6 +235,27 @@ const pulse = attentionForPlacement(attentionArtifacts, 'pulse', 12);
   .rh-home h2 {
     font-size: 1.35rem;
     line-height: 1.05;
+  }
+  .rh-empty {
+    display: grid;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-radius: 14px;
+    border: 1px dashed var(--kerf-border);
+    background: color-mix(in srgb, var(--kerf-surface-2) 55%, transparent);
+    color: var(--kerf-text-dim);
+  }
+  .rh-empty strong {
+    color: var(--kerf-text);
+    font-size: 0.98rem;
+  }
+  .rh-empty span {
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+  .rh-empty--small {
+    padding: 0.8rem 0.9rem;
+    font-size: 0.86rem;
   }
   .rh-one {
     display: grid;

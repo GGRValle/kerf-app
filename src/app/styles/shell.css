@@ -216,3 +216,146 @@ body {
     display: none;
   }
 }
+
+/* F-AA1 · Attention Artifact: one card grammar projected into Home, Right Hand,
+   and Office Review. Presentation labels may change; this card is the shared
+   attention projection, not a new primitive. */
+.aa-card {
+  --aa-tone: var(--right-hand);
+  --aa-state: var(--right-hand);
+  position: relative;
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  gap: 0.75rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 14px;
+  background: var(--kerf-surface);
+  padding: 0.85rem 0.9rem;
+}
+
+.aa-card--one {
+  border-color: color-mix(in srgb, var(--right-hand) 34%, var(--kerf-border));
+  background: color-mix(in srgb, var(--right-hand) 10%, var(--kerf-surface));
+  padding: 1rem;
+}
+
+.aa-card--pulse {
+  min-height: 58px;
+  padding-block: 0.7rem;
+}
+
+.aa-card__rail {
+  width: 4px;
+  min-height: 100%;
+  border-radius: 999px;
+  background: var(--aa-state);
+}
+
+.aa-card__body,
+.aa-card__top,
+.aa-card__meta {
+  min-width: 0;
+}
+
+.aa-card__body {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.aa-card__top,
+.aa-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+}
+
+.aa-card__domain {
+  color: var(--aa-tone);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.aa-card__state,
+.aa-card__chip {
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--aa-state) 38%, var(--kerf-border));
+  background: color-mix(in srgb, var(--aa-state) 12%, transparent);
+  color: var(--kerf-text);
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  padding: 0.24rem 0.46rem;
+}
+
+.aa-card__headline {
+  color: var(--kerf-text);
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.aa-card--one .aa-card__headline {
+  font-size: 1.24rem;
+  line-height: 1.15;
+}
+
+.aa-card__because {
+  color: var(--kerf-text-dim);
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.aa-card--one .aa-card__because {
+  font-size: 0.95rem;
+  line-height: 1.42;
+}
+
+.aa-card__chip {
+  color: var(--kerf-text-dim);
+}
+
+.aa-card__chip--source {
+  border-color: var(--kerf-border-soft);
+  background: var(--kerf-surface-2);
+}
+
+.aa-card__expand {
+  margin-left: auto;
+  color: var(--right-hand);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.aa-card[data-attention-state='handled'] {
+  --aa-state: var(--field-green);
+}
+
+.aa-card[data-attention-state='next_options'] {
+  --aa-state: var(--right-hand);
+}
+
+.aa-card[data-attention-state='needs_you'] {
+  --aa-state: var(--kerf-blue);
+}
+
+.aa-card[data-attention-state='risk_changed'] {
+  --aa-state: var(--kerf-red);
+}
+
+.aa-card[data-attention-state='review_suggested'] {
+  --aa-state: var(--kerf-violet);
+}
+
+.aa-tone-team { --aa-tone: var(--field-green); }
+.aa-tone-project { --aa-tone: var(--kerf-blue); }
+.aa-tone-money { --aa-tone: var(--kerf-amber); }
+.aa-tone-selection { --aa-tone: var(--kerf-violet); }
+.aa-tone-client { --aa-tone: #67D6E0; }
+.aa-tone-review { --aa-tone: var(--right-hand); }
+.aa-tone-neutral { --aa-tone: var(--kerf-text-mute); }

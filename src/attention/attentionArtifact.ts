@@ -7,6 +7,12 @@ import type {
 
 export type AttentionProjectionSource = 'turn_resolution' | 'relay_card' | 'home_fixture';
 export type AttentionProjectionPlacement = 'one_thing' | 'on_deck' | 'pulse' | 'inline_result' | 'review';
+export type AttentionProjectionState =
+  | 'needs_you'
+  | 'handled'
+  | 'next_options'
+  | 'risk_changed'
+  | 'review_suggested';
 export type AttentionProjectionTone =
   | 'project'
   | 'money'
@@ -21,17 +27,36 @@ export interface AttentionProjection {
   readonly source: AttentionProjectionSource;
   readonly placement: AttentionProjectionPlacement;
   readonly kind: AttentionKind;
+  readonly state?: AttentionProjectionState;
   readonly tone: AttentionProjectionTone;
+  readonly domain?: string;
   readonly label: string;
   readonly headline: string;
+  readonly because?: string;
   readonly detail: string;
   readonly href: string;
   readonly priority: number;
   readonly createdAt: number | null;
   readonly sourceRefs: readonly string[];
+  readonly sourceLabel?: string | null;
   readonly workArtifact: string | null;
   readonly needsUser: boolean;
   readonly consequenceTier: ConsequenceTier;
+  readonly consequenceLabel?: string;
+  readonly expandLabel?: string;
+}
+
+export interface HomeAttentionSections {
+  readonly oneThing: AttentionProjection | null;
+  readonly onDeck: readonly AttentionProjection[];
+  readonly pulse: readonly AttentionProjection[];
+}
+
+export interface ComposeHomeAttentionOptions {
+  readonly live?: readonly AttentionProjection[];
+  readonly fallback?: readonly AttentionProjection[];
+  readonly onDeckLimit?: number;
+  readonly pulseLimit?: number;
 }
 
 export interface RelayAttentionCopy {
@@ -117,6 +142,30 @@ function labelForRelaySeverity(severity: string, copy: RelayAttentionCopy): stri
   return copy.severity.review;
 }
 
+function stateForRelaySeverity(severity: string): AttentionProjectionState {
+  if (severity === 'block' || severity === 'warn') return 'risk_changed';
+  if (severity === 'info') return 'review_suggested';
+  return 'needs_you';
+}
+
+function stateForTurn(kind: AttentionKind): AttentionProjectionState {
+  if (kind === 'handled') return 'handled';
+  if (kind === 'ready_to_save') return 'next_options';
+  return 'needs_you';
+}
+
+function sourceLabelFromRefs(sourceRefs: readonly string[]): string | null {
+  const joined = sourceRefs.join(' ').toLowerCase();
+  if (/\bvoice|transcript|audio\b/.test(joined)) return 'via voice';
+  if (/\bphoto|image|camera\b/.test(joined)) return 'via photo';
+  if (/\btext|sms\b/.test(joined)) return 'via text';
+  return sourceRefs.length > 0 ? 'source' : null;
+}
+
+function consequenceLabelFor(tier: ConsequenceTier): string {
+  return tier;
+}
+
 function attentionKindForProjection(trp: TurnResolutionPacket): AttentionKind {
   if (trp.work_artifact) return 'handled';
   if (trp.attention_artifact.kind === 'needs_you') return 'needs_you';
@@ -151,17 +200,23 @@ export function attentionFromTurnResolution(
     source: 'turn_resolution',
     placement,
     kind,
+    state: stateForTurn(kind),
     tone: toneForTurnFrame(trp.context_hypothesis?.frame),
-    label: trp.context_hypothesis?.label || 'Right Hand',
+    domain: trp.context_hypothesis?.likely_entity?.label || trp.context_hypothesis?.label || 'Right Hand',
+    label: kind === 'ready_to_save' ? 'Next options' : kind === 'handled' ? 'Handled' : 'Needs you',
     headline: turnHeadline(trp, kind),
+    because: turnDetail(trp, kind),
     detail: turnDetail(trp, kind),
     href: trp.next_surface || '/',
     priority: kind === 'needs_you' ? 95 : kind === 'ready_to_save' ? 80 : 60,
     createdAt: trp.created_at,
     sourceRefs: trp.source_refs,
+    sourceLabel: sourceLabelFromRefs(trp.source_refs),
     workArtifact: trp.work_artifact,
     needsUser: kind !== 'handled',
     consequenceTier: trp.consequence_tier,
+    consequenceLabel: consequenceLabelFor(trp.consequence_tier),
+    expandLabel: 'Open',
   };
 }
 
@@ -187,17 +242,23 @@ export function attentionFromRelayCard(
     source: 'relay_card',
     placement: 'review',
     kind: 'needs_you',
+    state: stateForRelaySeverity(severity),
     tone: toneForRelaySeverity(severity),
+    domain: summary || 'Field',
     label: labelForRelaySeverity(severity, copy),
     headline,
+    because: detail,
     detail,
     href: `/relay/${encodeURIComponent(entryId)}`,
     priority: severity === 'block' ? 100 : severity === 'warn' ? 80 : severity === 'info' ? 45 : 60,
     createdAt: Number.isFinite(createdAt) ? createdAt : null,
     sourceRefs: safeSourceRefs(item.source_refs),
+    sourceLabel: sourceLabelFromRefs(safeSourceRefs(item.source_refs)),
     workArtifact: entryId !== 'unknown' ? `daily_log:${entryId}` : null,
     needsUser: true,
     consequenceTier: 'durable',
+    consequenceLabel: 'durable',
+    expandLabel: 'Open',
   };
 }
 
@@ -478,6 +539,53 @@ const HOME_ATTENTION_FIXTURES: readonly AttentionProjection[] = [
 
 export function demoHomeAttentionArtifacts(): readonly AttentionProjection[] {
   return HOME_ATTENTION_FIXTURES;
+}
+
+function sortAttention(items: readonly AttentionProjection[]): readonly AttentionProjection[] {
+  return [...items].sort((a, b) => {
+    if (a.priority !== b.priority) return b.priority - a.priority;
+    const aCreated = a.createdAt ?? 0;
+    const bCreated = b.createdAt ?? 0;
+    if (aCreated !== bCreated) return bCreated - aCreated;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function appendUnique(
+  target: AttentionProjection[],
+  seen: Set<string>,
+  items: readonly AttentionProjection[],
+  limit: number,
+) {
+  for (const item of items) {
+    if (target.length >= limit) return;
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    target.push(item);
+  }
+}
+
+export function composeHomeAttentionSections({
+  live = [],
+  fallback = [],
+  onDeckLimit = 5,
+  pulseLimit = 12,
+}: ComposeHomeAttentionOptions = {}): HomeAttentionSections {
+  const liveNeedsUser = sortAttention(live.filter((item) => item.needsUser));
+  const fallbackOneThing = topAttentionForPlacement(fallback, 'one_thing');
+  const oneThing = liveNeedsUser[0] ?? fallbackOneThing;
+  const seen = new Set<string>();
+  if (oneThing) seen.add(oneThing.id);
+
+  const onDeck: AttentionProjection[] = [];
+  appendUnique(onDeck, seen, liveNeedsUser.slice(oneThing && liveNeedsUser[0]?.id === oneThing.id ? 1 : 0), onDeckLimit);
+  appendUnique(onDeck, seen, attentionForPlacement(fallback, 'on_deck'), onDeckLimit);
+
+  const pulse: AttentionProjection[] = [];
+  appendUnique(pulse, seen, sortAttention(live), pulseLimit);
+  appendUnique(pulse, seen, attentionForPlacement(fallback, 'pulse'), pulseLimit);
+
+  return { oneThing, onDeck, pulse };
 }
 
 export function attentionForPlacement(
