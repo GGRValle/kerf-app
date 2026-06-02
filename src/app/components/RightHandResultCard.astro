@@ -37,6 +37,7 @@ const { t } = createLayoutContext();
     nextMovesFor,
     TURN_RESOLUTION_SESSION_KEY,
   } from '../../voice/realtime/turnResolution.js';
+  import { attentionFromTurnResolution } from '../../attention/attentionArtifact.js';
 
   const card = document.getElementById('rh-result');
   if (card) {
@@ -46,19 +47,15 @@ const { t } = createLayoutContext();
     } catch { /* storage unavailable — leave the card hidden */ }
     const trp = parseTurnResolution(raw);
     if (trp) {
+      const artifact = attentionFromTurnResolution(trp, 'inline_result');
       const badge = document.getElementById('rh-result-badge');
       const heard = document.getElementById('rh-result-heard');
       const prompt = document.getElementById('rh-result-prompt');
-      // HONEST: badge text is driven by the real attention kind. The overlay
-      // only ever emits `ready_to_save` (no overlay-side durable write), so the
-      // card never claims "handled" unless a real work_artifact backs it.
-      if (badge && trp.attention_artifact?.kind && trp.attention_artifact.headline) {
-        badge.textContent = trp.attention_artifact.headline;
-      }
+      // HONEST: the projection computes durable status from work_artifact, not
+      // model/result copy. The card cannot claim handled without a real artifact.
+      if (badge) badge.textContent = artifact.headline;
       if (heard) heard.textContent = trp.heard_text;
-      if (prompt && trp.attention_artifact?.why) {
-        prompt.textContent = trp.attention_artifact.why;
-      }
+      if (prompt) prompt.textContent = artifact.detail;
       const moves = nextMovesFor(trp);
       card.querySelectorAll<HTMLElement>('[data-move]').forEach((el) => {
         el.addEventListener('click', () => {

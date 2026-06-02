@@ -29,6 +29,10 @@ const copy = {
   <script define:vars={{ entryId, tenantId: context.tenantId, copy }}>
   const root = document.getElementById('relay-detail-root');
 
+  function apiUrl(path) {
+    return new URL(path, window.location.origin).toString();
+  }
+
   function renderItem(item) {
     if (!(root instanceof HTMLElement)) return;
     const auditHref = `/projects/${item.project_id}/audit#audit-${item.surfaced_event_id ?? item.relay_card_id}`;
@@ -86,7 +90,7 @@ const copy = {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
         try {
-          const res = await fetch(`/api/v1/relay-cards/${item.relay_card_id}/review`, {
+          const res = await fetch(apiUrl(`/api/v1/relay-cards/${item.relay_card_id}/review`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tenant_id: tenantId, reviewer: 'office_operator', outcome: 'acknowledged' }),
@@ -108,7 +112,7 @@ const copy = {
 
   async function load() {
     try {
-      const res = await fetch(`/api/v1/field-daily/relay-feed?tenant_id=${tenantId}`);
+      const res = await fetch(apiUrl(`/api/v1/field-daily/relay-feed?tenant_id=${tenantId}`));
       const body = await res.json();
       const item = (body.items ?? []).find((row) => row.entry_id === entryId);
       if (!item) {
