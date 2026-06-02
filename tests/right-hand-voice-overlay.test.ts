@@ -383,7 +383,7 @@ test('trust loop: durable committed intent enters confirm and does NOT auto-navi
 
   // routeCommitted's durable branch hands off to the sorting→confirm loop; it
   // must NOT navigate (the abrupt auto-nav is gone).
-  const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /requiresCommittedTranscript\(intent\)/);
   assert.match(routeCommitted, /enterSorting\(/);
   assert.doesNotMatch(routeCommitted, /navigate\(/);
@@ -425,7 +425,7 @@ test('trust loop: confirm projects the TRP as a Right Hand conversation, not aud
 
 test('trust loop: meaningful unclassified speech defaults to a saveable note', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /const cleanText = text\.trim\(\)/);
   assert.match(routeCommitted, /if \(cleanText\.length > 0\) \{/);
   assert.match(routeCommitted, /enterSorting\(cleanText\)/);
@@ -515,6 +515,11 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   const renderConfirmTurn = sliceDecl(src, 'renderConfirmTurn', 'currentTenantId');
   assert.match(renderConfirmTurn, /startNewIntakeTurn\(trp\)/);
   assert.match(renderConfirmTurn, /actionStartIntake/);
+  // Stage 4: the primary affordance is "Save to <job>" once a destination is
+  // known; Change job is only offered when there is a job to change away from.
+  assert.match(renderConfirmTurn, /const entity = likelyEntityLabel\(trp\)/);
+  assert.match(renderConfirmTurn, /actionSaveTo[\s\S]{0,40}\{ job: entity \}/);
+  assert.match(renderConfirmTurn, /changeJobBtn\.hidden = state !== 'confirm' \|\| !entity/);
 
   const resolveTurn = sliceDecl(src, 'resolveTurn', 'routeMove');
   assert.match(resolveTurn, /startNewIntakeTurn\(baseTrp\)/);
@@ -539,12 +544,18 @@ test('turn resolution: next moves — only "Add a photo" routes to Field Capture
 
 test('trust loop: Keep talking returns to listening with the original note preserved', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  const returnToListening = sliceDecl(src, 'returnToListening', 'currentProjectId');
-  assert.match(returnToListening, /awaitingConfirm = false/);
-  assert.match(returnToListening, /correctionBaseTrp = parkedTurnResolution/);
-  assert.match(returnToListening, /beginSession\(\)/);
-  assert.doesNotMatch(returnToListening, /navigate\(/);
-  const routeCommitted = sliceDecl(src, 'routeCommitted', 'returnToListening');
+  // The shared resume helper keeps the parked note as a correction base and
+  // re-acquires the mic WITHOUT leaving the conversation (no navigate).
+  const resume = sliceDecl(src, 'resumeListeningWithCorrection', 'returnToListening');
+  assert.match(resume, /awaitingConfirm = false/);
+  assert.match(resume, /correctionBaseTrp = parkedTurnResolution/);
+  assert.match(resume, /beginSession\(\)/);
+  assert.doesNotMatch(resume, /navigate\(/);
+  // Keep talking delegates to that one resume path with the keep-talking prompt.
+  const returnToListening = sliceDecl(src, 'returnToListening', 'changeJob');
+  assert.match(returnToListening, /resumeListeningWithCorrection\(/);
+  assert.match(returnToListening, /keepTalkingPrompt/);
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /correctionBaseTrp/);
   assert.match(routeCommitted, /Correction: \$\{cleanText\}/);
   // Wired to the same visible mic and the Keep talking button.
@@ -552,6 +563,49 @@ test('trust loop: Keep talking returns to listening with the original note prese
   assert.match(src, /state === 'confirm'[\s\S]*?returnToListening\(\)/);
   assert.match(src, /overlay\.dataset\.actionKeepTalking/);
   assert.match(src, /notThatBtn\?\.addEventListener\('click', returnToListening\)/);
+});
+
+test('F-RH3 stage 4: the consequence bubble answers where-it-goes (Save to <job> · Change job · Keep talking)', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  // Three affordances that answer the real question — NOT a generic
+  // Save/Don't-save/Keep-talking box. The generic "Don't save" cancel is not
+  // part of the consequence row; it only shows on the capped pause.
+  assert.match(src, /id="rhvo-changejob"/);
+  assert.match(src, /rh_voice\.action_change_job/);
+  assert.match(src, /rh_voice\.action_save\b/);
+  assert.match(src, /id="rhvo-notthat"[\s\S]{0,80}rh_voice\.action_keep_talking/);
+  // Change job re-routes the SAME parked note (same resume path, job-focused
+  // prompt) — it never navigates away or discards the note. (Matched on the
+  // function body directly; "changeJob" also prefixes the changeJobBtn ref.)
+  const changeJobFn = src.match(/const changeJob = \(\) => \{[\s\S]*?\n {4}\};/);
+  assert.ok(changeJobFn, 'expected the changeJob function declaration');
+  assert.match(changeJobFn![0], /resumeListeningWithCorrection\(/);
+  assert.match(changeJobFn![0], /correctionNeeds/);
+  assert.doesNotMatch(changeJobFn![0], /navigate\(/);
+  assert.match(src, /changeJobBtn\?\.addEventListener\('click', changeJob\)/);
+  // showActions reveals exactly the consequence row in confirm and hides the
+  // generic cancel there (it returns only on the capped pause).
+  const showActions = sliceDecl(src, 'showActions', 'resetConfirmActionCopy');
+  assert.match(showActions, /cancelBtn\.hidden = mode !== 'capped'/);
+  assert.match(showActions, /saveBtn\.hidden = mode !== 'confirm'/);
+  assert.match(showActions, /changeJobBtn\.hidden = mode !== 'confirm'/);
+  assert.match(showActions, /notThatBtn\.hidden = mode !== 'confirm'/);
+});
+
+test('F-RH3 stage 5: "Filed" renders only after the durable write returns (honesty floor)', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const resolveTurn = sliceDecl(src, 'resolveTurn', 'routeMove');
+  // The committed (filed) headline is set ONLY after commitTurnServerSide
+  // succeeds — it lives after the failure early-return inside resolveTurn.
+  assert.match(resolveTurn, /commitTurnServerSide\(baseTrp\)/);
+  assert.match(resolveTurn, /if \(!committed\.ok\)[\s\S]*?return;/);
+  assert.match(resolveTurn, /setState\('resolved'\)[\s\S]{0,700}headFiled/);
+  assert.match(resolveTurn, /filedPrompt/);
+  // The honest pre-write copy ("Nothing was filed") still guards the failure path.
+  assert.match(resolveTurn, /Nothing was filed/);
+  // i18n: the filed headline names the job and the daily log, via voice.
+  const en = readFileSync(path.join(ROOT, 'src/i18n/en.ts'), 'utf8');
+  assert.match(en, /'rh_voice\.head_filed': '✓ Filed to \{job\} · Daily Log · via voice'/);
 });
 
 test('reversible LIVE intent still routes immediately (unchanged)', () => {
@@ -646,8 +700,14 @@ test('F-RH1 i18n: new keys exist in the key union, EN, and ES', () => {
     'rh_voice.confirm_needs_label',
     'rh_voice.confirm_prompt',
     'rh_voice.action_save',
+    'rh_voice.action_save_to',
+    'rh_voice.action_change_job',
     'rh_voice.action_not_that',
     'rh_voice.action_stop',
+    'rh_voice.keep_talking_prompt',
+    'rh_voice.head_filed',
+    'rh_voice.head_filed_generic',
+    'rh_voice.filed_prompt',
     'rh_voice.action_back',
     'rh_voice.mic_toggle_label',
     'rh_voice.action_correct',
