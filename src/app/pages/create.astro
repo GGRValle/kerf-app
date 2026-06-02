@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 
 const actions = [
-  { href: '/projects/new?src=create', title: 'New job intake', detail: 'Start a lead, site walk, or estimate packet.' },
+  { href: '/projects/new?src=create', title: 'New estimate', detail: 'Start a lead, site walk, or proposal.' },
   { href: '/field-capture?src=create', title: 'Daily log note', detail: 'Add a job note, photo, or site condition.' },
   { href: '/draft-review?src=create', title: 'Change order', detail: 'Collect scope changes before pricing or sending.' },
   { href: '/money?src=create', title: 'Invoice', detail: 'Start from the money lane; no money posts without review.' },
@@ -13,6 +13,7 @@ const actions = [
 
 <Layout title="Create" activeHref="/create">
   <section class="create-sheet" aria-labelledby="create-title">
+    <a class="create-back" href="/">‹ Back home</a>
     <p class="create-sheet__eyebrow">Start something</p>
     <h1 id="create-title">Create</h1>
     <p class="create-sheet__lede">Use this when speaking is not convenient. Right Hand still handles the routing and review behind the scenes.</p>
@@ -31,6 +32,13 @@ const actions = [
   .create-sheet {
     display: grid;
     gap: 0.8rem;
+  }
+  .create-back {
+    justify-self: start;
+    color: var(--kerf-text-dim);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
   }
   .create-sheet__eyebrow {
     margin: 0;

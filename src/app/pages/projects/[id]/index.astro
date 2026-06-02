@@ -49,7 +49,7 @@ const project = id ? getLane23Project(id) : null;
           </div>
         </dl>
         <div class="lane23-rh-handoff__actions">
-          <a class="lane23-btn-link" href={`/field-capture?dest=this-job&intent=record&src=voice&project_id=${project.project_id}`}>
+          <a class="lane23-btn-link" href={`/camera?src=project&mode=photo&project_id=${project.project_id}&return_to=/projects/${project.project_id}`}>
             {t('project.detail.rh_handoff_add_photo')}
           </a>
         </div>

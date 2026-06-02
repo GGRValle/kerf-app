@@ -114,17 +114,12 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </span>
           </aside>
 
-          <!-- Voice is the bottom-bar Right Hand mic (the one universal, context-aware
-               voice control). Field Capture no longer hosts a second giant recorder
-               on the page body — turn-resolution brief 2026-05-31 §2/§3. -->
-          <div class="fc-mic-hint" role="note">
-            <span class="fc-mic-hint-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"/></svg>
-            </span>
-            <div class="fc-mic-hint-body">
-              <strong>You're on this job — speak to add a note here.</strong>
-              <span>Tap the mic in the bottom bar for a voice note. Or add a photo, attach a file, or edit the summary below.</span>
-            </div>
+          <!-- Voice stays owned by the universal bottom-bar Right Hand mic.
+               This page is the quiet detail/media surface once the operator
+               chooses to come here. -->
+          <div class="fc-context-note" role="note">
+            <strong>Right Hand brought you here with the job context.</strong>
+            <span>Add a photo, attach a file, or edit the note details. Use the bottom mic to keep talking.</span>
           </div>
 
           <div class="cap-secondary">
@@ -153,32 +148,20 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           </div>
         </section>
 
-        <!-- ===================== STATE 2 · ACTIVE CAPTURE ===================== -->
-        <section class="capture-state state-active" aria-label="Active capture">
+        <!-- ===================== STATE 2 · ADD DETAILS ===================== -->
+        <section class="capture-state state-active" aria-label="Add details">
           <header class="top-chrome">
             <div class="tc-eyebrow">
               <span class="tc-mode" id="f-e1-active-mode">Adding · {assignment.client} / {assignment.location}</span>
               <span class="tc-user" id="f-e1-active-count">0 items</span>
             </div>
-            <h1 class="tc-title tc-title-sm">Recording voice</h1>
+            <h1 class="tc-title tc-title-sm">Add details</h1>
           </header>
-
-          <div class="live-record-bar">
-            <span class="live-rec-dot" aria-hidden="true"></span>
-            <div class="live-rec-body">
-              <p class="live-rec-label">Recording</p>
-              <strong class="live-rec-time" id="f-e1-timer">0:00</strong>
-            </div>
-            <button type="button" class="live-rec-stop" id="f-e1-stop">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
-              Stop
-            </button>
-          </div>
 
           <label class="note-card" for="f-e1-note">
             <span class="card-eyebrow">Typed summary</span>
             <p class="note-helper">
-              Voice stays with this job note. Until transcription is wired here, type a short summary before filing.
+              Use the bottom mic to keep talking with Right Hand, or type a short summary before filing.
             </p>
             <textarea
               id="f-e1-note"
@@ -567,6 +550,11 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
         const icon = captureIconKind(item);
         const iconWrap = document.createElement('div');
         iconWrap.className = `cap-item-icon ${icon.cls}`;
+        iconWrap.style.width = '28px';
+        iconWrap.style.height = '28px';
+        iconWrap.style.maxWidth = '28px';
+        iconWrap.style.maxHeight = '28px';
+        iconWrap.style.overflow = 'hidden';
         if (item.kind === 'photo' && item.ref?.url) {
           const img = document.createElement('img');
           img.className = 'cap-item-thumb';
@@ -575,6 +563,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           iconWrap.append(img);
         } else {
           iconWrap.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon.svg}</svg>`;
+          const svg = iconWrap.querySelector('svg');
+          if (svg instanceof SVGElement) {
+            svg.setAttribute('width', '14');
+            svg.setAttribute('height', '14');
+            svg.style.width = '14px';
+            svg.style.height = '14px';
+            svg.style.maxWidth = '14px';
+            svg.style.maxHeight = '14px';
+          }
         }
 
         const bodyWrap = document.createElement('div');
@@ -753,7 +750,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     setState('active');
     setStatus('');
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      setStatus('Recording is already running. Tap Stop before starting another voice memo.', 'neutral');
+      setStatus('Recording is already running. Finish the current voice memo before starting another one.', 'neutral');
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia || !('MediaRecorder' in window)) {
@@ -1021,15 +1018,6 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
 
   stopButton?.addEventListener('click', stopRecording);
-  window.addEventListener('kerf:rh-speak', (event) => {
-    event.preventDefault();
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      stopRecording();
-      return;
-    }
-    setState('active');
-    void startRecording();
-  });
   typeNoteButton?.addEventListener('click', () => setState('active'));
   photoButtons.forEach((button) => button?.addEventListener('click', openCamera));
   cameraInput?.addEventListener('change', handlePhotoPick);
@@ -1319,32 +1307,27 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     display: block;
   }
 
-  /* ===== Bottom-mic context hint (replaces the on-page giant recorder) ===== */
-  .fc-mic-hint {
+  /* ===== Context note (voice remains owned by the bottom-bar mic) ===== */
+  .fc-context-note {
     margin: 16px 0;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
     padding: 14px;
     border: 1px solid var(--kerf-border, #d8dee6);
     border-radius: 14px;
     background: var(--kerf-bg-2, #f6f8fa);
   }
-  .fc-mic-hint-icon {
-    flex: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: color-mix(in srgb, var(--field-green, #38c977) 18%, transparent);
-    color: var(--field-green, #38c977);
+  .fc-context-note strong {
+    display: block;
+    font-size: 0.92rem;
+    line-height: 1.35;
+    color: var(--kerf-text);
   }
-  .fc-mic-hint-icon svg { width: 22px; height: 22px; fill: currentColor; }
-  .fc-mic-hint-body { display: flex; flex-direction: column; gap: 3px; }
-  .fc-mic-hint-body strong { font-size: 0.92rem; line-height: 1.35; color: var(--kerf-text); }
-  .fc-mic-hint-body span { font-size: 0.8rem; line-height: 1.4; color: var(--kerf-text-mute, #5c6670); }
+  .fc-context-note span {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--kerf-text-mute, #5c6670);
+  }
 
   /* ===== Capture guidance ===== */
   .record-label {

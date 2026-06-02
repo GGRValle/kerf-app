@@ -27,6 +27,20 @@ test('center Speak nav opens Right Hand and the phone bar uses Create/Camera', (
 test('Layout wires mobile bottom nav', () => {
   assert.match(read('src/app/layouts/Layout.astro'), /MobileBottomNav/);
 });
+test('served shell exposes build stamp for path-truth verification', () => {
+  const layout = read('src/app/layouts/Layout.astro');
+  const shell = read('scripts/serve-kerf-shell.ts');
+  const api = read('src/api/routes/projects.ts');
+  assert.match(layout, /meta name="kerf-build-commit"/);
+  assert.match(layout, /data-build-commit/);
+  assert.match(layout, /data-build-dirty/);
+  assert.match(shell, /KERF_BUILD_COMMIT/);
+  assert.match(shell, /KERF_BUILD_DIRTY/);
+  assert.match(shell, /gitOutput\(\['rev-parse', 'HEAD'\]\)/);
+  assert.match(shell, /build: \{/);
+  assert.match(api, /build: \{/);
+  assert.match(api, /KERF_BUILD_COMMIT/);
+});
 test('shell.css reserves space for mobile bottom nav', () => {
   assert.match(read('src/app/styles/shell.css'), /5\.5rem/);
 });
@@ -44,6 +58,35 @@ test('preview pages exist for schedule, reports, settings, more, create, camera'
   for (const page of ['schedule.astro', 'reports.astro', 'settings.astro', 'more.astro', 'create.astro', 'camera.astro']) {
     assert.ok(existsSync(path.join(ROOT, 'src/app/pages', page)), page);
   }
+});
+test('F-CAM1 V1 camera shell gates on job and keeps modes inline', () => {
+  const src = read('src/app/pages/camera.astro');
+  assert.match(src, /Where should this go\?/);
+  assert.match(src, /class:list=\{\['f-cam1'/);
+  assert.match(src, /data-selected-project-id/);
+  assert.match(src, /data-project-id=\{project\.project_id\}/);
+  assert.match(src, /Walkthru/);
+  assert.match(src, /Photo/);
+  assert.match(src, /Scan/);
+  assert.match(src, /Right Hand listening · REC/);
+  assert.match(src, /id="camera-photo-input"/);
+  assert.match(src, /id="camera-video-input"/);
+  assert.match(src, /id="camera-scan-input"/);
+  assert.match(src, /sessionStorage\.setItem\('kerf\.cameraCapture'/);
+  assert.match(src, /Captured this session/);
+  assert.match(src, /attached_to_session/);
+  assert.match(src, /ready_for_job_file/);
+  assert.match(src, /Nothing captured yet/);
+  assert.match(src, /href="\/room-capture\?src=camera&mode=start"/);
+  assert.doesNotMatch(src, /href="\/field-capture"/);
+});
+test('Room scan reached from Camera starts honestly instead of showing post-scan fixture results', () => {
+  const src = read('src/app/pages/room-capture.astro');
+  assert.match(src, /const freshScan/);
+  assert.match(src, /mode'\) === 'start'/);
+  assert.match(src, /Start room scan/);
+  assert.match(src, /Native capture not available in this web build/);
+  assert.match(src, /href="\/room-capture\?scan_id=demo_last"/);
 });
 test('ActionsStrip delegates to ExportPrintBar', () => {
   assert.match(read('src/app/components/ActionsStrip.astro'), /ExportPrintBar/);

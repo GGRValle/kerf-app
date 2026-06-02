@@ -1,36 +1,290 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { listLane23Projects } from '../lib/lane23Fixtures.js';
 
-const actions = [
-  { href: '/field-capture?src=camera&mode=photo', title: 'Photo', detail: 'Attach a photo to the current job or a new note.' },
-  { href: '/field-capture?src=camera&mode=video', title: 'Video', detail: 'Capture a walkthrough clip and keep it with the job.' },
-  { href: '/field-capture?src=camera&mode=walkthrough', title: 'AI-assisted walkthrough', detail: 'Talk while you capture; Right Hand turns it into organized notes.' },
-  { href: '/room-capture?src=camera', title: 'Room scan', detail: 'Use the LiDAR path when measurements matter.' },
-];
+const { context } = createLayoutContext();
+const projects = listLane23Projects(context.tenantId);
+const safeProjectId = (raw: string | null) => raw && /^[A-Za-z0-9_-]+$/.test(raw) ? raw : '';
+const requestedProjectId = safeProjectId(Astro.url.searchParams.get('project_id'));
+const selectedProject = projects.find((project) => project.project_id === requestedProjectId) ?? null;
+const rawReturnTo = Astro.url.searchParams.get('return_to') ?? '';
+const safeReturnTo = rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : '';
+const fallbackReturn = selectedProject ? `/projects/${selectedProject.project_id}?src=camera` : '/';
+const returnHref = safeReturnTo || fallbackReturn;
+const startsWithGate = selectedProject === null;
+const modeParam = Astro.url.searchParams.get('mode');
+const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam : 'photo';
 ---
 
 <Layout title="Camera" activeHref="/camera">
-  <section class="camera-sheet" aria-labelledby="camera-title">
-    <p class="camera-sheet__eyebrow">Capture with context</p>
-    <h1 id="camera-title">Camera</h1>
-    <p class="camera-sheet__lede">Photos and video stay lightweight in the conversation. Open the asset only when you need to inspect it.</p>
-    <div class="camera-sheet__list">
-      {actions.map((action) => (
-        <a class="camera-action" href={action.href}>
-          <span>{action.title}</span>
-          <small>{action.detail}</small>
-        </a>
-      ))}
-    </div>
+  <section
+    class:list={['f-cam1', startsWithGate ? 'needs-job' : 'has-job']}
+    aria-labelledby="camera-title"
+    data-selected-project-id={selectedProject?.project_id ?? ''}
+    data-return-href={returnHref}
+    data-initial-mode={initialMode}
+  >
+    <section class="cam-job-gate" aria-label="Choose job for capture">
+      <a class="cam-back" href={returnHref}>‹ Back</a>
+      <p class="cam-eyebrow">Camera</p>
+      <h1 id="camera-title">Where should this go?</h1>
+      <p class="cam-lede">
+        Pick the job first so photos, walkthroughs, and scans do not get orphaned.
+      </p>
+
+      <div class="cam-recents" role="list" aria-label="Recent jobs">
+        {projects.map((project, index) => (
+          <button
+            class="cam-job-option"
+            type="button"
+            data-project-id={project.project_id}
+            data-project-name={project.project_name}
+            data-project-client={project.client_name}
+            data-project-address={project.address_line}
+            data-preselected={index === 0 ? 'true' : 'false'}
+          >
+            <span>{project.project_name}</span>
+            <small>{project.client_name} · {project.address_line}</small>
+          </button>
+        ))}
+      </div>
+
+      <div class="cam-gate-actions">
+        <a class="cam-pill ghost" href="/projects/new?src=camera">New lead</a>
+        <a class="cam-pill ghost" href="/projects">Search jobs</a>
+      </div>
+    </section>
+
+    <section class="cam-stage" aria-label="Camera capture">
+      <div class="cam-viewfinder" data-mode={initialMode}>
+        <div class="cam-topbar">
+          <div class="cam-topbar__group">
+            <a class="cam-icon-link" href={returnHref} aria-label="Close camera">×</a>
+            <button type="button" class="cam-icon-btn" aria-label="Camera settings">⚙</button>
+          </div>
+          <div class="cam-job-chip" id="cam-job-chip">
+            <span class="cam-job-chip__label">Job</span>
+            <strong>{selectedProject?.project_name ?? 'Choose job'}</strong>
+          </div>
+          <div class="cam-topbar__group">
+            <button type="button" class="cam-icon-btn" aria-label="Flash">⚡</button>
+            <button type="button" class="cam-icon-btn" aria-label="Flip camera">↻</button>
+          </div>
+        </div>
+
+        <div class="cam-rec-pill" id="cam-rec-pill" hidden>Right Hand listening · REC</div>
+        <div class="cam-crosshair" aria-hidden="true"></div>
+        <p class="cam-viewfinder__copy" id="cam-viewfinder-copy">
+          {initialMode === 'walkthru'
+            ? 'Talk while you film. Right Hand will keep the walkthrough with this job.'
+            : initialMode === 'scan'
+              ? 'Capture plans, specs, or paperwork. Right Hand will keep the document with this job.'
+              : 'Take a photo for this job.'}
+        </p>
+      </div>
+
+      <a class="cam-room-link" href="/room-capture?src=camera&mode=start">Room scan</a>
+
+      <div class="cam-bottom-overlay">
+        <div class="cam-zoom" aria-label="Zoom">
+          <button type="button">.5</button>
+          <button type="button" aria-pressed="true">1×</button>
+          <button type="button">3×</button>
+        </div>
+
+        <div class="cam-mode-strip" role="tablist" aria-label="Camera mode">
+          <button type="button" role="tab" data-mode="walkthru" aria-selected={initialMode === 'walkthru' ? 'true' : 'false'}>Walkthru</button>
+          <button type="button" role="tab" data-mode="photo" aria-selected={initialMode === 'photo' ? 'true' : 'false'}>Photo</button>
+          <button type="button" role="tab" data-mode="scan" aria-selected={initialMode === 'scan' ? 'true' : 'false'}>Scan</button>
+        </div>
+
+        <div class="cam-controls">
+          <div class="cam-last-shot" aria-hidden="true">
+            <span>Last</span>
+          </div>
+          <button type="button" class="cam-shutter" id="cam-shutter" aria-label="Capture media"></button>
+          <button type="button" class="cam-done" id="cam-done">Done</button>
+        </div>
+      </div>
+
+      <section class="cam-captured" id="cam-captured" aria-label="Captured media" hidden>
+        <p class="cam-captured__eyebrow">Captured this session</p>
+        <div class="cam-captured__item" id="cam-captured-item">
+          <div class="cam-thumb" id="cam-thumb" aria-hidden="true"></div>
+          <div class="cam-captured__copy">
+            <strong id="cam-captured-title">Capture ready</strong>
+            <span id="cam-captured-detail">Attached to this session.</span>
+          </div>
+        </div>
+      </section>
+
+      <p class="cam-status" id="camera-status" role="status" aria-live="polite">
+        {selectedProject
+          ? `Ready for ${selectedProject.project_name}.`
+          : 'Choose a job before you capture.'}
+      </p>
+
+      <input id="camera-photo-input" type="file" accept="image/*" capture="environment" hidden />
+      <input id="camera-video-input" type="file" accept="video/*" capture="environment" hidden />
+      <input id="camera-scan-input" type="file" accept="image/*,.pdf,application/pdf" capture="environment" hidden />
+    </section>
   </section>
+
+  <script>
+    const root = document.querySelector('.f-cam1');
+    const status = document.querySelector('#camera-status');
+    const jobChip = document.querySelector('#cam-job-chip strong');
+    const viewfinder = document.querySelector('.cam-viewfinder');
+    const viewfinderCopy = document.querySelector('#cam-viewfinder-copy');
+    const recPill = document.querySelector('#cam-rec-pill');
+    const photoInput = document.querySelector('#camera-photo-input');
+    const videoInput = document.querySelector('#camera-video-input');
+    const scanInput = document.querySelector('#camera-scan-input');
+    const captured = document.querySelector('#cam-captured');
+    const capturedTitle = document.querySelector('#cam-captured-title');
+    const capturedDetail = document.querySelector('#cam-captured-detail');
+    const thumb = document.querySelector('#cam-thumb');
+    let currentMode = root?.getAttribute('data-initial-mode') || 'photo';
+    let selectedProjectId = root?.getAttribute('data-selected-project-id') || '';
+    let selectedProjectName = jobChip?.textContent?.trim() || '';
+    let lastCapture = null;
+
+    const copyForMode = (mode) => {
+      if (mode === 'walkthru') return 'Talk while you film. Right Hand will keep the walkthrough with this job.';
+      if (mode === 'scan') return 'Capture plans, specs, or paperwork. Right Hand will keep the document with this job.';
+      return 'Take a photo for this job.';
+    };
+    const setStatus = (message) => {
+      if (status instanceof HTMLElement) status.textContent = message;
+    };
+    const setMode = (mode) => {
+      currentMode = mode;
+      if (viewfinder instanceof HTMLElement) viewfinder.dataset.mode = mode;
+      if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.textContent = copyForMode(mode);
+      if (recPill instanceof HTMLElement) recPill.hidden = mode !== 'walkthru';
+      document.querySelectorAll('[data-mode]').forEach((button) => {
+        if (button instanceof HTMLButtonElement) button.setAttribute('aria-selected', button.dataset.mode === mode ? 'true' : 'false');
+      });
+      setStatus(selectedProjectId ? `Ready for ${selectedProjectName}.` : 'Choose a job first.');
+    };
+    const selectProject = (button) => {
+      selectedProjectId = button.dataset.projectId || '';
+      selectedProjectName = button.dataset.projectName || 'Selected job';
+      if (root instanceof HTMLElement) {
+        root.dataset.selectedProjectId = selectedProjectId;
+        root.classList.remove('needs-job');
+        root.classList.add('has-job');
+      }
+      if (jobChip instanceof HTMLElement) jobChip.textContent = selectedProjectName;
+      setStatus(`Ready for ${selectedProjectName}.`);
+    };
+    const inputForMode = () => {
+      if (currentMode === 'walkthru') return videoInput;
+      if (currentMode === 'scan') return scanInput;
+      return photoInput;
+    };
+    const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
+    const openCapture = () => {
+      if (!selectedProjectId) {
+        setStatus('Choose a job before you capture.');
+        return;
+      }
+      const input = inputForMode();
+      if (input instanceof HTMLInputElement) input.click();
+    };
+    const onSelectedFile = (file, kind) => {
+      if (!file) return;
+      const objectUrl = kind === 'photo' && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
+      lastCapture = {
+        kind,
+        name: file.name || `${kind} capture`,
+        project_id: selectedProjectId,
+        project_name: selectedProjectName,
+        at: Date.now(),
+        status: 'attached_to_session',
+      };
+      try {
+        sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(lastCapture));
+      } catch {
+        // Visible state still tells the operator what happened.
+      }
+      const friendly = kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
+      if (captured instanceof HTMLElement) captured.hidden = false;
+      if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} ready`;
+      if (capturedDetail instanceof HTMLElement) {
+        capturedDetail.textContent = `${file.name || friendly} · attached to ${selectedProjectName} for this session.`;
+      }
+      if (thumb instanceof HTMLElement) {
+        thumb.className = `cam-thumb ${kind === 'photo' ? 'is-photo' : kind === 'scan' ? 'is-scan' : 'is-video'}`;
+        thumb.style.backgroundImage = objectUrl ? `url("${objectUrl}")` : '';
+        thumb.textContent = objectUrl ? '' : kind === 'walkthrough' ? 'REC' : kind === 'scan' ? 'DOC' : 'IMG';
+      }
+      setStatus(`${friendly} attached to ${selectedProjectName} for this session. Tap Done to return.`);
+    };
+    const done = () => {
+      if (!selectedProjectId) {
+        setStatus('Choose a job before you capture.');
+        return;
+      }
+      if (!lastCapture) {
+        setStatus('Nothing captured yet. Take a photo, scan a document, or record a walkthrough first.');
+        return;
+      }
+      try {
+        sessionStorage.setItem('kerf.cameraCapture', JSON.stringify({
+          ...lastCapture,
+          status: 'ready_for_job_file',
+          returned_at: Date.now(),
+        }));
+      } catch {
+        // Status below remains the visible fallback.
+      }
+      const destination = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}?src=camera`;
+      window.location.href = destination;
+    };
+
+    document.querySelectorAll('.cam-job-option').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (button instanceof HTMLButtonElement) selectProject(button);
+      });
+    });
+    document.querySelectorAll('.cam-mode-strip [data-mode]').forEach((button) => {
+      button.addEventListener('click', () => setMode(button.getAttribute('data-mode') || 'photo'));
+    });
+    document.querySelector('#cam-shutter')?.addEventListener('click', openCapture);
+    document.querySelector('#cam-done')?.addEventListener('click', done);
+    photoInput?.addEventListener('change', () => onSelectedFile(photoInput instanceof HTMLInputElement ? photoInput.files?.[0] : null, 'photo'));
+    videoInput?.addEventListener('change', () => onSelectedFile(videoInput instanceof HTMLInputElement ? videoInput.files?.[0] : null, 'walkthrough'));
+    scanInput?.addEventListener('change', () => onSelectedFile(scanInput instanceof HTMLInputElement ? scanInput.files?.[0] : null, 'scan'));
+
+    setMode(currentMode);
+  </script>
 </Layout>
 
 <style>
-  .camera-sheet {
-    display: grid;
-    gap: 0.8rem;
+  .f-cam1 {
+    min-height: calc(100dvh - 8rem);
+    color: #111827;
   }
-  .camera-sheet__eyebrow {
+  .cam-job-gate,
+  .cam-stage {
+    display: grid;
+    gap: 0.9rem;
+  }
+  .f-cam1.has-job .cam-job-gate {
+    display: none;
+  }
+  .f-cam1.needs-job .cam-stage {
+    display: none;
+  }
+  .cam-back,
+  .cam-icon-link {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 800;
+  }
+  .cam-eyebrow {
     margin: 0;
     color: var(--right-hand);
     font-size: 0.72rem;
@@ -38,37 +292,409 @@ const actions = [
     letter-spacing: 0;
     text-transform: uppercase;
   }
-  .camera-sheet h1 {
+  .cam-job-gate h1 {
     margin: 0;
     font-size: 2.2rem;
     line-height: 1;
   }
-  .camera-sheet__lede {
+  .cam-lede {
     margin: 0;
     color: var(--kerf-text-dim);
     line-height: 1.45;
   }
-  .camera-sheet__list {
+  .cam-recents {
     display: grid;
-    gap: 0.6rem;
+    gap: 0.65rem;
   }
-  .camera-action {
-    display: grid;
-    gap: 0.2rem;
-    padding: 0.95rem;
+  .cam-job-option,
+  .cam-pill {
     border: 1px solid var(--kerf-border);
-    border-radius: 14px;
+    border-radius: 16px;
     background: var(--kerf-surface);
     color: inherit;
+    text-align: left;
+    text-decoration: none;
+    font: inherit;
+  }
+  .cam-job-option {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.95rem;
+    cursor: pointer;
+  }
+  .cam-job-option span {
+    font-weight: 850;
+    font-size: 1rem;
+  }
+  .cam-job-option small {
+    color: var(--kerf-text-dim);
+    line-height: 1.35;
+  }
+  .cam-gate-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .cam-pill {
+    padding: 0.78rem;
+    text-align: center;
+    font-weight: 800;
+  }
+  .cam-stage {
+    position: relative;
+    min-height: calc(100dvh - 8.15rem);
+    margin: -1rem;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 0;
+    background: #05070b;
+    color: #f8fafc;
+  }
+  .cam-topbar {
+    position: absolute;
+    z-index: 5;
+    top: 0.72rem;
+    left: 0.72rem;
+    right: 0.72rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.42rem;
+  }
+  .cam-topbar__group {
+    display: flex;
+    align-items: center;
+    gap: 0.34rem;
+  }
+  .cam-icon-link,
+  .cam-icon-btn {
+    width: 1.78rem;
+    height: 1.78rem;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.08);
+    color: #f8fafc;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 900;
+  }
+  .cam-job-chip {
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    max-width: min(46vw, 12rem);
+    padding: 0.34rem 0.54rem;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+  }
+  .cam-job-chip__label {
+    color: rgba(248,250,252,0.62);
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .cam-job-chip strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.76rem;
+  }
+  .cam-viewfinder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+    border-radius: 0;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01)),
+      radial-gradient(circle at 35% 30%, rgba(99,102,241,0.3), transparent 35%),
+      #151922;
+    border: 0;
+  }
+  .cam-viewfinder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 33% 33%;
+    opacity: 0.24;
+    pointer-events: none;
+  }
+  .cam-viewfinder[data-mode='scan'] {
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+      #121722;
+    background-size: 38px 38px;
+  }
+  .cam-viewfinder[data-mode='walkthru'] {
+    background:
+      radial-gradient(circle at 50% 40%, rgba(56,201,119,0.24), transparent 34%),
+      linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)),
+      #10151d;
+  }
+  .cam-rec-pill {
+    position: absolute;
+    z-index: 4;
+    top: 3.45rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.28rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(56,201,119,0.18);
+    color: #86efac;
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+  .cam-crosshair {
+    position: relative;
+    z-index: 1;
+    width: min(32vw, 6.2rem);
+    aspect-ratio: 1;
+    border: 2px solid rgba(255,255,255,0.34);
+    border-radius: 999px;
+    box-shadow: 0 0 0 999px rgba(0,0,0,0.12);
+  }
+  .cam-viewfinder__copy {
+    position: absolute;
+    z-index: 3;
+    left: 1rem;
+    right: 1rem;
+    bottom: 12.25rem;
+    margin: 0;
+    color: rgba(248,250,252,0.78);
+    text-align: center;
+    line-height: 1.35;
+    font-size: 0.78rem;
+  }
+  .cam-room-link {
+    position: absolute;
+    z-index: 5;
+    top: 3.36rem;
+    right: 0.78rem;
+    padding: 0.34rem 0.56rem;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px;
+    background: rgba(5,7,11,0.42);
+    color: rgba(248,250,252,0.74);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-decoration: none;
+    backdrop-filter: blur(14px);
+  }
+  .cam-bottom-overlay {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.7rem 0.92rem 0.88rem;
+    background: linear-gradient(to top, rgba(5,7,11,0.96), rgba(5,7,11,0.82) 62%, transparent);
+  }
+  .cam-zoom,
+  .cam-mode-strip,
+  .cam-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .cam-zoom button,
+  .cam-mode-strip button,
+  .cam-done {
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    color: #f8fafc;
+    font: inherit;
+    font-weight: 800;
     text-decoration: none;
   }
-  .camera-action span {
-    font-weight: 800;
-    font-size: 1.02rem;
+  .cam-zoom button {
+    min-width: 1.95rem;
+    padding: 0.26rem 0.38rem;
+    font-size: 0.68rem;
   }
-  .camera-action small {
-    color: var(--kerf-text-dim);
-    font-size: 0.86rem;
+  .cam-zoom button[aria-pressed='true'],
+  .cam-mode-strip button[aria-selected='true'] {
+    background: #f8fafc;
+    color: #0b0e13;
+  }
+  .cam-mode-strip button {
+    padding: 0.38rem 0.58rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .cam-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+  }
+  .cam-last-shot {
+    justify-self: start;
+    display: grid;
+    place-items: center;
+    gap: 0.18rem;
+    width: 2.72rem;
+    color: rgba(248,250,252,0.74);
+    font-size: 0.58rem;
+    font-weight: 800;
+  }
+  .cam-last-shot::before {
+    content: '';
+    width: 2.4rem;
+    aspect-ratio: 1;
+    border-radius: 11px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)),
+      rgba(255,255,255,0.07);
+  }
+  .cam-shutter {
+    width: 4.3rem;
+    height: 4.3rem;
+    border-radius: 999px;
+    border: 3px solid #f8fafc;
+    background: var(--right-hand);
+    box-shadow: inset 0 0 0 4px rgba(11,14,19,0.9);
+  }
+  .cam-done {
+    justify-self: end;
+    padding: 0.48rem 0.82rem;
+    text-align: center;
+    font-size: 0.78rem;
+  }
+  .cam-done {
+    background: var(--right-hand);
+    border-color: var(--right-hand);
+    color: #171100;
+  }
+  .cam-status {
+    position: absolute;
+    z-index: 5;
+    left: 0.82rem;
+    right: 0.82rem;
+    bottom: 10.65rem;
+    min-height: 1.2rem;
+    margin: 0;
+    color: rgba(248,250,252,0.74);
+    text-align: center;
     line-height: 1.35;
+    font-size: 0.76rem;
+  }
+  .cam-captured[hidden] {
+    display: none;
+  }
+  .cam-captured {
+    position: absolute;
+    z-index: 6;
+    left: 0.82rem;
+    right: 0.82rem;
+    bottom: 9.2rem;
+    display: grid;
+    gap: 0.42rem;
+    padding: 0.55rem;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.08);
+  }
+  .cam-captured__eyebrow {
+    margin: 0;
+    color: rgba(248,250,252,0.58);
+    font-size: 0.6rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .cam-captured__item {
+    display: grid;
+    grid-template-columns: 2.72rem minmax(0, 1fr);
+    gap: 0.54rem;
+    align-items: center;
+  }
+  .cam-thumb {
+    display: grid;
+    place-items: center;
+    width: 2.72rem;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 12px;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)),
+      rgba(255,255,255,0.08);
+    background-size: cover;
+    background-position: center;
+    color: rgba(248,250,252,0.78);
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+  .cam-thumb.is-photo {
+    border: 1px solid rgba(56,201,119,0.45);
+  }
+  .cam-thumb.is-video {
+    background: rgba(56,201,119,0.18);
+  }
+  .cam-thumb.is-scan {
+    background:
+      linear-gradient(90deg, rgba(248,250,252,0.16) 1px, transparent 1px),
+      linear-gradient(rgba(248,250,252,0.16) 1px, transparent 1px),
+      rgba(255,255,255,0.08);
+    background-size: 12px 12px;
+  }
+  .cam-captured__copy {
+    display: grid;
+    gap: 0.14rem;
+    min-width: 0;
+  }
+  .cam-captured__copy strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.84rem;
+  }
+  .cam-captured__copy span {
+    color: rgba(248,250,252,0.68);
+    font-size: 0.72rem;
+    line-height: 1.3;
+  }
+  @media (max-height: 760px) {
+    .cam-stage {
+      min-height: calc(100dvh - 8.65rem);
+    }
+    .cam-bottom-overlay {
+      gap: 0.42rem;
+      padding-bottom: 0.7rem;
+    }
+    .cam-shutter {
+      width: 3.86rem;
+      height: 3.86rem;
+    }
+    .cam-captured {
+      padding: 0.48rem;
+    }
+  }
+  @media (min-width: 760px) {
+    .cam-stage,
+    .cam-job-gate {
+      max-width: 440px;
+      margin-inline: auto;
+    }
+    .cam-stage {
+      border-radius: 24px;
+    }
   }
 </style>

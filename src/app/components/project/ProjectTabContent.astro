@@ -25,7 +25,7 @@ const previewBadge = t('action.preview.badge');
   <Card title={t('project.tab.field')}>
     <p>{t('project.panel.field')}</p>
     <div class="lane23-action-links">
-      <a class="lane23-btn-link" href={`/field-capture?dest=this-job&intent=record&project_id=${project.project_id}`}>{t('project.field.link_capture')}</a>
+      <a class="lane23-btn-link" href={`/camera?src=project&mode=photo&project_id=${project.project_id}&return_to=/projects/${project.project_id}/field`}>{t('project.field.link_capture')}</a>
       <a class="lane23-btn-link" href="/relay">{t('project.field.link_relay')}</a>
       <a class="lane23-btn-link" href="/field-detail">{t('project.field.link_detail')}</a>
     </div>

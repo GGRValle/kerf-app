@@ -93,7 +93,7 @@ Operating rule:
 - Ask only when the answer changes the action, money, client communication, or durable record.
 - Infer and move for reversible navigation/draft setup.
 - Never claim a durable write happened. Use "prepare", "start", "ready", or "draft" language only.
-- Use plain contractor-facing words like job, note, estimate, change order, photo, and room scan. Do not use internal words like "packet".
+- Use plain contractor-facing words like job, note, estimate, change order, photo, and room scan. Do not use internal words like "packet" or "intake".
 - Confidence speeds reversible routing; it never bypasses durable/money/send confirmation.
 - Do not invent tenant facts. Use likely_entity only from transcript or the provided tenant-scoped context.`;
 
@@ -210,7 +210,7 @@ function contextWithKnownEntity(
     return {
       ...hypothesis,
       likely_entity: entity,
-      routed_label: `${knownProject.label} → estimate intake`,
+      routed_label: `${knownProject.label} → estimate`,
       prompt: `Create estimate from this for ${knownProject.label}?`,
       missing_facts: hypothesis.missing_facts.filter((fact) => !/\b(job|project|active project)\b/i.test(fact)),
     };
@@ -221,7 +221,7 @@ function contextWithKnownEntity(
       ...hypothesis,
       likely_entity: entity,
       routed_label: `${knownProject.label} → job notes`,
-      prompt: `Save this note to ${knownProject.label}?`,
+      prompt: `I'll save this to ${knownProject.label} → today's Daily Log. Good there?`,
       missing_facts: hypothesis.missing_facts.filter((fact) => !/\b(job|project|active project)\b/i.test(fact)),
     };
   }
@@ -292,7 +292,7 @@ function safePreparingLabel(
   // this resolver only prepares a session-backed TRP. Never let model copy imply
   // a durable write, a sent message, or completed draft exists.
   if (/\b(saved|filed|created|logged|sent|submitted|drafting|creating|generated|wrote|packet)\b/i.test(cleaned)) {
-    if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate intake ready';
+    if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate ready to start';
     if (frame === 'change_order') return 'Change-order note ready';
     if (frame === 'money_check') return 'Money review ready';
     if (frame === 'status_check') return 'Project review ready';
@@ -314,12 +314,12 @@ function contractorSafeFallback(frame: TurnFrame, slot: 'routed' | 'prompt', fal
     return fallback;
   }
 
-  if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate walk → estimate intake';
+  if (frame === 'estimate_walk' || frame === 'job_intake') return 'Estimate walk → estimate';
   if (frame === 'change_order') return 'Change order → draft review';
   if (frame === 'money_check') return 'Money → read-only review';
   if (frame === 'status_check') return 'Project status → active project review';
   if (frame === 'room_scan') return 'Room scan → LiDAR capture';
-  if (frame === 'media_capture') return 'Media → Field Capture';
+  if (frame === 'media_capture') return 'Media → Camera';
   return fallback;
 }
 
@@ -332,7 +332,7 @@ function safeOperatorCopy(
   const cleaned = cleanText(value, fallback, 96);
   // Model copy can still drift into internal build language. Keep that language
   // out of operator-facing rows; the audit/debug layer can carry packets.
-  if (/\b(packet|estimate-start|trp|artifact|turn resolution|work artifact|attention artifact)\b/i.test(cleaned)) {
+  if (/\b(packet|intake|estimate-start|trp|artifact|turn resolution|work artifact|attention artifact)\b/i.test(cleaned)) {
     return contractorSafeFallback(frame, slot, fallback);
   }
   return cleaned;

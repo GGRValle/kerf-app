@@ -25,9 +25,9 @@ export const VOICE_INTENTS = [
   'open_relay', // "show me what needs review" → /relay
   'open_job_intake', // explicit "open job intake" navigation → /projects/new
   'open_money', // "check money" / "budget" / "margin" → /money
-  'open_field_capture', // "take a job note" → /field-capture (carry context)
+  'open_field_capture', // explicit media capture → /camera (carry context)
   // ── COMMIT lane · durable (consequence) ───────────────────────────────────
-  'job_intake', // start/prepare a job or estimate intake from committed speech
+  'job_intake', // start/prepare a job or estimate from committed speech
   'job_note', // persist a job note
   'change_order', // draft → execution change order
   'estimate_update', // estimate line additions/edits
@@ -73,7 +73,7 @@ const LIVE_LANE_ROUTES: Readonly<Record<string, string>> = {
   open_relay: '/relay',
   open_job_intake: '/projects/new',
   open_money: '/money',
-  open_field_capture: '/field-capture',
+  open_field_capture: '/camera',
   // status_question routes to the active project's status surface; the concrete
   // project id is bound by the overlay from active-job context, not here.
 };
@@ -170,8 +170,8 @@ const INTENT_RULES: readonly IntentRule[] = [
   // It waits for the committed transcript, runs the confirm trust loop, and on
   // Save resolves the turn into a TRP (result + Home) — no fresh intake form.
   { intent: 'job_note', pattern: /\b(take (this|a) (job )?note|job note|take this down|jot (this )?down|make a note|add a note|note this|capture this note)\b/i },
-  // EXPLICIT "go to Field Capture" / media phrasing is the reversible live route
-  // to the capture surface (brief §8: add photo/video → Field Capture).
+  // EXPLICIT media phrasing is the reversible live route to the universal
+  // camera surface (F-CAM1: add photo/video/scan → Camera).
   { intent: 'open_field_capture', pattern: /\b(open (field )?capture|field capture|add (a )?(photo|video|picture)|attach (a )?(photo|file|video)|take (a )?(photo|picture|video))\b/i },
 ];
 

@@ -132,15 +132,19 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
         heard.textContent = trp?.heard_text || 'Right Hand started this from your last conversation.';
       }
       if (contextEl && trp) {
-        contextEl.textContent = trp.context_hypothesis?.routed_label ?? 'Estimate walk → estimate intake';
+        const routed = trp.context_hypothesis?.routed_label ?? 'Create a new estimate';
+        contextEl.textContent = routed
+          .replace(/estimate intake/gi, 'estimate')
+          .replace(/intake packet/gi, 'estimate')
+          .replace(/estimate-start packet/gi, 'estimate');
       } else if (contextEl) {
         contextEl.textContent = archetypeHint === 'bath_refresh'
-          ? 'New bathroom estimate intake'
+          ? 'New bathroom estimate'
           : archetypeHint === 'kitchen_remodel'
-            ? 'New kitchen estimate intake'
+            ? 'New kitchen estimate'
             : archetypeHint === 'adu'
-              ? 'New addition estimate intake'
-              : 'Estimate walk → estimate intake';
+              ? 'New addition estimate'
+              : 'Create a new estimate';
       }
       if (handoff) handoff.hidden = false;
 

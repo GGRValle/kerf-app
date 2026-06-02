@@ -46,6 +46,8 @@ const operatorInitials =
       .join('')
       .slice(0, 2)
       .toUpperCase() || 'CA';
+const buildCommit = process.env['KERF_BUILD_COMMIT'] ?? 'unknown';
+const buildDirty = process.env['KERF_BUILD_DIRTY'] ?? 'unknown';
 ---
 
 <!doctype html>
@@ -53,6 +55,8 @@ const operatorInitials =
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="kerf-build-commit" content={buildCommit} />
+    <meta name="kerf-build-dirty" content={buildDirty} />
     <title>{pageTitle}</title>
   </head>
   <body>
@@ -62,6 +66,8 @@ const operatorInitials =
       data-locale={context.locale}
       data-tenant={context.tenantId}
       data-operator-name={conversationOperatorName}
+      data-build-commit={buildCommit}
+      data-build-dirty={buildDirty}
     >
       <header class="kerf-topbar">
         <div class="kerf-topbar-lead">
