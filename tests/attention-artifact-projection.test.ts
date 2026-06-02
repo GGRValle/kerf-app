@@ -178,6 +178,10 @@ test('Home and Office Review render the shared attention artifact card, not fixt
     path.join(process.cwd(), 'src/app/pages/relay/index.astro'),
     'utf8',
   );
+  const projectionSource = await readFile(
+    path.join(process.cwd(), 'src/attention/attentionArtifact.ts'),
+    'utf8',
+  );
   const cardSource = await readFile(
     path.join(process.cwd(), 'src/app/lib/attentionArtifactCard.ts'),
     'utf8',
@@ -190,6 +194,7 @@ test('Home and Office Review render the shared attention artifact card, not fixt
   assert.match(cardSource, /dataset\.attentionState/);
   assert.match(cardSource, /dataset\.consequenceTier/);
   assert.doesNotMatch(homeSource, /demoHomeAttentionArtifacts/);
+  assert.match(projectionSource, /@test-only Demo projection fixtures/);
   assert.match(homeSource, /Nothing needs you right now/);
   assert.match(homeSource, /No queued decisions/);
   assert.match(homeSource, /No company pulse items yet/);

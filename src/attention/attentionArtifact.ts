@@ -537,6 +537,13 @@ const HOME_ATTENTION_FIXTURES: readonly AttentionProjection[] = [
   },
 ];
 
+/**
+ * @test-only Demo projection fixtures for selector/card tests.
+ *
+ * Production surfaces must pass live projections into `composeHomeAttentionSections()`
+ * and render the honest empty state when none exist. Do not use these as a Home
+ * fallback; that would reintroduce fake attention items.
+ */
 export function demoHomeAttentionArtifacts(): readonly AttentionProjection[] {
   return HOME_ATTENTION_FIXTURES;
 }
