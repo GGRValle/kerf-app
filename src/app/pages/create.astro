@@ -2,9 +2,10 @@
 import Layout from '../layouts/Layout.astro';
 
 const actions = [
+  { href: '/estimates/new?src=create', title: 'Estimate', detail: 'Build a priced estimate from a lead — a signature turns it into a contract.' },
+  { href: '/change-orders/new?src=create', title: 'Change order', detail: 'Price a scope change on a known project, then preview before send.' },
   { href: '/projects/new?src=create', title: 'New job intake', detail: 'Start a lead, site walk, or estimate packet.' },
   { href: '/field-capture?src=create', title: 'Daily log note', detail: 'Add a job note, photo, or site condition.' },
-  { href: '/draft-review?src=create', title: 'Change order', detail: 'Collect scope changes before pricing or sending.' },
   { href: '/money?src=create', title: 'Invoice', detail: 'Start from the money lane; no money posts without review.' },
   { href: '/room-capture?src=create', title: 'Room scan / LiDAR', detail: 'Capture a room, then let Right Hand summarize it.' },
   { href: '/right-hand', title: 'Ask Right Hand', detail: 'Use the conversation when you are not sure what to start.' },

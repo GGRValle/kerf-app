@@ -1,0 +1,24 @@
+---
+// F-EST1 · Estimate builder (lead-capture door) · /estimates/new
+// Same engine as the Change Order door; the only divergence is the customer
+// block — an estimate captures a lead (find existing client or add new), and
+// the project number is assigned on save. Send routes to the signature gate
+// (a signed estimate becomes a contract, F-PV1).
+import Layout from '../../layouts/Layout.astro';
+import BuilderShell from '../../components/BuilderShell.astro';
+import { resolveSettings } from '../../lib/builderEngine.js';
+import { GGR_BUILDER_SETTINGS } from '../../lib/builderFixtures.js';
+import { LANE6_CLIENTS } from '../../lib/lane6Fixtures.js';
+import '../../styles/builder.css';
+
+const settings = resolveSettings(GGR_BUILDER_SETTINGS, {
+  audience: 'operator',
+  canViewMarkup: true,
+});
+
+const clients = LANE6_CLIENTS.map((c) => ({ client_id: c.client_id, display_name: c.display_name }));
+---
+
+<Layout title="Estimate" activeHref="/clients">
+  <BuilderShell mode="estimate" settings={settings} clients={clients} backHref="/clients" />
+</Layout>

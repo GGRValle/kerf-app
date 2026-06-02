@@ -1,0 +1,31 @@
+---
+// F-CHG1 · Change Order builder (project-known door) · /change-orders/new
+// One engine, two doors — this door prefills Customer + Project # from the
+// project. Everything below the customer block is the shared BuilderShell.
+import Layout from '../../layouts/Layout.astro';
+import BuilderShell from '../../components/BuilderShell.astro';
+import { resolveSettings } from '../../lib/builderEngine.js';
+import {
+  getBuilderProject,
+  DEFAULT_CHANGE_ORDER_PROJECT_ID,
+  GGR_BUILDER_SETTINGS,
+} from '../../lib/builderFixtures.js';
+import '../../styles/builder.css';
+
+// Project-known: prefill from ?project_id (fail closed to the founder demo
+// project if the binding is missing — never fetch against a null project).
+const requestedId = Astro.url.searchParams.get('project_id');
+const prefill =
+  getBuilderProject(requestedId) ?? getBuilderProject(DEFAULT_CHANGE_ORDER_PROJECT_ID);
+
+const settings = resolveSettings(GGR_BUILDER_SETTINGS, {
+  audience: 'operator',
+  canViewMarkup: true,
+});
+
+const backHref = prefill ? `/projects` : '/money';
+---
+
+<Layout title="Change Order" activeHref="/projects">
+  <BuilderShell mode="change_order" settings={settings} prefill={prefill} backHref={backHref} />
+</Layout>
