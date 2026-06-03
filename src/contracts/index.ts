@@ -3,3 +3,4 @@
 // (if we ever go direct), `calendar`, etc.
 
 export * from './platform/index.js';
+export * from './lane1/index.js';
