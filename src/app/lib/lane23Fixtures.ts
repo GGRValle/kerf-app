@@ -270,16 +270,13 @@ export function formatCentsDisplay(cents: number): string {
   );
 }
 
+/** F-PR* project detail tabs · Lane 3 Do-the-Work canon. */
 export const PROJECT_TAB_IDS = [
-  'scope',
-  'schedule',
-  'budget',
-  'field',
-  'media',
-  'comms',
-  'todo',
-  'files',
-  'audit',
+  'overview',
+  'selections',
+  'daily_log',
+  'notes',
+  'portal',
 ] as const;
 
 export type ProjectTabId = (typeof PROJECT_TAB_IDS)[number];
@@ -293,7 +290,7 @@ export function projectTabLabelKey(tab: ProjectTabId): `project.tab.${ProjectTab
 }
 
 export function projectTabHref(projectId: string, tab: ProjectTabId): string {
-  if (tab === 'scope') {
+  if (tab === 'overview') {
     return `/projects/${projectId}`;
   }
   return `/projects/${projectId}/${tab}`;

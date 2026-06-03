@@ -10,8 +10,8 @@ const { id } = Astro.params;
 const { t, context } = createLayoutContext();
 if (!id) return Astro.redirect('/projects');
 
-// Real project↔client binding — resolve the owning client from the project id.
-// No hardcoded client: an unbound project has no portal to preview.
+// Real project<->client binding: resolve the owning client from the project id.
+// An unbound project has no portal to preview.
 const boundClientId = getLane3ClientForProject(id);
 const session = boundClientId
   ? findLane3SessionByClient(context.tenantId as any, boundClientId)
@@ -23,15 +23,15 @@ const clientLoginToken = session?.session_token ?? null;
   <article
     class="lane3-page f-cp-preview"
     data-project-id={id}
-    data-tenant-id={context.tenantId}
     data-client-id={boundClientId ?? ''}
   >
+    <p class="lane23-crumb"><a href={`/projects/${id}`}>{t('project.detail.back')}</a></p>
     <div class="lane3-portal-banner">{t('f_cp.gc_banner')}</div>
     <h1 class="lane6-title">{t('f_cp.preview_title')}</h1>
     <p class="lane6-subtitle">{t('f_cp.preview_subtitle')}</p>
     {boundClientId ? (
       clientLoginToken && (
-        <p><a href={`/portal/s/${clientLoginToken}?tenant_id=${context.tenantId}`}>{t('f_cp.open_client_login')}</a></p>
+        <p><a href={`/portal/s/${clientLoginToken}`}>{t('f_cp.open_client_login')}</a></p>
       )
     ) : (
       <p class="lane6-subtitle" data-unbound>This project is not yet bound to a client — no portal to preview.</p>
@@ -40,15 +40,14 @@ const clientLoginToken = session?.session_token ?? null;
   </article>
   <script>
     const root = document.querySelector('.f-cp-preview');
-    const tenantId = root?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
     const clientId = root?.getAttribute('data-client-id') ?? '';
     const projectId = root?.getAttribute('data-project-id') ?? '';
     const mount = document.getElementById('portal-preview-root');
     if (!mount || !clientId || !projectId) {
-      // no-op
+      // no portal preview to render
     } else {
       fetch(
-        `/api/v1/portal/preview?tenant_id=${tenantId}&client_id=${clientId}&project_id=${projectId}`,
+        `/api/v1/portal/preview?client_id=${clientId}&project_id=${projectId}`,
       )
         .then((r) => r.json())
         .then((data) => {

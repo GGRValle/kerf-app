@@ -2,16 +2,18 @@
 import Layout from '../../../layouts/Layout.astro';
 import ActionsStrip from '../../../components/ActionsStrip.astro';
 import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
-import Card from '../../../components/Card.astro';
-import Chip from '../../../components/Chip.astro';
+import ProjectTabContent from '../../../components/project/ProjectTabContent.astro';
+import ProjectBrainSummary from '../../../components/ProjectBrainSummary.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
-import { formatCentsDisplay, getLane23Project } from '../../../lib/lane23Fixtures.js';
-import { formatScopeTag } from '../../../lib/formatOperatorLabel.js';
+import { getLane23Project } from '../../../lib/lane23Fixtures.js';
+import { getProjectBrain } from '../../../lib/lane3WorkFixtures.js';
 import '../../../styles/lane23.css';
+import '../../../styles/lane3work.css';
 
 const { t, context } = createLayoutContext();
 const { id } = Astro.params;
 const project = id ? getLane23Project(id) : null;
+const brain = project ? getProjectBrain(project.project_id) : null;
 ---
 
 <Layout titleKey="project.list.title" activeHref="/projects">
@@ -30,145 +32,94 @@ const project = id ? getLane23Project(id) : null;
         <ActionsStrip surface="project_detail" projectId={project.project_id} tenantId={context.tenantId} wired />
       </div>
 
-      <section
-        class="lane23-rh-handoff"
-        id="rh-project-detail-handoff"
-        aria-label={t('project.detail.rh_handoff_title')}
-        hidden
-      >
+      <section class="lane23-rh-handoff" id="rh-project-detail-handoff" aria-label={t('project.detail.rh_handoff_title')} hidden>
         <p class="lane23-rh-handoff__eyebrow">{t('project.detail.rh_handoff_title')}</p>
         <p class="lane23-rh-handoff__body">{t('project.detail.rh_handoff_body')}</p>
-        <dl class="lane23-rh-handoff__facts">
-          <div>
-            <dt>{t('project.detail.rh_handoff_heard')}</dt>
-            <dd id="rh-project-detail-handoff-heard"></dd>
-          </div>
-          <div>
-            <dt>{t('project.detail.rh_handoff_context')}</dt>
-            <dd id="rh-project-detail-handoff-context"></dd>
-          </div>
-        </dl>
-        <div class="lane23-rh-handoff__actions">
-          <a class="lane23-btn-link" href={`/camera?src=project&mode=photo&project_id=${project.project_id}&return_to=/projects/${project.project_id}`}>
-            {t('project.detail.rh_handoff_add_photo')}
-          </a>
-        </div>
       </section>
 
-      <ProjectTabStrip projectId={project.project_id} activeTab="scope" labelFor={t} />
+      <section class="lane23-camera-landed" id="camera-landed-banner" hidden>
+        <p><strong id="camera-landed-title">Capture filed</strong></p>
+        <p class="lane23-notice" id="camera-landed-detail"></p>
+        <a class="lane23-btn-link" href={`/projects/${project.project_id}/daily_log`}>{t('project.daily_log.view')}</a>
+      </section>
+
+      {brain !== null && (
+        <ProjectBrainSummary
+          brain={brain}
+          labels={{
+            nextAction: t('project.brain.next_action'),
+            crewOnSite: t('project.brain.crew_on_site'),
+            openItems: t('project.brain.open_items'),
+            lastCapture: t('project.brain.last_capture'),
+          }}
+        />
+      )}
+
+      <ProjectTabStrip projectId={project.project_id} activeTab="overview" labelFor={t} />
 
       <div class="lane23-tab-panel">
-        <Card title={t('project.tab.scope')}>
-          <p>{t('project.panel.scope')}</p>
-          <div>
-            {project.scope_tags.map((tag) => (
-              <Chip label={formatScopeTag(tag)} tone="cyan" variant="outlined" title={tag} />
-            ))}
-          </div>
-          <p class="lane23-notice">{t('project.detail.budget')}: {formatCentsDisplay(project.budget_cents)}</p>
-          <p class="lane23-notice">{t('project.detail.phase')}: {project.phase}</p>
-          <div class="lane23-quick-links">
-            <a class="lane23-btn-link" href={`/projects/${project.project_id}/field`}>{t('project.scope.link_field')}</a>
-            <a class="lane23-btn-link" href="/relay">{t('project.scope.link_relay')}</a>
-            <a class="lane23-btn-link" href={`/projects/${project.project_id}/audit`}>{t('project.scope.link_audit')}</a>
-          </div>
-        </Card>
+        <ProjectTabContent
+          project={project}
+          activeTab="overview"
+          labelFor={t}
+          tenantId={context.tenantId}
+        />
       </div>
     </div>
   )}
 
-  <script>
-    import {
-      parseTurnResolution,
-      TURN_RESOLUTION_SESSION_KEY,
-    } from '../../../../voice/realtime/turnResolution.js';
-
+  <script define:vars={{ tenantId: context.tenantId }}>
     const params = new URLSearchParams(window.location.search);
-    const projectId = document.querySelector<HTMLElement>('.lane23-page')?.dataset.projectId ?? '';
-    if (params.get('src') === 'voice' && projectId) {
+    const projectId = document.querySelector('.lane23-page')?.getAttribute('data-project-id') ?? '';
+    if (params.get('src') === 'camera' && projectId) {
       let raw = null;
       try {
-        raw = sessionStorage.getItem(TURN_RESOLUTION_SESSION_KEY);
+        raw = sessionStorage.getItem('kerf.cameraCapture');
       } catch {
         raw = null;
       }
-      const trp = parseTurnResolution(raw);
-      const likely = trp?.context_hypothesis?.likely_entity;
-      const likelyProjectMatches = likely?.type === 'project' && likely.id === projectId;
-      // Show the handoff when Right Hand explicitly routed to this known project.
-      // If it resolved a different project, stay silent rather than implying the
-      // note belongs here.
-      if (trp && (!likely?.id || likelyProjectMatches)) {
-        const handoff = document.getElementById('rh-project-detail-handoff');
-        const heard = document.getElementById('rh-project-detail-handoff-heard');
-        const context = document.getElementById('rh-project-detail-handoff-context');
-        if (heard) heard.textContent = trp.heard_text;
-        if (context) {
-          context.textContent = trp.work_artifact
-            ? `${trp.attention_artifact.headline}. ${trp.attention_artifact.why}`
-            : `${trp.context_hypothesis?.preparing_label ?? 'Session note ready'}. Nothing has been filed yet.`;
-        }
-        if (handoff) handoff.hidden = false;
+      if (raw) {
+        const capture = JSON.parse(raw);
+        const banner = document.getElementById('camera-landed-banner');
+        const title = document.getElementById('camera-landed-title');
+        const detail = document.getElementById('camera-landed-detail');
+        if (banner) banner.hidden = false;
+        fetch(`/api/v1/projects/${projectId}/camera-capture?tenant_id=${tenantId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            capture_kind: capture.kind === 'walkthrough' ? 'walkthrough' : capture.kind === 'scan' ? 'scan' : 'photo',
+            file_name: capture.name,
+            confirmed: true,
+          }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (title && data.artifacts?.attention?.headline) {
+              title.textContent = data.artifacts.attention.headline;
+            }
+            if (detail && data.artifacts?.work?.body_preview) {
+              detail.textContent = data.artifacts.work.body_preview;
+            }
+            sessionStorage.removeItem('kerf.cameraCapture');
+          })
+          .catch(() => {
+            if (detail) detail.textContent = 'Capture session saved — reload daily log to review.';
+          });
       }
     }
   </script>
 </Layout>
 
-
 <style>
-  .lane23-rh-handoff[hidden] { display: none; }
-  .lane23-rh-handoff {
+  .lane23-camera-landed[hidden] { display: none; }
+  .lane23-camera-landed {
     margin: 0.75rem 0;
-    padding: 0.9rem;
-    border: 1px solid color-mix(in srgb, var(--field-green, #38c977) 36%, var(--border, #d8dee6));
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--field-green, #38c977) 7%, var(--surface, #fff));
-  }
-  .lane23-rh-handoff__eyebrow {
-    margin: 0 0 0.3rem;
-    font-size: 0.72rem;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
-    font-weight: 800;
-    color: var(--field-green, #38c977);
-  }
-  .lane23-rh-handoff__body {
-    margin: 0 0 0.65rem;
-    color: var(--text-muted, #6a7282);
-    line-height: 1.45;
-  }
-  .lane23-rh-handoff__facts {
-    display: grid;
-    gap: 0.5rem;
-    margin: 0;
-  }
-  .lane23-rh-handoff__facts div {
-    display: grid;
-    gap: 0.12rem;
-  }
-  .lane23-rh-handoff__facts dt {
-    font-size: 0.68rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    font-weight: 800;
-    color: var(--text-muted, #6a7282);
-  }
-  .lane23-rh-handoff__facts dd {
-    margin: 0;
-    color: var(--text, #1a1f24);
-    line-height: 1.4;
-  }
-  .lane23-rh-handoff__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-  .lane23-quick-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    padding: 0.85rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--field-green, #38c977) 35%, var(--border, #d8dee6));
+    background: color-mix(in srgb, var(--field-green, #38c977) 8%, var(--surface, #fff));
   }
   .lane23-btn-link {
     display: inline-block;

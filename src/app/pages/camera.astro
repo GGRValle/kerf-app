@@ -243,7 +243,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       } catch {
         // Status below remains the visible fallback.
       }
-      const destination = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}?src=camera`;
+      const base = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}`;
+      const destination = base.includes('?') ? `${base}&src=camera` : `${base}?src=camera`;
       window.location.href = destination;
     };
 

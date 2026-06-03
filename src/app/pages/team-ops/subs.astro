@@ -1,0 +1,65 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import '../../styles/lane3work.css';
+
+const { t, context } = createLayoutContext();
+---
+
+<Layout titleKey="team_ops.subs.title" activeHref="/schedule">
+  <article class="lane23-page" data-tenant-id={context.tenantId}>
+    <h1>{t('team_ops.subs.title')}</h1>
+    <p class="lane23-notice">{t('team_ops.subs.subtitle')}</p>
+    <div id="compliance-attention"></div>
+    <ul id="compliance-list"></ul>
+    <section id="assign-actions"></section>
+  </article>
+  <script>
+    const tenantId = document.querySelector('[data-tenant-id]')?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
+    fetch(`/api/v1/team-ops/compliance?tenant_id=${tenantId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const attn = document.getElementById('compliance-attention');
+        attn.innerHTML = (data.attention ?? [])
+          .map((a) => `<p class="lane23-notice"><strong>${a.headline}</strong> — ${a.because}</p>`)
+          .join('');
+        document.getElementById('compliance-list').innerHTML = (data.compliance ?? [])
+          .map((c) => `<li>${c.sub_label} · ${c.cert_type} · expires ${c.expires_at}</li>`)
+          .join('');
+      });
+    fetch(`/api/v1/projects/proj_wegrzyn_kitchen/schedule-substrate?tenant_id=${tenantId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const el = document.getElementById('assign-actions');
+        el.innerHTML = (data.crew_assignments ?? [])
+          .map(
+            (a) => `<div class="lane3w-assign-row"><strong>${a.sub_label}</strong>
+              <button type="button" data-send="${a.assignment_id}">Send WO (confirm)</button>
+              <button type="button" data-msg="${a.assignment_id}">Message via relay</button></div>`,
+          )
+          .join('');
+        el.querySelectorAll('[data-send]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Send work order to sub? No autonomous email/SMS.')) return;
+            await fetch(`/api/v1/schedule/assignments/${btn.getAttribute('data-send')}/send-work-order`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ confirmed: true }),
+            });
+            alert('WO marked sent.');
+          });
+        });
+        el.querySelectorAll('[data-msg]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const res = await fetch(`/api/v1/schedule/assignments/${btn.getAttribute('data-msg')}/message-sub`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ confirmed: true, message: 'Confirm tomorrow start.' }),
+            });
+            const data = await res.json();
+            if (data.relay_route) window.location.href = data.relay_route;
+          });
+        });
+      });
+  </script>
+</Layout>

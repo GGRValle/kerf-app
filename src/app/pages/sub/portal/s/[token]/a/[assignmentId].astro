@@ -1,0 +1,35 @@
+---
+import '../../../../../../styles/lane3work.css';
+
+const { token, assignmentId } = Astro.params;
+const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Assignment</title>
+  </head>
+  <body data-token={token} data-assignment-id={assignmentId} data-tenant-id={tenantId}>
+    <a href={`/sub/portal/s/${token}?tenant_id=${tenantId}`}>← Back</a>
+    <div id="sub-assignment-detail"></div>
+    <button type="button" id="sub-clock-in">Clock in</button>
+  </body>
+  <script define:vars={{ token, assignmentId, tenantId }}>
+    fetch(`/api/v1/sub/portal/session/${token}/assignments/${assignmentId}?tenant_id=${tenantId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const a = data.assignment;
+        document.getElementById('sub-assignment-detail').innerHTML = `
+          <h1>${a.trade}</h1>
+          <p>${a.location_label}</p>
+          <p>${a.start_at} → ${a.end_at}</p>
+        `;
+      });
+    document.getElementById('sub-clock-in')?.addEventListener('click', () => {
+      alert('Timesheet captured locally — payroll flows to Lane 4.');
+    });
+  </script>
+</html>

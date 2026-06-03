@@ -2,78 +2,99 @@
 import Card from '../Card.astro';
 import Row from '../Row.astro';
 import PreviewNotice from './PreviewNotice.astro';
-import ProjectAuditPanel from '../ProjectAuditPanel.astro';
-import type { ProjectAuditEntry } from '../../../project/projectAuditProjection.js';
-import type { Lane23ProjectRecord, ProjectTabId } from '../../lib/lane23Fixtures.js';
-import { formatCentsDisplay } from '../../lib/lane23Fixtures.js';
+import { formatCentsDisplay, type Lane23ProjectRecord, type ProjectTabId } from '../../lib/lane23Fixtures.js';
+import {
+  getProjectBrain,
+  listProjectNotes,
+  listProjectSelections,
+  listAssignmentsForProject,
+} from '../../lib/lane3WorkFixtures.js';
 import type { I18nKey } from '../../../i18n/keys.js';
 
 export interface Props {
   project: Lane23ProjectRecord;
   activeTab: ProjectTabId;
   labelFor: (key: I18nKey) => string;
-  auditEntries?: readonly ProjectAuditEntry[];
+  tenantId: string;
 }
 
-const { project, activeTab, labelFor: t, auditEntries = [] } = Astro.props;
+const { project, activeTab, labelFor: t, tenantId } = Astro.props;
 const previewBadge = t('action.preview.badge');
+const brain = getProjectBrain(project.project_id);
+const selections = listProjectSelections(project.project_id);
+const notes = listProjectNotes(project.project_id);
+const assignments = listAssignmentsForProject(
+  tenantId as 'tenant_ggr' | 'tenant_valle' | 'tenant_hpg',
+  project.project_id,
+);
 ---
 
-{activeTab === 'audit' ? (
-  <ProjectAuditPanel entries={auditEntries} labelFor={t} />
-) : activeTab === 'field' ? (
-  <Card title={t('project.tab.field')}>
-    <p>{t('project.panel.field')}</p>
+{activeTab === 'overview' ? (
+  <Card title={t('project.tab.overview')}>
+    <p>{t('project.panel.overview')}</p>
+    <p class="lane23-notice">{t('project.detail.budget')}: {formatCentsDisplay(project.budget_cents)}</p>
+    <p class="lane23-notice">{t('project.detail.phase')}: {project.phase}</p>
     <div class="lane23-action-links">
-      <a class="lane23-btn-link" href={`/camera?src=project&mode=photo&project_id=${project.project_id}&return_to=/projects/${project.project_id}/field`}>{t('project.field.link_capture')}</a>
-      <a class="lane23-btn-link" href="/relay">{t('project.field.link_relay')}</a>
-      <a class="lane23-btn-link" href="/field-detail">{t('project.field.link_detail')}</a>
+      <a class="lane23-btn-link" href={`/camera?project_id=${project.project_id}&return_to=/projects/${project.project_id}`}>
+        {t('project.overview.link_camera')}
+      </a>
+      <a class="lane23-btn-link" href={`/projects/${project.project_id}/portal-preview`}>{t('project.overview.link_portal')}</a>
+      <a class="lane23-btn-link" href="/schedule">{t('project.overview.link_schedule')}</a>
+      <a class="lane23-btn-link" href="/team-ops/subs">{t('project.overview.link_subs')}</a>
     </div>
-    {project.work_orders.length === 0 ? (
-      <p class="lane23-notice">{t('project.field.no_work_orders')}</p>
+    {assignments.length > 0 && (
+      <>
+        <p class="lane23-notice">{t('project.overview.assignments')}</p>
+        {assignments.map((a) => (
+          <div class="lane3w-assign-row">
+            <strong>{a.sub_label}</strong>
+            <span>{a.trade} · {a.start_at.slice(0, 10)} · {a.location_label}</span>
+            <span>{a.wo_sent_at ? t('project.wo.sent') : t('project.wo.draft')}</span>
+          </div>
+        ))}
+      </>
+    )}
+  </Card>
+) : activeTab === 'selections' ? (
+  <Card title={t('project.tab.selections')}>
+    <p>{t('project.panel.selections')}</p>
+    {selections.length === 0 ? (
+      <p class="lane23-notice">{t('project.selections.empty')}</p>
     ) : (
-      project.work_orders.map((wo) => (
-        <a href={`/projects/${project.project_id}/work-orders/${wo.work_order_id}`} class="lane23-project-link">
-          <Row title={wo.title} meta={`${wo.trade} · ${wo.scheduled_date}`} showArrow />
-        </a>
+      selections.map((s) => (
+        <Row title={s.label} meta={`${s.lifecycle} · ${formatCentsDisplay(s.client_visible_cents)}`} />
       ))
     )}
   </Card>
-) : activeTab === 'budget' ? (
-  <Card title={t('project.tab.budget')}>
-    <p>{t('project.panel.budget')}</p>
-    <p class="lane23-notice">{formatCentsDisplay(project.budget_cents)}</p>
-    <PreviewNotice badgeLabel={previewBadge} message={t('project.budget.preview_next')} />
-  </Card>
-) : activeTab === 'schedule' ? (
-  <Card title={t('project.tab.schedule')}>
-    <p>{t('project.panel.schedule')}</p>
-    <a class="lane23-btn-link" href={`/projects/${project.project_id}/status`}>{t('project.schedule.link_status')}</a>
-    <PreviewNotice badgeLabel={previewBadge} message={t('project.schedule.preview_next')} />
-  </Card>
-) : activeTab === 'comms' ? (
-  <Card title={t('project.tab.comms')}>
-    <p>{t('project.panel.comms')}</p>
+) : activeTab === 'daily_log' ? (
+  <Card title={t('project.tab.daily_log')}>
+    <p>{t('project.panel.daily_log')}</p>
+    <ul class="lane3w-daily-log-list" id="project-daily-log-list" data-project-id={project.project_id} data-tenant-id={tenantId}>
+      <li class="lane23-notice">{t('project.daily_log.loading')}</li>
+    </ul>
     <div class="lane23-action-links">
-      <a class="lane23-btn-link" href="/transcript-review">{t('project.comms.link_transcript')}</a>
-      <a class="lane23-btn-link" href="/relay">{t('project.comms.link_relay')}</a>
+      <a class="lane23-btn-link" href={`/camera?project_id=${project.project_id}&return_to=/projects/${project.project_id}/daily_log`}>
+        {t('project.daily_log.link_camera')}
+      </a>
+      <a class="lane23-btn-link" href="/field-capture">{t('project.daily_log.link_voice')}</a>
     </div>
-    <PreviewNotice badgeLabel={previewBadge} message={t('project.comms.preview_next')} />
   </Card>
-) : activeTab === 'media' ? (
-  <Card title={t('project.tab.media')}>
-    <p>{t('project.panel.media')}</p>
-    <PreviewNotice badgeLabel={previewBadge} message={t('project.media.preview_next')} />
+) : activeTab === 'notes' ? (
+  <Card title={t('project.tab.notes')}>
+    <p>{t('project.panel.notes')}</p>
+    {notes.length === 0 ? (
+      <p class="lane23-notice">{t('project.notes.empty')}</p>
+    ) : (
+      notes.map((n) => (
+        <Row title={n.evidence_label} meta={n.body} />
+      ))
+    )}
   </Card>
-) : activeTab === 'todo' ? (
-  <Card title={t('project.tab.todo')}>
-    <p>{t('project.panel.todo')}</p>
-    <PreviewNotice badgeLabel={previewBadge} message={t('project.todo.preview_next')} />
-  </Card>
-) : activeTab === 'files' ? (
-  <Card title={t('project.tab.files')}>
-    <p>{t('project.panel.files')}</p>
-    <PreviewNotice badgeLabel={previewBadge} message={t('project.files.preview_next')} />
+) : activeTab === 'portal' ? (
+  <Card title={t('project.tab.portal')}>
+    <p>{t('project.panel.portal')}</p>
+    <a class="lane23-btn-link" href={`/projects/${project.project_id}/portal-preview`}>{t('project.portal.gc_preview')}</a>
+    <PreviewNotice badgeLabel={previewBadge} message={t('project.portal.client_login_hint')} />
   </Card>
 ) : (
   <Card title={t(`project.tab.${activeTab}`)}>
@@ -81,13 +102,43 @@ const previewBadge = t('action.preview.badge');
   </Card>
 )}
 
+{activeTab === 'daily_log' && (
+  <script>
+    const list = document.getElementById('project-daily-log-list');
+    const projectId = list?.getAttribute('data-project-id');
+    const tenantId = list?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
+    if (list && projectId) {
+      fetch(`/api/v1/projects/${projectId}/audit-events?tenant_id=${tenantId}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const entries = (data.entries ?? []).filter(
+            (e) => e.kind === 'daily_log.entry_captured',
+          );
+          if (entries.length === 0) {
+            list.innerHTML = '<li class="lane23-notice">No daily log entries yet — use Camera or Field capture.</li>';
+            return;
+          }
+          list.innerHTML = entries
+            .slice(-8)
+            .reverse()
+            .map(
+              (e) =>
+                `<li><strong>${e.headline ?? 'Field capture'}</strong><br/><span class="lane23-notice">${e.at ?? ''} · evidence — review suggested</span></li>`,
+            )
+            .join('');
+        })
+        .catch(() => {
+          list.innerHTML = '<li class="lane23-notice">Could not load daily log.</li>';
+        });
+    }
+  </script>
+)}
+
 <style>
-  .lane23-preview,
   .lane23-action-links {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    align-items: center;
     margin: 0.75rem 0;
   }
   .lane23-btn-link {
@@ -98,11 +149,6 @@ const previewBadge = t('action.preview.badge');
     color: var(--accent, #0f766e);
     font-weight: 600;
     font-size: 0.85rem;
-    text-decoration: none;
-  }
-  .lane23-project-link {
-    display: block;
-    color: inherit;
     text-decoration: none;
   }
 </style>
