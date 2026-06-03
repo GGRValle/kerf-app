@@ -143,6 +143,78 @@ const PROPOSAL_FIXTURES: Record<string, ProposalArtifact> = {
       },
     ],
   }),
+  'prop_lane6_override_valle': makeProposalBase({
+    proposal_id: 'prop_lane6_override_valle',
+    tenant_id: 'tenant_valle',
+    project_id: 'proj_moore_cabs',
+    proposal_number: 'VALLE-2026-101',
+    total_cents: 250_00,
+    subtotal_cents: 250_00,
+    source_refs: [],
+    decision_packet_id: null,
+    divisions: [
+      {
+        code: '01',
+        label: 'General Requirements',
+        sections: [
+          {
+            section_id: 'sec_small',
+            label: null,
+            lines: [
+              {
+                line_id: 'ln_small',
+                description: 'Small repair',
+                quantity: 1,
+                uom: 'LS',
+                unit_cents: 250_00,
+                extended_cents: 250_00,
+                notes: '',
+                is_materials_taxable: false,
+                scaffold_provenance: null,
+              },
+            ],
+          },
+        ],
+        subtotal_cents: 250_00,
+      },
+    ],
+  }),
+  'prop_lane6_override_hpg': makeProposalBase({
+    proposal_id: 'prop_lane6_override_hpg',
+    tenant_id: 'tenant_hpg',
+    project_id: 'proj_hpg_demo',
+    proposal_number: 'HPG-2026-101',
+    total_cents: 250_00,
+    subtotal_cents: 250_00,
+    source_refs: [],
+    decision_packet_id: null,
+    divisions: [
+      {
+        code: '01',
+        label: 'General Requirements',
+        sections: [
+          {
+            section_id: 'sec_small',
+            label: null,
+            lines: [
+              {
+                line_id: 'ln_small',
+                description: 'Small repair',
+                quantity: 1,
+                uom: 'LS',
+                unit_cents: 250_00,
+                extended_cents: 250_00,
+                notes: '',
+                is_materials_taxable: false,
+                scaffold_provenance: null,
+              },
+            ],
+          },
+        ],
+        subtotal_cents: 250_00,
+      },
+    ],
+  }),
   'prop_lane6_no_capture': makeProposalBase({
     proposal_id: 'prop_lane6_no_capture',
     project_id: 'proj_desk_only',
@@ -163,6 +235,17 @@ const PROPOSAL_FIXTURES: Record<string, ProposalArtifact> = {
 
 export function getLane6Proposal(proposalId: string): ProposalArtifact | null {
   return PROPOSAL_FIXTURES[proposalId] ?? null;
+}
+
+export function getLane6ProposalForTenant(
+  proposalId: string,
+  tenantId: Lane6ClientRecord['tenant_id'],
+): ProposalArtifact | null {
+  const proposal = getLane6Proposal(proposalId);
+  if (proposal === null || proposal.tenant_id !== tenantId) {
+    return null;
+  }
+  return proposal;
 }
 
 export function listLane6ProposalIds(): readonly string[] {
@@ -207,4 +290,15 @@ export const LANE6_CLIENTS: readonly Lane6ClientRecord[] = [
 
 export function getLane6Client(clientId: string): Lane6ClientRecord | null {
   return LANE6_CLIENTS.find((c) => c.client_id === clientId) ?? null;
+}
+
+export function getLane6ClientForTenant(
+  clientId: string,
+  tenantId: Lane6ClientRecord['tenant_id'],
+): Lane6ClientRecord | null {
+  const client = getLane6Client(clientId);
+  if (client === null || client.tenant_id !== tenantId) {
+    return null;
+  }
+  return client;
 }

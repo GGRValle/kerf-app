@@ -2,7 +2,9 @@ import { Hono } from 'hono';
 
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
-import { getLane6Proposal } from '../../app/lib/lane6Fixtures.js';
+import { getLane6ProposalForTenant } from '../../app/lib/lane6Fixtures.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 import { tenantEvidenceClassForOverride } from '../../proposal/sendGate.js';
 import {
   assertValidConfidence,
@@ -11,17 +13,9 @@ import {
 } from '../../review/classifyCorrection.js';
 import type { CorrectionScope, PersistenceTenantId } from '../../persistence/events.js';
 
-export const reviewRoutes = new Hono();
-
-function parseTenantId(raw: string | undefined): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
+export const reviewRoutes = new Hono<{ Variables: ApiVariables }>();
 
 interface CorrectionBody {
-  tenant_id?: PersistenceTenantId;
   project_id: string;
   field: string;
   before: unknown;
@@ -40,21 +34,18 @@ interface DraftCorrectBody extends CorrectionBody {
 }
 
 interface DraftAcceptBody {
-  tenant_id?: PersistenceTenantId;
   proposal_id: string;
   project_id: string;
   accepted_by?: string;
 }
 
 interface DraftRejectBody {
-  tenant_id?: PersistenceTenantId;
   proposal_id: string;
   project_id: string;
   reason_text?: string;
 }
 
 interface FieldDetailOverrideBody {
-  tenant_id?: PersistenceTenantId;
   project_id: string;
   entry_id?: string;
   entity_id: string;
@@ -134,10 +125,7 @@ async function handleCorrection(params: {
 
 reviewRoutes.post('/review/transcript/correct', async (c) => {
   const body = await c.req.json<TranscriptCorrectBody>();
-  const tenant = parseTenantId(body.tenant_id);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   if (!body.capture_id || !body.project_id || !body.field) {
     return c.json({ error: 'invalid_body' }, 400);
   }
@@ -164,10 +152,7 @@ reviewRoutes.post('/review/transcript/correct', async (c) => {
 
 reviewRoutes.post('/review/draft/correct', async (c) => {
   const body = await c.req.json<DraftCorrectBody>();
-  const tenant = parseTenantId(body.tenant_id);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   if (!body.proposal_id || !body.project_id || !body.field) {
     return c.json({ error: 'invalid_body' }, 400);
   }
@@ -195,14 +180,11 @@ reviewRoutes.post('/review/draft/correct', async (c) => {
 
 reviewRoutes.post('/review/draft/accept', async (c) => {
   const body = await c.req.json<DraftAcceptBody>();
-  const tenant = parseTenantId(body.tenant_id);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   if (!body.proposal_id || !body.project_id) {
     return c.json({ error: 'invalid_body' }, 400);
   }
-  const proposal = getLane6Proposal(body.proposal_id);
+  const proposal = getLane6ProposalForTenant(body.proposal_id, tenant);
   if (proposal === null) {
     return c.json({ error: 'proposal_not_found' }, 404);
   }
@@ -219,15 +201,17 @@ reviewRoutes.post('/review/draft/accept', async (c) => {
       source_refs: [{ kind: 'doc', uri: `kerf://proposal/${body.proposal_id}/accept`, excerpt: 'draft review accept' }],
     },
   );
-  return c.json({ ok: true, event_id: accepted.event_id, preview_url: `/proposals/${body.proposal_id}/preview` });
+  return c.json({
+    ok: true,
+    event_id: accepted.event_id,
+    preview_url: `/proposals/${body.proposal_id}/preview`,
+    ...tenantOverrideFlags(c),
+  });
 });
 
 reviewRoutes.post('/review/draft/reject', async (c) => {
   const body = await c.req.json<DraftRejectBody>();
-  const tenant = parseTenantId(body.tenant_id);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   if (!body.proposal_id || !body.project_id) {
     return c.json({ error: 'invalid_body' }, 400);
   }
@@ -260,15 +244,17 @@ reviewRoutes.post('/review/draft/reject', async (c) => {
       source_refs: [{ kind: 'doc', uri: `kerf://proposal/${body.proposal_id}/reject-classified`, excerpt: 'draft reject' }],
     },
   );
-  return c.json({ ok: true, event_id: overridden.event_id, return_to: '/field-capture' });
+  return c.json({
+    ok: true,
+    event_id: overridden.event_id,
+    return_to: '/field-capture',
+    ...tenantOverrideFlags(c),
+  });
 });
 
 reviewRoutes.post('/review/field-detail/override', async (c) => {
   const body = await c.req.json<FieldDetailOverrideBody>();
-  const tenant = parseTenantId(body.tenant_id);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   if (!body.project_id || !body.entity_id || !body.reason_text?.trim()) {
     return c.json({ error: 'invalid_body' }, 400);
   }

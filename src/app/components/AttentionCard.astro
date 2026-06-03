@@ -1,0 +1,47 @@
+---
+/**
+ * F-AA1 · shared AttentionCard — frozen ATTENTION_STATE_VISUAL (Contract 3).
+ */
+import {
+  attentionVisualFor,
+  type AttentionArtifact,
+  type AttentionArtifactState,
+} from '../../contracts/lane1/attentionArtifact.js';
+
+export interface Props {
+  artifact: AttentionArtifact;
+  variant?: 'one' | 'deck' | 'pulse' | 'review' | 'inline';
+  href?: string;
+}
+
+const { artifact, variant = 'deck', href } = Astro.props as Props;
+const visual = attentionVisualFor(artifact.state as AttentionArtifactState);
+const targetHref =
+  href ??
+  (artifact.work_artifact_ref.startsWith('jobnote:')
+    ? `/draft-review/${artifact.work_artifact_ref.replace('jobnote:', '')}`
+    : '/');
+---
+
+<a
+  class:list={['aa-card', `aa-card--${variant}`, `aa-tone-${visual.bar}`]}
+  href={targetHref}
+  data-attention-id={artifact.id}
+  data-attention-state={artifact.state}
+  data-consequence-tier={artifact.consequence_tier}
+>
+  <span class="aa-card__rail" aria-hidden="true"></span>
+  <span class="aa-card__body">
+    <span class="aa-card__top">
+      <span class="aa-card__domain">{artifact.domain}</span>
+      <span class="aa-card__state">{visual.pill}</span>
+    </span>
+    <strong class="aa-card__headline">{artifact.headline}</strong>
+    <span class="aa-card__because">{artifact.because}</span>
+    <span class="aa-card__meta">
+      <span class="aa-card__chip">{artifact.consequence_tier}</span>
+      <span class="aa-card__chip aa-card__chip--source">{artifact.source_ref}</span>
+      <span class="aa-card__expand">Open</span>
+    </span>
+  </span>
+</a>

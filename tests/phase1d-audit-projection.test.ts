@@ -7,7 +7,7 @@ import path from 'node:path';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
-import { createApiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.js';
 import { createTenantScopedEventReader } from '../src/persistence/tenantScopedReads.js';
@@ -23,11 +23,13 @@ const HENDERSON_TRANSCRIPT =
   'galvanized all the way back to the main. Gotta replace about 8 feet. ' +
   'Bumping you on the CO.';
 
-async function withIsolatedApp<T>(fn: (dir: string, app: ReturnType<typeof createApiRouter>) => Promise<T>): Promise<T> {
+async function withIsolatedApp<T>(
+  fn: (dir: string, app: ReturnType<typeof createAuthenticatedApiRouter>) => Promise<T>,
+): Promise<T> {
   resetApiDepsForTests();
   const dir = await mkdtemp(path.join(tmpdir(), 'phase1d-audit-'));
   process.env['PERSISTENCE_DIR'] = dir;
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
     return await fn(dir, app);
   } finally {

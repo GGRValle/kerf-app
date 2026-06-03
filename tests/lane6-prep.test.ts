@@ -7,7 +7,10 @@ import path from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
-import { createApiRouter } from '../src/api/router.js';
+import {
+  createAuthenticatedApiRouter,
+  PLATFORM_SESSION_GGR_OWNER,
+} from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.js';
 import { createTenantScopedEventReader } from '../src/persistence/tenantScopedReads.js';
@@ -15,30 +18,43 @@ import type { PersistenceTenantId } from '../src/persistence/events.js';
 import { evaluateSendGate, tenantEvidenceClassForOverride } from '../src/proposal/sendGate.js';
 import { getLane6Proposal } from '../src/app/lib/lane6Fixtures.js';
 
+const OVERRIDE_PROPOSAL_BY_TENANT: Record<PersistenceTenantId, string> = {
+  tenant_ggr: 'prop_lane6_override',
+  tenant_valle: 'prop_lane6_override_valle',
+  tenant_hpg: 'prop_lane6_override_hpg',
+};
+
+const SESSION_AUTH_BY_TENANT: Record<PersistenceTenantId, string> = {
+  tenant_ggr: PLATFORM_SESSION_GGR_OWNER,
+  tenant_valle: 'Bearer psess_test_valle_owner',
+  tenant_hpg: 'Bearer psess_test_hpg_admin',
+};
+
 async function runOverrideClassification(
   tenant: PersistenceTenantId,
 ): Promise<string | undefined> {
+  const proposalId = OVERRIDE_PROPOSAL_BY_TENANT[tenant];
   const dir = await mkdtemp(path.join(tmpdir(), `lane6-override-${tenant}-`));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
-    const gateRes = await app.request(
-      `/proposals/prop_lane6_override/send-gate?tenant_id=${tenant}`,
-      { method: 'POST' },
-    );
+    const gateRes = await app.request(`/proposals/${proposalId}/send-gate`, {
+      method: 'POST',
+      headers: { Authorization: SESSION_AUTH_BY_TENANT[tenant] },
+    });
     const gateBody = await gateRes.json();
-    const sendRes = await app.request(
-      `/proposals/prop_lane6_override/send?tenant_id=${tenant}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          send_gate_event_id: gateBody.event_id,
-          override_reason: 'Tenant-scoped override classification test.',
-        }),
+    const sendRes = await app.request(`/proposals/${proposalId}/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: SESSION_AUTH_BY_TENANT[tenant],
       },
-    );
+      body: JSON.stringify({
+        send_gate_event_id: gateBody.event_id,
+        override_reason: 'Tenant-scoped override classification test.',
+      }),
+    });
     assert.equal(sendRes.status, 200);
     const store = createPersistenceEventStore({ filepath: path.join(dir, 'events.jsonl') });
     const reader = createTenantScopedEventReader(store);
@@ -80,7 +96,7 @@ test('POST send-gate persists send_gate.evaluated', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'lane6-gate-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
     const res = await app.request('/proposals/prop_lane6_pass/send-gate?tenant_id=tenant_ggr', {
       method: 'POST',
@@ -100,7 +116,7 @@ test('POST clients emits client.created with validator chain', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'lane6-clients-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
     const res = await app.request('/clients?tenant_id=tenant_ggr', {
       method: 'POST',
@@ -126,7 +142,7 @@ test('override send chain emits suggestion.overridden + correction.classified + 
   const dir = await mkdtemp(path.join(tmpdir(), 'lane6-override-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
     const gateRes = await app.request('/proposals/prop_lane6_override/send-gate?tenant_id=tenant_ggr', {
       method: 'POST',

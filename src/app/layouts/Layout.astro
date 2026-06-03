@@ -1,11 +1,14 @@
 ---
 import '../styles/shell.css';
+import '../../shell/surfaceCatalog.js';
 import SpeakFAB from '../components/SpeakFAB.astro';
 import MobileBottomNav from '../components/MobileBottomNav.astro';
 import RightHandVoiceOverlay from '../components/RightHandVoiceOverlay.astro';
+import RightHandConversationDock from '../components/RightHandConversationDock.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { navForContext } from '../lib/nav.js';
-import { DEFAULT_ROLE_ROOT_CONTEXT, type LayoutProps } from '../lib/layout-props.js';
+import { DEFAULT_ROLE_ROOT_CONTEXT, type LayoutProps, type RoleRoot } from '../lib/layout-props.js';
+import { ROLE_ROOT_COOKIE } from '../lib/roleSession.js';
 import type { I18nKey } from '../../i18n/keys.js';
 
 export interface Props extends Partial<LayoutProps> {
@@ -22,8 +25,16 @@ const {
   activeHref = '/',
 } = Astro.props as Props;
 
-const { t } = createLayoutContext({ username, locale: context.locale });
+const { t } = createLayoutContext({ username, locale: context.locale, roleRoot: context.roleRoot });
 const navItems = navForContext(context);
+const roleRoots: readonly RoleRoot[] = ['owner', 'pm', 'admin_ops', 'field_hand', 'sub'];
+const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
+  owner: 'roleRoot.owner',
+  pm: 'roleRoot.pm',
+  admin_ops: 'roleRoot.admin_ops',
+  field_hand: 'roleRoot.field_hand',
+  sub: 'roleRoot.sub',
+};
 const pageTitle = titleKey ? t(titleKey) : (title ?? t('layout.brand'));
 const rawOperatorName =
   username?.trim() ||
@@ -61,7 +72,7 @@ const buildDirty = process.env['KERF_BUILD_DIRTY'] ?? 'unknown';
   </head>
   <body>
     <div
-      class="kerf-shell"
+      class="kerf-shell kerf-shell--desktop-rh"
       data-role-root={context.roleRoot}
       data-locale={context.locale}
       data-tenant={context.tenantId}
@@ -90,13 +101,26 @@ const buildDirty = process.env['KERF_BUILD_DIRTY'] ?? 'unknown';
             );
           })}
         </nav>
-        <a class="kerf-topbar-rh" href="/more" aria-label={`${operatorName} settings`}>
+        <label class="kerf-role-chip" aria-label={t('shell.role_switcher.aria')}>
+          <span class="kerf-role-chip__label">{t(ROLE_LABEL_KEYS[context.roleRoot])}</span>
+          <select id="kerf-role-switcher" data-cookie={ROLE_ROOT_COOKIE}>
+            {roleRoots.map((role) => (
+              <option value={role} selected={role === context.roleRoot}>
+                {t(ROLE_LABEL_KEYS[role])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <a class="kerf-topbar-rh" href="/login" aria-label={`${operatorName} account`}>
           <span aria-hidden="true">{operatorInitials}</span>
         </a>
       </header>
-      <main class="kerf-main">
-        <slot />
-      </main>
+      <div class="kerf-shell__body">
+        <main class="kerf-main">
+          <slot />
+        </main>
+        <RightHandConversationDock />
+      </div>
       <MobileBottomNav activeHref={activeHref} roleRoot={context.roleRoot} />
       <SpeakFAB />
       <RightHandVoiceOverlay />
@@ -104,6 +128,20 @@ const buildDirty = process.env['KERF_BUILD_DIRTY'] ?? 'unknown';
     <script>
       const activeNav = document.querySelector('.kerf-nav-link.active');
       activeNav?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' });
+      const roleSelect = document.getElementById('kerf-role-switcher');
+      const cookieName = roleSelect?.getAttribute('data-cookie') || 'kerf_role_root';
+      const homePaths = {
+        owner: '/home/owner',
+        pm: '/home/pm',
+        admin_ops: '/home/admin-ops',
+        field_hand: '/home/field',
+        sub: '/home/sub',
+      };
+      roleSelect?.addEventListener('change', () => {
+        const role = roleSelect.value;
+        document.cookie = `${cookieName}=${encodeURIComponent(role)}; path=/; max-age=2592000; SameSite=Lax`;
+        window.location.href = homePaths[role] ?? '/';
+      });
     </script>
   </body>
 </html>

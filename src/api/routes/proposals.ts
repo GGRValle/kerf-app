@@ -2,30 +2,26 @@ import { Hono } from 'hono';
 
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
-import { getLane6Proposal } from '../../app/lib/lane6Fixtures.js';
-import type { PersistenceTenantId } from '../../persistence/events.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { getLane6ProposalForTenant } from '../../app/lib/lane6Fixtures.js';
 import { evaluateSendGate, tenantEvidenceClassForOverride } from '../../proposal/sendGate.js';
 import { renderProposalHtml } from '../../proposal/render.js';
 
-export const proposalRoutes = new Hono();
-
-function parseTenantId(raw: string | undefined): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
+export const proposalRoutes = new Hono<{ Variables: ApiVariables }>();
 
 proposalRoutes.get('/proposals/:id', (c) => {
-  const proposal = getLane6Proposal(c.req.param('id'));
+  const tenant = requireApiTenant(c);
+  const proposal = getLane6ProposalForTenant(c.req.param('id'), tenant);
   if (proposal === null) {
     return c.json({ error: 'proposal_not_found', proposal_id: c.req.param('id') }, 404);
   }
-  return c.json({ proposal });
+  return c.json({ proposal, ...tenantOverrideFlags(c) });
 });
 
 proposalRoutes.get('/proposals/:id/preview-html', (c) => {
-  const proposal = getLane6Proposal(c.req.param('id'));
+  const tenant = requireApiTenant(c);
+  const proposal = getLane6ProposalForTenant(c.req.param('id'), tenant);
   if (proposal === null) {
     return c.json({ error: 'proposal_not_found' }, 404);
   }
@@ -35,11 +31,8 @@ proposalRoutes.get('/proposals/:id/preview-html', (c) => {
 /** F-PV2 · evaluate send gate and persist send_gate.evaluated on every load. */
 proposalRoutes.post('/proposals/:id/send-gate', async (c) => {
   const proposalId = c.req.param('id');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
-  const proposal = getLane6Proposal(proposalId);
+  const tenant = requireApiTenant(c);
+  const proposal = getLane6ProposalForTenant(proposalId, tenant);
   if (proposal === null) {
     return c.json({ error: 'proposal_not_found', proposal_id: proposalId }, 404);
   }
@@ -70,17 +63,15 @@ proposalRoutes.post('/proposals/:id/send-gate', async (c) => {
       recoverable: evaluation.recoverable,
     },
     event_id: event.event_id,
+    ...tenantOverrideFlags(c),
   });
 });
 
 proposalRoutes.post('/proposals/:id/send', async (c) => {
   const proposalId = c.req.param('id');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   const body = await c.req.json<{ send_gate_event_id: string; override_reason?: string }>();
-  const proposal = getLane6Proposal(proposalId);
+  const proposal = getLane6ProposalForTenant(proposalId, tenant);
   if (proposal === null) {
     return c.json({ error: 'proposal_not_found' }, 404);
   }
@@ -155,5 +146,6 @@ proposalRoutes.post('/proposals/:id/send', async (c) => {
     proposal_sent_event_id: sent.event_id,
     send_gate_event_id: gateEvent.event_id,
     override_event_id: overrideEventId,
+    ...tenantOverrideFlags(c),
   });
 });

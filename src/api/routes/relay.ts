@@ -1,28 +1,22 @@
 import { Hono } from 'hono';
 
-import { getLane23Project } from '../../app/lib/lane23Fixtures.js';
+import { getLane23ProjectForTenant } from '../../app/lib/lane23Fixtures.js';
 import type {
   DailyLogDriftDetectedEvent,
   DailyLogEntryCapturedEvent,
   DailyLogFactsExtractedEvent,
-  PersistenceTenantId,
   RelayCardReviewedEvent,
   RelayCardReviewOutcome,
   RelayCardSurfacedEvent,
 } from '../../persistence/events.js';
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 
 const VALID_OUTCOMES: readonly RelayCardReviewOutcome[] = ['acknowledged', 'actioned', 'dismissed'];
 
-export const relayRoutes = new Hono();
-
-function parseTenantId(raw: unknown): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
+export const relayRoutes = new Hono<{ Variables: ApiVariables }>();
 
 function summaryFromFacts(facts: Readonly<Record<string, unknown>>): string {
   const completed = facts['completed_work'];
@@ -37,10 +31,7 @@ function summaryFromFacts(facts: Readonly<Record<string, unknown>>): string {
 }
 
 relayRoutes.get('/field-daily/relay-feed', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? 'tenant_ggr');
-  if (tenant === null) {
-    return c.json({ error: 'invalid_tenant' }, 400);
-  }
+  const tenant = requireApiTenant(c);
 
   const { tenantReader } = getApiDeps();
   const events = await tenantReader.readEventsForTenant(tenant);
@@ -64,7 +55,7 @@ relayRoutes.get('/field-daily/relay-feed', async (c) => {
       const driftEvent = drift.get(card.entry_id);
       const entry = entries.get(card.entry_id);
       const reviewed = reviewedByCard.get(card.relay_card_id);
-      const project = getLane23Project(card.correlation_id);
+      const project = getLane23ProjectForTenant(card.correlation_id, tenant);
       return {
         relay_card_id: card.relay_card_id,
         surfaced_event_id: card.event_id,
@@ -83,14 +74,13 @@ relayRoutes.get('/field-daily/relay-feed', async (c) => {
     })
     .sort((a, b) => b.surfaced_at.localeCompare(a.surfaced_at));
 
-  return c.json({ ok: true, tenant_id: tenant, items });
+  return c.json({ ok: true, tenant_id: tenant, items, ...tenantOverrideFlags(c) });
 });
 
 relayRoutes.post('/relay-cards/:relayCardId/review', async (c) => {
   const relayCardId = c.req.param('relayCardId');
-  const body = await c.req.json<{ tenant_id?: string; reviewer?: string; outcome?: string }>();
-  const tenant = parseTenantId(body.tenant_id ?? 'tenant_ggr');
-  if (tenant === null) return c.json({ error: 'invalid_tenant' }, 400);
+  const tenant = requireApiTenant(c);
+  const body = await c.req.json<{ reviewer?: string; outcome?: string }>();
   const reviewer = typeof body.reviewer === 'string' ? body.reviewer.trim() : '';
   if (!reviewer) return c.json({ error: 'invalid_reviewer' }, 400);
   if (!VALID_OUTCOMES.includes(body.outcome as RelayCardReviewOutcome)) {
@@ -125,5 +115,5 @@ relayRoutes.post('/relay-cards/:relayCardId/review', async (c) => {
       outcome: body.outcome as RelayCardReviewOutcome,
     },
   );
-  return c.json({ ok: true, event_id: event.event_id });
+  return c.json({ ok: true, event_id: event.event_id, ...tenantOverrideFlags(c) });
 });

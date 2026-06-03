@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { ROLE_ROOT_COOKIE, roleHomePath } from '../lib/roleSession.js';
+import type { RoleRoot } from '../lib/layout-props.js';
+import type { I18nKey } from '../../i18n/keys.js';
+
+const { t } = createLayoutContext();
+const roles: readonly RoleRoot[] = ['owner', 'pm', 'admin_ops', 'field_hand', 'sub'];
+const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
+  owner: 'roleRoot.owner',
+  pm: 'roleRoot.pm',
+  admin_ops: 'roleRoot.admin_ops',
+  field_hand: 'roleRoot.field_hand',
+  sub: 'roleRoot.sub',
+};
+---
+
+<Layout titleKey="login.title" activeHref="/login">
+  <section class="login" data-wireframe="F-LND1">
+    <h1>{t('login.title')}</h1>
+    <p>{t('login.subtitle')}</p>
+    <p class="login__tenant">{t('login.tenant_label')}: tenant_ggr (dogfood)</p>
+    <form class="login__form" id="login-form">
+      <fieldset>
+        <legend>{t('shell.role_switcher.aria')}</legend>
+        {roles.map((role) => (
+          <label class="login__role">
+            <input type="radio" name="role" value={role} checked={role === 'owner'} />
+            <span>{t(ROLE_LABEL_KEYS[role])}</span>
+            <span class="login__path">{roleHomePath(role)}</span>
+          </label>
+        ))}
+      </fieldset>
+      <button type="submit">{t('login.continue')}</button>
+    </form>
+  </section>
+</Layout>
+
+<script define:vars={{ cookieName: ROLE_ROOT_COOKIE }}>
+  const form = document.getElementById('login-form');
+  form?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const data = new FormData(form);
+    const role = String(data.get('role') || 'owner');
+    document.cookie = `${cookieName}=${encodeURIComponent(role)}; path=/; max-age=2592000; SameSite=Lax`;
+    const paths = {
+      owner: '/home/owner',
+      pm: '/home/pm',
+      admin_ops: '/home/admin-ops',
+      field_hand: '/home/field',
+      sub: '/home/sub',
+    };
+    window.location.href = paths[role] ?? '/';
+  });
+</script>
+
+<style>
+  .login { max-width: 28rem; }
+  .login h1 { margin: 0 0 0.35rem; font-size: 1.25rem; }
+  .login p { color: var(--text-muted); }
+  .login__tenant { font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  .login__form fieldset { border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin: 1rem 0; }
+  .login__role { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.5rem; padding: 0.35rem 0; cursor: pointer; }
+  .login__path { grid-column: 2; font-size: 0.7rem; color: var(--text-muted); }
+  .login__form button {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: var(--on-accent, #1a1300);
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>

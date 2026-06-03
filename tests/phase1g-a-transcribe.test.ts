@@ -31,7 +31,7 @@ import type {
 } from '../src/voice/runtime/whisperClient.js';
 
 function authHeader(): string {
-  return 'Basic test';
+  return `Basic ${Buffer.from('christian:test').toString('base64')}`;
 }
 
 function makeAudioBuf(size = 64): ArrayBuffer {

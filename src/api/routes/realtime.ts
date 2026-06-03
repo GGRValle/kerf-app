@@ -29,7 +29,9 @@
  */
 import { Hono } from 'hono';
 
-import type { EntityId, ISO8601 } from '../../blackboard/types.js';
+import type { ISO8601 } from '../../blackboard/types.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant } from '../lib/tenantContext.js';
 import { checkHostingRoute } from '../../hosting/routeCheck.js';
 import { hasSynthesisConsent, SYNTHESIS_CONSENT_FALLBACK } from '../../tenant/synthesisConsent.js';
 import {
@@ -40,11 +42,9 @@ import {
   type RealtimeSessionResult,
 } from '../../voice/realtime/realtimeSession.js';
 
-export const realtimeRoutes = new Hono();
+export const realtimeRoutes = new Hono<{ Variables: ApiVariables }>();
 
 const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1';
-/** Dogfood default tenant — matches the shell basic-auth posture in transcribe.ts. */
-const DEFAULT_TENANT_ID = 'tenant_ggr' as EntityId;
 
 export interface RealtimeRouteDeps {
   readonly env: {
@@ -76,18 +76,6 @@ function resolveDeps(): RealtimeRouteDeps {
   };
 }
 
-/**
- * Derive the tenant for consent gating. The shell has only basic-auth at the
- * edge (no per-user tenant context yet — see transcribe.ts). An optional
- * `x-kerf-tenant` header lets the caller scope; default is the dogfood tenant.
- * Phase 1F tenant-derivation harden replaces this with auth-context-derived
- * tenant.
- */
-function deriveTenant(headerValue: string | undefined): EntityId {
-  const trimmed = (headerValue ?? '').trim();
-  return (trimmed.length > 0 ? trimmed : DEFAULT_TENANT_ID) as EntityId;
-}
-
 function generateInvocationId(): string {
   const ts = Date.now().toString(36);
   const rand = Math.random().toString(36).slice(2, 10);
@@ -113,7 +101,7 @@ realtimeRoutes.post('/realtime/transcription-session', async (c) => {
     );
   }
 
-  const tenantId = deriveTenant(c.req.header('x-kerf-tenant'));
+  const tenantId = requireApiTenant(c);
 
   // 403 · consent gate (D-049 §6). Non-consenting tenants never mint a realtime
   // session — their mic audio is not streamed to OpenAI. They fall back to Groq.

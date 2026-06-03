@@ -24,7 +24,7 @@ import type { GroqChatRequest, GroqChatResult } from '../src/altitude/modelAdapt
 import { checkHostingRoute } from '../src/hosting/routeCheck.js';
 
 function authHeader(): string {
-  return 'Basic test';
+  return `Basic ${Buffer.from('christian:test').toString('base64')}`;
 }
 
 test.afterEach(() => {
@@ -263,9 +263,8 @@ test('route blocks hosted resolver for tenants without synthesis consent', async
   const res = await apiRouter.request('/right-hand/resolve-turn', {
     method: 'POST',
     headers: {
-      authorization: authHeader(),
       'content-type': 'application/json',
-      'x-kerf-tenant': 'tenant_valle',
+      Authorization: 'Bearer psess_test_valle_pm',
     },
     body: JSON.stringify({ heardText: BASE_INPUT.heardText, currentPath: '/' }),
   });

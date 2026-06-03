@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import RoleHomeSurface from '../../components/RoleHomeSurface.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+
+const { context } = createLayoutContext({ roleRoot: 'admin_ops' });
+---
+
+<Layout context={context} titleKey="home.title" activeHref="/">
+  <RoleHomeSurface roleRoot="admin_ops" wireframeOverride="F-TO2" />
+</Layout>

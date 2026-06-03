@@ -8,7 +8,7 @@
  * the LLM route is unavailable, the deterministic v28 resolver remains the
  * fallback floor.
  */
-import { Hono, type Context } from 'hono';
+import { Hono } from 'hono';
 import crypto from 'node:crypto';
 
 import {
@@ -30,7 +30,9 @@ import { hasSynthesisConsent } from '../../tenant/synthesisConsent.js';
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import { appendDailyLogEntryAndSurface } from '../lib/dailyLogCommit.js';
-import { getLane23Project, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
+import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant } from '../lib/tenantContext.js';
 import {
   resolveTurnWithModel,
   type KnownEntityContext,
@@ -42,9 +44,7 @@ import {
   type TurnResolutionPacket,
 } from '../../voice/realtime/turnResolution.js';
 
-export const rightHandTurnRoutes = new Hono();
-
-const DEFAULT_TENANT_ID = 'tenant_ggr' as EntityId;
+export const rightHandTurnRoutes = new Hono<{ Variables: ApiVariables }>();
 const DEFAULT_GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 
 export interface RightHandTurnRouteDeps {
@@ -77,11 +77,6 @@ function resolveDeps(): RightHandTurnRouteDeps {
   };
 }
 
-function tenantFromHeader(value: string | undefined): EntityId {
-  const trimmed = (value ?? '').trim();
-  return (trimmed || DEFAULT_TENANT_ID) as EntityId;
-}
-
 function cleanKnownEntities(value: unknown): readonly KnownEntityContext[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -102,15 +97,6 @@ function cleanKnownEntities(value: unknown): readonly KnownEntityContext[] {
     })
     .filter((item): item is KnownEntityContext => item !== null)
     .slice(0, 8);
-}
-
-function parsePersistenceTenantId(raw: unknown): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') return raw;
-  return null;
-}
-
-function tenantFromCommit(c: Context, body: Record<string, unknown>): PersistenceTenantId | null {
-  return parsePersistenceTenantId(c.req.header('x-kerf-tenant')) ?? parsePersistenceTenantId(body['tenant_id']);
 }
 
 function safeProjectId(raw: unknown): string | null {
@@ -181,9 +167,10 @@ async function projectBelongsToTenant(
   const events = await tenantReader.readEventsForProject(tenant, projectId);
   if (events.length > 0) return { ok: true };
 
-  const fixtureProject = getLane23Project(projectId);
-  if (fixtureProject && fixtureProject.tenant_id === tenant) return { ok: true };
-  if (fixtureProject && fixtureProject.tenant_id !== tenant) {
+  const fixtureProject = getLane23ProjectForTenant(projectId, tenant);
+  if (fixtureProject) return { ok: true };
+  const foreignFixture = getLane23Project(projectId);
+  if (foreignFixture !== null && foreignFixture.tenant_id !== tenant) {
     return {
       ok: false,
       status: 403,
@@ -311,7 +298,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
   }
 
   const deps = resolveDeps();
-  const tenantId = tenantFromHeader(c.req.header('x-kerf-tenant'));
+  const tenantId = requireApiTenant(c);
   const baseInput = {
     heardText,
     currentPath: typeof body['currentPath'] === 'string' ? body['currentPath'].slice(0, 160) : undefined,
@@ -361,16 +348,7 @@ rightHandTurnRoutes.post('/right-hand/commit-turn', async (c) => {
     return c.json({ error: 'invalid_json' }, 400);
   }
 
-  const tenant = tenantFromCommit(c, body);
-  if (tenant === null) {
-    return c.json(
-      {
-        error: 'tenant_required',
-        reason: 'x-kerf-tenant header or tenant_id body field is required for durable writes',
-      },
-      400,
-    );
-  }
+  const tenant = requireApiTenant(c);
 
   const trp = parseTurnResolution(JSON.stringify(body['trp'] ?? null));
   if (trp === null) {

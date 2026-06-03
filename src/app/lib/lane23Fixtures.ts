@@ -246,6 +246,17 @@ export function getLane23Project(projectId: string): Lane23ProjectRecord | null 
   return LANE23_PROJECTS.find((p) => p.project_id === projectId) ?? null;
 }
 
+export function getLane23ProjectForTenant(
+  projectId: string,
+  tenantId: PersistenceTenantId,
+): Lane23ProjectRecord | null {
+  const project = getLane23Project(projectId);
+  if (project === null || project.tenant_id !== tenantId) {
+    return null;
+  }
+  return project;
+}
+
 export function listLane23Projects(tenantId?: PersistenceTenantId): readonly Lane23ProjectRecord[] {
   if (tenantId === undefined) {
     return LANE23_PROJECTS;

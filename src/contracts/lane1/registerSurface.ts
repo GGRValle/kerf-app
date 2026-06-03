@@ -43,5 +43,8 @@ export function validateRegisterSurfaceInput(
   if (input.route.includes('?')) {
     return { ok: false, reason: 'route must not include query strings' };
   }
+  if (input.roleScope.length === 0) {
+    return { ok: false, reason: 'roleScope must include at least one role root' };
+  }
   return { ok: true };
 }
