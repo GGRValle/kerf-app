@@ -1,0 +1,183 @@
+---
+// F-DS1 · Design workspace · /design/:projectId (Lane 2)
+import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import {
+  getSalesStore,
+  selectionsForProject,
+  catalogItemById,
+  toSelectionView,
+  catalogUnitCents,
+} from '../../../sales/index.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const projectId = Astro.params.projectId ?? '';
+const store = getSalesStore(tenant);
+const libraryItems = store.items.filter((i) => i.collection === 'selections');
+const selections = selectionsForProject(tenant, projectId).map((s) =>
+  toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_item_id)?.label ?? s.library_item_id }),
+);
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+// Design's five tabs. Selections is wired; the rest are honest stubs (not built yet).
+const TABS = [
+  { id: 'mood', label: 'Mood', status: 'stub' },
+  { id: 'threed', label: '3D', status: 'stub' },
+  { id: 'selections', label: 'Selections', status: 'functional' },
+  { id: 'tools', label: 'Design tools', status: 'stub' },
+  { id: 'integrations', label: 'Integrations', status: 'stub' },
+] as const;
+---
+
+<Layout title="Design workspace" activeHref="/sales">
+  <article class="ds-page" data-project={projectId}>
+    <a class="ds-back" href={`/sales/${projectId.replace(/^proj_/, '')}`}>‹ Deal</a>
+    <header>
+      <div class="ds-crumb">Design · {projectId}</div>
+      <h1>Design workspace</h1>
+      <p class="ds-sub">Pull Selections from the Knowledge Base, approve them into the job, then build the estimate.</p>
+    </header>
+
+    <nav class="ds-tabs" role="tablist">
+      {TABS.map((tab) => (
+        <button class="ds-tab" data-tab={tab.id} aria-selected={tab.id === 'selections' ? 'true' : 'false'}>
+          {tab.label}{tab.status === 'stub' ? <span class="ds-soon">soon</span> : null}
+        </button>
+      ))}
+    </nav>
+
+    <!-- Selections tab (functional) -->
+    <section class="ds-panel" data-panel="selections">
+      <div class="ds-two">
+        <div class="ds-lib">
+          <h2>Pull from Library <a class="ds-link" href="/library">Open KB ›</a></h2>
+          {libraryItems.length === 0 ? <p class="ds-empty">No catalog selections.</p> : null}
+          {libraryItems.map((item) => (
+            <div class="ds-libitem">
+              <div>
+                <strong>{item.label}</strong>
+                <span class="ds-meta">{item.line_type} · {fmt(catalogUnitCents(item))}/{item.uom}</span>
+              </div>
+              <button class="ds-btn pull" data-item={item.id}>Pull</button>
+            </div>
+          ))}
+        </div>
+        <div class="ds-sel">
+          <h2>Project Selections</h2>
+          {selections.length === 0 ? <p class="ds-empty">Nothing pulled yet. Pull a Selection from the Library.</p> : null}
+          {selections.map((sel) => (
+            <div class="ds-selitem">
+              <div>
+                <strong>{sel.label}</strong>
+                <span class="ds-meta">{sel.line_type} · {fmt(sel.amount_cents)} · {sel.lifecycle}</span>
+              </div>
+              {sel.lifecycle === 'proposed' ? (
+                <button class="ds-btn approve" data-sel={sel.id}>Approve</button>
+              ) : (
+                <span class="ds-ok">✓ {sel.lifecycle}</span>
+              )}
+            </div>
+          ))}
+          {selections.some((s) => s.lifecycle === 'approved') ? (
+            <a class="ds-btn primary go-estimate" href={`/estimate/${projectId}`}>Build estimate ›</a>
+          ) : null}
+        </div>
+      </div>
+    </section>
+
+    <!-- Honest stubs for the other four tabs -->
+    {TABS.filter((t) => t.status === 'stub').map((tab) => (
+      <section class="ds-panel ds-stub" data-panel={tab.id} hidden>
+        <div class="ds-stub-card">
+          <h2>{tab.label}</h2>
+          <p>Not built yet. This Design tab is a placeholder — no fake controls.</p>
+          <p class="ds-meta">Lane 2 fix queue: wire {tab.label} after the price-it/propose-it spine lands.</p>
+        </div>
+      </section>
+    ))}
+  </article>
+</Layout>
+
+<script>
+  const root = document.querySelector('.ds-page');
+  const projectId = root?.getAttribute('data-project') ?? '';
+
+  function showTab(id: string) {
+    document.querySelectorAll('.ds-tab').forEach((b) =>
+      b.setAttribute('aria-selected', b.getAttribute('data-tab') === id ? 'true' : 'false'),
+    );
+    document.querySelectorAll('.ds-panel').forEach((p) => {
+      (p as HTMLElement).hidden = p.getAttribute('data-panel') !== id;
+    });
+  }
+  document.querySelectorAll('.ds-tab').forEach((b) =>
+    b.addEventListener('click', () => showTab(b.getAttribute('data-tab') ?? 'selections')),
+  );
+
+  async function durableWrite(url: string, confirmMsg: string) {
+    if (!confirm(confirmMsg)) return false;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ confirmed: true }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      alert('Write failed (' + res.status + '): ' + text);
+      return false;
+    }
+    return true;
+  }
+
+  document.querySelectorAll('.ds-btn.pull').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const itemId = btn.getAttribute('data-item');
+      // Consequence gate: confirm, then a single durable write carrying item_id.
+      if (!confirm('Pull this Selection onto the job?')) return;
+      const res = await fetch(`/api/v1/design/${projectId}/pull`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ confirmed: true, item_id: itemId }),
+      });
+      if (res.ok) window.location.reload();
+      else alert('Pull failed (' + res.status + ').');
+    }),
+  );
+
+  document.querySelectorAll('.ds-btn.approve').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const selId = btn.getAttribute('data-sel');
+      const ok = await durableWrite(
+        `/api/v1/design/${projectId}/selections/${selId}/approve`,
+        'Approve this Selection into the job?',
+      );
+      if (ok) window.location.reload();
+    }),
+  );
+</script>
+
+<style>
+  .ds-page { padding: 1rem; }
+  .ds-back { color: var(--text-muted, #98a1b3); text-decoration: none; font-size: 0.85rem; }
+  .ds-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); margin-top: 0.6rem; }
+  .ds-sub { color: var(--text-muted, #98a1b3); }
+  .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.8rem 0; border-bottom: 1px solid var(--border, #2a3140); padding-bottom: 0.5rem; }
+  .ds-tab { padding: 0.4rem 0.7rem; border: 1px solid var(--border, #2a3140); border-radius: 999px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; font-size: 0.85rem; }
+  .ds-tab[aria-selected='true'] { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
+  .ds-soon { font-size: 0.62rem; margin-left: 0.3rem; opacity: 0.6; }
+  .ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 720px) { .ds-two { grid-template-columns: 1fr; } }
+  .ds-lib, .ds-sel { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.7rem; background: var(--surface, #11151c); }
+  .ds-lib h2, .ds-sel h2 { font-size: 0.95rem; margin: 0 0 0.6rem; display: flex; justify-content: space-between; align-items: baseline; }
+  .ds-link { font-size: 0.78rem; }
+  .ds-libitem, .ds-selitem { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border, #222a36); }
+  .ds-meta { display: block; font-size: 0.75rem; color: var(--text-muted, #98a1b3); }
+  .ds-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; text-decoration: none; }
+  .ds-btn.primary { display: inline-block; margin-top: 0.7rem; background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
+  .ds-ok { color: var(--field-green, #38c977); font-size: 0.82rem; }
+  .ds-empty { color: var(--text-muted, #6a7282); font-size: 0.9rem; }
+  .ds-stub-card { border: 1px dashed var(--border, #2a3140); border-radius: 12px; padding: 1.2rem; color: var(--text-muted, #98a1b3); background: var(--surface, #11151c); }
+</style>

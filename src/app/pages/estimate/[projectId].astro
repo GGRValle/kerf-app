@@ -1,0 +1,178 @@
+---
+// F-EST1 · Estimate builder · /estimate/:projectId (Lane 2)
+import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import {
+  estimateLinesForProject,
+  lineBreakdown,
+  estimateTotals,
+  clientVisibleLines,
+  selectionsForProject,
+} from '../../../sales/index.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const projectId = Astro.params.projectId ?? '';
+const lines = estimateLinesForProject(tenant, projectId);
+const breakdowns = lines.map(lineBreakdown);
+const totals = estimateTotals(lines);
+const clientLines = clientVisibleLines(lines).map(lineBreakdown);
+const approvedCount = selectionsForProject(tenant, projectId).filter((s) => s.lifecycle === 'approved').length;
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+---
+
+<Layout title="Estimate builder" activeHref="/sales">
+  <article class="es-page" data-project={projectId}>
+    <a class="es-back" href={`/design/${projectId}`}>‹ Design</a>
+    <header>
+      <div class="es-crumb">Estimate · {projectId}</div>
+      <h1>Estimate builder</h1>
+      <p class="es-sub">Operator total = client total. Markup is folded into the price, never shown to the client.</p>
+    </header>
+
+    <div class="es-toolbar">
+      <button class="es-btn" id="seed" data-approved={approvedCount}>Seed from approved Selections ({approvedCount})</button>
+      <button class="es-btn" id="add-toggle">+ Add line</button>
+    </div>
+
+    <form class="es-add" id="add-form" hidden>
+      <input id="ln-label" placeholder="Label" />
+      <select id="ln-type">
+        <option value="material">material</option>
+        <option value="labor">labor</option>
+        <option value="product">product</option>
+        <option value="allowance">allowance</option>
+        <option value="subcontract">subcontract</option>
+        <option value="equipment">equipment</option>
+        <option value="fee">fee</option>
+        <option value="markup">markup (internal)</option>
+      </select>
+      <input id="ln-qty" type="number" step="0.01" min="0" value="1" placeholder="Qty" />
+      <input id="ln-cost" type="number" step="1" min="0" placeholder="Unit cost (cents)" />
+      <input id="ln-markup" type="number" step="1" min="0" value="3000" placeholder="Markup bps" />
+      <button class="es-btn primary" id="add-go" type="button">Add</button>
+    </form>
+
+    <!-- Operator view: cost + markup + client price -->
+    <section class="es-table">
+      <h2>Operator view</h2>
+      {breakdowns.length === 0 ? <p class="es-empty">No lines yet. Seed from approved Selections or add a line.</p> : null}
+      {breakdowns.map((b) => (
+        <div class="es-row" data-internal={b.line.client_visible ? 'false' : 'true'}>
+          <span class="es-ln-label">{b.line.label} <span class="es-tag">{b.line.line_type}</span>{b.line.client_visible ? null : <span class="es-tag internal">internal</span>}</span>
+          <span class="es-ln-num">cost {fmt(b.extended_cost_cents)}</span>
+          <span class="es-ln-num">+mkup {fmt(b.markup_cents)}</span>
+          <span class="es-ln-num strong">{fmt(b.client_price_cents)}</span>
+        </div>
+      ))}
+      <div class="es-totals">
+        <span>Cost {fmt(totals.cost_cents)}</span>
+        <span>Markup {fmt(totals.markup_cents)}</span>
+        <span class="strong">Operator total {fmt(totals.operator_total_cents)}</span>
+        <span class={totals.reconciles ? 'es-recon ok' : 'es-recon bad'}>
+          {totals.reconciles ? '✓ reconciles' : '✗ does not reconcile'}
+        </span>
+      </div>
+    </section>
+
+    <!-- Client view: prices only; markup never appears -->
+    <section class="es-table es-client">
+      <h2>Client view <span class="es-meta">(what the client sees — no cost, no markup)</span></h2>
+      {clientLines.map((b) => (
+        <div class="es-row">
+          <span class="es-ln-label">{b.line.label}</span>
+          <span class="es-ln-num strong">{fmt(b.client_price_cents)}</span>
+        </div>
+      ))}
+      <div class="es-totals">
+        <span class="strong">Total {fmt(totals.client_total_cents)}</span>
+      </div>
+    </section>
+
+    <section class="es-propose">
+      <button class="es-btn primary" id="gen-proposal" disabled={breakdowns.length === 0}>Generate proposal draft ›</button>
+      <p class="es-meta">Drafts only. Kerf never auto-sends — sending is a separate, human-gated step.</p>
+      <div id="draft-result" class="es-draft" hidden></div>
+    </section>
+  </article>
+</Layout>
+
+<script>
+  const root = document.querySelector('.es-page');
+  const projectId = root?.getAttribute('data-project') ?? '';
+
+  async function post(url: string, body: Record<string, unknown>, confirmMsg: string) {
+    if (!confirm(confirmMsg)) return null;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ confirmed: true, ...body }),
+    });
+    if (!res.ok) { alert('Failed (' + res.status + '): ' + (await res.text())); return null; }
+    return res.json();
+  }
+
+  document.getElementById('seed')?.addEventListener('click', async () => {
+    const out = await post(`/api/v1/estimate/${projectId}/seed-from-selections`, {}, 'Create estimate lines from approved Selections?');
+    if (out) window.location.reload();
+  });
+
+  document.getElementById('add-toggle')?.addEventListener('click', () => {
+    const f = document.getElementById('add-form') as HTMLElement;
+    f.hidden = !f.hidden;
+  });
+
+  document.getElementById('add-go')?.addEventListener('click', async () => {
+    const label = (document.getElementById('ln-label') as HTMLInputElement).value.trim();
+    const line_type = (document.getElementById('ln-type') as HTMLSelectElement).value;
+    const quantity = parseFloat((document.getElementById('ln-qty') as HTMLInputElement).value || '1');
+    const unit_cost_cents = parseInt((document.getElementById('ln-cost') as HTMLInputElement).value || '', 10);
+    const markup_bps = parseInt((document.getElementById('ln-markup') as HTMLInputElement).value || '0', 10);
+    if (!label || !Number.isInteger(unit_cost_cents)) { alert('Label and integer cents cost required.'); return; }
+    const client_visible = line_type !== 'markup';
+    const out = await post(`/api/v1/estimate/${projectId}/lines`, { label, line_type, quantity, unit_cost_cents, markup_bps, client_visible }, `Add line "${label}"?`);
+    if (out) window.location.reload();
+  });
+
+  document.getElementById('gen-proposal')?.addEventListener('click', async () => {
+    const out = await post(`/api/v1/estimate/${projectId}/generate-proposal`, {}, 'Generate a proposal draft from this estimate?');
+    if (out) {
+      const el = document.getElementById('draft-result') as HTMLElement;
+      el.hidden = false;
+      el.innerHTML = `<strong>Draft created.</strong> ${out.attention.headline}.
+        <br/>Total $${(out.draft.client_total_cents / 100).toFixed(2)} · auto-send allowed: ${out.auto_send_allowed}
+        <br/><a href="${out.draft.surface_route}">Open proposal draft ›</a>`;
+    }
+  });
+</script>
+
+<style>
+  .es-page { padding: 1rem; max-width: 820px; }
+  .es-back { color: var(--text-muted, #98a1b3); text-decoration: none; font-size: 0.85rem; }
+  .es-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); margin-top: 0.6rem; }
+  .es-sub { color: var(--text-muted, #98a1b3); }
+  .es-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.8rem 0; }
+  .es-btn { padding: 0.5rem 0.85rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; }
+  .es-btn.primary { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
+  .es-btn[disabled] { opacity: 0.5; cursor: default; }
+  .es-add { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .es-add input, .es-add select { padding: 0.45rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); font: inherit; }
+  .es-table { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.75rem; background: var(--surface, #11151c); margin-bottom: 1rem; }
+  .es-table h2 { font-size: 0.95rem; margin: 0 0 0.6rem; }
+  .es-row { display: flex; justify-content: space-between; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border, #222a36); }
+  .es-row[data-internal='true'] { opacity: 0.85; }
+  .es-ln-label { flex: 1 1 auto; }
+  .es-ln-num { font-variant-numeric: tabular-nums; font-size: 0.85rem; color: var(--text-muted, #98a1b3); white-space: nowrap; }
+  .es-ln-num.strong, .strong { color: var(--text, #e8edf4); font-weight: 700; }
+  .es-tag { font-size: 0.65rem; padding: 0.05rem 0.35rem; border: 1px solid var(--border, #2a3140); border-radius: 999px; margin-left: 0.3rem; color: var(--text-muted, #98a1b3); }
+  .es-tag.internal { color: var(--accent, #f5b544); border-color: var(--accent, #f5b544); }
+  .es-totals { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.6rem; padding-top: 0.5rem; border-top: 2px solid var(--border, #2a3140); font-variant-numeric: tabular-nums; }
+  .es-recon.ok { color: var(--field-green, #38c977); }
+  .es-recon.bad { color: #f87171; }
+  .es-client { border-color: var(--field-green, #2f8f5b); }
+  .es-meta { font-size: 0.75rem; color: var(--text-muted, #6a7282); font-weight: 400; }
+  .es-propose { margin-top: 0.5rem; }
+  .es-draft { margin-top: 0.7rem; padding: 0.7rem; border: 1px solid var(--field-green, #2f8f5b); border-radius: 10px; background: var(--surface, #11151c); }
+  .es-empty { color: var(--text-muted, #6a7282); }
+</style>

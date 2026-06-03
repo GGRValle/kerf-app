@@ -12,11 +12,13 @@ import { reviewRoutes } from './routes/review.js';
 import { transcribeRoutes } from './routes/transcribe.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { rightHandTurnRoutes } from './routes/rightHandTurn.js';
+import { salesDesignKbRoutes } from './routes/salesDesignKb.js';
 
 export function createApiRouter(): Hono {
   const app = new Hono();
   app.use('*', authMiddleware);
   app.route('/', healthRoutes);
+  app.route('/', salesDesignKbRoutes);
   app.route('/', projectRoutes);
   app.route('/', proposalRoutes);
   app.route('/', clientRoutes);

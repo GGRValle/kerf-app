@@ -1,0 +1,61 @@
+---
+// F-SL2 · Sales pipeline · /sales (Lane 2)
+import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { getSalesStore, pipelineColumns, dealStageLabel } from '../../../sales/index.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const store = getSalesStore(tenant);
+const columns = pipelineColumns(store.deals);
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+---
+
+<Layout title="Sales · Pipeline" activeHref="/sales">
+  <article class="sl-page">
+    <header class="sl-head">
+      <div class="sl-crumb">Sales</div>
+      <h1>Pipeline</h1>
+      <p class="sl-sub">A lead becomes a priced, proposable job. Open a deal to enter Design.</p>
+    </header>
+
+    {store.deals.length === 0 ? (
+      <p class="sl-empty">No deals yet for this tenant.</p>
+    ) : (
+      <div class="sl-board">
+        {columns.map((col) => (
+          <section class="sl-col">
+            <h2 class="sl-col-head">{col.label} <span class="sl-count">{col.deals.length}</span></h2>
+            {col.deals.map((deal) => (
+              <a class="sl-card" href={`/sales/${deal.id}`}>
+                <strong>{deal.name}</strong>
+                <span class="sl-client">{deal.client_name}</span>
+                <span class="sl-meta">{fmt(deal.value_cents)} · {dealStageLabel(deal.stage)}</span>
+                <span class="sl-src">{deal.source}</span>
+              </a>
+            ))}
+            {col.deals.length === 0 ? <p class="sl-col-empty">—</p> : null}
+          </section>
+        ))}
+      </div>
+    )}
+  </article>
+</Layout>
+
+<style>
+  .sl-page { padding: 1rem; }
+  .sl-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
+  .sl-head h1 { margin: 0.1rem 0; }
+  .sl-sub { color: var(--text-muted, #6a7282); margin: 0 0 1rem; }
+  .sl-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; }
+  .sl-col { background: var(--surface, #11151c); border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.6rem; }
+  .sl-col-head { font-size: 0.85rem; margin: 0 0 0.5rem; display: flex; justify-content: space-between; }
+  .sl-count { color: var(--text-muted, #6a7282); }
+  .sl-card { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.55rem; margin-bottom: 0.4rem; border: 1px solid var(--border, #2a3140); border-radius: 9px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); text-decoration: none; }
+  .sl-card:hover { border-color: var(--accent, #f5b544); }
+  .sl-client { font-size: 0.82rem; }
+  .sl-meta { font-size: 0.75rem; color: var(--text-muted, #98a1b3); font-variant-numeric: tabular-nums; }
+  .sl-src { font-size: 0.7rem; color: var(--text-muted, #6a7282); }
+  .sl-col-empty { color: var(--text-muted, #6a7282); text-align: center; margin: 0.2rem 0; }
+  .sl-empty { color: var(--text-muted, #6a7282); }
+</style>
