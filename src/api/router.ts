@@ -14,6 +14,7 @@ import { transcribeRoutes } from './routes/transcribe.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { rightHandTurnRoutes } from './routes/rightHandTurn.js';
 import { attentionRoutes } from './routes/attention.js';
+import { clientPortalRoutes } from './routes/clientPortal.js';
 
 export function createApiRouter(): Hono {
   const app = new Hono();
@@ -32,6 +33,7 @@ export function createApiRouter(): Hono {
   app.route('/', realtimeRoutes);
   app.route('/', rightHandTurnRoutes);
   app.route('/', attentionRoutes);
+  app.route('/', clientPortalRoutes);
   return app;
 }
 

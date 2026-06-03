@@ -1,0 +1,56 @@
+---
+// F-CP1 · Client portal login (no PII in path)
+import '../../styles/lane3.css';
+
+const tenantId = 'tenant_ggr';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kerf · Client portal</title>
+  </head>
+  <body class="lane3-portal-standalone">
+    <header class="lane3-portal-header">
+      <strong>Client portal</strong>
+      <span class="lane6-subtitle">Co-branded · your project only</span>
+    </header>
+    <main class="lane3-page">
+      <h1>Sign in</h1>
+      <p class="lane6-subtitle">Use the email on your proposal. Demo: mgrace.wegrzyn@example.com</p>
+      <form id="portal-login-form">
+        <label>
+          Email
+          <input type="email" name="email" required placeholder="you@example.com" />
+        </label>
+        <button type="submit">Continue</button>
+      </form>
+      <p id="portal-login-error" hidden></p>
+    </main>
+    <script define:vars={{ tenantId }}>
+      const form = document.getElementById('portal-login-form');
+      const err = document.getElementById('portal-login-error');
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const email = String(fd.get('email') ?? '');
+        const res = await fetch(`/api/v1/portal/login?tenant_id=${tenantId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (err) {
+            err.hidden = false;
+            err.textContent = 'Could not sign in. Check your email.';
+          }
+          return;
+        }
+        window.location.href = `${data.redirect_path}?tenant_id=${tenantId}`;
+      });
+    </script>
+  </body>
+</html>

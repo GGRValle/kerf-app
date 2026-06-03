@@ -1,0 +1,104 @@
+---
+// F-CP1 · Client session — opaque token path (no PII in URL)
+import '../../../styles/lane3.css';
+
+const { token } = Astro.params;
+const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
+if (!token) return Astro.redirect('/portal');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your project · Kerf portal</title>
+  </head>
+  <body class="lane3-portal-standalone" data-token={token} data-tenant-id={tenantId}>
+    <header class="lane3-portal-header">
+      <div>
+        <strong id="portal-client-name">Your project</strong>
+        <p class="lane6-subtitle" id="portal-project-label"></p>
+      </div>
+      <div class="lane3-project-switcher">
+        <label>
+          Project
+          <select id="portal-project-select" aria-label="Switch project"></select>
+        </label>
+      </div>
+    </header>
+    <main class="lane3-page">
+      <h2>Needs your approval</h2>
+      <div id="portal-approvals"></div>
+    </main>
+    <script define:vars={{ token, tenantId }}>
+      const body = document.body;
+      const select = document.getElementById('portal-project-select');
+      const approvalsEl = document.getElementById('portal-approvals');
+
+      async function load(projectId) {
+        const qs = projectId
+          ? `?tenant_id=${tenantId}&project_id=${projectId}`
+          : `?tenant_id=${tenantId}`;
+        const res = await fetch(`/api/v1/portal/session/${token}${qs}`);
+        const data = await res.json();
+        if (!res.ok) {
+          approvalsEl.innerHTML = '<p>Session not available.</p>';
+          return;
+        }
+        document.getElementById('portal-client-name').textContent = data.display_name;
+        document.getElementById('portal-project-label').textContent = data.project_id;
+        if (select && select.options.length === 0) {
+          for (const p of data.projects ?? []) {
+            const opt = document.createElement('option');
+            opt.value = p.project_id;
+            opt.textContent = p.label;
+            if (p.project_id === data.project_id) opt.selected = true;
+            select.appendChild(opt);
+          }
+        }
+        const approvals = data.approvals ?? [];
+        if (approvals.length === 0) {
+          approvalsEl.innerHTML = '<p>Nothing waiting for approval.</p>';
+          return;
+        }
+        approvalsEl.innerHTML = approvals
+          .map((a) => {
+            const dollars = (a.client_visible_total_cents / 100).toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            });
+            const confirm =
+              a.state === 'needs_you'
+                ? `<div class="lane3-confirm-panel"><label><input type="checkbox" data-approval="${a.approval_id}" /> I approve this ${a.kind}</label><button type="button" data-approve="${a.approval_id}">Confirm approval</button></div>`
+                : '<p class="lane6-subtitle">Approved · propagated to your contractor</p>';
+            return `<article class="lane3-approval ${a.state === 'needs_you' ? 'needs-you' : ''}"><div class="lane3-approval-head"><div><strong>${a.headline}</strong><p>${a.because}</p></div><span class="lane3-price">${dollars}</span></div>${confirm}</article>`;
+          })
+          .join('');
+        approvalsEl.querySelectorAll('[data-approve]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const approvalId = btn.getAttribute('data-approve');
+            const box = approvalsEl.querySelector(`input[data-approval="${approvalId}"]`);
+            if (!(box instanceof HTMLInputElement) || !box.checked) {
+              alert('Check the box to confirm.');
+              return;
+            }
+            const res = await fetch(
+              `/api/v1/portal/session/${token}/approvals/${approvalId}/confirm?tenant_id=${tenantId}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirmed: true }),
+              },
+            );
+            if (res.ok) load(select?.value || data.project_id);
+            else alert('Approval could not be saved.');
+          });
+        });
+      }
+
+      select?.addEventListener('change', () => load(select.value));
+      load();
+    </script>
+  </body>
+</html>

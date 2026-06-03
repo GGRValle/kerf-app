@@ -1,0 +1,34 @@
+---
+import type { Lane3BrainSummary } from '../lib/lane3Fixtures.js';
+
+interface Props {
+  brain: Lane3BrainSummary;
+  nextActionLabel: string;
+  openBalanceLabel: string;
+  latestNoteLabel: string;
+}
+
+const { brain, nextActionLabel, openBalanceLabel, latestNoteLabel } = Astro.props;
+
+function formatCents(cents: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+}
+---
+
+<section class="lane3-brain" aria-label="Client business summary">
+  <h2>Business brain</h2>
+  <div class="lane3-brain-grid">
+    <div class="lane3-brain-card">
+      <span>{nextActionLabel}</span>
+      <strong>{brain.next_action}</strong>
+    </div>
+    <div class="lane3-brain-card">
+      <span>{openBalanceLabel}</span>
+      <strong>{formatCents(brain.open_balance_cents)}</strong>
+    </div>
+    <div class="lane3-brain-card">
+      <span>{latestNoteLabel}</span>
+      <strong>{brain.latest_note}</strong>
+    </div>
+  </div>
+</section>
