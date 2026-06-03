@@ -68,6 +68,8 @@ const project = id ? getLane23Project(id) : null;
           <p class="lane23-notice">{t('project.detail.budget')}: {formatCentsDisplay(project.budget_cents)}</p>
           <p class="lane23-notice">{t('project.detail.phase')}: {project.phase}</p>
           <div class="lane23-quick-links">
+            <a class="lane23-btn-link" href={`/projects/${project.project_id}/daily-log`}>Daily Log</a>
+            <a class="lane23-btn-link" href={`/projects/${project.project_id}/notes`}>Notes</a>
             <a class="lane23-btn-link" href={`/projects/${project.project_id}/field`}>{t('project.scope.link_field')}</a>
             <a class="lane23-btn-link" href="/relay">{t('project.scope.link_relay')}</a>
             <a class="lane23-btn-link" href={`/projects/${project.project_id}/audit`}>{t('project.scope.link_audit')}</a>

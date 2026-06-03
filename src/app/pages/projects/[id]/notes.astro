@@ -1,0 +1,249 @@
+---
+// F-PN1 · Project Notes · Lane 4
+// Dictate or type a note to Right Hand → it files as a durable Daily Log
+// artifact on this project → it appears in the list → it can be pinned.
+// Voice dictation uses the browser speech API where available (honest type
+// fallback otherwise); the durable note is the daily_log.entry_captured event.
+// Pin state is per-device (localStorage) and labelled as such — durable,
+// shared pinning ships with the Company Blackboard contract.
+import Layout from '../../../layouts/Layout.astro';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getLane23Project } from '../../../lib/lane23Fixtures.js';
+import { loadProjectAuditTrail } from '../../../../project/projectAuditProjection.js';
+import { deriveJobNotes } from '../../../lib/projectDailyLog.js';
+import '../../../styles/lane23.css';
+
+const { id } = Astro.params;
+const project = id ? getLane23Project(id) : null;
+
+const auditEntries = project
+  ? await loadProjectAuditTrail(getApiDeps().tenantReader, project.tenant_id, project.project_id)
+  : [];
+const notes = deriveJobNotes(auditEntries);
+
+function timeLabel(at: string): string {
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return at;
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+---
+
+<Layout title="Notes" activeHref="/projects">
+  {project === null ? (
+    <p>Project not found.</p>
+  ) : (
+    <div class="pn-page" data-project-id={project.project_id} data-tenant={project.tenant_id}>
+      <p class="pn-crumb"><a href={`/projects/${project.project_id}`}>‹ Back to job</a></p>
+      <header class="pn-header">
+        <p class="pn-eyebrow">Notes</p>
+        <h1>{project.project_name}</h1>
+        <p class="pn-meta">{project.client_name} · {project.address_line}</p>
+      </header>
+
+      <section class="pn-compose" aria-label="Add a note">
+        <textarea id="pn-input" rows="3" placeholder="Type a note, or tap Dictate to talk to Right Hand…"></textarea>
+        <div class="pn-compose-actions">
+          <button type="button" class="pn-btn" id="pn-dictate">🎤 Dictate</button>
+          <button type="button" class="pn-btn primary" id="pn-save">Save note</button>
+        </div>
+        <p class="pn-status" id="pn-status" role="status"></p>
+      </section>
+
+      {notes.length === 0 ? (
+        <div class="pn-empty">
+          <strong>No notes yet.</strong>
+          <span>Pinned notes stay on top so the crew sees them first.</span>
+        </div>
+      ) : (
+        <ul class="pn-list" id="pn-list">
+          {notes.map((note) => (
+            <li class="pn-note" data-entry-id={note.entry_id}>
+              <button type="button" class="pn-pin" aria-pressed="false" aria-label="Pin note">📌</button>
+              <div class="pn-note-body">
+                <p class="pn-note-text">{note.detail}</p>
+                <span class="pn-note-time">{timeLabel(note.at)}{note.needs_attention ? ' · flagged for office' : ''}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )}
+
+  <script>
+    const page = document.querySelector('.pn-page');
+    const projectId = page instanceof HTMLElement ? page.dataset.projectId ?? '' : '';
+    const tenantId = page instanceof HTMLElement ? page.dataset.tenant ?? '' : '';
+    const input = document.querySelector('#pn-input');
+    const status = document.querySelector('#pn-status');
+    const saveBtn = document.querySelector('#pn-save');
+    const dictateBtn = document.querySelector('#pn-dictate');
+    const list = document.querySelector('#pn-list');
+    const pinKey = `kerf.pinned.${projectId}`;
+
+    const setStatus = (msg) => { if (status instanceof HTMLElement) status.textContent = msg; };
+
+    const readPins = () => {
+      try { return new Set(JSON.parse(localStorage.getItem(pinKey) || '[]')); } catch { return new Set(); }
+    };
+    const writePins = (set) => {
+      try { localStorage.setItem(pinKey, JSON.stringify([...set])); } catch { /* device-only */ }
+    };
+
+    const applyPins = () => {
+      if (!(list instanceof HTMLElement)) return;
+      const pins = readPins();
+      const items = [...list.querySelectorAll('.pn-note')];
+      items.forEach((li) => {
+        if (!(li instanceof HTMLElement)) return;
+        const entryId = li.dataset.entryId || '';
+        const pinned = pins.has(entryId);
+        li.classList.toggle('pinned', pinned);
+        const btn = li.querySelector('.pn-pin');
+        if (btn instanceof HTMLElement) btn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+      });
+      // Pinned notes float to the top (device-local ordering).
+      items
+        .filter((li) => li instanceof HTMLElement && pins.has(li.dataset.entryId || ''))
+        .forEach((li) => list.prepend(li));
+    };
+
+    if (list instanceof HTMLElement) {
+      list.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const btn = target.closest('.pn-pin');
+        if (!btn) return;
+        const li = btn.closest('.pn-note');
+        const entryId = li instanceof HTMLElement ? li.dataset.entryId || '' : '';
+        if (!entryId) return;
+        const pins = readPins();
+        if (pins.has(entryId)) pins.delete(entryId); else pins.add(entryId);
+        writePins(pins);
+        applyPins();
+      });
+    }
+
+    const saveNote = async () => {
+      const text = input instanceof HTMLTextAreaElement ? input.value.trim() : '';
+      if (text.length === 0) { setStatus('Type or dictate a note first.'); return; }
+      if (!tenantId) { setStatus('Missing tenant. Cannot save the note.'); return; }
+      if (saveBtn instanceof HTMLElement) saveBtn.setAttribute('aria-busy', 'true');
+      setStatus('Saving note to this job…');
+      try {
+        const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            entry_kind: 'progress_update',
+            transcript_text: text,
+            audio_uri: null,
+            photo_uris: [],
+            actor: { id: 'browser_operator', role: 'field_super' },
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = typeof body.error === 'string' ? body.error : `save_failed_${res.status}`;
+          throw new Error(detail);
+        }
+        if (input instanceof HTMLTextAreaElement) input.value = '';
+        setStatus('Saved. Refreshing notes…');
+        window.location.reload();
+      } catch (err) {
+        if (saveBtn instanceof HTMLElement) saveBtn.removeAttribute('aria-busy');
+        setStatus(`Could not save: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    };
+
+    saveBtn?.addEventListener('click', () => { void saveNote(); });
+
+    // Voice dictation — progressive enhancement. Honest fallback to typing.
+    const win = window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any };
+    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (dictateBtn instanceof HTMLElement) {
+      if (!SpeechRecognition) {
+        dictateBtn.addEventListener('click', () => {
+          setStatus('Voice dictation is not available in this browser — type the note, or use the bottom mic.');
+        });
+      } else {
+        let recognizing = false;
+        const recog = new SpeechRecognition();
+        recog.lang = 'en-US';
+        recog.interimResults = true;
+        recog.continuous = false;
+        recog.addEventListener('result', (event: any) => {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            transcript += event.results[i][0].transcript;
+          }
+          if (input instanceof HTMLTextAreaElement) {
+            const base = input.value.replace(/\s*$/, '');
+            input.value = base.length > 0 ? `${base} ${transcript}` : transcript;
+          }
+        });
+        recog.addEventListener('end', () => { recognizing = false; dictateBtn.setAttribute('aria-pressed', 'false'); setStatus('Dictation stopped. Edit, then Save.'); });
+        recog.addEventListener('error', () => { recognizing = false; setStatus('Dictation error — type the note instead.'); });
+        dictateBtn.addEventListener('click', () => {
+          if (recognizing) { recog.stop(); return; }
+          try { recog.start(); recognizing = true; dictateBtn.setAttribute('aria-pressed', 'true'); setStatus('Listening… talk to Right Hand.'); }
+          catch { setStatus('Could not start dictation — type the note instead.'); }
+        });
+      }
+    }
+
+    applyPins();
+  </script>
+</Layout>
+
+<style>
+  .pn-page { max-width: 720px; margin: 0 auto; }
+  .pn-crumb { margin: 0 0 0.5rem; }
+  .pn-crumb a { color: var(--field-green, #38c977); font-weight: 700; text-decoration: none; }
+  .pn-header { margin-bottom: 1rem; }
+  .pn-eyebrow {
+    margin: 0; font-size: 0.7rem; letter-spacing: 0.11em; text-transform: uppercase;
+    font-weight: 800; color: var(--field-green, #38c977);
+  }
+  .pn-header h1 { margin: 0.15rem 0 0.2rem; font-size: 1.5rem; line-height: 1.15; }
+  .pn-meta { margin: 0; color: var(--kerf-text-dim, #6a7282); font-size: 0.9rem; }
+  .pn-compose {
+    display: grid; gap: 0.5rem; margin-bottom: 1.1rem; padding: 0.85rem;
+    border: 1px solid var(--kerf-border, #d8dee6); border-radius: 14px; background: var(--kerf-surface, #fff);
+  }
+  .pn-compose textarea {
+    width: 100%; box-sizing: border-box; font: inherit; font-size: 16px; resize: vertical;
+    padding: 0.6rem; border-radius: 10px; border: 1px solid var(--kerf-border, #d8dee6);
+    background: var(--kerf-bg-2, #f6f8fa); color: var(--kerf-text, #1a1f24);
+  }
+  .pn-compose-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+  .pn-btn {
+    padding: 0.5rem 0.95rem; border-radius: 999px; font: inherit; font-weight: 700; font-size: 0.85rem;
+    border: 1px solid var(--kerf-border, #d8dee6); background: var(--kerf-surface, #fff);
+    color: var(--kerf-text, #1a1f24); cursor: pointer;
+  }
+  .pn-btn.primary { background: var(--field-green, #38c977); border-color: var(--field-green, #38c977); color: #0a1a0f; }
+  .pn-btn[aria-busy='true'] { opacity: 0.6; }
+  .pn-btn[aria-pressed='true'] { background: rgba(56, 201, 119, 0.15); border-color: var(--field-green, #38c977); }
+  .pn-status { margin: 0; min-height: 1.1rem; font-size: 0.82rem; color: var(--kerf-text-dim, #6a7282); }
+  .pn-empty {
+    display: grid; gap: 0.25rem; padding: 1.5rem; text-align: center;
+    border: 1px dashed var(--kerf-border, #d8dee6); border-radius: 14px; color: var(--kerf-text-dim, #6a7282);
+  }
+  .pn-empty strong { color: var(--kerf-text, #1a1f24); }
+  .pn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .pn-note {
+    display: grid; grid-template-columns: auto 1fr; gap: 0.6rem; align-items: start;
+    padding: 0.7rem 0.85rem; border: 1px solid var(--kerf-border, #d8dee6); border-radius: 12px;
+    background: var(--kerf-surface, #fff);
+  }
+  .pn-note.pinned { border-left: 4px solid var(--field-green, #38c977); background: rgba(56, 201, 119, 0.05); }
+  .pn-pin {
+    background: none; border: 0; cursor: pointer; font-size: 1rem; opacity: 0.35; padding: 0; line-height: 1.4;
+  }
+  .pn-note.pinned .pn-pin { opacity: 1; }
+  .pn-note-body { display: grid; gap: 0.2rem; }
+  .pn-note-text { margin: 0; line-height: 1.45; color: var(--kerf-text, #1a1f24); }
+  .pn-note-time { font-size: 0.74rem; color: var(--kerf-text-dim, #6a7282); }
+</style>

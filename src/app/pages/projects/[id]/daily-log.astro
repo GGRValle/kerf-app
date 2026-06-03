@@ -1,0 +1,148 @@
+---
+// F-DL* · Project Daily Log · Lane 4
+// The job-note landing surface: field captures (camera / voice) file here as
+// durable Daily Log artifacts, and Right Hand's office-review flags surface as
+// the paired attention artifact on the matching note. Read-only render of the
+// tenant-scoped project audit projection, friendly job-note shape.
+import Layout from '../../../layouts/Layout.astro';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getLane23Project } from '../../../lib/lane23Fixtures.js';
+import { loadProjectAuditTrail } from '../../../../project/projectAuditProjection.js';
+import { deriveJobNotes, attentionCount } from '../../../lib/projectDailyLog.js';
+import '../../../styles/lane23.css';
+
+const { id } = Astro.params;
+const project = id ? getLane23Project(id) : null;
+
+const auditEntries = project
+  ? await loadProjectAuditTrail(getApiDeps().tenantReader, project.tenant_id, project.project_id)
+  : [];
+const notes = deriveJobNotes(auditEntries);
+const attentionNotes = attentionCount(notes);
+
+const justFiled = Astro.url.searchParams.get('filed');
+const fromCamera = Astro.url.searchParams.get('src') === 'camera';
+
+function timeLabel(at: string): string {
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return at;
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+---
+
+<Layout title="Daily Log" activeHref="/projects">
+  {project === null ? (
+    <p>Project not found.</p>
+  ) : (
+    <div class="dl-page" data-project-id={project.project_id} data-tenant={project.tenant_id}>
+      <p class="dl-crumb"><a href={`/projects/${project.project_id}`}>‹ Back to job</a></p>
+      <header class="dl-header">
+        <p class="dl-eyebrow">Daily Log</p>
+        <h1>{project.project_name}</h1>
+        <p class="dl-meta">{project.client_name} · {project.address_line}</p>
+      </header>
+
+      {fromCamera && (
+        <aside class="dl-filed" role="status">
+          <strong>Capture filed to today's Daily Log.</strong>
+          <span>Right Hand reviewed it and will flag anything that needs the office.</span>
+        </aside>
+      )}
+
+      <section class="dl-summary" aria-label="Daily Log summary">
+        <div class="dl-stat"><span class="dl-stat-n">{notes.length}</span><span class="dl-stat-l">job notes</span></div>
+        <div class="dl-stat"><span class="dl-stat-n">{attentionNotes}</span><span class="dl-stat-l">need the office</span></div>
+      </section>
+
+      <div class="dl-actions">
+        <a class="dl-btn primary" href={`/camera?src=project&mode=photo&project_id=${project.project_id}&return_to=/projects/${project.project_id}/daily-log`}>Open Camera</a>
+        <a class="dl-btn" href={`/projects/${project.project_id}/notes`}>Notes</a>
+      </div>
+
+      {notes.length === 0 ? (
+        <div class="dl-empty">
+          <strong>No job notes yet.</strong>
+          <span>Capture a photo, scan, or walkthrough — it files here automatically.</span>
+        </div>
+      ) : (
+        <ul class="dl-list">
+          {notes.map((note) => (
+            <li class:list={['dl-note', note.needs_attention && 'attention', justFiled && justFiled === note.entry_id && 'just-filed']}>
+              <div class="dl-note-head">
+                <span class="dl-note-kind">{note.headline}</span>
+                <span class="dl-note-time">{timeLabel(note.at)}</span>
+              </div>
+              <p class="dl-note-detail">{note.detail}</p>
+              <div class="dl-note-foot">
+                {note.media_count > 0 && <span class="dl-tag">{note.media_count} photo{note.media_count === 1 ? '' : 's'}</span>}
+                {note.has_audio && <span class="dl-tag">voice</span>}
+                {note.needs_attention && (
+                  <a class="dl-attention" href="/relay">{note.attention_reason} · Open office review →</a>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )}
+</Layout>
+
+<style>
+  .dl-page { max-width: 720px; margin: 0 auto; }
+  .dl-crumb { margin: 0 0 0.5rem; }
+  .dl-crumb a { color: var(--field-green, #38c977); font-weight: 700; text-decoration: none; }
+  .dl-header { margin-bottom: 1rem; }
+  .dl-eyebrow {
+    margin: 0; font-size: 0.7rem; letter-spacing: 0.11em; text-transform: uppercase;
+    font-weight: 800; color: var(--field-green, #38c977);
+  }
+  .dl-header h1 { margin: 0.15rem 0 0.2rem; font-size: 1.5rem; line-height: 1.15; }
+  .dl-meta { margin: 0; color: var(--kerf-text-dim, #6a7282); font-size: 0.9rem; }
+  .dl-filed {
+    display: grid; gap: 0.2rem; margin: 0 0 1rem; padding: 0.7rem 0.9rem;
+    border: 1px solid rgba(56, 201, 119, 0.35);
+    border-left: 3px solid var(--field-green, #38c977);
+    border-radius: 10px; background: rgba(56, 201, 119, 0.07);
+  }
+  .dl-filed strong { color: var(--field-green, #38c977); }
+  .dl-filed span { color: var(--kerf-text-dim, #6a7282); font-size: 0.85rem; }
+  .dl-summary { display: flex; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .dl-stat {
+    flex: 1; display: grid; gap: 0.1rem; padding: 0.65rem 0.8rem;
+    border: 1px solid var(--kerf-border, #d8dee6); border-radius: 12px;
+    background: var(--kerf-surface, #fff);
+  }
+  .dl-stat-n { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+  .dl-stat-l { font-size: 0.72rem; color: var(--kerf-text-dim, #6a7282); text-transform: uppercase; letter-spacing: 0.06em; }
+  .dl-actions { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .dl-btn {
+    padding: 0.5rem 0.9rem; border-radius: 999px; font-weight: 700; font-size: 0.85rem;
+    border: 1px solid var(--kerf-border, #d8dee6); color: var(--kerf-text, #1a1f24);
+    text-decoration: none;
+  }
+  .dl-btn.primary { background: var(--field-green, #38c977); border-color: var(--field-green, #38c977); color: #0a1a0f; }
+  .dl-empty {
+    display: grid; gap: 0.25rem; padding: 1.5rem; text-align: center;
+    border: 1px dashed var(--kerf-border, #d8dee6); border-radius: 14px; color: var(--kerf-text-dim, #6a7282);
+  }
+  .dl-empty strong { color: var(--kerf-text, #1a1f24); }
+  .dl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+  .dl-note {
+    display: grid; gap: 0.4rem; padding: 0.8rem 0.95rem;
+    border: 1px solid var(--kerf-border, #d8dee6); border-radius: 14px;
+    background: var(--kerf-surface, #fff);
+  }
+  .dl-note.attention { border-left: 4px solid var(--kerf-amber, #f5b544); }
+  .dl-note.just-filed { box-shadow: 0 0 0 2px rgba(56, 201, 119, 0.4); }
+  .dl-note-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+  .dl-note-kind { font-weight: 800; font-size: 0.9rem; }
+  .dl-note-time { color: var(--kerf-text-dim, #6a7282); font-size: 0.74rem; white-space: nowrap; }
+  .dl-note-detail { margin: 0; line-height: 1.45; color: var(--kerf-text, #1a1f24); }
+  .dl-note-foot { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .dl-tag {
+    font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px;
+    background: var(--kerf-bg-2, #f2f4f6); color: var(--kerf-text-dim, #6a7282);
+  }
+  .dl-attention { color: var(--kerf-amber, #b4801a); font-weight: 700; font-size: 0.78rem; text-decoration: none; }
+</style>
