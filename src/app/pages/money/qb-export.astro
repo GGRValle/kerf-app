@@ -5,6 +5,8 @@ import Card from '../../components/Card.astro';
 import ExportActions from '../../components/ExportActions.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import { projectForRole, DEFAULT_BUSINESS_GRAPH_SLICE } from '../../lib/roleRootProjection.js';
+import { MONEY_AP_ROWS, formatMoneyUsd } from '../../lib/moneyFixtures.js';
+import { apRowsToBills, iifTotalCents } from '../../lib/qbIifExport.js';
 import '../../styles/money.css';
 
 const { t, context } = createLayoutContext();
@@ -12,6 +14,14 @@ const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
 if (!projected.capabilities.moneyRead) {
   return Astro.redirect('/');
 }
+
+// Real numbers: the IIF is built from the live AP queue, in integer cents.
+const exportDate = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+  .format(new Date())
+  .replace(/-/g, '/');
+const bills = apRowsToBills(MONEY_AP_ROWS, exportDate);
+const totalCents = iifTotalCents(bills);
+const billsJson = JSON.stringify(bills);
 ---
 
 <Layout titleKey="f_bk.qb.title" activeHref="/money">
@@ -26,15 +36,27 @@ if (!projected.capabilities.moneyRead) {
       <Card title={t('f_bk.qb.panel_title')}>
         <p>{t('f_bk.qb.lede')}</p>
         <div class="money-qb-panel">
-          <p><strong>{t('f_bk.qb.last_export')}</strong> — May 24, 2026 · 142 rows · validated</p>
+          <p><strong>Staged for export</strong> — {bills.length} A/P bill{bills.length === 1 ? '' : 's'} · {formatMoneyUsd(totalCents)} · QuickBooks Desktop IIF</p>
           <p class="money-notice">{t('f_bk.qb.desktop_note')}</p>
         </div>
+
+        <div
+          class="money-iif"
+          data-bills={billsJson}
+          data-tenant-id={context.tenantId}
+          data-total-cents={String(totalCents)}
+        >
+          <button type="button" class="money-btn primary" id="qb-iif-download">
+            {t('f_bk.qb.export_iif')} ({bills.length})
+          </button>
+          <p class="export-status" id="qb-iif-status" role="status" aria-live="polite"></p>
+        </div>
+
         <ExportActions
           surface="money.qb_iif_export"
           scopeDescriptor="QuickBooks Desktop IIF · operating money"
-          itemCount={142}
+          itemCount={bills.length}
           actions={[
-            { label: t('f_bk.qb.export_iif'), format: 'iif' },
             { label: t('f_mn.export.csv'), format: 'csv' },
             { label: t('action.print'), format: 'print' },
           ]}
@@ -43,4 +65,53 @@ if (!projected.capabilities.moneyRead) {
       </Card>
     </SurfaceIrreversibilityWrap>
   </article>
+
+  <script>
+    import { billsToIif } from '../../lib/qbIifExport.js';
+
+    const root = document.querySelector('.money-iif');
+    const button = document.querySelector('#qb-iif-download');
+    const status = document.querySelector('#qb-iif-status');
+    const setStatus = (msg: string) => { if (status instanceof HTMLElement) status.textContent = msg; };
+
+    if (root instanceof HTMLElement && button instanceof HTMLButtonElement) {
+      const tenantId = root.dataset.tenantId || 'tenant_ggr';
+      let bills: any[] = [];
+      try { bills = JSON.parse(root.dataset.bills || '[]'); } catch { bills = []; }
+
+      button.addEventListener('click', async () => {
+        if (bills.length === 0) { setStatus('Nothing staged to export.'); return; }
+        // Generate the IIF file locally and hand it to the operator. This is a
+        // file download, never a live post to QuickBooks.
+        const iif = billsToIif(bills);
+        const blob = new Blob([iif], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'kerf-ap-quickbooks.iif';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setStatus(`IIF file downloaded · ${bills.length} bills. Import it into QuickBooks Desktop — no money was posted.`);
+
+        // Record the egress in the audit trail (no money mutation).
+        try {
+          await fetch(`/api/v1/money/export?tenant_id=${encodeURIComponent(tenantId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              surface: 'money.qb_iif_export',
+              format: 'iif',
+              scope_descriptor: 'QuickBooks Desktop IIF · operating money',
+              owner_private: false,
+              item_count: bills.length,
+            }),
+          });
+        } catch {
+          setStatus(`IIF file downloaded · ${bills.length} bills. (Audit record could not be saved — file is still valid.)`);
+        }
+      });
+    }
+  </script>
 </Layout>
