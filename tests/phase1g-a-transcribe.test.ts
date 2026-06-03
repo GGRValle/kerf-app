@@ -19,7 +19,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { apiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
+
+const apiRouter = createAuthenticatedApiRouter();
 import {
   __setTranscribeDepsForTests,
   type TranscribeRouteDeps,

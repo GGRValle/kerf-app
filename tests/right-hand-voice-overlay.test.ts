@@ -23,7 +23,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { apiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
+
+const apiRouter = createAuthenticatedApiRouter();
 import {
   __setRealtimeDepsForTests,
   type RealtimeRouteDeps,

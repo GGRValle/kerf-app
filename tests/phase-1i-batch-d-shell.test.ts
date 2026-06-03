@@ -78,7 +78,8 @@ test('F-CAM1 V1 camera shell gates on job and keeps modes inline', () => {
   assert.match(src, /id="camera-scan-input"/);
   assert.match(src, /sessionStorage\.setItem\('kerf\.cameraCapture'/);
   assert.match(src, /Captured this session/);
-  assert.match(src, /attached_to_session/);
+  assert.match(src, /preview_only_not_filed/);
+  assert.match(src, /Not filed yet/);
   assert.match(src, /ready_for_job_file/);
   assert.match(src, /Nothing captured yet/);
   assert.match(src, /href="\/room-capture\?src=camera&mode=start"/);

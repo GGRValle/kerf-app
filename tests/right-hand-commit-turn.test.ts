@@ -4,7 +4,8 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { apiRouter, createApiRouter } from '../src/api/router.js';
+import { createApiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import {
   __setRightHandTurnDepsForTests,
@@ -95,7 +96,7 @@ async function postCommit(
   } else if (session === 'valle') {
     headers['Authorization'] = 'Bearer psess_test_valle_pm';
   }
-  return apiRouter.request('/right-hand/commit-turn', {
+  return createAuthenticatedApiRouter().request('/right-hand/commit-turn', {
     method: 'POST',
     headers,
     body: JSON.stringify(body),

@@ -4,7 +4,9 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { apiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
+
+const apiRouter = createAuthenticatedApiRouter();
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 
 const HENDERSON_TRANSCRIPT =

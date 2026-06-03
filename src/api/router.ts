@@ -35,17 +35,5 @@ export function createApiRouter(): Hono {
   return app;
 }
 
-function withDefaultPlatformSession(app: Hono): Hono {
-  const baseRequest = app.request.bind(app);
-  app.request = (input: RequestInfo | URL, init?: RequestInit) => {
-    const headers = new Headers(init?.headers);
-    if (!headers.has('Authorization')) {
-      headers.set('Authorization', 'Bearer psess_test_ggr_owner');
-    }
-    return baseRequest(input, { ...init, headers });
-  };
-  return app;
-}
-
-/** Mounted at /api/v1 by the shell server (tests default to GGR platform session when unauthenticated). */
-export const apiRouter = withDefaultPlatformSession(createApiRouter());
+/** Mounted at /api/v1 by the shell server — no implicit platform session (Wall 1 fail-closed). */
+export const apiRouter = createApiRouter();

@@ -113,8 +113,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         <div class="cam-captured__item" id="cam-captured-item">
           <div class="cam-thumb" id="cam-thumb" aria-hidden="true"></div>
           <div class="cam-captured__copy">
-            <strong id="cam-captured-title">Capture ready</strong>
-            <span id="cam-captured-detail">Attached to this session.</span>
+            <strong id="cam-captured-title">Preview only</strong>
+            <span id="cam-captured-detail">Not filed yet — capture wiring pending.</span>
           </div>
         </div>
       </section>
@@ -193,6 +193,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       const input = inputForMode();
       if (input instanceof HTMLInputElement) input.click();
     };
+    // TODO(lane-3): replace honest-stub with real capture confirmation when Daily Log wiring lands.
     const onSelectedFile = (file, kind) => {
       if (!file) return;
       const objectUrl = kind === 'photo' && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
@@ -202,7 +203,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         project_id: selectedProjectId,
         project_name: selectedProjectName,
         at: Date.now(),
-        status: 'attached_to_session',
+        status: 'preview_only_not_filed',
       };
       try {
         sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(lastCapture));
@@ -210,17 +211,19 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         // Visible state still tells the operator what happened.
       }
       const friendly = kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
+      if (root instanceof HTMLElement) root.classList.add('has-capture');
       if (captured instanceof HTMLElement) captured.hidden = false;
-      if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} ready`;
+      if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.hidden = true;
+      if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} · preview only`;
       if (capturedDetail instanceof HTMLElement) {
-        capturedDetail.textContent = `${file.name || friendly} · attached to ${selectedProjectName} for this session.`;
+        capturedDetail.textContent = 'Not filed yet — capture wiring pending (Lane 3).';
       }
       if (thumb instanceof HTMLElement) {
         thumb.className = `cam-thumb ${kind === 'photo' ? 'is-photo' : kind === 'scan' ? 'is-scan' : 'is-video'}`;
         thumb.style.backgroundImage = objectUrl ? `url("${objectUrl}")` : '';
         thumb.textContent = objectUrl ? '' : kind === 'walkthrough' ? 'REC' : kind === 'scan' ? 'DOC' : 'IMG';
       }
-      setStatus(`${friendly} attached to ${selectedProjectName} for this session. Tap Done to return.`);
+      setStatus(`${friendly} preview on device only — not filed to Daily Log yet. Tap Done to return.`);
     };
     const done = () => {
       if (!selectedProjectId) {
@@ -595,6 +598,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     text-align: center;
     line-height: 1.35;
     font-size: 0.76rem;
+  }
+  .f-cam1.has-capture .cam-viewfinder__copy {
+    visibility: hidden;
   }
   .cam-captured[hidden] {
     display: none;
