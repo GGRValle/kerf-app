@@ -1,0 +1,64 @@
+---
+import RightHandHomeSurface from './RightHandHomeSurface.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { wireframeIdForRole } from '../lib/roleSession.js';
+import type { RoleRoot } from '../lib/layout-props.js';
+
+export interface Props {
+  roleRoot: RoleRoot;
+  wireframeOverride?: string;
+}
+
+const { roleRoot, wireframeOverride } = Astro.props as Props;
+const { t } = createLayoutContext({ roleRoot });
+const wireframe = wireframeOverride ?? wireframeIdForRole(roleRoot);
+const ROLE_LABEL_KEYS = {
+  owner: 'roleRoot.owner',
+  pm: 'roleRoot.pm',
+  admin_ops: 'roleRoot.admin_ops',
+  field_hand: 'roleRoot.field_hand',
+  sub: 'roleRoot.sub',
+} as const;
+---
+
+<section class="role-home" data-wireframe={wireframe} data-role-root={roleRoot}>
+  <p class="role-home__wireframe">{wireframe} · {t(ROLE_LABEL_KEYS[roleRoot])}</p>
+  {roleRoot === 'owner' ? (
+    <RightHandHomeSurface />
+  ) : (
+    <div class="role-home__stub">
+      <strong>{t('platform.home.stub_title')}</strong>
+      <p>{t('platform.home.stub_body')}</p>
+      <ul class="role-home__links">
+        <li><a href="/field-capture">{t('nav.field_capture')}</a></li>
+        <li><a href="/projects">{t('nav.projects')}</a></li>
+        <li><a href="/on-me">{t('platform.on_me.nav')}</a></li>
+      </ul>
+    </div>
+  )}
+</section>
+
+<style>
+  .role-home__wireframe {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--kerf-amber, #f5b544);
+    margin: 0 0 0.75rem;
+  }
+  .role-home__stub {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    color: var(--text-muted);
+  }
+  .role-home__stub strong {
+    display: block;
+    color: var(--text);
+    margin-bottom: 0.35rem;
+  }
+  .role-home__links {
+    margin: 0.75rem 0 0;
+    padding-left: 1.1rem;
+  }
+</style>

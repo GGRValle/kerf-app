@@ -1,7 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import RightHandHomeSurface from '../components/RightHandHomeSurface.astro';
+import RoleHomeSurface from '../components/RoleHomeSurface.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { parseRoleRootCookie, ROLE_ROOT_COOKIE } from '../lib/roleSession.js';
+
+const cookieRole = parseRoleRootCookie(Astro.cookies.get(ROLE_ROOT_COOKIE)?.value);
+const { context } = createLayoutContext({ roleRoot: cookieRole ?? undefined });
 ---
-<Layout titleKey="home.title" activeHref="/">
-  <RightHandHomeSurface />
+
+<Layout context={context} titleKey="home.title" activeHref="/">
+  <RoleHomeSurface roleRoot={context.roleRoot} />
 </Layout>

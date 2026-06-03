@@ -1,0 +1,134 @@
+---
+/**
+ * F-RH3/RH4 · right-docked, bottom-anchored conversation (desktop shell).
+ * Speak opens the global voice overlay; this dock is the persistent projection surface.
+ */
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import type { I18nKey } from '../../i18n/keys.js';
+import type { RoleRoot } from '../lib/layout-props.js';
+
+const { t, context } = createLayoutContext();
+const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
+  owner: 'roleRoot.owner',
+  pm: 'roleRoot.pm',
+  admin_ops: 'roleRoot.admin_ops',
+  field_hand: 'roleRoot.field_hand',
+  sub: 'roleRoot.sub',
+};
+const operatorName = context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner'
+  ? 'Christian'
+  : context.roleRoot;
+---
+
+<aside class="kerf-rh-dock" aria-label={t('shell.conversation.aria')}>
+  <header class="kerf-rh-dock__head">
+    <span class="kerf-rh-dock__brand">{t('right_hand.title')}</span>
+    <span class="kerf-rh-dock__role">{t(ROLE_LABEL_KEYS[context.roleRoot])}</span>
+  </header>
+  <div class="kerf-rh-dock__thread" id="kerf-rh-dock-thread">
+    <p class="kerf-rh-dock__hint">{t('shell.conversation.hint')}</p>
+  </div>
+  <form class="kerf-rh-dock__composer" action="/right-hand" method="get">
+    <button type="button" class="kerf-rh-dock__import" aria-label={t('shell.conversation.import')}>+</button>
+    <label class="sr-only" for="kerf-rh-dock-input">{t('shell.conversation.input_label')}</label>
+    <textarea
+      id="kerf-rh-dock-input"
+      name="q"
+      rows="2"
+      placeholder={t('shell.conversation.placeholder')}
+    ></textarea>
+    <a class="kerf-rh-dock__speak" href="/right-hand" data-rh-speak>{t('shell.nav.speak')}</a>
+  </form>
+  <p class="kerf-rh-dock__meta">Hi {operatorName} — mic stays available while you confirm durable writes.</p>
+</aside>
+
+<style>
+  .kerf-rh-dock {
+    display: none;
+  }
+  @media (min-width: 900px) {
+    .kerf-rh-dock {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      min-height: calc(100dvh - 3.5rem);
+      position: sticky;
+      top: 3.5rem;
+      align-self: start;
+    }
+    .kerf-rh-dock__head {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .kerf-rh-dock__brand {
+      color: var(--right-hand, #c9a961);
+      font-weight: 700;
+    }
+    .kerf-rh-dock__thread {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .kerf-rh-dock__composer {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--border);
+      align-items: end;
+    }
+    .kerf-rh-dock__import {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .kerf-rh-dock textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 2.5rem;
+      max-height: 8rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 0.5rem 0.65rem;
+      font: inherit;
+    }
+    .kerf-rh-dock__speak {
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .kerf-rh-dock__meta {
+      margin: 0;
+      padding: 0 1rem 0.75rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+</style>

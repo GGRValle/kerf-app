@@ -22,6 +22,8 @@ export interface WorkArtifactRef {
   /** Stable deep link into the owning record (no PII in path segments). */
   readonly surface_route: string;
   readonly created_at: string;
+  /** Optional cross-link when emit order is work-first (fix-queue). */
+  readonly attention_id?: string;
 }
 
 export interface JobNoteWorkArtifact extends WorkArtifactRef {

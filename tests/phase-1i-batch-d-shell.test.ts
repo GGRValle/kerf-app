@@ -50,7 +50,7 @@ test('shell.css reserves space for mobile bottom nav', () => {
 });
 test('home index uses the Right Hand home surface', () => {
   const src = read('src/app/pages/index.astro');
-  assert.match(src, /RightHandHomeSurface/);
+  assert.match(src, /RoleHomeSurface/);
   assert.match(src, /home\.title/);
 });
 test('nav includes schedule, reports, and settings', () => {

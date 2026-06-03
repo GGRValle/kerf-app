@@ -1,0 +1,37 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AttentionCard from '../components/AttentionCard.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { parseRoleRootCookie, ROLE_ROOT_COOKIE } from '../lib/roleSession.js';
+import { ensureDemoAttentionSeed, listRankedAttention } from '../../platform/attentionStore.js';
+import type { ShellRoleRoot } from '../../contracts/lane1/domains.js';
+
+const cookieRole = parseRoleRootCookie(Astro.cookies.get(ROLE_ROOT_COOKIE)?.value);
+const { context, t } = createLayoutContext({ roleRoot: cookieRole ?? undefined });
+const role = context.roleRoot as ShellRoleRoot;
+ensureDemoAttentionSeed(context.tenantId);
+const items = listRankedAttention({ tenantId: context.tenantId, role, limit: 12 });
+---
+
+<Layout context={context} titleKey="platform.on_me.title" activeHref="/on-me">
+  <section class="on-me" data-wireframe="F-ON1">
+    <header class="on-me__head">
+      <h1>{t('platform.on_me.title')}</h1>
+      <p>{t('platform.on_me.subtitle')}</p>
+    </header>
+    <div class="on-me__list">
+      {items.length > 0 ? (
+        items.map((artifact) => <AttentionCard artifact={artifact} variant="deck" />)
+      ) : (
+        <p class="on-me__empty">{t('platform.on_me.empty')}</p>
+      )}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .on-me__head { margin-bottom: 1rem; }
+  .on-me__head h1 { margin: 0 0 0.35rem; }
+  .on-me__list { display: grid; gap: 0.65rem; }
+  .on-me__empty { color: var(--text-muted); font-style: italic; }
+</style>

@@ -29,8 +29,15 @@ export function resolveAuthBinding(username: string | undefined): AuthBinding {
 }
 
 export function resolveRoleRootContext(params: {
-  username?: string; locale?: AppLocale; tenantId?: PersistenceTenantId;
+  username?: string;
+  locale?: AppLocale;
+  tenantId?: PersistenceTenantId;
+  roleRoot?: RoleRoot;
 }): RoleRootContext {
   const binding = resolveAuthBinding(params.username);
-  return { tenantId: params.tenantId ?? binding.tenantId, roleRoot: binding.roleRoot, locale: params.locale ?? binding.locale };
+  return {
+    tenantId: params.tenantId ?? binding.tenantId,
+    roleRoot: params.roleRoot ?? binding.roleRoot,
+    locale: params.locale ?? binding.locale,
+  };
 }

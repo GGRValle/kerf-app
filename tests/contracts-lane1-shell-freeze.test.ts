@@ -73,6 +73,15 @@ test('Contract 2 · registerSurface enforces backTo on non-home routes', () => {
   });
   assert.equal(homeWithBack.ok, false);
 
+  const emptyScope = validateRegisterSurfaceInput({
+    domain: 'projects',
+    route: '/projects',
+    roleScope: [],
+    component: 'ProjectsIndex',
+    backTo: '/',
+  });
+  assert.equal(emptyScope.ok, false);
+
   const registry = createInMemorySurfaceRegistry();
   const home = registry.register({
     domain: 'home',

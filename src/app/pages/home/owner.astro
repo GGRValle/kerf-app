@@ -1,0 +1,13 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import RoleHomeSurface from '../../components/RoleHomeSurface.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { parseRoleRootCookie, ROLE_ROOT_COOKIE } from '../../lib/roleSession.js';
+
+const cookieRole = parseRoleRootCookie(Astro.cookies.get(ROLE_ROOT_COOKIE)?.value) ?? 'owner';
+const { context } = createLayoutContext({ roleRoot: cookieRole });
+---
+
+<Layout context={context} titleKey="home.title" activeHref="/">
+  <RoleHomeSurface roleRoot="owner" wireframeOverride="F-A2" />
+</Layout>

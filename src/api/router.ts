@@ -12,6 +12,7 @@ import { reviewRoutes } from './routes/review.js';
 import { transcribeRoutes } from './routes/transcribe.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { rightHandTurnRoutes } from './routes/rightHandTurn.js';
+import { attentionRoutes } from './routes/attention.js';
 
 export function createApiRouter(): Hono {
   const app = new Hono();
@@ -28,6 +29,7 @@ export function createApiRouter(): Hono {
   app.route('/', transcribeRoutes);
   app.route('/', realtimeRoutes);
   app.route('/', rightHandTurnRoutes);
+  app.route('/', attentionRoutes);
   return app;
 }
 

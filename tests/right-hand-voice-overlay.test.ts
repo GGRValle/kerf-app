@@ -806,7 +806,7 @@ test('Home folds the resolved turn into the shared Attention Artifact queue', ()
   const surface = readFileSync(path.join(ROOT, 'src/app/components/RightHandHomeSurface.astro'), 'utf8');
   const card = readFileSync(path.join(ROOT, 'src/app/lib/attentionArtifactCard.ts'), 'utf8');
   // Mounted on the Right Hand home surface.
-  assert.match(home, /RightHandHomeSurface/);
+  assert.match(home, /RoleHomeSurface/);
   assert.doesNotMatch(surface, /RightHandResultCard/);
   assert.match(surface, /The one thing/);
   assert.match(surface, /On deck/);

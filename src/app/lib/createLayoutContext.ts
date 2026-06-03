@@ -8,7 +8,11 @@ export interface LayoutRuntimeContext {
   readonly t: Translator['t'];
 }
 
-export function createLayoutContext(params?: { username?: string; locale?: AppLocale }): LayoutRuntimeContext {
+export function createLayoutContext(params?: {
+  username?: string;
+  locale?: AppLocale;
+  roleRoot?: import('./layout-props.js').RoleRoot;
+}): LayoutRuntimeContext {
   const context = resolveRoleRootContext(params ?? {});
   const translator = createTranslator(context.locale);
   return { context, translator, t: translator.t.bind(translator) };

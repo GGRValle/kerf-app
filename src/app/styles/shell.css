@@ -213,6 +213,39 @@ body {
     flex: 1;
   }
   .kerf-topbar-rh {
+    display: grid;
+  }
+  .kerf-shell--desktop-rh .kerf-shell__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) min(380px, 34vw);
+    flex: 1;
+    align-items: stretch;
+  }
+  .kerf-shell--desktop-rh .kerf-main {
+    width: auto;
+    max-width: none;
+    margin: 0;
+  }
+  .kerf-role-chip {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .kerf-role-chip select {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+  }
+}
+
+@media (max-width: 899px) {
+  .kerf-role-chip {
     display: none;
   }
 }
