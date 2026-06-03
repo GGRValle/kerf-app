@@ -18,6 +18,12 @@ export interface ShellSidebarContract {
   readonly domains: readonly ShellBusinessDomain[];
   readonly drillDownExpand: true;
   readonly highlightCurrentSubSurface: true;
+  /**
+   * Sidebar domain visibility derives from route registration — no parallel
+   * domain×role list. A role sees a domain iff `registerSurface()` has at least
+   * one surface in that domain whose `roleScope` includes the role (D-060).
+   */
+  readonly roleVisibilityDerivesFrom: 'register_surface_role_scope';
 }
 
 export interface ShellConversationPanelContract {
@@ -73,6 +79,7 @@ export const APP_SHELL_CONTRACT: AppShellContract = {
     ],
     drillDownExpand: true,
     highlightCurrentSubSurface: true,
+    roleVisibilityDerivesFrom: 'register_surface_role_scope',
   },
   contentSlot: true,
   conversationPanel: {

@@ -2,7 +2,7 @@
 
 **Branch:** `lane-1-shell-routing-contracts`  
 **Worktree:** `/Users/christianasdal/code/kerf-app-lane-1` (dedicated — not the shared checkout)  
-**Contract version:** `2026-06-02.0`
+**Contract version:** `2026-06-02.1` (conformance patch — markup rule, `library_ref`, `ATTENTION_STATE_VISUAL`, sidebar derivation doc)
 
 ## Day-1 deliverable (dependency root)
 

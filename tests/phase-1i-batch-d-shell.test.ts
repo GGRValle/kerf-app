@@ -31,15 +31,19 @@ test('served shell exposes build stamp for path-truth verification', () => {
   const layout = read('src/app/layouts/Layout.astro');
   const shell = read('scripts/serve-kerf-shell.ts');
   const api = read('src/api/routes/projects.ts');
+  const buildStamp = read('src/shell/buildStamp.ts');
   assert.match(layout, /meta name="kerf-build-commit"/);
   assert.match(layout, /data-build-commit/);
   assert.match(layout, /data-build-dirty/);
-  assert.match(shell, /KERF_BUILD_COMMIT/);
-  assert.match(shell, /KERF_BUILD_DIRTY/);
-  assert.match(shell, /gitOutput\(\['rev-parse', 'HEAD'\]\)/);
-  assert.match(shell, /build: \{/);
-  assert.match(api, /build: \{/);
-  assert.match(api, /KERF_BUILD_COMMIT/);
+  assert.match(shell, /stampServedBuild/);
+  assert.match(shell, /readBuildStamp/);
+  assert.match(shell, /buildStampPayload\(stamp\)/);
+  assert.match(api, /readBuildStamp/);
+  assert.match(api, /buildStampPayload\(stamp\)/);
+  // Top-level commit + boolean dirty is the path-truth shape (nested build kept for legacy readers).
+  assert.match(buildStamp, /commit: stamp\.commit/);
+  assert.match(buildStamp, /dirty: stamp\.dirty/);
+  assert.match(buildStamp, /build: \{/);
 });
 test('shell.css reserves space for mobile bottom nav', () => {
   assert.match(read('src/app/styles/shell.css'), /5\.5rem/);
