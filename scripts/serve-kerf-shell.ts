@@ -13,6 +13,7 @@ import { getRequestListener } from '@hono/node-server';
 import { Hono } from 'hono';
 
 import { apiRouter } from '../src/api/router.ts';
+import { buildStampPayload, readBuildStamp } from '../src/shell/buildStamp.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -105,19 +106,14 @@ async function main(): Promise<void> {
   const astroHandler = await loadAstroHandler();
   const edge = new Hono();
 
-  edge.get('/health', (c) =>
-    c.json({
-      ok: true,
-      service: 'kerf-shell',
+  edge.get('/health', (c) => {
+    const stamp = readBuildStamp();
+    return c.json({
+      ...buildStampPayload(stamp),
       astro: true,
       auth_exempt: true,
-      build: {
-        commit: process.env['KERF_BUILD_COMMIT'] ?? 'unknown',
-        dirty: process.env['KERF_BUILD_DIRTY'] ?? 'unknown',
-        source: process.env['KERF_BUILD_SOURCE'] ?? 'unknown',
-      },
-    }),
-  );
+    });
+  });
   edge.route('/api/v1', apiRouter);
 
   const honoListener = getRequestListener(edge.fetch);

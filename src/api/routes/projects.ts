@@ -3,23 +3,19 @@ import { Hono } from 'hono';
 import type { PersistenceTenantId } from '../../persistence/events.js';
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import { buildStampPayload, readBuildStamp } from '../../shell/buildStamp.js';
 
 export const healthRoutes = new Hono();
 
-healthRoutes.get('/health', (c) =>
-  c.json({
-    ok: true,
-    service: 'kerf-shell',
+healthRoutes.get('/health', (c) => {
+  const stamp = readBuildStamp();
+  return c.json({
+    ...buildStampPayload(stamp),
     auth_enabled:
       typeof process.env['BASIC_AUTH_USER'] === 'string' &&
       process.env['BASIC_AUTH_USER'].length > 0,
-    build: {
-      commit: process.env['KERF_BUILD_COMMIT'] ?? 'unknown',
-      dirty: process.env['KERF_BUILD_DIRTY'] ?? 'unknown',
-      source: process.env['KERF_BUILD_SOURCE'] ?? 'unknown',
-    },
-  }),
-);
+  });
+});
 
 export const projectRoutes = new Hono();
 
