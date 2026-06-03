@@ -16,7 +16,7 @@ const projectId = Astro.params.projectId ?? '';
 const store = getSalesStore(tenant);
 const libraryItems = store.items.filter((i) => i.collection === 'selections');
 const selections = selectionsForProject(tenant, projectId).map((s) =>
-  toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_item_id)?.label ?? s.library_item_id }),
+  toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_ref)?.label ?? s.library_ref }),
 );
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 

@@ -6,6 +6,7 @@ import { getApiDeps } from '../lib/deps.js';
 import {
   findLane3SessionByClient,
   getLane3Brain,
+  getLane3ClientForProject,
   getLane3WarrantyForClient,
   listLane3ApprovalsForScope,
   listLane3Warranties,
@@ -39,10 +40,20 @@ clientPortalRoutes.get('/clients/:id/brain', (c) => {
 
 clientPortalRoutes.get('/portal/preview', (c) => {
   const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  const clientId = c.req.query('client_id');
   const projectId = c.req.query('project_id');
-  if (tenant === null || !clientId || !projectId) {
-    return c.json({ error: 'tenant_client_project_required' }, 400);
+  const requestedClientId = c.req.query('client_id');
+  if (tenant === null || !projectId) {
+    return c.json({ error: 'tenant_project_required' }, 400);
+  }
+  // Real project↔client binding: the client is derived FROM the project, never
+  // trusted from the query. An unbound project has no portal to preview.
+  const clientId = getLane3ClientForProject(projectId);
+  if (clientId === null) {
+    return c.json({ error: 'project_not_bound_to_client', project_id: projectId }, 404);
+  }
+  // If a client_id is passed it must match the binding — refuse cross-client peeking.
+  if (requestedClientId && requestedClientId !== clientId) {
+    return c.json({ error: 'project_client_binding_mismatch' }, 403);
   }
   const approvals = listLane3ApprovalsForScope(tenant, clientId, projectId).map(
     toClientPortalApprovalView,
@@ -127,6 +138,8 @@ clientPortalRoutes.post('/portal/session/:token/approvals/:approvalId/confirm', 
     return c.json({ error: 'approval_failed' }, 409);
   }
   const { eventStore } = getApiDeps();
+  // Distinct client-side event — NOT the operator `decision.approved`. The client
+  // is the actor; only the client-facing total is recorded (no cost, no margin).
   await appendValidatedEvent(
     {
       store: eventStore,
@@ -134,10 +147,14 @@ clientPortalRoutes.post('/portal/session/:token/approvals/:approvalId/confirm', 
       correlation_id: result.propagation.approval_id,
     },
     {
-      type: 'decision.approved',
-      packet_id: result.propagation.approval_id,
-      approver: `client_portal:${session.client_id}`,
-      approved_at: result.propagation.approved_at,
+      type: 'client_approval.confirmed',
+      approval_id: result.propagation.approval_id,
+      client_id: session.client_id,
+      project_id: result.propagation.project_id,
+      project_selection_id: result.propagation.project_selection_id,
+      approval_kind: result.propagation.kind,
+      client_visible_total_cents: result.propagation.client_visible_total_cents,
+      confirmed_at: result.propagation.approved_at,
       source_refs: [
         {
           kind: 'doc',

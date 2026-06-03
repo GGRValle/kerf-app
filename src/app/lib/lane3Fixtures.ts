@@ -41,6 +41,8 @@ export interface Lane3WarrantyEntity {
   readonly covered_components: readonly string[];
   readonly claims_open: number;
   readonly status: 'active' | 'expired';
+  /** ISO date the warranty term ends — drives the warranty-expiring attention card. */
+  readonly expires_on: string;
 }
 
 const BRAIN: Record<string, Lane3BrainSummary> = {
@@ -138,6 +140,7 @@ const WARRANTIES: Lane3WarrantyEntity[] = [
     covered_components: ['Cabinetry installation', 'Countertops', 'Plumbing tie-ins'],
     claims_open: 0,
     status: 'active',
+    expires_on: '2028-04-15',
   },
   {
     warranty_id: 'war_hernandez_cabs',
@@ -147,8 +150,50 @@ const WARRANTIES: Lane3WarrantyEntity[] = [
     covered_components: ['Cabinet boxes', 'Soft-close hardware'],
     claims_open: 1,
     status: 'active',
+    // Within the 90-day window from "today" (2026-05-28) — drives the expiring card.
+    expires_on: '2026-07-10',
   },
 ];
+
+/** Days until a warranty's term ends, relative to `now`. */
+export function warrantyDaysRemaining(w: Lane3WarrantyEntity, now: Date = new Date()): number {
+  const end = new Date(`${w.expires_on}T00:00:00Z`).getTime();
+  return Math.ceil((end - now.getTime()) / 86_400_000);
+}
+
+/** A warranty is "expiring" if active and within the warning window (default 90 days). */
+export function isWarrantyExpiring(
+  w: Lane3WarrantyEntity,
+  now: Date = new Date(),
+  windowDays = 90,
+): boolean {
+  if (w.status !== 'active') return false;
+  const days = warrantyDaysRemaining(w, now);
+  return days >= 0 && days <= windowDays;
+}
+
+/**
+ * Real project↔client binding. A project belongs to exactly one client; the
+ * portal preview resolves the client FROM the project (no hardcoded client id).
+ * This is the canonical edge for cross-client isolation: a project can only ever
+ * surface the data of the client it is bound to.
+ */
+const PROJECT_CLIENT_BINDING: Record<string, string> = {
+  proj_wegrzyn_kitchen: 'client_wegrzyn',
+  proj_dunne_bath: 'client_dunne',
+  proj_dunne_deck: 'client_dunne',
+  proj_hernandez_cabs: 'client_hernandez',
+};
+
+/** Resolve the owning client for a project, or null if the project is unbound. */
+export function getLane3ClientForProject(projectId: string): string | null {
+  return PROJECT_CLIENT_BINDING[projectId] ?? null;
+}
+
+/** True iff the project is bound to this client (the isolation edge). */
+export function projectBelongsToClient(projectId: string, clientId: string): boolean {
+  return PROJECT_CLIENT_BINDING[projectId] === clientId;
+}
 
 /** Mutable approval states for dogfood approve flow. */
 const approvalState = new Map<string, Lane3PortalApproval['state']>(
@@ -172,6 +217,28 @@ export function listLane3ApprovalsForScope(
     ...a,
     state: approvalState.get(a.approval_id) ?? a.state,
   }));
+}
+
+/**
+ * Register a new pending portal approval (the seam from Lane 2's proposal draft).
+ * The approval lands `needs_you`; the client confirms it in their portal, which
+ * propagates a Project Selection + schedule ref. Refuses to register against a
+ * project that isn't bound to the given client (cross-client isolation edge).
+ */
+export function registerPortalApproval(approval: Lane3PortalApproval): Lane3PortalApproval {
+  if (!projectBelongsToClient(approval.project_id, approval.client_id)) {
+    throw new Error(
+      `project ${approval.project_id} is not bound to client ${approval.client_id}`,
+    );
+  }
+  const existingIdx = APPROVALS.findIndex((a) => a.approval_id === approval.approval_id);
+  if (existingIdx >= 0) {
+    APPROVALS[existingIdx] = approval;
+  } else {
+    APPROVALS.push(approval);
+  }
+  approvalState.set(approval.approval_id, approval.state);
+  return approval;
 }
 
 export function getLane3Approval(approvalId: string): Lane3PortalApproval | null {

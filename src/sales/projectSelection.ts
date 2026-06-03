@@ -8,6 +8,8 @@
  */
 import {
   assertSelectionMoneyCents,
+  assertSelectionClientVisibility,
+  SELECTION_LIFECYCLE_ORDER,
   type ProjectSelectionInstance,
   type SelectionLifecycle,
 } from '../contracts/lane1/selection.js';
@@ -15,20 +17,12 @@ import { classifyConsequenceGate } from '../contracts/lane1/consequenceGate.js';
 import type { CatalogItem, ProjectSelectionView } from './types.js';
 import { catalogUnitCents } from './catalog.js';
 
-/** Allowed lifecycle advances — proposed → approved → ordered → installed. */
-const LIFECYCLE_ORDER: readonly SelectionLifecycle[] = [
-  'proposed',
-  'approved',
-  'ordered',
-  'installed',
-];
-
 export function canAdvanceLifecycle(
   from: SelectionLifecycle,
   to: SelectionLifecycle,
 ): boolean {
-  const fromIdx = LIFECYCLE_ORDER.indexOf(from);
-  const toIdx = LIFECYCLE_ORDER.indexOf(to);
+  const fromIdx = SELECTION_LIFECYCLE_ORDER.indexOf(from);
+  const toIdx = SELECTION_LIFECYCLE_ORDER.indexOf(to);
   return fromIdx >= 0 && toIdx === fromIdx + 1;
 }
 
@@ -58,15 +52,19 @@ export function pullFromLibrary(params: {
 }): ProjectSelectionInstance {
   assertDurableConfirmed(params.confirmed);
   const amount = assertSelectionMoneyCents(catalogUnitCents(params.item));
+  // Markup lines never surface to the client; everything else is visible.
+  const client_visible = params.item.line_type !== 'markup';
+  // Validator boundary (Bar 2): refuse a markup line that claims client visibility.
+  const vis = assertSelectionClientVisibility(params.item.line_type, client_visible);
+  if (!vis.ok) throw new Error(vis.reason);
   return {
     id: params.id ?? `psel_${++selectionSeq}`,
-    library_item_id: params.item.id,
+    library_ref: params.item.id,
     project_id: params.project_id,
     lifecycle: 'proposed',
     line_type: params.item.line_type,
     amount_cents: amount,
-    // Markup lines never surface to the client; everything else is visible.
-    client_visible: params.item.line_type !== 'markup',
+    client_visible,
   };
 }
 
@@ -100,7 +98,7 @@ export function saveBackToLibrary(params: {
   readonly id?: string;
 }): CatalogItem {
   return {
-    id: params.id ?? `cat_${params.selection.library_item_id}_saved`,
+    id: params.id ?? `cat_${params.selection.library_ref}_saved`,
     tenant: params.tenant,
     collection: 'selections',
     label: params.label,
@@ -118,7 +116,7 @@ export function toSelectionView(
 ): ProjectSelectionView {
   return {
     id: selection.id,
-    library_item_id: selection.library_item_id,
+    library_ref: selection.library_ref,
     project_id: selection.project_id,
     tenant: ctx.tenant,
     label: ctx.label,

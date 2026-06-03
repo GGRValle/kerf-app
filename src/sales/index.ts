@@ -11,3 +11,5 @@ export * from './estimate.js';
 export * from './proposalDraft.js';
 export * from './store.js';
 export * from './surfaces.js';
+export * from './attention.js';
+export * from './winTheWork.js';

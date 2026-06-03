@@ -161,7 +161,7 @@ salesDesignKbRoutes.get('/design/:projectId/selections', (c) => {
   const store = getSalesStore(tenant);
   const views = store.selections
     .filter((s) => s.project_id === projectId)
-    .map((s) => toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_item_id)?.label ?? s.library_item_id }));
+    .map((s) => toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_ref)?.label ?? s.library_ref }));
   return c.json({ tenant, project_id: projectId, selections: views });
 });
 
@@ -193,7 +193,7 @@ salesDesignKbRoutes.post('/design/:projectId/selections/:selId/approve', async (
   } catch (err) {
     return c.json({ error: 'illegal_transition', reason: err instanceof Error ? err.message : String(err) }, 409);
   }
-  const label = catalogItemById(tenant, store.selections[idx]!.library_item_id)?.label ?? store.selections[idx]!.library_item_id;
+  const label = catalogItemById(tenant, store.selections[idx]!.library_ref)?.label ?? store.selections[idx]!.library_ref;
   return c.json({ selection: toSelectionView(store.selections[idx]!, { tenant, label }) });
 });
 
@@ -225,14 +225,14 @@ salesDesignKbRoutes.post('/estimate/:projectId/seed-from-selections', async (c) 
   const approved = store.selections.filter((s) => s.project_id === projectId && s.lifecycle === 'approved');
   for (const sel of approved) {
     if (store.estimateLines.some((l) => l.source_selection_id === sel.id)) continue;
-    const item = catalogItemById(tenant, sel.library_item_id);
+    const item = catalogItemById(tenant, sel.library_ref);
     store.estimateLines.push({
       id: `el_${sel.id}`,
       estimate_id: `est_${projectId}`,
       project_id: projectId,
       tenant,
       line_type: sel.line_type,
-      label: item?.label ?? sel.library_item_id,
+      label: item?.label ?? sel.library_ref,
       quantity: 1,
       unit_cost_cents: sel.amount_cents,
       markup_bps: item?.default_markup_bps ?? 3000,

@@ -80,7 +80,11 @@ export type PersistenceEventType =
   | 'payment.recorded'
   | 'payment.received'
   | 'allowance.exception.opened'
-  | 'allowance.exception.resolved';
+  | 'allowance.exception.resolved'
+  // ─── Lane 2 (Win the Work) addition ───
+  // Distinct client-side approval. NOT operator `decision.approved`: this records
+  // the CLIENT confirming in their portal (the client-side consequence point).
+  | 'client_approval.confirmed';
 
 /**
  * Daily Log entry kinds — what kind of field capture this is. Per
@@ -319,6 +323,23 @@ export interface DecisionApprovedEvent extends BasePersistenceEvent {
   readonly packet_id: string;
   readonly approver: string;
   readonly approved_at: string;
+}
+
+/**
+ * The CLIENT confirmed an approval in their portal (Lane 2 · Win the Work).
+ * Distinct from the operator-side `decision.approved`: the actor is the client,
+ * captured at the client-facing total (no cost, no margin ever recorded here).
+ */
+export interface ClientApprovalConfirmedEvent extends BasePersistenceEvent {
+  readonly type: 'client_approval.confirmed';
+  readonly approval_id: string;
+  readonly client_id: string;
+  readonly project_id: string;
+  readonly project_selection_id: string;
+  readonly approval_kind: 'selection' | 'change_order' | 'proposal';
+  /** Client-facing total only — markup/cost never recorded on this event. */
+  readonly client_visible_total_cents: number;
+  readonly confirmed_at: string;
 }
 
 export interface ActualsRecordedEvent extends BasePersistenceEvent {
@@ -822,7 +843,9 @@ export type PersistenceEvent =
   | PaymentRecordedEvent
   | PaymentReceivedEvent
   | AllowanceExceptionOpenedEvent
-  | AllowanceExceptionResolvedEvent;
+  | AllowanceExceptionResolvedEvent
+  // ─── Lane 2 (Win the Work) addition ───
+  | ClientApprovalConfirmedEvent;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Validation
@@ -890,6 +913,7 @@ const VALID_EVENT_TYPES: ReadonlySet<PersistenceEventType> = new Set([
   'payment.received',
   'allowance.exception.opened',
   'allowance.exception.resolved',
+  'client_approval.confirmed',
 ]);
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1201,6 +1225,28 @@ function validateDecisionApproved(input: Record<string, unknown>): readonly stri
   if (!nonEmptyString(input['packet_id'])) errors.push('packet_id must be a non-empty string');
   if (!nonEmptyString(input['approver'])) errors.push('approver must be a non-empty string');
   if (!isIso8601(input['approved_at'])) errors.push('approved_at must be an ISO8601 timestamp');
+  return errors;
+}
+
+function validateClientApprovalConfirmed(input: Record<string, unknown>): readonly string[] {
+  const errors: string[] = [];
+  if (!nonEmptyString(input['approval_id'])) errors.push('approval_id must be a non-empty string');
+  if (!nonEmptyString(input['client_id'])) errors.push('client_id must be a non-empty string');
+  if (!nonEmptyString(input['project_id'])) errors.push('project_id must be a non-empty string');
+  if (!nonEmptyString(input['project_selection_id'])) {
+    errors.push('project_selection_id must be a non-empty string');
+  }
+  if (
+    input['approval_kind'] !== 'selection' &&
+    input['approval_kind'] !== 'change_order' &&
+    input['approval_kind'] !== 'proposal'
+  ) {
+    errors.push('approval_kind must be selection | change_order | proposal');
+  }
+  if (!isIntegerCents(input['client_visible_total_cents'])) {
+    errors.push('client_visible_total_cents must be a non-negative integer (cents)');
+  }
+  if (!isIso8601(input['confirmed_at'])) errors.push('confirmed_at must be an ISO8601 timestamp');
   return errors;
 }
 
@@ -1816,6 +1862,9 @@ export function validatePersistenceEvent(input: unknown): ValidationResult<Persi
       break;
     case 'allowance.exception.resolved':
       typeErrors = validateAllowanceExceptionResolved(record);
+      break;
+    case 'client_approval.confirmed':
+      typeErrors = validateClientApprovalConfirmed(record);
       break;
   }
   const allErrors = [...baseErrors, ...typeErrors];

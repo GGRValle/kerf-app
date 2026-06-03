@@ -194,7 +194,9 @@ test('every Lane 2 surface registers with a backTo and no query string', () => {
   }
   const registry = createInMemorySurfaceRegistry();
   const registered = registerLane2Surfaces(registry);
-  assert.equal(registered.length, LANE2_SURFACES.length);
+  // registerLane2Surfaces now registers the full Win-the-Work set (sales spine +
+  // folded-in clients/portal/success/warranty surfaces).
+  assert.ok(registered.length >= LANE2_SURFACES.length);
   assert.ok(registered.every((r) => !r.isHome));
   assert.equal(registry.getByRoute('/sales')?.domain, 'sales');
 });

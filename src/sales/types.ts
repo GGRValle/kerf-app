@@ -141,7 +141,7 @@ export interface Deal {
 
 export interface ProjectSelectionView {
   readonly id: string;
-  readonly library_item_id: string;
+  readonly library_ref: string;
   readonly project_id: string;
   readonly tenant: PersistenceTenantId;
   readonly label: string;
