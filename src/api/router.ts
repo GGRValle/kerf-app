@@ -15,12 +15,14 @@ import { realtimeRoutes } from './routes/realtime.js';
 import { rightHandTurnRoutes } from './routes/rightHandTurn.js';
 import { attentionRoutes } from './routes/attention.js';
 import { clientPortalRoutes } from './routes/clientPortal.js';
+import { salesDesignKbRoutes } from './routes/salesDesignKb.js';
 
 export function createApiRouter(): Hono {
   const app = new Hono();
   app.use('*', authMiddleware);
   app.use('*', platformSessionMiddleware);
   app.route('/', healthRoutes);
+  app.route('/', salesDesignKbRoutes);
   app.route('/', projectRoutes);
   app.route('/', proposalRoutes);
   app.route('/', clientRoutes);

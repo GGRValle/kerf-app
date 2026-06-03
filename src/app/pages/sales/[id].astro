@@ -1,0 +1,79 @@
+---
+// F-SL3/F-SL4 · Deal detail · /sales/:id (Lane 2)
+import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { dealById, dealStageLabel } from '../../../sales/index.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const id = Astro.params.id ?? '';
+const deal = dealById(tenant, id);
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+const projectId = deal?.project_id ?? (deal ? `proj_${deal.id}` : '');
+---
+
+<Layout title={deal ? `Deal · ${deal.name}` : 'Deal'} activeHref="/sales">
+  <article class="dl-page">
+    <a class="dl-back" href="/sales">‹ Pipeline</a>
+    {!deal ? (
+      <p class="dl-empty">Deal not found for this tenant.</p>
+    ) : (
+      <>
+        <header>
+          <div class="dl-crumb">Sales · Deal</div>
+          <h1>{deal.name}</h1>
+          <p class="dl-sub">{deal.client_name} · {fmt(deal.value_cents)} · {dealStageLabel(deal.stage)}</p>
+          <p class="dl-src">Source: {deal.source}</p>
+        </header>
+
+        <section class="dl-actions">
+          <h2>Next: price it</h2>
+          <p class="dl-hint">Enter Design to assemble Selections from the Knowledge Base, then build the estimate and draft a proposal.</p>
+          {deal.stage === 'design' || deal.project_id ? (
+            <a class="dl-btn primary" href={`/design/${projectId}`}>Open Design workspace ›</a>
+          ) : (
+            <button class="dl-btn primary" id="enter-design" data-deal={deal.id}>Enter Design</button>
+          )}
+          <a class="dl-btn" href={`/estimate/${projectId}`}>Estimate builder</a>
+        </section>
+      </>
+    )}
+  </article>
+</Layout>
+
+<script>
+  const btn = document.getElementById('enter-design');
+  btn?.addEventListener('click', async () => {
+    const dealId = btn.getAttribute('data-deal');
+    // Consequence gate: a durable write only proceeds on explicit confirm.
+    if (!confirm('Enter Design for this lead? This starts the working job.')) return;
+    btn.setAttribute('disabled', 'true');
+    const res = await fetch(`/api/v1/sales/deals/${dealId}/enter-design`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ confirmed: true }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      window.location.href = `/design/${data.project_id}`;
+    } else {
+      btn.removeAttribute('disabled');
+      alert('Could not enter Design (status ' + res.status + ').');
+    }
+  });
+</script>
+
+<style>
+  .dl-page { padding: 1rem; max-width: 720px; }
+  .dl-back { color: var(--text-muted, #98a1b3); text-decoration: none; font-size: 0.85rem; }
+  .dl-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); margin-top: 0.6rem; }
+  .dl-sub { color: var(--text-muted, #98a1b3); }
+  .dl-src { color: var(--text-muted, #6a7282); font-size: 0.85rem; }
+  .dl-actions { margin-top: 1.2rem; padding: 0.9rem; border: 1px solid var(--border, #2a3140); border-radius: 12px; background: var(--surface, #11151c); }
+  .dl-hint { color: var(--text-muted, #98a1b3); font-size: 0.9rem; }
+  .dl-btn { display: inline-block; margin: 0.35rem 0.35rem 0 0; padding: 0.55rem 0.9rem; border: 1px solid var(--border, #2a3140); border-radius: 9px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); text-decoration: none; cursor: pointer; font: inherit; }
+  .dl-btn.primary { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
+  .dl-btn[disabled] { opacity: 0.5; cursor: default; }
+  .dl-empty { color: var(--text-muted, #6a7282); }
+</style>
