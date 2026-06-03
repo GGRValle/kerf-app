@@ -53,7 +53,7 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function authHeader(): string {
-  return 'Basic test';
+  return `Basic ${Buffer.from('christian:test').toString('base64')}`;
 }
 
 const STANDING_KEY = 'sk-standing-secret-DO-NOT-LEAK';
@@ -178,7 +178,7 @@ test('endpoint · 403 + groq fallback when tenant lacks synthesis consent', asyn
   __setRealtimeDepsForTests(makeRealtimeDeps());
   const res = await apiRouter.request('/realtime/transcription-session', {
     method: 'POST',
-    headers: { authorization: authHeader(), 'x-kerf-tenant': 'tenant_valle' },
+    headers: { Authorization: 'Bearer psess_test_valle_pm' },
   });
   assert.equal(res.status, 403);
   const body = (await res.json()) as { error: string; fallback: string };
@@ -190,7 +190,7 @@ test('endpoint · 200 for consenting tenant returns ephemeral secret + bounded w
   __setRealtimeDepsForTests(makeRealtimeDeps());
   const res = await apiRouter.request('/realtime/transcription-session', {
     method: 'POST',
-    headers: { authorization: authHeader(), 'x-kerf-tenant': 'tenant_ggr' },
+    headers: { Authorization: 'Bearer psess_test_ggr_owner' },
   });
   assert.equal(res.status, 200);
   const raw = await res.text();

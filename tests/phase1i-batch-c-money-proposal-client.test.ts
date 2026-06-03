@@ -7,7 +7,7 @@ import path from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
-import { createApiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.js';
 import { createTenantScopedEventReader } from '../src/persistence/tenantScopedReads.js';
@@ -18,7 +18,7 @@ test('POST /money/export persists export.requested without money mutation types'
   const dir = await mkdtemp(path.join(tmpdir(), 'phase1i-money-export-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
     const res = await app.request('/money/export?tenant_id=tenant_ggr', {
       method: 'POST',
@@ -51,7 +51,7 @@ test('owner-private margin export rejects non-pdf formats', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'phase1i-margin-export-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
     const res = await app.request('/money/export?tenant_id=tenant_ggr', {
       method: 'POST',
@@ -76,7 +76,7 @@ test('POST /projects emits project.created', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'phase1i-project-create-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
-  const app = createApiRouter();
+  const app = createAuthenticatedApiRouter();
   try {
     const res = await app.request('/projects?tenant_id=tenant_ggr', {
       method: 'POST',

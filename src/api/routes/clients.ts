@@ -2,23 +2,14 @@ import { Hono } from 'hono';
 
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
-import { getLane6Client, LANE6_CLIENTS } from '../../app/lib/lane6Fixtures.js';
-import type { PersistenceTenantId } from '../../persistence/events.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { getLane6ClientForTenant, LANE6_CLIENTS } from '../../app/lib/lane6Fixtures.js';
 
-export const clientRoutes = new Hono();
-
-function parseTenantId(raw: string | undefined): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
+export const clientRoutes = new Hono<{ Variables: ApiVariables }>();
 
 clientRoutes.get('/clients', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   const { tenantReader } = getApiDeps();
   const created = await tenantReader.readEventsByTypeForTenant(tenant, 'client.created');
   const fromEvents = created.map((e) => {
@@ -46,19 +37,16 @@ clientRoutes.get('/clients', async (c) => {
     seen.add(cl.client_id);
     return true;
   });
-  return c.json({ clients });
+  return c.json({ clients, ...tenantOverrideFlags(c) });
 });
 
 clientRoutes.get('/clients/:id', async (c) => {
   const clientId = c.req.param('id');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   const { tenantReader } = getApiDeps();
   const created = await tenantReader.readEventsByTypeForTenant(tenant, 'client.created');
   const fromEvent = created.find((e) => e.type === 'client.created' && e.client_id === clientId);
-  const fixture = getLane6Client(clientId);
+  const fixture = getLane6ClientForTenant(clientId, tenant);
   if (fromEvent === undefined && fixture === null) {
     return c.json({ error: 'client_not_found', client_id: clientId }, 404);
   }
@@ -84,14 +72,12 @@ clientRoutes.get('/clients/:id', async (c) => {
         }
       : fixture,
     linked_projects: linkedProjects,
+    ...tenantOverrideFlags(c),
   });
 });
 
 clientRoutes.post('/clients/check-email', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   const body = await c.req.json<{ email: string }>();
   const email = body.email?.trim().toLowerCase() ?? '';
   if (email.length === 0) {
@@ -105,28 +91,15 @@ clientRoutes.post('/clients/check-email', async (c) => {
   const fixtureMatch = LANE6_CLIENTS.some(
     (cl) => cl.tenant_id === tenant && (cl.email?.toLowerCase() ?? '') === email,
   );
-  let crossTenantMatch = false;
-  if (!localMatch && !fixtureMatch) {
-    const cross = await tenantReader.readEventsAcrossTenants({
-      reason: 'bounded_single_project_lookup',
-      project_id: `email_lookup_${email}`,
-      operator: 'shell_api',
-    });
-    crossTenantMatch = cross.some(
-      (e) => e.type === 'client.created' && (e.contact_email?.toLowerCase() ?? '') === email,
-    );
-  }
   return c.json({
-    exists: localMatch || fixtureMatch || crossTenantMatch,
-    scope: crossTenantMatch ? 'cross_tenant' : 'tenant',
+    exists: localMatch || fixtureMatch,
+    scope: 'tenant',
+    ...tenantOverrideFlags(c),
   });
 });
 
 clientRoutes.post('/clients', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   const body = await c.req.json<{
     display_name: string;
     contact_email?: string | null;
@@ -150,5 +123,5 @@ clientRoutes.post('/clients', async (c) => {
       source_refs: [{ kind: 'doc', uri: `kerf://clients/${clientId}`, excerpt: body.display_name.trim() }],
     },
   );
-  return c.json({ ok: true, client_id: clientId, event_id: event.event_id }, 201);
+  return c.json({ ok: true, client_id: clientId, event_id: event.event_id, ...tenantOverrideFlags(c) }, 201);
 });

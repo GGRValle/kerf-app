@@ -8,7 +8,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createApiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { getLane6Proposal } from '../src/app/lib/lane6Fixtures.js';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.js';
@@ -38,7 +38,7 @@ test('prop_lane23_wegrzyn resolves in lane6 fixtures for draft preview route', (
 
 test('POST /review/draft/accept emits proposal.accepted', async () => {
   await withIsolatedStore(async (dir) => {
-    const app = createApiRouter();
+    const app = createAuthenticatedApiRouter();
     const res = await app.request('http://localhost/review/draft/accept', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,7 +62,7 @@ test('POST /review/draft/accept emits proposal.accepted', async () => {
 
 test('POST /review/draft/reject emits suggestion.overridden + correction.classified', async () => {
   await withIsolatedStore(async (dir) => {
-    const app = createApiRouter();
+    const app = createAuthenticatedApiRouter();
     const res = await app.request('http://localhost/review/draft/reject', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -87,7 +87,7 @@ test('POST /review/draft/reject emits suggestion.overridden + correction.classif
 
 test('POST /review/field-detail/override requires scope_answer then records events', async () => {
   await withIsolatedStore(async (dir) => {
-    const app = createApiRouter();
+    const app = createAuthenticatedApiRouter();
     const missingScope = await app.request('http://localhost/review/field-detail/override', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -4,6 +4,9 @@ import type { PersistenceTenantId } from '../../persistence/events.js';
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import { buildStampPayload, readBuildStamp } from '../../shell/buildStamp.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 
 export const healthRoutes = new Hono();
 
@@ -17,26 +20,10 @@ healthRoutes.get('/health', (c) => {
   });
 });
 
-export const projectRoutes = new Hono();
-
-function parseTenantId(raw: string | undefined): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
+export const projectRoutes = new Hono<{ Variables: ApiVariables }>();
 
 projectRoutes.get('/projects', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json(
-      {
-        error: 'tenant_required',
-        reason: 'tenant_id query param required (tenant_ggr | tenant_valle | tenant_hpg)',
-      },
-      400,
-    );
-  }
+  const tenant = requireApiTenant(c);
   const { tenantReader } = getApiDeps();
   const events = await tenantReader.readEventsForTenant(tenant);
   const seen = new Map<
@@ -68,43 +55,44 @@ projectRoutes.get('/projects', async (c) => {
       entry.last_activity_at = e.at;
     }
   }
-  const projects = [...seen.values()].sort((a, b) =>
+  const fixtureProjects = listLane23Projects(tenant).map((p) => ({
+    tenant_id: p.tenant_id,
+    project_id: p.project_id,
+    project_name: p.project_name,
+    client_name: p.client_name,
+    created_at: p.last_activity_at,
+    last_activity_at: p.last_activity_at,
+    source: 'fixture' as const,
+  }));
+  const eventProjects = [...seen.values()].map((p) => ({ ...p, source: 'event' as const }));
+  const merged = new Map<string, (typeof eventProjects)[number] | (typeof fixtureProjects)[number]>();
+  for (const row of [...eventProjects, ...fixtureProjects]) {
+    merged.set(row.project_id, row);
+  }
+  const projects = [...merged.values()].sort((a, b) =>
     b.last_activity_at.localeCompare(a.last_activity_at),
   );
-  return c.json({ projects });
+  return c.json({ projects, ...tenantOverrideFlags(c) });
 });
 
 projectRoutes.get('/projects/:id', async (c) => {
   const projectId = c.req.param('id');
-  const tenantHint = parseTenantId(c.req.query('tenant_id') ?? undefined);
+  const tenant = requireApiTenant(c);
   const { tenantReader } = getApiDeps();
-  if (tenantHint !== null) {
-    const events = await tenantReader.readEventsForProject(tenantHint, projectId);
-    if (events.length === 0) {
+  const events = await tenantReader.readEventsForProject(tenant, projectId);
+  if (events.length === 0) {
+    const fixture = listLane23Projects(tenant).find((p) => p.project_id === projectId);
+    if (fixture === undefined) {
       return c.json({ error: 'project_not_found', project_id: projectId }, 404);
     }
-    return c.json({ project_id: projectId, tenant_id: tenantHint, event_count: events.length });
+    return c.json({ project_id: projectId, tenant_id: tenant, event_count: 0, ...tenantOverrideFlags(c) });
   }
-  const events = await tenantReader.readEventsAcrossTenants({
-    reason: 'bounded_single_project_lookup',
-    project_id: projectId,
-    operator: 'shell_api',
-  });
-  const projectEvents = events.filter((e) => e.correlation_id === projectId);
-  if (projectEvents.length === 0) {
-    return c.json({ error: 'project_not_found', project_id: projectId }, 404);
-  }
-  const tenant =
-    projectEvents.find((e) => e.type === 'project.created')?.tenant_id ?? projectEvents[0]?.tenant_id;
-  return c.json({ project_id: projectId, tenant_id: tenant, event_count: projectEvents.length });
+  return c.json({ project_id: projectId, tenant_id: tenant, event_count: events.length, ...tenantOverrideFlags(c) });
 });
 
 /** Phase 1I · create project route — emits project.created only (no money fields). */
 projectRoutes.post('/projects', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   const body = await c.req.json<{
     project_name?: string;
     client_name?: string;
@@ -135,6 +123,7 @@ projectRoutes.post('/projects', async (c) => {
       project_id: projectId,
       client_id: body.client_id ?? null,
       event_id: event.event_id,
+      ...tenantOverrideFlags(c),
     },
     201,
   );

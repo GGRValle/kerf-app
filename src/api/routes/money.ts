@@ -2,23 +2,14 @@ import { Hono } from 'hono';
 
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
-import type { PersistenceTenantId } from '../../persistence/events.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 
-export const moneyRoutes = new Hono();
-
-function parseTenantId(raw: string | undefined): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
+export const moneyRoutes = new Hono<{ Variables: ApiVariables }>();
 
 /** Phase 1I · export/print egress only — records export.requested; no money mutation. */
 moneyRoutes.post('/money/export', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) {
-    return c.json({ error: 'tenant_required' }, 400);
-  }
+  const tenant = requireApiTenant(c);
   const body = await c.req.json<{
     surface?: string;
     format?: 'pdf' | 'csv' | 'xlsx' | 'iif' | 'print';
@@ -50,5 +41,11 @@ moneyRoutes.post('/money/export', async (c) => {
     },
   );
 
-  return c.json({ ok: true, export_event_id: event.event_id, format, preview_only: false });
+  return c.json({
+    ok: true,
+    export_event_id: event.event_id,
+    format,
+    preview_only: false,
+    ...tenantOverrideFlags(c),
+  });
 });

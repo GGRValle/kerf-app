@@ -9,12 +9,14 @@ import type {
 } from '../../persistence/events.js';
 import { generateEventId } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 import {
   appendDailyLogEntryAndSurface,
   sourceRefsForDailyLogEntry,
 } from '../lib/dailyLogCommit.js';
 
-export const fieldDailyRoutes = new Hono();
+export const fieldDailyRoutes = new Hono<{ Variables: ApiVariables }>();
 
 const VALID_DAILY_LOG_ENTRY_KINDS: readonly DailyLogEntryKind[] = [
   'morning_brief',
@@ -34,13 +36,6 @@ const VALID_CLOCK_SUB_KINDS: readonly ClockEventSubKind[] = [
   'break_start',
   'break_end',
 ];
-
-function parseTenantId(raw: unknown): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
 
 function parseEntryKind(raw: unknown): DailyLogEntryKind | null {
   if (typeof raw === 'string' && (VALID_DAILY_LOG_ENTRY_KINDS as readonly string[]).includes(raw)) {
@@ -68,10 +63,7 @@ function stringArray(raw: unknown): readonly string[] {
 fieldDailyRoutes.post('/projects/:id/daily-log/entries', async (c) => {
   const projectId = c.req.param('id');
   const body = await c.req.json<Record<string, unknown>>();
-  const tenant = parseTenantId(body['tenant_id'] ?? c.req.query('tenant_id'));
-  if (tenant === null) {
-    return c.json({ error: 'invalid_tenant' }, 400);
-  }
+  const tenant = requireApiTenant(c);
 
   const entryKind = parseEntryKind(body['entry_kind'] ?? 'progress_update');
   if (entryKind === null) {
@@ -116,6 +108,7 @@ fieldDailyRoutes.post('/projects/:id/daily-log/entries', async (c) => {
     return c.json({
       ok: true,
       ...result,
+      ...tenantOverrideFlags(c),
     }, 201);
   } catch (err) {
     if (err instanceof AggregateError) {

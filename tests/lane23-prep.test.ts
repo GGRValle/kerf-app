@@ -7,7 +7,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createApiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { createPersistenceEventStore } from '../src/persistence/eventStore.js';
 import { createTenantScopedEventReader } from '../src/persistence/tenantScopedReads.js';
@@ -109,7 +109,7 @@ test('correction.classified validator rejects out-of-range confidence at persist
 
 test('POST /review/transcript/correct emits transcript.reviewed + correction.classified', async () => {
   await withIsolatedStore(async (dir) => {
-    const app = createApiRouter();
+    const app = createAuthenticatedApiRouter();
     const res = await app.request('http://localhost/review/transcript/correct', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -140,7 +140,7 @@ test('POST /review/transcript/correct emits transcript.reviewed + correction.cla
 
 test('POST /review/transcript/correct returns follow-up when classification ambiguous', async () => {
   await withIsolatedStore(async () => {
-    const app = createApiRouter();
+    const app = createAuthenticatedApiRouter();
     const res = await app.request('http://localhost/review/transcript/correct', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -162,7 +162,7 @@ test('POST /review/transcript/correct returns follow-up when classification ambi
 
 test('POST /review/draft/correct emits proposal.edited + correction.classified', async () => {
   await withIsolatedStore(async (dir) => {
-    const app = createApiRouter();
+    const app = createAuthenticatedApiRouter();
     const res = await app.request('http://localhost/review/draft/correct', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -189,7 +189,7 @@ test('POST /review/draft/correct emits proposal.edited + correction.classified',
 
 test('POST /projects/:id/export emits export.requested with projects.detail.report surface', async () => {
   await withIsolatedStore(async (dir) => {
-    const app = createApiRouter();
+    const app = createAuthenticatedApiRouter();
     const res = await app.request(
       'http://localhost/projects/proj_wegrzyn_kitchen/export?tenant_id=tenant_ggr',
       {

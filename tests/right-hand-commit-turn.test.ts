@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { apiRouter } from '../src/api/router.js';
+import { apiRouter, createApiRouter } from '../src/api/router.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import {
   __setRightHandTurnDepsForTests,
@@ -85,9 +85,16 @@ function trpForEstimateWalk(): TurnResolutionPacket {
   });
 }
 
-async function postCommit(body: Record<string, unknown>, tenant = 'tenant_ggr'): Promise<Response> {
+async function postCommit(
+  body: Record<string, unknown>,
+  session: 'ggr' | 'valle' | 'none' = 'ggr',
+): Promise<Response> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (tenant) headers['x-kerf-tenant'] = tenant;
+  if (session === 'ggr') {
+    headers['Authorization'] = 'Bearer psess_test_ggr_owner';
+  } else if (session === 'valle') {
+    headers['Authorization'] = 'Bearer psess_test_valle_pm';
+  }
   return apiRouter.request('/right-hand/commit-turn', {
     method: 'POST',
     headers,
@@ -191,13 +198,18 @@ test('commit-turn preserves provider fallback TRPs instead of blocking durable f
   }
 });
 
-test('commit-turn rejects missing tenant before any durable write', async () => {
+test('commit-turn rejects missing platform session before any durable write', async () => {
   const store = await withStore();
   try {
-    const res = await postCommit({ trp: trpForJobNote(), idempotency_key: 'missing-tenant' }, '');
-    assert.equal(res.status, 400);
+    const app = createApiRouter();
+    const res = await app.request('/right-hand/commit-turn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trp: trpForJobNote(), idempotency_key: 'missing-tenant' }),
+    });
+    assert.equal(res.status, 401);
     const body = await res.json() as { error: string };
-    assert.equal(body.error, 'tenant_required');
+    assert.match(body.error, /platform session required/i);
     assert.deepEqual(await readEvents(store.dir), []);
   } finally {
     await store.close();
@@ -227,7 +239,7 @@ test('commit-turn asks for the job in operator language when no project resolves
 test('commit-turn rejects tenant mismatch before any durable write', async () => {
   const store = await withStore();
   try {
-    const res = await postCommit({ trp: trpForJobNote(), idempotency_key: 'tenant-mismatch' }, 'tenant_valle');
+    const res = await postCommit({ trp: trpForJobNote(), idempotency_key: 'tenant-mismatch' }, 'valle');
     assert.equal(res.status, 403);
     const body = await res.json() as { error: string };
     assert.equal(body.error, 'tenant_mismatch');

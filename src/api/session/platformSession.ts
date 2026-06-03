@@ -71,6 +71,9 @@ function sessionFromBasicAuth(authorization: string | undefined): PlatformSessio
     const colon = decoded.indexOf(':');
     const username = colon >= 0 ? decoded.slice(0, colon) : decoded;
     const binding = resolveAuthBinding(username);
+    if (binding === null) {
+      return null;
+    }
     return {
       token: `psess_bound_${binding.username}`,
       tenantId: binding.tenantId,
