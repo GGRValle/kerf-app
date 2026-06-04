@@ -43,6 +43,12 @@ test('camera Done files through Lane 3 daily-log endpoint before claiming attach
   assert.doesNotMatch(src, /TODO\(lane-3\)/);
   assert.doesNotMatch(src, /preview_only_not_filed/);
   assert.doesNotMatch(src, /Not filed yet/);
+  assert.match(src, /navigator\.mediaDevices\?\.getUserMedia/);
+  assert.match(src, /video\.srcObject = cameraStream/);
+  assert.match(src, /canvas\.toDataURL\('image\/jpeg'/);
+  assert.match(src, /source: 'getUserMedia_canvas_frame'/);
+  assert.match(src, /source: 'file_input_fallback'/);
+  assert.match(src, /Camera unavailable here — using fallback file picker/);
   assert.match(src, /\/api\/v1\/projects\/\$\{selectedProjectId\}\/camera-capture/);
   assert.match(src, /status: 'filed_to_daily_log'/);
   assert.match(src, /Attached to \$\{selectedProjectName\} · Daily Log/);
