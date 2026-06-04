@@ -1,13 +1,16 @@
 ---
-// F-CL2/F-CL4 · Client detail · /clients/:id
+// F-CL5 · Client record · business brain first
 import Layout from '../../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
+import ClientBrainSummary from '../../components/ClientBrainSummary.astro';
 import Card from '../../components/Card.astro';
 import Row from '../../components/Row.astro';
 import SectionLabel from '../../components/SectionLabel.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import { getLane6Client } from '../../lib/lane6Fixtures.js';
+import { getLane3Brain } from '../../lib/lane3Fixtures.js';
 import '../../styles/lane6.css';
+import '../../styles/lane3.css';
 
 const { id } = Astro.params;
 const { t, context } = createLayoutContext();
@@ -17,43 +20,64 @@ if (!id) {
 }
 
 const fixture = getLane6Client(id);
+const brain = getLane3Brain(id);
 ---
 
 <Layout titleKey="f_cl.detail.title" activeHref="/clients">
   <article
-    class="lane6-page f-cl-detail"
+    class="lane6-page lane3-page f-cl-detail"
     data-client-id={id}
     data-tenant-id={context.tenantId}
-    data-fixture-name={fixture?.display_name ?? ''}
   >
-        <header>
-          <div class="lane6-crumb">
-            <a href="/clients">{t('f_cl.crumb')}</a>
-            · <span id="client-display-name">{fixture?.display_name ?? id}</span>
-          </div>
-          <h1 class="lane6-title" id="client-title">{fixture?.display_name ?? id}</h1>
-          <p class="lane6-subtitle">{t('f_cl.detail.subtitle_active')}</p>
-          <div class="lane6-actions">
-            <a class="lane6-btn primary" id="new-project-link" href={`/projects/new?client_id=${id}`}>
-              {t('f_cl.detail.new_project')}
-            </a>
-          </div>
-        </header>
+    <header>
+      <div class="lane6-crumb">
+        <a href="/clients">{t('f_cl.crumb')}</a>
+        · <span id="client-display-name">{fixture?.display_name ?? id}</span>
+      </div>
+      <h1 class="lane6-title" id="client-title">{fixture?.display_name ?? id}</h1>
+      <p class="lane6-subtitle">{t('f_cl5.subtitle')}</p>
+      <div class="lane6-actions">
+        <a class="lane6-btn primary" href={`/projects/new?client_id=${id}`}>
+          {t('f_cl.detail.new_project')}
+        </a>
+        <a class="lane6-btn" href={`/client-success/${id}`}>{t('f_cs.link')}</a>
+        {brain !== null && (
+          <a class="lane6-btn" href={`/clients/${id}/warranty`}>{t('f_war.link')}</a>
+        )}
+      </div>
+    </header>
 
-        <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-          <Card title={t('f_cl.detail.title')}>
-            <Row title={t('f_cl.form.email')} meta={fixture?.email ?? '—'} />
-            <Row title={t('f_cl.form.phone')} meta={fixture?.phone ?? '—'} />
-            <Row title={t('f_cl.form.address')} meta={fixture?.address_line ?? '—'} />
-            <SectionLabel label={t('f_cl.detail.projects')} />
-            <ul class="lane6-list" id="client-projects-list">
-              <li class="lane6-subtitle">{t('f_cl.detail.loading_projects')}</li>
-            </ul>
-          </Card>
-        </SurfaceIrreversibilityWrap>
+    {brain !== null ? (
+      <ClientBrainSummary
+        brain={brain}
+        nextActionLabel={t('f_cl5.next_action')}
+        openBalanceLabel={t('f_cl5.open_balance')}
+        latestNoteLabel={t('f_cl5.latest_note')}
+      />
+    ) : (
+      <p class="lane6-subtitle">{t('f_cl5.brain_pending')}</p>
+    )}
+
+    <nav class="lane3-tabs" aria-label="Client record sections">
+      <span class="lane3-tab active">{t('f_cl5.tab.projects')}</span>
+      <span class="lane3-tab">{t('f_cl5.tab.folders')}</span>
+      <span class="lane3-tab">{t('f_cl5.tab.comms')}</span>
+    </nav>
+
+    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
+      <Card title={t('f_cl.detail.projects')}>
+        <Row title={t('f_cl.form.email')} meta={fixture?.email ?? '—'} />
+        <Row title={t('f_cl.form.phone')} meta={fixture?.phone ?? '—'} />
+        <Row title={t('f_cl.form.address')} meta={fixture?.address_line ?? '—'} />
+        <SectionLabel label={t('f_cl.detail.projects')} />
+        <ul class="lane6-list" id="client-projects-list">
+          <li class="lane6-subtitle">{t('f_cl.detail.loading_projects')}</li>
+        </ul>
+      </Card>
+    </SurfaceIrreversibilityWrap>
   </article>
 
-  <script define:vars={{ emptyProjects: 'No linked projects yet.', loadError: 'Could not load client detail.' }}>
+  <script define:vars={{ emptyProjects: 'No linked projects yet.', loadError: 'Could not load client detail.', portalPreviewLabel: 'Portal preview' }}>
     const root = document.querySelector('.f-cl-detail');
     const clientId = root?.getAttribute('data-client-id');
     const tenantId = root?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
@@ -80,7 +104,7 @@ const fixture = getLane6Client(id);
           list.innerHTML = projects
             .map(
               (p) =>
-                `<li><a class="lane6-client-row" href="/projects/${p.project_id}"><strong>${p.project_name}</strong></a></li>`,
+                `<li><a class="lane6-client-row" href="/projects/${p.project_id}"><strong>${p.project_name}</strong></a> · <a href="/projects/${p.project_id}/portal-preview">${portalPreviewLabel}</a></li>`,
             )
             .join('');
         })

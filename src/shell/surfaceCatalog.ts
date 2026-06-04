@@ -3,6 +3,7 @@
  * Sidebar visibility derives from route roleScope (D-060).
  */
 import type { ShellRoleRoot } from '../contracts/lane1/domains.js';
+import { LANE2_ALL_SURFACES } from '../sales/surfaces.js';
 import { createInMemorySurfaceRegistry } from './inMemorySurfaceRegistry.js';
 
 const ALL_ROLES: readonly ShellRoleRoot[] = [
@@ -75,6 +76,11 @@ reg('client_success', '/transcript-review', 'TranscriptReview', OWNER_PM_ADMIN, 
 /** Surfaces registered but not yet built — honest stub routes still carry backTo. */
 reg('projects', '/blackboard', 'BlackboardStub', OWNER_PM_ADMIN, '/');
 reg('people_admin_ops', '/kb-ingestion', 'KbIngestionStub', ['owner', 'admin_ops'], '/');
+
+/** Lane 2 · Win the Work — sales spine + folded-in clients / portal-preview / success / warranty. */
+for (const surface of LANE2_ALL_SURFACES) {
+  surfaceRegistry.register(surface);
+}
 
 export function surfacesVisibleForRole(role: ShellRoleRoot) {
   return surfaceRegistry.listForRole(role);

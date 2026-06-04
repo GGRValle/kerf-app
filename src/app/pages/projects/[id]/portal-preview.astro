@@ -1,0 +1,72 @@
+---
+// F-CP1 · GC-side client portal preview
+import Layout from '../../../layouts/Layout.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getLane3ClientForProject, findLane3SessionByClient } from '../../../lib/lane3Fixtures.js';
+import '../../../styles/lane6.css';
+import '../../../styles/lane3.css';
+
+const { id } = Astro.params;
+const { t, context } = createLayoutContext();
+if (!id) return Astro.redirect('/projects');
+
+// Real project↔client binding — resolve the owning client from the project id.
+// No hardcoded client: an unbound project has no portal to preview.
+const boundClientId = getLane3ClientForProject(id);
+const session = boundClientId
+  ? findLane3SessionByClient(context.tenantId as any, boundClientId)
+  : null;
+const clientLoginToken = session?.session_token ?? null;
+---
+
+<Layout titleKey="f_cp.preview_title" activeHref="/projects">
+  <article
+    class="lane3-page f-cp-preview"
+    data-project-id={id}
+    data-tenant-id={context.tenantId}
+    data-client-id={boundClientId ?? ''}
+  >
+    <div class="lane3-portal-banner">{t('f_cp.gc_banner')}</div>
+    <h1 class="lane6-title">{t('f_cp.preview_title')}</h1>
+    <p class="lane6-subtitle">{t('f_cp.preview_subtitle')}</p>
+    {boundClientId ? (
+      clientLoginToken && (
+        <p><a href={`/portal/s/${clientLoginToken}?tenant_id=${context.tenantId}`}>{t('f_cp.open_client_login')}</a></p>
+      )
+    ) : (
+      <p class="lane6-subtitle" data-unbound>This project is not yet bound to a client — no portal to preview.</p>
+    )}
+    <div id="portal-preview-root" class="lane3-approvals"></div>
+  </article>
+  <script>
+    const root = document.querySelector('.f-cp-preview');
+    const tenantId = root?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
+    const clientId = root?.getAttribute('data-client-id') ?? '';
+    const projectId = root?.getAttribute('data-project-id') ?? '';
+    const mount = document.getElementById('portal-preview-root');
+    if (!mount || !clientId || !projectId) {
+      // no-op
+    } else {
+      fetch(
+        `/api/v1/portal/preview?tenant_id=${tenantId}&client_id=${clientId}&project_id=${projectId}`,
+      )
+        .then((r) => r.json())
+        .then((data) => {
+          const approvals = data.approvals ?? [];
+          if (approvals.length === 0) {
+            mount.innerHTML = '<p class="lane6-subtitle">No pending approvals for this project.</p>';
+            return;
+          }
+          mount.innerHTML = approvals
+            .map((a) => {
+              const dollars = (a.client_visible_total_cents / 100).toLocaleString('en-US', {
+                style: 'currency',
+                currency: 'USD',
+              });
+              return `<article class="lane3-approval ${a.state === 'needs_you' ? 'needs-you' : ''}"><div class="lane3-approval-head"><div><strong>${a.headline}</strong><p class="lane6-subtitle">${a.because}</p></div><span class="lane3-price">${dollars}</span></div><p class="lane6-subtitle">Client view only · no cost or margin shown</p></article>`;
+            })
+            .join('');
+        });
+    }
+  </script>
+</Layout>

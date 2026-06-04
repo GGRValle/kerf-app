@@ -1,0 +1,29 @@
+---
+// F-CS2 · Client Success detail
+import Layout from '../../layouts/Layout.astro';
+import ClientBrainSummary from '../../components/ClientBrainSummary.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { getLane3Brain } from '../../lib/lane3Fixtures.js';
+import '../../styles/lane3.css';
+
+const { clientId } = Astro.params;
+const { t } = createLayoutContext();
+if (!clientId) return Astro.redirect('/client-success');
+const brain = getLane3Brain(clientId);
+---
+
+<Layout titleKey="f_cs.detail_title" activeHref="/clients">
+  <article class="lane3-page">
+    <h1 class="lane6-title">{t('f_cs.detail_title')}</h1>
+    <p class="lane6-subtitle">{clientId}</p>
+    {brain !== null && (
+      <ClientBrainSummary
+        brain={brain}
+        nextActionLabel={t('f_cl5.next_action')}
+        openBalanceLabel={t('f_cl5.open_balance')}
+        latestNoteLabel={t('f_cl5.latest_note')}
+      />
+    )}
+    <p><a href={`/clients/${clientId}`}>{t('f_cs.back_client')}</a> · <a href={`/clients/${clientId}/warranty`}>{t('f_war.link')}</a></p>
+  </article>
+</Layout>

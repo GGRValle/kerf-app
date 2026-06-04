@@ -1,0 +1,45 @@
+---
+// F-WAR1 frame 1 · Warranty entity (tracking projection = Lane 5)
+import Layout from '../../../layouts/Layout.astro';
+import Card from '../../../components/Card.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getLane3WarrantyForClient } from '../../../lib/lane3Fixtures.js';
+import '../../../styles/lane3.css';
+
+const { id } = Astro.params;
+const { t } = createLayoutContext();
+if (!id) return Astro.redirect('/clients');
+const warranty = getLane3WarrantyForClient(id);
+---
+
+<Layout titleKey="f_war.title" activeHref="/clients">
+  <article class="lane3-page">
+    <div class="lane6-crumb">
+      <a href={`/clients/${id}`}>{t('f_cl.crumb')}</a> · {t('f_war.title')}
+    </div>
+    <h1 class="lane6-title">{t('f_war.title')}</h1>
+    {warranty === null ? (
+      <p class="lane6-subtitle">{t('f_war.empty')}</p>
+    ) : (
+      <Card title={t('f_war.terms')}>
+        <p>
+          <strong>{t('f_war.term_years')}</strong> {warranty.term_years}
+        </p>
+        <p>
+          <strong>{t('f_war.status')}</strong> {warranty.status}
+        </p>
+        <p>
+          <strong>{t('f_war.claims_open')}</strong> {warranty.claims_open}
+        </p>
+        <ul>
+          {warranty.covered_components.map((c) => (
+            <li>{c}</li>
+          ))}
+        </ul>
+        {warranty.claims_open > 0 && (
+          <p class="lane6-subtitle">{t('f_war.claim_spawn_hint')}</p>
+        )}
+      </Card>
+    )}
+  </article>
+</Layout>

@@ -1,0 +1,167 @@
+---
+// F-LIB1 · Knowledge Base / Libraries · /library (Lane 2)
+import Layout from '../layouts/Layout.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import {
+  getSalesStore,
+  kbCollectionLabel,
+  KB_COLLECTIONS,
+  templateAssemblies,
+  assemblyItems,
+  catalogUnitCents,
+} from '../../sales/index.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const store = getSalesStore(tenant);
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+const functional = new Set(['selections', 'assemblies', 'templates']);
+const counts: Record<string, number> = {
+  cost: store.items.filter((i) => i.collection === 'cost').length,
+  selections: store.items.filter((i) => i.collection === 'selections').length,
+  vendors: store.vendors.length,
+  assemblies: store.assemblies.length,
+  templates: store.templates.length,
+};
+const selectionItems = store.items.filter((i) => i.collection === 'selections');
+const ladder = store.templates.map((tpl) => ({
+  template: tpl,
+  assemblies: templateAssemblies(tpl, store.assemblies).map((asm) => ({
+    assembly: asm,
+    items: assemblyItems(asm, store.items),
+  })),
+}));
+---
+
+<Layout title="Knowledge Base" activeHref="/library">
+  <article class="lib-page">
+    <header>
+      <div class="lib-crumb">Knowledge Base</div>
+      <h1>Libraries</h1>
+      <p class="lib-sub">Item → Assembly → Template. The catalog you price jobs from.</p>
+    </header>
+
+    <nav class="lib-tabs" role="tablist">
+      {KB_COLLECTIONS.map((col) => (
+        <button class="lib-tab" data-tab={col} aria-selected={col === 'selections' ? 'true' : 'false'}>
+          {kbCollectionLabel(col)} <span class="lib-count">{counts[col] ?? 0}</span>
+          {functional.has(col) ? null : <span class="lib-soon">soon</span>}
+        </button>
+      ))}
+    </nav>
+
+    <!-- Selections collection (functional) + import + ladder -->
+    <section class="lib-panel" data-panel="selections">
+      <div class="lib-import">
+        <h2>Import a catalog item</h2>
+        <div class="lib-import-row">
+          <input id="imp-label" placeholder="Label (e.g. Oak floor — engineered)" />
+          <input id="imp-uom" placeholder="UOM" value="SF" />
+          <input id="imp-cost" type="number" min="0" step="1" placeholder="Unit cost (cents)" />
+          <button id="imp-go" class="lib-btn primary">Import</button>
+        </div>
+        <p class="lib-meta">Import is a durable write — you'll confirm. Cost is integer cents.</p>
+      </div>
+
+      <h2>Selections catalog</h2>
+      {selectionItems.map((item) => (
+        <div class="lib-item">
+          <strong>{item.label}</strong>
+          <span class="lib-meta">{item.sku ?? '—'} · {item.line_type} · {fmt(catalogUnitCents(item))}/{item.uom}{item.pricing_mode === 'flat_rate' ? ' · flat rate' : ''}</span>
+        </div>
+      ))}
+
+      <h2 class="lib-ladder-head">Item → Assembly → Template ladder</h2>
+      {ladder.length === 0 ? <p class="lib-meta">No templates yet.</p> : null}
+      {ladder.map((rung) => (
+        <div class="lib-ladder">
+          <div class="lib-tpl">Template · {rung.template.label}</div>
+          {rung.assemblies.map((a) => (
+            <div class="lib-asm">
+              <div class="lib-asm-head">Assembly · {a.assembly.label}</div>
+              {a.items.map((it) => (
+                <div class="lib-leaf">Item · {it.label} <span class="lib-meta">{fmt(catalogUnitCents(it))}/{it.uom}</span></div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
+    </section>
+
+    <!-- Other collections: cost + vendors stubbed honestly; assemblies/templates shown via ladder -->
+    {KB_COLLECTIONS.filter((c) => c !== 'selections').map((col) => (
+      <section class="lib-panel" data-panel={col} hidden>
+        {functional.has(col) ? (
+          <div class="lib-stub-card lib-ok">
+            <h2>{kbCollectionLabel(col)} ({counts[col] ?? 0})</h2>
+            <p>{col === 'assemblies' ? 'Assemblies bundle catalog items.' : 'Templates bundle assemblies into a job archetype.'} See the ladder under Selections.</p>
+          </div>
+        ) : (
+          <div class="lib-stub-card">
+            <h2>{kbCollectionLabel(col)} ({counts[col] ?? 0})</h2>
+            <p>Not built yet — this collection has data ({counts[col] ?? 0} rows) but its dedicated editor is a placeholder. No fake controls.</p>
+            <p class="lib-meta">Guardrail held: the schema can hold a flat-rate price book + rebate catalog (modeled on the catalog item), no vertical UI.</p>
+          </div>
+        )}
+      </section>
+    ))}
+  </article>
+</Layout>
+
+<script>
+  function showTab(id: string) {
+    document.querySelectorAll('.lib-tab').forEach((b) =>
+      b.setAttribute('aria-selected', b.getAttribute('data-tab') === id ? 'true' : 'false'),
+    );
+    document.querySelectorAll('.lib-panel').forEach((p) => {
+      (p as HTMLElement).hidden = p.getAttribute('data-panel') !== id;
+    });
+  }
+  document.querySelectorAll('.lib-tab').forEach((b) =>
+    b.addEventListener('click', () => showTab(b.getAttribute('data-tab') ?? 'selections')),
+  );
+
+  document.getElementById('imp-go')?.addEventListener('click', async () => {
+    const label = (document.getElementById('imp-label') as HTMLInputElement)?.value.trim();
+    const uom = (document.getElementById('imp-uom') as HTMLInputElement)?.value.trim() || 'EA';
+    const cost = parseInt((document.getElementById('imp-cost') as HTMLInputElement)?.value || '', 10);
+    if (!label || !Number.isInteger(cost)) { alert('Label and integer cents cost required.'); return; }
+    if (!confirm(`Import "${label}" into the catalog?`)) return;
+    const res = await fetch('/api/v1/kb/import', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ confirmed: true, label, uom, unit_cost_cents: cost }),
+    });
+    if (res.ok) window.location.reload();
+    else alert('Import failed (' + res.status + ').');
+  });
+</script>
+
+<style>
+  .lib-page { padding: 1rem; max-width: 900px; }
+  .lib-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
+  .lib-sub { color: var(--text-muted, #98a1b3); }
+  .lib-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.8rem 0; border-bottom: 1px solid var(--border, #2a3140); padding-bottom: 0.5rem; }
+  .lib-tab { padding: 0.4rem 0.7rem; border: 1px solid var(--border, #2a3140); border-radius: 999px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; font-size: 0.85rem; }
+  .lib-tab[aria-selected='true'] { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
+  .lib-count { color: var(--text-muted, #98a1b3); }
+  .lib-soon { font-size: 0.62rem; margin-left: 0.25rem; opacity: 0.6; }
+  .lib-import { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.75rem; background: var(--surface, #11151c); margin-bottom: 1rem; }
+  .lib-import h2 { font-size: 0.95rem; margin: 0 0 0.5rem; }
+  .lib-import-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .lib-import-row input { flex: 1 1 130px; padding: 0.45rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); font: inherit; }
+  .lib-btn { padding: 0.45rem 0.85rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; }
+  .lib-btn.primary { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
+  .lib-item { padding: 0.45rem 0; border-bottom: 1px solid var(--border, #222a36); }
+  .lib-meta { display: block; font-size: 0.75rem; color: var(--text-muted, #98a1b3); }
+  .lib-ladder-head { margin-top: 1.2rem; }
+  .lib-ladder { border: 1px solid var(--border, #2a3140); border-radius: 10px; padding: 0.6rem; margin-bottom: 0.6rem; background: var(--surface, #11151c); }
+  .lib-tpl { font-weight: 700; }
+  .lib-asm { margin: 0.4rem 0 0.4rem 0.8rem; padding-left: 0.6rem; border-left: 2px solid var(--border, #2a3140); }
+  .lib-asm-head { font-weight: 600; font-size: 0.9rem; }
+  .lib-leaf { margin-left: 0.8rem; font-size: 0.85rem; color: var(--text, #cdd6e2); }
+  .lib-stub-card { border: 1px dashed var(--border, #2a3140); border-radius: 12px; padding: 1.1rem; color: var(--text-muted, #98a1b3); background: var(--surface, #11151c); }
+  .lib-stub-card.lib-ok { border-style: solid; }
+</style>

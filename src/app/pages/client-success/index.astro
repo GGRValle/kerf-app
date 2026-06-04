@@ -1,0 +1,31 @@
+---
+// F-CS1 · Client Success roster
+import Layout from '../../layouts/Layout.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import '../../styles/lane3.css';
+
+const { t, context } = createLayoutContext();
+---
+
+<Layout titleKey="f_cs.list_title" activeHref="/clients">
+  <article class="lane3-page" data-tenant-id={context.tenantId}>
+    <h1 class="lane6-title">{t('f_cs.list_title')}</h1>
+    <p class="lane6-subtitle">{t('f_cs.list_subtitle')}</p>
+    <ul class="lane6-list" id="cs-roster"></ul>
+  </article>
+  <script>
+    const tenantId = document.querySelector('[data-tenant-id]')?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
+    fetch(`/api/v1/client-success?tenant_id=${tenantId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const list = document.getElementById('cs-roster');
+        if (!list) return;
+        list.innerHTML = (data.clients ?? [])
+          .map(
+            (c) =>
+              `<li><a class="lane6-client-row" href="/client-success/${c.client_id}"><strong>${c.client_id}</strong></a> <span class="lane3-health ${c.health_label}">${c.health_label} · ${c.health_score}</span> · claims ${c.claims_open}</li>`,
+          )
+          .join('');
+      });
+  </script>
+</Layout>

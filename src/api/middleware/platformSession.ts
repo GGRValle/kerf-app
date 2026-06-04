@@ -6,8 +6,26 @@ import {
   resolvePlatformSession,
 } from '../session/platformSession.js';
 
+export function normalizeApiMountPath(pathname: string): string {
+  const normalized = pathname.replace(/^\/api\/v\d+(?=\/|$)/, '');
+  return normalized.length > 0 ? normalized : '/';
+}
+
+function isPortalClientAuthPathNormalized(pathname: string): boolean {
+  if (pathname === '/portal/login') return true;
+  if (/^\/portal\/session\/[^/]+$/.test(pathname)) return true;
+  if (/^\/portal\/session\/[^/]+\/approvals\/[^/]+\/confirm$/.test(pathname)) return true;
+  return false;
+}
+
+/** Client portal token routes — scoped by opaque `psess_*` / portal token, not operator platform session. */
+export function isPortalClientAuthPath(pathname: string): boolean {
+  return isPortalClientAuthPathNormalized(normalizeApiMountPath(pathname));
+}
+
 export function isPlatformSessionExemptPath(pathname: string): boolean {
-  return pathname === '/health' || pathname === '/api/v1/health';
+  const normalized = normalizeApiMountPath(pathname);
+  return normalized === '/health' || isPortalClientAuthPathNormalized(normalized);
 }
 
 /** Wall 1 · inject session tenant before any /api/v1 handler runs. */

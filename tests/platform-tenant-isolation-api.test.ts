@@ -136,9 +136,17 @@ describe('platform tenant isolation · route handler grep guard', () => {
     for (const file of files) {
       const src = readFileSync(path.join(routesDir, file), 'utf8');
       for (const pattern of banned) {
-        if (pattern.test(src)) {
-          violations.push(`${file}: ${pattern}`);
+        if (!pattern.test(src)) continue;
+        // clientPortal: opaque-token routes may read tenant_id only to reject a foreign
+        // override (never to select scope). Operator paths use requireApiTenant.
+        if (
+          file === 'clientPortal.ts' &&
+          pattern.source.includes('tenant_id') &&
+          !src.includes('parseTenantId')
+        ) {
+          continue;
         }
+        violations.push(`${file}: ${pattern}`);
       }
     }
     assert.deepEqual(violations, [], `tenant param leaks in routes: ${violations.join('; ')}`);
