@@ -38,12 +38,15 @@ test('owner More nav includes Projects in ≤2 taps from any screen', () => {
   assert.equal(projects.href, '/projects');
 });
 
-test('camera honest-stub does not claim attachment before Lane 3 wiring', () => {
+test('camera Done files through Lane 3 daily-log endpoint before claiming attachment', () => {
   const src = read('src/app/pages/camera.astro');
-  assert.match(src, /TODO\(lane-3\)/);
-  assert.match(src, /preview_only_not_filed/);
-  assert.match(src, /Not filed yet/);
-  assert.doesNotMatch(src, /attached to \$\{selectedProjectName\}/);
+  assert.doesNotMatch(src, /TODO\(lane-3\)/);
+  assert.doesNotMatch(src, /preview_only_not_filed/);
+  assert.doesNotMatch(src, /Not filed yet/);
+  assert.match(src, /\/api\/v1\/projects\/\$\{selectedProjectId\}\/camera-capture/);
+  assert.match(src, /status: 'filed_to_daily_log'/);
+  assert.match(src, /Attached to \$\{selectedProjectName\} · Daily Log/);
+  assert.match(src, /Could not file that yet\. Nothing was attached/);
   assert.match(src, /\.f-cam1\.has-capture \.cam-viewfinder__copy/);
 });
 

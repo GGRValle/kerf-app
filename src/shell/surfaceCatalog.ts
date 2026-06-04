@@ -43,6 +43,8 @@ reg('home', '/on-me', 'OnMeF-ON1', ALL_ROLES, '/');
 reg('home', '/login', 'LoginF-LND1', ALL_ROLES, '/');
 
 reg('field', '/field-capture', 'FieldCapture', FIELD_ROLES, '/');
+reg('field', '/field', 'FieldHome', FIELD_ROLES, '/');
+reg('field', '/field-detail', 'FieldDetail', FIELD_ROLES, '/field');
 reg('field', '/relay', 'RelayReview', FIELD_ROLES, '/');
 reg('field', '/relay/[id]', 'RelayDetail', FIELD_ROLES, '/relay');
 
@@ -62,6 +64,10 @@ reg('clients', '/clients/new', 'ClientNew', OWNER_PM_ADMIN, '/clients');
 reg('clients', '/clients/[id]', 'ClientDetail', OWNER_PM_ADMIN, '/clients');
 
 reg('schedule', '/schedule', 'Schedule', ['owner', 'pm', 'admin_ops', 'field_hand'], '/');
+reg('people_admin_ops', '/team-ops/subs', 'TeamOpsSubs', ['owner', 'pm', 'admin_ops'], '/home/team-ops');
+reg('people_admin_ops', '/sub/portal', 'SubPortalDoor', ['sub'], '/home/sub');
+reg('people_admin_ops', '/sub/portal/s/[token]', 'SubPortalSession', ['sub'], '/sub/portal');
+reg('people_admin_ops', '/sub/portal/s/[token]/a/[assignmentId]', 'SubPortalAssignment', ['sub'], '/sub/portal/s/[token]');
 reg('people_admin_ops', '/settings', 'Settings', ALL_ROLES, '/');
 reg('people_admin_ops', '/reports', 'Reports', OWNER_PM_ADMIN, '/');
 reg('people_admin_ops', '/role-routing', 'RoleRouting', OWNER_PM_ADMIN, '/');

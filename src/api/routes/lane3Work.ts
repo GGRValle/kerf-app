@@ -4,6 +4,12 @@ import type { PersistenceTenantId } from '../../persistence/events.js';
 import { appendDailyLogEntryAndSurface } from '../lib/dailyLogCommit.js';
 import { getApiDeps } from '../lib/deps.js';
 import {
+  requireApiTenant,
+  tenantOverrideFlags,
+  tenantParamConflictsWithScope,
+  type ApiVariables,
+} from '../lib/tenantContext.js';
+import {
   assignmentVisibleToSub,
   COMPLIANCE_ROWS,
   getAssignment,
@@ -16,6 +22,7 @@ import {
   markWorkOrderSent,
   resolveSubToken,
 } from '../../app/lib/lane3WorkFixtures.js';
+import { getLane23ProjectForTenant } from '../../app/lib/lane23Fixtures.js';
 import {
   buildCameraCaptureJobNotePair,
   entryKindForCaptureKind,
@@ -24,52 +31,57 @@ import {
 import { assignmentEnvelope } from '../../schedule/d032Substrate.js';
 import type { AttentionArtifact } from '../../contracts/lane1/attentionArtifact.js';
 
-export const lane3WorkRoutes = new Hono();
+export const lane3WorkRoutes = new Hono<{ Variables: ApiVariables }>();
 
-function parseTenantId(raw: string | undefined): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
+function projectVisibleToTenant(projectId: string, tenant: PersistenceTenantId): boolean {
+  return getLane23ProjectForTenant(projectId, tenant) !== null;
 }
 
 lane3WorkRoutes.get('/projects/:id/brain', (c) => {
+  const tenant = requireApiTenant(c);
   const projectId = c.req.param('id');
+  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
   const brain = getProjectBrain(projectId);
   if (brain === null) return c.json({ error: 'brain_not_found' }, 404);
-  return c.json({ project_id: projectId, brain });
+  return c.json({ project_id: projectId, brain, ...tenantOverrideFlags(c) });
 });
 
 lane3WorkRoutes.get('/projects/:id/selections', (c) => {
-  return c.json({ project_id: c.req.param('id'), selections: listProjectSelections(c.req.param('id')) });
+  const tenant = requireApiTenant(c);
+  const projectId = c.req.param('id');
+  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
+  return c.json({ project_id: projectId, selections: listProjectSelections(projectId), ...tenantOverrideFlags(c) });
 });
 
 lane3WorkRoutes.get('/projects/:id/notes', (c) => {
-  return c.json({ project_id: c.req.param('id'), notes: listProjectNotes(c.req.param('id')) });
+  const tenant = requireApiTenant(c);
+  const projectId = c.req.param('id');
+  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
+  return c.json({ project_id: projectId, notes: listProjectNotes(projectId), ...tenantOverrideFlags(c) });
 });
 
 lane3WorkRoutes.get('/projects/:id/schedule-substrate', (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
+  const tenant = requireApiTenant(c);
   const projectId = c.req.param('id');
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
+  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
   const events = listScheduleEventsForProject(tenant, projectId);
   const assignments = listAssignmentsForProject(tenant, projectId).map((a) => ({
     ...a,
     envelope: assignmentEnvelope(a),
   }));
-  return c.json({ schedule_events: events, crew_assignments: assignments });
+  return c.json({ schedule_events: events, crew_assignments: assignments, ...tenantOverrideFlags(c) });
 });
 
 lane3WorkRoutes.post('/projects/:id/camera-capture', async (c) => {
   const projectId = c.req.param('id');
-  const body = await c.req.json<{
-    tenant_id?: string;
+  type CameraCaptureBody = {
     capture_kind?: 'photo' | 'walkthrough' | 'scan';
     file_name?: string;
     confirmed?: boolean;
-  }>();
-  const tenant = parseTenantId(body.tenant_id ?? c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
+  };
+  const body: CameraCaptureBody = await c.req.json<CameraCaptureBody>().catch(() => ({}));
+  const tenant = requireApiTenant(c);
+  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
   const kind = body.capture_kind ?? 'photo';
   if (kind !== 'photo' && kind !== 'walkthrough' && kind !== 'scan') {
     return c.json({ error: 'invalid_capture_kind' }, 400);
@@ -112,29 +124,35 @@ lane3WorkRoutes.post('/projects/:id/camera-capture', async (c) => {
       daily_log: result,
       artifacts: pair,
       daily_log_route: `/projects/${projectId}/daily_log`,
+      ...tenantOverrideFlags(c),
     },
     201,
   );
 });
 
 lane3WorkRoutes.post('/schedule/assignments/:id/send-work-order', async (c) => {
+  const tenant = requireApiTenant(c);
   const assignmentId = c.req.param('id');
   const body = await c.req.json<{ confirmed?: boolean }>();
   if (body.confirmed !== true) {
     return c.json({ error: 'confirmation_required' }, 400);
   }
+  const existing = getAssignment(assignmentId);
+  if (existing === null || existing.tenant_id !== tenant) return c.json({ error: 'assignment_not_found' }, 404);
   const assignment = markWorkOrderSent(assignmentId, new Date().toISOString());
   if (assignment === null) return c.json({ error: 'assignment_not_found' }, 404);
   return c.json({
     ok: true,
     assignment,
     message: 'Work order marked sent — no autonomous SMS/email from Kerf.',
+    ...tenantOverrideFlags(c),
   });
 });
 
 lane3WorkRoutes.post('/schedule/assignments/:id/message-sub', async (c) => {
+  const tenant = requireApiTenant(c);
   const assignment = getAssignment(c.req.param('id'));
-  if (assignment === null) return c.json({ error: 'assignment_not_found' }, 404);
+  if (assignment === null || assignment.tenant_id !== tenant) return c.json({ error: 'assignment_not_found' }, 404);
   const body = await c.req.json<{ confirmed?: boolean; message?: string }>();
   if (body.confirmed !== true) {
     return c.json({
@@ -148,16 +166,18 @@ lane3WorkRoutes.post('/schedule/assignments/:id/message-sub', async (c) => {
     relay_route: `/relay?sub=${assignment.sub_id}&assignment=${assignment.assignment_id}`,
     drafted_message: body.message ?? `Scope confirmed for ${assignment.trade} · ${assignment.location_label}`,
     autonomous_send: false,
+    ...tenantOverrideFlags(c),
   });
 });
 
 lane3WorkRoutes.get('/sub/portal/session/:token', (c) => {
   const token = c.req.param('token');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
   const session = resolveSubToken(token);
-  if (session === null || session.tenant_id !== tenant) {
+  if (session === null) {
     return c.json({ error: 'sub_session_not_found' }, 404);
+  }
+  if (tenantParamConflictsWithScope(c.req.url, session.tenant_id)) {
+    return c.json({ error: 'sub_isolation_violation' }, 403);
   }
   const assignments = listAssignmentsForSub(session.sub_id).map((a) => ({
     assignment_id: a.assignment_id,
@@ -178,12 +198,13 @@ lane3WorkRoutes.get('/sub/portal/session/:token', (c) => {
 lane3WorkRoutes.get('/sub/portal/session/:token/assignments/:assignmentId', (c) => {
   const token = c.req.param('token');
   const assignmentId = c.req.param('assignmentId');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
   const session = resolveSubToken(token);
   const assignment = getAssignment(assignmentId);
-  if (session === null || assignment === null || session.tenant_id !== tenant) {
+  if (session === null || assignment === null) {
     return c.json({ error: 'not_found' }, 404);
+  }
+  if (tenantParamConflictsWithScope(c.req.url, session.tenant_id)) {
+    return c.json({ error: 'sub_isolation_violation' }, 403);
   }
   if (!assignmentVisibleToSub(assignment, session.sub_id)) {
     return c.json({ error: 'sub_isolation_violation' }, 403);
@@ -201,8 +222,7 @@ lane3WorkRoutes.get('/sub/portal/session/:token/assignments/:assignmentId', (c) 
 });
 
 lane3WorkRoutes.get('/team-ops/compliance', (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
+  const tenant = requireApiTenant(c);
   const attention: AttentionArtifact[] = COMPLIANCE_ROWS.filter((r) => r.days_until_expiry <= 30).map(
     (r) => ({
       id: `attn_coi_${r.sub_id}`,
@@ -217,5 +237,5 @@ lane3WorkRoutes.get('/team-ops/compliance', (c) => {
       locality: { tenant, consequence_tier: 'reversible' as const },
     }),
   );
-  return c.json({ compliance: COMPLIANCE_ROWS, attention });
+  return c.json({ compliance: COMPLIANCE_ROWS, attention, ...tenantOverrideFlags(c) });
 });

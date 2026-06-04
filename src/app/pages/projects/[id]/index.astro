@@ -68,9 +68,50 @@ const brain = project ? getProjectBrain(project.project_id) : null;
     </div>
   )}
 
-  <script define:vars={{ tenantId: context.tenantId }}>
+  <script>
+    const TURN_RESOLUTION_SESSION_KEY = 'kerf.turnResolution';
+    const parseTurnResolution = (raw) => {
+      try {
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (typeof parsed.heard_text !== 'string') return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    };
+    const likelyProjectMatches = (trp, currentProjectId, currentProjectName) => {
+      const likely = trp?.context_hypothesis?.likely_entity;
+      if (likely?.type !== 'project') return false;
+      if (likely.id && likely.id === currentProjectId) return true;
+      const label = typeof likely.label === 'string' ? likely.label.toLowerCase() : '';
+      return label.length > 0 && currentProjectName.toLowerCase().includes(label);
+    };
+
+    const hydrateRightHandProjectHandoff = () => {
+      const handoff = document.getElementById('rh-project-detail-handoff');
+      if (!handoff) return;
+      let raw = null;
+      try {
+        raw = sessionStorage.getItem(TURN_RESOLUTION_SESSION_KEY);
+      } catch {
+        raw = null;
+      }
+      const trp = parseTurnResolution(raw);
+      if (!trp) return;
+      const currentProjectId = document.querySelector('.lane23-page')?.getAttribute('data-project-id') ?? '';
+      const currentProjectName = document.querySelector('.lane23-project-header h1')?.textContent?.trim() ?? '';
+      if (!likelyProjectMatches(trp, currentProjectId, currentProjectName)) return;
+      const body = handoff.querySelector('.lane23-rh-handoff__body');
+      if (body) {
+        body.textContent = `Right Hand brought this over: ${trp.heard_text} Nothing has been filed yet.`;
+      }
+      handoff.hidden = false;
+    };
+
     const params = new URLSearchParams(window.location.search);
     const projectId = document.querySelector('.lane23-page')?.getAttribute('data-project-id') ?? '';
+    hydrateRightHandProjectHandoff();
     if (params.get('src') === 'camera' && projectId) {
       let raw = null;
       try {
@@ -84,29 +125,17 @@ const brain = project ? getProjectBrain(project.project_id) : null;
         const title = document.getElementById('camera-landed-title');
         const detail = document.getElementById('camera-landed-detail');
         if (banner) banner.hidden = false;
-        fetch(`/api/v1/projects/${projectId}/camera-capture?tenant_id=${tenantId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tenant_id: tenantId,
-            capture_kind: capture.kind === 'walkthrough' ? 'walkthrough' : capture.kind === 'scan' ? 'scan' : 'photo',
-            file_name: capture.name,
-            confirmed: true,
-          }),
-        })
-          .then((r) => r.json())
-          .then((data) => {
-            if (title && data.artifacts?.attention?.headline) {
-              title.textContent = data.artifacts.attention.headline;
-            }
-            if (detail && data.artifacts?.work?.body_preview) {
-              detail.textContent = data.artifacts.work.body_preview;
-            }
-            sessionStorage.removeItem('kerf.cameraCapture');
-          })
-          .catch(() => {
-            if (detail) detail.textContent = 'Capture session saved — reload daily log to review.';
-          });
+        if (title && capture.status === 'filed_to_daily_log') {
+          title.textContent = `${capture.kind === 'walkthrough' ? 'Walkthrough' : capture.kind === 'scan' ? 'Document scan' : 'Photo'} filed`;
+        }
+        if (detail) {
+          detail.textContent = capture.status === 'filed_to_daily_log'
+            ? `Filed to Daily Log${capture.work_artifact_ref ? ` · ${capture.work_artifact_ref}` : ''}`
+            : 'Capture is still pending — open Camera to try filing again.';
+        }
+        if (capture.status === 'filed_to_daily_log') {
+          sessionStorage.removeItem('kerf.cameraCapture');
+        }
       }
     }
   </script>

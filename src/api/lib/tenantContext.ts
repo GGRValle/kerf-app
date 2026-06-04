@@ -25,3 +25,11 @@ export function tenantOverrideFlags(c: Context<{ Variables: ApiVariables }>): Re
       }
     : {};
 }
+
+export function tenantParamConflictsWithScope(
+  requestUrl: string,
+  scopedTenant: PersistenceTenantId,
+): boolean {
+  const requested = new URL(requestUrl).searchParams.get('tenant_id');
+  return requested !== null && requested !== scopedTenant;
+}

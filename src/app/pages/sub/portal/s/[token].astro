@@ -2,7 +2,6 @@
 import '../../../../styles/lane3work.css';
 
 const { token } = Astro.params;
-const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
 ---
 
 <!doctype html>
@@ -12,12 +11,12 @@ const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Your assignments</title>
   </head>
-  <body class="lane3w-sub-portal" data-token={token} data-tenant-id={tenantId}>
+  <body class="lane3w-sub-portal" data-token={token}>
     <h1 id="sub-portal-title">Assignments</h1>
     <ul id="sub-assignments"></ul>
   </body>
-  <script define:vars={{ token, tenantId }}>
-    fetch(`/api/v1/sub/portal/session/${token}?tenant_id=${tenantId}`)
+  <script define:vars={{ token }}>
+    fetch(`/api/v1/sub/portal/session/${token}`)
       .then((r) => r.json())
       .then((data) => {
         document.getElementById('sub-portal-title').textContent = data.sub_label ?? 'Assignments';
@@ -25,7 +24,7 @@ const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
         list.innerHTML = (data.assignments ?? [])
           .map(
             (a) =>
-              `<li><a href="/sub/portal/s/${token}/a/${a.assignment_id}?tenant_id=${tenantId}"><strong>${a.trade}</strong> · ${a.location_label}</a></li>`,
+              `<li><a href="/sub/portal/s/${token}/a/${a.assignment_id}"><strong>${a.trade}</strong> · ${a.location_label}</a></li>`,
           )
           .join('');
       });

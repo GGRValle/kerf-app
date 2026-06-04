@@ -2,7 +2,6 @@
 import '../../../../../../styles/lane3work.css';
 
 const { token, assignmentId } = Astro.params;
-const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
 ---
 
 <!doctype html>
@@ -12,13 +11,13 @@ const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Assignment</title>
   </head>
-  <body data-token={token} data-assignment-id={assignmentId} data-tenant-id={tenantId}>
-    <a href={`/sub/portal/s/${token}?tenant_id=${tenantId}`}>← Back</a>
+  <body data-token={token} data-assignment-id={assignmentId}>
+    <a href={`/sub/portal/s/${token}`}>← Back</a>
     <div id="sub-assignment-detail"></div>
     <button type="button" id="sub-clock-in">Clock in</button>
   </body>
-  <script define:vars={{ token, assignmentId, tenantId }}>
-    fetch(`/api/v1/sub/portal/session/${token}/assignments/${assignmentId}?tenant_id=${tenantId}`)
+  <script define:vars={{ token, assignmentId }}>
+    fetch(`/api/v1/sub/portal/session/${token}/assignments/${assignmentId}`)
       .then((r) => r.json())
       .then((data) => {
         const a = data.assignment;

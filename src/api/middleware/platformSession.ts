@@ -18,14 +18,29 @@ function isPortalClientAuthPathNormalized(pathname: string): boolean {
   return false;
 }
 
+function isSubPortalAuthPathNormalized(pathname: string): boolean {
+  if (/^\/sub\/portal\/session\/[^/]+$/.test(pathname)) return true;
+  if (/^\/sub\/portal\/session\/[^/]+\/assignments\/[^/]+$/.test(pathname)) return true;
+  return false;
+}
+
 /** Client portal token routes — scoped by opaque `psess_*` / portal token, not operator platform session. */
 export function isPortalClientAuthPath(pathname: string): boolean {
   return isPortalClientAuthPathNormalized(normalizeApiMountPath(pathname));
 }
 
+/** Sub portal token routes — scoped by opaque `subtok_*`, not operator platform session. */
+export function isSubPortalAuthPath(pathname: string): boolean {
+  return isSubPortalAuthPathNormalized(normalizeApiMountPath(pathname));
+}
+
 export function isPlatformSessionExemptPath(pathname: string): boolean {
   const normalized = normalizeApiMountPath(pathname);
-  return normalized === '/health' || isPortalClientAuthPathNormalized(normalized);
+  return (
+    normalized === '/health' ||
+    isPortalClientAuthPathNormalized(normalized) ||
+    isSubPortalAuthPathNormalized(normalized)
+  );
 }
 
 /** Wall 1 · inject session tenant before any /api/v1 handler runs. */
