@@ -58,6 +58,15 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
 
     <section class="cam-stage" aria-label="Camera capture">
       <div class="cam-viewfinder" data-mode={initialMode}>
+        <video
+          id="cam-video"
+          class="cam-video"
+          playsinline
+          muted
+          autoplay
+          aria-label="Live camera preview"
+        ></video>
+        <canvas id="cam-canvas" hidden></canvas>
         <div class="cam-topbar">
           <div class="cam-topbar__group">
             <a class="cam-icon-link" href={returnHref} aria-label="Close camera">×</a>
@@ -74,12 +83,16 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         </div>
 
         <div class="cam-rec-pill" id="cam-rec-pill" hidden>Right Hand listening · REC</div>
+        <div class="cam-camera-state" id="cam-camera-state" hidden>
+          <strong>Camera access needed</strong>
+          <span>Use the fallback only if the browser cannot open the camera here.</span>
+        </div>
         <div class="cam-crosshair" aria-hidden="true"></div>
         <p class="cam-viewfinder__copy" id="cam-viewfinder-copy">
           {initialMode === 'walkthru'
             ? 'Talk while you film. Right Hand will keep the walkthrough with this job.'
             : initialMode === 'scan'
-              ? 'Capture plans, specs, or paperwork. Right Hand will keep the document with this job.'
+              ? 'Room scan needs native LiDAR. This web build keeps it separate for now.'
               : 'Take a photo for this job.'}
         </p>
       </div>
@@ -127,7 +140,6 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
 
       <input id="camera-photo-input" type="file" accept="image/*" capture="environment" hidden />
       <input id="camera-video-input" type="file" accept="video/*" capture="environment" hidden />
-      <input id="camera-scan-input" type="file" accept="image/*,.pdf,application/pdf" capture="environment" hidden />
     </section>
   </section>
 
@@ -136,11 +148,13 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const status = document.querySelector('#camera-status');
     const jobChip = document.querySelector('#cam-job-chip strong');
     const viewfinder = document.querySelector('.cam-viewfinder');
+    const video = document.querySelector('#cam-video');
+    const canvas = document.querySelector('#cam-canvas');
+    const cameraState = document.querySelector('#cam-camera-state');
     const viewfinderCopy = document.querySelector('#cam-viewfinder-copy');
     const recPill = document.querySelector('#cam-rec-pill');
     const photoInput = document.querySelector('#camera-photo-input');
     const videoInput = document.querySelector('#camera-video-input');
-    const scanInput = document.querySelector('#camera-scan-input');
     const captured = document.querySelector('#cam-captured');
     const capturedTitle = document.querySelector('#cam-captured-title');
     const capturedDetail = document.querySelector('#cam-captured-detail');
@@ -149,24 +163,110 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     let selectedProjectId = root?.getAttribute('data-selected-project-id') || '';
     let selectedProjectName = jobChip?.textContent?.trim() || '';
     let lastCapture = null;
+    let cameraStream = null;
+    let cameraFailure = null;
+    let recorder = null;
+    let recorderChunks = [];
+    let recordingStartedAt = 0;
 
     const copyForMode = (mode) => {
       if (mode === 'walkthru') return 'Talk while you film. Right Hand will keep the walkthrough with this job.';
-      if (mode === 'scan') return 'Capture plans, specs, or paperwork. Right Hand will keep the document with this job.';
+      if (mode === 'scan') return 'Room scan needs native LiDAR. This web build keeps it separate for now.';
       return 'Take a photo for this job.';
     };
     const setStatus = (message) => {
       if (status instanceof HTMLElement) status.textContent = message;
     };
-    const setMode = (mode) => {
+    const stopCamera = () => {
+      if (cameraStream instanceof MediaStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+      cameraStream = null;
+      if (video instanceof HTMLVideoElement) video.srcObject = null;
+      if (viewfinder instanceof HTMLElement) viewfinder.classList.remove('is-live');
+    };
+    const setCameraState = (headline, detail) => {
+      if (!(cameraState instanceof HTMLElement)) return;
+      if (!headline) {
+        cameraState.hidden = true;
+        return;
+      }
+      cameraState.hidden = false;
+      const title = cameraState.querySelector('strong');
+      const copy = cameraState.querySelector('span');
+      if (title instanceof HTMLElement) title.textContent = headline;
+      if (copy instanceof HTMLElement) copy.textContent = detail;
+    };
+    const mediaConstraintsForMode = (mode) => ({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+      audio: mode === 'walkthru',
+    });
+    const startCamera = async () => {
+      cameraFailure = null;
+      if (!selectedProjectId || currentMode === 'scan') {
+        stopCamera();
+        if (currentMode === 'scan') {
+          setCameraState('Native scan is separate', 'LiDAR/room scan is not available in this web camera yet.');
+        }
+        return false;
+      }
+      if (!window.isSecureContext) {
+        cameraFailure = 'secure_context_required';
+        stopCamera();
+        setCameraState('Open on HTTPS to use camera', 'Use the file fallback only for this browser session.');
+        return false;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        cameraFailure = 'getusermedia_unavailable';
+        stopCamera();
+        setCameraState('Camera unavailable here', 'Use the file fallback because this browser cannot open an in-app camera.');
+        return false;
+      }
+      stopCamera();
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia(mediaConstraintsForMode(currentMode));
+      } catch (err) {
+        if (currentMode === 'walkthru') {
+          try {
+            cameraStream = await navigator.mediaDevices.getUserMedia(mediaConstraintsForMode('photo'));
+          } catch (fallbackErr) {
+            cameraFailure = fallbackErr instanceof Error ? fallbackErr.name : 'camera_denied';
+          }
+        } else {
+          cameraFailure = err instanceof Error ? err.name : 'camera_denied';
+        }
+      }
+      if (!(cameraStream instanceof MediaStream)) {
+        stopCamera();
+        setCameraState('Camera access blocked', 'Enable camera access or use the fallback file picker.');
+        return false;
+      }
+      if (video instanceof HTMLVideoElement) {
+        video.srcObject = cameraStream;
+        await video.play().catch(() => undefined);
+      }
+      if (viewfinder instanceof HTMLElement) viewfinder.classList.add('is-live');
+      setCameraState('', '');
+      return true;
+    };
+    const setMode = async (mode) => {
       currentMode = mode;
       if (viewfinder instanceof HTMLElement) viewfinder.dataset.mode = mode;
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.textContent = copyForMode(mode);
-      if (recPill instanceof HTMLElement) recPill.hidden = mode !== 'walkthru';
+      if (recPill instanceof HTMLElement) recPill.hidden = mode !== 'walkthru' || !(recorder instanceof MediaRecorder && recorder.state === 'recording');
       document.querySelectorAll('[data-mode]').forEach((button) => {
         if (button instanceof HTMLButtonElement) button.setAttribute('aria-selected', button.dataset.mode === mode ? 'true' : 'false');
       });
-      setStatus(selectedProjectId ? `Ready for ${selectedProjectName}.` : 'Choose a job first.');
+      if (mode === 'scan') {
+        setStatus('');
+      } else {
+        setStatus(selectedProjectId ? `Ready for ${selectedProjectName}.` : 'Choose a job first.');
+      }
+      await startCamera();
     };
     const selectProject = (button) => {
       selectedProjectId = button.dataset.projectId || '';
@@ -178,38 +278,20 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       }
       if (jobChip instanceof HTMLElement) jobChip.textContent = selectedProjectName;
       setStatus(`Ready for ${selectedProjectName}.`);
-    };
-    const inputForMode = () => {
-      if (currentMode === 'walkthru') return videoInput;
-      if (currentMode === 'scan') return scanInput;
-      return photoInput;
+      void startCamera();
     };
     const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
     const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
-    const openCapture = () => {
-      if (!selectedProjectId) {
-        setStatus('Choose a job before you capture.');
+    const fallbackInputForMode = () => currentMode === 'walkthru' ? videoInput : photoInput;
+    const openFallbackCapture = () => {
+      if (currentMode === 'scan') {
+        setStatus('Room scan is native LiDAR and is not available in this web camera yet.');
         return;
       }
-      const input = inputForMode();
+      const input = fallbackInputForMode();
       if (input instanceof HTMLInputElement) input.click();
     };
-    const onSelectedFile = (file, kind) => {
-      if (!file) return;
-      const objectUrl = kind === 'photo' && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
-      lastCapture = {
-        kind,
-        name: file.name || `${kind} capture`,
-        project_id: selectedProjectId,
-        project_name: selectedProjectName,
-        at: Date.now(),
-        status: 'ready_to_file',
-      };
-      try {
-        sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(lastCapture));
-      } catch {
-        // Visible state still tells the operator what happened.
-      }
+    const updateLastShot = (kind, previewUrl = '') => {
       const friendly = friendlyForKind(kind);
       if (root instanceof HTMLElement) root.classList.add('has-capture');
       if (captured instanceof HTMLElement) captured.hidden = false;
@@ -220,15 +302,127 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       }
       if (thumb instanceof HTMLElement) {
         thumb.className = `cam-thumb ${kind === 'photo' ? 'is-photo' : kind === 'scan' ? 'is-scan' : 'is-video'}`;
-        thumb.style.backgroundImage = objectUrl ? `url("${objectUrl}")` : '';
-        thumb.textContent = objectUrl ? '' : kind === 'walkthrough' ? 'REC' : kind === 'scan' ? 'DOC' : 'IMG';
+        thumb.style.backgroundImage = previewUrl ? `url("${previewUrl}")` : '';
+        thumb.textContent = previewUrl ? '' : kind === 'walkthrough' ? 'REC' : kind === 'scan' ? 'DOC' : 'IMG';
       }
       setStatus(`${friendly} ready — tap Done to attach it to ${selectedProjectName}.`);
+    };
+    const rememberCapture = (capture) => {
+      lastCapture = {
+        project_id: selectedProjectId,
+        project_name: selectedProjectName,
+        at: Date.now(),
+        status: 'ready_to_file',
+        ...capture,
+      };
+      try {
+        sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(lastCapture));
+      } catch {
+        // Visible state still tells the operator what happened.
+      }
+    };
+    const captureStillFromVideo = (kind = 'photo') => {
+      if (!(video instanceof HTMLVideoElement) || !(canvas instanceof HTMLCanvasElement)) {
+        return false;
+      }
+      const width = video.videoWidth || 1280;
+      const height = video.videoHeight || 720;
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return false;
+      ctx.drawImage(video, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const name = `${kind === 'walkthrough' ? 'walkthrough-frame' : 'photo'}-${Date.now()}.jpg`;
+      rememberCapture({ kind, name, source: 'getUserMedia_canvas_frame' });
+      updateLastShot(kind, dataUrl);
+      return true;
+    };
+    const finishWalkthruRecording = () => new Promise((resolve) => {
+      if (!(recorder instanceof MediaRecorder) || recorder.state === 'inactive') {
+        resolve(false);
+        return;
+      }
+      recorder.addEventListener('stop', () => {
+        const mime = recorder.mimeType || 'video/webm';
+        const blob = new Blob(recorderChunks, { type: mime });
+        const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+        const objectUrl = URL.createObjectURL(blob);
+        rememberCapture({
+          kind: 'walkthrough',
+          name: `walkthrough-${recordingStartedAt || Date.now()}.${ext}`,
+          source: 'getUserMedia_mediarecorder',
+          bytes: blob.size,
+        });
+        updateLastShot('walkthrough', objectUrl);
+        if (recPill instanceof HTMLElement) recPill.hidden = true;
+        resolve(true);
+      }, { once: true });
+      recorder.stop();
+    });
+    const startWalkthruRecording = () => {
+      if (!(cameraStream instanceof MediaStream) || typeof MediaRecorder === 'undefined') {
+        return captureStillFromVideo('walkthrough');
+      }
+      if (recorder instanceof MediaRecorder && recorder.state === 'recording') {
+        void finishWalkthruRecording();
+        return true;
+      }
+      recorderChunks = [];
+      recorder = new MediaRecorder(cameraStream);
+      recordingStartedAt = Date.now();
+      recorder.addEventListener('dataavailable', (event) => {
+        if (event.data.size > 0) recorderChunks.push(event.data);
+      });
+      recorder.start();
+      if (recPill instanceof HTMLElement) recPill.hidden = false;
+      setStatus('Recording walkthrough — tap shutter or Done to finish.');
+      return true;
+    };
+    const openCapture = async () => {
+      if (!selectedProjectId) {
+        setStatus('Choose a job before you capture.');
+        return;
+      }
+      if (currentMode === 'scan') {
+        setStatus('Scan needs native LiDAR. Use Room scan when the native capture path is ready.');
+        setCameraState('Native scan is separate', 'Nothing was filed. LiDAR capture is deferred to the native track.');
+        return;
+      }
+      if (!(cameraStream instanceof MediaStream)) {
+        const started = await startCamera();
+        if (!started) {
+          setStatus('Camera unavailable here — using fallback file picker.');
+          openFallbackCapture();
+          return;
+        }
+      }
+      const capturedInline = currentMode === 'walkthru'
+        ? startWalkthruRecording()
+        : captureStillFromVideo('photo');
+      if (!capturedInline) {
+        setStatus('Camera unavailable here — using fallback file picker.');
+        openFallbackCapture();
+      }
+    };
+    const onSelectedFile = (file, kind) => {
+      if (!file) return;
+      const objectUrl = kind === 'photo' && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
+      rememberCapture({
+        kind,
+        name: file.name || `${kind} capture`,
+        source: 'file_input_fallback',
+      });
+      updateLastShot(kind, objectUrl);
     };
     const done = async () => {
       if (!selectedProjectId) {
         setStatus('Choose a job before you capture.');
         return;
+      }
+      if (recorder instanceof MediaRecorder && recorder.state === 'recording') {
+        setStatus('Finishing walkthrough…');
+        await finishWalkthruRecording();
       }
       if (!lastCapture) {
         setStatus('Nothing captured yet. Take a photo, scan a document, or record a walkthrough first.');
@@ -285,15 +479,15 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       });
     });
     document.querySelectorAll('.cam-mode-strip [data-mode]').forEach((button) => {
-      button.addEventListener('click', () => setMode(button.getAttribute('data-mode') || 'photo'));
+      button.addEventListener('click', () => void setMode(button.getAttribute('data-mode') || 'photo'));
     });
-    document.querySelector('#cam-shutter')?.addEventListener('click', openCapture);
+    document.querySelector('#cam-shutter')?.addEventListener('click', () => void openCapture());
     document.querySelector('#cam-done')?.addEventListener('click', done);
     photoInput?.addEventListener('change', () => onSelectedFile(photoInput instanceof HTMLInputElement ? photoInput.files?.[0] : null, 'photo'));
     videoInput?.addEventListener('change', () => onSelectedFile(videoInput instanceof HTMLInputElement ? videoInput.files?.[0] : null, 'walkthrough'));
-    scanInput?.addEventListener('change', () => onSelectedFile(scanInput instanceof HTMLInputElement ? scanInput.files?.[0] : null, 'scan'));
+    window.addEventListener('pagehide', stopCamera);
 
-    setMode(currentMode);
+    void setMode(currentMode);
   </script>
 </Layout>
 
@@ -455,6 +649,20 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       #151922;
     border: 0;
   }
+  .cam-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transform: scaleX(1);
+    transition: opacity 160ms ease;
+    background: #05070b;
+  }
+  .cam-viewfinder.is-live .cam-video {
+    opacity: 1;
+  }
   .cam-viewfinder::before {
     content: '';
     position: absolute;
@@ -465,6 +673,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     background-size: 33% 33%;
     opacity: 0.24;
     pointer-events: none;
+  }
+  .cam-viewfinder.is-live::before {
+    opacity: 0.14;
   }
   .cam-viewfinder[data-mode='scan'] {
     background:
@@ -492,6 +703,33 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     font-size: 0.68rem;
     font-weight: 800;
   }
+  .cam-camera-state {
+    position: absolute;
+    z-index: 4;
+    left: 1rem;
+    right: 1rem;
+    top: 42%;
+    display: grid;
+    gap: 0.28rem;
+    padding: 0.8rem;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 14px;
+    background: rgba(5,7,11,0.64);
+    color: #f8fafc;
+    text-align: center;
+    backdrop-filter: blur(16px);
+  }
+  .cam-camera-state[hidden] {
+    display: none;
+  }
+  .cam-camera-state strong {
+    font-size: 0.9rem;
+  }
+  .cam-camera-state span {
+    color: rgba(248,250,252,0.7);
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
   .cam-crosshair {
     position: relative;
     z-index: 1;
@@ -500,6 +738,10 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     border: 2px solid rgba(255,255,255,0.34);
     border-radius: 999px;
     box-shadow: 0 0 0 999px rgba(0,0,0,0.12);
+  }
+  .cam-viewfinder.is-live .cam-crosshair {
+    border-radius: 18px;
+    opacity: 0.42;
   }
   .cam-viewfinder__copy {
     position: absolute;
