@@ -7,11 +7,19 @@ import path from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
+import { Hono } from 'hono';
+
 import { createApiRouter } from '../src/api/router.js';
 import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { readBuildStamp } from '../src/shell/buildStamp.js';
 import { toClientPortalApprovalView, getLane3Approval } from '../src/app/lib/lane3Fixtures.js';
+
+function createMountedApiRouter(): Hono {
+  const app = new Hono();
+  app.route('/api/v1', createApiRouter());
+  return app;
+}
 
 test('toClientPortalApprovalView strips cost and margin', () => {
   const approval = getLane3Approval('appr_wegrzyn_quartz');
@@ -131,6 +139,57 @@ test('portal approval confirm · propagates selection + schedule ref', async () 
     delete process.env['PERSISTENCE_DIR'];
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('mounted /api/v1 portal token doors are exempt from platform sessions', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'lane3-mounted-portal-'));
+  process.env['PERSISTENCE_DIR'] = dir;
+  resetApiDepsForTests();
+  const app = createMountedApiRouter();
+  try {
+    const session = await app.request(
+      '/api/v1/portal/session/psess_wegrzyn_demo?project_id=proj_wegrzyn_kitchen',
+    );
+    assert.equal(session.status, 200);
+    const sessionBody = await session.json();
+    assert.equal(sessionBody.client_id, 'client_wegrzyn');
+
+    const confirm = await app.request(
+      '/api/v1/portal/session/psess_wegrzyn_demo/approvals/appr_wegrzyn_quartz/confirm',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmed: true }),
+      },
+    );
+    assert.equal(confirm.status, 200);
+
+    const login = await app.request('/api/v1/portal/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'wegrzyn@example.com' }),
+    });
+    assert.equal(login.status, 200);
+    const loginBody = await login.json();
+    assert.equal(loginBody.session_token, 'psess_wegrzyn_demo');
+  } finally {
+    resetApiDepsForTests();
+    delete process.env['PERSISTENCE_DIR'];
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('mounted /api/v1 exemptions stay narrow', async () => {
+  const app = createMountedApiRouter();
+
+  const health = await app.request('/api/v1/health');
+  assert.equal(health.status, 200);
+
+  const clients = await app.request('/api/v1/clients');
+  assert.equal(clients.status, 401);
+
+  const missingPortalSession = await app.request('/api/v1/portal/session/nope');
+  assert.equal(missingPortalSession.status, 404);
 });
 
 test('/health exposes commit and dirty boolean via build stamp', async () => {
