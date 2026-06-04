@@ -3,7 +3,6 @@
 import '../../../styles/lane3.css';
 
 const { token } = Astro.params;
-const tenantId = Astro.url.searchParams.get('tenant_id') ?? 'tenant_ggr';
 if (!token) return Astro.redirect('/portal');
 ---
 
@@ -14,7 +13,7 @@ if (!token) return Astro.redirect('/portal');
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Your project · Kerf portal</title>
   </head>
-  <body class="lane3-portal-standalone" data-token={token} data-tenant-id={tenantId}>
+  <body class="lane3-portal-standalone" data-token={token}>
     <header class="lane3-portal-header">
       <div>
         <strong id="portal-client-name">Your project</strong>
@@ -31,15 +30,13 @@ if (!token) return Astro.redirect('/portal');
       <h2>Needs your approval</h2>
       <div id="portal-approvals"></div>
     </main>
-    <script define:vars={{ token, tenantId }}>
+    <script define:vars={{ token }}>
       const body = document.body;
       const select = document.getElementById('portal-project-select');
       const approvalsEl = document.getElementById('portal-approvals');
 
       async function load(projectId) {
-        const qs = projectId
-          ? `?tenant_id=${tenantId}&project_id=${projectId}`
-          : `?tenant_id=${tenantId}`;
+        const qs = projectId ? `?project_id=${projectId}` : '';
         const res = await fetch(`/api/v1/portal/session/${token}${qs}`);
         const data = await res.json();
         if (!res.ok) {
@@ -84,7 +81,7 @@ if (!token) return Astro.redirect('/portal');
               return;
             }
             const res = await fetch(
-              `/api/v1/portal/session/${token}/approvals/${approvalId}/confirm?tenant_id=${tenantId}`,
+              `/api/v1/portal/session/${token}/approvals/${approvalId}/confirm`,
               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

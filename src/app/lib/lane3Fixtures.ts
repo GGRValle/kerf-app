@@ -35,6 +35,7 @@ export interface Lane3PortalSession {
 
 export interface Lane3WarrantyEntity {
   readonly warranty_id: string;
+  readonly tenant_id: PersistenceTenantId;
   readonly client_id: string;
   readonly project_id: string;
   readonly term_years: number;
@@ -134,6 +135,7 @@ const SESSIONS: Lane3PortalSession[] = [
 const WARRANTIES: Lane3WarrantyEntity[] = [
   {
     warranty_id: 'war_wegrzyn_kitchen',
+    tenant_id: 'tenant_ggr',
     client_id: 'client_wegrzyn',
     project_id: 'proj_wegrzyn_kitchen',
     term_years: 2,
@@ -144,6 +146,7 @@ const WARRANTIES: Lane3WarrantyEntity[] = [
   },
   {
     warranty_id: 'war_hernandez_cabs',
+    tenant_id: 'tenant_ggr',
     client_id: 'client_hernandez',
     project_id: 'proj_hernandez_cabs',
     term_years: 1,
@@ -265,12 +268,30 @@ export function findLane3SessionByClient(
   return SESSIONS.find((s) => s.tenant_id === tenantId && s.client_id === clientId) ?? null;
 }
 
+/** Dogfood portal login — email hint resolves to the client's opaque session (no tenant param). */
+export function findLane3SessionByEmailHint(email: string): Lane3PortalSession | null {
+  const normalized = email.trim().toLowerCase();
+  if (normalized.includes('wegrzyn')) {
+    return SESSIONS.find((s) => s.client_id === 'client_wegrzyn') ?? null;
+  }
+  if (normalized.includes('dunne')) {
+    return SESSIONS.find((s) => s.client_id === 'client_dunne') ?? null;
+  }
+  return null;
+}
+
 export function getLane3WarrantyForClient(clientId: string): Lane3WarrantyEntity | null {
   return WARRANTIES.find((w) => w.client_id === clientId) ?? null;
 }
 
 export function listLane3Warranties(): readonly Lane3WarrantyEntity[] {
   return WARRANTIES;
+}
+
+export function listLane3WarrantiesForTenant(
+  tenantId: PersistenceTenantId,
+): readonly Lane3WarrantyEntity[] {
+  return WARRANTIES.filter((w) => w.tenant_id === tenantId);
 }
 
 /** Client-facing strip — no cost, no margin. */

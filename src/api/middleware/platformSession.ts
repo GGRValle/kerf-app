@@ -6,8 +6,20 @@ import {
   resolvePlatformSession,
 } from '../session/platformSession.js';
 
+/** Client portal token routes — scoped by opaque `psess_*` / portal token, not operator platform session. */
+export function isPortalClientAuthPath(pathname: string): boolean {
+  if (pathname === '/portal/login') return true;
+  if (/^\/portal\/session\/[^/]+$/.test(pathname)) return true;
+  if (/^\/portal\/session\/[^/]+\/approvals\/[^/]+\/confirm$/.test(pathname)) return true;
+  return false;
+}
+
 export function isPlatformSessionExemptPath(pathname: string): boolean {
-  return pathname === '/health' || pathname === '/api/v1/health';
+  return (
+    pathname === '/health' ||
+    pathname === '/api/v1/health' ||
+    isPortalClientAuthPath(pathname)
+  );
 }
 
 /** Wall 1 · inject session tenant before any /api/v1 handler runs. */

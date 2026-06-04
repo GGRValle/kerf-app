@@ -9,10 +9,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
 import { createApiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 import { resetApiDepsForTests, getApiDeps } from '../src/api/lib/deps.js';
 import {
   getLane3ClientForProject,
@@ -39,8 +41,25 @@ import {
 import type { AttentionArtifact } from '../src/contracts/lane1/attentionArtifact.js';
 import type { LocalityEnvelope } from '../src/contracts/lane1/locality.js';
 
-async function withApi<T>(fn: (app: ReturnType<typeof createApiRouter>) => Promise<T>): Promise<T> {
+async function withOperatorApi<T>(
+  fn: (app: ReturnType<typeof createAuthenticatedApiRouter>) => Promise<T>,
+): Promise<T> {
   const dir = await mkdtemp(path.join(tmpdir(), 'lane2-win-'));
+  process.env['PERSISTENCE_DIR'] = dir;
+  resetApiDepsForTests();
+  try {
+    return await fn(createAuthenticatedApiRouter());
+  } finally {
+    resetApiDepsForTests();
+    delete process.env['PERSISTENCE_DIR'];
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+async function withPortalApi<T>(
+  fn: (app: ReturnType<typeof createApiRouter>) => Promise<T>,
+): Promise<T> {
+  const dir = await mkdtemp(path.join(tmpdir(), 'lane2-portal-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
   try {
@@ -63,9 +82,8 @@ test('project↔client binding resolves the owning client from the project', () 
 });
 
 test('/portal/preview derives client from project; rejects mismatch + unbound', async () => {
-  await withApi(async (app) => {
-    // Derived — no client_id needed.
-    const ok = await app.request('/portal/preview?tenant_id=tenant_ggr&project_id=proj_wegrzyn_kitchen');
+  await withOperatorApi(async (app) => {
+    const ok = await app.request('/portal/preview?project_id=proj_wegrzyn_kitchen');
     assert.equal(ok.status, 200);
     const body = await ok.json();
     assert.equal(body.client_id, 'client_wegrzyn');
@@ -75,11 +93,11 @@ test('/portal/preview derives client from project; rejects mismatch + unbound', 
     }
     // Cross-client peeking via mismatched client_id → 403.
     const mismatch = await app.request(
-      '/portal/preview?tenant_id=tenant_ggr&project_id=proj_wegrzyn_kitchen&client_id=client_dunne',
+      '/portal/preview?project_id=proj_wegrzyn_kitchen&client_id=client_dunne',
     );
     assert.equal(mismatch.status, 403);
     // Unbound project → 404 (no portal to preview).
-    const unbound = await app.request('/portal/preview?tenant_id=tenant_ggr&project_id=proj_nope');
+    const unbound = await app.request('/portal/preview?project_id=proj_nope');
     assert.equal(unbound.status, 404);
   });
 });
@@ -87,9 +105,9 @@ test('/portal/preview derives client from project; rejects mismatch + unbound', 
 // ── Distinct client_approval.confirmed event ─────────────────────────────────
 
 test('client confirm emits `client_approval.confirmed`, never operator `decision.approved`', async () => {
-  await withApi(async (app) => {
+  await withPortalApi(async (app) => {
     const res = await app.request(
-      '/portal/session/psess_dunne_demo/approvals/appr_dunne_prop/confirm?tenant_id=tenant_ggr',
+      '/portal/session/psess_dunne_demo/approvals/appr_dunne_prop/confirm',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,13 +184,21 @@ test('client-facing portal door is NOT in the operator surface registry', () => 
   assert.ok(!routes.includes('/portal/s/:token'));
 });
 
+test('client portal astro pages do not render cost, margin, or markup fields', () => {
+  const portalSrc = readFileSync(
+    path.join(process.cwd(), 'src/app/pages/portal/s/[token].astro'),
+    'utf8',
+  );
+  assert.doesNotMatch(portalSrc, /cost_cents|margin_cents|markup/i);
+  assert.match(portalSrc, /client_visible_total_cents/);
+});
+
 // ── Cross-CLIENT isolation ───────────────────────────────────────────────────
 
 test('a client session cannot confirm another client\'s approval', async () => {
-  await withApi(async (app) => {
-    // Wegrzyn's token attempts to confirm Dunne's proposal approval.
+  await withPortalApi(async (app) => {
     const res = await app.request(
-      '/portal/session/psess_wegrzyn_demo/approvals/appr_dunne_prop/confirm?tenant_id=tenant_ggr',
+      '/portal/session/psess_wegrzyn_demo/approvals/appr_dunne_prop/confirm',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,7 +236,7 @@ test('publishProposalToPortal refuses a project not bound to the client', () => 
 // ── Proposal draft → portal approval seam (client price; no cost/margin) ─────
 
 test('proposal draft → portal approval → client confirm propagates client total', async () => {
-  await withApi(async (app) => {
+  await withPortalApi(async (app) => {
     const lines: EstimateLine[] = [
       {
         id: 'l1', estimate_id: 'est1', project_id: 'proj_wegrzyn_kitchen', tenant: 'tenant_ggr',
@@ -246,7 +272,7 @@ test('proposal draft → portal approval → client confirm propagates client to
       approval_id: 'appr_seam',
     });
     const res = await app.request(
-      '/portal/session/psess_wegrzyn_demo/approvals/appr_seam/confirm?tenant_id=tenant_ggr',
+      '/portal/session/psess_wegrzyn_demo/approvals/appr_seam/confirm',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -12,7 +12,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { apiRouter } from '../src/api/router.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
+
+const apiRouter = createAuthenticatedApiRouter();
 import { createInMemorySurfaceRegistry } from '../src/shell/inMemorySurfaceRegistry.js';
 import { validateRegisterSurfaceInput } from '../src/contracts/lane1/registerSurface.js';
 import {
@@ -204,7 +206,7 @@ test('every Lane 2 surface registers with a backTo and no query string', () => {
 // ── API seam: UI → route → data → back ────────────────────────────────────────
 
 test('GET /sales/deals returns pipeline columns for the tenant', async () => {
-  const res = await apiRouter.request('/sales/deals', { headers: { 'x-kerf-tenant': 'tenant_ggr' } });
+  const res = await apiRouter.request('/sales/deals');
   assert.equal(res.status, 200);
   const body = (await res.json()) as { tenant: string; columns: unknown[]; deals: unknown[] };
   assert.equal(body.tenant, 'tenant_ggr');
@@ -218,14 +220,14 @@ test('POST pull without confirm is gated (409); with confirm it writes', async (
 
   const gated = await apiRouter.request('/design/proj_t/pull', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-kerf-tenant': 'tenant_ggr' },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ item_id: itemId }),
   });
   assert.equal(gated.status, 409);
 
   const ok = await apiRouter.request('/design/proj_t/pull', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-kerf-tenant': 'tenant_ggr' },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ confirmed: true, item_id: itemId }),
   });
   assert.equal(ok.status, 200);
@@ -234,7 +236,7 @@ test('POST pull without confirm is gated (409); with confirm it writes', async (
 });
 
 test('end-to-end seam: pull → approve → seed estimate → reconcile → draft (no send)', async () => {
-  const h = { 'content-type': 'application/json', 'x-kerf-tenant': 'tenant_ggr' } as Record<string, string>;
+  const h = { 'content-type': 'application/json' } as Record<string, string>;
   const store = getSalesStore('tenant_ggr');
   const itemId = store.items.find((i) => i.collection === 'selections')!.id;
   const project = 'proj_e2e';

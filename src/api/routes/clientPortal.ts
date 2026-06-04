@@ -1,15 +1,17 @@
 import { Hono } from 'hono';
 
-import type { PersistenceTenantId } from '../../persistence/events.js';
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import type { ApiVariables } from '../lib/tenantContext.js';
+import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 import {
   findLane3SessionByClient,
+  findLane3SessionByEmailHint,
   getLane3Brain,
   getLane3ClientForProject,
   getLane3WarrantyForClient,
   listLane3ApprovalsForScope,
-  listLane3Warranties,
+  listLane3WarrantiesForTenant,
   toClientPortalApprovalView,
 } from '../../app/lib/lane3Fixtures.js';
 import {
@@ -20,38 +22,29 @@ import {
   resolveSession,
 } from '../../app/lib/lane3Portal.js';
 
-export const clientPortalRoutes = new Hono();
+export const clientPortalRoutes = new Hono<{ Variables: ApiVariables }>();
 
-function parseTenantId(raw: string | undefined): PersistenceTenantId | null {
-  if (raw === 'tenant_ggr' || raw === 'tenant_valle' || raw === 'tenant_hpg') {
-    return raw;
-  }
-  return null;
-}
-
+/** Operator CRM brain — tenant from platform session only (Wall 1). */
 clientPortalRoutes.get('/clients/:id/brain', (c) => {
+  const tenant = requireApiTenant(c);
   const clientId = c.req.param('id');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
   const brain = getLane3Brain(clientId);
   if (brain === null) return c.json({ error: 'brain_not_found', client_id: clientId }, 404);
-  return c.json({ client_id: clientId, tenant_id: tenant, brain });
+  return c.json({ client_id: clientId, tenant_id: tenant, brain, ...tenantOverrideFlags(c) });
 });
 
+/** GC preview from Projects — project-scoped; tenant from platform session. */
 clientPortalRoutes.get('/portal/preview', (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
+  const tenant = requireApiTenant(c);
   const projectId = c.req.query('project_id');
   const requestedClientId = c.req.query('client_id');
-  if (tenant === null || !projectId) {
+  if (!projectId) {
     return c.json({ error: 'tenant_project_required' }, 400);
   }
-  // Real project↔client binding: the client is derived FROM the project, never
-  // trusted from the query. An unbound project has no portal to preview.
   const clientId = getLane3ClientForProject(projectId);
   if (clientId === null) {
     return c.json({ error: 'project_not_bound_to_client', project_id: projectId }, 404);
   }
-  // If a client_id is passed it must match the binding — refuse cross-client peeking.
   if (requestedClientId && requestedClientId !== clientId) {
     return c.json({ error: 'project_client_binding_mismatch' }, 403);
   }
@@ -70,18 +63,22 @@ clientPortalRoutes.get('/portal/preview', (c) => {
     project_id: projectId,
     projects,
     approvals,
+    ...tenantOverrideFlags(c),
   });
 });
 
+/** Client portal session — token is the scope; tenant never from query/body. */
 clientPortalRoutes.get('/portal/session/:token', (c) => {
   const token = c.req.param('token');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
   const projectId = c.req.query('project_id');
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
   const session = resolveSession(token);
   if (session === null) return c.json({ error: 'session_not_found' }, 404);
+  const foreignTenant = c.req.query('tenant_id');
+  if (foreignTenant && foreignTenant !== session.tenant_id) {
+    return c.json({ error: 'portal_isolation_violation' }, 403);
+  }
   try {
-    assertPortalScope(session, tenant, session.client_id, projectId);
+    assertPortalScope(session, session.tenant_id, session.client_id, projectId);
   } catch (e) {
     if (e instanceof PortalIsolationError) {
       return c.json({ error: e.code }, 403);
@@ -90,14 +87,14 @@ clientPortalRoutes.get('/portal/session/:token', (c) => {
   }
   const activeProject = projectId ?? session.project_ids[0];
   const approvals = listLane3ApprovalsForScope(
-    tenant,
+    session.tenant_id,
     session.client_id,
     activeProject,
   ).map(toClientPortalApprovalView);
   return c.json({
     mode: 'client_login',
     session_token: token,
-    tenant_id: tenant,
+    tenant_id: session.tenant_id,
     client_id: session.client_id,
     display_name: session.display_name,
     project_id: activeProject,
@@ -112,23 +109,25 @@ clientPortalRoutes.get('/portal/session/:token', (c) => {
 clientPortalRoutes.post('/portal/session/:token/approvals/:approvalId/confirm', async (c) => {
   const token = c.req.param('token');
   const approvalId = c.req.param('approvalId');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
   const body = await c.req.json<{ confirmed?: boolean }>().catch(() => ({ confirmed: false }));
   if (body.confirmed !== true) {
     return c.json({ error: 'confirmation_required', message: 'Set confirmed:true to approve' }, 400);
   }
   const session = resolveSession(token);
   if (session === null) return c.json({ error: 'session_not_found' }, 404);
+  const foreignTenant = c.req.query('tenant_id');
+  if (foreignTenant && foreignTenant !== session.tenant_id) {
+    return c.json({ error: 'portal_isolation_violation' }, 403);
+  }
   try {
-    assertPortalScope(session, tenant, session.client_id);
+    assertPortalScope(session, session.tenant_id, session.client_id);
   } catch (e) {
     if (e instanceof PortalIsolationError) {
       return c.json({ error: e.code }, 403);
     }
     throw e;
   }
-  const approvals = listLane3ApprovalsForScope(tenant, session.client_id);
+  const approvals = listLane3ApprovalsForScope(session.tenant_id, session.client_id);
   const target = approvals.find((a) => a.approval_id === approvalId);
   if (target === undefined || !approvalBelongsToSession(target, session)) {
     return c.json({ error: 'approval_not_in_scope' }, 403);
@@ -138,12 +137,10 @@ clientPortalRoutes.post('/portal/session/:token/approvals/:approvalId/confirm', 
     return c.json({ error: 'approval_failed' }, 409);
   }
   const { eventStore } = getApiDeps();
-  // Distinct client-side event — NOT the operator `decision.approved`. The client
-  // is the actor; only the client-facing total is recorded (no cost, no margin).
   await appendValidatedEvent(
     {
       store: eventStore,
-      tenant_id: tenant,
+      tenant_id: session.tenant_id,
       correlation_id: result.propagation.approval_id,
     },
     {
@@ -172,9 +169,8 @@ clientPortalRoutes.post('/portal/session/:token/approvals/:approvalId/confirm', 
 });
 
 clientPortalRoutes.get('/client-success', (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
-  const rows = listLane3Warranties().map((w) => {
+  const tenant = requireApiTenant(c);
+  const rows = listLane3WarrantiesForTenant(tenant).map((w) => {
     const brain = getLane3Brain(w.client_id);
     return {
       client_id: w.client_id,
@@ -185,16 +181,18 @@ clientPortalRoutes.get('/client-success', (c) => {
       warranty_status: w.status,
     };
   });
-  return c.json({ clients: rows });
+  return c.json({ clients: rows, ...tenantOverrideFlags(c) });
 });
 
 clientPortalRoutes.get('/client-success/:clientId', (c) => {
+  const tenant = requireApiTenant(c);
   const clientId = c.req.param('clientId');
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
   const brain = getLane3Brain(clientId);
   const warranty = getLane3WarrantyForClient(clientId);
   if (brain === null && warranty === null) {
+    return c.json({ error: 'client_success_not_found' }, 404);
+  }
+  if (warranty !== null && warranty.tenant_id !== tenant) {
     return c.json({ error: 'client_success_not_found' }, 404);
   }
   return c.json({
@@ -202,21 +200,15 @@ clientPortalRoutes.get('/client-success/:clientId', (c) => {
     tenant_id: tenant,
     brain,
     warranty,
+    ...tenantOverrideFlags(c),
   });
 });
 
 clientPortalRoutes.post('/portal/login', async (c) => {
-  const tenant = parseTenantId(c.req.query('tenant_id') ?? undefined);
-  if (tenant === null) return c.json({ error: 'tenant_required' }, 400);
   const body = await c.req.json<{ email?: string }>();
   const email = body.email?.trim().toLowerCase() ?? '';
   if (email.length === 0) return c.json({ error: 'email_required' }, 400);
-  const session =
-    email.includes('wegrzyn')
-      ? findLane3SessionByClient(tenant, 'client_wegrzyn')
-      : email.includes('dunne')
-        ? findLane3SessionByClient(tenant, 'client_dunne')
-        : null;
+  const session = findLane3SessionByEmailHint(email);
   if (session === null) {
     return c.json({ error: 'portal_login_not_found' }, 404);
   }
