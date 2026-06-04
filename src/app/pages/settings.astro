@@ -5,6 +5,16 @@ import RhSummary from '../components/RhSummary.astro';
 
 const settingLinks = [
   {
+    href: '/settings/me',
+    title: 'Your settings',
+    detail: 'Personal profile, language, and notifications — separate from Admin.',
+  },
+  {
+    href: '/connections',
+    title: 'Connections',
+    detail: 'QuickBooks, calendar, email, SMS, RoomPlan, Bluebeam, DocuSign, storage.',
+  },
+  {
     href: '/role-routing',
     title: 'Role routing',
     detail: 'Preview how owner, PM, admin, and field views are separated.',
@@ -55,6 +65,15 @@ const settingLinks = [
             <small>{link.detail}</small>
           </a>
         ))}
+      </div>
+    </Card>
+
+    <Card eyebrow="Trust" title="Audit trail">
+      <div class="settings-page__actions">
+        <a class="settings-page__action" href="/projects/proj_wegrzyn_kitchen/audit">
+          <span>Open the audit trail</span>
+          <small>Every approval, export, and durable write is recorded. Audit lives here in Settings — one click deep, never in the top nav.</small>
+        </a>
       </div>
     </Card>
   </section>

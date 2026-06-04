@@ -70,5 +70,4 @@ export const MORE_NAV_LINKS = [
   { href: '/blackboard', labelKey: 'nav.blackboard' },
   { href: '/kb-ingestion', labelKey: 'nav.cost_kb' },
   { href: '/clients', labelKey: 'nav.clients' },
-  { href: '/role-routing', labelKey: 'nav.role_routing' },
 ] as const;

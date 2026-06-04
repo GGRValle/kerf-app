@@ -141,7 +141,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
       const el = document.getElementById('draft-result') as HTMLElement;
       el.hidden = false;
       el.innerHTML = `<strong>Draft created.</strong> ${out.attention.headline}.
-        <br/>Total $${(out.draft.client_total_cents / 100).toFixed(2)} · auto-send allowed: ${out.auto_send_allowed}
+        <br/>Total $${(out.draft.client_total_cents / 100).toFixed(2)} · send requires your review
         <br/><a href="${out.draft.surface_route}">Open proposal draft ›</a>`;
     }
   });

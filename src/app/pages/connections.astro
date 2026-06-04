@@ -1,0 +1,92 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/Card.astro';
+import RhSummary from '../components/RhSummary.astro';
+import { CONNECTIONS, connectionStatusLabel } from '../lib/connectionsRegistry.js';
+
+const connected = CONNECTIONS.filter((c) => c.status === 'connected').length;
+---
+
+<Layout title="Connections" activeHref="/settings">
+  <section class="connections-page" aria-labelledby="connections-title">
+    <div class="connections-crumb"><a href="/settings">Settings</a> · Connections</div>
+    <h1 id="connections-title" class="connections-title">Connections</h1>
+
+    <RhSummary
+      headline="One card per integration"
+      detail={`${connected} of ${CONNECTIONS.length} connected. Connecting opens a real OAuth flow when wired; nothing here is a dead toggle. Outbound (email / SMS / e-sign) always confirms with you first.`}
+      tone="green"
+    />
+
+    <div class="connections-grid">
+      {CONNECTIONS.map((conn) => (
+        <Card eyebrow={conn.category} title={conn.name}>
+          <p class="connections-purpose">{conn.purpose}</p>
+          <div class="connections-row">
+            <span class:list={['connections-chip', `is-${conn.status}`]}>
+              {connectionStatusLabel(conn.status)}
+            </span>
+            <button
+              type="button"
+              class="connections-connect"
+              data-connection={conn.id}
+              data-status={conn.status}
+              data-mechanism={conn.mechanism}
+            >
+              {conn.status === 'connected' ? 'Manage' : 'Connect'}
+            </button>
+          </div>
+          <p class="connections-status" data-status-for={conn.id} role="status" aria-live="polite"></p>
+        </Card>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.connections-connect').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.connection ?? '';
+      const status = btn.dataset.status ?? 'not_wired';
+      const msgEl = document.querySelector(`[data-status-for="${id}"]`);
+      if (!(msgEl instanceof HTMLElement)) return;
+      // Honest: no real OAuth flow is wired yet, so we say so instead of
+      // flipping a fake toggle. When the flow lands this opens the popup.
+      if (status === 'connected') {
+        msgEl.textContent = 'Already connected. The manage flow is not wired yet.';
+      } else {
+        msgEl.textContent = 'The connect flow for this integration is not wired yet — coming in a later pass. No credentials are stored here.';
+      }
+    });
+  });
+</script>
+
+<style>
+  .connections-page { display: grid; gap: 0.85rem; }
+  .connections-crumb { font-size: 0.78rem; color: var(--text-muted, #5c6670); }
+  .connections-crumb a { color: inherit; }
+  .connections-title { margin: 0; font-size: 1.4rem; }
+  .connections-grid { display: grid; gap: 0.75rem; }
+  .connections-purpose { margin: 0 0 0.6rem; line-height: 1.4; color: var(--text-muted, #5c6670); }
+  .connections-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .connections-chip {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border, #d8dee6);
+  }
+  .connections-chip.is-connected { color: #1b7f4b; border-color: #1b7f4b; }
+  .connections-chip.is-not_connected { color: #8a6d00; border-color: #c9a961; }
+  .connections-chip.is-not_wired { color: var(--text-muted, #5c6670); border-style: dashed; }
+  .connections-connect {
+    border: 1px solid var(--border, #2a3140);
+    background: var(--surface, #1a1f26);
+    color: var(--text, #e8ecf1);
+    border-radius: 8px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.84rem;
+    cursor: pointer;
+  }
+  .connections-status { margin: 0.45rem 0 0; font-size: 0.78rem; color: var(--text-muted, #98a1b3); }
+</style>

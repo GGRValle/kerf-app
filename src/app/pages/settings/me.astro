@@ -1,0 +1,62 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/Card.astro';
+import RhSummary from '../../components/RhSummary.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+
+const { context } = createLayoutContext();
+const personalFacts = [
+  { dt: 'Name', dd: context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian Asdal' : context.roleRoot },
+  { dt: 'Role', dd: context.roleRoot },
+  { dt: 'Language', dd: context.locale === 'es' ? 'Español' : 'English' },
+] as const;
+---
+
+<Layout title="Your settings" activeHref="/settings">
+  <section class="us1-page" aria-labelledby="us1-title">
+    <div class="us1-crumb"><a href="/settings">Settings</a> · Your settings</div>
+    <h1 id="us1-title" class="us1-title">Your settings</h1>
+
+    <RhSummary
+      headline="Personal settings"
+      detail="This is your personal profile and preferences — separate from Admin / Ops settings that change how the whole company operates."
+      tone="green"
+    />
+
+    <Card eyebrow="Profile" title="You">
+      <dl class="us1-facts">
+        {personalFacts.map((fact) => (
+          <div>
+            <dt>{fact.dt}</dt>
+            <dd>{fact.dd}</dd>
+          </div>
+        ))}
+      </dl>
+      <p class="us1-notice">Editing your profile is not wired yet — coming in a later pass. No values are changed from this page.</p>
+    </Card>
+
+    <Card eyebrow="Preferences" title="Notifications &amp; language">
+      <p class="us1-notice">Notification and language preferences will live here. Not wired yet.</p>
+    </Card>
+
+    <Card eyebrow="Admin" title="Looking for company settings?">
+      <a class="us1-link" href="/settings">Admin / Ops settings change company-wide behavior — open Settings.</a>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .us1-page { display: grid; gap: 0.85rem; }
+  .us1-crumb { font-size: 0.78rem; color: var(--text-muted, #5c6670); }
+  .us1-crumb a { color: inherit; }
+  .us1-title { margin: 0; font-size: 1.4rem; }
+  .us1-facts { display: grid; gap: 0.7rem; margin: 0; }
+  .us1-facts div { display: grid; gap: 0.2rem; }
+  .us1-facts dt {
+    font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 700; color: var(--text-muted, #5c6670);
+  }
+  .us1-facts dd { margin: 0; line-height: 1.4; }
+  .us1-notice { margin: 0.4rem 0 0; font-size: 0.82rem; color: var(--text-muted, #5c6670); line-height: 1.4; }
+  .us1-link { color: inherit; }
+</style>
