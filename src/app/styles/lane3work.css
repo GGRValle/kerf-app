@@ -1,0 +1,56 @@
+.lane3w-brain {
+  border: 1px solid var(--border, #d8dee6);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--kerf-bg-2, #f4f6f9);
+}
+
+.lane3w-brain h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6a7282);
+}
+
+.lane3w-brain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.65rem;
+}
+
+.lane3w-brain-card {
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border, #d8dee6);
+  background: var(--surface, #fff);
+}
+
+.lane3w-brain-card span {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted, #6a7282);
+  margin-bottom: 0.2rem;
+}
+
+.lane3w-daily-log-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.lane3w-assign-row {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border-soft, #e8ecf0);
+}
+
+.lane3w-sub-portal {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem;
+}

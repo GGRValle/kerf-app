@@ -1,0 +1,32 @@
+---
+import '../../../../styles/lane3work.css';
+
+const { token } = Astro.params;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your assignments</title>
+  </head>
+  <body class="lane3w-sub-portal" data-token={token}>
+    <h1 id="sub-portal-title">Assignments</h1>
+    <ul id="sub-assignments"></ul>
+  </body>
+  <script define:vars={{ token }}>
+    fetch(`/api/v1/sub/portal/session/${token}`)
+      .then((r) => r.json())
+      .then((data) => {
+        document.getElementById('sub-portal-title').textContent = data.sub_label ?? 'Assignments';
+        const list = document.getElementById('sub-assignments');
+        list.innerHTML = (data.assignments ?? [])
+          .map(
+            (a) =>
+              `<li><a href="/sub/portal/s/${token}/a/${a.assignment_id}"><strong>${a.trade}</strong> · ${a.location_label}</a></li>`,
+          )
+          .join('');
+      });
+  </script>
+</html>

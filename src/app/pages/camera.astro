@@ -113,8 +113,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         <div class="cam-captured__item" id="cam-captured-item">
           <div class="cam-thumb" id="cam-thumb" aria-hidden="true"></div>
           <div class="cam-captured__copy">
-            <strong id="cam-captured-title">Preview only</strong>
-            <span id="cam-captured-detail">Not filed yet — capture wiring pending.</span>
+            <strong id="cam-captured-title">Media ready</strong>
+            <span id="cam-captured-detail">Capture media, then Done files it to this job.</span>
           </div>
         </div>
       </section>
@@ -185,6 +185,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       return photoInput;
     };
     const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
+    const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
     const openCapture = () => {
       if (!selectedProjectId) {
         setStatus('Choose a job before you capture.');
@@ -193,7 +194,6 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       const input = inputForMode();
       if (input instanceof HTMLInputElement) input.click();
     };
-    // TODO(lane-3): replace honest-stub with real capture confirmation when Daily Log wiring lands.
     const onSelectedFile = (file, kind) => {
       if (!file) return;
       const objectUrl = kind === 'photo' && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
@@ -203,29 +203,29 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         project_id: selectedProjectId,
         project_name: selectedProjectName,
         at: Date.now(),
-        status: 'preview_only_not_filed',
+        status: 'ready_to_file',
       };
       try {
         sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(lastCapture));
       } catch {
         // Visible state still tells the operator what happened.
       }
-      const friendly = kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
+      const friendly = friendlyForKind(kind);
       if (root instanceof HTMLElement) root.classList.add('has-capture');
       if (captured instanceof HTMLElement) captured.hidden = false;
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.hidden = true;
-      if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} · preview only`;
+      if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} ready`;
       if (capturedDetail instanceof HTMLElement) {
-        capturedDetail.textContent = 'Not filed yet — capture wiring pending (Lane 3).';
+        capturedDetail.textContent = `Ready to file to ${selectedProjectName} · Daily Log.`;
       }
       if (thumb instanceof HTMLElement) {
         thumb.className = `cam-thumb ${kind === 'photo' ? 'is-photo' : kind === 'scan' ? 'is-scan' : 'is-video'}`;
         thumb.style.backgroundImage = objectUrl ? `url("${objectUrl}")` : '';
         thumb.textContent = objectUrl ? '' : kind === 'walkthrough' ? 'REC' : kind === 'scan' ? 'DOC' : 'IMG';
       }
-      setStatus(`${friendly} preview on device only — not filed to Daily Log yet. Tap Done to return.`);
+      setStatus(`${friendly} ready — tap Done to attach it to ${selectedProjectName}.`);
     };
-    const done = () => {
+    const done = async () => {
       if (!selectedProjectId) {
         setStatus('Choose a job before you capture.');
         return;
@@ -234,16 +234,48 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         setStatus('Nothing captured yet. Take a photo, scan a document, or record a walkthrough first.');
         return;
       }
+      setStatus(`Filing ${friendlyForKind(lastCapture.kind).toLowerCase()} to ${selectedProjectName}…`);
+      const doneButton = document.querySelector('#cam-done');
+      if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
       try {
-        sessionStorage.setItem('kerf.cameraCapture', JSON.stringify({
+        const response = await fetch(`/api/v1/projects/${selectedProjectId}/camera-capture`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            capture_kind: lastCapture.kind,
+            file_name: lastCapture.name,
+            confirmed: true,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error(`file_failed_${response.status}`);
+        }
+        const result = await response.json();
+        const filedCapture = {
           ...lastCapture,
-          status: 'ready_for_job_file',
+          status: 'filed_to_daily_log',
+          daily_log_route: result.daily_log_route,
+          work_artifact_ref: result.artifacts?.work?.id,
+          attention_artifact_ref: result.artifacts?.attention?.id,
           returned_at: Date.now(),
-        }));
+        };
+        try {
+          sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(filedCapture));
+        } catch {
+          // Status below remains the visible fallback.
+        }
+        if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendlyForKind(lastCapture.kind)} attached`;
+        if (capturedDetail instanceof HTMLElement) {
+          capturedDetail.textContent = `Attached to ${selectedProjectName} · Daily Log.`;
+        }
+        setStatus(`${friendlyForKind(lastCapture.kind)} attached to ${selectedProjectName}.`);
       } catch {
-        // Status below remains the visible fallback.
+        if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
+        setStatus('Could not file that yet. Nothing was attached — try again or choose another job.');
+        return;
       }
-      const destination = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}?src=camera`;
+      const base = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}`;
+      const destination = base.includes('?') ? `${base}&src=camera` : `${base}?src=camera`;
       window.location.href = destination;
     };
 

@@ -1,0 +1,37 @@
+---
+import type { ProjectBrainSummary } from '../lib/lane3WorkFixtures.js';
+
+interface Props {
+  brain: ProjectBrainSummary;
+  labels: {
+    nextAction: string;
+    crewOnSite: string;
+    openItems: string;
+    lastCapture: string;
+  };
+}
+
+const { brain, labels } = Astro.props;
+---
+
+<section class="lane3w-brain" aria-label="Project business summary">
+  <h2>Business brain</h2>
+  <div class="lane3w-brain-grid">
+    <div class="lane3w-brain-card">
+      <span>{labels.nextAction}</span>
+      <strong>{brain.next_action}</strong>
+    </div>
+    <div class="lane3w-brain-card">
+      <span>{labels.crewOnSite}</span>
+      <strong>{brain.crew_on_site}</strong>
+    </div>
+    <div class="lane3w-brain-card">
+      <span>{labels.openItems}</span>
+      <strong>{brain.open_items}</strong>
+    </div>
+    <div class="lane3w-brain-card">
+      <span>{labels.lastCapture}</span>
+      <strong>{brain.last_capture}</strong>
+    </div>
+  </div>
+</section>
