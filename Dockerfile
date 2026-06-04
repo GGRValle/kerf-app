@@ -17,7 +17,9 @@
 #   - BASIC_AUTH_USER=<...>  (optional — gates all routes if set)
 #   - BASIC_AUTH_PASS=<...>  (optional — must be set alongside USER)
 #
-# Build: `fly deploy` uses Fly's remote builder; local Docker not required.
+# Build: `npm run deploy:fly` passes GIT_COMMIT/GIT_DIRTY into the
+# Docker build. The runtime /health stamp is baked into the image, not
+# injected later by mutable Fly env/secrets.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -30,8 +32,12 @@ RUN npm ci --no-audit --no-fund --ignore-scripts
 
 FROM node:22-alpine AS build
 WORKDIR /app
+ARG GIT_COMMIT=unknown
+ARG GIT_DIRTY=true
+ARG BUILD_TIMESTAMP=unknown
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN printf '{"commit":"%s","dirty":%s,"built_at":"%s"}\n' "$GIT_COMMIT" "$GIT_DIRTY" "$BUILD_TIMESTAMP" > /app/build-stamp.json
 # Build Astro SSR output used by scripts/serve-kerf-shell.ts.
 RUN npm run build:astro
 
@@ -49,6 +55,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/src ./src
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/build-stamp.json ./build-stamp.json
 
 EXPOSE 8080
 CMD ["node", "--import", "tsx", "scripts/serve-kerf-shell.ts"]

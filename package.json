@@ -38,7 +38,7 @@
     "demo:field-capture": "npm run demo:field-capture:esbuild && node -e \"console.log('Built field-capture + transcript-review bundles. Serve from src: python3 -m http.server 8000 --directory src  then open http://localhost:8000/field-capture/')\"",
     "demo:field-capture:serve": "npm run demo:field-capture:esbuild && node -e \"console.log('\\nF·33 Field capture: http://localhost:8000/field-capture/\\nTranscript review: http://localhost:8000/transcript-review/\\n(static server from src/; Ctrl-C to stop)\\n')\" && python3 -m http.server 8000 --directory src",
     "test-fixtures:validate": "tsx -e \"import('./src/test-fixtures/index.js').then(m => { const events = m.seedWorld(); console.log('seed produced', events.length, 'events'); })\"",
-    "deploy:fly": "fly deploy --remote-only",
+    "deploy:fly": "sh scripts/fly-deploy-stamped.sh",
     "build:astro": "astro build",
     "dev:shell": "astro dev --port 8020",
     "serve:shell": "npm run build:astro && node --import tsx scripts/serve-kerf-shell.ts"
