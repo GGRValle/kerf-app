@@ -34,7 +34,6 @@ const { context, t } = createLayoutContext();
 <div
   class="export-actions"
   data-export-surface={surface}
-  data-tenant-id={context.tenantId}
   data-api-path={apiPath}
   data-owner-private={ownerPrivate ? 'true' : 'false'}
   data-scope={scopeDescriptor ?? ''}
@@ -87,7 +86,6 @@ const { context, t } = createLayoutContext();
 <script define:vars={{ successMsg: 'Export recorded in audit — no money moved.', previewMsg: 'Preview only — this action is not wired yet.', errorMsg: 'Could not record export.' }}>
   document.querySelectorAll('.export-actions').forEach((root) => {
     const statusEl = root.querySelector('.export-status');
-    const tenantId = root.getAttribute('data-tenant-id') ?? 'tenant_ggr';
     const apiPath = root.getAttribute('data-api-path') ?? '/api/v1/money/export';
     const surface = root.getAttribute('data-export-surface') ?? 'unknown';
     const ownerPrivate = root.getAttribute('data-owner-private') === 'true';
@@ -103,7 +101,7 @@ const { context, t } = createLayoutContext();
         }
         const format = btn.getAttribute('data-format');
         try {
-          const res = await fetch(`${apiPath}?tenant_id=${tenantId}`, {
+          const res = await fetch(apiPath, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

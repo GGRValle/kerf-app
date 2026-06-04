@@ -43,7 +43,6 @@ const billsJson = JSON.stringify(bills);
         <div
           class="money-iif"
           data-bills={billsJson}
-          data-tenant-id={context.tenantId}
           data-total-cents={String(totalCents)}
         >
           <button type="button" class="money-btn primary" id="qb-iif-download">
@@ -75,7 +74,6 @@ const billsJson = JSON.stringify(bills);
     const setStatus = (msg: string) => { if (status instanceof HTMLElement) status.textContent = msg; };
 
     if (root instanceof HTMLElement && button instanceof HTMLButtonElement) {
-      const tenantId = root.dataset.tenantId || 'tenant_ggr';
       let bills: any[] = [];
       try { bills = JSON.parse(root.dataset.bills || '[]'); } catch { bills = []; }
 
@@ -97,7 +95,7 @@ const billsJson = JSON.stringify(bills);
 
         // Record the egress in the audit trail (no money mutation).
         try {
-          await fetch(`/api/v1/money/export?tenant_id=${encodeURIComponent(tenantId)}`, {
+          await fetch('/api/v1/money/export', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

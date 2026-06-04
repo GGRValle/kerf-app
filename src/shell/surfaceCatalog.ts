@@ -57,6 +57,9 @@ reg('projects', '/draft-review/[draft_id]', 'DraftReviewDetail', ['owner', 'pm']
 reg('money', '/money', 'MoneyHome', OWNER_PM_ADMIN, '/');
 reg('money', '/money/ar', 'MoneyAR', OWNER_PM_ADMIN, '/money');
 reg('money', '/money/ap', 'MoneyAP', OWNER_PM_ADMIN, '/money');
+reg('money', '/money/allowances', 'MoneyAllowances', OWNER_PM_ADMIN, '/money');
+reg('money', '/money/bookkeeping', 'MoneyBookkeeping', OWNER_PM_ADMIN, '/money');
+reg('money', '/money/qb-export', 'MoneyQuickBooksIifExport', OWNER_PM_ADMIN, '/money');
 reg('money', '/money/margin', 'MoneyMargin', ['owner'], '/money');
 
 reg('clients', '/clients', 'ClientsIndex', OWNER_PM_ADMIN, '/');
@@ -69,8 +72,10 @@ reg('people_admin_ops', '/sub/portal', 'SubPortalDoor', ['sub'], '/home/sub');
 reg('people_admin_ops', '/sub/portal/s/[token]', 'SubPortalSession', ['sub'], '/sub/portal');
 reg('people_admin_ops', '/sub/portal/s/[token]/a/[assignmentId]', 'SubPortalAssignment', ['sub'], '/sub/portal/s/[token]');
 reg('people_admin_ops', '/settings', 'Settings', ALL_ROLES, '/');
+reg('people_admin_ops', '/settings/me', 'PersonalSettings', ALL_ROLES, '/settings');
+reg('people_admin_ops', '/connections', 'Connections', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/reports', 'Reports', OWNER_PM_ADMIN, '/');
-reg('people_admin_ops', '/role-routing', 'RoleRouting', OWNER_PM_ADMIN, '/');
+reg('people_admin_ops', '/role-routing', 'RoleRouting', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/more', 'More', ALL_ROLES, '/');
 reg('people_admin_ops', '/create', 'Create', ALL_ROLES, '/');
 reg('people_admin_ops', '/camera', 'Camera', ALL_ROLES, '/');

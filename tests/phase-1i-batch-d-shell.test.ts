@@ -23,6 +23,7 @@ test('center Speak nav opens Right Hand and the phone bar uses Create/Camera', (
   assert.match(src, /href: '\/create', labelKey: 'shell\.nav\.create'/);
   assert.match(src, /href: '\/camera', labelKey: 'shell\.nav\.camera'/);
   assert.doesNotMatch(src, /href: '\/field-capture', labelKey: 'shell\.nav\.speak'/);
+  assert.doesNotMatch(src, /href: '\/role-routing'/);
 });
 test('Layout wires mobile bottom nav', () => {
   assert.match(read('src/app/layouts/Layout.astro'), /MobileBottomNav/);
@@ -53,10 +54,14 @@ test('home index uses the Right Hand home surface', () => {
   assert.match(src, /RoleHomeSurface/);
   assert.match(src, /home\.title/);
 });
-test('nav includes schedule, reports, and settings', () => {
+test('nav includes schedule, reports, and settings without making audit top-nav', () => {
   const src = read('src/app/lib/nav.ts');
   assert.match(src, /\/schedule/);
-  assert.match(src, /domain: 'audit'/);
+  assert.match(src, /\/reports/);
+  assert.match(src, /domain: 'reports'/);
+  assert.match(src, /\/settings/);
+  assert.doesNotMatch(src, /domain: 'audit'/);
+  assert.doesNotMatch(src, /href: '\/role-routing'/);
 });
 test('preview pages exist for schedule, reports, settings, more, create, camera', () => {
   for (const page of ['schedule.astro', 'reports.astro', 'settings.astro', 'more.astro', 'create.astro', 'camera.astro']) {
