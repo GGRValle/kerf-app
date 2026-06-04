@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { test } from 'node:test';
 
 import {
@@ -207,4 +210,66 @@ test('build stamp exposes commit + boolean dirty for /health gates', () => {
   assert.equal(payload['commit'], stamp.commit);
   assert.equal(payload['dirty'], stamp.dirty);
   assert.equal((payload['build'] as { dirty: boolean }).dirty, stamp.dirty);
+});
+
+test('build stamp prefers baked image stamp over mutable runtime env', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'kerf-build-stamp-'));
+  const stampPath = path.join(dir, 'build-stamp.json');
+  const oldCommit = process.env['KERF_BUILD_COMMIT'];
+  const oldDirty = process.env['KERF_BUILD_DIRTY'];
+  const oldSource = process.env['KERF_BUILD_SOURCE'];
+  try {
+    await writeFile(
+      stampPath,
+      JSON.stringify({
+        commit: 'image-commit',
+        dirty: false,
+        source: 'image',
+      }),
+      'utf8',
+    );
+    process.env['KERF_BUILD_COMMIT'] = 'stale-env-commit';
+    process.env['KERF_BUILD_DIRTY'] = 'true';
+    process.env['KERF_BUILD_SOURCE'] = 'env';
+
+    const stamp = readBuildStamp({ imageStampPath: stampPath });
+    assert.equal(stamp.commit, 'image-commit');
+    assert.equal(stamp.dirty, false);
+    assert.equal(stamp.source, 'image');
+  } finally {
+    if (oldCommit === undefined) delete process.env['KERF_BUILD_COMMIT'];
+    else process.env['KERF_BUILD_COMMIT'] = oldCommit;
+    if (oldDirty === undefined) delete process.env['KERF_BUILD_DIRTY'];
+    else process.env['KERF_BUILD_DIRTY'] = oldDirty;
+    if (oldSource === undefined) delete process.env['KERF_BUILD_SOURCE'];
+    else process.env['KERF_BUILD_SOURCE'] = oldSource;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('build stamp preserves Fly image ref fallback when no baked file or stamp env exists', () => {
+  const oldCommit = process.env['KERF_BUILD_COMMIT'];
+  const oldDirty = process.env['KERF_BUILD_DIRTY'];
+  const oldSource = process.env['KERF_BUILD_SOURCE'];
+  const oldFlyImageRef = process.env['FLY_IMAGE_REF'];
+  try {
+    delete process.env['KERF_BUILD_COMMIT'];
+    delete process.env['KERF_BUILD_DIRTY'];
+    delete process.env['KERF_BUILD_SOURCE'];
+    process.env['FLY_IMAGE_REF'] = 'registry.fly.io/kerf-v17-internal:deployment-123';
+
+    const stamp = readBuildStamp({ imageStampPath: path.join(tmpdir(), 'missing-build-stamp.json') });
+    assert.equal(stamp.commit, 'registry.fly.io/kerf-v17-internal:deployment-123');
+    assert.equal(stamp.dirty, true);
+    assert.equal(stamp.source, 'fly_image');
+  } finally {
+    if (oldCommit === undefined) delete process.env['KERF_BUILD_COMMIT'];
+    else process.env['KERF_BUILD_COMMIT'] = oldCommit;
+    if (oldDirty === undefined) delete process.env['KERF_BUILD_DIRTY'];
+    else process.env['KERF_BUILD_DIRTY'] = oldDirty;
+    if (oldSource === undefined) delete process.env['KERF_BUILD_SOURCE'];
+    else process.env['KERF_BUILD_SOURCE'] = oldSource;
+    if (oldFlyImageRef === undefined) delete process.env['FLY_IMAGE_REF'];
+    else process.env['FLY_IMAGE_REF'] = oldFlyImageRef;
+  }
 });
