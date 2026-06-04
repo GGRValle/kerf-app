@@ -287,8 +287,11 @@ test('overlay uses the mic as the finish control and offers a cancelable Speak h
   assert.match(src, /state === 'listening' \|\| state === 'fallback'[\s\S]*?finishCurrentTurn\(\)/);
   assert.doesNotMatch(src, /doneBtn/);
   assert.match(src, /id="rhvo-caption-input"/);
+  assert.match(src, /id="rhvo-composer"/);
   assert.match(src, /const currentCaptionText/);
   assert.match(src, /captionInputEl\?\.addEventListener\('input'/);
+  assert.match(src, /composerForm\?\.addEventListener\('submit'/);
+  assert.match(src, /routeCommitted\(classifyTranscriptIntent\(typed\), typed\)/);
   // Pages may observe Speak context, but they cannot claim the mic away from
   // the universal Right Hand overlay.
   assert.match(src, /document\.addEventListener\('click'/);
@@ -385,15 +388,24 @@ test('lifecycle: hard cap fully releases the mic and realtime silence re-arms id
 
 const OVERLAY = 'src/app/components/RightHandVoiceOverlay.astro';
 
-test('trust loop: durable committed intent enters confirm and does NOT auto-navigate', () => {
+test('trust loop: durable-capable committed intent replies in place and does NOT auto-navigate', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
 
-  // routeCommitted's durable branch hands off to the sorting→confirm loop; it
-  // must NOT navigate (the abrupt auto-nav is gone).
+  // routeCommitted's durable-capable branch starts as conversation, not an
+  // immediate consequence card. The hard gate appears only when the operator
+  // asks to file/send or taps a consequence affordance.
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /requiresCommittedTranscript\(intent\)/);
-  assert.match(routeCommitted, /enterSorting\(/);
+  assert.match(routeCommitted, /enterReply\(cleanText\)/);
+  assert.match(routeCommitted, /textRequestsDurableCommit\(cleanText\)/);
+  assert.match(routeCommitted, /enterSorting\(draft\)/);
   assert.doesNotMatch(routeCommitted, /navigate\(/);
+
+  const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
+  assert.match(enterReply, /workingDraftTurns\.push\(clean\)/);
+  assert.match(enterReply, /appendTurn\('operator', clean\)/);
+  assert.match(enterReply, /appendTurn\('right_hand'/);
+  assert.doesNotMatch(enterReply, /enterConfirm\(/);
 
   // The sorting beat advances to confirm and persists nothing.
   const enterSorting = sliceDecl(src, 'enterSorting', 'routeCommitted');
@@ -420,6 +432,7 @@ test('trust loop: confirm projects the TRP as a Right Hand conversation, not aud
   assert.match(src, /const operatorName/);
   assert.match(src, /confirmSpeakerEl\.textContent = operatorName\(\)/);
   assert.match(src, /const replyForTurn/);
+  assert.match(src, /choose job\|session review\|draft review\|daily log/);
   assert.match(src, /confirmReplyEl\.textContent = replyForTurn\(trp\)/);
   assert.doesNotMatch(src, /id="rhvo-confirm-routed"/);
   assert.doesNotMatch(src, /id="rhvo-confirm-creating"/);
@@ -435,7 +448,7 @@ test('trust loop: meaningful unclassified speech defaults to a saveable note', (
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /const cleanText = text\.trim\(\)/);
   assert.match(routeCommitted, /if \(cleanText\.length > 0\) \{/);
-  assert.match(routeCommitted, /enterSorting\(cleanText\)/);
+  assert.match(routeCommitted, /enterReply\(cleanText\)/);
   assert.doesNotMatch(
     routeCommitted,
     /cleanText\.length > 0[\s\S]{0,180}setStatus\(overlay\.dataset\.clarify/,
@@ -446,8 +459,9 @@ test('stale trap gone: mic-off on useful interim speech enters the trust loop, n
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
   assert.match(finishCurrentTurn, /releaseListeningResources\(\)/);
-  // Useful interim (durable OR unclassified) → Save/Not-that trust loop.
-  assert.match(finishCurrentTurn, /enterSorting\(interim\)/);
+  // Useful interim becomes a conversational turn first; it does not jump to a
+  // Save/Not-that card until the operator asks to file/send.
+  assert.match(finishCurrentTurn, /routeCommitted\(intent, interim\)/);
   // The OLD "unclassified-but-useful → capped clarify" dead-end is GONE: there is
   // no second capped branch after the empty-interim early return.
   assert.doesNotMatch(finishCurrentTurn, /else \{[\s\S]*?setState\('capped'\)/);
@@ -466,7 +480,7 @@ test('mic-off immediately releases the mic/session before any clarify or route d
     /releaseListeningResources\(\);\s*const interim = currentCaptionText\(\);/,
   );
   const currentCaptionText = sliceDecl(src, 'currentCaptionText', 'clearTimers');
-  assert.match(currentCaptionText, /captionInputEl\?\.value\.trim\(\) \|\| lastInterim\.trim\(\)/);
+  assert.match(currentCaptionText, /lastInterim\.trim\(\)/);
   // Empty audio still parks on capped (Continue) — the one legitimate capped use.
   assert.match(
     finishCurrentTurn,
@@ -564,11 +578,12 @@ test('turn resolution: next moves — only "Add a photo" routes to Camera (expli
 
 test('trust loop: Keep talking returns to listening with the original note preserved', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  // The shared resume helper keeps the parked note as a correction base and
+  // The shared resume helper leaves the existing working draft/thread intact and
   // re-acquires the mic WITHOUT leaving the conversation (no navigate).
   const resume = sliceDecl(src, 'resumeListeningWithCorrection', 'returnToListening');
   assert.match(resume, /awaitingConfirm = false/);
-  assert.match(resume, /correctionBaseTrp = parkedTurnResolution/);
+  assert.doesNotMatch(resume, /workingDraftTurns = \[\]/);
+  assert.doesNotMatch(resume, /conversationTurns = \[\]/);
   assert.match(resume, /beginSession\(\)/);
   assert.doesNotMatch(resume, /navigate\(/);
   // Keep talking delegates to that one resume path with the keep-talking prompt.
@@ -576,13 +591,34 @@ test('trust loop: Keep talking returns to listening with the original note prese
   assert.match(returnToListening, /resumeListeningWithCorrection\(/);
   assert.match(returnToListening, /keepTalkingPrompt/);
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
-  assert.match(routeCommitted, /correctionBaseTrp/);
-  assert.match(routeCommitted, /Correction: \$\{cleanText\}/);
+  assert.match(routeCommitted, /workingDraftText\(\)/);
+  assert.doesNotMatch(routeCommitted, /Correction: \$\{cleanText\}/);
+  assert.doesNotMatch(src, /correctionBaseTrp/);
   // Wired to the same visible mic and the Keep talking button.
   assert.match(src, /micButton\?\.addEventListener\('click'/);
   assert.match(src, /state === 'confirm'[\s\S]*?returnToListening\(\)/);
   assert.match(src, /overlay\.dataset\.actionKeepTalking/);
   assert.match(src, /notThatBtn\?\.addEventListener\('click', returnToListening\)/);
+});
+
+test('F-RH3 conversation surface: typed notes share the same thread as voice', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /class="rhvo__thread" id="rhvo-thread"/);
+  assert.match(src, /class="rhvo__composer" id="rhvo-composer"/);
+  assert.match(src, /class="rhvo__composer-input"/);
+  assert.match(src, /let conversationTurns/);
+  assert.match(src, /let workingDraftTurns/);
+  assert.match(src, /const renderThread/);
+  assert.match(src, /const speakerClass = turn\.speaker\.replace\('_', '-'\)/);
+  assert.match(src, /const appendTurn/);
+  assert.match(src, /const workingDraftText/);
+  const submit = src.match(/composerForm\?\.addEventListener\('submit'[\s\S]*?\n {4}\}\);/);
+  assert.ok(submit, 'expected composer submit handler');
+  assert.match(submit![0], /event\.preventDefault\(\)/);
+  assert.match(submit![0], /const typed = captionInputEl\?\.value\.trim\(\) \?\? ''/);
+  assert.match(submit![0], /clearComposer\(\)/);
+  assert.match(submit![0], /routeCommitted\(classifyTranscriptIntent\(typed\), typed\)/);
+  assert.doesNotMatch(submit![0], /navigate\(/);
 });
 
 test('F-RH3 stage 4: the consequence bubble answers where-it-goes (Save to <job> · Change job · Keep talking)', () => {

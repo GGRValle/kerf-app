@@ -543,7 +543,7 @@ export const EN: TranslationMap = {
   'rh_voice.title': 'Right Hand is listening',
   'rh_voice.caption_label': 'Heard',
   'rh_voice.typed_input_label': 'Tell Right Hand what you said',
-  'rh_voice.typed_input_placeholder': 'Type it here if the mic is off.',
+  'rh_voice.typed_input_placeholder': 'Just talk, or type here. I’ll ask before I file anything.',
   'rh_voice.authority_deterministic': 'Speak naturally. I’ll ask before I file anything.',
   'rh_voice.action_cancel': 'Close',
   'rh_voice.action_done': 'Done',

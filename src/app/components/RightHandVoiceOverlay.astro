@@ -103,18 +103,25 @@ const { t } = createLayoutContext();
       ><span class="rhvo__bar"></span>
     </div>
 
+    <div class="rhvo__thread" id="rhvo-thread" aria-live="polite"></div>
+
     <div class="rhvo__caption" id="rhvo-caption" aria-live="polite" data-empty="true">
       <span class="rhvo__caption-label" id="rhvo-caption-label">{t('rh_voice.caption_label')}</span>
       <span class="rhvo__caption-text" id="rhvo-caption-text"></span
       ><span class="rhvo__cursor" id="rhvo-cursor" aria-hidden="true"></span>
+    </div>
+
+    <form class="rhvo__composer" id="rhvo-composer">
+      <button type="button" class="rhvo__composer-add" aria-label="Attach or paste source">+</button>
       <textarea
-        class="rhvo__caption-input"
+        class="rhvo__composer-input"
         id="rhvo-caption-input"
-        rows="3"
+        rows="1"
         aria-label={t('rh_voice.typed_input_label')}
         placeholder={t('rh_voice.typed_input_placeholder')}
       ></textarea>
-    </div>
+      <button type="submit" class="rhvo__composer-send" aria-label="Send typed note to Right Hand">Send</button>
+    </form>
 
     <div class="rhvo__confirm" id="rhvo-confirm" hidden>
       <div class="rhvo__turn rhvo__turn--operator">
@@ -137,8 +144,6 @@ const { t } = createLayoutContext();
         <button type="button" class="rhvo__move rhvo__move--primary" data-move="go_home">{t('rh_voice.move_go_home')}</button>
       </div>
     </div>
-
-    <p class="rhvo__authority" id="rhvo-authority">{t('rh_voice.authority_deterministic')}</p>
 
     <div class="rhvo__actions">
       <button type="button" class="rhvo__btn rhvo__btn--ghost" id="rhvo-cancel" data-rhvo-dismiss>
@@ -178,7 +183,7 @@ const { t } = createLayoutContext();
     type TurnResolutionPacket,
   } from '../../voice/realtime/turnResolution.js';
 
-  type OverlayState = 'idle' | 'listening' | 'sorting' | 'confirm' | 'resolved' | 'fallback' | 'capped';
+  type OverlayState = 'idle' | 'listening' | 'sorting' | 'reply' | 'confirm' | 'resolved' | 'fallback' | 'capped';
 
   // Operator-facing copy is rendered into data-* on the overlay (resolved via
   // t() at render) so the script stays i18n-correct. The inline English here is
@@ -195,6 +200,8 @@ const { t } = createLayoutContext();
     const micButton = document.getElementById('rhvo-mic-button') as HTMLButtonElement | null;
     const meterEl = document.getElementById('rhvo-meter');
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
+    const threadEl = document.getElementById('rhvo-thread');
+    const composerForm = document.getElementById('rhvo-composer') as HTMLFormElement | null;
     const confirmSpeakerEl = document.getElementById('rhvo-speaker-operator');
     const confirmHeardEl = document.getElementById('rhvo-confirm-heard');
     const confirmReplyEl = document.getElementById('rhvo-confirm-reply');
@@ -231,10 +238,55 @@ const { t } = createLayoutContext();
     let awaitingConfirm = false; // durable confirm open — pause STT processing
     let parkedTranscript = ''; // committed durable transcript awaiting Save
     let parkedTurnResolution: TurnResolutionPacket | null = null;
-    let correctionBaseTrp: TurnResolutionPacket | null = null; // original turn while collecting a correction
     let currentMoves: readonly NextMove[] = []; // resolved-state next moves
     let resolvedSurface = '/'; // default landing after a resolved turn
     let confirmSaveNeedsMoreContext = false;
+    let workingDraftTurns: string[] = [];
+    let conversationTurns: Array<{ speaker: 'operator' | 'right_hand' | 'system'; text: string; tone?: 'normal' | 'consequence' | 'saved' }> = [];
+
+    const escapeHtml = (value: string): string => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const renderThread = () => {
+      if (!threadEl) return;
+      threadEl.innerHTML = conversationTurns.map((turn) => {
+        const label = turn.speaker === 'operator'
+          ? operatorName()
+          : turn.speaker === 'right_hand'
+            ? (overlay.dataset.speakerRightHand ?? 'Right Hand')
+            : 'Done';
+        const speakerClass = turn.speaker.replace('_', '-');
+        return `<div class="rhvo__thread-turn rhvo__thread-turn--${speakerClass} rhvo__thread-turn--${turn.tone ?? 'normal'}">
+          <span class="rhvo__speaker">${escapeHtml(label)}</span>
+          <p>${escapeHtml(turn.text)}</p>
+        </div>`;
+      }).join('');
+      threadEl.hidden = conversationTurns.length === 0;
+      threadEl.scrollTop = threadEl.scrollHeight;
+    };
+
+    const appendTurn = (speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal') => {
+      const clean = text.trim();
+      if (!clean) return;
+      conversationTurns.push({ speaker, text: clean, tone });
+      renderThread();
+    };
+
+    const resetConversation = () => {
+      workingDraftTurns = [];
+      conversationTurns = [];
+      renderThread();
+    };
+
+    const workingDraftText = () => workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n');
+
+    const textRequestsDurableCommit = (text: string): boolean => (
+      /\b(save|file|log|submit|send|done|that'?s it|go ahead|looks good)\b/i.test(text)
+    );
 
     const setState = (next: OverlayState) => {
       state = next;
@@ -249,11 +301,22 @@ const { t } = createLayoutContext();
     const setCaption = (text: string) => {
       // REAL transcript only — never invented. Empty until STT produces words.
       if (captionEl) captionEl.textContent = text;
-      if (captionInputEl && document.activeElement !== captionInputEl) captionInputEl.value = text;
-      const visibleText = captionInputEl?.value ?? text;
-      if (captionWrap) captionWrap.dataset.empty = visibleText.trim().length === 0 ? 'true' : 'false';
+      if (captionWrap) captionWrap.dataset.empty = text.trim().length === 0 ? 'true' : 'false';
     };
-    const currentCaptionText = () => (captionInputEl?.value.trim() || lastInterim.trim());
+    const currentCaptionText = () => lastInterim.trim();
+
+    const clearComposer = () => {
+      if (!captionInputEl) return;
+      captionInputEl.value = '';
+      captionInputEl.style.height = '';
+    };
+
+    const growComposer = () => {
+      if (!captionInputEl) return;
+      captionInputEl.style.height = 'auto';
+      const max = 6 * 22;
+      captionInputEl.style.height = `${Math.min(captionInputEl.scrollHeight, max)}px`;
+    };
 
     // ── Elapsed timer (mm:ss) — starts on overlay open, ticks every second,
     // cleared in teardown (§4 bounded window is the real guard; this is display).
@@ -395,7 +458,7 @@ const { t } = createLayoutContext();
       if (label) return label;
       const routedParts = trp.context_hypothesis.routed_label.split('→');
       const routed = routedParts[routedParts.length - 1]?.trim() ?? '';
-      if (/session review|draft review|daily log|estimate intake|estimate|field capture|read-only review/i.test(routed)) return '';
+      if (/choose job|session review|draft review|daily log|estimate intake|estimate|field capture|read-only review/i.test(routed)) return '';
       return routed;
     };
 
@@ -686,6 +749,27 @@ const { t } = createLayoutContext();
       });
     };
 
+    const enterReply = (text: string) => {
+      const clean = text.trim();
+      if (!clean) return;
+      awaitingConfirm = false;
+      workingDraftTurns.push(clean);
+      const intent = classifyTranscriptIntent(clean);
+      const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: workingDraftText(), intent }));
+      parkedTranscript = workingDraftText();
+      parkedTurnResolution = trp;
+      teardown();
+      setState('reply');
+      setHeading('');
+      setStatus('');
+      if (timerEl) timerEl.textContent = '';
+      setCaption('');
+      clearComposer();
+      appendTurn('operator', clean);
+      appendTurn('right_hand', `${replyForTurn(trp)} What else?`);
+      showActions('listening');
+    };
+
     const SORTING_BEAT_MS = 700;
     const enterSorting = (text: string) => {
       // Guard immediately so the still-draining session can't re-commit mid-beat.
@@ -693,23 +777,23 @@ const { t } = createLayoutContext();
       setState('sorting');
       setHeading(overlay.dataset.headSorting ?? 'Heard you');
       setStatus(overlay.dataset.sorting ?? 'Got it. Sorting this…');
-      setCaption(text);
+      setCaption('');
       window.setTimeout(() => enterConfirm(text), SORTING_BEAT_MS);
     };
 
     const routeCommitted = (intent: VoiceIntent, text: string) => {
       const cleanText = text.trim();
-      if (correctionBaseTrp && cleanText.length > 0) {
-        const correctedText = `${correctionBaseTrp.heard_text}\n\nCorrection: ${cleanText}`;
-        correctionBaseTrp = null;
-        enterSorting(correctedText);
+      if (cleanText.length > 0 && textRequestsDurableCommit(cleanText) && workingDraftText().length > 0) {
+        const draft = workingDraftText();
+        appendTurn('operator', cleanText);
+        enterSorting(draft);
         return;
       }
       if (requiresCommittedTranscript(intent)) {
-        // Durable intent: confirm in-overlay first (trust loop). No navigation,
-        // no persistence here — that happens only on Save, via the existing
-        // validated capture path.
-        enterSorting(cleanText);
+        // Durable-capable speech starts as conversation, not a button gate. A
+        // consequence bubble appears only when the operator asks to file/send or
+        // taps the explicit save affordance at the end of the thread.
+        enterReply(cleanText);
         return;
       }
       if (canRouteFromInterim(intent)) {
@@ -717,10 +801,9 @@ const { t } = createLayoutContext();
         return;
       }
       if (cleanText.length > 0) {
-        // A useful field note does not need to contain a routing keyword to be
-        // worth saving. Default meaningful committed speech into the same
-        // operator-confirmed note path instead of dead-ending on "no action."
-        enterSorting(cleanText);
+        // A useful field note does not need to contain a routing keyword. Keep
+        // it as a conversational turn until the operator asks to file it.
+        enterReply(cleanText);
         return;
       }
       // Unclassified — keep the overlay open and prompt once.
@@ -729,23 +812,19 @@ const { t } = createLayoutContext();
       armIdleClose();
     };
 
-    // Both "Keep talking" and "Change job" resume the SAME turn without leaving
-    // the conversation: the parked note stays in memory as correctionBaseTrp so
-    // the next spoken words merge into it (re-route to the right job, or add
-    // more). The mic comes back; nothing is persisted or discarded.
+    // Both "Keep talking" and "Change job" resume the SAME conversational
+    // thread. Prior turns stay in workingDraftTurns; the next spoken/typed turn
+    // is appended as its own bubble rather than being spliced into one synthetic
+    // transcript. Nothing is persisted or discarded.
     const resumeListeningWithCorrection = (statusText: string) => {
       awaitingConfirm = false;
       confirmSaveNeedsMoreContext = false;
-      correctionBaseTrp = parkedTurnResolution?.heard_text === parkedTranscript
-        ? parkedTurnResolution
-        : parkedTranscript.trim().length > 0
-          ? buildTurnResolutionPacket({ heardText: parkedTranscript, intent: classifyTranscriptIntent(parkedTranscript) })
-          : null;
       parkedTranscript = '';
       parkedTurnResolution = null;
       routedLive = false;
       lastInterim = '';
       setCaption('');
+      clearComposer();
       if (captionLabelEl) captionLabelEl.textContent = operatorName();
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
@@ -765,6 +844,7 @@ const { t } = createLayoutContext();
     // Change job — re-route the same note to a different job. Same resume path,
     // but the prompt asks specifically for the destination.
     const changeJob = () => {
+      appendTurn('right_hand', overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?');
       resumeListeningWithCorrection(
         overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?',
       );
@@ -916,6 +996,10 @@ const { t } = createLayoutContext();
         : overlay.dataset.headFiledGeneric ?? '✓ Filed · Daily Log · via voice');
       setStatus(overlay.dataset.filedPrompt ?? 'Anything else, or want to add a photo to it?');
       if (timerEl) timerEl.textContent = '';
+      appendTurn('system', filedEntity
+        ? template(overlay.dataset.headFiled ?? '✓ Filed to {job} · Daily Log · via voice', { job: filedEntity })
+        : overlay.dataset.headFiledGeneric ?? '✓ Filed · Daily Log · via voice', 'saved');
+      appendTurn('right_hand', overlay.dataset.filedPrompt ?? 'Anything else, or want to add a photo to it?');
       showActions('resolved');
     };
 
@@ -977,10 +1061,10 @@ const { t } = createLayoutContext();
         return;
       }
       setCaption(interim);
-      // Durable OR unclassified-but-useful speech → confirm trust loop (Save /
-      // Keep talking), never a dead-end. This closes the stale
-      // "I didn't catch an action" trap on the mic-off path.
-      enterSorting(interim);
+      // Useful speech becomes the next conversational turn first. The
+      // consequence bubble appears only when the operator asks to file/send or
+      // taps the explicit Save affordance.
+      routeCommitted(intent, interim);
     };
 
     // ── Bounded window timers (§4) ──────────────────────────────────────────
@@ -1214,7 +1298,10 @@ const { t } = createLayoutContext();
       lastInterim = '';
       awaitingConfirm = false;
       parkedTranscript = '';
+      parkedTurnResolution = null;
       setCaption('');
+      clearComposer();
+      resetConversation();
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
       setStatus(overlay.dataset.listening ?? 'Listening…');
@@ -1247,7 +1334,7 @@ const { t } = createLayoutContext();
         finishCurrentTurn();
         return;
       }
-      if (state === 'confirm' || state === 'resolved') {
+      if (state === 'reply' || state === 'confirm' || state === 'resolved') {
         returnToListening();
         return;
       }
@@ -1275,13 +1362,18 @@ const { t } = createLayoutContext();
       void beginSession();
     });
     captionInputEl?.addEventListener('input', () => {
-      const typed = captionInputEl.value;
-      lastInterim = typed;
-      if (captionEl) captionEl.textContent = typed;
-      if (captionWrap) captionWrap.dataset.empty = typed.trim().length === 0 ? 'true' : 'false';
-      if (typed.trim().length > 0) {
+      growComposer();
+      if (captionInputEl.value.trim().length > 0) {
         window.clearTimeout(idleTimer);
       }
+    });
+    composerForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const typed = captionInputEl?.value.trim() ?? '';
+      if (typed.length === 0) return;
+      clearComposer();
+      setCaption('');
+      routeCommitted(classifyTranscriptIntent(typed), typed);
     });
     // Save: commit the turn through the durable backend path, then render the
     // handled TRP returned by the server. No server artifact, no "saved" state.
@@ -1337,7 +1429,7 @@ const { t } = createLayoutContext();
     width: min(520px, calc(100% - 1rem));
     margin: 0 0 max(0.85rem, env(safe-area-inset-bottom, 0px));
     padding: 0.92rem 0.85rem 0.8rem;
-    max-height: min(76dvh, 720px);
+    max-height: min(88dvh, 760px);
     overflow: auto;
     border: 1px solid var(--rhvo-border);
     border-top-color: var(--rhvo-border-soft);
@@ -1447,6 +1539,8 @@ const { t } = createLayoutContext();
   .rhvo__status:empty { display: none; }
   .rhvo[data-state='confirm'] .rhvo__head,
   .rhvo[data-state='confirm'] .rhvo__status,
+  .rhvo[data-state='reply'] .rhvo__head,
+  .rhvo[data-state='reply'] .rhvo__status,
   .rhvo[data-state='resolved'] .rhvo__head { display: none; }
   /* Discrete field-green VU bars — listening identity stays Right Hand gold,
      capture/level reads field-green. Shown only while actively capturing. */
@@ -1472,7 +1566,7 @@ const { t } = createLayoutContext();
     transition: transform 0.08s linear;
   }
   .rhvo__caption {
-    order: 4;
+    order: 5;
     grid-column: 1 / -1;
     width: 100%;
     min-height: 2.2rem;
@@ -1484,7 +1578,9 @@ const { t } = createLayoutContext();
     border: 1px solid var(--rhvo-border);
     text-align: left;
   }
-  .rhvo[data-state='confirm'] .rhvo__caption { display: none; }
+  .rhvo[data-state='reply'] .rhvo__caption,
+  .rhvo[data-state='confirm'] .rhvo__caption,
+  .rhvo[data-state='resolved'] .rhvo__caption { display: none; }
   .rhvo__caption[data-empty='true'] { opacity: 0.72; }
   .rhvo__caption-label {
     display: block;
@@ -1496,21 +1592,102 @@ const { t } = createLayoutContext();
     margin-bottom: 0.15rem;
   }
   .rhvo__caption-text { font-size: 0.95rem; line-height: 1.42; color: var(--rhvo-text); }
-  .rhvo__caption-input {
+  .rhvo__thread {
+    order: 4;
+    grid-column: 1 / -1;
+    width: 100%;
+    max-height: min(46dvh, 25rem);
+    overflow: auto;
+    display: grid;
+    gap: 0.56rem;
+    padding: 0.1rem 0 0.2rem;
+    scroll-behavior: smooth;
+  }
+  .rhvo__thread[hidden] { display: none; }
+  .rhvo__thread-turn {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.66rem 0.76rem;
+    border: 1px solid var(--rhvo-border);
+    background: var(--rhvo-surface);
+    max-width: 92%;
+  }
+  .rhvo__thread-turn p {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.46;
+    color: var(--rhvo-text);
+    white-space: pre-wrap;
+  }
+  .rhvo__thread-turn--operator {
+    justify-self: end;
+    border-radius: 12px 12px 4px 12px;
+    background: rgba(255, 255, 255, 0.075);
+  }
+  .rhvo__thread-turn--right-hand {
+    justify-self: start;
+    border-radius: 12px 12px 12px 4px;
+    border-color: rgba(201, 169, 97, 0.32);
+    background: rgba(201, 169, 97, 0.14);
+  }
+  .rhvo__thread-turn--system {
+    justify-self: start;
+    max-width: 94%;
+    border-radius: 12px;
+    border-color: rgba(56, 201, 119, 0.38);
+    background: rgba(56, 201, 119, 0.13);
+  }
+  .rhvo__thread-turn--saved p {
+    font-weight: 800;
+    color: #bdf2cd;
+  }
+  .rhvo__composer {
+    order: 91;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.48rem;
+    width: 100%;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--rhvo-border);
+  }
+  .rhvo__composer-add,
+  .rhvo__composer-send {
+    height: 38px;
+    min-width: 38px;
+    border-radius: 999px;
+    border: 1px solid var(--rhvo-border-soft);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--rhvo-text);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .rhvo__composer-send {
+    padding: 0 0.82rem;
+    color: #241b07;
+    background: #f5b544;
+    border-color: #f5b544;
+  }
+  .rhvo__composer-input {
     display: block;
     width: 100%;
-    min-height: 3.05rem;
-    padding: 0.2rem 0 0;
-    border: 0;
+    min-height: 38px;
+    max-height: 8.25rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--rhvo-border-soft);
+    border-radius: 18px;
     outline: 0;
-    resize: vertical;
-    background: transparent;
+    resize: none;
+    background: rgba(255, 255, 255, 0.055);
     color: var(--rhvo-text);
     font: inherit;
     font-size: 0.96rem;
     line-height: 1.42;
+    overflow: auto;
   }
-  .rhvo__caption-input::placeholder { color: var(--rhvo-mute); }
+  .rhvo__composer-input::placeholder { color: var(--rhvo-mute); }
   /* Typing cursor on the live caption — only while actively listening. */
   .rhvo__cursor {
     display: none;
@@ -1529,7 +1706,7 @@ const { t } = createLayoutContext();
      exists underneath; the operator sees Right Hand reply in plain language. */
   .rhvo__confirm { display: none; width: 100%; text-align: left; }
   .rhvo__confirm {
-    order: 5;
+    order: 6;
     grid-column: 1 / -1;
   }
   .rhvo[data-state='confirm'] .rhvo__confirm { display: grid; gap: 0.55rem; }
@@ -1537,13 +1714,12 @@ const { t } = createLayoutContext();
      never the live capture chrome or a competing primary action. */
   .rhvo__resolution { display: none; width: 100%; }
   .rhvo__resolution {
-    order: 5;
+    order: 6;
     grid-column: 1 / -1;
   }
   .rhvo[data-state='resolved'] .rhvo__resolution { display: block; }
   .rhvo[data-state='resolved'] .rhvo__meter,
   .rhvo[data-state='resolved'] .rhvo__caption,
-  .rhvo[data-state='resolved'] .rhvo__authority,
   .rhvo[data-state='resolved'] .rhvo__actions { display: none; }
   .rhvo__resolution-prompt {
     margin: 0 0 0.7rem;
@@ -1625,15 +1801,6 @@ const { t } = createLayoutContext();
     background: rgba(56, 201, 119, 0.13);
     font-weight: 700;
     color: var(--rhvo-text);
-  }
-  .rhvo__authority {
-    order: 90;
-    grid-column: 2;
-    margin: 0;
-    align-self: center;
-    font-size: 0.78rem;
-    line-height: 1.35;
-    color: var(--rhvo-dim);
   }
   .rhvo__actions {
     order: 6;
