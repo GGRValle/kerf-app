@@ -4,11 +4,14 @@ import SectionLabel from '../../components/SectionLabel.astro';
 import Row from '../../components/Row.astro';
 import Chip from '../../components/Chip.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
-import { formatCentsDisplay, listLane23Projects } from '../../lib/lane23Fixtures.js';
+import { getApiDeps } from '../../../api/lib/deps.js';
+import { formatCentsDisplay } from '../../lib/lane23Fixtures.js';
+import { listProjectRecordsForTenant } from '../../lib/projectRecords.js';
 import '../../styles/lane23.css';
 
 const { t, context } = createLayoutContext();
-const projects = listLane23Projects(context.tenantId);
+const { tenantReader } = getApiDeps();
+const projects = await listProjectRecordsForTenant(tenantReader, context.tenantId);
 ---
 
 <Layout titleKey="project.list.title" activeHref="/projects">

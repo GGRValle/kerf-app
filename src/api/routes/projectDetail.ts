@@ -4,20 +4,25 @@ import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
-import { getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
+import {
+  getProjectRecordForTenant,
+  listProjectRecordsForTenant,
+} from '../../app/lib/projectRecords.js';
 import { loadProjectAuditTrail } from '../../project/projectAuditProjection.js';
 
 export const projectDetailRoutes = new Hono<{ Variables: ApiVariables }>();
 
-projectDetailRoutes.get('/projects/detail/fixtures', (c) => {
+projectDetailRoutes.get('/projects/detail/fixtures', async (c) => {
   const tenant = requireApiTenant(c);
-  const projects = listLane23Projects(tenant);
+  const { tenantReader } = getApiDeps();
+  const projects = await listProjectRecordsForTenant(tenantReader, tenant);
   return c.json({ projects, ...tenantOverrideFlags(c) });
 });
 
-projectDetailRoutes.get('/projects/detail/:id', (c) => {
+projectDetailRoutes.get('/projects/detail/:id', async (c) => {
   const tenant = requireApiTenant(c);
-  const project = getLane23ProjectForTenant(c.req.param('id'), tenant);
+  const { tenantReader } = getApiDeps();
+  const project = await getProjectRecordForTenant(tenantReader, tenant, c.req.param('id'));
   if (project === null) {
     return c.json({ error: 'project_not_found', project_id: c.req.param('id') }, 404);
   }
@@ -27,7 +32,8 @@ projectDetailRoutes.get('/projects/detail/:id', (c) => {
 projectDetailRoutes.post('/projects/:id/export', async (c) => {
   const projectId = c.req.param('id');
   const tenant = requireApiTenant(c);
-  const project = getLane23ProjectForTenant(projectId, tenant);
+  const { eventStore, tenantReader } = getApiDeps();
+  const project = await getProjectRecordForTenant(tenantReader, tenant, projectId);
   if (project === null) {
     return c.json({ error: 'project_not_found', project_id: projectId }, 404);
   }
@@ -38,7 +44,6 @@ projectDetailRoutes.post('/projects/:id/export', async (c) => {
     return c.json({ error: 'invalid_format' }, 400);
   }
 
-  const { eventStore } = getApiDeps();
   const event = await appendValidatedEvent(
     { store: eventStore, tenant_id: tenant, correlation_id: projectId },
     {
@@ -59,12 +64,12 @@ projectDetailRoutes.post('/projects/:id/export', async (c) => {
 projectDetailRoutes.get('/projects/:id/audit-events', async (c) => {
   const projectId = c.req.param('id');
   const tenant = requireApiTenant(c);
-  const project = getLane23ProjectForTenant(projectId, tenant);
+  const { tenantReader } = getApiDeps();
+  const project = await getProjectRecordForTenant(tenantReader, tenant, projectId);
   if (project === null) {
     return c.json({ error: 'project_not_found', project_id: projectId }, 404);
   }
 
-  const { tenantReader } = getApiDeps();
   const entries = await loadProjectAuditTrail(tenantReader, tenant, projectId);
   return c.json({ project_id: projectId, entries, ...tenantOverrideFlags(c) });
 });
