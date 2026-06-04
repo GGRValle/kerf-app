@@ -5,14 +5,17 @@ import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
 import ProjectTabContent from '../../../components/project/ProjectTabContent.astro';
 import ProjectBrainSummary from '../../../components/ProjectBrainSummary.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
-import { getLane23Project, isProjectTabId } from '../../../lib/lane23Fixtures.js';
+import { isProjectTabId } from '../../../lib/lane23Fixtures.js';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getProjectRecordForTenant } from '../../../lib/projectRecords.js';
 import { getProjectBrain } from '../../../lib/lane3WorkFixtures.js';
 import '../../../styles/lane23.css';
 import '../../../styles/lane3work.css';
 
 const { t, context } = createLayoutContext();
 const { id, tab } = Astro.params;
-const project = id ? getLane23Project(id) : null;
+const { tenantReader } = getApiDeps();
+const project = id ? await getProjectRecordForTenant(tenantReader, context.tenantId, id) : null;
 const activeTab = tab && isProjectTabId(tab) ? tab : null;
 
 if (tab === 'scope' && project !== null) {

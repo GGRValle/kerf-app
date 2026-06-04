@@ -4,13 +4,15 @@ import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
 import Card from '../../../components/Card.astro';
 import Chip from '../../../components/Chip.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
-import { getLane23Project } from '../../../lib/lane23Fixtures.js';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getProjectRecordForTenant } from '../../../lib/projectRecords.js';
 import type { I18nKey } from '../../../../i18n/keys.js';
 import '../../../styles/lane23.css';
 
-const { t } = createLayoutContext();
+const { t, context } = createLayoutContext();
 const { id } = Astro.params;
-const project = id ? getLane23Project(id) : null;
+const { tenantReader } = getApiDeps();
+const project = id ? await getProjectRecordForTenant(tenantReader, context.tenantId, id) : null;
 ---
 
 <Layout titleKey="project.closeout.title" activeHref="/projects">
