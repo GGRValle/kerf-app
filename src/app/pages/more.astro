@@ -2,60 +2,63 @@
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
 import RhSummary from '../components/RhSummary.astro';
-import { MORE_NAV_LINKS } from '../lib/shellRoutes.js';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { moreDomainLinksForRole } from '../../shell/moreDomainNav.js';
+import type { ShellRoleRoot } from '../../contracts/lane1/domains.js';
 
-const { t } = createLayoutContext();
+const { context, t } = createLayoutContext();
+const domainLinks = moreDomainLinksForRole(context.roleRoot as ShellRoleRoot);
 
-const primaryDestinations = [
+const quickLinks = [
   {
     href: '/schedule',
-    title: 'Schedule',
-    detail: 'See the current schedule preview and jump back to projects or office cards.',
+    titleKey: 'shell.domain.schedule' as const,
+    detailKey: 'shell.more.schedule_detail' as const,
   },
   {
     href: '/reports',
-    title: 'Reports',
-    detail: 'Open audit, project, and money views that are already safe to inspect.',
+    titleKey: 'nav.reports' as const,
+    detailKey: 'shell.more.reports_detail' as const,
   },
   {
     href: '/settings',
-    title: 'Settings',
-    detail: 'Review tenant-safe defaults and the role-routing preview.',
+    titleKey: 'nav.settings' as const,
+    detailKey: 'shell.more.settings_detail' as const,
   },
-] as const;
+].filter((item) => domainLinks.some((link) => link.href === item.href));
 ---
 
 <Layout titleKey="shell.more.title" activeHref="/more">
   <section class="more-page" aria-labelledby="more-title">
     <RhSummary
-      headline="More"
-      detail="These are the secondary surfaces for the phone test. Working links open real routes; preview areas say so plainly."
+      headline={t('shell.more.title')}
+      detail={t('shell.more.lead')}
       tone="green"
     />
 
-    <Card eyebrow="Available now" title="Keep moving">
-      <p class="more-page__copy">
-        Right Hand stays on the bottom mic. Use these destinations when you want
-        to leave the conversation and inspect a specific part of the business.
-      </p>
-      <div class="more-page__actions">
-        {primaryDestinations.map((item) => (
-          <a class="more-page__action" href={item.href}>
-            <span>{item.title}</span>
-            <small>{item.detail}</small>
+    <Card eyebrow={t('shell.more.domains_eyebrow')} title={t('shell.more.domains_title')}>
+      <p class="more-page__copy">{t('shell.more.domains_copy')}</p>
+      <nav class="more-page__nav" aria-label={t('shell.more.domains_aria')}>
+        {domainLinks.map((link) => (
+          <a href={link.href}>
+            <span>{t(link.labelKey)}</span>
           </a>
-        ))}
-      </div>
-    </Card>
-
-    <Card eyebrow="All destinations" title={t('shell.more.title')}>
-      <nav class="more-page__nav" aria-label={t('shell.more.nav_aria')}>
-        {MORE_NAV_LINKS.map((link) => (
-          <a href={link.href}>{t(link.labelKey)}</a>
         ))}
       </nav>
     </Card>
+
+    {quickLinks.length > 0 ? (
+      <Card eyebrow={t('shell.more.quick_eyebrow')} title={t('shell.more.quick_title')}>
+        <div class="more-page__actions">
+          {quickLinks.map((item) => (
+            <a class="more-page__action" href={item.href}>
+              <span>{t(item.titleKey)}</span>
+              <small>{t(item.detailKey)}</small>
+            </a>
+          ))}
+        </div>
+      </Card>
+    ) : null}
   </section>
 </Layout>
 
@@ -96,13 +99,17 @@ const primaryDestinations = [
     border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
   }
 
-  .more-page__action span {
+  .more-page__action span,
+  .more-page__nav a span {
     font-weight: 700;
   }
 
-  .more-page__action small {
+  .more-page__action small,
+  .more-page__nav a small {
     color: var(--text-muted, #5c6670);
     line-height: 1.35;
+    font-weight: 500;
+    font-size: 0.72rem;
   }
 
   .more-page__nav {
@@ -111,15 +118,12 @@ const primaryDestinations = [
   }
 
   .more-page__nav a {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: grid;
+    gap: 0.12rem;
     padding: 0.75rem 0.85rem;
-    font-weight: 650;
   }
 
   .more-page__nav a::after {
-    content: '->';
-    color: var(--text-muted, #5c6670);
+    content: none;
   }
 </style>

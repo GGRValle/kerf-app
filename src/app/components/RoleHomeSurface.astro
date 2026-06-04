@@ -12,6 +12,8 @@ export interface Props {
 const { roleRoot, wireframeOverride } = Astro.props as Props;
 const { t } = createLayoutContext({ roleRoot });
 const wireframe = wireframeOverride ?? wireframeIdForRole(roleRoot);
+const showWireframeRef =
+  import.meta.env.DEV || Astro.url.searchParams.get('debug') === '1';
 const ROLE_LABEL_KEYS = {
   owner: 'roleRoot.owner',
   pm: 'roleRoot.pm',
@@ -22,7 +24,12 @@ const ROLE_LABEL_KEYS = {
 ---
 
 <section class="role-home" data-wireframe={wireframe} data-role-root={roleRoot}>
-  <p class="role-home__wireframe">{wireframe} · {t(ROLE_LABEL_KEYS[roleRoot])}</p>
+  <p class="role-home__crumb">
+    {showWireframeRef ? (
+      <span class="role-home__wireframe-ref">{wireframe} · </span>
+    ) : null}
+    {t(ROLE_LABEL_KEYS[roleRoot])}
+  </p>
   {roleRoot === 'owner' ? (
     <RightHandHomeSurface />
   ) : (
@@ -39,12 +46,16 @@ const ROLE_LABEL_KEYS = {
 </section>
 
 <style>
-  .role-home__wireframe {
-    font-size: 0.7rem;
-    letter-spacing: 0.06em;
+  .role-home__crumb {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--kerf-amber, #f5b544);
+    color: var(--text-muted, #5c6670);
     margin: 0 0 0.75rem;
+  }
+  .role-home__wireframe-ref {
+    color: var(--kerf-amber, #f5b544);
   }
   .role-home__stub {
     border: 1px dashed var(--border);
