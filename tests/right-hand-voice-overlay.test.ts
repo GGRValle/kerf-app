@@ -353,17 +353,20 @@ function sliceDecl(src: string, name: string, nextName: string): string {
   return src.slice(start, end);
 }
 
-test('lifecycle: hard cap fully releases the mic and realtime silence re-arms idle close', () => {
+test('lifecycle: hard cap fully releases the mic while normal pauses preserve the grant', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
 
   // teardown() is the single source of truth for full mic + audio release.
-  const teardown = sliceDecl(src, 'teardown', 'closeOverlay');
-  assert.match(teardown, /getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+  const stopMicStream = sliceDecl(src, 'stopMicStream', 'queryMicPermission');
+  assert.match(stopMicStream, /getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+  const teardown = sliceDecl(src, 'teardown', 'releaseListeningResources');
+  assert.match(teardown, /stopMicStream\(\)/);
   assert.match(teardown, /audioCtx\?\.close\(\)/);
 
   const releaseListeningResources = sliceDecl(src, 'releaseListeningResources', 'closeOverlay');
-  assert.match(releaseListeningResources, /getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+  assert.match(releaseListeningResources, /setMicTracksEnabled\(false\)/);
   assert.match(releaseListeningResources, /audioCtx\?\.close\(\)/);
+  assert.doesNotMatch(releaseListeningResources, /track\.stop\(\)/);
   assert.doesNotMatch(releaseListeningResources, /recChunks = \[\]/);
 
   // Blocker 1: the hard-cap path must DELEGATE to teardown() (full release),
@@ -379,6 +382,20 @@ test('lifecycle: hard cap fully releases the mic and realtime silence re-arms id
   const startRealtime = sliceDecl(src, 'startRealtime', 'beginSession');
   assert.doesNotMatch(startRealtime, /startMeter\(\s*\(\)\s*=>\s*\{\s*\}\s*\)/);
   assert.match(startRealtime, /startMeter\(\s*\(\)\s*=>\s*\{[\s\S]*?armIdleClose\(\)[\s\S]*?\}\s*\)/);
+});
+
+test('mic permission: granted streams are reused within the same conversation', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const acquireMicStream = sliceDecl(src, 'acquireMicStream', 'teardown');
+  assert.match(acquireMicStream, /hasLiveMicStream\(\)/);
+  assert.match(acquireMicStream, /setMicTracksEnabled\(true\)/);
+  assert.match(acquireMicStream, /queryMicPermission\(\)/);
+  assert.match(acquireMicStream, /getUserMedia\(\{ audio: true \}\)/);
+  assert.match(acquireMicStream, /micGrantSeen = true/);
+
+  const beginSession = sliceDecl(src, 'beginSession', 'openOverlay');
+  assert.match(beginSession, /await acquireMicStream\(\)/);
+  assert.doesNotMatch(beginSession, /getUserMedia\(\{ audio: true \}\)/);
 });
 
 // ── F-RH1 fidelity: trust loop + visual fidelity (source-level path slicing) ──
@@ -468,7 +485,7 @@ test('stale trap gone: mic-off on useful interim speech enters the trust loop, n
   assert.doesNotMatch(finishCurrentTurn, /requiresCommittedTranscript\(intent\)[\s\S]{0,120}setState\('capped'\)/);
 });
 
-test('mic-off immediately releases the mic/session before any clarify or route decision', () => {
+test('mic-off immediately pauses the mic/session before any clarify or route decision', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
   assert.match(
@@ -538,7 +555,7 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   assert.match(renderConfirmTurn, /actionStartIntake/);
   // Stage 4: the primary affordance is "Save to <job>" once a destination is
   // known; Change job is only offered when there is a job to change away from.
-  assert.match(renderConfirmTurn, /const entity = likelyEntityLabel\(trp\)/);
+  assert.match(renderConfirmTurn, /const entity = conversationEntityLabel\(trp\)/);
   assert.match(renderConfirmTurn, /actionSaveTo[\s\S]{0,40}\{ job: entity \}/);
   assert.match(renderConfirmTurn, /changeJobBtn\.hidden = state !== 'confirm' \|\| !entity/);
 

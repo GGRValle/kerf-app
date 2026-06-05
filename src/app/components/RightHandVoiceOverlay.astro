@@ -23,6 +23,7 @@ const { t } = createLayoutContext();
   aria-modal="true"
   aria-labelledby="rhvo-title"
   data-state="idle"
+  data-typed="false"
   data-title={t('rh_voice.title')}
   data-listening={t('rh_voice.status_listening')}
   data-fallback={t('rh_voice.status_fallback')}
@@ -75,22 +76,6 @@ const { t } = createLayoutContext();
     <button type="button" class="rhvo__close" data-rhvo-dismiss aria-label={t('rh_voice.action_back')}>
       <span aria-hidden="true">‹</span>
     </button>
-    <button
-      type="button"
-      class="rhvo__indicator"
-      id="rhvo-mic-button"
-      aria-label={t('rh_voice.mic_toggle_label')}
-    >
-      <span class="rhvo__pulse"></span>
-      <span class="rhvo__mic">
-        <svg viewBox="0 0 24 24" aria-hidden="true"
-          ><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path><path
-            d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"
-          ></path></svg
-        >
-      </span>
-    </button>
-
     <div class="rhvo__head">
       <p class="rhvo__eyebrow" id="rhvo-title">{t('rh_voice.title')}</p>
       <span class="rhvo__timer" id="rhvo-timer" aria-hidden="true">0:00</span>
@@ -113,6 +98,21 @@ const { t } = createLayoutContext();
 
     <form class="rhvo__composer" id="rhvo-composer">
       <button type="button" class="rhvo__composer-add" aria-label="Attach or paste source">+</button>
+      <button
+        type="button"
+        class="rhvo__indicator"
+        id="rhvo-mic-button"
+        aria-label={t('rh_voice.mic_toggle_label')}
+      >
+        <span class="rhvo__pulse"></span>
+        <span class="rhvo__mic">
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path><path
+              d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"
+            ></path></svg
+          >
+        </span>
+      </button>
       <textarea
         class="rhvo__composer-input"
         id="rhvo-caption-input"
@@ -135,7 +135,7 @@ const { t } = createLayoutContext();
       <p class="rhvo__confirm-prompt" id="rhvo-confirm-prompt">{t('rh_voice.confirm_prompt')}</p>
     </div>
 
-    <div class="rhvo__resolution" id="rhvo-resolution" hidden>
+    <div class="rhvo__resolution" id="rhvo-resolution" hidden aria-hidden="true">
       <p class="rhvo__resolution-prompt">{t('rh_voice.resolved_prompt')}</p>
       <div class="rhvo__moves">
         <button type="button" class="rhvo__move" data-move="add_photo">{t('rh_voice.move_add_photo')}</button>
@@ -221,6 +221,8 @@ const { t } = createLayoutContext();
 
     let state: OverlayState = 'idle';
     let mediaStream: MediaStream | null = null;
+    let micPermissionState: PermissionState | 'unknown' | 'unsupported' = 'unknown';
+    let micGrantSeen = false;
     let audioCtx: AudioContext | null = null;
     let analyser: AnalyserNode | null = null;
     let rafId = 0;
@@ -259,13 +261,16 @@ const { t } = createLayoutContext();
       if (!threadEl) return;
       threadEl.innerHTML = conversationTurns.map((turn) => {
         const label = turn.speaker === 'operator'
-          ? operatorName()
+          ? (overlay.dataset.speakerYou ?? 'You')
           : turn.speaker === 'right_hand'
             ? (overlay.dataset.speakerRightHand ?? 'Right Hand')
             : 'Done';
         const speakerClass = turn.speaker.replace('_', '-');
+        const speakerIcon = turn.speaker === 'right_hand'
+          ? '<span class="rhvo__speaker-shield" aria-hidden="true"></span>'
+          : '';
         return `<div class="rhvo__thread-turn rhvo__thread-turn--${speakerClass} rhvo__thread-turn--${turn.tone ?? 'normal'}">
-          <span class="rhvo__speaker">${escapeHtml(label)}</span>
+          <span class="rhvo__speaker">${speakerIcon}${escapeHtml(label)}</span>
           <p>${escapeHtml(turn.text)}</p>
         </div>`;
       }).join('');
@@ -373,6 +378,7 @@ const { t } = createLayoutContext();
       if (!captionInputEl) return;
       captionInputEl.value = '';
       captionInputEl.style.height = '';
+      overlay.dataset.typed = 'false';
     };
 
     const growComposer = () => {
@@ -433,6 +439,73 @@ const { t } = createLayoutContext();
       window.clearTimeout(hardCapTimer);
     };
 
+    const liveMicTracks = () => mediaStream?.getAudioTracks().filter((track) => track.readyState === 'live') ?? [];
+    const hasLiveMicStream = () => liveMicTracks().length > 0;
+    const setMicTracksEnabled = (enabled: boolean) => {
+      liveMicTracks().forEach((track) => {
+        track.enabled = enabled;
+      });
+    };
+    const stopMicStream = () => {
+      mediaStream?.getTracks().forEach((track) => track.stop());
+      mediaStream = null;
+    };
+    const queryMicPermission = async (): Promise<PermissionState | 'unknown' | 'unsupported'> => {
+      const permissions = navigator.permissions;
+      if (!permissions?.query) {
+        micPermissionState = 'unsupported';
+        return micPermissionState;
+      }
+      try {
+        const status = await permissions.query({ name: 'microphone' as PermissionName });
+        micPermissionState = status.state;
+        status.onchange = () => {
+          micPermissionState = status.state;
+        };
+        return status.state;
+      } catch {
+        micPermissionState = 'unsupported';
+        return micPermissionState;
+      }
+    };
+    const micFailureStatus = (err: unknown): string => {
+      const name = err instanceof DOMException ? err.name : '';
+      if (micPermissionState === 'denied' || name === 'NotAllowedError' || name === 'SecurityError') {
+        return overlay.dataset.micdenied ?? 'Microphone is off — enable it or open Right Hand to type.';
+      }
+      return overlay.dataset.unavailable ?? 'Voice isn’t available here — open Right Hand to type.';
+    };
+    const acquireMicStream = async (): Promise<boolean> => {
+      if (hasLiveMicStream()) {
+        setMicTracksEnabled(true);
+        micGrantSeen = true;
+        return true;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setStatus(overlay.dataset.unavailable ?? 'Voice isn’t available here — open Right Hand to type.');
+        return false;
+      }
+      const permission = await queryMicPermission();
+      if (permission === 'denied') {
+        setStatus(overlay.dataset.micdenied ?? 'Microphone is off — enable it or open Right Hand to type.');
+        return false;
+      }
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micPermissionState = 'granted';
+        micGrantSeen = true;
+        return true;
+      } catch (err) {
+        const afterFailure = await queryMicPermission();
+        if (afterFailure === 'granted' || micGrantSeen) {
+          setStatus(overlay.dataset.unavailable ?? 'Voice isn’t available here — open Right Hand to type.');
+        } else {
+          setStatus(micFailureStatus(err));
+        }
+        return false;
+      }
+    };
+
     const teardown = () => {
       clearTimers();
       stopTimer();
@@ -444,8 +517,7 @@ const { t } = createLayoutContext();
         if (recorder && recorder.state !== 'inactive') recorder.stop();
       } catch { /* noop */ }
       try { void audioCtx?.close(); } catch { /* noop */ }
-      mediaStream?.getTracks().forEach((track) => track.stop());
-      mediaStream = null;
+      stopMicStream();
       audioCtx = null;
       analyser = null;
       pc = null;
@@ -462,8 +534,11 @@ const { t } = createLayoutContext();
       try { dc?.close(); } catch { /* noop */ }
       try { pc?.close(); } catch { /* noop */ }
       try { void audioCtx?.close(); } catch { /* noop */ }
-      mediaStream?.getTracks().forEach((track) => track.stop());
-      mediaStream = null;
+      // Pause normal turn-listening without revoking an already granted mic
+      // stream. The same overlay conversation can resume without looking like
+      // a fresh permission request. closeOverlay()/hard-cap still call teardown()
+      // for a full privacy release.
+      setMicTracksEnabled(false);
       audioCtx = null;
       analyser = null;
       pc = null;
@@ -528,8 +603,19 @@ const { t } = createLayoutContext();
       return routed;
     };
 
+    const conversationEntityLabel = (trp: TurnResolutionPacket): string => {
+      const label = likelyEntityLabel(trp).replace(/\s+/g, ' ').trim();
+      if (!label) return '';
+      const clientPart = label.split(',')[0]?.trim() || label;
+      const routePart = clientPart.split(/[·+]/)[0]?.trim() || clientPart;
+      const scopeStripped = routePart
+        .replace(/\s+(kitchen|bath(?:room)?|primary|site|project|job|remodel|addition|adu)\b.*$/i, '')
+        .trim();
+      return scopeStripped || routePart || clientPart || label;
+    };
+
     const replyForTurn = (trp: TurnResolutionPacket): string => {
-      const entity = likelyEntityLabel(trp);
+      const entity = conversationEntityLabel(trp);
       const frame = trp.context_hypothesis.frame;
       if (trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note') {
         return entity
@@ -546,14 +632,15 @@ const { t } = createLayoutContext();
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
       confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave(trp);
-      const entity = likelyEntityLabel(trp);
+      const entity = conversationEntityLabel(trp);
       if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
       if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
-      if (confirmPromptEl) confirmPromptEl.textContent = promptForTurn(trp);
+      if (confirmPromptEl) {
+        const prompt = promptForTurn(trp);
+        confirmPromptEl.innerHTML = `<span class="rhvo__confirm-kicker">Before I file it</span><span>${escapeHtml(prompt)}</span>`;
+      }
       if (notThatBtn) {
-        notThatBtn.textContent = entity && !confirmSaveNeedsMoreContext
-          ? overlay.dataset.actionChangeJob ?? 'Change job'
-          : overlay.dataset.actionKeepTalking ?? 'Keep talking';
+        notThatBtn.textContent = overlay.dataset.actionKeepTalking ?? 'Keep talking';
       }
       // Primary affordance is the answer to where-it-goes: "Save to <job>" when
       // the destination is known (F-RH3 stage 4), "Start intake" for a brand-new
@@ -686,12 +773,13 @@ const { t } = createLayoutContext();
         return overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
       }
       const entity = likelyEntityLabel(trp);
+      const conversationalEntity = conversationEntityLabel(trp);
       const frame = trp.context_hypothesis?.frame;
       if (entity && (trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note')) {
-        return `I'll save this to ${entity} → today's Daily Log. Good there?`;
+        return `I'll save this to ${conversationalEntity || entity} → today's Daily Log. Good there?`;
       }
       if (entity && (trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk')) {
-        return `Create estimate from this for ${entity}?`;
+        return `Create estimate from this for ${conversationalEntity || entity}?`;
       }
       if (!entity && (trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk')) {
         return 'Start a new estimate from this?';
@@ -1053,7 +1141,7 @@ const { t } = createLayoutContext();
       stashCommitted(clean);
       currentMoves = nextMovesFor(trp);
       resolvedSurface = trp.next_surface;
-      teardown();
+      releaseListeningResources();
       awaitingConfirm = false;
       parkedTranscript = '';
       parkedTurnResolution = null;
@@ -1064,11 +1152,11 @@ const { t } = createLayoutContext();
       // write returned — "✓ Filed to <job> · Daily Log · via voice". Never before
       // (honesty floor #5). The conversation stays open with the mic available;
       // the next-move buttons offer "add a photo" etc. without dumping the user.
-      const filedEntity = likelyEntityLabel(trp);
+      const filedEntity = conversationEntityLabel(trp);
       setHeading(filedEntity
         ? template(overlay.dataset.headFiled ?? '✓ Filed to {job} · Daily Log · via voice', { job: filedEntity })
         : overlay.dataset.headFiledGeneric ?? '✓ Filed · Daily Log · via voice');
-      setStatus(overlay.dataset.filedPrompt ?? 'Anything else, or want to add a photo to it?');
+      setStatus('');
       if (timerEl) timerEl.textContent = '';
       appendTurn('system', filedEntity
         ? template(overlay.dataset.headFiled ?? '✓ Filed to {job} · Daily Log · via voice', { job: filedEntity })
@@ -1328,12 +1416,7 @@ const { t } = createLayoutContext();
     };
 
     const beginSession = async () => {
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch {
-        setStatus(overlay.dataset.micdenied ?? 'Microphone is off — enable it or open Right Hand to type.');
-        return;
-      }
+      if (!(await acquireMicStream())) return;
       armHardCap();
       armIdleClose();
       // Ask the server whether this tenant gets realtime. Consent + config are
@@ -1439,7 +1522,9 @@ const { t } = createLayoutContext();
     });
     captionInputEl?.addEventListener('input', () => {
       growComposer();
-      if (captionInputEl.value.trim().length > 0) {
+      const hasTypedText = captionInputEl.value.trim().length > 0;
+      overlay.dataset.typed = hasTypedText ? 'true' : 'false';
+      if (hasTypedText) {
         window.clearTimeout(idleTimer);
       }
     });
@@ -1497,20 +1582,20 @@ const { t } = createLayoutContext();
   .rhvo__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(6, 8, 11, 0.5);
-    backdrop-filter: blur(16px) saturate(0.85);
+    background: rgba(6, 8, 11, 0.34);
+    backdrop-filter: blur(12px) saturate(0.92);
   }
   .rhvo__panel {
     position: relative;
     width: min(520px, calc(100% - 1rem));
     margin: 0 0 max(0.85rem, env(safe-area-inset-bottom, 0px));
     padding: 0.92rem 0.85rem 0.8rem;
-    max-height: min(88dvh, 760px);
+    max-height: min(94dvh, 820px);
     overflow: auto;
     border: 1px solid var(--rhvo-border);
     border-top-color: var(--rhvo-border-soft);
     border-radius: 22px 22px 24px 24px;
-    background: var(--rhvo-bg);
+    background: rgba(20, 24, 31, 0.92);
     backdrop-filter: blur(14px);
     color: var(--rhvo-text);
     display: grid;
@@ -1542,15 +1627,13 @@ const { t } = createLayoutContext();
   }
   .rhvo__indicator {
     position: relative;
-    order: 90;
-    grid-column: 1;
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
-    justify-self: start;
+    justify-self: center;
     align-self: center;
   }
   .rhvo__pulse {
@@ -1617,7 +1700,8 @@ const { t } = createLayoutContext();
   .rhvo[data-state='confirm'] .rhvo__status,
   .rhvo[data-state='reply'] .rhvo__head,
   .rhvo[data-state='reply'] .rhvo__status,
-  .rhvo[data-state='resolved'] .rhvo__head { display: none; }
+  .rhvo[data-state='resolved'] .rhvo__head,
+  .rhvo[data-state='resolved'] .rhvo__status { display: none; }
   /* Discrete field-green VU bars — listening identity stays Right Hand gold,
      capture/level reads field-green. Shown only while actively capturing. */
   .rhvo__meter {
@@ -1672,10 +1756,11 @@ const { t } = createLayoutContext();
     order: 4;
     grid-column: 1 / -1;
     width: 100%;
-    max-height: min(46dvh, 25rem);
+    max-height: min(64dvh, 36rem);
     overflow: auto;
     display: grid;
     gap: 0.56rem;
+    justify-items: start;
     padding: 0.1rem 0 0.2rem;
     scroll-behavior: smooth;
   }
@@ -1683,10 +1768,12 @@ const { t } = createLayoutContext();
   .rhvo__thread-turn {
     display: grid;
     gap: 0.25rem;
-    padding: 0.66rem 0.76rem;
+    padding: 0.76rem 0.86rem;
     border: 1px solid var(--rhvo-border);
     background: var(--rhvo-surface);
-    max-width: 92%;
+    width: fit-content;
+    max-width: min(84%, 28rem);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
   }
   .rhvo__thread-turn p {
     margin: 0;
@@ -1697,18 +1784,21 @@ const { t } = createLayoutContext();
   }
   .rhvo__thread-turn--operator {
     justify-self: end;
-    border-radius: 12px 12px 4px 12px;
-    background: rgba(255, 255, 255, 0.075);
+    width: min(84%, 28rem);
+    border-radius: 17px 17px 5px 17px;
+    border-color: rgba(210, 217, 228, 0.16);
+    background: rgba(232, 236, 241, 0.16);
   }
   .rhvo__thread-turn--right-hand {
     justify-self: start;
-    border-radius: 12px 12px 12px 4px;
-    border-color: rgba(201, 169, 97, 0.32);
-    background: rgba(201, 169, 97, 0.14);
+    width: min(76%, 24rem);
+    border-radius: 17px 17px 17px 5px;
+    border-color: rgba(201, 169, 97, 0.44);
+    background: rgba(201, 169, 97, 0.21);
   }
   .rhvo__thread-turn--system {
     justify-self: start;
-    max-width: 94%;
+    width: min(86%, 26rem);
     border-radius: 12px;
     border-color: rgba(56, 201, 119, 0.38);
     background: rgba(56, 201, 119, 0.13);
@@ -1717,21 +1807,83 @@ const { t } = createLayoutContext();
     font-weight: 800;
     color: #bdf2cd;
   }
+  /* Thread turns are injected with innerHTML, so they do not receive Astro's
+     scoped style attribute. Scope from the static thread container, then make
+     the dynamic classes global so the bubbles actually render in the browser. */
+  .rhvo__thread :global(.rhvo__thread-turn) {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.76rem 0.86rem;
+    border: 1px solid var(--rhvo-border);
+    background: var(--rhvo-surface);
+    width: fit-content;
+    max-width: min(84%, 28rem);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  }
+  .rhvo__thread :global(.rhvo__thread-turn p) {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.46;
+    color: var(--rhvo-text);
+    white-space: pre-wrap;
+  }
+  .rhvo__thread :global(.rhvo__thread-turn--operator) {
+    justify-self: end;
+    width: min(84%, 28rem);
+    border-radius: 17px 17px 5px 17px;
+    border-color: rgba(210, 217, 228, 0.16);
+    background: rgba(232, 236, 241, 0.16);
+  }
+  .rhvo__thread :global(.rhvo__thread-turn--right-hand) {
+    justify-self: start;
+    width: min(76%, 24rem);
+    border-radius: 17px 17px 17px 5px;
+    border-color: rgba(201, 169, 97, 0.44);
+    background: rgba(201, 169, 97, 0.21);
+  }
+  .rhvo__thread :global(.rhvo__thread-turn--system) {
+    justify-self: start;
+    width: min(86%, 26rem);
+    border-radius: 12px;
+    border-color: rgba(56, 201, 119, 0.38);
+    background: rgba(56, 201, 119, 0.13);
+  }
+  .rhvo__thread :global(.rhvo__thread-turn--saved p) {
+    font-weight: 800;
+    color: #bdf2cd;
+  }
+  .rhvo__thread :global(.rhvo__speaker) {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 800;
+    color: var(--rhvo-mute);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+  }
+  .rhvo__thread :global(.rhvo__speaker-shield) {
+    width: 0.48rem;
+    height: 0.48rem;
+    border: 1.5px solid rgba(201, 169, 97, 0.95);
+    border-radius: 999px;
+    display: inline-block;
+  }
   .rhvo__composer {
     order: 91;
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: end;
-    gap: 0.48rem;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
     width: 100%;
     padding-top: 0.65rem;
     border-top: 1px solid var(--rhvo-border);
   }
   .rhvo__composer-add,
   .rhvo__composer-send {
-    height: 38px;
-    min-width: 38px;
+    height: 40px;
+    min-width: 40px;
     border-radius: 999px;
     border: 1px solid var(--rhvo-border-soft);
     background: rgba(255, 255, 255, 0.06);
@@ -1745,11 +1897,15 @@ const { t } = createLayoutContext();
     color: #241b07;
     background: #f5b544;
     border-color: #f5b544;
+    display: none;
+  }
+  .rhvo[data-typed='true'] .rhvo__composer-send {
+    display: inline-block;
   }
   .rhvo__composer-input {
     display: block;
     width: 100%;
-    min-height: 38px;
+    min-height: 40px;
     max-height: 8.25rem;
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--rhvo-border-soft);
@@ -1786,14 +1942,15 @@ const { t } = createLayoutContext();
     grid-column: 1 / -1;
   }
   .rhvo[data-state='confirm'] .rhvo__confirm { display: grid; gap: 0.55rem; }
-  /* Resolved state — the turn is closed; show the next-step response + moves,
-     never the live capture chrome or a competing primary action. */
+  /* Resolved state — the turn is closed; render the saved bubble and Right
+     Hand follow-up in the same thread. The old next-move menu stays hidden for
+     F-RH3; the mic/composer remains the continuation affordance. */
   .rhvo__resolution { display: none; width: 100%; }
   .rhvo__resolution {
     order: 6;
     grid-column: 1 / -1;
   }
-  .rhvo[data-state='resolved'] .rhvo__resolution { display: block; }
+  .rhvo[data-state='resolved'] .rhvo__resolution { display: none; }
   .rhvo[data-state='resolved'] .rhvo__meter,
   .rhvo[data-state='resolved'] .rhvo__caption,
   .rhvo[data-state='resolved'] .rhvo__actions { display: none; }
@@ -1837,6 +1994,7 @@ const { t } = createLayoutContext();
     justify-self: end;
     border-radius: 12px 12px 4px 12px;
   }
+  .rhvo[data-state='confirm'] .rhvo__turn--operator { display: none; }
   .rhvo__turn--right-hand {
     max-width: 94%;
     justify-self: start;
@@ -1852,6 +2010,16 @@ const { t } = createLayoutContext();
     letter-spacing: 0.12em;
     font-weight: 800;
     color: var(--rhvo-mute);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+  }
+  .rhvo__speaker-shield {
+    width: 0.48rem;
+    height: 0.48rem;
+    border: 1.5px solid rgba(201, 169, 97, 0.95);
+    border-radius: 999px;
+    display: inline-block;
   }
   .rhvo__said,
   .rhvo__reply,
@@ -1871,12 +2039,21 @@ const { t } = createLayoutContext();
     max-width: 96%;
     justify-self: start;
     margin-top: 0;
-    padding: 0.72rem 0.78rem 0.65rem;
+    padding: 0.76rem 0.82rem 0.72rem;
     border: 1px solid rgba(56, 201, 119, 0.4);
-    border-radius: 12px 12px 12px 4px;
-    background: rgba(56, 201, 119, 0.13);
+    border-radius: 16px 16px 16px 5px;
+    background: rgba(56, 201, 119, 0.15);
     font-weight: 700;
     color: var(--rhvo-text);
+    display: grid;
+    gap: 0.3rem;
+  }
+  .rhvo__confirm-kicker {
+    color: #a9e8bb;
+    font-size: 0.61rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
   .rhvo__actions {
     order: 6;

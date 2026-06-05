@@ -186,6 +186,39 @@ test('model resolver does not ground a project that the transcript rejects', asy
   assert.equal(result.trp.context_hypothesis.prompt, 'Create estimate from this?');
 });
 
+test('model resolver demotes unsupported estimate guesses for field evidence notes', async () => {
+  const result = await resolveTurnWithModel(
+    {
+      ...BASE_INPUT,
+      heardText:
+        'Framing the north wall at Wegrzyn. The slab came in short on the north run and is holding the cabinet set.',
+      currentPath: '/',
+      knownEntities: [
+        { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
+      ],
+    },
+    successClient({
+      intent: 'job_intake',
+      frame: 'estimate_walk',
+      label: 'Estimate walk',
+      confidence: 'high',
+      likely_entity: { type: 'project', label: 'Wegrzyn kitchen + primary bath', id: 'proj_wegrzyn_kitchen', confidence: 'medium' },
+      routed_label: 'Wegrzyn kitchen + primary bath → estimate',
+      preparing_label: 'Estimate ready to start',
+      prompt: 'Create estimate from this for Wegrzyn kitchen + primary bath?',
+      missing_facts: [],
+    }),
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.trp.intent, 'job_note');
+  assert.equal(result.trp.context_hypothesis.frame, 'field_note');
+  assert.equal(result.trp.context_hypothesis.label, 'Job note');
+  assert.equal(result.trp.context_hypothesis.likely_entity?.id, 'proj_wegrzyn_kitchen');
+  assert.doesNotMatch(result.trp.context_hypothesis.routed_label, /estimate/i);
+  assert.doesNotMatch(result.trp.context_hypothesis.prompt, /estimate/i);
+});
+
 test('model failure falls back to deterministic resolver without throwing', async () => {
   const client: TurnResolverLlmClient = {
     tenantId: 'tenant_ggr',
@@ -240,10 +273,10 @@ test('route uses deterministic fallback when GROQ is not configured and still ap
   };
   assert.equal(body.authority, 'deterministic_fallback');
   assert.equal(body.fallback_reason, 'model_not_configured');
-  assert.equal(body.trp.context_hypothesis.frame, 'estimate_walk');
+  assert.equal(body.trp.context_hypothesis.frame, 'field_note');
   assert.equal(body.trp.context_hypothesis.likely_entity?.id, 'proj_wegrzyn_kitchen');
   assert.equal(body.trp.context_hypothesis.likely_entity?.label, 'Wegrzyn kitchen + primary bath');
-  assert.match(body.trp.context_hypothesis.prompt, /Wegrzyn kitchen \+ primary bath/);
+  assert.match(body.trp.context_hypothesis.prompt, /Daily Log/);
 });
 
 test('route blocks hosted resolver for tenants without synthesis consent', async () => {
