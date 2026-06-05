@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-CAM1 · Mobile Camera (Walkthru · Photo · Scan)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--green:#38C977;--rh:#C9A961;--gold:#F5B544;--teal:#67D6E0;--cyan:#67D6E0;--blue:#7BA8FF;--amber:#F5B544;--red:#F8615A;--accent:#C9A961}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--green:#1E8E50;--rh:#8A6D29;--teal:#0E6E78;--cyan:#0E6E78;--accent:#8A6D29}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--accent);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}body.presentation-mode .three{grid-template-columns:repeat(3,1fr)}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:32px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:48px}.frame-label{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin-bottom:4px}.frame-narr{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin:0 0 14px;max-width:1080px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:30px;display:flex;justify-content:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.three-head{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin:8px 0 0}
+.three .frame-render{padding:20px}
+.specrow{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin:18px 0 40px}
+.phone{width:292px;border:1.5px solid var(--bd);border-radius:38px;padding:10px;background:#000;box-shadow:0 16px 50px rgba(0,0,0,.5);position:relative}
+.phone-notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:104px;height:21px;background:#000;border-radius:0 0 13px 13px;z-index:5}
+.scr{border-radius:28px;overflow:hidden;height:624px;display:flex;flex-direction:column;background:var(--bg)}
+/* picker (themed) */
+.status-bar{display:flex;justify-content:space-between;padding:10px 17px 4px;font-size:10.5px;font-weight:600}
+.nav-top{display:flex;align-items:center;gap:9px;padding:4px 13px 8px;border-bottom:1px solid var(--bds)}.nav-top .bk{width:25px;height:25px;border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--dim)}.nav-top .bk svg{width:13px;height:13px}.nav-top .ttl{font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700}.nav-top .ttl b{color:var(--accent)}
+.body{flex:1;overflow-y:auto;padding:12px 13px 14px}
+.pintro{font-size:11px;color:var(--dim);line-height:1.5;margin-bottom:12px}.pintro b{color:var(--t)}
+.curjob{border:1.5px solid rgba(56,201,119,.5);background:linear-gradient(150deg,rgba(56,201,119,.12),rgba(56,201,119,.02));border-radius:13px;padding:12px}
+.curjob .cl{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-weight:800;display:flex;align-items:center;gap:5px}.curjob .cl svg{width:11px;height:11px}
+.curjob .cn{font-size:15px;font-weight:800;margin-top:5px}.curjob .ca{font-size:10px;color:var(--mute);margin-top:1px}
+.curjob .use{margin-top:10px;width:100%;background:var(--green);color:#04210F;border-radius:10px;padding:10px;font-size:12.5px;font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center;gap:7px}.curjob .use svg{width:15px;height:15px}
+.srch{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--bds);border-radius:9px;padding:8px 10px;font-size:11px;color:var(--mute);margin:13px 0 7px}.srch svg{width:13px;height:13px}
+.plist-lb{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:11px 2px 6px}
+.prow{display:flex;align-items:center;gap:9px;padding:9px 10px;background:var(--s);border:1px solid var(--bds);border-radius:10px;margin-bottom:6px}
+.prow .pi{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none}.prow .pi svg{width:14px;height:14px}
+.prow .pn{font-size:12px;font-weight:600}.prow .ps{font-size:9px;color:var(--mute);margin-top:1px}.prow .pc{margin-left:auto;color:var(--mute);flex:none}.prow .pc svg{width:14px;height:14px}
+.newlead{display:flex;align-items:center;gap:8px;justify-content:center;padding:11px;border:1.5px dashed var(--bd);border-radius:10px;color:var(--coral,#F0997B);font-size:12px;font-weight:700;margin-top:4px}.newlead svg{width:15px;height:15px}
+/* CAMERA (always dark) */
+.cam{background:linear-gradient(170deg,#1a1c22,#050608 70%);color:#fff;height:100%;display:flex;flex-direction:column;position:relative}
+.cam-top{display:flex;align-items:center;gap:8px;padding:14px 14px 8px}
+.ci-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:#fff;flex:none}.ci-btn svg{width:15px;height:15px}
+.jobchip{margin:0 auto;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 11px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:5px;color:#fff}.jobchip svg{width:11px;height:11px;color:var(--green)}
+.vf{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.vf .grid-l{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:33.3% 33.3%}
+.rh-pill{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(201,169,97,.92);color:#241B07;border-radius:20px;padding:4px 12px;font-size:9.5px;font-weight:800;letter-spacing:.04em;display:flex;align-items:center;gap:6px;white-space:nowrap}.rh-pill .rdot{width:7px;height:7px;border-radius:50%;background:#B0241B;animation:none}
+.cap{position:absolute;bottom:14px;left:14px;right:14px;background:rgba(0,0,0,.55);border-radius:11px;padding:9px 11px;font-size:11px;color:#fff;line-height:1.4}
+.cap .ct{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:800;margin-bottom:3px}
+.wave{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);display:flex;gap:3px;align-items:flex-end;height:22px}.wave i{width:3px;border-radius:2px;background:var(--gold)}
+.scan-quad{width:62%;height:46%;border:2px solid var(--blue);border-radius:6px;position:relative;box-shadow:0 0 0 100vmax rgba(0,0,0,.35)}
+.scan-quad::before,.scan-quad::after{content:"";position:absolute;width:16px;height:16px;border:3px solid #fff}.scan-quad::before{top:-3px;left:-3px;border-right:none;border-bottom:none}.scan-quad::after{bottom:-3px;right:-3px;border-left:none;border-top:none}
+.scan-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,.85)}
+.photo-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:54px;height:54px;border:1px solid rgba(255,255,255,.3);border-radius:8px}
+.zoom{display:flex;justify-content:center;gap:7px;padding:9px 0 6px}
+.zoom span{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}.zoom span.on{background:rgba(0,0,0,.5);color:var(--gold);font-size:11px}
+.modes{display:flex;justify-content:center;gap:20px;padding:4px 0 6px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.modes span{color:rgba(255,255,255,.42)}.modes span.on{color:var(--gold)}.modes span.on.wk{color:var(--gold)}.modes span.on.sc{color:var(--blue)}
+.shutter-row{display:flex;align-items:center;justify-content:space-between;padding:6px 26px 18px}
+.side{width:46px;text-align:center;color:rgba(255,255,255,.8);font-size:8.5px;font-weight:700}.side .sb{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 4px}.side .sb svg{width:19px;height:19px}
+.shutter{width:64px;height:64px;border-radius:50%;border:4px solid #fff;background:#fff}
+.shutter.rec{background:var(--red);border-color:rgba(255,255,255,.6)}
+.shutter.scan{background:var(--blue);border-color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center}.shutter.scan svg{width:26px;height:26px;color:#fff}
+.donebtn{position:absolute;bottom:88px;right:16px;background:var(--gold);color:#241B07;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:800}
+.save-toast{position:absolute;bottom:88px;left:50%;transform:translateX(-50%);background:rgba(56,201,119,.92);color:#04210F;border-radius:20px;padding:5px 13px;font-size:9.5px;font-weight:800;display:flex;align-items:center;gap:5px;white-space:nowrap}.save-toast svg{width:11px;height:11px}
+.callout-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:8px}.callout{background:var(--bg2);border:1px solid var(--bd);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--dim)}.callout.g{border-left-color:var(--gold)}.callout.b{border-left-color:var(--blue)}.callout .ct{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;display:block;margin-bottom:5px}.callout.g .ct{color:var(--gold)}.callout.b .ct{color:var(--blue)}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#8A6D29;--green:#1E8E50}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.three,.specrow,.callout-row{grid-template-columns:repeat(3,1fr)!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.phone{box-shadow:none!important}@page{size:letter landscape;margin:.35in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · from founder sketch · resolves v47 Defect 2 · icons inline</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Right Hand · Capture</span><span class="sep">›</span><span class="step current">F-CAM1 · Camera (mobile)</span></div>
+<h1>F-CAM1 · Camera · pick the job, then one camera with three modes</h1>
+<p>From your sketch. Tapping Camera first asks <strong>which job</strong> (a project or lead must be selected so every capture files correctly) — then opens <strong>one camera</strong> that does everything but LiDAR: <strong>Walkthru</strong> (brings in Right Hand + a live mic — you talk while you film, tap Done), <strong>Photo</strong> (the shutter), and <strong>Scan</strong> (capture plans / site docs as a job document that feeds Right Hand for estimates and change orders). No interstitial landing pages — each mode is right there in the camera (the fix for v47's camera fan-out). <strong>Done</strong> exits every mode the same way. And this is <strong>the</strong> Right Hand camera: wherever the app needs the camera — "add a photo" inside a job, a Daily Log, an estimate — this same interface opens (with the job already known, so it skips straight to shooting). LiDAR room scan stays its own flow (F-RC1).</p></div>
+
+<div class="frame"><div class="frame-label">Frame 1 · Pick the job first (routing gate)</div>
+<p class="frame-narr">A project or lead must be selected before the camera opens, so photos, scans, and walkthroughs land in the right place. For a field worker already clocked in, their current job is pre-selected — one tap and they're shooting. A manager picks from recent jobs, searches, or starts a new lead.</p>
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>9:41</span><span>●●● 88%</span></div>
+<div class="nav-top"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span class="ttl">Camera · <b>file it to…</b></span></div>
+<div class="body">
+<div class="pintro"><b>Which job is this for?</b> Pick first so every shot files itself.</div>
+<div class="curjob">
+<div class="cl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>You're on this job</div>
+<div class="cn">Wegrzyn kitchen</div>
+<div class="ca">PRJ-014 · 4287 Pacifica Way · clocked in</div>
+<div class="use"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Open camera here</div>
+</div>
+<div class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Search projects &amp; leads…</div>
+<div class="plist-lb">Recent projects</div>
+<div class="prow"><span class="pi" style="background:rgba(123,168,255,.16);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/></svg></span><div><div class="pn">Hernández pantry</div><div class="ps">PRJ-011 · active</div></div><span class="pc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></div>
+<div class="prow"><span class="pi" style="background:rgba(123,168,255,.16);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/></svg></span><div><div class="pn">Dunne bath</div><div class="ps">PRJ-009 · closeout</div></div><span class="pc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></div>
+<div class="plist-lb">Recent leads</div>
+<div class="prow"><span class="pi" style="background:rgba(240,153,123,.18);color:#F0997B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 21c0-4 3.5-6 7-6s7 2 7 6"/></svg></span><div><div class="pn">Patel ADU</div><div class="ps">Lead · estimate pending</div></div><span class="pc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></div>
+<div class="newlead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>New lead</div>
+</div>
+</div></div></div>
+<div class="frame-spec"><h3>F-CAM1 · Spec</h3>
+<h4>Routing gate</h4><ul>
+<li>A <b>project or lead must be selected before the camera opens</b> (your note) — captures always file to a job, never orphan.</li>
+<li>Field worker clocked in → <b>current job pre-selected</b> (one tap). Manager → search / recents / new lead.</li>
+<li>The selected job rides as a chip in the camera chrome; everything saves there.</li>
+</ul>
+<h4>Where each mode files</h4><ul>
+<li>Photo → job photos / today's Daily Log.</li>
+<li>Walkthru → Daily Log video note + transcript.</li>
+<li>Scan → job <b>Documents</b> (plans / site info) — and is offered to Right Hand for estimates / change orders.</li>
+</ul>
+<h4>One camera, everywhere</h4><ul>
+<li>This is <b>the</b> Right Hand camera. Anywhere the app needs a camera — "add a photo" inside a job, a Daily Log, an estimate — <b>this</b> interface opens.</li>
+<li>Launched <b>with</b> job context → the routing gate is skipped (job already known) and <b>Done</b> returns you to where you were.</li>
+<li>Launched from the bottom-bar Camera (no context) → the routing gate (Frame 1) comes first.</li>
+</ul>
+<h4>Consistent exit</h4><ul>
+<li><b>Done</b> is on all three modes (gold pill, same spot) — one way out, save everything to the job, return to origin. Per-mode shutter captures; Done finishes.</li>
+</ul>
+</div></div>
+
+<div class="three-head">Frames 2–4 · One camera · three modes (swipe Walkthru · Photo · Scan)</div>
+<p class="frame-narr" style="background:rgba(245,181,68,.08);border:1px solid rgba(245,181,68,.35);border-radius:10px;padding:12px 14px;color:var(--t)"><b style="color:var(--gold)">⚠ Layout = a camera, not a form (build proportions exactly this way).</b> The phones above show the intended scale. Critical, because the first build rendered as a centered web form:
+<br>• <b>Viewfinder is full-bleed.</b> The live preview <em>is</em> the background — it fills the entire frame edge-to-edge, top chrome and bottom controls float <em>over</em> it. No centered circle in a padded panel, no margins around the preview. (Empty/no-permission state still fills the frame — a dark preview with a small centered hint, not a boxed placeholder.)
+<br>• <b>Controls are a thin overlay at the bottom</b>, not stacked rows with even spacing. Zoom pills → mode strip → shutter row sit as one compact cluster over the preview, ~bottom third max.
+<br>• <b>The shutter is the dominant control</b> — the largest element, centered. <b>Done</b> is a small text/pill affordance to its right; the left slot is the last-capture thumbnail. <b>Room scan is NOT on the capture row</b> — it's a separate entry (own flow, F-RC1), so the capture row reads as one big shutter, not three equal buttons.
+<br>• Top chrome (settings · flash · flip · close) + job chip overlay the top of the preview; they don't push it down.</p>
+<div class="three">
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr"><div class="cam">
+<div class="cam-top">
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+<span class="jobchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/></svg>Wegrzyn kitchen</span>
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/></svg></span>
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.95V11a4 4 0 014-4h14M7 21.9l-4-4 4-4"/><path d="M21 11v2a4 4 0 01-4 4H3"/></svg></span>
+</div>
+<div class="vf"><div class="grid-l"></div><div class="photo-hint"></div></div>
+<div class="zoom"><span>.5</span><span class="on">1×</span><span>3</span></div>
+<div class="modes"><span class="wk">Walkthru</span><span class="on">Photo</span><span class="sc">Scan</span></div>
+<div class="shutter-row">
+<div class="side"><div class="sb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg></div>Last</div>
+<div class="shutter"></div>
+<div class="side" style="color:transparent"><div class="sb" style="opacity:0"></div></div>
+</div>
+<div class="donebtn">Done</div>
+</div></div></div></div>
+
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr"><div class="cam">
+<div class="cam-top">
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+<span class="jobchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/></svg>Wegrzyn kitchen</span>
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/></svg></span>
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.95V11a4 4 0 014-4h14M7 21.9l-4-4 4-4"/><path d="M21 11v2a4 4 0 01-4 4H3"/></svg></span>
+</div>
+<div class="vf"><div class="grid-l"></div>
+<div class="rh-pill"><span class="rdot"></span>Right Hand listening · REC 0:24</div>
+<div class="wave"><i style="height:8px"></i><i style="height:16px"></i><i style="height:22px"></i><i style="height:12px"></i><i style="height:19px"></i><i style="height:9px"></i><i style="height:15px"></i></div>
+<div class="cap"><div class="ct">Hearing you</div>"…this north wall's gonna need blocking before the uppers go back, and the slab's running short on this run…"</div>
+</div>
+<div class="zoom"><span>.5</span><span class="on">1×</span><span>3</span></div>
+<div class="modes"><span class="on wk">Walkthru</span><span>Photo</span><span class="sc">Scan</span></div>
+<div class="shutter-row">
+<div class="side"><div class="sb" style="background:rgba(248,97,90,.25)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div>Mic on</div>
+<div class="shutter rec"></div>
+<div class="side" style="color:transparent"><div class="sb" style="opacity:0"></div></div>
+</div>
+<div class="donebtn">Done</div>
+</div></div></div></div>
+
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr"><div class="cam">
+<div class="cam-top">
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+<span class="jobchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/></svg>Wegrzyn kitchen</span>
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/></svg></span>
+<span class="ci-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.95V11a4 4 0 014-4h14M7 21.9l-4-4 4-4"/><path d="M21 11v2a4 4 0 01-4 4H3"/></svg></span>
+</div>
+<div class="vf"><div class="scan-quad"></div><div class="scan-hint">Align the plan — edges snap automatically</div></div>
+<div class="zoom"><span>.5</span><span class="on">1×</span><span>3</span></div>
+<div class="modes"><span class="wk">Walkthru</span><span>Photo</span><span class="on sc">Scan</span></div>
+<div class="shutter-row">
+<div class="side"><div class="sb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg></div>1 page</div>
+<div class="shutter scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 011-1h2M17 4h2a1 1 0 011 1v2M20 17v2a1 1 0 01-1 1h-2M7 20H5a1 1 0 01-1-1v-2M4 12h16"/></svg></div>
+<div class="side" style="color:transparent"><div class="sb" style="opacity:0"></div></div>
+</div>
+<div class="donebtn">Done</div>
+</div></div></div></div>
+</div>
+
+<div class="specrow">
+<div class="frame-spec"><h3>Photo</h3>
+<h4 class="warn">Layout (proportions)</h4><ul>
+<li><b>Full-bleed viewfinder</b> — preview fills the frame; chrome floats over it. Not a centered circle in a box.</li>
+<li><b>Shutter dominant + centered</b>; Done = small affordance right; thumbnail left. <b>Room scan off the capture row.</b></li>
+<li>Controls = one compact bottom overlay (zoom · modes · shutter), ~bottom third, not evenly-spaced stacked rows.</li>
+</ul>
+<h4>The default</h4><ul>
+<li>Plain shutter; tap to capture. Files to the job's photos / today's Daily Log.</li>
+<li>Top chrome (your sketch): <b>Settings</b> (left), <b>Flash</b> + <b>front/rear flip</b> (right), job chip center, close — overlaid on the preview top.</li>
+<li><b>Zoom</b> pills (.5 / 1× / 3×) above the mode switch.</li>
+</ul></div>
+<div class="frame-spec"><h3>Walkthru</h3>
+<h4>Brings in Right Hand</h4><ul>
+<li>Center mode = video + <b>live mic</b>. The gold "Right Hand listening · REC" pill + waveform show you're <b>speaking and recording</b> (your "add mic for consistency").</li>
+<li>You narrate as you film; live caption confirms it's hearing you.</li>
+<li><b>Done</b> saves the video + transcript to the job's Daily Log and routes it to Right Hand for synthesis (notes → draft).</li>
+</ul></div>
+<div class="frame-spec"><h3>Scan</h3>
+<h4>Plans &amp; site docs → job document</h4><ul>
+<li>Document capture (edge-snap, multi-page) — <b>not</b> LiDAR. For scanning plans, spec sheets, on-site info.</li>
+<li>Saves to the job's <b>Documents</b> and is <b>offered to Right Hand</b> as source for estimates / change orders (feeds F-CHG1 / F-EST1 Add-item + scope).</li>
+<li>LiDAR room scan stays separate (F-RC1).</li>
+</ul></div>
+</div>
+
+<div class="callout-row"><div class="callout"><span class="ct">Pick the job, then shoot</span>The routing question happens once, up front — so nothing orphans. Clocked-in workers skip it in one tap.</div><div class="callout g"><span class="ct">Walkthru = talk + film</span>The center button brings in Right Hand and the live mic together; narrate the site, tap Done, and it becomes a filed note + a draft-ready transcript.</div><div class="callout b"><span class="ct">Scan feeds the estimate</span>Scanned plans land as job documents and flow straight into Right Hand for change orders and estimates — the capture-to-quote shortcut.</div></div>
+</div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>
