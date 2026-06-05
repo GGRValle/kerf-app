@@ -241,8 +241,12 @@ const { t } = createLayoutContext();
     let currentMoves: readonly NextMove[] = []; // resolved-state next moves
     let resolvedSurface = '/'; // default landing after a resolved turn
     let confirmSaveNeedsMoreContext = false;
+    type ConversationTurn = { speaker: 'operator' | 'right_hand' | 'system'; text: string; tone?: 'normal' | 'consequence' | 'saved' };
+
+    const VOICE_CONVERSATION_SESSION_KEY = 'kerf.voiceConversation';
+
     let workingDraftTurns: string[] = [];
-    let conversationTurns: Array<{ speaker: 'operator' | 'right_hand' | 'system'; text: string; tone?: 'normal' | 'consequence' | 'saved' }> = [];
+    let conversationTurns: ConversationTurn[] = [];
 
     const escapeHtml = (value: string): string => value
       .replace(/&/g, '&amp;')
@@ -276,16 +280,76 @@ const { t } = createLayoutContext();
       renderThread();
     };
 
-    const resetConversation = () => {
+    const persistConversation = () => {
+      try {
+        sessionStorage.setItem(VOICE_CONVERSATION_SESSION_KEY, JSON.stringify({
+          at: Date.now(),
+          workingDraftTurns,
+          conversationTurns,
+        }));
+      } catch { /* storage may be unavailable; the live page still keeps state */ }
+    };
+
+    const restoreConversation = () => {
+      try {
+        const raw = sessionStorage.getItem(VOICE_CONVERSATION_SESSION_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw) as {
+          at?: unknown;
+          workingDraftTurns?: unknown;
+          conversationTurns?: unknown;
+        };
+        if (!Array.isArray(parsed.workingDraftTurns) || !Array.isArray(parsed.conversationTurns)) return false;
+        workingDraftTurns = parsed.workingDraftTurns
+          .filter((turn): turn is string => typeof turn === 'string')
+          .map((turn) => turn.trim())
+          .filter(Boolean);
+        conversationTurns = parsed.conversationTurns
+          .filter((turn): turn is ConversationTurn => (
+            typeof turn === 'object'
+            && turn !== null
+            && ['operator', 'right_hand', 'system'].includes((turn as ConversationTurn).speaker)
+            && typeof (turn as ConversationTurn).text === 'string'
+          ))
+          .map((turn) => ({
+            speaker: turn.speaker,
+            text: turn.text.trim(),
+            tone: ['consequence', 'saved'].includes(String(turn.tone)) ? turn.tone : 'normal',
+          }))
+          .filter((turn) => turn.text.length > 0);
+        renderThread();
+        return conversationTurns.length > 0 || workingDraftTurns.length > 0;
+      } catch {
+        return false;
+      }
+    };
+
+    const clearPersistedConversation = () => {
+      try { sessionStorage.removeItem(VOICE_CONVERSATION_SESSION_KEY); } catch { /* noop */ }
+    };
+
+    const resetConversation = (options: { clearStored?: boolean } = {}) => {
       workingDraftTurns = [];
       conversationTurns = [];
       renderThread();
+      if (options.clearStored) clearPersistedConversation();
     };
 
     const workingDraftText = () => workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n');
 
     const textRequestsDurableCommit = (text: string): boolean => (
       /\b(save|file|log|submit|send|done|that'?s it|go ahead|looks good)\b/i.test(text)
+    );
+
+    const textContainsInlineDurableDraft = (text: string): boolean => (
+      /\b(save|file|log)\b[\s\S]{0,32}\b(?:job\s+note|note|daily\s+log|update)\b[\s\S]{0,32}\b(?:that|about|saying|:)\b/i.test(text)
+    );
+
+    const textIsDestinationCorrection = (text: string): boolean => (
+      /^(?:correction:?\s*)?(?:no|actually|yes|yep|correct|right|it'?s|this is|attach|file|save|put|route)\b/i.test(text.trim())
+      && /\b(?:attach|file|save|put|route|job|project|client)\b/i.test(text)
+      && /\b(?:job|project|client)\b/i.test(text)
+      && text.trim().split(/\s+/).length <= 14
     );
 
     const setState = (next: OverlayState) => {
@@ -409,6 +473,7 @@ const { t } = createLayoutContext();
     const closeOverlay = () => {
       teardown();
       setState('idle');
+      clearPersistedConversation();
       overlay.hidden = true;
     };
 
@@ -423,6 +488,7 @@ const { t } = createLayoutContext();
     const navigate = (href: string, options: { resume?: boolean } = {}) => {
       if (options.resume) {
         try {
+          persistConversation();
           sessionStorage.setItem('kerf.voiceResume', JSON.stringify({ at: Date.now(), href }));
         } catch { /* storage may be unavailable; navigation still works */ }
       }
@@ -753,9 +819,11 @@ const { t } = createLayoutContext();
       const clean = text.trim();
       if (!clean) return;
       awaitingConfirm = false;
-      workingDraftTurns.push(clean);
+      const isDestinationCorrection = textIsDestinationCorrection(clean);
+      if (!isDestinationCorrection) workingDraftTurns.push(clean);
       const intent = classifyTranscriptIntent(clean);
-      const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: workingDraftText(), intent }));
+      const draftText = workingDraftText() || clean;
+      const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: draftText, intent }));
       parkedTranscript = workingDraftText();
       parkedTurnResolution = trp;
       teardown();
@@ -768,6 +836,7 @@ const { t } = createLayoutContext();
       appendTurn('operator', clean);
       appendTurn('right_hand', `${replyForTurn(trp)} What else?`);
       showActions('listening');
+      persistConversation();
     };
 
     const SORTING_BEAT_MS = 700;
@@ -783,9 +852,14 @@ const { t } = createLayoutContext();
 
     const routeCommitted = (intent: VoiceIntent, text: string) => {
       const cleanText = text.trim();
-      if (cleanText.length > 0 && textRequestsDurableCommit(cleanText) && workingDraftText().length > 0) {
-        const draft = workingDraftText();
+      const draftText = workingDraftText();
+      if (cleanText.length > 0 && textRequestsDurableCommit(cleanText) && (draftText.length > 0 || textContainsInlineDurableDraft(cleanText))) {
+        const draft = draftText.length > 0 ? draftText : cleanText;
+        if (draftText.length === 0) {
+          workingDraftTurns.push(cleanText);
+        }
         appendTurn('operator', cleanText);
+        persistConversation();
         enterSorting(draft);
         return;
       }
@@ -1292,7 +1366,7 @@ const { t } = createLayoutContext();
       }
     };
 
-    const openOverlay = () => {
+    const openOverlay = (options: { restoreConversation?: boolean } = {}) => {
       if (!overlay.hidden) return;
       routedLive = false;
       lastInterim = '';
@@ -1301,7 +1375,9 @@ const { t } = createLayoutContext();
       parkedTurnResolution = null;
       setCaption('');
       clearComposer();
-      resetConversation();
+      if (!options.restoreConversation || !restoreConversation()) {
+        resetConversation({ clearStored: true });
+      }
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
       setStatus(overlay.dataset.listening ?? 'Listening…');
@@ -1393,7 +1469,7 @@ const { t } = createLayoutContext();
       if (resumeRaw) {
         sessionStorage.removeItem('kerf.voiceResume');
         window.setTimeout(() => {
-          if (overlay.hidden) openOverlay();
+          if (overlay.hidden) openOverlay({ restoreConversation: true });
         }, 450);
       }
     } catch { /* storage may be unavailable; user can tap Speak again */ }

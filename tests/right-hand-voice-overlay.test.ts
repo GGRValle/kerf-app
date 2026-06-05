@@ -601,6 +601,28 @@ test('trust loop: Keep talking returns to listening with the original note prese
   assert.match(src, /notThatBtn\?\.addEventListener\('click', returnToListening\)/);
 });
 
+test('F-RH3 conversation surface: route-resume restores the same thread instead of wiping it', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /VOICE_CONVERSATION_SESSION_KEY = 'kerf\.voiceConversation'/);
+
+  const persistConversation = sliceDecl(src, 'persistConversation', 'restoreConversation');
+  assert.match(persistConversation, /workingDraftTurns/);
+  assert.match(persistConversation, /conversationTurns/);
+  assert.match(persistConversation, /sessionStorage\.setItem\(VOICE_CONVERSATION_SESSION_KEY/);
+
+  const navigate = sliceDecl(src, 'navigate', 'routeLive');
+  assert.match(navigate, /persistConversation\(\)[\s\S]*?sessionStorage\.setItem\('kerf\.voiceResume'/);
+
+  const openOverlay = sliceDecl(src, 'openOverlay', 'speakEvent');
+  assert.match(openOverlay, /options: \{ restoreConversation\?: boolean \} = \{\}/);
+  assert.match(openOverlay, /if \(!options\.restoreConversation \|\| !restoreConversation\(\)\) \{/);
+  assert.match(openOverlay, /resetConversation\(\{ clearStored: true \}\)/);
+
+  const resume = src.match(/const resumeRaw = sessionStorage\.getItem\('kerf\.voiceResume'\)[\s\S]*?\n {4}\} catch/);
+  assert.ok(resume, 'expected voiceResume restore block');
+  assert.match(resume![0], /openOverlay\(\{ restoreConversation: true \}\)/);
+});
+
 test('F-RH3 conversation surface: typed notes share the same thread as voice', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /class="rhvo__thread" id="rhvo-thread"/);
@@ -619,6 +641,32 @@ test('F-RH3 conversation surface: typed notes share the same thread as voice', (
   assert.match(submit![0], /clearComposer\(\)/);
   assert.match(submit![0], /routeCommitted\(classifyTranscriptIntent\(typed\), typed\)/);
   assert.doesNotMatch(submit![0], /navigate\(/);
+});
+
+test('F-RH3 conversation surface: correction turns stay visible without becoming contradictory note body', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /const textIsDestinationCorrection/);
+  assert.match(src, /split\(\/\\s\+\/\)\.length <= 14/);
+
+  const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
+  assert.match(enterReply, /const isDestinationCorrection = textIsDestinationCorrection\(clean\)/);
+  assert.match(enterReply, /if \(!isDestinationCorrection\) workingDraftTurns\.push\(clean\)/);
+  assert.match(enterReply, /const draftText = workingDraftText\(\) \|\| clean/);
+  assert.match(enterReply, /appendTurn\('operator', clean\)/);
+  assert.match(enterReply, /persistConversation\(\)/);
+});
+
+test('F-RH3 conversation surface: an inline "save a note that…" opens the consequence gate', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /const textContainsInlineDurableDraft/);
+
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
+  assert.match(routeCommitted, /textContainsInlineDurableDraft\(cleanText\)/);
+  assert.match(routeCommitted, /const draft = draftText\.length > 0 \? draftText : cleanText/);
+  assert.match(routeCommitted, /if \(draftText\.length === 0\) \{\s*workingDraftTurns\.push\(cleanText\);\s*\}/);
+  assert.match(routeCommitted, /appendTurn\('operator', cleanText\)/);
+  assert.match(routeCommitted, /persistConversation\(\)/);
+  assert.match(routeCommitted, /enterSorting\(draft\)/);
 });
 
 test('F-RH3 stage 4: the consequence bubble answers where-it-goes (Save to <job> · Change job · Keep talking)', () => {
@@ -684,7 +732,7 @@ test('LIVE frame shifts keep Right Hand in the conversation on the destination f
   assert.match(routeLive, /navigate\(`\$\{route\}\?src=voice`, \{ resume: intent !== 'open_field_capture' \}\)/);
   assert.match(routeLive, /navigate\('\/projects\?src=voice', \{ resume: true \}\)/);
   assert.match(src, /sessionStorage\.getItem\('kerf\.voiceResume'\)/);
-  assert.match(src, /if \(overlay\.hidden\) openOverlay\(\)/);
+  assert.match(src, /if \(overlay\.hidden\) openOverlay\(\{ restoreConversation: true \}\)/);
 });
 
 test('fallback mic-off cannot freeze forever on empty audio or hanging transcription', () => {
