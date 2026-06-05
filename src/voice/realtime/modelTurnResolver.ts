@@ -15,6 +15,7 @@ import { approvedHostingEndpoint } from '../../hosting/routeCheck.js';
 import {
   buildTurnResolutionPacket,
   inferTurnContext,
+  sourceSupportsEstimateFrame,
   type TurnConfidence,
   type TurnContextHypothesis,
   type TurnFrame,
@@ -244,6 +245,26 @@ function deterministicResult(input: ResolveTurnInput, fallbackReason?: string): 
   };
 }
 
+function modelEstimateFrameIsSourceSupported(
+  input: ResolveTurnInput,
+  deterministicIntent: VoiceIntent,
+  hypothesis: TurnContextHypothesis,
+): boolean {
+  if (hypothesis.frame !== 'estimate_walk' && hypothesis.frame !== 'job_intake') return true;
+  return sourceSupportsEstimateFrame(input.heardText, deterministicIntent);
+}
+
+function demoteUnsupportedEstimateToFieldNote(input: ResolveTurnInput): { intent: VoiceIntent; hypothesis: TurnContextHypothesis } {
+  return {
+    intent: 'job_note',
+    hypothesis: {
+      ...inferTurnContext(input.heardText, 'job_note'),
+      confidence: 'medium',
+      hypothesis_authority: 'llm_inferred',
+    },
+  };
+}
+
 function cleanText(value: unknown, fallback: string, max = 96): string {
   if (typeof value !== 'string') return fallback;
   const trimmed = value.replace(/\s+/g, ' ').trim();
@@ -450,7 +471,10 @@ export async function resolveTurnWithModel(
     return deterministicResult(input, 'model_invalid_json');
   }
 
-  const { intent, hypothesis } = hypothesisFromModel(parsed, fallbackHypothesis);
+  const parsedHypothesis = hypothesisFromModel(parsed, fallbackHypothesis);
+  const { intent, hypothesis } = modelEstimateFrameIsSourceSupported(input, deterministicIntent, parsedHypothesis.hypothesis)
+    ? parsedHypothesis
+    : demoteUnsupportedEstimateToFieldNote(input);
   const contextHypothesis = contextWithKnownEntity(input, hypothesis);
   const trp = buildTurnResolutionPacket({
     heardText: input.heardText,

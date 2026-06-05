@@ -78,6 +78,21 @@ test('context resolver treats new bathroom remodel language as a new estimate', 
   assert.equal(openJob?.route, '/projects/new?src=voice&intent=estimate_walk');
 });
 
+test('context resolver keeps field evidence as a job note instead of inventing an estimate walk', () => {
+  const text =
+    'Framing the north wall at Wegrzyn. The slab came in short on the north run and is holding the cabinet set.';
+  const hypothesis = inferTurnContext(text, 'unclassified');
+  assert.equal(hypothesis.frame, 'field_note');
+  assert.equal(hypothesis.label, 'Job note');
+  assert.doesNotMatch(hypothesis.routed_label, /estimate/i);
+  assert.doesNotMatch(hypothesis.prompt, /estimate/i);
+
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'unclassified' });
+  assert.equal(trp.context_hypothesis.frame, 'field_note');
+  assert.equal(trp.context_hypothesis.label, 'Job note');
+  assert.equal(trp.attention_artifact.headline, 'Job note ready');
+});
+
 test('a real work_artifact licenses handled + settles the turn', () => {
   const trp = buildTurnResolutionPacket({
     heardText: 'Logged the inspection pass.',

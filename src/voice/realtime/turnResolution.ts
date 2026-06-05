@@ -143,8 +143,46 @@ export function nextSurfaceFor(_intent: VoiceIntent): string {
   return TURN_HOME_SURFACE;
 }
 
-function textLooksLikeEstimateWalk(text: string): boolean {
-  return /\b(estimate walk|new estimate|new (bathroom|bath|kitchen|remodel|addition|adu|project)|bathroom remodel|bath remodel|job walk|job input|walk this|walked into|12\s*(foot|feet|ft)|16\s*(foot|feet|ft)|countertop|countertops|cabinets?|uppers|lowers|range|sink|appliances?|island|pantry|refrigerator|hood|linear feet|quartz|quartzite|vanity|shower|tub)\b/i.test(text);
+function textHasExplicitEstimateLanguage(text: string): boolean {
+  return /\b(job input|job intake|new estimate|estimate walk|job walk|site walk|walk this (kitchen|bath|room|site)|walked into this (kitchen|bath|room|site)|start (a |the )?(job|project|estimate)|create (a |the )?(job|project|estimate)|set up (a |the )?(job|project|estimate)|new (bathroom|bath|kitchen|remodel|addition|adu|project)|bathroom remodel|bath remodel)\b/i.test(text);
+}
+
+function textLooksLikeFieldEvidence(text: string): boolean {
+  return /\b(installed|installing|finished|completed|wrapped|ready for template|template|scheduled|schedule|framing|framed|slab|drywall|patch|repair|painted|painters?|electricians?|plumbers?|rough[- ]?in|trim(?:med)? out|pendants?|conflict|inspection|poured|pour|blocking|holding|cabinet set|north wall|south wall|east wall|west wall)\b/i.test(text);
+}
+
+function measuredScopeSignalCount(text: string): number {
+  const signals = [
+    /\b\d+\s*(?:foot|feet|ft|inches|inch|in)\b/i,
+    /\bcountertops?\b/i,
+    /\bcabinets?\b/i,
+    /\buppers?\b/i,
+    /\blowers?\b/i,
+    /\brange\b/i,
+    /\bsink\b/i,
+    /\bappliances?\b/i,
+    /\bisland\b/i,
+    /\bpantry\b/i,
+    /\brefrigerator\b/i,
+    /\bhood\b/i,
+    /\blinear feet\b/i,
+    /\bquartz(?:ite)?\b/i,
+    /\bvanity\b/i,
+    /\bshower\b/i,
+    /\btub\b/i,
+  ];
+  return signals.reduce((count, signal) => count + (signal.test(text) ? 1 : 0), 0);
+}
+
+export function sourceSupportsEstimateFrame(text: string, intent: VoiceIntent): boolean {
+  if (intent === 'job_intake' || intent === 'estimate_update') return true;
+  if (textHasExplicitEstimateLanguage(text)) return true;
+  if (textLooksLikeFieldEvidence(text)) return false;
+  return measuredScopeSignalCount(text) >= 3;
+}
+
+function textLooksLikeEstimateWalk(text: string, intent: VoiceIntent): boolean {
+  return sourceSupportsEstimateFrame(text, intent);
 }
 
 export function inferTurnContext(
@@ -153,7 +191,7 @@ export function inferTurnContext(
 ): TurnContextHypothesis {
   const text = heardText.trim();
 
-  if (intent === 'job_intake' || intent === 'estimate_update' || textLooksLikeEstimateWalk(text)) {
+  if (textLooksLikeEstimateWalk(text, intent)) {
     const explicit = /\b(job input|job intake|new estimate|estimate walk|job walk|start (a |the )?(estimate|job|project))\b/i.test(text);
     return {
       frame: 'estimate_walk',
