@@ -102,6 +102,11 @@ Regenerate any render: `"/Applications/Google Chrome.app/Contents/MacOS/Google C
 ### F-PR2 · Mobile Project Detail (VIEWED) — "one job, nine lenses"
 - Project header ("Pantry conversion") + amber Right Hand alert + **tabbed interface (nine lenses)** over one job (overview/money/schedule/audit/field/…). Maps to live `/projects/[id]`. PR1 list, PR3 desktop list, PR4 desktop detail.
 
+### F-RH3 / F-CAM1 · Current Canon Pins (VIEWED) — literal build targets
+- `canon/F-RH3_mobile_right_hand_conversation_lifecycle.html` is the **current** Right Hand conversation target from KERF Canon v1, not the historical master extract. It defines one persistent blurred surface, same mic, growing composer with typed/pasted input, consequence-only confirmation, and "filed" only after the durable write returns.
+- `canon/F-CAM1_mobile_camera.html` is the **current** camera target from KERF Canon v1. It defines the full-bleed in-app camera, job-first routing gate, Walkthru/Photo/Scan modes, dominant centered shutter, compact bottom controls, and LiDAR room scan as a separate flow.
+- These files are pinned by `tests/wireframe-canon-pinned.test.ts`; a green pin test proves the files exist, but completion still requires rendered screenshot comparison against the built surface.
+
 ### F-RC1 · Mobile Room Capture (VIEWED)
 - Spatial capture: "Hernandez - pantry", **camera viewfinder + room-scan overlay guides** (Apple RoomPlan-style), measurement rows, green-themed. Maps to live `/room-capture`.
 
