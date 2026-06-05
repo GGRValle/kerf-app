@@ -157,6 +157,7 @@ const INTENT_RULES: readonly IntentRule[] = [
   // Natural "we are doing a job input / estimate walk" language is a durable
   // turn to resolve, not an interim navigation to a form. Keep the live route
   // for explicit navigation commands only.
+  { intent: 'status_question', pattern: /\b(open|show me|go to|take me to) (the )?(projects|project list|jobs|job list)\b/i },
   { intent: 'open_job_intake', pattern: /\b(open|show me|go to|take me to) (the )?(job intake|new job|new project|project setup|job setup)\b/i },
   { intent: 'open_money', pattern: /\b(money|budget|margin|allowance|allowances|invoice|invoices|accounts payable|accounts receivable|\bap\b|\bar\b|costs?|financials?|finance)\b/i },
   { intent: 'job_intake', pattern: /\b(job input|job intake|input (a |the |new )?job|new estimate|new (bathroom|bath|kitchen|remodel|addition|adu|project)|estimate walk|job walk|site walk|walk this (kitchen|bath|room|site)|walked into this (kitchen|bath|room|site)|start (a |the )?(job|project|estimate)|create (a |the )?(job|project|estimate)|set up (a |the )?(job|project|estimate))\b/i },
