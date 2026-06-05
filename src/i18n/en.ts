@@ -599,7 +599,7 @@ export const EN: TranslationMap = {
   'rh_voice.reply_job_note_unknown': 'Got it — I have the note. Tell me the job and I’ll file it there.',
   'rh_voice.reply_estimate_known': 'Got it — estimate walk for {entity}.',
   'rh_voice.reply_estimate_unknown': 'Got it — this sounds like a new estimate. I can start it from here.',
-  'rh_voice.reply_generic': 'Got it — {action}.',
+  'rh_voice.reply_generic': 'Got it — keep going, or say "save it" when you are ready.',
   'rh_voice.reply_correction_needed': 'I have the note. Tell me the job and I’ll file it there.',
   'rh_voice.move_add_photo': 'Add a photo',
   'rh_voice.move_open_job': 'Choose job',

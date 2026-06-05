@@ -97,7 +97,15 @@ const { t } = createLayoutContext();
     </div>
 
     <form class="rhvo__composer" id="rhvo-composer">
-      <button type="button" class="rhvo__composer-add" aria-label="Attach or paste source">+</button>
+      <button type="button" class="rhvo__composer-add" id="rhvo-source-add" aria-label="Attach or paste source">+</button>
+      <input
+        class="rhvo__source-input"
+        id="rhvo-source-input"
+        type="file"
+        multiple
+        hidden
+        accept="image/*,video/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+      />
       <button
         type="button"
         class="rhvo__indicator"
@@ -202,6 +210,9 @@ const { t } = createLayoutContext();
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
     const threadEl = document.getElementById('rhvo-thread');
     const composerForm = document.getElementById('rhvo-composer') as HTMLFormElement | null;
+    const panelEl = overlay.querySelector<HTMLElement>('.rhvo__panel');
+    const sourceAddBtn = document.getElementById('rhvo-source-add') as HTMLButtonElement | null;
+    const sourceInputEl = document.getElementById('rhvo-source-input') as HTMLInputElement | null;
     const confirmSpeakerEl = document.getElementById('rhvo-speaker-operator');
     const confirmHeardEl = document.getElementById('rhvo-confirm-heard');
     const confirmReplyEl = document.getElementById('rhvo-confirm-reply');
@@ -249,6 +260,7 @@ const { t } = createLayoutContext();
 
     let workingDraftTurns: string[] = [];
     let conversationTurns: ConversationTurn[] = [];
+    let attachedSourceNames: string[] = [];
 
     const escapeHtml = (value: string): string => value
       .replace(/&/g, '&amp;')
@@ -256,6 +268,17 @@ const { t } = createLayoutContext();
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+
+    const scrollConversationToLatest = (behavior: ScrollBehavior = 'smooth') => {
+      const run = () => {
+        if (threadEl) threadEl.scrollTop = threadEl.scrollHeight;
+        if (panelEl) panelEl.scrollTo({ top: panelEl.scrollHeight, behavior });
+        (composerForm ?? threadEl)?.scrollIntoView({ block: 'end', behavior });
+      };
+      run();
+      requestAnimationFrame(run);
+      window.setTimeout(run, 120);
+    };
 
     const renderThread = () => {
       if (!threadEl) return;
@@ -276,6 +299,7 @@ const { t } = createLayoutContext();
       }).join('');
       threadEl.hidden = conversationTurns.length === 0;
       threadEl.scrollTop = threadEl.scrollHeight;
+      scrollConversationToLatest();
     };
 
     const appendTurn = (speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal') => {
@@ -291,6 +315,7 @@ const { t } = createLayoutContext();
           at: Date.now(),
           workingDraftTurns,
           conversationTurns,
+          attachedSourceNames,
         }));
       } catch { /* storage may be unavailable; the live page still keeps state */ }
     };
@@ -303,6 +328,7 @@ const { t } = createLayoutContext();
           at?: unknown;
           workingDraftTurns?: unknown;
           conversationTurns?: unknown;
+          attachedSourceNames?: unknown;
         };
         if (!Array.isArray(parsed.workingDraftTurns) || !Array.isArray(parsed.conversationTurns)) return false;
         workingDraftTurns = parsed.workingDraftTurns
@@ -322,6 +348,12 @@ const { t } = createLayoutContext();
             tone: ['consequence', 'saved'].includes(String(turn.tone)) ? turn.tone : 'normal',
           }))
           .filter((turn) => turn.text.length > 0);
+        attachedSourceNames = Array.isArray(parsed.attachedSourceNames)
+          ? parsed.attachedSourceNames
+            .filter((name): name is string => typeof name === 'string')
+            .map((name) => name.trim())
+            .filter(Boolean)
+          : [];
         renderThread();
         return conversationTurns.length > 0 || workingDraftTurns.length > 0;
       } catch {
@@ -336,6 +368,7 @@ const { t } = createLayoutContext();
     const resetConversation = (options: { clearStored?: boolean } = {}) => {
       workingDraftTurns = [];
       conversationTurns = [];
+      attachedSourceNames = [];
       renderThread();
       if (options.clearStored) clearPersistedConversation();
     };
@@ -386,6 +419,7 @@ const { t } = createLayoutContext();
       captionInputEl.style.height = 'auto';
       const max = 6 * 22;
       captionInputEl.style.height = `${Math.min(captionInputEl.scrollHeight, max)}px`;
+      scrollConversationToLatest('auto');
     };
 
     // ── Elapsed timer (mm:ss) — starts on overlay open, ticks every second,
@@ -627,7 +661,99 @@ const { t } = createLayoutContext();
           ? template(overlay.dataset.replyEstimateKnown, { entity })
           : (overlay.dataset.replyEstimateUnknown ?? 'Got it — this looks like an estimate walk. Tell me the job and I’ll start the draft.');
       }
-      return template(overlay.dataset.replyGeneric, { action: trp.context_hypothesis.preparing_label });
+      const action = trp.context_hypothesis.preparing_label
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      return action
+        ? `Got it — I am preparing ${action}. Keep going, or say "save it" when you are ready.`
+        : 'Got it — keep going, or say "save it" when you are ready.';
+    };
+
+    const normalizedReply = (text: string): string => text.toLowerCase().replace(/\s+/g, ' ').trim();
+    const priorRightHandReplies = () => new Set(
+      conversationTurns
+        .filter((turn) => turn.speaker === 'right_hand')
+        .map((turn) => normalizedReply(turn.text)),
+    );
+    const firstFreshReply = (candidate: string, alternatives: string[]): string => {
+      const prior = priorRightHandReplies();
+      if (!prior.has(normalizedReply(candidate))) return candidate;
+      return alternatives.find((reply) => !prior.has(normalizedReply(reply))) ?? candidate;
+    };
+    const latestAsksForScope = (text: string): boolean => (
+      /\b(rundown|what do you need|what else do you need|understanding|questions|scope)\b/i.test(text)
+    );
+    const latestLooksLikeProductFeedback = (text: string): boolean => (
+      /\b(button|screen|scroll|interface|mic|microphone|working correctly|improved|not working|doesn'?t work|response|conversation)\b/i.test(text)
+    );
+    const latestLooksLikeFieldStatus = (text: string): boolean => (
+      /\b(installed|finished|complete|completed|schedule|scheduled|paint|painters|drywall|patch|cabinet|cabinetry|invoice|paperwork|change order|punch(?:less| list)?|cleanup|cleaned up)\b/i.test(text)
+    );
+    const textExplicitlyRequestsEstimate = (text: string): boolean => (
+      /\b(estimate|bid|quote|proposal|pricing|price out|scope for pricing)\b/i.test(text)
+    );
+    const conversationIntentForTurn = (text: string, draftText: string): VoiceIntent => {
+      const classified = classifyTranscriptIntent(text);
+      if ((latestLooksLikeFieldStatus(text) || latestLooksLikeProductFeedback(text)) && !textExplicitlyRequestsEstimate(text)) {
+        return 'job_note';
+      }
+      const draftIntent = classifyTranscriptIntent(draftText);
+      if (classified === 'unclassified' && requiresCommittedTranscript(draftIntent)) {
+        return draftIntent;
+      }
+      return classified;
+    };
+    const conversationalReplyForTurn = (latestText: string, trp: TurnResolutionPacket): string => {
+      const entity = conversationEntityLabel(trp);
+      const frame = trp.context_hypothesis.frame;
+      const isEstimate = trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk';
+      const isNote = trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note';
+      const baseReply = replyForTurn(trp);
+      if (textIsDestinationCorrection(latestText)) {
+        const candidate = entity
+          ? `Got it — I will use ${entity} for this note. Keep going, or say "save it" when you are ready.`
+          : 'Got it — tell me the job name and I will keep this note pointed there.';
+        return firstFreshReply(candidate, [
+          entity ? `Understood. This stays with ${entity}; keep going.` : 'Understood. I am still listening for the job name.',
+        ]);
+      }
+      if (latestAsksForScope(latestText)) {
+        const candidate = isEstimate
+          ? 'For the estimate, I still need the room, rough dimensions, main scope, selections, and any must-haves. Keep going and I will organize it.'
+          : 'Give me the status, schedule impact, blockers, who needs to know, and anything that should become a follow-up. I will keep it organized here.';
+        return firstFreshReply(candidate, [
+          isEstimate
+            ? 'I am tracking scope now. Tell me dimensions, materials, fixtures, and anything you already know should be included.'
+            : 'I am tracking the note. Tell me what changed, who is affected, and what needs follow-up.',
+        ]);
+      }
+      if (latestLooksLikeProductFeedback(latestText)) {
+        const candidate = 'Got it — I am keeping that as feedback on this Right Hand flow. I am tracking the issue and the improvement note here. What else should I add?';
+        return firstFreshReply(candidate, [
+          'Added that feedback. Keep going; I will keep these as separate notes in this thread.',
+        ]);
+      }
+      if (latestLooksLikeFieldStatus(latestText) || isNote) {
+        const candidate = entity
+          ? `Got it — adding that to the ${entity} note. I am tracking status, schedule impact, paperwork, and invoice follow-up. Keep going.`
+          : 'Got it — I am building this as a job note. Tell me the job when you know where it belongs.';
+        return firstFreshReply(candidate, [
+          entity ? `Added. This is still on ${entity}; keep going.` : 'Added. I still need the job before I file it.',
+        ]);
+      }
+      if (isEstimate) {
+        const candidate = workingDraftTurns.length <= 1
+          ? `${baseReply} Give me the room, scope, measurements, materials, and any budget constraints.`
+          : 'Added that. I am building the estimate context from the details you are giving me. Keep going, or say "save it" when you are ready.';
+        return firstFreshReply(candidate, [
+          'Added. Keep giving me scope, measurements, materials, and exceptions; I will keep it in this estimate thread.',
+          'I have that. What is the next scope item or measurement?',
+        ]);
+      }
+      return firstFreshReply(`${baseReply} What else?`, [
+        'Got it. Keep going, or say "save it" when you are ready.',
+      ]);
     };
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
@@ -909,8 +1035,8 @@ const { t } = createLayoutContext();
       awaitingConfirm = false;
       const isDestinationCorrection = textIsDestinationCorrection(clean);
       if (!isDestinationCorrection) workingDraftTurns.push(clean);
-      const intent = classifyTranscriptIntent(clean);
       const draftText = workingDraftText() || clean;
+      const intent = conversationIntentForTurn(clean, draftText);
       const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: draftText, intent }));
       parkedTranscript = workingDraftText();
       parkedTurnResolution = trp;
@@ -922,7 +1048,7 @@ const { t } = createLayoutContext();
       setCaption('');
       clearComposer();
       appendTurn('operator', clean);
-      appendTurn('right_hand', `${replyForTurn(trp)} What else?`);
+      appendTurn('right_hand', conversationalReplyForTurn(clean, trp));
       showActions('listening');
       persistConversation();
     };
@@ -940,10 +1066,11 @@ const { t } = createLayoutContext();
 
     const routeCommitted = (intent: VoiceIntent, text: string) => {
       const cleanText = text.trim();
-      const draftText = workingDraftText();
+      const existingDraftText = workingDraftText();
+      const draftText = [existingDraftText, cleanText].filter(Boolean).join('\n\n');
       if (cleanText.length > 0 && textRequestsDurableCommit(cleanText) && (draftText.length > 0 || textContainsInlineDurableDraft(cleanText))) {
         const draft = draftText.length > 0 ? draftText : cleanText;
-        if (draftText.length === 0) {
+        if (existingDraftText.length === 0) {
           workingDraftTurns.push(cleanText);
         }
         appendTurn('operator', cleanText);
@@ -951,7 +1078,8 @@ const { t } = createLayoutContext();
         enterSorting(draft);
         return;
       }
-      if (requiresCommittedTranscript(intent)) {
+      const conversationIntent = conversationIntentForTurn(cleanText, draftText || cleanText);
+      if (requiresCommittedTranscript(conversationIntent)) {
         // Durable-capable speech starts as conversation, not a button gate. A
         // consequence bubble appears only when the operator asks to file/send or
         // taps the explicit save affordance at the end of the thread.
@@ -1467,6 +1595,7 @@ const { t } = createLayoutContext();
       showActions('listening');
       overlay.hidden = false;
       startTimer();
+      scrollConversationToLatest('auto');
       void beginSession();
     };
 
@@ -1527,6 +1656,7 @@ const { t } = createLayoutContext();
       if (hasTypedText) {
         window.clearTimeout(idleTimer);
       }
+      scrollConversationToLatest('auto');
     });
     composerForm?.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -1535,6 +1665,20 @@ const { t } = createLayoutContext();
       clearComposer();
       setCaption('');
       routeCommitted(classifyTranscriptIntent(typed), typed);
+    });
+    sourceAddBtn?.addEventListener('click', () => {
+      sourceInputEl?.click();
+    });
+    sourceInputEl?.addEventListener('change', () => {
+      const files = Array.from(sourceInputEl.files ?? []);
+      if (files.length === 0) return;
+      const names = files.map((file) => file.name.trim()).filter(Boolean);
+      attachedSourceNames.push(...names);
+      const shownNames = names.slice(0, 3).join(', ') || 'that source';
+      const more = names.length > 3 ? ` and ${names.length - 3} more` : '';
+      appendTurn('system', `Added ${shownNames}${more} to this conversation. I will use it as source while we keep talking.`);
+      persistConversation();
+      sourceInputEl.value = '';
     });
     // Save: commit the turn through the durable backend path, then render the
     // handled TRP returned by the server. No server artifact, no "saved" state.
@@ -1604,6 +1748,8 @@ const { t } = createLayoutContext();
     justify-items: stretch;
     text-align: left;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+    scroll-padding-bottom: 6.25rem;
+    overscroll-behavior: contain;
   }
   .rhvo__close {
     position: absolute;
@@ -1636,6 +1782,10 @@ const { t } = createLayoutContext();
     justify-self: center;
     align-self: center;
   }
+  .rhvo[data-state='listening'] .rhvo__indicator {
+    width: 56px;
+    height: 56px;
+  }
   .rhvo__pulse {
     position: absolute;
     inset: 0;
@@ -1645,9 +1795,17 @@ const { t } = createLayoutContext();
   }
   .rhvo[data-state='fallback'] .rhvo__pulse { background: rgba(123, 168, 255, 0.24); }
   .rhvo[data-state='capped'] .rhvo__pulse { animation: none; opacity: 0.4; }
+  .rhvo[data-state='listening'] .rhvo__pulse {
+    background: rgba(245, 181, 68, 0.42);
+    animation: rhvo-hot-pulse 1.05s ease-out infinite;
+  }
   @keyframes rhvo-pulse {
     0% { transform: scale(0.8); opacity: 0.7; }
     100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes rhvo-hot-pulse {
+    0% { transform: scale(0.78); opacity: 0.88; }
+    100% { transform: scale(1.75); opacity: 0; }
   }
   .rhvo__mic {
     position: absolute;
@@ -1658,6 +1816,31 @@ const { t } = createLayoutContext();
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  .rhvo[data-state='listening'] .rhvo__mic {
+    inset: 4px;
+    background: #ffc44d;
+    box-shadow:
+      0 0 0 4px rgba(245, 181, 68, 0.24),
+      0 0 28px rgba(245, 181, 68, 0.7);
+    animation: rhvo-hot-mic 0.9s ease-in-out infinite alternate;
+  }
+  .rhvo[data-state='listening'] .rhvo__indicator::after {
+    content: "Stop";
+    position: absolute;
+    left: 50%;
+    bottom: -1.05rem;
+    transform: translateX(-50%);
+    font-size: 0.58rem;
+    font-weight: 900;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: #ffc44d;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.42);
+  }
+  @keyframes rhvo-hot-mic {
+    from { transform: scale(0.96); }
+    to { transform: scale(1.04); }
   }
   .rhvo__mic :global(svg) { width: 22px; height: 22px; fill: currentColor; }
   /* The same mic stays visible across the turn. Listening pulses; confirm and
@@ -1756,7 +1939,7 @@ const { t } = createLayoutContext();
     order: 4;
     grid-column: 1 / -1;
     width: 100%;
-    max-height: min(64dvh, 36rem);
+    max-height: min(68dvh, 38rem);
     overflow: auto;
     display: grid;
     gap: 0.56rem;
@@ -1877,7 +2060,8 @@ const { t } = createLayoutContext();
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-    padding-top: 0.65rem;
+    padding-top: 0.78rem;
+    padding-bottom: 0.18rem;
     border-top: 1px solid var(--rhvo-border);
   }
   .rhvo__composer-add,
@@ -1920,6 +2104,7 @@ const { t } = createLayoutContext();
     overflow: auto;
   }
   .rhvo__composer-input::placeholder { color: var(--rhvo-mute); }
+  .rhvo__source-input { display: none; }
   /* Typing cursor on the live caption — only while actively listening. */
   .rhvo__cursor {
     display: none;

@@ -412,7 +412,8 @@ test('trust loop: durable-capable committed intent replies in place and does NOT
   // immediate consequence card. The hard gate appears only when the operator
   // asks to file/send or taps a consequence affordance.
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
-  assert.match(routeCommitted, /requiresCommittedTranscript\(intent\)/);
+  assert.match(routeCommitted, /const conversationIntent = conversationIntentForTurn\(cleanText, draftText \|\| cleanText\)/);
+  assert.match(routeCommitted, /requiresCommittedTranscript\(conversationIntent\)/);
   assert.match(routeCommitted, /enterReply\(cleanText\)/);
   assert.match(routeCommitted, /textRequestsDurableCommit\(cleanText\)/);
   assert.match(routeCommitted, /enterSorting\(draft\)/);
@@ -660,6 +661,75 @@ test('F-RH3 conversation surface: typed notes share the same thread as voice', (
   assert.doesNotMatch(submit![0], /navigate\(/);
 });
 
+test('F-RH3 conversation surface: latest turn and composer stay anchored on phone', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /const panelEl = overlay\.querySelector<HTMLElement>\('\.rhvo__panel'\)/);
+  assert.match(src, /const scrollConversationToLatest/);
+  assert.match(src, /panelEl\.scrollTo\(\{ top: panelEl\.scrollHeight, behavior \}\)/);
+  assert.match(src, /scrollIntoView\(\{ block: 'end', behavior \}\)/);
+  assert.match(src, /requestAnimationFrame\(run\)/);
+  assert.match(src, /window\.setTimeout\(run, 120\)/);
+  assert.match(src, /scrollConversationToLatest\(\)/);
+  assert.match(src, /scrollConversationToLatest\('auto'\)/);
+  assert.match(src, /scroll-padding-bottom: 6\.25rem/);
+  assert.match(src, /overscroll-behavior: contain/);
+});
+
+test('F-RH3 conversation surface: plus button opens a source picker in the same thread', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /id="rhvo-source-add"/);
+  assert.match(src, /id="rhvo-source-input"/);
+  assert.match(src, /type="file"/);
+  assert.match(src, /multiple/);
+  assert.match(src, /const sourceAddBtn = document\.getElementById\('rhvo-source-add'\)/);
+  assert.match(src, /const sourceInputEl = document\.getElementById\('rhvo-source-input'\)/);
+  assert.match(src, /sourceAddBtn\?\.addEventListener\('click'/);
+  assert.match(src, /sourceInputEl\?\.click\(\)/);
+  assert.match(src, /sourceInputEl\?\.addEventListener\('change'/);
+  assert.match(src, /Array\.from\(sourceInputEl\.files \?\? \[\]\)/);
+  assert.match(src, /attachedSourceNames\.push\(\.\.\.names\)/);
+  assert.match(src, /appendTurn\('system', `Added \$\{shownNames\}\$\{more\} to this conversation/);
+  assert.match(src, /persistConversation\(\)/);
+});
+
+test('F-RH3 conversation surface: Right Hand replies vary by the latest turn instead of repeating a canned line', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /const conversationalReplyForTurn/);
+  assert.match(src, /const firstFreshReply/);
+  assert.match(src, /const latestAsksForScope/);
+  assert.match(src, /const latestLooksLikeFieldStatus/);
+  assert.match(src, /const latestLooksLikeProductFeedback/);
+  assert.match(src, /const conversationIntentForTurn/);
+  assert.match(src, /requiresCommittedTranscript\(draftIntent\)/);
+  assert.match(src, /For the estimate, I still need the room, rough dimensions, main scope, selections/);
+  assert.match(src, /I am keeping that as feedback on this Right Hand flow/);
+  assert.match(src, /I am tracking status, schedule impact, paperwork, and invoice follow-up/);
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
+  assert.match(routeCommitted, /const existingDraftText = workingDraftText\(\)/);
+  assert.match(routeCommitted, /const conversationIntent = conversationIntentForTurn\(cleanText, draftText \|\| cleanText\)/);
+  assert.match(routeCommitted, /requiresCommittedTranscript\(conversationIntent\)/);
+  const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
+  assert.match(enterReply, /const intent = conversationIntentForTurn\(clean, draftText\)/);
+  assert.match(enterReply, /appendTurn\('right_hand', conversationalReplyForTurn\(clean, trp\)\)/);
+  assert.doesNotMatch(enterReply, /\$\{replyForTurn\(trp\)\} What else\?/);
+});
+
+test('F-RH3 conversation surface: no raw action placeholder can render in Right Hand copy', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const en = readFileSync(path.join(ROOT, 'src/i18n/en.ts'), 'utf8');
+  assert.doesNotMatch(src, /Got it\s+—\s+\{action\}/);
+  assert.doesNotMatch(en, /Got it\s+—\s+\{action\}/);
+});
+
+test('F-RH3 conversation surface: active mic reads as recording and tap-to-stop', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /\.rhvo\[data-state='listening'\] \.rhvo__indicator/);
+  assert.match(src, /content: "Stop"/);
+  assert.match(src, /@keyframes rhvo-hot-pulse/);
+  assert.match(src, /@keyframes rhvo-hot-mic/);
+  assert.match(src, /box-shadow:[\s\S]*rgba\(245, 181, 68, 0\.7\)/);
+});
+
 test('F-RH3 conversation surface: correction turns stay visible without becoming contradictory note body', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /const textIsDestinationCorrection/);
@@ -680,7 +750,7 @@ test('F-RH3 conversation surface: an inline "save a note that…" opens the cons
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /textContainsInlineDurableDraft\(cleanText\)/);
   assert.match(routeCommitted, /const draft = draftText\.length > 0 \? draftText : cleanText/);
-  assert.match(routeCommitted, /if \(draftText\.length === 0\) \{\s*workingDraftTurns\.push\(cleanText\);\s*\}/);
+  assert.match(routeCommitted, /if \(existingDraftText\.length === 0\) \{\s*workingDraftTurns\.push\(cleanText\);\s*\}/);
   assert.match(routeCommitted, /appendTurn\('operator', cleanText\)/);
   assert.match(routeCommitted, /persistConversation\(\)/);
   assert.match(routeCommitted, /enterSorting\(draft\)/);

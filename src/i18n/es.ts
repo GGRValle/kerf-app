@@ -605,7 +605,7 @@ export const ES: TranslationMap = {
   'rh_voice.reply_job_note_unknown': 'Entendido — tengo la nota. Dime la obra y la archivo ahí.',
   'rh_voice.reply_estimate_known': 'Entendido — visita para estimar {entity}.',
   'rh_voice.reply_estimate_unknown': 'Entendido — esto parece un estimado nuevo. Puedo iniciarlo desde aquí.',
-  'rh_voice.reply_generic': 'Entendido — {action}.',
+  'rh_voice.reply_generic': 'Entendido — sigue, o di "guárdalo" cuando estés listo.',
   'rh_voice.reply_correction_needed': 'Tengo la nota. Dime la obra y la archivo ahí.',
   'rh_voice.move_add_photo': 'Agregar una foto',
   'rh_voice.move_open_job': 'Elegir obra',
