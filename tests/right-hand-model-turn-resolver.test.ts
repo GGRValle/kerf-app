@@ -22,6 +22,10 @@ import {
   type ResolveTurnInput,
   type TurnResolverLlmClient,
 } from '../src/voice/realtime/modelTurnResolver.js';
+import {
+  resolveReplyWithModel,
+} from '../src/voice/realtime/modelReplyResolver.js';
+import { buildTurnResolutionPacket } from '../src/voice/realtime/turnResolution.js';
 import type { GroqChatRequest, GroqChatResult } from '../src/altitude/modelAdapter/index.js';
 import { checkHostingRoute } from '../src/hosting/routeCheck.js';
 
@@ -405,4 +409,373 @@ test('turn resolver LLM endpoint/model pair is approved', () => {
     requested_at: '2026-05-31T12:00:00.000Z',
   });
   assert.equal(result.allowed, true);
+});
+
+test('reply resolver calls model with peer-altitude doctrine and returns its natural reply', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up and counter drops need template Monday.',
+    intent: 'job_note',
+  });
+  let capturedBody: GroqChatRequest | null = null;
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'This is for the Clem project.',
+      draftText: trp.heard_text,
+      currentPath: '/',
+      userRole: 'owner',
+      tenantId: 'tenant_ggr' as never,
+      knownEntities: [{ type: 'project', id: 'proj_clem', label: 'Clem project' }],
+      userPreferenceSummary: 'Peer altitude. Do not re-ground every turn.',
+      trp,
+      conversationTurns: [
+        { speaker: 'operator', text: trp.heard_text },
+        { speaker: 'right_hand', text: 'I have the note.' },
+        { speaker: 'operator', text: 'This is for the Clem project.' },
+      ],
+      now: () => new Date('2026-06-05T20:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => {
+        capturedBody = req;
+        return {
+          ok: true,
+          content: JSON.stringify({
+            mode: 'peer_update',
+            claims_durable_action: false,
+            reply: 'Clem. Cabinets wrapping, template Monday.',
+          }),
+          model: req.model,
+          inputTokens: 50,
+          outputTokens: 12,
+          totalTokens: 62,
+          latencyMs: 20,
+          costNanoUsd: 1_000 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-06-05T20:00:00.000Z',
+        };
+      },
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.mode, 'peer_update');
+  assert.equal(result.reply, 'Clem. Cabinets wrapping, template Monday.');
+  assert.equal(capturedBody?.purpose, 'right_hand_peer_conversation_reply');
+  assert.equal(capturedBody?.endpoint, TURN_RESOLVER_LLM_ENDPOINT);
+  assert.equal(capturedBody?.model, TURN_RESOLVER_LLM_MODEL);
+  const system = capturedBody?.messages[0]?.content ?? '';
+  assert.match(system, /Start at peer altitude/);
+  assert.match(system, /tenant isolation · source validation · durable-write gate · money\/send gate · classification\/envelope stamping · health\/safety\/policy gates · humble fallback/);
+  assert.match(system, /Never let the safety floor impersonate judgment/);
+  assert.match(system, /Density never eats the honesty seam/);
+  assert.match(system, /claims_durable_action=true only when your reply says an action already happened/);
+});
+
+test('reply resolver honesty floor rejects false durable model copy', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up.',
+    intent: 'job_note',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'This is for Clem.',
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      now: () => new Date('2026-06-05T20:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: true,
+          reply: 'Filed to Clem.',
+        }),
+        model: req.model,
+        inputTokens: 10,
+        outputTokens: 10,
+        totalTokens: 20,
+        latencyMs: 1,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-05T20:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'humble_fallback');
+  assert.equal(result.fallback_reason, 'model_reply_failed_honesty_floor');
+  assert.equal(result.reply, 'I have the note.');
+});
+
+test('reply resolver honesty floor rejects completed-action synonym claims', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up.',
+    intent: 'job_note',
+  });
+  const falseCompletionReplies = [
+    'Logged it to Clem.',
+    'Done — added that to Clem.',
+    'Recorded it.',
+    'Posted the deposit to the ledger.',
+    'Emailed the sub about Monday.',
+    'Texted the client the update.',
+    'Scheduled the tile sub for Monday.',
+    'Booked the inspection.',
+    'Told the client about the delay.',
+    'Right Hand has posted that update.',
+    'I texted the client.',
+    'Handled it.',
+    'All set on Clem.',
+    'Handled that with the sub.',
+  ];
+
+  for (const reply of falseCompletionReplies) {
+    const result = await resolveReplyWithModel(
+      {
+        latestText: 'This is for Clem.',
+        trp,
+        tenantId: 'tenant_ggr' as never,
+        now: () => new Date('2026-06-05T20:00:00.000Z'),
+      },
+      {
+        tenantId: 'tenant_ggr',
+        groqChat: async (req) => ({
+          ok: true,
+          content: JSON.stringify({
+            mode: 'peer_update',
+            claims_durable_action: false,
+            reply,
+          }),
+          model: req.model,
+          inputTokens: 10,
+          outputTokens: 10,
+          totalTokens: 20,
+          latencyMs: 1,
+          costNanoUsd: 1_000 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-06-05T20:00:00.000Z',
+        }),
+      },
+    );
+
+    assert.equal(result.authority, 'humble_fallback', reply);
+    assert.equal(result.fallback_reason, 'model_reply_failed_honesty_floor', reply);
+    assert.equal(result.reply, 'I have the note.', reply);
+  }
+});
+
+test('reply resolver honesty floor allows ordinary work-state wording', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up.',
+    intent: 'job_note',
+  });
+  const allowedReplies = [
+    "Once framing's done, drywall Monday.",
+    "That's handled on their end.",
+    'All set on the selections?',
+  ];
+
+  for (const reply of allowedReplies) {
+    const result = await resolveReplyWithModel(
+      {
+        latestText: 'This is for Clem.',
+        trp,
+        tenantId: 'tenant_ggr' as never,
+        now: () => new Date('2026-06-05T20:00:00.000Z'),
+      },
+      {
+        tenantId: 'tenant_ggr',
+        groqChat: async (req) => ({
+          ok: true,
+          content: JSON.stringify({
+            mode: 'peer_update',
+            claims_durable_action: false,
+            reply,
+          }),
+          model: req.model,
+          inputTokens: 10,
+          outputTokens: 10,
+          totalTokens: 20,
+          latencyMs: 1,
+          costNanoUsd: 1_000 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-06-05T20:00:00.000Z',
+        }),
+      },
+    );
+
+    assert.equal(result.authority, 'llm_inferred', reply);
+    assert.equal(result.reply, reply);
+  }
+});
+
+test('reply resolver honesty floor allows future/gate offers without artifact', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up.',
+    intent: 'job_note',
+  });
+  const allowedReplies = [
+    'Want it added to the Clem scope?',
+    "I'll save this to Clem when you say save.",
+  ];
+
+  for (const reply of allowedReplies) {
+    const result = await resolveReplyWithModel(
+      {
+        latestText: 'This is for Clem.',
+        trp,
+        tenantId: 'tenant_ggr' as never,
+        now: () => new Date('2026-06-05T20:00:00.000Z'),
+      },
+      {
+        tenantId: 'tenant_ggr',
+        groqChat: async (req) => ({
+          ok: true,
+          content: JSON.stringify({
+            mode: 'gate_ready',
+            claims_durable_action: false,
+            reply,
+          }),
+          model: req.model,
+          inputTokens: 10,
+          outputTokens: 10,
+          totalTokens: 20,
+          latencyMs: 1,
+          costNanoUsd: 1_000 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-06-05T20:00:00.000Z',
+        }),
+      },
+    );
+
+    assert.equal(result.authority, 'llm_inferred', reply);
+    assert.equal(result.reply, reply);
+    assert.equal(result.claims_durable_action, false);
+  }
+});
+
+test('reply resolver honesty floor rejects durable claim flag without artifact', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up.',
+    intent: 'job_note',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'This is for Clem.',
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      now: () => new Date('2026-06-05T20:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: true,
+          reply: 'All set for Clem.',
+        }),
+        model: req.model,
+        inputTokens: 10,
+        outputTokens: 10,
+        totalTokens: 20,
+        latencyMs: 1,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-05T20:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'humble_fallback');
+  assert.equal(result.fallback_reason, 'model_reply_failed_honesty_floor');
+  assert.equal(result.reply, 'I have the note.');
+});
+
+test('reply resolver honesty floor allows durable claim when artifact exists', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up.',
+    intent: 'job_note',
+    workArtifact: 'job_note:jn_clem_001',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'Save it.',
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      now: () => new Date('2026-06-05T20:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: true,
+          reply: 'Filed to Clem.',
+        }),
+        model: req.model,
+        inputTokens: 10,
+        outputTokens: 10,
+        totalTokens: 20,
+        latencyMs: 1,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-05T20:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.claims_durable_action, true);
+  assert.equal(result.reply, 'Filed to Clem.');
+});
+
+test('reply route falls back humbly when Groq is not configured', async () => {
+  __setRightHandTurnDepsForTests({
+    env: { GROQ_API_KEY: undefined },
+    now: () => new Date('2026-06-05T20:00:00.000Z'),
+  });
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up and counter drops need template Monday.',
+    intent: 'job_note',
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: 'This is for the Clem project.',
+      draftText: trp.heard_text,
+      trp,
+      currentPath: '/',
+      knownEntities: [{ type: 'project', id: 'proj_clem', label: 'Clem project' }],
+      conversationTurns: [{ speaker: 'operator', text: trp.heard_text }],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as { authority: string; fallback_reason?: string; reply: string };
+  assert.equal(body.authority, 'humble_fallback');
+  assert.equal(body.fallback_reason, 'model_not_configured');
+  assert.match(body.reply, /Got it|I have|Yes|Added/);
+  assert.doesNotMatch(body.reply, /I am tracking status, schedule impact, paperwork, and invoice follow-up/);
+  assert.doesNotMatch(body.reply, /Tell me the job and I’ll file it there\. What else/);
 });

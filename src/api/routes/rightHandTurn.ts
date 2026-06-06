@@ -39,6 +39,11 @@ import {
   type ResolveTurnResult,
 } from '../../voice/realtime/modelTurnResolver.js';
 import {
+  resolveReplyWithModel,
+  type ConversationReplyTurn,
+  type ResolveReplyResult,
+} from '../../voice/realtime/modelReplyResolver.js';
+import {
   buildTurnResolutionPacket,
   parseTurnResolution,
   type TurnResolutionPacket,
@@ -97,6 +102,22 @@ function cleanKnownEntities(value: unknown): readonly KnownEntityContext[] {
     })
     .filter((item): item is KnownEntityContext => item !== null)
     .slice(0, 8);
+}
+
+function cleanConversationTurns(value: unknown): readonly ConversationReplyTurn[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map((item) => {
+      const speaker = ['operator', 'right_hand', 'system'].includes(String(item['speaker']))
+        ? item['speaker'] as ConversationReplyTurn['speaker']
+        : null;
+      const text = typeof item['text'] === 'string' ? item['text'].replace(/\s+/g, ' ').trim() : '';
+      if (!speaker || !text) return null;
+      return { speaker, text: text.slice(0, 260) } satisfies ConversationReplyTurn;
+    })
+    .filter((item): item is ConversationReplyTurn => item !== null)
+    .slice(-12);
 }
 
 function safeProjectId(raw: unknown): string | null {
@@ -335,6 +356,68 @@ rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
 
   return c.json({
     trp: result.trp,
+    authority: result.authority,
+    ...(result.fallback_reason ? { fallback_reason: result.fallback_reason } : {}),
+  });
+});
+
+rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400);
+  }
+
+  const latestText = typeof body['latestText'] === 'string' ? body['latestText'].trim() : '';
+  if (!latestText) {
+    return c.json({ error: 'empty_turn', reason: 'latestText is required' }, 400);
+  }
+
+  const trp = parseTurnResolution(JSON.stringify(body['trp'] ?? null));
+  if (trp === null) {
+    return c.json({ error: 'invalid_trp', reason: 'a valid Turn Resolution Packet is required' }, 400);
+  }
+
+  const deps = resolveDeps();
+  const tenantId = requireApiTenant(c);
+  const baseInput = {
+    latestText,
+    draftText: typeof body['draftText'] === 'string' ? body['draftText'].slice(0, 1800) : trp.heard_text,
+    currentPath: typeof body['currentPath'] === 'string' ? body['currentPath'].slice(0, 160) : undefined,
+    userRole: typeof body['userRole'] === 'string' ? body['userRole'].slice(0, 48) : 'owner',
+    tenantId,
+    knownEntities: cleanKnownEntities(body['knownEntities']),
+    userPreferenceSummary: typeof body['userPreferenceSummary'] === 'string'
+      ? body['userPreferenceSummary'].slice(0, 480)
+      : undefined,
+    trp,
+    conversationTurns: cleanConversationTurns(body['conversationTurns']),
+    now: deps.now,
+  };
+
+  const { GROQ_API_KEY } = deps.env;
+  const baseUrl = deps.env.GROQ_BASE_URL || DEFAULT_GROQ_BASE_URL;
+  let result: ResolveReplyResult;
+
+  if (!hasSynthesisConsent(tenantId)) {
+    result = await resolveReplyWithModel(baseInput);
+    result = { ...result, fallback_reason: 'synthesis_consent_required' };
+  } else if (!GROQ_API_KEY) {
+    result = await resolveReplyWithModel(baseInput);
+  } else {
+    const depsFactory = deps.groqDepsFactory ?? defaultGroqClientDeps;
+    const groqDeps = depsFactory(GROQ_API_KEY, baseUrl);
+    const chatFn = deps.groqChatFn ?? groqChat;
+    result = await resolveReplyWithModel(baseInput, {
+      tenantId,
+      groqChat: (request) => chatFn(request, groqDeps),
+    });
+  }
+
+  return c.json({
+    reply: result.reply,
+    mode: result.mode,
     authority: result.authority,
     ...(result.fallback_reason ? { fallback_reason: result.fallback_reason } : {}),
   });

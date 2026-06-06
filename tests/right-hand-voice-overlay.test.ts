@@ -633,7 +633,8 @@ test('F-RH3 conversation surface: route-resume restores the same thread instead 
 
   const openOverlay = sliceDecl(src, 'openOverlay', 'speakEvent');
   assert.match(openOverlay, /options: \{ restoreConversation\?: boolean \} = \{\}/);
-  assert.match(openOverlay, /if \(!options\.restoreConversation \|\| !restoreConversation\(\)\) \{/);
+  assert.match(openOverlay, /const restored = options\.restoreConversation \? restoreConversation\(\) : false/);
+  assert.match(openOverlay, /if \(!restored\) \{/);
   assert.match(openOverlay, /resetConversation\(\{ clearStored: true \}\)/);
 
   const resume = src.match(/const resumeRaw = sessionStorage\.getItem\('kerf\.voiceResume'\)[\s\S]*?\n {4}\} catch/);
@@ -729,25 +730,33 @@ test('F-RH3 conversation surface: plus button opens a source picker in the same 
   assert.match(src, /persistConversation\(\)/);
 });
 
-test('F-RH3 conversation surface: Right Hand replies vary by the latest turn instead of repeating a canned line', () => {
+test('F-RH3 conversation surface: model-led reply brain replaces the humble fallback', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  assert.match(src, /const conversationalReplyForTurn/);
-  assert.match(src, /const firstFreshReply/);
+  assert.match(src, /const humbleFallbackReplyForTurn/);
+  assert.match(src, /const resolveReplyServerSide/);
+  assert.match(src, /\/api\/v1\/right-hand\/resolve-reply/);
+  assert.match(src, /rightHandVoiceProfileSummary/);
+  assert.match(src, /Peer altitude: sharp contractor operator talking to a trusted PM\/advisor/);
+  assert.match(src, /tenant isolation · source validation · durable-write gate · money\/send gate · classification\/envelope stamping · health\/safety\/policy gates · humble fallback/);
   assert.match(src, /const latestAsksForScope/);
   assert.match(src, /const latestLooksLikeFieldStatus/);
   assert.match(src, /const latestLooksLikeProductFeedback/);
   assert.match(src, /const conversationIntentForTurn/);
   assert.match(src, /requiresCommittedTranscript\(draftIntent\)/);
-  assert.match(src, /For the estimate, I still need the room, rough dimensions, main scope, selections/);
-  assert.match(src, /I am keeping that as feedback on this Right Hand flow/);
-  assert.match(src, /I am tracking status, schedule impact, paperwork, and invoice follow-up/);
+  assert.doesNotMatch(src, /For the estimate, I still need the room, rough dimensions, main scope, selections/);
+  assert.doesNotMatch(src, /I am keeping that as feedback on this Right Hand flow/);
+  assert.doesNotMatch(src, /I am tracking status, schedule impact, paperwork, and invoice follow-up/);
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /const existingDraftText = workingDraftText\(\)/);
   assert.match(routeCommitted, /const conversationIntent = conversationIntentForTurn\(cleanText, draftText \|\| cleanText\)/);
   assert.match(routeCommitted, /requiresCommittedTranscript\(conversationIntent\)/);
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
   assert.match(enterReply, /const intent = conversationIntentForTurn\(clean, draftText\)/);
-  assert.match(enterReply, /appendTurn\('right_hand', conversationalReplyForTurn\(clean, trp\)\)/);
+  assert.match(enterReply, /const turnsForModel = \[\.\.\.conversationTurns\]/);
+  assert.match(enterReply, /const fallbackReply = humbleFallbackReplyForTurn\(clean, trp\)/);
+  assert.match(enterReply, /const replyIndex = appendTurn\('right_hand', fallbackReply\)/);
+  assert.match(enterReply, /resolveReplyServerSide\(clean, draftText, trp, turnsForModel\)/);
+  assert.match(enterReply, /replaceTurn\(replyIndex, 'right_hand', reply\)/);
   assert.doesNotMatch(enterReply, /\$\{replyForTurn\(trp\)\} What else\?/);
 });
 
@@ -796,12 +805,13 @@ test('F-RH3 conversation surface: a spoken job label stops the unresolved-job re
   assert.match(extractDestinationLabel, /attach\|file\|save\|put\|route/);
   assert.match(extractDestinationLabel, /cleanDestinationLabel/);
 
-  const conversationalReplyForTurn = sliceDecl(src, 'conversationalReplyForTurn', 'renderConfirmTurn');
-  assert.match(conversationalReplyForTurn, /const entity = conversationDestinationFor\(trp, latestText\)/);
-  assert.match(conversationalReplyForTurn, /latestLooksLikeUnderstandingCheck\(latestText\)/);
-  assert.match(conversationalReplyForTurn, /You are right — I have it now\. This note is for \$\{entity\}/);
-  assert.match(conversationalReplyForTurn, /Got it — I will keep this with \$\{entity\}/);
-  assert.doesNotMatch(conversationalReplyForTurn, /Got it — I have the note\. Tell me the job and I’ll file it there\. What else\?/);
+  const humbleFallbackReplyForTurn = sliceDecl(src, 'humbleFallbackReplyForTurn', 'renderConfirmTurn');
+  assert.match(humbleFallbackReplyForTurn, /const entity = conversationDestinationFor\(trp, latestText\)/);
+  assert.match(humbleFallbackReplyForTurn, /latestLooksLikeUnderstandingCheck\(latestText\)/);
+  assert.match(humbleFallbackReplyForTurn, /Yes\. I have this on \$\{entity\}/);
+  assert.match(humbleFallbackReplyForTurn, /Got it — \$\{entity\}/);
+  assert.doesNotMatch(humbleFallbackReplyForTurn, /Got it — I have the note\. Tell me the job and I’ll file it there\. What else\?/);
+  assert.doesNotMatch(humbleFallbackReplyForTurn, /I am tracking status, schedule impact, paperwork, and invoice follow-up/);
 });
 
 test('F-RH3 conversation surface: destination memory survives session restore', () => {
@@ -816,6 +826,20 @@ test('F-RH3 conversation surface: destination memory survives session restore', 
 
   const resetConversation = sliceDecl(src, 'resetConversation', 'workingDraftText');
   assert.match(resetConversation, /conversationDestinationLabel = ''/);
+});
+
+test('F-RH3 conversation surface: reopening an unfiled draft surfaces the loop once', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /const surfaceUnfiledDraftLoop/);
+  const surfaceUnfiledDraftLoop = sliceDecl(src, 'surfaceUnfiledDraftLoop', 'textRequestsDurableCommit');
+  assert.match(surfaceUnfiledDraftLoop, /workingDraftTurns\.length === 0/);
+  assert.match(surfaceUnfiledDraftLoop, /Still holding this\. Say "save it" when you want me to file it, or keep going\./);
+  assert.match(surfaceUnfiledDraftLoop, /persistConversation\(\)/);
+
+  const openOverlay = sliceDecl(src, 'openOverlay', 'speakEvent');
+  assert.match(openOverlay, /const restored = options\.restoreConversation \? restoreConversation\(\) : false/);
+  assert.match(openOverlay, /surfaceUnfiledDraftLoop\(\)/);
+  assert.doesNotMatch(surfaceUnfiledDraftLoop, /\bfiled\b/i);
 });
 
 test('F-RH3 conversation surface: an inline "save a note that…" opens the consequence gate', () => {
