@@ -556,7 +556,7 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   assert.match(renderConfirmTurn, /actionStartIntake/);
   // Stage 4: the primary affordance is "Save to <job>" once a destination is
   // known; Change job is only offered when there is a job to change away from.
-  assert.match(renderConfirmTurn, /const entity = conversationEntityLabel\(trp\)/);
+  assert.match(renderConfirmTurn, /const entity = conversationDestinationFor\(trp\)/);
   assert.match(renderConfirmTurn, /actionSaveTo[\s\S]{0,40}\{ job: entity \}/);
   assert.match(renderConfirmTurn, /changeJobBtn\.hidden = state !== 'confirm' \|\| !entity/);
 
@@ -733,14 +733,48 @@ test('F-RH3 conversation surface: active mic reads as recording and tap-to-stop'
 test('F-RH3 conversation surface: correction turns stay visible without becoming contradictory note body', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /const textIsDestinationCorrection/);
+  assert.match(src, /const extractDestinationLabel/);
+  assert.match(src, /const conversationDestinationFor/);
+  assert.match(src, /let conversationDestinationLabel = ''/);
   assert.match(src, /split\(\/\\s\+\/\)\.length <= 14/);
 
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
   assert.match(enterReply, /const isDestinationCorrection = textIsDestinationCorrection\(clean\)/);
+  assert.match(enterReply, /const spokenDestination = isDestinationCorrection \? extractDestinationLabel\(clean\) : ''/);
+  assert.match(enterReply, /if \(spokenDestination\) conversationDestinationLabel = spokenDestination/);
   assert.match(enterReply, /if \(!isDestinationCorrection\) workingDraftTurns\.push\(clean\)/);
   assert.match(enterReply, /const draftText = workingDraftText\(\) \|\| clean/);
   assert.match(enterReply, /appendTurn\('operator', clean\)/);
   assert.match(enterReply, /persistConversation\(\)/);
+});
+
+test('F-RH3 conversation surface: a spoken job label stops the unresolved-job reply loop', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const extractDestinationLabel = sliceDecl(src, 'extractDestinationLabel', 'latestLooksLikeUnderstandingCheck');
+  assert.match(extractDestinationLabel, /this\\s\+is[\s\S]*for[\s\S]*project/i);
+  assert.match(extractDestinationLabel, /attach\|file\|save\|put\|route/);
+  assert.match(extractDestinationLabel, /cleanDestinationLabel/);
+
+  const conversationalReplyForTurn = sliceDecl(src, 'conversationalReplyForTurn', 'renderConfirmTurn');
+  assert.match(conversationalReplyForTurn, /const entity = conversationDestinationFor\(trp, latestText\)/);
+  assert.match(conversationalReplyForTurn, /latestLooksLikeUnderstandingCheck\(latestText\)/);
+  assert.match(conversationalReplyForTurn, /You are right — I have it now\. This note is for \$\{entity\}/);
+  assert.match(conversationalReplyForTurn, /Got it — I will keep this with \$\{entity\}/);
+  assert.doesNotMatch(conversationalReplyForTurn, /Got it — I have the note\. Tell me the job and I’ll file it there\. What else\?/);
+});
+
+test('F-RH3 conversation surface: destination memory survives session restore', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const persistConversation = sliceDecl(src, 'persistConversation', 'restoreConversation');
+  assert.match(persistConversation, /conversationDestinationLabel/);
+
+  const restoreConversation = sliceDecl(src, 'restoreConversation', 'clearPersistedConversation');
+  assert.match(restoreConversation, /conversationDestinationLabel\?: unknown/);
+  assert.match(restoreConversation, /parsed\.conversationDestinationLabel/);
+  assert.match(restoreConversation, /cleanDestinationLabel\(parsed\.conversationDestinationLabel\)/);
+
+  const resetConversation = sliceDecl(src, 'resetConversation', 'workingDraftText');
+  assert.match(resetConversation, /conversationDestinationLabel = ''/);
 });
 
 test('F-RH3 conversation surface: an inline "save a note that…" opens the consequence gate', () => {

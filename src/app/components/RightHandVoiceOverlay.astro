@@ -261,6 +261,7 @@ const { t } = createLayoutContext();
     let workingDraftTurns: string[] = [];
     let conversationTurns: ConversationTurn[] = [];
     let attachedSourceNames: string[] = [];
+    let conversationDestinationLabel = '';
 
     const escapeHtml = (value: string): string => value
       .replace(/&/g, '&amp;')
@@ -316,6 +317,7 @@ const { t } = createLayoutContext();
           workingDraftTurns,
           conversationTurns,
           attachedSourceNames,
+          conversationDestinationLabel,
         }));
       } catch { /* storage may be unavailable; the live page still keeps state */ }
     };
@@ -329,6 +331,7 @@ const { t } = createLayoutContext();
           workingDraftTurns?: unknown;
           conversationTurns?: unknown;
           attachedSourceNames?: unknown;
+          conversationDestinationLabel?: unknown;
         };
         if (!Array.isArray(parsed.workingDraftTurns) || !Array.isArray(parsed.conversationTurns)) return false;
         workingDraftTurns = parsed.workingDraftTurns
@@ -354,6 +357,9 @@ const { t } = createLayoutContext();
             .map((name) => name.trim())
             .filter(Boolean)
           : [];
+        conversationDestinationLabel = typeof parsed.conversationDestinationLabel === 'string'
+          ? cleanDestinationLabel(parsed.conversationDestinationLabel)
+          : '';
         renderThread();
         return conversationTurns.length > 0 || workingDraftTurns.length > 0;
       } catch {
@@ -369,6 +375,7 @@ const { t } = createLayoutContext();
       workingDraftTurns = [];
       conversationTurns = [];
       attachedSourceNames = [];
+      conversationDestinationLabel = '';
       renderThread();
       if (options.clearStored) clearPersistedConversation();
     };
@@ -388,6 +395,48 @@ const { t } = createLayoutContext();
       && /\b(?:attach|file|save|put|route|job|project|client)\b/i.test(text)
       && /\b(?:job|project|client)\b/i.test(text)
       && text.trim().split(/\s+/).length <= 14
+    );
+
+    const cleanDestinationLabel = (raw: string): string => {
+      const compact = raw
+        .replace(/\b(?:are you able to understand that|do you understand that|can you understand that)\b[\s?.!]*$/i, '')
+        .replace(/\b(?:job|project|client|site)\b[\s?.!]*$/i, '')
+        .replace(/^(?:the|a|an)\s+/i, '')
+        .replace(/[“”]/g, '"')
+        .replace(/[’]/g, "'")
+        .replace(/[?.!,;:]+$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!compact || /^(?:it|this|that|there|here|job|project|client|site)$/i.test(compact)) return '';
+      const words = compact.split(/\s+/).filter(Boolean);
+      if (words.length > 5) return '';
+      return words.map((word) => {
+        if (/^[A-Z0-9&]+$/.test(word)) return word;
+        return `${word.slice(0, 1).toUpperCase()}${word.slice(1)}`;
+      }).join(' ');
+    };
+
+    const extractDestinationLabel = (text: string): string => {
+      const clean = text.trim()
+        .replace(/^(?:correction:?\s*)?(?:no|actually|yes|yep|correct|right)[,\s]+/i, '')
+        .replace(/\b(?:are you able to understand that|do you understand that|can you understand that)\b[\s?.!]*$/i, '')
+        .trim();
+      const patterns = [
+        /\b(?:this\s+is|it'?s|that'?s)\s+(?:for|on|under|with|to)\s+(?:the\s+)?(.+?)\s+(?:project|job|client|site)\b/i,
+        /\b(?:attach|file|save|put|route)(?:\s+(?:it|this|that|the note))?\s+(?:to|under|with|in|on)\s+(?:the\s+)?(.+?)(?:\s+(?:project|job|client|site))?(?:[.?!]|$)/i,
+        /\b(?:for|under|with|to)\s+(?:the\s+)?(.+?)\s+(?:project|job|client|site)\b/i,
+        /\b(?:the\s+)?([A-Z][A-Za-z0-9&' -]{1,40}?)\s+(?:project|job|client|site)\b/,
+      ];
+      for (const pattern of patterns) {
+        const match = clean.match(pattern);
+        const label = cleanDestinationLabel(match?.[1] ?? '');
+        if (label) return label;
+      }
+      return '';
+    };
+
+    const latestLooksLikeUnderstandingCheck = (text: string): boolean => (
+      /\b(?:i'?m sorry|are you able to understand|do you understand|can you understand|you keep repeating|same thing|not understanding)\b/i.test(text)
     );
 
     const setState = (next: OverlayState) => {
@@ -648,8 +697,14 @@ const { t } = createLayoutContext();
       return scopeStripped || routePart || clientPart || label;
     };
 
+    const conversationDestinationFor = (trp: TurnResolutionPacket, latestText = ''): string => (
+      conversationEntityLabel(trp)
+      || (textIsDestinationCorrection(latestText) ? extractDestinationLabel(latestText) : '')
+      || conversationDestinationLabel
+    );
+
     const replyForTurn = (trp: TurnResolutionPacket): string => {
-      const entity = conversationEntityLabel(trp);
+      const entity = conversationDestinationFor(trp);
       const frame = trp.context_hypothesis.frame;
       if (trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note') {
         return entity
@@ -705,14 +760,22 @@ const { t } = createLayoutContext();
       return classified;
     };
     const conversationalReplyForTurn = (latestText: string, trp: TurnResolutionPacket): string => {
-      const entity = conversationEntityLabel(trp);
+      const entity = conversationDestinationFor(trp, latestText);
       const frame = trp.context_hypothesis.frame;
       const isEstimate = trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk';
       const isNote = trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note';
       const baseReply = replyForTurn(trp);
+      if (latestLooksLikeUnderstandingCheck(latestText)) {
+        const candidate = entity
+          ? `You are right — I have it now. This note is for ${entity}. Keep going, and I will keep it in this thread.`
+          : 'You are right — I was looping. Keep going, and I will track this as a job note until we match the job.';
+        return firstFreshReply(candidate, [
+          entity ? `Understood. This stays with ${entity}; keep going.` : 'Understood. I am tracking this as a job note and listening for where it belongs.',
+        ]);
+      }
       if (textIsDestinationCorrection(latestText)) {
         const candidate = entity
-          ? `Got it — I will use ${entity} for this note. Keep going, or say "save it" when you are ready.`
+          ? `Got it — I will keep this with ${entity}. Keep going, or say "save it" when you are ready.`
           : 'Got it — tell me the job name and I will keep this note pointed there.';
         return firstFreshReply(candidate, [
           entity ? `Understood. This stays with ${entity}; keep going.` : 'Understood. I am still listening for the job name.',
@@ -758,7 +821,7 @@ const { t } = createLayoutContext();
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
       confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave(trp);
-      const entity = conversationEntityLabel(trp);
+      const entity = conversationDestinationFor(trp);
       if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
       if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
       if (confirmPromptEl) {
@@ -896,7 +959,10 @@ const { t } = createLayoutContext();
 
     const promptForTurn = (trp: TurnResolutionPacket): string => {
       if (turnNeedsProjectBeforeSave(trp)) {
-        return overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
+        const destination = conversationDestinationFor(trp);
+        return destination
+          ? `I will keep this with ${destination}. I still need to match it to a job before I file it.`
+          : overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
       }
       const entity = likelyEntityLabel(trp);
       const conversationalEntity = conversationEntityLabel(trp);
@@ -1034,6 +1100,8 @@ const { t } = createLayoutContext();
       if (!clean) return;
       awaitingConfirm = false;
       const isDestinationCorrection = textIsDestinationCorrection(clean);
+      const spokenDestination = isDestinationCorrection ? extractDestinationLabel(clean) : '';
+      if (spokenDestination) conversationDestinationLabel = spokenDestination;
       if (!isDestinationCorrection) workingDraftTurns.push(clean);
       const draftText = workingDraftText() || clean;
       const intent = conversationIntentForTurn(clean, draftText);
