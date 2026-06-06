@@ -330,6 +330,23 @@ const { t } = createLayoutContext();
       renderThread();
     };
 
+    const normalizeStoredReplyText = (value: string): string => value
+      .toLowerCase()
+      .replace(/[’]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const isRetiredCannedRightHandTurn = (turn: ConversationTurn): boolean => {
+      if (turn.speaker !== 'right_hand' || turn.tone === 'consequence' || turn.tone === 'saved') return false;
+      const text = normalizeStoredReplyText(turn.text);
+      return (
+        text.includes('i still need the job before i file it') ||
+        text.includes('tell me the job when you know where it belongs') ||
+        text.includes("tell me the job and i'll file it there") ||
+        text === 'got it — this sounds like a new estimate. i can start it from here. what else?'
+      );
+    };
+
     const persistConversation = () => {
       try {
         sessionStorage.setItem(VOICE_CONVERSATION_SESSION_KEY, JSON.stringify({
@@ -370,7 +387,11 @@ const { t } = createLayoutContext();
             text: turn.text.trim(),
             tone: ['consequence', 'saved'].includes(String(turn.tone)) ? turn.tone : 'normal',
           }))
-          .filter((turn) => turn.text.length > 0);
+          .filter((turn) => turn.text.length > 0)
+          // #302 model-led replies replaced these deterministic placeholders.
+          // Scrub persisted old RH bubbles so a stale browser session cannot
+          // make the current build look canned after deploy.
+          .filter((turn) => !isRetiredCannedRightHandTurn(turn));
         attachedSourceNames = Array.isArray(parsed.attachedSourceNames)
           ? parsed.attachedSourceNames
             .filter((name): name is string => typeof name === 'string')
@@ -1051,6 +1072,7 @@ const { t } = createLayoutContext();
         if (tenantId) headers['x-kerf-tenant'] = tenantId;
         const res = await fetch('/api/v1/right-hand/resolve-turn', {
           method: 'POST',
+          credentials: 'include',
           headers,
           body: JSON.stringify({
             heardText: text,
@@ -1090,6 +1112,7 @@ const { t } = createLayoutContext();
         if (tenantId) headers['x-kerf-tenant'] = tenantId;
         const res = await fetch('/api/v1/right-hand/resolve-reply', {
           method: 'POST',
+          credentials: 'include',
           headers,
           body: JSON.stringify({
             latestText,
@@ -1310,6 +1333,7 @@ const { t } = createLayoutContext();
         if (tenantId) headers['x-kerf-tenant'] = tenantId;
         const res = await fetch('/api/v1/right-hand/commit-turn', {
           method: 'POST',
+          credentials: 'include',
           headers,
           body: JSON.stringify({
             trp,
@@ -1593,6 +1617,7 @@ const { t } = createLayoutContext();
         try {
           const res = await fetch('/api/v1/transcribe', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': blob.type || 'audio/webm' },
             body: blob,
             signal: controller.signal,
@@ -1678,7 +1703,7 @@ const { t } = createLayoutContext();
       // Ask the server whether this tenant gets realtime. Consent + config are
       // server-authoritative; 403/503 → honest Groq fallback.
       try {
-        const res = await fetch('/api/v1/realtime/transcription-session', { method: 'POST' });
+        const res = await fetch('/api/v1/realtime/transcription-session', { method: 'POST', credentials: 'include' });
         if (res.ok) {
           const data = (await res.json()) as {
             client_secret?: string;
