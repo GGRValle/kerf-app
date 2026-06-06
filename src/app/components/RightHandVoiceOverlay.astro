@@ -219,7 +219,6 @@ const { t } = createLayoutContext();
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
     const threadEl = document.getElementById('rhvo-thread');
     const composerForm = document.getElementById('rhvo-composer') as HTMLFormElement | null;
-    const panelEl = overlay.querySelector<HTMLElement>('.rhvo__panel');
     const sourceAddBtn = document.getElementById('rhvo-source-add') as HTMLButtonElement | null;
     const sourceInputEl = document.getElementById('rhvo-source-input') as HTMLInputElement | null;
     const confirmSpeakerEl = document.getElementById('rhvo-speaker-operator');
@@ -279,11 +278,13 @@ const { t } = createLayoutContext();
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
 
+    const setMicActive = (active: boolean) => {
+      overlay.dataset.micActive = active ? 'true' : 'false';
+    };
+
     const scrollConversationToLatest = (behavior: ScrollBehavior = 'smooth') => {
       const run = () => {
-        if (threadEl) threadEl.scrollTop = threadEl.scrollHeight;
-        if (panelEl) panelEl.scrollTo({ top: panelEl.scrollHeight, behavior });
-        (composerForm ?? threadEl)?.scrollIntoView({ block: 'end', behavior });
+        if (threadEl) threadEl.scrollTo({ top: threadEl.scrollHeight, behavior });
       };
       run();
       requestAnimationFrame(run);
@@ -538,10 +539,12 @@ const { t } = createLayoutContext();
       liveMicTracks().forEach((track) => {
         track.enabled = enabled;
       });
+      setMicActive(enabled && hasLiveMicStream());
     };
     const stopMicStream = () => {
       mediaStream?.getTracks().forEach((track) => track.stop());
       mediaStream = null;
+      setMicActive(false);
     };
     const queryMicPermission = async (): Promise<PermissionState | 'unknown' | 'unsupported'> => {
       const permissions = navigator.permissions;
@@ -576,17 +579,20 @@ const { t } = createLayoutContext();
       }
       if (!navigator.mediaDevices?.getUserMedia) {
         setStatus(overlay.dataset.unavailable ?? 'Voice isn’t available here — open Right Hand to type.');
+        setMicActive(false);
         return false;
       }
       const permission = await queryMicPermission();
       if (permission === 'denied') {
         setStatus(overlay.dataset.micdenied ?? 'Microphone is off — enable it or open Right Hand to type.');
+        setMicActive(false);
         return false;
       }
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micPermissionState = 'granted';
         micGrantSeen = true;
+        setMicActive(true);
         return true;
       } catch (err) {
         const afterFailure = await queryMicPermission();
@@ -595,6 +601,7 @@ const { t } = createLayoutContext();
         } else {
           setStatus(micFailureStatus(err));
         }
+        setMicActive(false);
         return false;
       }
     };
@@ -632,6 +639,7 @@ const { t } = createLayoutContext();
       // a fresh permission request. closeOverlay()/hard-cap still call teardown()
       // for a full privacy release.
       setMicTracksEnabled(false);
+      setMicActive(false);
       audioCtx = null;
       analyser = null;
       pc = null;
@@ -1657,6 +1665,7 @@ const { t } = createLayoutContext();
 
     const openOverlay = (options: { restoreConversation?: boolean } = {}) => {
       if (!overlay.hidden) return;
+      setMicActive(false);
       routedLive = false;
       lastInterim = '';
       awaitingConfirm = false;
@@ -1856,11 +1865,9 @@ const { t } = createLayoutContext();
     background: var(--rhvo-panel-bg);
     backdrop-filter: blur(14px);
     color: var(--rhvo-text);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto;
+    display: flex;
+    flex-direction: column;
     gap: 0.56rem 0.62rem;
-    justify-items: stretch;
     text-align: left;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
     scroll-padding-bottom: 6.25rem;
@@ -1908,7 +1915,7 @@ const { t } = createLayoutContext();
   }
   .rhvo[data-state='fallback'] .rhvo__pulse { background: rgba(123, 168, 255, 0.24); }
   .rhvo[data-state='capped'] .rhvo__pulse { animation: none; opacity: 0.4; }
-  .rhvo[data-state='listening'] .rhvo__pulse {
+  .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__pulse {
     inset: 0;
     background: rgba(245, 181, 68, 0.42);
     animation: rhvo-hot-pulse 1.05s ease-out infinite;
@@ -1931,7 +1938,7 @@ const { t } = createLayoutContext();
     align-items: center;
     justify-content: center;
   }
-  .rhvo[data-state='listening'] .rhvo__mic {
+  .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__mic {
     inset: 9px;
     background: #ffc44d;
     box-shadow:
@@ -1956,8 +1963,13 @@ const { t } = createLayoutContext();
   .rhvo[data-state='resolved'] .rhvo__indicator::after {
     content: "TALK AGAIN";
   }
-  .rhvo[data-state='listening'] .rhvo__indicator::after {
+  .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__indicator::after {
     content: "STOP";
+  }
+  .rhvo[data-state='listening']:not([data-mic-active='true']) .rhvo__indicator::after {
+    content: "TYPE";
+    color: var(--rhvo-dim);
+    text-shadow: none;
   }
   .rhvo[data-state='fallback'] .rhvo__indicator::after,
   .rhvo[data-state='capped'] .rhvo__indicator::after {
@@ -2063,18 +2075,23 @@ const { t } = createLayoutContext();
   .rhvo__caption-text { font-size: 0.95rem; line-height: 1.42; color: var(--rhvo-text); }
   .rhvo__thread {
     order: 4;
-    grid-column: 1 / -1;
     width: 100%;
+    flex: 1 1 auto;
     min-height: 0;
     max-height: none;
-    overflow: auto;
-    display: grid;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
     gap: 0.56rem;
-    justify-items: start;
-    align-content: end;
+    align-items: stretch;
     padding: 0.1rem 0 0.36rem;
     scroll-behavior: smooth;
     overscroll-behavior: contain;
+  }
+  .rhvo__thread::before {
+    content: "";
+    margin-top: auto;
   }
   .rhvo__thread[hidden] { display: none; }
   .rhvo__thread-turn {
@@ -2183,7 +2200,8 @@ const { t } = createLayoutContext();
   }
   .rhvo__composer {
     order: 91;
-    grid-column: 1 / -1;
+    flex: 0 0 auto;
+    margin-top: auto;
     display: grid;
     gap: 0.5rem;
     width: 100%;

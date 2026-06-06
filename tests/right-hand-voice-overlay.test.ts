@@ -663,10 +663,10 @@ test('F-RH3 conversation surface: typed notes share the same thread as voice', (
 
 test('F-RH3 conversation surface: latest turn and composer stay anchored on phone', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  assert.match(src, /const panelEl = overlay\.querySelector<HTMLElement>\('\.rhvo__panel'\)/);
   assert.match(src, /const scrollConversationToLatest/);
-  assert.match(src, /panelEl\.scrollTo\(\{ top: panelEl\.scrollHeight, behavior \}\)/);
-  assert.match(src, /scrollIntoView\(\{ block: 'end', behavior \}\)/);
+  assert.match(src, /threadEl\.scrollTo\(\{ top: threadEl\.scrollHeight, behavior \}\)/);
+  assert.doesNotMatch(src, /panelEl\.scrollTo\(/);
+  assert.doesNotMatch(src, /scrollIntoView\(\{ block: 'end', behavior \}\)/);
   assert.match(src, /requestAnimationFrame\(run\)/);
   assert.match(src, /window\.setTimeout\(run, 120\)/);
   assert.match(src, /scrollConversationToLatest\(\)/);
@@ -697,7 +697,11 @@ test('F-RH3 bloom-from-heart: surface grows upward then holds and scrolls', () =
   assert.match(src, /height: var\(--rhvo-bloom-height\)/);
   assert.match(src, /max-height: min\(84svh, 46rem\)/);
   assert.match(src, /overlay\.dataset\.hasThread = conversationTurns\.length > 0 \? 'true' : 'false'/);
-  assert.match(src, /\.rhvo__thread\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow: auto;[\s\S]*?align-content: end;/);
+  assert.match(src, /\.rhvo__panel\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;/);
+  assert.match(src, /\.rhvo__thread\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;[\s\S]*?display: flex;[\s\S]*?flex-direction: column;/);
+  assert.match(src, /\.rhvo__thread::before\s*\{[\s\S]*?margin-top: auto;/);
+  assert.match(src, /\.rhvo__composer\s*\{[\s\S]*?flex: 0 0 auto;[\s\S]*?margin-top: auto;/);
+  assert.doesNotMatch(src, /align-content: end/);
 });
 
 test('F-RH3 bloom-from-heart: copy is mic-first and stateful, not tap-to-talk', () => {
@@ -756,8 +760,12 @@ test('F-RH3 conversation surface: no raw action placeholder can render in Right 
 
 test('F-RH3 conversation surface: active mic reads as recording and stop', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  assert.match(src, /\.rhvo\[data-state='listening'\] \.rhvo__indicator/);
+  assert.match(src, /const setMicActive = \(active: boolean\)/);
+  assert.match(src, /overlay\.dataset\.micActive = active \? 'true' : 'false'/);
+  assert.match(src, /\.rhvo\[data-state='listening'\]\[data-mic-active='true'\] \.rhvo__indicator::after/);
   assert.match(src, /content: "STOP"/);
+  assert.match(src, /\.rhvo\[data-state='listening'\]:not\(\[data-mic-active='true'\]\) \.rhvo__indicator::after/);
+  assert.match(src, /content: "TYPE"/);
   assert.match(src, /@keyframes rhvo-hot-pulse/);
   assert.match(src, /@keyframes rhvo-hot-mic/);
   assert.match(src, /box-shadow:[\s\S]*rgba\(245, 181, 68, 0\.7\)/);
