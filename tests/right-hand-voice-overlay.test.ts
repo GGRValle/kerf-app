@@ -675,6 +675,39 @@ test('F-RH3 conversation surface: latest turn and composer stay anchored on phon
   assert.match(src, /overscroll-behavior: contain/);
 });
 
+test('F-RH3 bloom-from-heart: composer is one dock with the mic seated dead center', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /class="rhvo__composer-row"/);
+  assert.match(src, /class="rhvo__dock"/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Home<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Create<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Camera<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">More<\/span>/);
+  assert.match(src, /\.rhvo__dock\s*\{[\s\S]*?grid-template-columns: 1fr 1fr 72px 1fr 1fr;/);
+  assert.match(src, /\.rhvo__indicator\s*\{[\s\S]*?width: 64px;[\s\S]*?height: 64px;/);
+  assert.doesNotMatch(src, /\.rhvo\[data-state='listening'\] \.rhvo__indicator\s*\{[\s\S]*?width:/);
+});
+
+test('F-RH3 bloom-from-heart: surface grows upward then holds and scrolls', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /data-has-thread="false"/);
+  assert.match(src, /--rhvo-bloom-height: min\(38svh, 22rem\)/);
+  assert.match(src, /\.rhvo\[data-state='listening'\] \{ --rhvo-bloom-height: min\(58svh, 34rem\); \}/);
+  assert.match(src, /\.rhvo\[data-has-thread='true'\] \{ --rhvo-bloom-height: min\(84svh, 46rem\); \}/);
+  assert.match(src, /height: var\(--rhvo-bloom-height\)/);
+  assert.match(src, /max-height: min\(84svh, 46rem\)/);
+  assert.match(src, /overlay\.dataset\.hasThread = conversationTurns\.length > 0 \? 'true' : 'false'/);
+  assert.match(src, /\.rhvo__thread\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow: auto;[\s\S]*?align-content: end;/);
+});
+
+test('F-RH3 bloom-from-heart: copy is mic-first and stateful, not tap-to-talk', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /content: "KEEP GOING"/);
+  assert.match(src, /content: "TALK AGAIN"/);
+  assert.match(src, /content: "STOP"/);
+  assert.doesNotMatch(src, /Tap to talk/i);
+});
+
 test('F-RH3 conversation surface: plus button opens a source picker in the same thread', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /id="rhvo-source-add"/);
@@ -721,10 +754,10 @@ test('F-RH3 conversation surface: no raw action placeholder can render in Right 
   assert.doesNotMatch(en, /Got it\s+—\s+\{action\}/);
 });
 
-test('F-RH3 conversation surface: active mic reads as recording and tap-to-stop', () => {
+test('F-RH3 conversation surface: active mic reads as recording and stop', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /\.rhvo\[data-state='listening'\] \.rhvo__indicator/);
-  assert.match(src, /content: "Stop"/);
+  assert.match(src, /content: "STOP"/);
   assert.match(src, /@keyframes rhvo-hot-pulse/);
   assert.match(src, /@keyframes rhvo-hot-mic/);
   assert.match(src, /box-shadow:[\s\S]*rgba\(245, 181, 68, 0\.7\)/);

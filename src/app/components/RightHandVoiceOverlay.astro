@@ -24,6 +24,7 @@ const { t } = createLayoutContext();
   aria-labelledby="rhvo-title"
   data-state="idle"
   data-typed="false"
+  data-has-thread="false"
   data-title={t('rh_voice.title')}
   data-listening={t('rh_voice.status_listening')}
   data-fallback={t('rh_voice.status_fallback')}
@@ -97,38 +98,46 @@ const { t } = createLayoutContext();
     </div>
 
     <form class="rhvo__composer" id="rhvo-composer">
-      <button type="button" class="rhvo__composer-add" id="rhvo-source-add" aria-label="Attach or paste source">+</button>
-      <input
-        class="rhvo__source-input"
-        id="rhvo-source-input"
-        type="file"
-        multiple
-        hidden
-        accept="image/*,video/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
-      />
-      <button
-        type="button"
-        class="rhvo__indicator"
-        id="rhvo-mic-button"
-        aria-label={t('rh_voice.mic_toggle_label')}
-      >
-        <span class="rhvo__pulse"></span>
-        <span class="rhvo__mic">
-          <svg viewBox="0 0 24 24" aria-hidden="true"
-            ><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path><path
-              d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"
-            ></path></svg
-          >
-        </span>
-      </button>
-      <textarea
-        class="rhvo__composer-input"
-        id="rhvo-caption-input"
-        rows="1"
-        aria-label={t('rh_voice.typed_input_label')}
-        placeholder={t('rh_voice.typed_input_placeholder')}
-      ></textarea>
-      <button type="submit" class="rhvo__composer-send" aria-label="Send typed note to Right Hand">Send</button>
+      <div class="rhvo__composer-row">
+        <button type="button" class="rhvo__composer-add" id="rhvo-source-add" aria-label="Attach or paste source">+</button>
+        <input
+          class="rhvo__source-input"
+          id="rhvo-source-input"
+          type="file"
+          multiple
+          hidden
+          accept="image/*,video/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+        />
+        <textarea
+          class="rhvo__composer-input"
+          id="rhvo-caption-input"
+          rows="1"
+          aria-label={t('rh_voice.typed_input_label')}
+          placeholder={t('rh_voice.typed_input_placeholder')}
+        ></textarea>
+        <button type="submit" class="rhvo__composer-send" aria-label="Send typed note to Right Hand">Send</button>
+      </div>
+      <div class="rhvo__dock">
+        <span class="rhvo__dock-item" aria-hidden="true">Home</span>
+        <span class="rhvo__dock-item" aria-hidden="true">Create</span>
+        <button
+          type="button"
+          class="rhvo__indicator"
+          id="rhvo-mic-button"
+          aria-label={t('rh_voice.mic_toggle_label')}
+        >
+          <span class="rhvo__pulse"></span>
+          <span class="rhvo__mic">
+            <svg viewBox="0 0 24 24" aria-hidden="true"
+              ><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path><path
+                d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"
+              ></path></svg
+            >
+          </span>
+        </button>
+        <span class="rhvo__dock-item" aria-hidden="true">Camera</span>
+        <span class="rhvo__dock-item" aria-hidden="true">More</span>
+      </div>
     </form>
 
     <div class="rhvo__confirm" id="rhvo-confirm" hidden>
@@ -283,6 +292,7 @@ const { t } = createLayoutContext();
 
     const renderThread = () => {
       if (!threadEl) return;
+      overlay.dataset.hasThread = conversationTurns.length > 0 ? 'true' : 'false';
       threadEl.innerHTML = conversationTurns.map((turn) => {
         const label = turn.speaker === 'operator'
           ? (overlay.dataset.speakerYou ?? 'You')
@@ -1782,6 +1792,8 @@ const { t } = createLayoutContext();
     align-items: flex-end;
     justify-content: center;
     --rhvo-bg: rgba(20, 24, 31, 0.9);
+    --rhvo-panel-bg: rgba(20, 24, 31, 0.92);
+    --rhvo-backdrop-bg: rgba(6, 8, 11, 0.34);
     --rhvo-surface: #232936;
     --rhvo-surface-soft: #1a1f28;
     --rhvo-border: rgba(255, 255, 255, 0.09);
@@ -1789,35 +1801,71 @@ const { t } = createLayoutContext();
     --rhvo-text: #e8ecf1;
     --rhvo-dim: #98a1b3;
     --rhvo-mute: #6a7282;
+    --rhvo-bloom-height: min(38svh, 22rem);
   }
+  :global(:root[data-theme='light']) .rhvo {
+    --rhvo-panel-bg: rgba(255, 255, 255, 0.96);
+    --rhvo-backdrop-bg: rgba(224, 229, 236, 0.48);
+    --rhvo-surface: #f1f4f8;
+    --rhvo-surface-soft: #ffffff;
+    --rhvo-border: rgba(10, 13, 17, 0.12);
+    --rhvo-border-soft: rgba(10, 13, 17, 0.16);
+    --rhvo-text: #161a21;
+    --rhvo-dim: #4a5462;
+    --rhvo-mute: #7b8492;
+  }
+  @media (prefers-color-scheme: light) {
+    :global(:root:not([data-theme])) .rhvo {
+      --rhvo-panel-bg: rgba(255, 255, 255, 0.96);
+      --rhvo-backdrop-bg: rgba(224, 229, 236, 0.48);
+      --rhvo-surface: #f1f4f8;
+      --rhvo-surface-soft: #ffffff;
+      --rhvo-border: rgba(10, 13, 17, 0.12);
+      --rhvo-border-soft: rgba(10, 13, 17, 0.16);
+      --rhvo-text: #161a21;
+      --rhvo-dim: #4a5462;
+      --rhvo-mute: #7b8492;
+    }
+  }
+  .rhvo[data-state='listening'] { --rhvo-bloom-height: min(58svh, 34rem); }
+  .rhvo[data-state='fallback'],
+  .rhvo[data-state='reply'],
+  .rhvo[data-state='confirm'],
+  .rhvo[data-state='resolved'],
+  .rhvo[data-state='capped'],
+  .rhvo[data-has-thread='true'] { --rhvo-bloom-height: min(84svh, 46rem); }
   .rhvo[hidden] { display: none; }
   .rhvo__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(6, 8, 11, 0.34);
+    background: var(--rhvo-backdrop-bg);
     backdrop-filter: blur(12px) saturate(0.92);
   }
   .rhvo__panel {
     position: relative;
-    width: min(520px, calc(100% - 1rem));
-    margin: 0 0 max(0.85rem, env(safe-area-inset-bottom, 0px));
-    padding: 0.92rem 0.85rem 0.8rem;
-    max-height: min(94dvh, 820px);
-    overflow: auto;
+    width: min(430px, calc(100% - 1rem));
+    height: var(--rhvo-bloom-height);
+    min-height: 18rem;
+    max-height: min(84svh, 46rem);
+    margin: 0 0 max(0.45rem, env(safe-area-inset-bottom, 0px));
+    padding: 0.92rem 0.85rem 0.62rem;
+    overflow: hidden;
     border: 1px solid var(--rhvo-border);
     border-top-color: var(--rhvo-border-soft);
     border-radius: 22px 22px 24px 24px;
-    background: rgba(20, 24, 31, 0.92);
+    background: var(--rhvo-panel-bg);
     backdrop-filter: blur(14px);
     color: var(--rhvo-text);
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto;
     gap: 0.56rem 0.62rem;
     justify-items: stretch;
     text-align: left;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
     scroll-padding-bottom: 6.25rem;
     overscroll-behavior: contain;
+    transition: height 220ms ease, max-height 220ms ease, border-radius 220ms ease;
   }
   .rhvo__close {
     position: absolute;
@@ -1837,33 +1885,31 @@ const { t } = createLayoutContext();
     cursor: pointer;
   }
   @media (min-width: 600px) {
-    .rhvo__panel { width: min(520px, calc(100% - 2rem)); }
+    .rhvo__panel { width: min(430px, calc(100% - 2rem)); }
   }
   .rhvo__indicator {
     position: relative;
-    width: 50px;
-    height: 50px;
+    width: 64px;
+    height: 64px;
     padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
     justify-self: center;
     align-self: center;
-  }
-  .rhvo[data-state='listening'] .rhvo__indicator {
-    width: 56px;
-    height: 56px;
+    overflow: visible;
   }
   .rhvo__pulse {
     position: absolute;
-    inset: 0;
+    inset: 4px;
     border-radius: 50%;
-    background: rgba(245, 181, 68, 0.24);
-    animation: rhvo-pulse 1.6s ease-out infinite;
+    background: rgba(245, 181, 68, 0.2);
+    box-shadow: 0 0 0 8px rgba(245, 181, 68, 0.08);
   }
   .rhvo[data-state='fallback'] .rhvo__pulse { background: rgba(123, 168, 255, 0.24); }
   .rhvo[data-state='capped'] .rhvo__pulse { animation: none; opacity: 0.4; }
   .rhvo[data-state='listening'] .rhvo__pulse {
+    inset: 0;
     background: rgba(245, 181, 68, 0.42);
     animation: rhvo-hot-pulse 1.05s ease-out infinite;
   }
@@ -1877,7 +1923,7 @@ const { t } = createLayoutContext();
   }
   .rhvo__mic {
     position: absolute;
-    inset: 7px;
+    inset: 9px;
     border-radius: 50%;
     background: #f5b544;
     color: #241b07;
@@ -1886,15 +1932,15 @@ const { t } = createLayoutContext();
     justify-content: center;
   }
   .rhvo[data-state='listening'] .rhvo__mic {
-    inset: 4px;
+    inset: 9px;
     background: #ffc44d;
     box-shadow:
       0 0 0 4px rgba(245, 181, 68, 0.24),
       0 0 28px rgba(245, 181, 68, 0.7);
     animation: rhvo-hot-mic 0.9s ease-in-out infinite alternate;
   }
-  .rhvo[data-state='listening'] .rhvo__indicator::after {
-    content: "Stop";
+  .rhvo__indicator::after {
+    content: "KEEP GOING";
     position: absolute;
     left: 50%;
     bottom: -1.05rem;
@@ -1905,6 +1951,18 @@ const { t } = createLayoutContext();
     text-transform: uppercase;
     color: #ffc44d;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.42);
+  }
+  .rhvo[data-state='idle'] .rhvo__indicator::after,
+  .rhvo[data-state='resolved'] .rhvo__indicator::after {
+    content: "TALK AGAIN";
+  }
+  .rhvo[data-state='listening'] .rhvo__indicator::after {
+    content: "STOP";
+  }
+  .rhvo[data-state='fallback'] .rhvo__indicator::after,
+  .rhvo[data-state='capped'] .rhvo__indicator::after {
+    content: "TYPE";
+    color: var(--rhvo-dim);
   }
   @keyframes rhvo-hot-mic {
     from { transform: scale(0.96); }
@@ -2007,13 +2065,16 @@ const { t } = createLayoutContext();
     order: 4;
     grid-column: 1 / -1;
     width: 100%;
-    max-height: min(68dvh, 38rem);
+    min-height: 0;
+    max-height: none;
     overflow: auto;
     display: grid;
     gap: 0.56rem;
     justify-items: start;
-    padding: 0.1rem 0 0.2rem;
+    align-content: end;
+    padding: 0.1rem 0 0.36rem;
     scroll-behavior: smooth;
+    overscroll-behavior: contain;
   }
   .rhvo__thread[hidden] { display: none; }
   .rhvo__thread-turn {
@@ -2124,13 +2185,35 @@ const { t } = createLayoutContext();
     order: 91;
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
-    align-items: center;
     gap: 0.5rem;
     width: 100%;
-    padding-top: 0.78rem;
-    padding-bottom: 0.18rem;
+    padding: 0.56rem 0 0.1rem;
     border-top: 1px solid var(--rhvo-border);
+  }
+  .rhvo__composer-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .rhvo__dock {
+    display: grid;
+    grid-template-columns: 1fr 1fr 72px 1fr 1fr;
+    align-items: center;
+    gap: 0.1rem;
+    min-height: 72px;
+    width: 100%;
+  }
+  .rhvo__dock-item {
+    align-self: end;
+    padding-bottom: 0.38rem;
+    text-align: center;
+    color: var(--rhvo-mute);
+    opacity: 0.58;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
   .rhvo__composer-add,
   .rhvo__composer-send {
