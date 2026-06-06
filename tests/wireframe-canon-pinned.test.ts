@@ -18,14 +18,16 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const PINNED = [
   {
     file: 'docs/wireframes/canon/F-RH3_mobile_right_hand_conversation_lifecycle.html',
-    // the F-RH3 contract — one growing surface, consequence-only confirm, paste/attach
+    // the F-RH3 BLOOM contract (Jun-5 canon) — mic dead-center heart, blooms
+    // upward over blurred Home, consequence-only confirm, paste/attach
     markers: [
       'F-RH3',
-      'one persistent, blurred surface',
-      'Stop appends Right Hand',
+      'blooms from the heart',
+      'dead-center anchor',
+      'Stop appends',
       'Save to Wegrzyn',
       'Filed to Wegrzyn',
-      'via voice',
+      'blurred Home',
       'paste',
     ],
     forbidden: ['kerf_views_master_v1_0'],
