@@ -314,10 +314,19 @@ const { t } = createLayoutContext();
       scrollConversationToLatest();
     };
 
-    const appendTurn = (speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal') => {
+    const appendTurn = (speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal'): number | null => {
       const clean = text.trim();
-      if (!clean) return;
+      if (!clean) return null;
       conversationTurns.push({ speaker, text: clean, tone });
+      renderThread();
+      return conversationTurns.length - 1;
+    };
+
+    const replaceTurn = (index: number | null, speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal') => {
+      if (index === null) return;
+      const clean = text.trim();
+      if (!clean || conversationTurns[index]?.speaker !== speaker) return;
+      conversationTurns[index] = { speaker, text: clean, tone };
       renderThread();
     };
 
@@ -392,6 +401,18 @@ const { t } = createLayoutContext();
     };
 
     const workingDraftText = () => workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n');
+
+    const surfaceUnfiledDraftLoop = () => {
+      if (workingDraftTurns.length === 0) return;
+      const alreadySurfaced = conversationTurns.some((turn) => (
+        turn.speaker === 'right_hand'
+        && /\b(still holding this|say "save it"|before i file it|ready to file)\b/i.test(turn.text)
+      ));
+      const alreadyFiled = conversationTurns.some((turn) => turn.tone === 'saved');
+      if (alreadySurfaced || alreadyFiled) return;
+      appendTurn('right_hand', 'Still holding this. Say "save it" when you want me to file it, or keep going.');
+      persistConversation();
+    };
 
     const textRequestsDurableCommit = (text: string): boolean => (
       /\b(save|file|log|submit|send|done|that'?s it|go ahead|looks good)\b/i.test(text)
@@ -743,17 +764,6 @@ const { t } = createLayoutContext();
         : 'Got it — keep going, or say "save it" when you are ready.';
     };
 
-    const normalizedReply = (text: string): string => text.toLowerCase().replace(/\s+/g, ' ').trim();
-    const priorRightHandReplies = () => new Set(
-      conversationTurns
-        .filter((turn) => turn.speaker === 'right_hand')
-        .map((turn) => normalizedReply(turn.text)),
-    );
-    const firstFreshReply = (candidate: string, alternatives: string[]): string => {
-      const prior = priorRightHandReplies();
-      if (!prior.has(normalizedReply(candidate))) return candidate;
-      return alternatives.find((reply) => !prior.has(normalizedReply(reply))) ?? candidate;
-    };
     const latestAsksForScope = (text: string): boolean => (
       /\b(rundown|what do you need|what else do you need|understanding|questions|scope)\b/i.test(text)
     );
@@ -777,64 +787,38 @@ const { t } = createLayoutContext();
       }
       return classified;
     };
-    const conversationalReplyForTurn = (latestText: string, trp: TurnResolutionPacket): string => {
+    const latestLooksCritical = (text: string): boolean => (
+      /\b(safety|unsafe|injury|injured|fall|gas leak|electrical hazard|mold|asbestos|lead paint|stop work|policy|violation|illegal|client threat|lawsuit)\b/i.test(text)
+    );
+    const humbleFallbackReplyForTurn = (latestText: string, trp: TurnResolutionPacket): string => {
       const entity = conversationDestinationFor(trp, latestText);
       const frame = trp.context_hypothesis.frame;
       const isEstimate = trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk';
       const isNote = trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note';
-      const baseReply = replyForTurn(trp);
+      if (latestLooksCritical(latestText)) {
+        return 'Flagging that. Do not let the crew work past the safety issue.';
+      }
       if (latestLooksLikeUnderstandingCheck(latestText)) {
-        const candidate = entity
-          ? `You are right — I have it now. This note is for ${entity}. Keep going, and I will keep it in this thread.`
-          : 'You are right — I was looping. Keep going, and I will track this as a job note until we match the job.';
-        return firstFreshReply(candidate, [
-          entity ? `Understood. This stays with ${entity}; keep going.` : 'Understood. I am tracking this as a job note and listening for where it belongs.',
-        ]);
+        return entity ? `Yes. I have this on ${entity}.` : 'Yes. I have the thread.';
       }
       if (textIsDestinationCorrection(latestText)) {
-        const candidate = entity
-          ? `Got it — I will keep this with ${entity}. Keep going, or say "save it" when you are ready.`
-          : 'Got it — tell me the job name and I will keep this note pointed there.';
-        return firstFreshReply(candidate, [
-          entity ? `Understood. This stays with ${entity}; keep going.` : 'Understood. I am still listening for the job name.',
-        ]);
+        return entity ? `Got it — ${entity}.` : 'Got it.';
       }
       if (latestAsksForScope(latestText)) {
-        const candidate = isEstimate
-          ? 'For the estimate, I still need the room, rough dimensions, main scope, selections, and any must-haves. Keep going and I will organize it.'
-          : 'Give me the status, schedule impact, blockers, who needs to know, and anything that should become a follow-up. I will keep it organized here.';
-        return firstFreshReply(candidate, [
-          isEstimate
-            ? 'I am tracking scope now. Tell me dimensions, materials, fixtures, and anything you already know should be included.'
-            : 'I am tracking the note. Tell me what changed, who is affected, and what needs follow-up.',
-        ]);
+        return isEstimate
+          ? 'Scope, rough dimensions, selections, constraints.'
+          : 'Status, blocker, next move, who needs to know.';
       }
       if (latestLooksLikeProductFeedback(latestText)) {
-        const candidate = 'Got it — I am keeping that as feedback on this Right Hand flow. I am tracking the issue and the improvement note here. What else should I add?';
-        return firstFreshReply(candidate, [
-          'Added that feedback. Keep going; I will keep these as separate notes in this thread.',
-        ]);
+        return 'Noted.';
       }
       if (latestLooksLikeFieldStatus(latestText) || isNote) {
-        const candidate = entity
-          ? `Got it — adding that to the ${entity} note. I am tracking status, schedule impact, paperwork, and invoice follow-up. Keep going.`
-          : 'Got it — I am building this as a job note. Tell me the job when you know where it belongs.';
-        return firstFreshReply(candidate, [
-          entity ? `Added. This is still on ${entity}; keep going.` : 'Added. I still need the job before I file it.',
-        ]);
+        return entity ? `I have it on ${entity}.` : 'I have the note.';
       }
       if (isEstimate) {
-        const candidate = workingDraftTurns.length <= 1
-          ? `${baseReply} Give me the room, scope, measurements, materials, and any budget constraints.`
-          : 'Added that. I am building the estimate context from the details you are giving me. Keep going, or say "save it" when you are ready.';
-        return firstFreshReply(candidate, [
-          'Added. Keep giving me scope, measurements, materials, and exceptions; I will keep it in this estimate thread.',
-          'I have that. What is the next scope item or measurement?',
-        ]);
+        return entity ? `I have it for ${entity}.` : 'I have the estimate thread.';
       }
-      return firstFreshReply(`${baseReply} What else?`, [
-        'Got it. Keep going, or say "save it" when you are ready.',
-      ]);
+      return 'Got it.';
     };
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
@@ -881,6 +865,14 @@ const { t } = createLayoutContext();
       overlay.dataset.speakerYou ||
       'You'
     );
+
+    const rightHandVoiceProfileSummary = (): string => [
+      'Peer altitude: sharp contractor operator talking to a trusted PM/advisor.',
+      'Use dense, casual contractor English; no rote re-grounding or repeated confirmation.',
+      'Adapt to role and user voice through interaction; unpack only when the operator misses or asks.',
+      'Be explicit and pushy only for consequence gates, health/safety/policy, money/send, client-risk, or durable writes.',
+      'Deterministic floor: tenant isolation · source validation · durable-write gate · money/send gate · classification/envelope stamping · health/safety/policy gates · humble fallback.',
+    ].join(' ');
 
     const collectKnownEntities = (): KnownEntityPayload[] => {
       const byKey = new Map<string, KnownEntityPayload>();
@@ -1066,7 +1058,7 @@ const { t } = createLayoutContext();
             userRole: 'owner',
             // V1 personalization hook: tenant/user preference orders what Right
             // Hand offers next, but never bypasses durable/money/send gates.
-            userPreferenceSummary: 'Owner dogfood prefers estimate impact after a job-walk note.',
+            userPreferenceSummary: rightHandVoiceProfileSummary(),
             knownEntities: collectKnownEntities(),
           }),
         });
@@ -1076,6 +1068,49 @@ const { t } = createLayoutContext();
         return parsed ? withKnownEntity(parsed) : fallback;
       } catch {
         return fallback;
+      }
+    };
+
+    type ResolveReplyResponse = {
+      reply?: string;
+      mode?: string;
+      authority?: string;
+      fallback_reason?: string;
+    };
+
+    const resolveReplyServerSide = async (
+      latestText: string,
+      draftText: string,
+      trp: TurnResolutionPacket,
+      turnsForModel: ConversationTurn[],
+    ): Promise<string | null> => {
+      try {
+        const tenantId = currentTenantId();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (tenantId) headers['x-kerf-tenant'] = tenantId;
+        const res = await fetch('/api/v1/right-hand/resolve-reply', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            latestText,
+            draftText,
+            trp,
+            currentPath: window.location.pathname,
+            userRole: 'owner',
+            userPreferenceSummary: rightHandVoiceProfileSummary(),
+            knownEntities: collectKnownEntities(),
+            conversationTurns: turnsForModel.map((turn) => ({
+              speaker: turn.speaker,
+              text: turn.text,
+            })),
+          }),
+        });
+        if (!res.ok) return null;
+        const body = await res.json() as ResolveReplyResponse;
+        const reply = typeof body.reply === 'string' ? body.reply.trim() : '';
+        return reply || null;
+      } catch {
+        return null;
       }
     };
 
@@ -1134,9 +1169,16 @@ const { t } = createLayoutContext();
       setCaption('');
       clearComposer();
       appendTurn('operator', clean);
-      appendTurn('right_hand', conversationalReplyForTurn(clean, trp));
+      const turnsForModel = [...conversationTurns];
+      const fallbackReply = humbleFallbackReplyForTurn(clean, trp);
+      const replyIndex = appendTurn('right_hand', fallbackReply);
       showActions('listening');
       persistConversation();
+      void resolveReplyServerSide(clean, draftText, trp, turnsForModel).then((reply) => {
+        if (!reply || reply === fallbackReply) return;
+        replaceTurn(replyIndex, 'right_hand', reply);
+        persistConversation();
+      });
     };
 
     const SORTING_BEAT_MS = 700;
@@ -1673,8 +1715,11 @@ const { t } = createLayoutContext();
       parkedTurnResolution = null;
       setCaption('');
       clearComposer();
-      if (!options.restoreConversation || !restoreConversation()) {
+      const restored = options.restoreConversation ? restoreConversation() : false;
+      if (!restored) {
         resetConversation({ clearStored: true });
+      } else {
+        surfaceUnfiledDraftLoop();
       }
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');
