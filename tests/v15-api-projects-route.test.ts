@@ -16,6 +16,7 @@
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
+import net from 'node:net';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -85,6 +86,22 @@ async function waitForReady(port: number, timeoutMs: number): Promise<void> {
   throw lastErr instanceof Error ? lastErr : new Error(`server never reported ready on ${port}`);
 }
 
+async function freeLoopbackPort(): Promise<number> {
+  return await new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port = typeof address === 'object' && address !== null ? address.port : 0;
+      server.close((err) => {
+        if (err) reject(err);
+        else resolve(port);
+      });
+    });
+  });
+}
+
 interface ServeProcess {
   readonly child: ChildProcessWithoutNullStreams;
   readonly port: number;
@@ -92,7 +109,7 @@ interface ServeProcess {
 }
 
 async function startServe(): Promise<ServeProcess> {
-  const port = 19_000 + Math.floor(Math.random() * 900);
+  const port = await freeLoopbackPort();
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-v15-step4-'));
   const child = spawn(
     'node',

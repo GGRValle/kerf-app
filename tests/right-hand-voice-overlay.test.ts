@@ -556,7 +556,7 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   assert.match(renderConfirmTurn, /actionStartIntake/);
   // Stage 4: the primary affordance is "Save to <job>" once a destination is
   // known; Change job is only offered when there is a job to change away from.
-  assert.match(renderConfirmTurn, /const entity = conversationEntityLabel\(trp\)/);
+  assert.match(renderConfirmTurn, /const entity = conversationDestinationFor\(trp\)/);
   assert.match(renderConfirmTurn, /actionSaveTo[\s\S]{0,40}\{ job: entity \}/);
   assert.match(renderConfirmTurn, /changeJobBtn\.hidden = state !== 'confirm' \|\| !entity/);
 
@@ -663,16 +663,53 @@ test('F-RH3 conversation surface: typed notes share the same thread as voice', (
 
 test('F-RH3 conversation surface: latest turn and composer stay anchored on phone', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  assert.match(src, /const panelEl = overlay\.querySelector<HTMLElement>\('\.rhvo__panel'\)/);
   assert.match(src, /const scrollConversationToLatest/);
-  assert.match(src, /panelEl\.scrollTo\(\{ top: panelEl\.scrollHeight, behavior \}\)/);
-  assert.match(src, /scrollIntoView\(\{ block: 'end', behavior \}\)/);
+  assert.match(src, /threadEl\.scrollTo\(\{ top: threadEl\.scrollHeight, behavior \}\)/);
+  assert.doesNotMatch(src, /panelEl\.scrollTo\(/);
+  assert.doesNotMatch(src, /scrollIntoView\(\{ block: 'end', behavior \}\)/);
   assert.match(src, /requestAnimationFrame\(run\)/);
   assert.match(src, /window\.setTimeout\(run, 120\)/);
   assert.match(src, /scrollConversationToLatest\(\)/);
   assert.match(src, /scrollConversationToLatest\('auto'\)/);
   assert.match(src, /scroll-padding-bottom: 6\.25rem/);
   assert.match(src, /overscroll-behavior: contain/);
+});
+
+test('F-RH3 bloom-from-heart: composer is one dock with the mic seated dead center', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /class="rhvo__composer-row"/);
+  assert.match(src, /class="rhvo__dock"/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Home<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Create<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Camera<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">More<\/span>/);
+  assert.match(src, /\.rhvo__dock\s*\{[\s\S]*?grid-template-columns: 1fr 1fr 72px 1fr 1fr;/);
+  assert.match(src, /\.rhvo__indicator\s*\{[\s\S]*?width: 64px;[\s\S]*?height: 64px;/);
+  assert.doesNotMatch(src, /\.rhvo\[data-state='listening'\] \.rhvo__indicator\s*\{[\s\S]*?width:/);
+});
+
+test('F-RH3 bloom-from-heart: surface grows upward then holds and scrolls', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /data-has-thread="false"/);
+  assert.match(src, /--rhvo-bloom-height: min\(38svh, 22rem\)/);
+  assert.match(src, /\.rhvo\[data-state='listening'\] \{ --rhvo-bloom-height: min\(58svh, 34rem\); \}/);
+  assert.match(src, /\.rhvo\[data-has-thread='true'\] \{ --rhvo-bloom-height: min\(84svh, 46rem\); \}/);
+  assert.match(src, /height: var\(--rhvo-bloom-height\)/);
+  assert.match(src, /max-height: min\(84svh, 46rem\)/);
+  assert.match(src, /overlay\.dataset\.hasThread = conversationTurns\.length > 0 \? 'true' : 'false'/);
+  assert.match(src, /\.rhvo__panel\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;/);
+  assert.match(src, /\.rhvo__thread\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;[\s\S]*?display: flex;[\s\S]*?flex-direction: column;/);
+  assert.match(src, /\.rhvo__thread::before\s*\{[\s\S]*?margin-top: auto;/);
+  assert.match(src, /\.rhvo__composer\s*\{[\s\S]*?flex: 0 0 auto;[\s\S]*?margin-top: auto;/);
+  assert.doesNotMatch(src, /align-content: end/);
+});
+
+test('F-RH3 bloom-from-heart: copy is mic-first and stateful, not tap-to-talk', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /content: "KEEP GOING"/);
+  assert.match(src, /content: "TALK AGAIN"/);
+  assert.match(src, /content: "STOP"/);
+  assert.doesNotMatch(src, /Tap to talk/i);
 });
 
 test('F-RH3 conversation surface: plus button opens a source picker in the same thread', () => {
@@ -721,10 +758,14 @@ test('F-RH3 conversation surface: no raw action placeholder can render in Right 
   assert.doesNotMatch(en, /Got it\s+—\s+\{action\}/);
 });
 
-test('F-RH3 conversation surface: active mic reads as recording and tap-to-stop', () => {
+test('F-RH3 conversation surface: active mic reads as recording and stop', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  assert.match(src, /\.rhvo\[data-state='listening'\] \.rhvo__indicator/);
-  assert.match(src, /content: "Stop"/);
+  assert.match(src, /const setMicActive = \(active: boolean\)/);
+  assert.match(src, /overlay\.dataset\.micActive = active \? 'true' : 'false'/);
+  assert.match(src, /\.rhvo\[data-state='listening'\]\[data-mic-active='true'\] \.rhvo__indicator::after/);
+  assert.match(src, /content: "STOP"/);
+  assert.match(src, /\.rhvo\[data-state='listening'\]:not\(\[data-mic-active='true'\]\) \.rhvo__indicator::after/);
+  assert.match(src, /content: "TYPE"/);
   assert.match(src, /@keyframes rhvo-hot-pulse/);
   assert.match(src, /@keyframes rhvo-hot-mic/);
   assert.match(src, /box-shadow:[\s\S]*rgba\(245, 181, 68, 0\.7\)/);
@@ -733,14 +774,48 @@ test('F-RH3 conversation surface: active mic reads as recording and tap-to-stop'
 test('F-RH3 conversation surface: correction turns stay visible without becoming contradictory note body', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /const textIsDestinationCorrection/);
+  assert.match(src, /const extractDestinationLabel/);
+  assert.match(src, /const conversationDestinationFor/);
+  assert.match(src, /let conversationDestinationLabel = ''/);
   assert.match(src, /split\(\/\\s\+\/\)\.length <= 14/);
 
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
   assert.match(enterReply, /const isDestinationCorrection = textIsDestinationCorrection\(clean\)/);
+  assert.match(enterReply, /const spokenDestination = isDestinationCorrection \? extractDestinationLabel\(clean\) : ''/);
+  assert.match(enterReply, /if \(spokenDestination\) conversationDestinationLabel = spokenDestination/);
   assert.match(enterReply, /if \(!isDestinationCorrection\) workingDraftTurns\.push\(clean\)/);
   assert.match(enterReply, /const draftText = workingDraftText\(\) \|\| clean/);
   assert.match(enterReply, /appendTurn\('operator', clean\)/);
   assert.match(enterReply, /persistConversation\(\)/);
+});
+
+test('F-RH3 conversation surface: a spoken job label stops the unresolved-job reply loop', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const extractDestinationLabel = sliceDecl(src, 'extractDestinationLabel', 'latestLooksLikeUnderstandingCheck');
+  assert.match(extractDestinationLabel, /this\\s\+is[\s\S]*for[\s\S]*project/i);
+  assert.match(extractDestinationLabel, /attach\|file\|save\|put\|route/);
+  assert.match(extractDestinationLabel, /cleanDestinationLabel/);
+
+  const conversationalReplyForTurn = sliceDecl(src, 'conversationalReplyForTurn', 'renderConfirmTurn');
+  assert.match(conversationalReplyForTurn, /const entity = conversationDestinationFor\(trp, latestText\)/);
+  assert.match(conversationalReplyForTurn, /latestLooksLikeUnderstandingCheck\(latestText\)/);
+  assert.match(conversationalReplyForTurn, /You are right — I have it now\. This note is for \$\{entity\}/);
+  assert.match(conversationalReplyForTurn, /Got it — I will keep this with \$\{entity\}/);
+  assert.doesNotMatch(conversationalReplyForTurn, /Got it — I have the note\. Tell me the job and I’ll file it there\. What else\?/);
+});
+
+test('F-RH3 conversation surface: destination memory survives session restore', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const persistConversation = sliceDecl(src, 'persistConversation', 'restoreConversation');
+  assert.match(persistConversation, /conversationDestinationLabel/);
+
+  const restoreConversation = sliceDecl(src, 'restoreConversation', 'clearPersistedConversation');
+  assert.match(restoreConversation, /conversationDestinationLabel\?: unknown/);
+  assert.match(restoreConversation, /parsed\.conversationDestinationLabel/);
+  assert.match(restoreConversation, /cleanDestinationLabel\(parsed\.conversationDestinationLabel\)/);
+
+  const resetConversation = sliceDecl(src, 'resetConversation', 'workingDraftText');
+  assert.match(resetConversation, /conversationDestinationLabel = ''/);
 });
 
 test('F-RH3 conversation surface: an inline "save a note that…" opens the consequence gate', () => {

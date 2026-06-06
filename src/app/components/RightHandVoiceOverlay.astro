@@ -24,6 +24,7 @@ const { t } = createLayoutContext();
   aria-labelledby="rhvo-title"
   data-state="idle"
   data-typed="false"
+  data-has-thread="false"
   data-title={t('rh_voice.title')}
   data-listening={t('rh_voice.status_listening')}
   data-fallback={t('rh_voice.status_fallback')}
@@ -97,38 +98,46 @@ const { t } = createLayoutContext();
     </div>
 
     <form class="rhvo__composer" id="rhvo-composer">
-      <button type="button" class="rhvo__composer-add" id="rhvo-source-add" aria-label="Attach or paste source">+</button>
-      <input
-        class="rhvo__source-input"
-        id="rhvo-source-input"
-        type="file"
-        multiple
-        hidden
-        accept="image/*,video/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
-      />
-      <button
-        type="button"
-        class="rhvo__indicator"
-        id="rhvo-mic-button"
-        aria-label={t('rh_voice.mic_toggle_label')}
-      >
-        <span class="rhvo__pulse"></span>
-        <span class="rhvo__mic">
-          <svg viewBox="0 0 24 24" aria-hidden="true"
-            ><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path><path
-              d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"
-            ></path></svg
-          >
-        </span>
-      </button>
-      <textarea
-        class="rhvo__composer-input"
-        id="rhvo-caption-input"
-        rows="1"
-        aria-label={t('rh_voice.typed_input_label')}
-        placeholder={t('rh_voice.typed_input_placeholder')}
-      ></textarea>
-      <button type="submit" class="rhvo__composer-send" aria-label="Send typed note to Right Hand">Send</button>
+      <div class="rhvo__composer-row">
+        <button type="button" class="rhvo__composer-add" id="rhvo-source-add" aria-label="Attach or paste source">+</button>
+        <input
+          class="rhvo__source-input"
+          id="rhvo-source-input"
+          type="file"
+          multiple
+          hidden
+          accept="image/*,video/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+        />
+        <textarea
+          class="rhvo__composer-input"
+          id="rhvo-caption-input"
+          rows="1"
+          aria-label={t('rh_voice.typed_input_label')}
+          placeholder={t('rh_voice.typed_input_placeholder')}
+        ></textarea>
+        <button type="submit" class="rhvo__composer-send" aria-label="Send typed note to Right Hand">Send</button>
+      </div>
+      <div class="rhvo__dock">
+        <span class="rhvo__dock-item" aria-hidden="true">Home</span>
+        <span class="rhvo__dock-item" aria-hidden="true">Create</span>
+        <button
+          type="button"
+          class="rhvo__indicator"
+          id="rhvo-mic-button"
+          aria-label={t('rh_voice.mic_toggle_label')}
+        >
+          <span class="rhvo__pulse"></span>
+          <span class="rhvo__mic">
+            <svg viewBox="0 0 24 24" aria-hidden="true"
+              ><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path><path
+                d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"
+              ></path></svg
+            >
+          </span>
+        </button>
+        <span class="rhvo__dock-item" aria-hidden="true">Camera</span>
+        <span class="rhvo__dock-item" aria-hidden="true">More</span>
+      </div>
     </form>
 
     <div class="rhvo__confirm" id="rhvo-confirm" hidden>
@@ -210,7 +219,6 @@ const { t } = createLayoutContext();
     const meterBars = meterEl ? Array.from(meterEl.querySelectorAll<HTMLElement>('.rhvo__bar')) : [];
     const threadEl = document.getElementById('rhvo-thread');
     const composerForm = document.getElementById('rhvo-composer') as HTMLFormElement | null;
-    const panelEl = overlay.querySelector<HTMLElement>('.rhvo__panel');
     const sourceAddBtn = document.getElementById('rhvo-source-add') as HTMLButtonElement | null;
     const sourceInputEl = document.getElementById('rhvo-source-input') as HTMLInputElement | null;
     const confirmSpeakerEl = document.getElementById('rhvo-speaker-operator');
@@ -261,6 +269,7 @@ const { t } = createLayoutContext();
     let workingDraftTurns: string[] = [];
     let conversationTurns: ConversationTurn[] = [];
     let attachedSourceNames: string[] = [];
+    let conversationDestinationLabel = '';
 
     const escapeHtml = (value: string): string => value
       .replace(/&/g, '&amp;')
@@ -269,11 +278,13 @@ const { t } = createLayoutContext();
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
 
+    const setMicActive = (active: boolean) => {
+      overlay.dataset.micActive = active ? 'true' : 'false';
+    };
+
     const scrollConversationToLatest = (behavior: ScrollBehavior = 'smooth') => {
       const run = () => {
-        if (threadEl) threadEl.scrollTop = threadEl.scrollHeight;
-        if (panelEl) panelEl.scrollTo({ top: panelEl.scrollHeight, behavior });
-        (composerForm ?? threadEl)?.scrollIntoView({ block: 'end', behavior });
+        if (threadEl) threadEl.scrollTo({ top: threadEl.scrollHeight, behavior });
       };
       run();
       requestAnimationFrame(run);
@@ -282,6 +293,7 @@ const { t } = createLayoutContext();
 
     const renderThread = () => {
       if (!threadEl) return;
+      overlay.dataset.hasThread = conversationTurns.length > 0 ? 'true' : 'false';
       threadEl.innerHTML = conversationTurns.map((turn) => {
         const label = turn.speaker === 'operator'
           ? (overlay.dataset.speakerYou ?? 'You')
@@ -316,6 +328,7 @@ const { t } = createLayoutContext();
           workingDraftTurns,
           conversationTurns,
           attachedSourceNames,
+          conversationDestinationLabel,
         }));
       } catch { /* storage may be unavailable; the live page still keeps state */ }
     };
@@ -329,6 +342,7 @@ const { t } = createLayoutContext();
           workingDraftTurns?: unknown;
           conversationTurns?: unknown;
           attachedSourceNames?: unknown;
+          conversationDestinationLabel?: unknown;
         };
         if (!Array.isArray(parsed.workingDraftTurns) || !Array.isArray(parsed.conversationTurns)) return false;
         workingDraftTurns = parsed.workingDraftTurns
@@ -354,6 +368,9 @@ const { t } = createLayoutContext();
             .map((name) => name.trim())
             .filter(Boolean)
           : [];
+        conversationDestinationLabel = typeof parsed.conversationDestinationLabel === 'string'
+          ? cleanDestinationLabel(parsed.conversationDestinationLabel)
+          : '';
         renderThread();
         return conversationTurns.length > 0 || workingDraftTurns.length > 0;
       } catch {
@@ -369,6 +386,7 @@ const { t } = createLayoutContext();
       workingDraftTurns = [];
       conversationTurns = [];
       attachedSourceNames = [];
+      conversationDestinationLabel = '';
       renderThread();
       if (options.clearStored) clearPersistedConversation();
     };
@@ -388,6 +406,48 @@ const { t } = createLayoutContext();
       && /\b(?:attach|file|save|put|route|job|project|client)\b/i.test(text)
       && /\b(?:job|project|client)\b/i.test(text)
       && text.trim().split(/\s+/).length <= 14
+    );
+
+    const cleanDestinationLabel = (raw: string): string => {
+      const compact = raw
+        .replace(/\b(?:are you able to understand that|do you understand that|can you understand that)\b[\s?.!]*$/i, '')
+        .replace(/\b(?:job|project|client|site)\b[\s?.!]*$/i, '')
+        .replace(/^(?:the|a|an)\s+/i, '')
+        .replace(/[“”]/g, '"')
+        .replace(/[’]/g, "'")
+        .replace(/[?.!,;:]+$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!compact || /^(?:it|this|that|there|here|job|project|client|site)$/i.test(compact)) return '';
+      const words = compact.split(/\s+/).filter(Boolean);
+      if (words.length > 5) return '';
+      return words.map((word) => {
+        if (/^[A-Z0-9&]+$/.test(word)) return word;
+        return `${word.slice(0, 1).toUpperCase()}${word.slice(1)}`;
+      }).join(' ');
+    };
+
+    const extractDestinationLabel = (text: string): string => {
+      const clean = text.trim()
+        .replace(/^(?:correction:?\s*)?(?:no|actually|yes|yep|correct|right)[,\s]+/i, '')
+        .replace(/\b(?:are you able to understand that|do you understand that|can you understand that)\b[\s?.!]*$/i, '')
+        .trim();
+      const patterns = [
+        /\b(?:this\s+is|it'?s|that'?s)\s+(?:for|on|under|with|to)\s+(?:the\s+)?(.+?)\s+(?:project|job|client|site)\b/i,
+        /\b(?:attach|file|save|put|route)(?:\s+(?:it|this|that|the note))?\s+(?:to|under|with|in|on)\s+(?:the\s+)?(.+?)(?:\s+(?:project|job|client|site))?(?:[.?!]|$)/i,
+        /\b(?:for|under|with|to)\s+(?:the\s+)?(.+?)\s+(?:project|job|client|site)\b/i,
+        /\b(?:the\s+)?([A-Z][A-Za-z0-9&' -]{1,40}?)\s+(?:project|job|client|site)\b/,
+      ];
+      for (const pattern of patterns) {
+        const match = clean.match(pattern);
+        const label = cleanDestinationLabel(match?.[1] ?? '');
+        if (label) return label;
+      }
+      return '';
+    };
+
+    const latestLooksLikeUnderstandingCheck = (text: string): boolean => (
+      /\b(?:i'?m sorry|are you able to understand|do you understand|can you understand|you keep repeating|same thing|not understanding)\b/i.test(text)
     );
 
     const setState = (next: OverlayState) => {
@@ -479,10 +539,12 @@ const { t } = createLayoutContext();
       liveMicTracks().forEach((track) => {
         track.enabled = enabled;
       });
+      setMicActive(enabled && hasLiveMicStream());
     };
     const stopMicStream = () => {
       mediaStream?.getTracks().forEach((track) => track.stop());
       mediaStream = null;
+      setMicActive(false);
     };
     const queryMicPermission = async (): Promise<PermissionState | 'unknown' | 'unsupported'> => {
       const permissions = navigator.permissions;
@@ -517,17 +579,20 @@ const { t } = createLayoutContext();
       }
       if (!navigator.mediaDevices?.getUserMedia) {
         setStatus(overlay.dataset.unavailable ?? 'Voice isn’t available here — open Right Hand to type.');
+        setMicActive(false);
         return false;
       }
       const permission = await queryMicPermission();
       if (permission === 'denied') {
         setStatus(overlay.dataset.micdenied ?? 'Microphone is off — enable it or open Right Hand to type.');
+        setMicActive(false);
         return false;
       }
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micPermissionState = 'granted';
         micGrantSeen = true;
+        setMicActive(true);
         return true;
       } catch (err) {
         const afterFailure = await queryMicPermission();
@@ -536,6 +601,7 @@ const { t } = createLayoutContext();
         } else {
           setStatus(micFailureStatus(err));
         }
+        setMicActive(false);
         return false;
       }
     };
@@ -573,6 +639,7 @@ const { t } = createLayoutContext();
       // a fresh permission request. closeOverlay()/hard-cap still call teardown()
       // for a full privacy release.
       setMicTracksEnabled(false);
+      setMicActive(false);
       audioCtx = null;
       analyser = null;
       pc = null;
@@ -648,8 +715,14 @@ const { t } = createLayoutContext();
       return scopeStripped || routePart || clientPart || label;
     };
 
+    const conversationDestinationFor = (trp: TurnResolutionPacket, latestText = ''): string => (
+      conversationEntityLabel(trp)
+      || (textIsDestinationCorrection(latestText) ? extractDestinationLabel(latestText) : '')
+      || conversationDestinationLabel
+    );
+
     const replyForTurn = (trp: TurnResolutionPacket): string => {
-      const entity = conversationEntityLabel(trp);
+      const entity = conversationDestinationFor(trp);
       const frame = trp.context_hypothesis.frame;
       if (trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note') {
         return entity
@@ -705,14 +778,22 @@ const { t } = createLayoutContext();
       return classified;
     };
     const conversationalReplyForTurn = (latestText: string, trp: TurnResolutionPacket): string => {
-      const entity = conversationEntityLabel(trp);
+      const entity = conversationDestinationFor(trp, latestText);
       const frame = trp.context_hypothesis.frame;
       const isEstimate = trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk';
       const isNote = trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note';
       const baseReply = replyForTurn(trp);
+      if (latestLooksLikeUnderstandingCheck(latestText)) {
+        const candidate = entity
+          ? `You are right — I have it now. This note is for ${entity}. Keep going, and I will keep it in this thread.`
+          : 'You are right — I was looping. Keep going, and I will track this as a job note until we match the job.';
+        return firstFreshReply(candidate, [
+          entity ? `Understood. This stays with ${entity}; keep going.` : 'Understood. I am tracking this as a job note and listening for where it belongs.',
+        ]);
+      }
       if (textIsDestinationCorrection(latestText)) {
         const candidate = entity
-          ? `Got it — I will use ${entity} for this note. Keep going, or say "save it" when you are ready.`
+          ? `Got it — I will keep this with ${entity}. Keep going, or say "save it" when you are ready.`
           : 'Got it — tell me the job name and I will keep this note pointed there.';
         return firstFreshReply(candidate, [
           entity ? `Understood. This stays with ${entity}; keep going.` : 'Understood. I am still listening for the job name.',
@@ -758,7 +839,7 @@ const { t } = createLayoutContext();
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
       confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave(trp);
-      const entity = conversationEntityLabel(trp);
+      const entity = conversationDestinationFor(trp);
       if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
       if (confirmReplyEl) confirmReplyEl.textContent = replyForTurn(trp);
       if (confirmPromptEl) {
@@ -896,7 +977,10 @@ const { t } = createLayoutContext();
 
     const promptForTurn = (trp: TurnResolutionPacket): string => {
       if (turnNeedsProjectBeforeSave(trp)) {
-        return overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
+        const destination = conversationDestinationFor(trp);
+        return destination
+          ? `I will keep this with ${destination}. I still need to match it to a job before I file it.`
+          : overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
       }
       const entity = likelyEntityLabel(trp);
       const conversationalEntity = conversationEntityLabel(trp);
@@ -1034,6 +1118,8 @@ const { t } = createLayoutContext();
       if (!clean) return;
       awaitingConfirm = false;
       const isDestinationCorrection = textIsDestinationCorrection(clean);
+      const spokenDestination = isDestinationCorrection ? extractDestinationLabel(clean) : '';
+      if (spokenDestination) conversationDestinationLabel = spokenDestination;
       if (!isDestinationCorrection) workingDraftTurns.push(clean);
       const draftText = workingDraftText() || clean;
       const intent = conversationIntentForTurn(clean, draftText);
@@ -1579,6 +1665,7 @@ const { t } = createLayoutContext();
 
     const openOverlay = (options: { restoreConversation?: boolean } = {}) => {
       if (!overlay.hidden) return;
+      setMicActive(false);
       routedLive = false;
       lastInterim = '';
       awaitingConfirm = false;
@@ -1714,6 +1801,8 @@ const { t } = createLayoutContext();
     align-items: flex-end;
     justify-content: center;
     --rhvo-bg: rgba(20, 24, 31, 0.9);
+    --rhvo-panel-bg: rgba(20, 24, 31, 0.92);
+    --rhvo-backdrop-bg: rgba(6, 8, 11, 0.34);
     --rhvo-surface: #232936;
     --rhvo-surface-soft: #1a1f28;
     --rhvo-border: rgba(255, 255, 255, 0.09);
@@ -1721,35 +1810,69 @@ const { t } = createLayoutContext();
     --rhvo-text: #e8ecf1;
     --rhvo-dim: #98a1b3;
     --rhvo-mute: #6a7282;
+    --rhvo-bloom-height: min(38svh, 22rem);
   }
+  :global(:root[data-theme='light']) .rhvo {
+    --rhvo-panel-bg: rgba(255, 255, 255, 0.96);
+    --rhvo-backdrop-bg: rgba(224, 229, 236, 0.48);
+    --rhvo-surface: #f1f4f8;
+    --rhvo-surface-soft: #ffffff;
+    --rhvo-border: rgba(10, 13, 17, 0.12);
+    --rhvo-border-soft: rgba(10, 13, 17, 0.16);
+    --rhvo-text: #161a21;
+    --rhvo-dim: #4a5462;
+    --rhvo-mute: #7b8492;
+  }
+  @media (prefers-color-scheme: light) {
+    :global(:root:not([data-theme])) .rhvo {
+      --rhvo-panel-bg: rgba(255, 255, 255, 0.96);
+      --rhvo-backdrop-bg: rgba(224, 229, 236, 0.48);
+      --rhvo-surface: #f1f4f8;
+      --rhvo-surface-soft: #ffffff;
+      --rhvo-border: rgba(10, 13, 17, 0.12);
+      --rhvo-border-soft: rgba(10, 13, 17, 0.16);
+      --rhvo-text: #161a21;
+      --rhvo-dim: #4a5462;
+      --rhvo-mute: #7b8492;
+    }
+  }
+  .rhvo[data-state='listening'] { --rhvo-bloom-height: min(58svh, 34rem); }
+  .rhvo[data-state='fallback'],
+  .rhvo[data-state='reply'],
+  .rhvo[data-state='confirm'],
+  .rhvo[data-state='resolved'],
+  .rhvo[data-state='capped'],
+  .rhvo[data-has-thread='true'] { --rhvo-bloom-height: min(84svh, 46rem); }
   .rhvo[hidden] { display: none; }
   .rhvo__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(6, 8, 11, 0.34);
+    background: var(--rhvo-backdrop-bg);
     backdrop-filter: blur(12px) saturate(0.92);
   }
   .rhvo__panel {
     position: relative;
-    width: min(520px, calc(100% - 1rem));
-    margin: 0 0 max(0.85rem, env(safe-area-inset-bottom, 0px));
-    padding: 0.92rem 0.85rem 0.8rem;
-    max-height: min(94dvh, 820px);
-    overflow: auto;
+    width: min(430px, calc(100% - 1rem));
+    height: var(--rhvo-bloom-height);
+    min-height: 18rem;
+    max-height: min(84svh, 46rem);
+    margin: 0 0 max(0.45rem, env(safe-area-inset-bottom, 0px));
+    padding: 0.92rem 0.85rem 0.62rem;
+    overflow: hidden;
     border: 1px solid var(--rhvo-border);
     border-top-color: var(--rhvo-border-soft);
     border-radius: 22px 22px 24px 24px;
-    background: rgba(20, 24, 31, 0.92);
+    background: var(--rhvo-panel-bg);
     backdrop-filter: blur(14px);
     color: var(--rhvo-text);
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 0.56rem 0.62rem;
-    justify-items: stretch;
     text-align: left;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
     scroll-padding-bottom: 6.25rem;
     overscroll-behavior: contain;
+    transition: height 220ms ease, max-height 220ms ease, border-radius 220ms ease;
   }
   .rhvo__close {
     position: absolute;
@@ -1769,33 +1892,31 @@ const { t } = createLayoutContext();
     cursor: pointer;
   }
   @media (min-width: 600px) {
-    .rhvo__panel { width: min(520px, calc(100% - 2rem)); }
+    .rhvo__panel { width: min(430px, calc(100% - 2rem)); }
   }
   .rhvo__indicator {
     position: relative;
-    width: 50px;
-    height: 50px;
+    width: 64px;
+    height: 64px;
     padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
     justify-self: center;
     align-self: center;
-  }
-  .rhvo[data-state='listening'] .rhvo__indicator {
-    width: 56px;
-    height: 56px;
+    overflow: visible;
   }
   .rhvo__pulse {
     position: absolute;
-    inset: 0;
+    inset: 4px;
     border-radius: 50%;
-    background: rgba(245, 181, 68, 0.24);
-    animation: rhvo-pulse 1.6s ease-out infinite;
+    background: rgba(245, 181, 68, 0.2);
+    box-shadow: 0 0 0 8px rgba(245, 181, 68, 0.08);
   }
   .rhvo[data-state='fallback'] .rhvo__pulse { background: rgba(123, 168, 255, 0.24); }
   .rhvo[data-state='capped'] .rhvo__pulse { animation: none; opacity: 0.4; }
-  .rhvo[data-state='listening'] .rhvo__pulse {
+  .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__pulse {
+    inset: 0;
     background: rgba(245, 181, 68, 0.42);
     animation: rhvo-hot-pulse 1.05s ease-out infinite;
   }
@@ -1809,7 +1930,7 @@ const { t } = createLayoutContext();
   }
   .rhvo__mic {
     position: absolute;
-    inset: 7px;
+    inset: 9px;
     border-radius: 50%;
     background: #f5b544;
     color: #241b07;
@@ -1817,16 +1938,16 @@ const { t } = createLayoutContext();
     align-items: center;
     justify-content: center;
   }
-  .rhvo[data-state='listening'] .rhvo__mic {
-    inset: 4px;
+  .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__mic {
+    inset: 9px;
     background: #ffc44d;
     box-shadow:
       0 0 0 4px rgba(245, 181, 68, 0.24),
       0 0 28px rgba(245, 181, 68, 0.7);
     animation: rhvo-hot-mic 0.9s ease-in-out infinite alternate;
   }
-  .rhvo[data-state='listening'] .rhvo__indicator::after {
-    content: "Stop";
+  .rhvo__indicator::after {
+    content: "KEEP GOING";
     position: absolute;
     left: 50%;
     bottom: -1.05rem;
@@ -1837,6 +1958,23 @@ const { t } = createLayoutContext();
     text-transform: uppercase;
     color: #ffc44d;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.42);
+  }
+  .rhvo[data-state='idle'] .rhvo__indicator::after,
+  .rhvo[data-state='resolved'] .rhvo__indicator::after {
+    content: "TALK AGAIN";
+  }
+  .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__indicator::after {
+    content: "STOP";
+  }
+  .rhvo[data-state='listening']:not([data-mic-active='true']) .rhvo__indicator::after {
+    content: "TYPE";
+    color: var(--rhvo-dim);
+    text-shadow: none;
+  }
+  .rhvo[data-state='fallback'] .rhvo__indicator::after,
+  .rhvo[data-state='capped'] .rhvo__indicator::after {
+    content: "TYPE";
+    color: var(--rhvo-dim);
   }
   @keyframes rhvo-hot-mic {
     from { transform: scale(0.96); }
@@ -1937,15 +2075,23 @@ const { t } = createLayoutContext();
   .rhvo__caption-text { font-size: 0.95rem; line-height: 1.42; color: var(--rhvo-text); }
   .rhvo__thread {
     order: 4;
-    grid-column: 1 / -1;
     width: 100%;
-    max-height: min(68dvh, 38rem);
-    overflow: auto;
-    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
     gap: 0.56rem;
-    justify-items: start;
-    padding: 0.1rem 0 0.2rem;
+    align-items: stretch;
+    padding: 0.1rem 0 0.36rem;
     scroll-behavior: smooth;
+    overscroll-behavior: contain;
+  }
+  .rhvo__thread::before {
+    content: "";
+    margin-top: auto;
   }
   .rhvo__thread[hidden] { display: none; }
   .rhvo__thread-turn {
@@ -2054,15 +2200,38 @@ const { t } = createLayoutContext();
   }
   .rhvo__composer {
     order: 91;
-    grid-column: 1 / -1;
+    flex: 0 0 auto;
+    margin-top: auto;
     display: grid;
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
-    align-items: center;
     gap: 0.5rem;
     width: 100%;
-    padding-top: 0.78rem;
-    padding-bottom: 0.18rem;
+    padding: 0.56rem 0 0.1rem;
     border-top: 1px solid var(--rhvo-border);
+  }
+  .rhvo__composer-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .rhvo__dock {
+    display: grid;
+    grid-template-columns: 1fr 1fr 72px 1fr 1fr;
+    align-items: center;
+    gap: 0.1rem;
+    min-height: 72px;
+    width: 100%;
+  }
+  .rhvo__dock-item {
+    align-self: end;
+    padding-bottom: 0.38rem;
+    text-align: center;
+    color: var(--rhvo-mute);
+    opacity: 0.58;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
   .rhvo__composer-add,
   .rhvo__composer-send {
