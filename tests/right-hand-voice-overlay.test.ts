@@ -627,6 +627,10 @@ test('F-RH3 conversation surface: route-resume restores the same thread instead 
   assert.match(persistConversation, /workingDraftTurns/);
   assert.match(persistConversation, /conversationTurns/);
   assert.match(persistConversation, /sessionStorage\.setItem\(VOICE_CONVERSATION_SESSION_KEY/);
+  assert.match(src, /const isRetiredCannedRightHandTurn/);
+  assert.match(src, /i still need the job before i file it/);
+  assert.match(src, /tell me the job when you know where it belongs/);
+  assert.match(src, /filter\(\(turn\) => !isRetiredCannedRightHandTurn\(turn\)\)/);
 
   const navigate = sliceDecl(src, 'navigate', 'routeLive');
   assert.match(navigate, /persistConversation\(\)[\s\S]*?sessionStorage\.setItem\('kerf\.voiceResume'/);
@@ -735,6 +739,9 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   assert.match(src, /const humbleFallbackReplyForTurn/);
   assert.match(src, /const resolveReplyServerSide/);
   assert.match(src, /\/api\/v1\/right-hand\/resolve-reply/);
+  assert.match(src, /fetch\('\/api\/v1\/right-hand\/resolve-turn', \{\s*method: 'POST',\s*credentials: 'include'/s);
+  assert.match(src, /fetch\('\/api\/v1\/right-hand\/resolve-reply', \{\s*method: 'POST',\s*credentials: 'include'/s);
+  assert.match(src, /fetch\('\/api\/v1\/right-hand\/commit-turn', \{\s*method: 'POST',\s*credentials: 'include'/s);
   assert.match(src, /rightHandVoiceProfileSummary/);
   assert.match(src, /Peer altitude: sharp contractor operator talking to a trusted PM\/advisor/);
   assert.match(src, /tenant isolation · source validation · durable-write gate · money\/send gate · classification\/envelope stamping · health\/safety\/policy gates · humble fallback/);
