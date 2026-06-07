@@ -83,6 +83,15 @@ export const APPROVED_HOSTING_ENDPOINTS = [
     approved_at: '2026-05-21T00:00:00.000Z',
     status: 'approved',
   },
+  {
+    endpoint: 'anthropic://claude-haiku-4-5',
+    provider: 'anthropic',
+    model: 'claude-haiku-4-5',
+    tier: 'frontier',
+    approved_by_decision: 'D-064',
+    approved_at: '2026-06-07T00:00:00.000Z',
+    status: 'approved',
+  },
   // Right Hand Voice Overlay realtime transcription lane
   // (right_hand_voice_overlay_spec_2026-05-29 §0 lock; D-049 consequence-gating).
   // OpenAI realtime transcription-only session — gpt-4o-transcribe streams live

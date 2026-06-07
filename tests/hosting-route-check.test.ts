@@ -59,6 +59,15 @@ test('approved hosting endpoint registry is seeded from D-023 (Tier 1) + D-047 (
       status: 'approved',
     },
     {
+      endpoint: 'anthropic://claude-haiku-4-5',
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      tier: 'frontier',
+      approved_by_decision: 'D-064',
+      approved_at: '2026-06-07T00:00:00.000Z',
+      status: 'approved',
+    },
+    {
       endpoint: 'openai://gpt-4o-transcribe-realtime',
       provider: 'openai',
       model: 'gpt-4o-transcribe',
@@ -72,6 +81,7 @@ test('approved hosting endpoint registry is seeded from D-023 (Tier 1) + D-047 (
   assert.equal(approvedHostingEndpoint('groq://llama-4-scout')?.approved_by_decision, 'D-023');
   assert.equal(approvedHostingEndpoint('groq://whisper-large-v3-turbo')?.approved_by_decision, 'D-023');
   assert.equal(approvedHostingEndpoint('anthropic://claude-sonnet-4-6')?.approved_by_decision, 'D-047');
+  assert.equal(approvedHostingEndpoint('anthropic://claude-haiku-4-5')?.approved_by_decision, 'D-064');
   assert.equal(
     approvedHostingEndpoint('openai://gpt-4o-transcribe-realtime')?.approved_by_decision,
     'D-049',

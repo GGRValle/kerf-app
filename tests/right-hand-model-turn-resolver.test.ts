@@ -31,7 +31,13 @@ import {
 } from '../src/voice/realtime/modelReplyResolver.js';
 import { buildTurnResolutionPacket } from '../src/voice/realtime/turnResolution.js';
 import { deriveWorkingDraftFields } from '../src/voice/realtime/workingDraft.js';
-import type { GroqChatRequest, GroqChatResult } from '../src/altitude/modelAdapter/index.js';
+import type {
+  AnthropicChatRequest,
+  AnthropicChatResult,
+  AnthropicClientDeps,
+  GroqChatRequest,
+  GroqChatResult,
+} from '../src/altitude/modelAdapter/index.js';
 import { checkHostingRoute } from '../src/hosting/routeCheck.js';
 
 function authHeader(): string {
@@ -1140,6 +1146,165 @@ test('reply route sends Chen draft memory to the model without stale Wegrzyn ble
   assert.match(prompt, /clientName: Chen/);
   assert.match(prompt, /projectName: Chen kitchen remodel/);
   assert.match(prompt, /open_items: none/);
+});
+
+test('reply route can run the reply brain through Anthropic with Groq-shaped parity', async () => {
+  const text = 'Kitchen plus downstairs remodel with 60 LF white oak cabinets and 1000 sqft glue-down flooring.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  let capturedAnthropic: AnthropicChatRequest | null = null;
+  let groqCalled = false;
+
+  __setRightHandTurnDepsForTests({
+    env: {
+      GROQ_API_KEY: undefined,
+      ANTHROPIC_API_KEY: 'sk-ant-test-secret',
+      ANTHROPIC_BASE_URL: 'https://anthropic.invalid',
+      REPLY_BRAIN: 'anthropic://claude-sonnet-4-6',
+    },
+    now: () => new Date('2026-06-07T18:00:00.000Z'),
+    anthropicDepsFactory: (apiKey, baseUrl): AnthropicClientDeps => ({
+      fetch: globalThis.fetch,
+      now: () => 1,
+      nowIso: () => '2026-06-07T18:00:00.000Z' as never,
+      apiKey,
+      baseUrl,
+    }),
+    anthropicChatFn: async (req): Promise<AnthropicChatResult> => {
+      capturedAnthropic = req;
+      return {
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Downstairs/kitchen estimate draft is taking shape.',
+          updated_working_draft: {
+            scope: ['60 LF white oak cabinets', '1000 sqft glue-down flooring'],
+            open_items: ['site address', 'timeline', 'decision maker'],
+            proposed_artifact: 'estimate_draft',
+          },
+          next_question: 'Does the glue-down flooring run through the full downstairs or only the kitchen-adjacent rooms?',
+        }),
+        model: req.model,
+        inputTokens: 20,
+        outputTokens: 10,
+        totalTokens: 30,
+        latencyMs: 1,
+        costNanoUsd: 1 as never,
+        finishReason: 'end_turn',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-07T18:00:00.000Z' as never,
+      };
+    },
+    groqDepsFactory: () => ({} as never),
+    groqChatFn: async () => {
+      groqCalled = true;
+      throw new Error('Groq should not be called for Anthropic reply brain');
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: text,
+      draftText: text,
+      trp,
+      currentPath: '/',
+      conversationTurns: [{ speaker: 'operator', text }],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as {
+    authority: string;
+    reply: string;
+    updated_working_draft?: { scope?: readonly string[]; proposed_artifact?: string };
+    next_question?: string;
+  };
+  assert.equal(groqCalled, false);
+  assert.equal(body.authority, 'llm_inferred');
+  assert.equal(body.updated_working_draft?.proposed_artifact, 'estimate_draft');
+  assert.ok(body.updated_working_draft?.scope?.includes('60 LF white oak cabinets'));
+  assert.match(body.next_question ?? '', /flooring run/i);
+  assert.equal(capturedAnthropic?.endpoint, 'anthropic://claude-sonnet-4-6');
+  assert.equal(capturedAnthropic?.model, 'claude-sonnet-4-6');
+  assert.match(capturedAnthropic?.system ?? '', /trusted operating partner/);
+  assert.equal(capturedAnthropic?.messages.length, 1);
+  assert.equal(capturedAnthropic?.messages[0]?.role, 'user');
+  assert.match(capturedAnthropic?.messages[0]?.content ?? '', /Latest operator turn/);
+});
+
+test('reply route fails closed for an unknown REPLY_BRAIN endpoint', async () => {
+  const text = 'Start a new estimate for the garage ADU.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  let groqCalled = false;
+
+  __setRightHandTurnDepsForTests({
+    env: {
+      GROQ_API_KEY: 'gsk-test-secret',
+      REPLY_BRAIN: 'anthropic://not-approved',
+    },
+    now: () => new Date('2026-06-07T18:00:00.000Z'),
+    groqDepsFactory: () => ({} as never),
+    groqChatFn: async () => {
+      groqCalled = true;
+      throw new Error('Unknown reply brain must not fall through to Groq');
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: text,
+      draftText: text,
+      trp,
+      currentPath: '/',
+      conversationTurns: [{ speaker: 'operator', text }],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as { authority: string; fallback_reason?: string };
+  assert.equal(groqCalled, false);
+  assert.equal(body.authority, 'humble_fallback');
+  assert.equal(body.fallback_reason, 'reply_brain_endpoint_not_approved');
+});
+
+test('reply route falls back humbly when Anthropic reply brain is selected without a key', async () => {
+  const text = 'Start a new estimate for the Okonkwo ADU.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+
+  __setRightHandTurnDepsForTests({
+    env: {
+      GROQ_API_KEY: 'gsk-test-secret',
+      ANTHROPIC_API_KEY: undefined,
+      REPLY_BRAIN: 'anthropic://claude-sonnet-4-6',
+    },
+    now: () => new Date('2026-06-07T18:00:00.000Z'),
+    groqDepsFactory: () => ({} as never),
+    groqChatFn: async () => {
+      throw new Error('Selected Anthropic reply brain must not fall through to Groq');
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: text,
+      draftText: text,
+      trp,
+      currentPath: '/',
+      conversationTurns: [{ speaker: 'operator', text }],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as { authority: string; fallback_reason?: string };
+  assert.equal(body.authority, 'humble_fallback');
+  assert.equal(body.fallback_reason, 'model_not_configured');
 });
 
 test('reply route persists Okonkwo model draft as canonical and merges later turns', async () => {
