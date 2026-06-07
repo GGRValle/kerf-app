@@ -19,8 +19,9 @@ import { buildTurnResolutionPacket } from '../src/voice/realtime/turnResolution.
 const API_KEY = process.env['ANTHROPIC_API_KEY'];
 if (!API_KEY) { console.error('ANTHROPIC_API_KEY missing'); process.exit(2); }
 
-const REPLY_MODEL = 'claude-haiku-4-5';
+const REPLY_MODEL = process.env['REPLY_BRAIN'] || 'claude-haiku-4-5';
 const JUDGE_MODEL = 'claude-sonnet-4-6';
+console.log(`reply brain: ${REPLY_MODEL}  ·  judge: ${JUDGE_MODEL}  ·  temp 0`);
 const NOW = () => new Date('2026-06-07T00:00:00.000Z');
 
 interface AnthMsg { role: 'user' | 'assistant'; content: string }
