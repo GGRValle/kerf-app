@@ -17,6 +17,7 @@ import {
   type KnownEntityContext,
 } from './modelTurnResolver.js';
 import type { TurnResolutionPacket } from './turnResolution.js';
+import type { WorkingDraftFields } from './workingDraft.js';
 
 export type ReplyResolverAuthority = 'llm_inferred' | 'humble_fallback';
 export type ReplyMode =
@@ -40,6 +41,7 @@ export interface ResolveReplyInput {
   readonly knownEntities?: readonly KnownEntityContext[];
   readonly userPreferenceSummary?: string;
   readonly trp: TurnResolutionPacket;
+  readonly workingDraft?: WorkingDraftFields;
   readonly conversationTurns?: readonly ConversationReplyTurn[];
   readonly now?: () => Date;
 }
@@ -76,6 +78,13 @@ Deterministic floor you must respect:
 tenant isolation · source validation · durable-write gate · money/send gate · classification/envelope stamping · health/safety/policy gates · humble fallback.
 
 That floor is not your conversation brain. It only prevents unsafe or false consequences. Never let the safety floor impersonate judgment.
+
+Working draft memory:
+- Treat working_draft clientName, projectName, archetypeHint, and scopeFacts as things the operator already told you.
+- Do not ask again for a client, job, project, or scope fact that appears in working draft memory.
+- If the operator gives a person/family name in a new-project thread, accept it as the client/project candidate unless tenant entities prove a conflict.
+- For a new project, move to the next missing business fact: budget range, address/access, timeline, decision maker, or blocking constraint.
+- If the thread drops/reopens, pick up from memory; do not restart intake.
 
 Density never eats the honesty seam.
 - Never claim something has been filed, saved, sent, submitted, charged, approved, paid, ordered, created, logged, recorded, posted, emailed, texted, told, scheduled, booked, added, done, handled, or all set unless a work_artifact is present.
@@ -276,6 +285,20 @@ function recentTurns(input: ResolveReplyInput): string {
     .join('\n');
 }
 
+function workingDraftPrompt(input: ResolveReplyInput): string {
+  const draft = input.workingDraft;
+  if (!draft) return '(none)';
+  return [
+    `rawText: ${draft.rawText || '(empty)'}`,
+    `clientName: ${draft.clientName ?? 'none'}`,
+    `projectName: ${draft.projectName ?? 'none'}`,
+    `archetypeHint: ${draft.archetypeHint ?? 'none'}`,
+    `scopeFacts: ${draft.scopeFacts.length ? draft.scopeFacts.join(', ') : 'none'}`,
+    `needsNewClient: ${draft.needsNewClient}`,
+    `needsNewProject: ${draft.needsNewProject}`,
+  ].join('\n');
+}
+
 function userPrompt(input: ResolveReplyInput): string {
   const entities = (input.knownEntities ?? [])
     .slice(0, 8)
@@ -295,6 +318,9 @@ function userPrompt(input: ResolveReplyInput): string {
     `likely_entity: ${trp.context_hypothesis.likely_entity?.label ?? 'none'}`,
     `work_artifact: ${trp.work_artifact ?? 'none'}`,
     `prompt: ${trp.context_hypothesis.prompt}`,
+    '',
+    'Working draft memory:',
+    workingDraftPrompt(input),
     '',
     'Draft so far:',
     (input.draftText ?? trp.heard_text).slice(0, 1400) || '(empty)',

@@ -297,7 +297,7 @@ test('overlay uses the mic as the finish control and offers a cancelable Speak h
   assert.match(src, /document\.addEventListener\('click'/);
   assert.match(src, /closest<HTMLElement>\('\[data-rh-speak\]'\)/);
   assert.match(src, /new CustomEvent\('kerf:rh-speak', \{ cancelable: true \}\)/);
-  assert.match(src, /window\.dispatchEvent\(speakEvent\);\s*openOverlay\(\)/);
+  assert.match(src, /window\.dispatchEvent\(speakEvent\);\s*openOverlay\(\{ restoreConversation: true \}\)/);
   assert.doesNotMatch(src, /if \(!window\.dispatchEvent\(speakEvent\)\) return/);
 });
 
@@ -338,7 +338,7 @@ test('overlay sends tenant-scoped known entities to the model resolver', () => {
   assert.match(src, /const withKnownEntity/);
   assert.match(src, /textMentionsEntity\(trp\.heard_text, entity\.label\)/);
   assert.match(src, /const trp = withKnownEntity\(buildTurnResolutionPacket/);
-  assert.match(src, /headers\['x-kerf-tenant'\] = tenantId/);
+  assert.doesNotMatch(src, /x-kerf-tenant/);
   assert.match(src, /knownEntities: collectKnownEntities\(\)/);
 });
 
@@ -623,10 +623,13 @@ test('F-RH3 conversation surface: route-resume restores the same thread instead 
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /VOICE_CONVERSATION_SESSION_KEY = 'kerf\.voiceConversation'/);
 
+  const conversationSnapshotBody = sliceDecl(src, 'conversationSnapshotBody', 'persistConversation');
+  assert.match(conversationSnapshotBody, /workingDraftTurns/);
+  assert.match(conversationSnapshotBody, /conversationTurns/);
   const persistConversation = sliceDecl(src, 'persistConversation', 'restoreConversation');
-  assert.match(persistConversation, /workingDraftTurns/);
-  assert.match(persistConversation, /conversationTurns/);
-  assert.match(persistConversation, /sessionStorage\.setItem\(VOICE_CONVERSATION_SESSION_KEY/);
+  assert.match(persistConversation, /const payload = conversationSnapshotBody\(\)/);
+  assert.match(persistConversation, /localStorage\.setItem\(VOICE_CONVERSATION_LOCAL_KEY/);
+  assert.doesNotMatch(persistConversation, /sessionStorage\.setItem/);
   assert.match(src, /const isRetiredCannedRightHandTurn/);
   assert.match(src, /i still need the job before i file it/);
   assert.match(src, /tell me the job when you know where it belongs/);
@@ -639,7 +642,7 @@ test('F-RH3 conversation surface: route-resume restores the same thread instead 
   assert.match(openOverlay, /options: \{ restoreConversation\?: boolean \} = \{\}/);
   assert.match(openOverlay, /const restored = options\.restoreConversation \? restoreConversation\(\) : false/);
   assert.match(openOverlay, /if \(!restored\) \{/);
-  assert.match(openOverlay, /resetConversation\(\{ clearStored: true \}\)/);
+  assert.match(openOverlay, /resetConversation\(\{ clearStored: false \}\)/);
 
   const resume = src.match(/const resumeRaw = sessionStorage\.getItem\('kerf\.voiceResume'\)[\s\S]*?\n {4}\} catch/);
   assert.ok(resume, 'expected voiceResume restore block');
@@ -736,7 +739,7 @@ test('F-RH3 conversation surface: plus button opens a source picker in the same 
 
 test('F-RH3 conversation surface: model-led reply brain replaces the humble fallback', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  assert.match(src, /const humbleFallbackReplyForTurn/);
+  assert.doesNotMatch(src, /const humbleFallbackReplyForTurn/);
   assert.match(src, /const resolveReplyServerSide/);
   assert.match(src, /\/api\/v1\/right-hand\/resolve-reply/);
   assert.match(src, /fetch\('\/api\/v1\/right-hand\/resolve-turn', \{\s*method: 'POST',\s*credentials: 'include'/s);
@@ -745,7 +748,6 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   assert.match(src, /rightHandVoiceProfileSummary/);
   assert.match(src, /Peer altitude: sharp contractor operator talking to a trusted PM\/advisor/);
   assert.match(src, /tenant isolation · source validation · durable-write gate · money\/send gate · classification\/envelope stamping · health\/safety\/policy gates · humble fallback/);
-  assert.match(src, /const latestAsksForScope/);
   assert.match(src, /const latestLooksLikeFieldStatus/);
   assert.match(src, /const latestLooksLikeProductFeedback/);
   assert.match(src, /const conversationIntentForTurn/);
@@ -760,7 +762,7 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
   assert.match(enterReply, /const intent = conversationIntentForTurn\(clean, draftText\)/);
   assert.match(enterReply, /const turnsForModel = \[\.\.\.conversationTurns\]/);
-  assert.match(enterReply, /const fallbackReply = humbleFallbackReplyForTurn\(clean, trp\)/);
+  assert.match(enterReply, /const fallbackReply = 'Got it\.'/);
   assert.match(enterReply, /const replyIndex = appendTurn\('right_hand', fallbackReply\)/);
   assert.match(enterReply, /resolveReplyServerSide\(clean, draftText, trp, turnsForModel\)/);
   assert.match(enterReply, /replaceTurn\(replyIndex, 'right_hand', reply\)/);
@@ -807,24 +809,24 @@ test('F-RH3 conversation surface: correction turns stay visible without becoming
 
 test('F-RH3 conversation surface: a spoken job label stops the unresolved-job reply loop', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  const extractDestinationLabel = sliceDecl(src, 'extractDestinationLabel', 'latestLooksLikeUnderstandingCheck');
+  const extractDestinationLabel = sliceDecl(src, 'extractDestinationLabel', 'setState');
   assert.match(extractDestinationLabel, /this\\s\+is[\s\S]*for[\s\S]*project/i);
   assert.match(extractDestinationLabel, /attach\|file\|save\|put\|route/);
   assert.match(extractDestinationLabel, /cleanDestinationLabel/);
 
-  const humbleFallbackReplyForTurn = sliceDecl(src, 'humbleFallbackReplyForTurn', 'renderConfirmTurn');
-  assert.match(humbleFallbackReplyForTurn, /const entity = conversationDestinationFor\(trp, latestText\)/);
-  assert.match(humbleFallbackReplyForTurn, /latestLooksLikeUnderstandingCheck\(latestText\)/);
-  assert.match(humbleFallbackReplyForTurn, /Yes\. I have this on \$\{entity\}/);
-  assert.match(humbleFallbackReplyForTurn, /Got it — \$\{entity\}/);
-  assert.doesNotMatch(humbleFallbackReplyForTurn, /Got it — I have the note\. Tell me the job and I’ll file it there\. What else\?/);
-  assert.doesNotMatch(humbleFallbackReplyForTurn, /I am tracking status, schedule impact, paperwork, and invoice follow-up/);
+  // One reply authority per turn: the client placeholder is a single inlined ack;
+  // the dead client reply-tree helpers are gone (no second voice generator).
+  assert.doesNotMatch(src, /const latestLooksLikeUnderstandingCheck/);
+  assert.doesNotMatch(src, /const latestLooksCritical/);
+  assert.doesNotMatch(src, /const latestAsksForScope/);
 });
 
 test('F-RH3 conversation surface: destination memory survives session restore', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const conversationSnapshotBody = sliceDecl(src, 'conversationSnapshotBody', 'persistConversation');
+  assert.match(conversationSnapshotBody, /conversationDestinationLabel/);
   const persistConversation = sliceDecl(src, 'persistConversation', 'restoreConversation');
-  assert.match(persistConversation, /conversationDestinationLabel/);
+  assert.match(persistConversation, /const payload = conversationSnapshotBody\(\)/);
 
   const restoreConversation = sliceDecl(src, 'restoreConversation', 'clearPersistedConversation');
   assert.match(restoreConversation, /conversationDestinationLabel\?: unknown/);
@@ -1140,6 +1142,13 @@ test('New Project keeps the Right Hand voice handoff visible and prefilled', () 
   const src = readFileSync(path.join(ROOT, 'src/app/pages/projects/new.astro'), 'utf8');
   assert.match(src, /id="rh-project-handoff"/);
   assert.match(src, /TURN_RESOLUTION_SESSION_KEY/);
+  assert.match(src, /VOICE_CONVERSATION_STORAGE_KEY/);
+  assert.match(src, /readVoiceConversation/);
+  assert.match(src, /voiceWorkingDraft/);
+  assert.match(src, /workingDraft\?\.rawText/);
+  assert.match(src, /workingDraft\?\.projectName/);
+  assert.match(src, /workingDraft\?\.clientName/);
+  assert.match(src, /workingDraft\.scopeFacts\.join/);
   assert.match(src, /parseTurnResolution\(raw\)/);
   assert.doesNotMatch(src, /from '..\/..\/..\/voice\/realtime\/turnResolution\.js'/);
   assert.doesNotMatch(src, /querySelector<[^>]+>/);
@@ -1151,6 +1160,19 @@ test('New Project keeps the Right Hand voice handoff visible and prefilled', () 
   assert.match(src, /projectName\.value = projectSuggestion/);
   assert.match(src, /archetype\.value = archetypeSuggestion/);
   assert.doesNotMatch(src, /Saved to today's Daily Log|filed for good|handled/i);
+});
+
+test('F-RH3 conversation surface preserves unfiled working drafts across close and reopen', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
+  assert.match(src, /VOICE_CONVERSATION_LOCAL_KEY = VOICE_CONVERSATION_SESSION_KEY/);
+  assert.match(src, /VOICE_CONVERSATION_ID_KEY = 'kerf\.voiceConversationId'/);
+  assert.match(src, /deriveWorkingDraftFields/);
+  assert.match(src, /\/api\/v1\/right-hand\/conversation/);
+  assert.match(src, /workingDraft: currentWorkingDraft\(\)/);
+  assert.match(src, /restoreConversationFromServer/);
+  assert.match(src, /openOverlay\(\{ restoreConversation: true \}\)/);
+  assert.match(src, /const closeOverlay = \(\) => \{[\s\S]*?persistConversation\(\);[\s\S]*?overlay\.hidden = true/);
+  assert.doesNotMatch(src, /clearPersistedConversation\(\);\s*overlay\.hidden = true/);
 });
 
 test('Project detail keeps a known-job Right Hand handoff visible without claiming a write', () => {
