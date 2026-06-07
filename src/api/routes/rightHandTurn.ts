@@ -12,8 +12,13 @@ import { Hono } from 'hono';
 import crypto from 'node:crypto';
 
 import {
+  anthropicChat,
+  defaultAnthropicClientDeps,
   defaultGroqClientDeps,
   groqChat,
+  type AnthropicChatRequest,
+  type AnthropicChatResult,
+  type AnthropicClientDeps,
   type GroqClientDeps,
   type GroqChatRequest,
   type GroqChatResult,
@@ -48,7 +53,10 @@ import {
 import {
   humbleReplyFallback,
   resolveReplyWithModel,
+  selectReplyBrain,
   type ConversationReplyTurn,
+  type ReplyBrainConfig,
+  type ReplyResolverLlmClient,
   type ResolveReplyResult,
 } from '../../voice/realtime/modelReplyResolver.js';
 import {
@@ -65,15 +73,21 @@ import {
 
 export const rightHandTurnRoutes = new Hono<{ Variables: ApiVariables }>();
 const DEFAULT_GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
+const DEFAULT_ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
 
 export interface RightHandTurnRouteDeps {
   readonly env: {
     readonly GROQ_API_KEY?: string;
     readonly GROQ_BASE_URL?: string;
+    readonly ANTHROPIC_API_KEY?: string;
+    readonly ANTHROPIC_BASE_URL?: string;
+    readonly REPLY_BRAIN?: string;
   };
   readonly now?: () => Date;
   readonly groqDepsFactory?: (apiKey: string, baseUrl: string) => GroqClientDeps;
   readonly groqChatFn?: (request: GroqChatRequest, deps: GroqClientDeps) => Promise<GroqChatResult>;
+  readonly anthropicDepsFactory?: (apiKey: string, baseUrl: string) => AnthropicClientDeps;
+  readonly anthropicChatFn?: (request: AnthropicChatRequest, deps: AnthropicClientDeps) => Promise<AnthropicChatResult>;
   readonly appendDailyLogEntryAndSurfaceFn?: typeof appendDailyLogEntryAndSurface;
 }
 
@@ -89,10 +103,15 @@ function resolveDeps(): RightHandTurnRouteDeps {
     env: {
       GROQ_API_KEY: process.env['GROQ_API_KEY'],
       GROQ_BASE_URL: process.env['GROQ_BASE_URL'],
+      ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
+      ANTHROPIC_BASE_URL: process.env['ANTHROPIC_BASE_URL'],
+      REPLY_BRAIN: process.env['REPLY_BRAIN'],
     },
     now: () => new Date(),
     groqDepsFactory: defaultGroqClientDeps,
     groqChatFn: groqChat,
+    anthropicDepsFactory: defaultAnthropicClientDeps,
+    anthropicChatFn: anthropicChat,
   };
 }
 
@@ -213,6 +232,71 @@ function replyRepeatsPrevious(reply: string, turns: readonly ConversationReplyTu
   return clean === prior || (clean.length > 24 && prior.length > 24 && (
     clean.includes(prior) || prior.includes(clean)
   ));
+}
+
+async function anthropicReplyBrainAsGroqChat(
+  request: GroqChatRequest,
+  chatFn: (request: AnthropicChatRequest, deps: AnthropicClientDeps) => Promise<AnthropicChatResult>,
+  deps: AnthropicClientDeps,
+): Promise<GroqChatResult> {
+  const system = request.messages
+    .filter((message) => message.role === 'system')
+    .map((message) => message.content)
+    .join('\n\n') || undefined;
+  const messages = request.messages
+    .filter((message) => message.role !== 'system')
+    .map((message) => ({
+      role: message.role === 'assistant' ? 'assistant' as const : 'user' as const,
+      content: message.content,
+    }));
+  const result = await chatFn({
+    endpoint: request.endpoint,
+    model: request.model,
+    system,
+    messages,
+    tenantId: request.tenantId,
+    invocationId: request.invocationId,
+    purpose: request.purpose,
+    workflow: request.workflow,
+    temperature: request.temperature,
+    maxTokens: request.maxTokens ?? 650,
+    requestedAt: request.requestedAt,
+  }, deps);
+  return result;
+}
+
+function buildReplyBrainClient(
+  routeDeps: RightHandTurnRouteDeps,
+  tenantId: EntityId,
+  config: ReplyBrainConfig,
+): ReplyResolverLlmClient | null {
+  if (config.provider === 'anthropic') {
+    const apiKey = routeDeps.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return null;
+    const baseUrl = routeDeps.env.ANTHROPIC_BASE_URL || DEFAULT_ANTHROPIC_BASE_URL;
+    const depsFactory = routeDeps.anthropicDepsFactory ?? defaultAnthropicClientDeps;
+    const anthropicDeps = depsFactory(apiKey, baseUrl);
+    const chatFn = routeDeps.anthropicChatFn ?? anthropicChat;
+    return {
+      tenantId,
+      endpoint: config.endpoint,
+      model: config.model,
+      groqChat: (request) => anthropicReplyBrainAsGroqChat(request, chatFn, anthropicDeps),
+    };
+  }
+
+  const apiKey = routeDeps.env.GROQ_API_KEY;
+  if (!apiKey) return null;
+  const baseUrl = routeDeps.env.GROQ_BASE_URL || DEFAULT_GROQ_BASE_URL;
+  const depsFactory = routeDeps.groqDepsFactory ?? defaultGroqClientDeps;
+  const groqDeps = depsFactory(apiKey, baseUrl);
+  const chatFn = routeDeps.groqChatFn ?? groqChat;
+  return {
+    tenantId,
+    endpoint: config.endpoint,
+    model: config.model,
+    groqChat: (request) => chatFn(request, groqDeps),
+  };
 }
 
 function textMentionsProject(text: string, label: string): boolean {
@@ -580,29 +664,28 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     now: deps.now,
   };
 
-  const { GROQ_API_KEY } = deps.env;
-  const baseUrl = deps.env.GROQ_BASE_URL || DEFAULT_GROQ_BASE_URL;
   let result: ResolveReplyResult;
+  let replyClient: ReplyResolverLlmClient | null = null;
 
   if (!hasSynthesisConsent(tenantId)) {
     result = await resolveReplyWithModel(baseInput);
     result = { ...result, fallback_reason: 'synthesis_consent_required' };
-  } else if (!GROQ_API_KEY) {
-    result = await resolveReplyWithModel(baseInput);
   } else {
-    const depsFactory = deps.groqDepsFactory ?? defaultGroqClientDeps;
-    const groqDeps = depsFactory(GROQ_API_KEY, baseUrl);
-    const chatFn = deps.groqChatFn ?? groqChat;
-    result = await resolveReplyWithModel(baseInput, {
-      tenantId,
-      groqChat: (request) => chatFn(request, groqDeps),
-    });
+    const selection = selectReplyBrain(deps.env.REPLY_BRAIN);
+    if (!selection.ok) {
+      result = {
+        ...humbleReplyFallback(baseInput, selection.reason),
+        fallback_reason: selection.reason,
+      };
+    } else {
+      replyClient = buildReplyBrainClient(deps, tenantId, selection.config);
+      result = replyClient
+        ? await resolveReplyWithModel(baseInput, replyClient)
+        : await resolveReplyWithModel(baseInput);
+    }
   }
 
-  if (replyRepeatsPrevious(result.reply, baseInput.conversationTurns) && hasSynthesisConsent(tenantId) && GROQ_API_KEY) {
-    const depsFactory = deps.groqDepsFactory ?? defaultGroqClientDeps;
-    const groqDeps = depsFactory(GROQ_API_KEY, baseUrl);
-    const chatFn = deps.groqChatFn ?? groqChat;
+  if (replyRepeatsPrevious(result.reply, baseInput.conversationTurns) && replyClient !== null) {
     const retry = await resolveReplyWithModel(
       {
         ...baseInput,
@@ -615,10 +698,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
           { speaker: 'system', text: 'Previous model reply was rejected as a repeated Right Hand turn.' },
         ],
       },
-      {
-        tenantId,
-        groqChat: (request) => chatFn(request, groqDeps),
-      },
+      replyClient,
     );
     result = replyRepeatsPrevious(retry.reply, baseInput.conversationTurns)
       ? {

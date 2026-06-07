@@ -48,6 +48,8 @@ export interface ResolveReplyInput {
 
 export interface ReplyResolverLlmClient {
   readonly tenantId: EntityId;
+  readonly endpoint?: string;
+  readonly model?: string;
   readonly groqChat: (request: GroqChatRequest) => Promise<GroqChatResult>;
 }
 
@@ -76,6 +78,46 @@ export type WorkingDraftUpdate = Partial<Pick<
   | 'proposed_artifact'
   | 'source_refs'
 >>;
+
+export interface ReplyBrainConfig {
+  readonly endpoint: string;
+  readonly model: string;
+  readonly provider: 'groq' | 'anthropic';
+}
+
+export type ReplyBrainSelection =
+  | { readonly ok: true; readonly config: ReplyBrainConfig }
+  | { readonly ok: false; readonly reason: string };
+
+export const DEFAULT_REPLY_BRAIN: ReplyBrainConfig = {
+  endpoint: TURN_RESOLVER_LLM_ENDPOINT,
+  model: TURN_RESOLVER_LLM_MODEL,
+  provider: 'groq',
+};
+
+export const APPROVED_REPLY_BRAINS = [
+  DEFAULT_REPLY_BRAIN,
+  {
+    endpoint: 'anthropic://claude-sonnet-4-6',
+    model: 'claude-sonnet-4-6',
+    provider: 'anthropic',
+  },
+  {
+    endpoint: 'anthropic://claude-haiku-4-5',
+    model: 'claude-haiku-4-5',
+    provider: 'anthropic',
+  },
+] as const satisfies readonly ReplyBrainConfig[];
+
+export function selectReplyBrain(value: unknown): ReplyBrainSelection {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return { ok: true, config: DEFAULT_REPLY_BRAIN };
+  }
+  const endpoint = value.trim();
+  const config = APPROVED_REPLY_BRAINS.find((brain) => brain.endpoint === endpoint);
+  if (!config) return { ok: false, reason: 'reply_brain_endpoint_not_approved' };
+  return { ok: true, config };
+}
 
 const SYSTEM_PROMPT = `You are Right Hand, the trusted operating partner inside a contractor operating system.
 
@@ -668,16 +710,18 @@ export async function resolveReplyWithModel(
   }
 
   const now = input.now?.() ?? new Date();
-  const approved = approvedHostingEndpoint(TURN_RESOLVER_LLM_ENDPOINT);
-  if (!approved || approved.model !== TURN_RESOLVER_LLM_MODEL) {
+  const endpoint = llmClient.endpoint ?? DEFAULT_REPLY_BRAIN.endpoint;
+  const model = llmClient.model ?? DEFAULT_REPLY_BRAIN.model;
+  const approved = approvedHostingEndpoint(endpoint);
+  if (!approved || approved.model !== model) {
     return humbleReplyFallback(input, 'model_route_not_approved');
   }
 
   let result: GroqChatResult;
   try {
     result = await llmClient.groqChat({
-      endpoint: TURN_RESOLVER_LLM_ENDPOINT,
-      model: TURN_RESOLVER_LLM_MODEL,
+      endpoint,
+      model,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt(input) },
