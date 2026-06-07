@@ -199,10 +199,7 @@ const { t } = createLayoutContext();
     type NextMove,
     type TurnResolutionPacket,
   } from '../../voice/realtime/turnResolution.js';
-  import {
-    deriveWorkingDraftFields,
-    type WorkingDraftFields,
-  } from '../../voice/realtime/workingDraft.js';
+  import type { WorkingDraftFields } from '../../voice/realtime/workingDraft.js';
 
   type OverlayState = 'idle' | 'listening' | 'sorting' | 'reply' | 'confirm' | 'resolved' | 'fallback' | 'capped';
 
@@ -281,6 +278,27 @@ const { t } = createLayoutContext();
     let conversationTurns: ConversationTurn[] = [];
     let attachedSourceNames: string[] = [];
     let conversationDestinationLabel = '';
+
+    const emptyWorkingDraft = (rawText = ''): WorkingDraftFields => ({
+      rawText,
+      clientName: null,
+      projectName: null,
+      archetypeHint: null,
+      scopeSummary: rawText || null,
+      scopeFacts: [],
+      needsNewClient: false,
+      needsNewProject: false,
+      scope: [],
+      known_entities: [],
+      open_items: [],
+      assumptions: [],
+      allowances: [],
+      next_action: null,
+      proposed_artifact: rawText ? 'job_note' : null,
+      source_refs: rawText ? ['turn:client_raw'] : [],
+    });
+
+    let canonicalWorkingDraft: WorkingDraftFields = emptyWorkingDraft();
 
     const escapeHtml = (value: string): string => value
       .replace(/&/g, '&amp;')
@@ -395,10 +413,72 @@ const { t } = createLayoutContext();
         .filter((turn) => !isRetiredCannedRightHandTurn(turn));
     };
 
-    const currentWorkingDraft = (): WorkingDraftFields => deriveWorkingDraftFields(
-      workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n'),
-      conversationDestinationLabel,
+    const workingDraftText = () => workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n');
+
+    const currentWorkingDraft = (): WorkingDraftFields => ({
+      ...canonicalWorkingDraft,
+      rawText: workingDraftText() || canonicalWorkingDraft.rawText,
+      scopeSummary: workingDraftText() || canonicalWorkingDraft.scopeSummary,
+    });
+
+    const cleanStringArray = (value: unknown): readonly string[] => (
+      Array.isArray(value)
+        ? value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean)
+        : []
     );
+
+    const cleanStoredWorkingDraft = (value: unknown, fallbackRawText = ''): WorkingDraftFields => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return emptyWorkingDraft(fallbackRawText);
+      const record = value as Record<string, unknown>;
+      const rawText = typeof record.rawText === 'string' && record.rawText.trim()
+        ? record.rawText.trim()
+        : fallbackRawText;
+      const archetype = ['kitchen_remodel', 'bath_refresh', 'adu'].includes(String(record.archetypeHint))
+        ? record.archetypeHint as WorkingDraftFields['archetypeHint']
+        : null;
+      const knownEntities = Array.isArray(record.known_entities)
+        ? record.known_entities
+          .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
+          .map((item) => {
+            const type = ['client', 'project', 'site', 'lead'].includes(String(item.type))
+              ? item.type as WorkingDraftFields['known_entities'][number]['type']
+              : null;
+            const label = typeof item.label === 'string' ? item.label.trim() : '';
+            const source = ['operator', 'tenant_context', 'model'].includes(String(item.source))
+              ? item.source as WorkingDraftFields['known_entities'][number]['source']
+              : 'model';
+            if (!type || !label) return null;
+            return {
+              type,
+              kind: type,
+              label,
+              source,
+              ...(typeof item.id === 'string' && item.id.trim() ? { id: item.id.trim() } : {}),
+            };
+          })
+          .filter((item): item is WorkingDraftFields['known_entities'][number] => item !== null)
+        : [];
+      return {
+        rawText,
+        clientName: typeof record.clientName === 'string' && record.clientName.trim() ? record.clientName.trim() : null,
+        projectName: typeof record.projectName === 'string' && record.projectName.trim() ? record.projectName.trim() : null,
+        archetypeHint: archetype,
+        scopeSummary: typeof record.scopeSummary === 'string' && record.scopeSummary.trim() ? record.scopeSummary.trim() : rawText || null,
+        scopeFacts: cleanStringArray(record.scopeFacts),
+        needsNewClient: record.needsNewClient === true,
+        needsNewProject: record.needsNewProject === true,
+        scope: cleanStringArray(record.scope),
+        known_entities: knownEntities,
+        open_items: cleanStringArray(record.open_items),
+        assumptions: cleanStringArray(record.assumptions),
+        allowances: cleanStringArray(record.allowances),
+        next_action: typeof record.next_action === 'string' && record.next_action.trim() ? record.next_action.trim() : null,
+        proposed_artifact: ['job_note', 'project_intake', 'estimate_draft'].includes(String(record.proposed_artifact))
+          ? record.proposed_artifact as WorkingDraftFields['proposed_artifact']
+          : rawText ? 'job_note' : null,
+        source_refs: cleanStringArray(record.source_refs),
+      };
+    };
 
     const conversationSnapshotBody = () => ({
       conversationId: getConversationId(),
@@ -438,6 +518,7 @@ const { t } = createLayoutContext();
           conversationTurns?: unknown;
           attachedSourceNames?: unknown;
           conversationDestinationLabel?: unknown;
+          workingDraft?: unknown;
         };
         if (!Array.isArray(parsed.workingDraftTurns) || !Array.isArray(parsed.conversationTurns)) return false;
         workingDraftTurns = parsed.workingDraftTurns
@@ -454,6 +535,7 @@ const { t } = createLayoutContext();
         conversationDestinationLabel = typeof parsed.conversationDestinationLabel === 'string'
           ? cleanDestinationLabel(parsed.conversationDestinationLabel)
           : '';
+        canonicalWorkingDraft = cleanStoredWorkingDraft(parsed.workingDraft, workingDraftText());
         renderThread();
         return conversationTurns.length > 0 || workingDraftTurns.length > 0;
       } catch {
@@ -473,30 +555,41 @@ const { t } = createLayoutContext();
         const body = await res.json() as { snapshot?: unknown };
         const snapshot = body.snapshot as {
           workingDraftTurns?: unknown;
+          working_draft_turns?: unknown;
           conversationTurns?: unknown;
+          conversation_turns?: unknown;
           attachedSourceNames?: unknown;
+          attached_source_names?: unknown;
           conversationDestinationLabel?: unknown;
+          conversation_destination_label?: unknown;
+          workingDraft?: unknown;
+          working_draft?: unknown;
         } | null;
         if (!snapshot) return false;
-        const restoredWorkingDraftTurns = Array.isArray(snapshot.workingDraftTurns)
-          ? snapshot.workingDraftTurns
+        const rawWorkingDraftTurns = snapshot.workingDraftTurns ?? snapshot.working_draft_turns;
+        const rawConversationTurns = snapshot.conversationTurns ?? snapshot.conversation_turns;
+        const rawAttachedSourceNames = snapshot.attachedSourceNames ?? snapshot.attached_source_names;
+        const rawDestinationLabel = snapshot.conversationDestinationLabel ?? snapshot.conversation_destination_label;
+        const restoredWorkingDraftTurns = Array.isArray(rawWorkingDraftTurns)
+          ? rawWorkingDraftTurns
             .filter((turn): turn is string => typeof turn === 'string')
             .map((turn) => turn.trim())
             .filter(Boolean)
           : [];
-        const restoredConversationTurns = normalizeStoredConversationTurns(snapshot.conversationTurns);
+        const restoredConversationTurns = normalizeStoredConversationTurns(rawConversationTurns);
         if (restoredWorkingDraftTurns.length === 0 && restoredConversationTurns.length === 0) return false;
         workingDraftTurns = restoredWorkingDraftTurns;
         conversationTurns = restoredConversationTurns;
-        attachedSourceNames = Array.isArray(snapshot.attachedSourceNames)
-          ? snapshot.attachedSourceNames
+        attachedSourceNames = Array.isArray(rawAttachedSourceNames)
+          ? rawAttachedSourceNames
             .filter((name): name is string => typeof name === 'string')
             .map((name) => name.trim())
             .filter(Boolean)
           : [];
-        conversationDestinationLabel = typeof snapshot.conversationDestinationLabel === 'string'
-          ? cleanDestinationLabel(snapshot.conversationDestinationLabel)
+        conversationDestinationLabel = typeof rawDestinationLabel === 'string'
+          ? cleanDestinationLabel(rawDestinationLabel)
           : '';
+        canonicalWorkingDraft = cleanStoredWorkingDraft(snapshot.workingDraft ?? snapshot.working_draft, workingDraftText());
         renderThread();
         surfaceUnfiledDraftLoop();
         persistConversation();
@@ -529,11 +622,24 @@ const { t } = createLayoutContext();
       conversationTurns = [];
       attachedSourceNames = [];
       conversationDestinationLabel = '';
+      canonicalWorkingDraft = emptyWorkingDraft();
       renderThread();
       if (options.clearStored) clearPersistedConversation({ server: options.clearServer });
     };
 
-    const workingDraftText = () => workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n');
+    const FALSE_LANGUAGE_TRANSCRIPT_RE = /^(?:hvað er þetta|það er hann)\.?\s*$/i;
+    const PUNCTUATION_ONLY_TRANSCRIPT_RE = /^[.?!,;:\-\s…]+$/;
+    const cleanCommittedTranscript = (value: string): string => {
+      const clean = value.replace(/\s+/g, ' ').trim();
+      if (!clean || PUNCTUATION_ONLY_TRANSCRIPT_RE.test(clean)) return '';
+      if (FALSE_LANGUAGE_TRANSCRIPT_RE.test(clean)) return '';
+      return clean;
+    };
+    const pushWorkingDraftTurn = (value: string) => {
+      const clean = value.trim();
+      if (!clean) return;
+      if (workingDraftTurns.at(-1) !== clean) workingDraftTurns.push(clean);
+    };
 
     const surfaceUnfiledDraftLoop = () => {
       if (workingDraftTurns.length === 0) return;
@@ -1171,6 +1277,14 @@ const { t } = createLayoutContext();
       mode?: string;
       authority?: string;
       fallback_reason?: string;
+      workingDraft?: unknown;
+      working_draft?: unknown;
+      draft_fabrication_flags?: unknown;
+    };
+
+    type ResolvedReplyPayload = {
+      readonly reply: string;
+      readonly workingDraft: WorkingDraftFields;
     };
 
     const resolveReplyServerSide = async (
@@ -1178,7 +1292,7 @@ const { t } = createLayoutContext();
       draftText: string,
       trp: TurnResolutionPacket,
       turnsForModel: ConversationTurn[],
-    ): Promise<string | null> => {
+    ): Promise<ResolvedReplyPayload | null> => {
       try {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         const res = await fetch('/api/v1/right-hand/resolve-reply', {
@@ -1205,7 +1319,11 @@ const { t } = createLayoutContext();
         if (!res.ok) return null;
         const body = await res.json() as ResolveReplyResponse;
         const reply = typeof body.reply === 'string' ? body.reply.trim() : '';
-        return reply || null;
+        if (!reply) return null;
+        return {
+          reply,
+          workingDraft: cleanStoredWorkingDraft(body.workingDraft ?? body.working_draft, draftText),
+        };
       } catch {
         return null;
       }
@@ -1252,7 +1370,7 @@ const { t } = createLayoutContext();
       const isDestinationCorrection = textIsDestinationCorrection(clean);
       const spokenDestination = isDestinationCorrection ? extractDestinationLabel(clean) : '';
       if (spokenDestination) conversationDestinationLabel = spokenDestination;
-      if (!isDestinationCorrection) workingDraftTurns.push(clean);
+      pushWorkingDraftTurn(clean);
       const draftText = workingDraftText() || clean;
       const intent = conversationIntentForTurn(clean, draftText);
       const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: draftText, intent }));
@@ -1271,9 +1389,14 @@ const { t } = createLayoutContext();
       const replyIndex = appendTurn('right_hand', fallbackReply);
       showActions('listening');
       persistConversation();
-      void resolveReplyServerSide(clean, draftText, trp, turnsForModel).then((reply) => {
-        if (!reply || reply === fallbackReply) return;
-        replaceTurn(replyIndex, 'right_hand', reply);
+      void resolveReplyServerSide(clean, draftText, trp, turnsForModel).then((payload) => {
+        if (!payload) return;
+        canonicalWorkingDraft = payload.workingDraft;
+        if (payload.reply === fallbackReply) {
+          persistConversation();
+          return;
+        }
+        replaceTurn(replyIndex, 'right_hand', payload.reply);
         persistConversation();
       });
     };
@@ -1290,13 +1413,17 @@ const { t } = createLayoutContext();
     };
 
     const routeCommitted = (intent: VoiceIntent, text: string) => {
-      const cleanText = text.trim();
+      const cleanText = cleanCommittedTranscript(text);
+      if (!cleanText) {
+        recoverVoiceTurn('I didn’t catch usable speech. Tap Continue and say it again.');
+        return;
+      }
       const existingDraftText = workingDraftText();
       const draftText = [existingDraftText, cleanText].filter(Boolean).join('\n\n');
       if (cleanText.length > 0 && textRequestsDurableCommit(cleanText) && (draftText.length > 0 || textContainsInlineDurableDraft(cleanText))) {
         const draft = draftText.length > 0 ? draftText : cleanText;
         if (existingDraftText.length === 0) {
-          workingDraftTurns.push(cleanText);
+          pushWorkingDraftTurn(cleanText);
         }
         appendTurn('operator', cleanText);
         persistConversation();
@@ -1552,7 +1679,11 @@ const { t } = createLayoutContext();
     // ── Committed transcript: the only input allowed to drive durable actions.
     const onCommitted = (text: string) => {
       if (awaitingConfirm) return; // already parked for confirm; ignore stragglers
-      const finalText = text.trim().length > 0 ? text : lastInterim;
+      const finalText = cleanCommittedTranscript(text.trim().length > 0 ? text : lastInterim);
+      if (!finalText) {
+        recoverVoiceTurn('I didn’t catch usable speech. Tap Continue and say it again.');
+        return;
+      }
       setCaption(finalText);
       const intent = classifyTranscriptIntent(finalText);
       routeCommitted(intent, finalText);
@@ -1566,7 +1697,7 @@ const { t } = createLayoutContext();
         return;
       }
       releaseListeningResources();
-      const interim = currentCaptionText();
+      const interim = cleanCommittedTranscript(currentCaptionText());
       if (interim.length === 0) {
         setState('capped');
         setStatus(overlay.dataset.clarify ?? 'I didn’t catch an action — say it once more?');
@@ -1607,9 +1738,9 @@ const { t } = createLayoutContext();
     const recoverVoiceTurn = (message?: string) => {
       awaitingConfirm = false;
       parkedTranscript = '';
-      const partial = currentCaptionText();
+      const partial = cleanCommittedTranscript(currentCaptionText());
       if (partial && workingDraftTurns.at(-1) !== partial) {
-        workingDraftTurns.push(partial);
+        pushWorkingDraftTurn(partial);
         appendTurn('operator', partial);
       }
       persistConversation();
@@ -1709,7 +1840,7 @@ const { t } = createLayoutContext();
             return;
           }
           const data = (await res.json()) as { transcript?: string };
-          const transcript = (data.transcript ?? '').trim();
+          const transcript = cleanCommittedTranscript(data.transcript ?? '');
           if (transcript.length === 0) {
             recoverVoiceTurn();
             return;

@@ -46,6 +46,7 @@ import {
   type ResolveTurnResult,
 } from '../../voice/realtime/modelTurnResolver.js';
 import {
+  humbleReplyFallback,
   resolveReplyWithModel,
   type ConversationReplyTurn,
   type ResolveReplyResult,
@@ -57,7 +58,9 @@ import {
 } from '../../voice/realtime/turnResolution.js';
 import {
   deriveWorkingDraftFields,
+  mergeWorkingDraftFields,
   type WorkingDraftFields,
+  type WorkingDraftUpdate,
 } from '../../voice/realtime/workingDraft.js';
 
 export const rightHandTurnRoutes = new Hono<{ Variables: ApiVariables }>();
@@ -150,6 +153,40 @@ function cleanWorkingDraft(
   return deriveWorkingDraftFields(raw, destinationLabel);
 }
 
+function textMentionsEntity(text: string, entity: KnownEntityContext): boolean {
+  return textMentionsProject(text, entity.label) || (entity.id ? textMentionsProject(text, entity.id) : false);
+}
+
+function entityMatchesCurrentPath(entity: KnownEntityContext, currentPath: string | undefined): boolean {
+  if (entity.type !== 'project' || !entity.id || !currentPath) return false;
+  return projectIdFromPath(currentPath) === entity.id;
+}
+
+function filterKnownEntitiesForReply(params: {
+  readonly entities: readonly KnownEntityContext[];
+  readonly workingDraft: WorkingDraftFields;
+  readonly latestText: string;
+  readonly draftText: string;
+  readonly currentPath?: string;
+  readonly destinationLabel: string;
+}): readonly KnownEntityContext[] {
+  if (!params.workingDraft.needsNewClient && !params.workingDraft.needsNewProject) {
+    return params.entities;
+  }
+  const supportText = [
+    params.latestText,
+    params.draftText,
+    params.destinationLabel,
+    params.workingDraft.rawText,
+    params.workingDraft.clientName ?? '',
+    params.workingDraft.projectName ?? '',
+    params.workingDraft.known_entities.map((entity) => entity.label).join(' '),
+  ].join('\n');
+  return params.entities.filter((entity) => (
+    entityMatchesCurrentPath(entity, params.currentPath) || textMentionsEntity(supportText, entity)
+  ));
+}
+
 function safeProjectId(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const trimmed = raw.trim();
@@ -166,11 +203,36 @@ function normalized(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function replyRepeatsPrevious(reply: string, turns: readonly ConversationReplyTurn[]): boolean {
+  const clean = normalized(reply);
+  if (!clean) return false;
+  const previous = [...turns].reverse().find((turn) => turn.speaker === 'right_hand');
+  if (!previous) return false;
+  const prior = normalized(previous.text);
+  if (!prior) return false;
+  return clean === prior || (clean.length > 24 && prior.length > 24 && (
+    clean.includes(prior) || prior.includes(clean)
+  ));
+}
+
 function textMentionsProject(text: string, label: string): boolean {
   const source = normalized(text);
   const candidate = normalized(label);
   if (!source || !candidate) return false;
-  const parts = candidate.split(' ').filter((part) => part.length >= 4);
+  const genericProjectWords = new Set([
+    'addition',
+    'bath',
+    'bathroom',
+    'client',
+    'kitchen',
+    'primary',
+    'project',
+    'remodel',
+    'site',
+  ]);
+  const parts = candidate
+    .split(' ')
+    .filter((part) => part.length >= 4 && !genericProjectWords.has(part));
   return parts.some((part) => source.includes(part));
 }
 
@@ -361,8 +423,24 @@ rightHandTurnRoutes.put('/right-hand/conversation', async (c) => {
     body,
     now: resolveDeps().now?.() ?? new Date(),
   });
-  await saveRightHandConversationSnapshot(snapshot);
-  return c.json({ snapshot });
+  const existing = await readRightHandConversationSnapshot(tenant, actorId, conversationId);
+  const canonicalSnapshot = existing
+    ? {
+        ...snapshot,
+        working_draft: mergeWorkingDraftFields(existing.working_draft, {
+          scope: snapshot.working_draft.scope,
+          known_entities: snapshot.working_draft.known_entities,
+          open_items: snapshot.working_draft.open_items,
+          assumptions: snapshot.working_draft.assumptions,
+          allowances: snapshot.working_draft.allowances,
+          next_action: snapshot.working_draft.next_action,
+          proposed_artifact: snapshot.working_draft.proposed_artifact,
+          source_refs: snapshot.working_draft.source_refs,
+        }),
+      }
+    : snapshot;
+  await saveRightHandConversationSnapshot(canonicalSnapshot);
+  return c.json({ snapshot: canonicalSnapshot });
 });
 
 rightHandTurnRoutes.delete('/right-hand/conversation', async (c) => {
@@ -457,22 +535,47 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
 
   const deps = resolveDeps();
   const tenantId = requireApiTenant(c);
+  const actorId = conversationActorIdFromSessionToken(requireApiSession(c).token);
+  const conversationId = cleanConversationId(body['conversationId'] ?? body['conversation_id']);
   const draftText = typeof body['draftText'] === 'string' ? body['draftText'].slice(0, 6000) : trp.heard_text;
   const destinationLabel = typeof body['conversationDestinationLabel'] === 'string'
     ? body['conversationDestinationLabel'].slice(0, 160)
     : '';
+  const currentPath = typeof body['currentPath'] === 'string' ? body['currentPath'].slice(0, 160) : undefined;
+  const clientWorkingDraft = cleanWorkingDraft(body['workingDraft'], draftText, destinationLabel);
+  const existingSnapshot = await readRightHandConversationSnapshot(tenantId, actorId, conversationId);
+  const workingDraft = existingSnapshot
+    ? mergeWorkingDraftFields(existingSnapshot.working_draft, {
+        scope: clientWorkingDraft.scope,
+        known_entities: clientWorkingDraft.known_entities,
+        open_items: clientWorkingDraft.open_items,
+        assumptions: clientWorkingDraft.assumptions,
+        allowances: clientWorkingDraft.allowances,
+        next_action: clientWorkingDraft.next_action,
+        proposed_artifact: clientWorkingDraft.proposed_artifact,
+        source_refs: clientWorkingDraft.source_refs,
+      })
+    : clientWorkingDraft;
+  const knownEntities = filterKnownEntitiesForReply({
+    entities: cleanKnownEntities(body['knownEntities']),
+    workingDraft,
+    latestText,
+    draftText,
+    currentPath,
+    destinationLabel,
+  });
   const baseInput = {
     latestText,
     draftText,
-    currentPath: typeof body['currentPath'] === 'string' ? body['currentPath'].slice(0, 160) : undefined,
+    currentPath,
     userRole: typeof body['userRole'] === 'string' ? body['userRole'].slice(0, 48) : 'owner',
     tenantId,
-    knownEntities: cleanKnownEntities(body['knownEntities']),
+    knownEntities,
     userPreferenceSummary: typeof body['userPreferenceSummary'] === 'string'
       ? body['userPreferenceSummary'].slice(0, 480)
       : undefined,
     trp,
-    workingDraft: cleanWorkingDraft(body['workingDraft'], draftText, destinationLabel),
+    workingDraft,
     conversationTurns: cleanConversationTurns(body['conversationTurns']),
     now: deps.now,
   };
@@ -496,12 +599,82 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     });
   }
 
+  if (replyRepeatsPrevious(result.reply, baseInput.conversationTurns) && hasSynthesisConsent(tenantId) && GROQ_API_KEY) {
+    const depsFactory = deps.groqDepsFactory ?? defaultGroqClientDeps;
+    const groqDeps = depsFactory(GROQ_API_KEY, baseUrl);
+    const chatFn = deps.groqChatFn ?? groqChat;
+    const retry = await resolveReplyWithModel(
+      {
+        ...baseInput,
+        userPreferenceSummary: [
+          baseInput.userPreferenceSummary ?? '',
+          'The previous Right Hand reply repeated itself. Absorb new scope or change strategy; do not ask the same thing again.',
+        ].filter(Boolean).join('\n'),
+        conversationTurns: [
+          ...baseInput.conversationTurns,
+          { speaker: 'system', text: 'Previous model reply was rejected as a repeated Right Hand turn.' },
+        ],
+      },
+      {
+        tenantId,
+        groqChat: (request) => chatFn(request, groqDeps),
+      },
+    );
+    result = replyRepeatsPrevious(retry.reply, baseInput.conversationTurns)
+      ? {
+          ...humbleReplyFallback(baseInput, 'model_repeated_previous_reply'),
+          fallback_reason: 'model_repeated_previous_reply',
+        }
+      : retry;
+  }
+
+  const draftUpdate: WorkingDraftUpdate = {
+    ...(result.updated_working_draft ?? {}),
+    ...(result.open_items ? { open_items: result.open_items } : {}),
+  };
+  const canonicalWorkingDraft = mergeWorkingDraftFields(
+    workingDraft,
+    Object.keys(draftUpdate).length > 0 ? draftUpdate : undefined,
+  );
+  const snapshot = buildRightHandConversationSnapshot({
+    tenant: tenantId,
+    actorId,
+    conversationId,
+    body: {
+      ...body,
+      workingDraft: canonicalWorkingDraft,
+    },
+    now: deps.now?.() ?? new Date(),
+  });
+  const mergedWithExisting = existingSnapshot
+    ? mergeWorkingDraftFields(existingSnapshot.working_draft, {
+        scope: canonicalWorkingDraft.scope,
+        known_entities: canonicalWorkingDraft.known_entities,
+        open_items: canonicalWorkingDraft.open_items,
+        assumptions: canonicalWorkingDraft.assumptions,
+        allowances: canonicalWorkingDraft.allowances,
+        next_action: canonicalWorkingDraft.next_action,
+        proposed_artifact: canonicalWorkingDraft.proposed_artifact,
+        source_refs: canonicalWorkingDraft.source_refs,
+      })
+    : canonicalWorkingDraft;
+  const canonicalSnapshot = { ...snapshot, working_draft: mergedWithExisting };
+  await saveRightHandConversationSnapshot(canonicalSnapshot);
+
   // Altitude-eval signal: one rung-log line per model-led reply turn (no PII — mode/authority only).
   console.info(`[right_hand] reply turn tenant=${tenantId} mode=${result.mode} authority=${result.authority}${result.fallback_reason ? ` fallback=${result.fallback_reason}` : ''}`);
   return c.json({
     reply: result.reply,
     mode: result.mode,
     authority: result.authority,
+    ...(result.updated_working_draft ? { updated_working_draft: result.updated_working_draft } : {}),
+    working_draft: canonicalSnapshot.working_draft,
+    workingDraft: canonicalSnapshot.working_draft,
+    ...(result.open_items ? { open_items: result.open_items } : {}),
+    ...(result.asked_questions_ack ? { asked_questions_ack: result.asked_questions_ack } : {}),
+    ...(result.next_question ? { next_question: result.next_question } : {}),
+    ...(result.proposed_action ? { proposed_action: result.proposed_action } : {}),
+    ...(result.draft_fabrication_flags ? { draft_fabrication_flags: result.draft_fabrication_flags } : {}),
     ...(result.fallback_reason ? { fallback_reason: result.fallback_reason } : {}),
   });
 });

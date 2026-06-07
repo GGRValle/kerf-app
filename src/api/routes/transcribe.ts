@@ -192,6 +192,7 @@ transcribeRoutes.post('/transcribe', async (c) => {
         filename,
         endpoint: WHISPER_ENDPOINT_ID,
         model: WHISPER_MODEL,
+        language: 'en',
         tenantId,
         invocationId,
         purpose: 'field-capture-transcribe',

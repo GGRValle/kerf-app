@@ -7,8 +7,12 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
+import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 
 const apiRouter = createAuthenticatedApiRouter();
 import {
@@ -26,6 +30,7 @@ import {
   resolveReplyWithModel,
 } from '../src/voice/realtime/modelReplyResolver.js';
 import { buildTurnResolutionPacket } from '../src/voice/realtime/turnResolution.js';
+import { deriveWorkingDraftFields } from '../src/voice/realtime/workingDraft.js';
 import type { GroqChatRequest, GroqChatResult } from '../src/altitude/modelAdapter/index.js';
 import { checkHostingRoute } from '../src/hosting/routeCheck.js';
 
@@ -36,6 +41,19 @@ function authHeader(): string {
 test.afterEach(() => {
   __setRightHandTurnDepsForTests(null);
 });
+
+async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
+  const dir = await mkdtemp(path.join(tmpdir(), 'kerf-rh-inversion-'));
+  process.env['PERSISTENCE_DIR'] = dir;
+  resetApiDepsForTests();
+  try {
+    return await fn();
+  } finally {
+    delete process.env['PERSISTENCE_DIR'];
+    resetApiDepsForTests();
+    await rm(dir, { recursive: true, force: true });
+  }
+}
 
 function successClient(json: object, capture?: (req: GroqChatRequest) => void): TurnResolverLlmClient {
   return {
@@ -474,6 +492,240 @@ test('reply resolver calls model with peer-altitude doctrine and returns its nat
   assert.match(system, /claims_durable_action=true only when your reply says an action already happened/);
 });
 
+test('reply resolver absorbs a rich Chen project narrative into working draft updates', async () => {
+  const chenNarrative = [
+    'The Chen family wants a kitchen plus whole downstairs remodel.',
+    'Demo the tile and carpet, replace the glue-down flooring, new baseboards and paint.',
+    'Kitchen is about sixty linear feet of cabinetry with white oak fronts and quartzite countertops.',
+  ].join(' ');
+  const trp = buildTurnResolutionPacket({
+    heardText: chenNarrative,
+    intent: 'job_intake',
+  });
+  let capturedBody: GroqChatRequest | null = null;
+
+  const result = await resolveReplyWithModel(
+    {
+      latestText: chenNarrative,
+      draftText: chenNarrative,
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      workingDraft: {
+        rawText: chenNarrative,
+        clientName: 'Chen',
+        projectName: 'Chen kitchen remodel',
+        archetypeHint: 'kitchen_remodel',
+        scopeSummary: chenNarrative,
+        scopeFacts: [
+          'kitchen remodel',
+          'flooring',
+          'flooring demo',
+          'glue-down flooring',
+          'baseboards',
+          'paint',
+          'cabinetry',
+          'cabinetry allowance',
+          'countertops',
+          'quartzite countertops',
+          'white oak finish',
+        ],
+        needsNewClient: true,
+        needsNewProject: true,
+        scope: ['kitchen remodel', 'flooring', 'baseboards', 'paint', 'cabinetry', 'countertops'],
+        known_entities: [
+          { type: 'client', label: 'Chen', source: 'operator' },
+          { type: 'project', label: 'Chen kitchen remodel', source: 'operator' },
+        ],
+        open_items: [],
+        assumptions: ['project name inferred from client and scope'],
+        allowances: ['60 LF cabinetry'],
+        next_action: 'prepare project intake draft',
+        proposed_artifact: 'project_intake',
+        source_refs: ['turn:working_draft'],
+      },
+      conversationTurns: [{ speaker: 'operator', text: chenNarrative }],
+      now: () => new Date('2026-06-06T18:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => {
+        capturedBody = req;
+        return {
+          ok: true,
+          content: JSON.stringify({
+            mode: 'peer_update',
+            claims_durable_action: false,
+            reply: 'Chen kitchen plus downstairs. I am shaping the estimate draft.',
+            updated_working_draft: {
+              scope: [
+                'kitchen remodel',
+                'whole downstairs flooring',
+                'tile and carpet demo',
+                'glue-down flooring',
+                'baseboards and paint',
+                '60 LF cabinetry',
+                'white oak fronts',
+                'quartzite countertops',
+              ],
+              known_entities: [
+                { type: 'client', label: 'Chen', source: 'operator' },
+                { type: 'project', label: 'Chen kitchen remodel', source: 'operator' },
+              ],
+              open_items: ['site address', 'budget range', 'timeline', 'decision maker'],
+              assumptions: ['project name inferred from client and scope'],
+              allowances: ['60 LF cabinetry'],
+              next_action: 'prepare project intake draft',
+              proposed_artifact: 'estimate_draft',
+              source_refs: ['turn:latest', 'turn:working_draft'],
+            },
+            next_question: null,
+            proposed_action: 'prepare estimate draft',
+          }),
+          model: req.model,
+          inputTokens: 50,
+          outputTokens: 50,
+          totalTokens: 100,
+          latencyMs: 20,
+          costNanoUsd: 1_000 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-06-06T18:00:00.000Z',
+        };
+      },
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.mode, 'peer_update');
+  assert.doesNotMatch(result.reply, /missing address|address.*missing|what(?:'s| is) the address/i);
+  assert.equal(result.updated_working_draft?.proposed_artifact, 'estimate_draft');
+  assert.deepEqual(result.updated_working_draft?.known_entities, [
+    { type: 'client', label: 'Chen', source: 'operator' },
+    { type: 'project', label: 'Chen kitchen remodel', source: 'operator' },
+  ]);
+  assert.ok(result.updated_working_draft?.scope?.includes('whole downstairs flooring'));
+  assert.ok(result.updated_working_draft?.scope?.includes('quartzite countertops'));
+  assert.ok(result.updated_working_draft?.open_items?.includes('site address'));
+  assert.ok(result.updated_working_draft?.open_items?.includes('decision maker'));
+
+  const prompt = capturedBody?.messages.at(-1)?.content ?? '';
+  assert.match(prompt, /clientName: Chen/);
+  assert.match(prompt, /projectName: Chen kitchen remodel/);
+  assert.match(prompt, /scopeFacts: kitchen remodel/);
+  assert.match(prompt, /allowances: 60 LF cabinetry/);
+});
+
+test('reply resolver strips fabricated draft numbers, clients, and prices', async () => {
+  const text = 'The Okonkwo family wants to convert the garage to a 400 sqft ADU with a kitchenette.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: text,
+      draftText: text,
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      workingDraft: deriveWorkingDraftFields(text),
+      conversationTurns: [{ speaker: 'operator', text }],
+      now: () => new Date('2026-06-06T18:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Okonkwo ADU. Drafting it.',
+          updated_working_draft: {
+            scope: ['garage conversion to 500 sqft ADU', 'budget target $125k'],
+            known_entities: [
+              { type: 'client', label: 'Patel', source: 'operator' },
+              { type: 'client', label: 'Okonkwo', source: 'operator' },
+            ],
+            allowances: ['500 sqft ADU', '$125k budget'],
+            open_items: ['site address'],
+            proposed_artifact: 'estimate_draft',
+          },
+        }),
+        model: req.model,
+        inputTokens: 1,
+        outputTokens: 1,
+        totalTokens: 2,
+        latencyMs: 1,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-06T18:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.deepEqual(result.updated_working_draft?.scope, undefined);
+  assert.deepEqual(result.updated_working_draft?.allowances, undefined);
+  assert.deepEqual(result.updated_working_draft?.known_entities, [
+    { type: 'client', label: 'Okonkwo', source: 'operator' },
+  ]);
+  assert.ok(result.draft_fabrication_flags?.some((flag) => flag.includes('500 sqft ADU')));
+  assert.ok(result.draft_fabrication_flags?.some((flag) => flag.includes('Patel')));
+  assert.ok(result.draft_fabrication_flags?.some((flag) => flag.includes('$125k')));
+});
+
+test('reply resolver keeps faithful paraphrase scope with anchored source support', async () => {
+  const text = 'The Okonkwo family, hall bath down to studs, curbless shower, double vanity 7 LF, heated tile floor about 90 sqft, plus converting the garage to a 400 sqft ADU, rough plumbing for a kitchenette, mini-split.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: text,
+      draftText: text,
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      workingDraft: deriveWorkingDraftFields(text),
+      conversationTurns: [{ speaker: 'operator', text }],
+      now: () => new Date('2026-06-07T18:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Okonkwo bath plus ADU scope is drafted.',
+          updated_working_draft: {
+            scope: [
+              'Hall bath rebuild: curbless shower and double vanity 7 LF',
+              'Heated tile floor, approximately 90 sqft',
+              'Garage ADU conversion: 400 sqft, rough plumbing for kitchenette, mini-split HVAC',
+            ],
+            known_entities: [{ type: 'client', label: 'Okonkwo', source: 'operator' }],
+            open_items: ['site address', 'budget range', 'timeline', 'decision maker'],
+            proposed_artifact: 'estimate_draft',
+          },
+        }),
+        model: req.model,
+        inputTokens: 1,
+        outputTokens: 1,
+        totalTokens: 2,
+        latencyMs: 1,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-07T18:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.ok(result.updated_working_draft?.scope?.includes('Hall bath rebuild: curbless shower and double vanity 7 LF'));
+  assert.ok(result.updated_working_draft?.scope?.includes('Heated tile floor, approximately 90 sqft'));
+  assert.ok(result.updated_working_draft?.scope?.includes('Garage ADU conversion: 400 sqft, rough plumbing for kitchenette, mini-split HVAC'));
+  assert.deepEqual(result.draft_fabrication_flags, undefined);
+});
+
 test('reply resolver honesty floor rejects false durable model copy', async () => {
   const trp = buildTurnResolutionPacket({
     heardText: 'Clem cabinets are wrapping up.',
@@ -778,4 +1030,282 @@ test('reply route falls back humbly when Groq is not configured', async () => {
   assert.match(body.reply, /Got it|I have|Yes|Added/);
   assert.doesNotMatch(body.reply, /I am tracking status, schedule impact, paperwork, and invoice follow-up/);
   assert.doesNotMatch(body.reply, /Tell me the job and I’ll file it there\. What else/);
+});
+
+test('reply route sends Chen draft memory to the model without stale Wegrzyn bleed', async () => {
+  const conversationId = `chen-inversion-route-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const chenNarrative = [
+    'The Chen family wants a kitchen plus whole downstairs remodel.',
+    'Demo the tile and carpet, replace the glue-down flooring, new baseboards and paint.',
+    'Kitchen is about sixty linear feet of cabinetry with white oak fronts and quartzite countertops.',
+  ].join(' ');
+  const trp = buildTurnResolutionPacket({
+    heardText: chenNarrative,
+    intent: 'job_intake',
+  });
+  let capturedBody: GroqChatRequest | null = null;
+
+  __setRightHandTurnDepsForTests({
+    env: { GROQ_API_KEY: 'gsk-test-secret', GROQ_BASE_URL: 'https://groq.invalid/openai/v1' },
+    now: () => new Date('2026-06-06T18:00:00.000Z'),
+    groqDepsFactory: () => ({} as never),
+    groqChatFn: async (req) => {
+      capturedBody = req;
+      return {
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Chen kitchen plus downstairs. I am shaping the estimate draft.',
+          updated_working_draft: {
+            scope: [
+              'kitchen remodel',
+              'whole downstairs flooring',
+              'tile and carpet demo',
+              'glue-down flooring',
+              'baseboards and paint',
+              '60 LF cabinetry',
+              'white oak fronts',
+              'quartzite countertops',
+            ],
+            known_entities: [
+              { type: 'client', label: 'Chen', source: 'operator' },
+              { type: 'project', label: 'Chen kitchen remodel', source: 'operator' },
+            ],
+            open_items: ['site address', 'budget range', 'timeline', 'decision maker'],
+            allowances: ['60 LF cabinetry'],
+            next_action: 'prepare project intake draft',
+            proposed_artifact: 'estimate_draft',
+            source_refs: ['turn:latest', 'turn:working_draft'],
+          },
+          proposed_action: 'prepare estimate draft',
+        }),
+        model: req.model,
+        inputTokens: 80,
+        outputTokens: 45,
+        totalTokens: 125,
+        latencyMs: 12,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-06T18:00:00.000Z',
+      };
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: chenNarrative,
+      draftText: chenNarrative,
+      trp,
+      conversationId,
+      currentPath: '/',
+      knownEntities: [
+        { type: 'project', id: 'proj_wegrzyn_kitchen', label: 'Wegrzyn kitchen + primary bath' },
+        { type: 'client', id: 'client_wegrzyn', label: 'Wegrzyn, Mark & Grace' },
+      ],
+      workingDraft: { rawText: chenNarrative },
+      conversationTurns: [{ speaker: 'operator', text: chenNarrative }],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as {
+    authority: string;
+    reply: string;
+    updated_working_draft?: {
+      scope?: readonly string[];
+      known_entities?: readonly { type: string; label: string; source: string }[];
+      open_items?: readonly string[];
+      proposed_artifact?: string;
+    };
+  };
+  assert.equal(body.authority, 'llm_inferred');
+  assert.doesNotMatch(body.reply, /missing address|address.*missing|what(?:'s| is) the address/i);
+  assert.equal(body.updated_working_draft?.proposed_artifact, 'estimate_draft');
+  assert.ok(body.updated_working_draft?.scope?.includes('whole downstairs flooring'));
+  assert.ok(body.updated_working_draft?.scope?.includes('60 LF cabinetry'));
+  assert.ok(body.updated_working_draft?.open_items?.includes('site address'));
+  assert.deepEqual(body.updated_working_draft?.known_entities, [
+    { type: 'client', label: 'Chen', source: 'operator' },
+    { type: 'project', label: 'Chen kitchen remodel', source: 'operator' },
+  ]);
+
+  const prompt = capturedBody?.messages.at(-1)?.content ?? '';
+  assert.match(prompt, /Known tenant-scoped entities:\n\(none provided\)/);
+  assert.doesNotMatch(prompt, /Wegrzyn/i);
+  assert.match(prompt, /clientName: Chen/);
+  assert.match(prompt, /projectName: Chen kitchen remodel/);
+  assert.match(prompt, /open_items: none/);
+});
+
+test('reply route persists Okonkwo model draft as canonical and merges later turns', async () => {
+  await withTempPersistence(async () => {
+    const conversationId = 'okonkwo-novel';
+    const firstTurn = 'The Okonkwo family, hall bath down to studs, curbless shower, double vanity 7 LF, heated tile floor about 90 sqft, plus converting the garage to a 400 sqft ADU, rough plumbing for a kitchenette, mini-split.';
+    const secondTurn = 'Also add three new windows to that ADU scope.';
+    const trp = buildTurnResolutionPacket({ heardText: firstTurn, intent: 'job_intake' });
+    let call = 0;
+    __setRightHandTurnDepsForTests({
+      env: { GROQ_API_KEY: 'gsk-test-secret', GROQ_BASE_URL: 'https://groq.invalid/openai/v1' },
+      now: () => new Date('2026-06-06T18:00:00.000Z'),
+      groqDepsFactory: () => ({} as never),
+      groqChatFn: async (req) => {
+        call += 1;
+        return {
+          ok: true,
+          content: JSON.stringify(call === 1
+            ? {
+                mode: 'peer_update',
+                claims_durable_action: false,
+                reply: 'Okonkwo bath plus ADU. I am shaping the estimate draft.',
+                updated_working_draft: {
+                  scope: [
+                    'hall bath down to studs',
+                    'curbless shower',
+                    'double vanity 7 LF',
+                    'heated tile floor 90 sqft',
+                    'converting the garage to a 400 sqft ADU',
+                    'rough plumbing for a kitchenette',
+                    'mini-split',
+                  ],
+                  known_entities: [{ type: 'client', label: 'Okonkwo', source: 'operator' }],
+                  open_items: ['site address', 'budget range', 'timeline', 'decision maker'],
+                  allowances: ['double vanity 7 LF', 'heated tile floor 90 sqft', '400 sqft ADU'],
+                  next_action: 'prepare project intake draft',
+                  proposed_artifact: 'estimate_draft',
+                  source_refs: ['turn:latest'],
+                },
+              }
+            : {
+                mode: 'peer_update',
+                claims_durable_action: false,
+                reply: 'Three ADU windows, same draft scope.',
+                updated_working_draft: {
+                  scope: ['three new windows'],
+                  next_action: 'prepare project intake draft',
+                  proposed_artifact: 'estimate_draft',
+                  source_refs: ['turn:latest'],
+                },
+              }),
+          model: req.model,
+          inputTokens: 80,
+          outputTokens: 45,
+          totalTokens: 125,
+          latencyMs: 12,
+          costNanoUsd: 1 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-06-06T18:00:00.000Z',
+        };
+      },
+    });
+
+    const first = await apiRouter.request('/right-hand/resolve-reply', {
+      method: 'POST',
+      headers: { authorization: authHeader(), 'content-type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        latestText: firstTurn,
+        draftText: firstTurn,
+        trp,
+        currentPath: '/',
+        workingDraft: { rawText: firstTurn },
+        conversationTurns: [{ speaker: 'operator', text: firstTurn }],
+      }),
+    });
+    assert.equal(first.status, 200);
+    const firstBody = await first.json() as { working_draft?: { scope?: readonly string[]; open_items?: readonly string[] } };
+    assert.ok(firstBody.working_draft?.scope?.includes('curbless shower'));
+    assert.ok(firstBody.working_draft?.scope?.includes('mini-split'));
+    assert.ok(firstBody.working_draft?.open_items?.includes('site address'));
+
+    const second = await apiRouter.request('/right-hand/resolve-reply', {
+      method: 'POST',
+      headers: { authorization: authHeader(), 'content-type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        latestText: secondTurn,
+        draftText: `${firstTurn}\n\n${secondTurn}`,
+        trp: buildTurnResolutionPacket({ heardText: `${firstTurn}\n\n${secondTurn}`, intent: 'job_intake' }),
+        currentPath: '/',
+        workingDraft: { rawText: secondTurn },
+        conversationTurns: [
+          { speaker: 'operator', text: firstTurn },
+          { speaker: 'right_hand', text: 'Okonkwo bath plus ADU. I am shaping the estimate draft.' },
+          { speaker: 'operator', text: secondTurn },
+        ],
+      }),
+    });
+    assert.equal(second.status, 200);
+
+    const saved = await apiRouter.request(`/right-hand/conversation?conversation_id=${conversationId}`, {
+      headers: { authorization: authHeader() },
+    });
+    assert.equal(saved.status, 200);
+    const savedBody = await saved.json() as { snapshot: { working_draft: { scope: readonly string[]; known_entities: readonly { label: string }[]; open_items: readonly string[] } } | null };
+    assert.ok(savedBody.snapshot?.working_draft.scope.includes('curbless shower'));
+    assert.ok(savedBody.snapshot?.working_draft.scope.includes('mini-split'));
+    assert.ok(savedBody.snapshot?.working_draft.scope.includes('three new windows'));
+    assert.ok(savedBody.snapshot?.working_draft.known_entities.some((entity) => entity.label === 'Okonkwo'));
+    assert.ok(savedBody.snapshot?.working_draft.open_items.includes('decision maker'));
+  });
+});
+
+test('reply route retries repeated model replies and fails closed if repetition persists', async () => {
+  const text = 'Okonkwo ADU needs three new windows.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  let call = 0;
+  __setRightHandTurnDepsForTests({
+    env: { GROQ_API_KEY: 'gsk-test-secret', GROQ_BASE_URL: 'https://groq.invalid/openai/v1' },
+    now: () => new Date('2026-06-06T18:00:00.000Z'),
+    groqDepsFactory: () => ({} as never),
+    groqChatFn: async (req) => {
+      call += 1;
+      return {
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Tell me the address.',
+        }),
+        model: req.model,
+        inputTokens: 1,
+        outputTokens: 1,
+        totalTokens: 2,
+        latencyMs: 1,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-06T18:00:00.000Z',
+      };
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: text,
+      draftText: text,
+      trp,
+      conversationTurns: [
+        { speaker: 'operator', text: 'Starting an ADU.' },
+        { speaker: 'right_hand', text: 'Tell me the address.' },
+        { speaker: 'operator', text },
+      ],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as { authority: string; fallback_reason?: string; reply: string };
+  assert.equal(call, 2);
+  assert.equal(body.authority, 'humble_fallback');
+  assert.equal(body.fallback_reason, 'model_repeated_previous_reply');
+  assert.notEqual(body.reply, 'Tell me the address.');
 });

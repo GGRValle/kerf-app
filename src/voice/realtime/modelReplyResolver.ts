@@ -56,8 +56,26 @@ export interface ResolveReplyResult {
   readonly mode: ReplyMode;
   readonly authority: ReplyResolverAuthority;
   readonly claims_durable_action: boolean;
+  readonly updated_working_draft?: WorkingDraftUpdate;
+  readonly open_items?: readonly string[];
+  readonly asked_questions_ack?: readonly string[];
+  readonly next_question?: string | null;
+  readonly proposed_action?: string | null;
+  readonly draft_fabrication_flags?: readonly string[];
   readonly fallback_reason?: string;
 }
+
+export type WorkingDraftUpdate = Partial<Pick<
+  WorkingDraftFields,
+  | 'scope'
+  | 'known_entities'
+  | 'open_items'
+  | 'assumptions'
+  | 'allowances'
+  | 'next_action'
+  | 'proposed_artifact'
+  | 'source_refs'
+>>;
 
 const SYSTEM_PROMPT = `You are Right Hand, the trusted operating partner inside a contractor operating system.
 
@@ -81,10 +99,20 @@ That floor is not your conversation brain. It only prevents unsafe or false cons
 
 Working draft memory:
 - Treat working_draft clientName, projectName, archetypeHint, and scopeFacts as things the operator already told you.
-- Do not ask again for a client, job, project, or scope fact that appears in working draft memory.
+- Treat working_draft scope, known_entities, open_items, assumptions, allowances, next_action, proposed_artifact, and source_refs as the current working draft state.
+- Do not ask again for a client, job, project, or scope fact that appears in working draft memory or recent conversation.
 - If the operator gives a person/family name in a new-project thread, accept it as the client/project candidate unless tenant entities prove a conflict.
-- For a new project, move to the next missing business fact: budget range, address/access, timeline, decision maker, or blocking constraint.
+- Absorb-first intake: if the operator gives a rich new project or estimate narrative, preserve the scope first. Address, budget range, timeline, decision maker, access, and similar details are open_items, not intake blockers.
+- A new client/project may begin as a placeholder working draft. Do not force address or customer details before absorbing the job narrative.
+- Identity/logistics fields are open_items, not questions: client name, address, budget range, timeline, decision maker, access, and contact details must not be asked during absorb-first scope capture unless the operator explicitly asks what is missing for filing.
+- Ask at most one question, only if it changes the next useful scope/consequence decision. Prefer the highest-consequence scope question over slot questions. Never repeat a question already asked or answered.
 - If the thread drops/reopens, pick up from memory; do not restart intake.
+
+Gold example:
+Operator: "Kitchen plus downstairs remodel: remove tile/carpet, about 1000 SF new flooring, paint, baseboards, white oak cabinetry, quartz counters."
+Good reply: "I have the kitchen + downstairs remodel draft: flooring, paint/baseboards, cabinetry, and counters. Main scope question: does flooring run through all downstairs rooms or only the kitchen/adjacent areas?"
+Good updated_working_draft.open_items: ["client name", "site address", "budget range", "timeline", "decision maker"].
+Bad reply: "What is the client name, address, and timeline?"
 
 Density never eats the honesty seam.
 - Never claim something has been filed, saved, sent, submitted, charged, approved, paid, ordered, created, logged, recorded, posted, emailed, texted, told, scheduled, booked, added, done, handled, or all set unless a work_artifact is present.
@@ -98,7 +126,20 @@ Return STRICT JSON only:
 {
   "mode": "minimal_ack"|"peer_update"|"clarify"|"advisor_flag"|"gate_ready",
   "claims_durable_action": true|false,
-  "reply": "one natural Right Hand reply, usually 2-24 words unless a real risk/gate needs more"
+  "reply": "one natural Right Hand reply, usually 2-24 words unless a real risk/gate needs more",
+  "updated_working_draft": {
+    "scope": ["source-backed scope item"],
+    "known_entities": [{"type":"client|project|site|lead","label":"source-backed label","source":"operator"}],
+    "open_items": ["missing item that remains open, not a blocker unless you say so"],
+    "assumptions": ["clearly labeled assumption"],
+    "allowances": ["source-backed allowance or rough quantity"],
+    "next_action": "prepare project intake draft|continue scope capture|ask one blocking question|null",
+    "proposed_artifact": "project_intake|estimate_draft|job_note|null",
+    "source_refs": ["turn:latest", "turn:working_draft"]
+  },
+  "asked_questions_ack": ["questions from prior turns that the operator has now answered"],
+  "next_question": null,
+  "proposed_action": "short action you are preparing, if any"
 }`;
 
 const ALLOWED_MODES: readonly ReplyMode[] = [
@@ -278,6 +319,280 @@ function violatesHonestyFloor(reply: string, input: ResolveReplyInput, claimsDur
   return false;
 }
 
+function normalized(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function supportCorpus(input: ResolveReplyInput): string {
+  const draft = input.workingDraft;
+  return [
+    input.latestText,
+    input.draftText ?? '',
+    draft?.rawText ?? '',
+    draft?.scope.join(' ') ?? '',
+    draft?.scopeFacts.join(' ') ?? '',
+    draft?.allowances.join(' ') ?? '',
+    draft?.known_entities.map((entity) => entity.label).join(' ') ?? '',
+    (input.conversationTurns ?? []).map((turn) => turn.text).join(' '),
+  ].join('\n');
+}
+
+const SUPPORT_STOP_WORDS = new Set([
+  'about',
+  'action',
+  'allowance',
+  'client',
+  'draft',
+  'estimate',
+  'item',
+  'job',
+  'missing',
+  'open',
+  'project',
+  'scope',
+  'source',
+  'that',
+  'this',
+  'turn',
+  'with',
+  'conversion',
+  'converted',
+  'converting',
+  'install',
+  'installed',
+  'approximately',
+  'rebuild',
+  'rebuilding',
+  'remodel',
+  'remodeling',
+  'renovation',
+  'roughly',
+]);
+
+const SCOPE_CLARIFIER_TOKENS = new Set([
+  'conversion',
+  'converted',
+  'converting',
+  'hvac',
+  'install',
+  'installed',
+  'approximately',
+  'rebuild',
+  'rebuilding',
+  'remodel',
+  'remodeling',
+  'renovation',
+  'roughly',
+]);
+
+const NUMBER_WORDS: Readonly<Record<string, string>> = {
+  zero: '0',
+  one: '1',
+  two: '2',
+  three: '3',
+  four: '4',
+  five: '5',
+  six: '6',
+  seven: '7',
+  eight: '8',
+  nine: '9',
+  ten: '10',
+  eleven: '11',
+  twelve: '12',
+  thirteen: '13',
+  fourteen: '14',
+  fifteen: '15',
+  sixteen: '16',
+  seventeen: '17',
+  eighteen: '18',
+  nineteen: '19',
+  twenty: '20',
+  thirty: '30',
+  forty: '40',
+  fifty: '50',
+  sixty: '60',
+  seventy: '70',
+  eighty: '80',
+  ninety: '90',
+  hundred: '100',
+  thousand: '1000',
+};
+
+function meaningfulTokens(value: string): readonly string[] {
+  return normalized(value)
+    .split(' ')
+    .filter((token) => token.length >= 4 && !SUPPORT_STOP_WORDS.has(token));
+}
+
+function numberTokens(value: string): readonly string[] {
+  return normalized(value)
+    .split(' ')
+    .map((token) => NUMBER_WORDS[token] ?? token)
+    .filter((token) => /^\d+(?:\.\d+)?$/.test(token));
+}
+
+function numbersHaveExactSupport(value: string, corpus: string): boolean {
+  const sourceNumbers = new Set(numberTokens(corpus));
+  return numberTokens(value).every((token) => sourceNumbers.has(token));
+}
+
+function hasSourceSupport(value: string, corpus: string): boolean {
+  if (!numbersHaveExactSupport(value, corpus)) return false;
+  const source = normalized(corpus);
+  const tokens = meaningfulTokens(value);
+  if (tokens.length === 0) return false;
+  return tokens.every((token) => source.includes(token));
+}
+
+function hasScopeSourceSupport(value: string, corpus: string): boolean {
+  if (!numbersHaveExactSupport(value, corpus)) return false;
+  const source = normalized(corpus);
+  const tokens = meaningfulTokens(value);
+  if (tokens.length === 0) return false;
+  const anchorTokens = tokens.filter((token) => !SCOPE_CLARIFIER_TOKENS.has(token));
+  if (anchorTokens.length === 0) return false;
+  const supported = anchorTokens.filter((token) => source.includes(token));
+  return supported.length === anchorTokens.length;
+}
+
+function cleanNullableString(value: unknown, max = 160): string | null {
+  if (typeof value !== 'string') return null;
+  const clean = value.replace(/\s+/g, ' ').trim();
+  return clean ? clean.slice(0, max) : null;
+}
+
+function cleanStringList(
+  value: unknown,
+  options: {
+    readonly maxItems: number;
+    readonly maxLength?: number;
+    readonly corpus?: string;
+    readonly requireSupport?: boolean;
+    readonly supportMode?: 'strict' | 'scope';
+    readonly flags?: string[];
+    readonly flagPrefix?: string;
+  },
+): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    const clean = cleanNullableString(item, options.maxLength ?? 140);
+    if (!clean) continue;
+    const supported = options.supportMode === 'scope'
+      ? hasScopeSourceSupport(clean, options.corpus ?? '')
+      : hasSourceSupport(clean, options.corpus ?? '');
+    if (options.requireSupport && !supported) {
+      options.flags?.push(`${options.flagPrefix ?? 'unsupported'}:${clean}`);
+      continue;
+    }
+    const key = normalized(clean);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(clean);
+    if (out.length >= options.maxItems) break;
+  }
+  return out;
+}
+
+function cleanDraftKnownEntities(
+  value: unknown,
+  corpus: string,
+  flags: string[],
+): WorkingDraftFields['known_entities'] {
+  if (!Array.isArray(value)) return [];
+  const out: WorkingDraftFields['known_entities'][number][] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const record = item as Record<string, unknown>;
+    const type = ['client', 'project', 'site', 'lead'].includes(String(record['type']))
+      ? record['type'] as WorkingDraftFields['known_entities'][number]['type']
+      : null;
+    const label = cleanNullableString(record['label'], 120);
+    if (!type || !label) continue;
+    if (!hasSourceSupport(label, corpus)) {
+      flags.push(`unsupported_entity:${type}:${label}`);
+      continue;
+    }
+    const source = ['operator', 'tenant_context', 'model'].includes(String(record['source']))
+      ? record['source'] as WorkingDraftFields['known_entities'][number]['source']
+      : 'model';
+    const id = cleanNullableString(record['id'], 96);
+    const key = `${type}:${normalized(label)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      type,
+      label,
+      source,
+      ...(id ? { id } : {}),
+    });
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
+function cleanProposedArtifact(value: unknown): WorkingDraftFields['proposed_artifact'] | undefined {
+  if (value === null) return null;
+  if (['job_note', 'project_intake', 'estimate_draft'].includes(String(value))) {
+    return value as WorkingDraftFields['proposed_artifact'];
+  }
+  return undefined;
+}
+
+export function cleanWorkingDraftUpdateWithFlags(
+  value: unknown,
+  input: ResolveReplyInput,
+): { update?: WorkingDraftUpdate; flags: readonly string[] } {
+  const flags: string[] = [];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { flags };
+  const record = value as Record<string, unknown>;
+  const corpus = supportCorpus(input);
+  const scope = cleanStringList(record['scope'], {
+    maxItems: 16,
+    maxLength: 140,
+    corpus,
+    requireSupport: true,
+    supportMode: 'scope',
+    flags,
+    flagPrefix: 'unsupported_scope',
+  });
+  const knownEntities = cleanDraftKnownEntities(record['known_entities'], corpus, flags);
+  const openItems = cleanStringList(record['open_items'], { maxItems: 12, maxLength: 120 });
+  const assumptions = cleanStringList(record['assumptions'], { maxItems: 8, maxLength: 140 });
+  const allowances = cleanStringList(record['allowances'], {
+    maxItems: 10,
+    maxLength: 140,
+    corpus,
+    requireSupport: true,
+    supportMode: 'scope',
+    flags,
+    flagPrefix: 'unsupported_allowance',
+  });
+  const sourceRefs = cleanStringList(record['source_refs'], { maxItems: 8, maxLength: 120 });
+  const nextAction = cleanNullableString(record['next_action'], 160);
+  const proposedArtifact = cleanProposedArtifact(record['proposed_artifact']);
+  const update: WorkingDraftUpdate = {
+    ...(scope.length > 0 ? { scope } : {}),
+    ...(knownEntities.length > 0 ? { known_entities: knownEntities } : {}),
+    ...(openItems.length > 0 ? { open_items: openItems } : {}),
+    ...(assumptions.length > 0 ? { assumptions } : {}),
+    ...(allowances.length > 0 ? { allowances } : {}),
+    ...(nextAction ? { next_action: nextAction } : {}),
+    ...(proposedArtifact !== undefined ? { proposed_artifact: proposedArtifact } : {}),
+    ...(sourceRefs.length > 0 ? { source_refs: sourceRefs } : {}),
+  };
+  return {
+    update: Object.keys(update).length > 0 ? update : undefined,
+    flags,
+  };
+}
+
 function recentTurns(input: ResolveReplyInput): string {
   return (input.conversationTurns ?? [])
     .slice(-8)
@@ -296,6 +611,13 @@ function workingDraftPrompt(input: ResolveReplyInput): string {
     `scopeFacts: ${draft.scopeFacts.length ? draft.scopeFacts.join(', ') : 'none'}`,
     `needsNewClient: ${draft.needsNewClient}`,
     `needsNewProject: ${draft.needsNewProject}`,
+    `scope: ${draft.scope.length ? draft.scope.join(', ') : 'none'}`,
+    `known_entities: ${draft.known_entities.length ? draft.known_entities.map((entity) => `${entity.type}:${entity.label}`).join(', ') : 'none'}`,
+    `open_items: ${draft.open_items.length ? draft.open_items.join(', ') : 'none'}`,
+    `assumptions: ${draft.assumptions.length ? draft.assumptions.join(', ') : 'none'}`,
+    `allowances: ${draft.allowances.length ? draft.allowances.join(', ') : 'none'}`,
+    `next_action: ${draft.next_action ?? 'none'}`,
+    `proposed_artifact: ${draft.proposed_artifact ?? 'none'}`,
   ].join('\n');
 }
 
@@ -365,7 +687,7 @@ export async function resolveReplyWithModel(
       purpose: 'right_hand_peer_conversation_reply',
       workflow: 'right-hand-voice-overlay',
       temperature: 0.45,
-      maxTokens: 220,
+      maxTokens: 650,
       requestedAt: now.toISOString() as ISO8601,
     });
   } catch (err) {
@@ -387,11 +709,23 @@ export async function resolveReplyWithModel(
   if (!reply || violatesHonestyFloor(reply, input, claimsDurableAction)) {
     return humbleReplyFallback(input, 'model_reply_failed_honesty_floor');
   }
+  const cleanedWorkingDraft = cleanWorkingDraftUpdateWithFlags(parsed['updated_working_draft'], input);
+  const updatedWorkingDraft = cleanedWorkingDraft.update;
+  const openItems = cleanStringList(parsed['open_items'], { maxItems: 12, maxLength: 120 });
+  const askedQuestionsAck = cleanStringList(parsed['asked_questions_ack'], { maxItems: 8, maxLength: 160 });
+  const nextQuestion = cleanNullableString(parsed['next_question'], 180);
+  const proposedAction = cleanNullableString(parsed['proposed_action'], 180);
 
   return {
     reply,
     mode: cleanMode(parsed['mode']),
     authority: 'llm_inferred',
     claims_durable_action: claimsDurableAction,
+    ...(updatedWorkingDraft ? { updated_working_draft: updatedWorkingDraft } : {}),
+    ...(openItems.length > 0 ? { open_items: openItems } : {}),
+    ...(askedQuestionsAck.length > 0 ? { asked_questions_ack: askedQuestionsAck } : {}),
+    ...(nextQuestion ? { next_question: nextQuestion } : {}),
+    ...(proposedAction ? { proposed_action: proposedAction } : {}),
+    ...(cleanedWorkingDraft.flags.length > 0 ? { draft_fabrication_flags: cleanedWorkingDraft.flags } : {}),
   };
 }

@@ -75,7 +75,26 @@ test.afterEach(() => {
 });
 
 test('Phase 1G-A · transcribe · 200 success returns transcript + metadata', async () => {
-  __setTranscribeDepsForTests(makeDeps());
+  let capturedRequest: WhisperTranscribeRequest | null = null;
+  __setTranscribeDepsForTests(makeDeps({
+    whisperTranscribeFn: async (req: WhisperTranscribeRequest, _deps: WhisperClientDeps) => {
+      capturedRequest = req;
+      const result: WhisperTranscribeResult = {
+        ok: true,
+        transcript: 'Henderson bath galvanized line · needs CO bump.',
+        language: 'en',
+        durationMs: 3500,
+        latencyMs: 1200,
+        costNanoUsd: 38_888,
+        route: { allowed: true } as WhisperTranscribeResult extends { route: infer R } ? R : never,
+        invocationId: 'inv_voice_test_001',
+        completedAt: '2026-05-26T10:00:00.000Z' as never,
+        modelId: 'whisper-large-v3-turbo',
+        endpoint: 'groq://whisper-large-v3-turbo',
+      } as WhisperTranscribeResult;
+      return result;
+    },
+  }));
 
   const res = await apiRouter.request('/transcribe', {
     method: 'POST',
@@ -102,6 +121,7 @@ test('Phase 1G-A · transcribe · 200 success returns transcript + metadata', as
   assert.match(body.sourceRefUri, /^kerf:\/\/voice-intake\//);
   assert.equal(body.endpoint, 'groq://whisper-large-v3-turbo');
   assert.equal(body.model, 'whisper-large-v3-turbo');
+  assert.equal(capturedRequest?.language, 'en');
 });
 
 test('Phase 1G-A · transcribe · 503 when GROQ env not configured', async () => {
