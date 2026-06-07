@@ -673,6 +673,59 @@ test('reply resolver strips fabricated draft numbers, clients, and prices', asyn
   assert.ok(result.draft_fabrication_flags?.some((flag) => flag.includes('$125k')));
 });
 
+test('reply resolver keeps faithful paraphrase scope with anchored source support', async () => {
+  const text = 'The Okonkwo family, hall bath down to studs, curbless shower, double vanity 7 LF, heated tile floor about 90 sqft, plus converting the garage to a 400 sqft ADU, rough plumbing for a kitchenette, mini-split.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: text,
+      draftText: text,
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      workingDraft: deriveWorkingDraftFields(text),
+      conversationTurns: [{ speaker: 'operator', text }],
+      now: () => new Date('2026-06-07T18:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Okonkwo bath plus ADU scope is drafted.',
+          updated_working_draft: {
+            scope: [
+              'Hall bath rebuild: curbless shower and double vanity 7 LF',
+              'Heated tile floor, approximately 90 sqft',
+              'Garage ADU conversion: 400 sqft, rough plumbing for kitchenette, mini-split HVAC',
+            ],
+            known_entities: [{ type: 'client', label: 'Okonkwo', source: 'operator' }],
+            open_items: ['site address', 'budget range', 'timeline', 'decision maker'],
+            proposed_artifact: 'estimate_draft',
+          },
+        }),
+        model: req.model,
+        inputTokens: 1,
+        outputTokens: 1,
+        totalTokens: 2,
+        latencyMs: 1,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-07T18:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.ok(result.updated_working_draft?.scope?.includes('Hall bath rebuild: curbless shower and double vanity 7 LF'));
+  assert.ok(result.updated_working_draft?.scope?.includes('Heated tile floor, approximately 90 sqft'));
+  assert.ok(result.updated_working_draft?.scope?.includes('Garage ADU conversion: 400 sqft, rough plumbing for kitchenette, mini-split HVAC'));
+  assert.deepEqual(result.draft_fabrication_flags, undefined);
+});
+
 test('reply resolver honesty floor rejects false durable model copy', async () => {
   const trp = buildTurnResolutionPacket({
     heardText: 'Clem cabinets are wrapping up.',

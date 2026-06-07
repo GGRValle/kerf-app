@@ -104,8 +104,15 @@ Working draft memory:
 - If the operator gives a person/family name in a new-project thread, accept it as the client/project candidate unless tenant entities prove a conflict.
 - Absorb-first intake: if the operator gives a rich new project or estimate narrative, preserve the scope first. Address, budget range, timeline, decision maker, access, and similar details are open_items, not intake blockers.
 - A new client/project may begin as a placeholder working draft. Do not force address or customer details before absorbing the job narrative.
-- Ask at most one question, only if it blocks the next useful move. Never repeat a question already asked or answered.
+- Identity/logistics fields are open_items, not questions: client name, address, budget range, timeline, decision maker, access, and contact details must not be asked during absorb-first scope capture unless the operator explicitly asks what is missing for filing.
+- Ask at most one question, only if it changes the next useful scope/consequence decision. Prefer the highest-consequence scope question over slot questions. Never repeat a question already asked or answered.
 - If the thread drops/reopens, pick up from memory; do not restart intake.
+
+Gold example:
+Operator: "Kitchen plus downstairs remodel: remove tile/carpet, about 1000 SF new flooring, paint, baseboards, white oak cabinetry, quartz counters."
+Good reply: "I have the kitchen + downstairs remodel draft: flooring, paint/baseboards, cabinetry, and counters. Main scope question: does flooring run through all downstairs rooms or only the kitchen/adjacent areas?"
+Good updated_working_draft.open_items: ["client name", "site address", "budget range", "timeline", "decision maker"].
+Bad reply: "What is the client name, address, and timeline?"
 
 Density never eats the honesty seam.
 - Never claim something has been filed, saved, sent, submitted, charged, approved, paid, ordered, created, logged, recorded, posted, emailed, texted, told, scheduled, booked, added, done, handled, or all set unless a work_artifact is present.
@@ -352,6 +359,34 @@ const SUPPORT_STOP_WORDS = new Set([
   'this',
   'turn',
   'with',
+  'conversion',
+  'converted',
+  'converting',
+  'install',
+  'installed',
+  'approximately',
+  'rebuild',
+  'rebuilding',
+  'remodel',
+  'remodeling',
+  'renovation',
+  'roughly',
+]);
+
+const SCOPE_CLARIFIER_TOKENS = new Set([
+  'conversion',
+  'converted',
+  'converting',
+  'hvac',
+  'install',
+  'installed',
+  'approximately',
+  'rebuild',
+  'rebuilding',
+  'remodel',
+  'remodeling',
+  'renovation',
+  'roughly',
 ]);
 
 const NUMBER_WORDS: Readonly<Record<string, string>> = {
@@ -413,6 +448,17 @@ function hasSourceSupport(value: string, corpus: string): boolean {
   return tokens.every((token) => source.includes(token));
 }
 
+function hasScopeSourceSupport(value: string, corpus: string): boolean {
+  if (!numbersHaveExactSupport(value, corpus)) return false;
+  const source = normalized(corpus);
+  const tokens = meaningfulTokens(value);
+  if (tokens.length === 0) return false;
+  const anchorTokens = tokens.filter((token) => !SCOPE_CLARIFIER_TOKENS.has(token));
+  if (anchorTokens.length === 0) return false;
+  const supported = anchorTokens.filter((token) => source.includes(token));
+  return supported.length === anchorTokens.length;
+}
+
 function cleanNullableString(value: unknown, max = 160): string | null {
   if (typeof value !== 'string') return null;
   const clean = value.replace(/\s+/g, ' ').trim();
@@ -426,6 +472,7 @@ function cleanStringList(
     readonly maxLength?: number;
     readonly corpus?: string;
     readonly requireSupport?: boolean;
+    readonly supportMode?: 'strict' | 'scope';
     readonly flags?: string[];
     readonly flagPrefix?: string;
   },
@@ -436,7 +483,10 @@ function cleanStringList(
   for (const item of value) {
     const clean = cleanNullableString(item, options.maxLength ?? 140);
     if (!clean) continue;
-    if (options.requireSupport && !hasSourceSupport(clean, options.corpus ?? '')) {
+    const supported = options.supportMode === 'scope'
+      ? hasScopeSourceSupport(clean, options.corpus ?? '')
+      : hasSourceSupport(clean, options.corpus ?? '');
+    if (options.requireSupport && !supported) {
       options.flags?.push(`${options.flagPrefix ?? 'unsupported'}:${clean}`);
       continue;
     }
@@ -508,6 +558,7 @@ export function cleanWorkingDraftUpdateWithFlags(
     maxLength: 140,
     corpus,
     requireSupport: true,
+    supportMode: 'scope',
     flags,
     flagPrefix: 'unsupported_scope',
   });
@@ -519,6 +570,7 @@ export function cleanWorkingDraftUpdateWithFlags(
     maxLength: 140,
     corpus,
     requireSupport: true,
+    supportMode: 'scope',
     flags,
     flagPrefix: 'unsupported_allowance',
   });
