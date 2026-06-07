@@ -199,6 +199,10 @@ const { t } = createLayoutContext();
     type NextMove,
     type TurnResolutionPacket,
   } from '../../voice/realtime/turnResolution.js';
+  import {
+    deriveWorkingDraftFields,
+    type WorkingDraftFields,
+  } from '../../voice/realtime/workingDraft.js';
 
   type OverlayState = 'idle' | 'listening' | 'sorting' | 'reply' | 'confirm' | 'resolved' | 'fallback' | 'capped';
 
@@ -262,9 +266,16 @@ const { t } = createLayoutContext();
     let currentMoves: readonly NextMove[] = []; // resolved-state next moves
     let resolvedSurface = '/'; // default landing after a resolved turn
     let confirmSaveNeedsMoreContext = false;
-    type ConversationTurn = { speaker: 'operator' | 'right_hand' | 'system'; text: string; tone?: 'normal' | 'consequence' | 'saved' };
+    type ConversationTurn = {
+      speaker: 'operator' | 'right_hand' | 'system';
+      text: string;
+      tone?: 'normal' | 'consequence' | 'saved';
+      at?: number;
+    };
 
     const VOICE_CONVERSATION_SESSION_KEY = 'kerf.voiceConversation';
+    const VOICE_CONVERSATION_LOCAL_KEY = VOICE_CONVERSATION_SESSION_KEY;
+    const VOICE_CONVERSATION_ID_KEY = 'kerf.voiceConversationId';
 
     let workingDraftTurns: string[] = [];
     let conversationTurns: ConversationTurn[] = [];
@@ -277,6 +288,19 @@ const { t } = createLayoutContext();
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+
+    const getConversationId = () => {
+      try {
+        const existing = localStorage.getItem(VOICE_CONVERSATION_ID_KEY) || sessionStorage.getItem(VOICE_CONVERSATION_ID_KEY);
+        if (existing) return existing;
+        const id = `rh_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        localStorage.setItem(VOICE_CONVERSATION_ID_KEY, id);
+        sessionStorage.setItem(VOICE_CONVERSATION_ID_KEY, id);
+        return id;
+      } catch {
+        return 'default';
+      }
+    };
 
     const setMicActive = (active: boolean) => {
       overlay.dataset.micActive = active ? 'true' : 'false';
@@ -317,8 +341,9 @@ const { t } = createLayoutContext();
     const appendTurn = (speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal'): number | null => {
       const clean = text.trim();
       if (!clean) return null;
-      conversationTurns.push({ speaker, text: clean, tone });
+      conversationTurns.push({ speaker, text: clean, tone, at: Date.now() });
       renderThread();
+      persistConversation();
       return conversationTurns.length - 1;
     };
 
@@ -326,8 +351,9 @@ const { t } = createLayoutContext();
       if (index === null) return;
       const clean = text.trim();
       if (!clean || conversationTurns[index]?.speaker !== speaker) return;
-      conversationTurns[index] = { speaker, text: clean, tone };
+      conversationTurns[index] = { speaker, text: clean, tone, at: conversationTurns[index]?.at ?? Date.now() };
       renderThread();
+      persistConversation();
     };
 
     const normalizeStoredReplyText = (value: string): string => value
@@ -347,21 +373,64 @@ const { t } = createLayoutContext();
       );
     };
 
+    const normalizeStoredConversationTurns = (value: unknown): ConversationTurn[] => {
+      if (!Array.isArray(value)) return [];
+      return value
+        .filter((turn): turn is ConversationTurn => (
+          typeof turn === 'object'
+          && turn !== null
+          && ['operator', 'right_hand', 'system'].includes((turn as ConversationTurn).speaker)
+          && typeof (turn as ConversationTurn).text === 'string'
+        ))
+        .map((turn) => ({
+          speaker: turn.speaker,
+          text: turn.text.trim(),
+          tone: ['consequence', 'saved'].includes(String(turn.tone)) ? turn.tone : 'normal',
+          ...(typeof turn.at === 'number' && Number.isFinite(turn.at) ? { at: turn.at } : {}),
+        }))
+        .filter((turn) => turn.text.length > 0)
+        // #302 model-led replies replaced these deterministic placeholders.
+        // Scrub persisted old RH bubbles so a stale browser session cannot
+        // make the current build look canned after deploy.
+        .filter((turn) => !isRetiredCannedRightHandTurn(turn));
+    };
+
+    const currentWorkingDraft = (): WorkingDraftFields => deriveWorkingDraftFields(
+      workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n'),
+      conversationDestinationLabel,
+    );
+
+    const conversationSnapshotBody = () => ({
+      conversationId: getConversationId(),
+      currentPath: window.location.pathname,
+      workingDraftTurns,
+      conversationTurns,
+      attachedSourceNames,
+      conversationDestinationLabel,
+      workingDraft: currentWorkingDraft(),
+    });
+
     const persistConversation = () => {
+      const payload = conversationSnapshotBody();
       try {
-        sessionStorage.setItem(VOICE_CONVERSATION_SESSION_KEY, JSON.stringify({
-          at: Date.now(),
-          workingDraftTurns,
-          conversationTurns,
-          attachedSourceNames,
-          conversationDestinationLabel,
-        }));
+        const raw = JSON.stringify({ at: Date.now(), ...payload });
+        localStorage.setItem(VOICE_CONVERSATION_LOCAL_KEY, raw);
       } catch { /* storage may be unavailable; the live page still keeps state */ }
+      try {
+        const tenantId = currentTenantId();
+        if (!tenantId) return;
+        void fetch('/api/v1/right-hand/conversation', {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(() => {});
+      } catch { /* server memory is best-effort; local memory still protects the turn */ }
     };
 
     const restoreConversation = () => {
       try {
-        const raw = sessionStorage.getItem(VOICE_CONVERSATION_SESSION_KEY);
+        const raw = localStorage.getItem(VOICE_CONVERSATION_LOCAL_KEY);
         if (!raw) return false;
         const parsed = JSON.parse(raw) as {
           at?: unknown;
@@ -373,25 +442,9 @@ const { t } = createLayoutContext();
         if (!Array.isArray(parsed.workingDraftTurns) || !Array.isArray(parsed.conversationTurns)) return false;
         workingDraftTurns = parsed.workingDraftTurns
           .filter((turn): turn is string => typeof turn === 'string')
-          .map((turn) => turn.trim())
-          .filter(Boolean);
-        conversationTurns = parsed.conversationTurns
-          .filter((turn): turn is ConversationTurn => (
-            typeof turn === 'object'
-            && turn !== null
-            && ['operator', 'right_hand', 'system'].includes((turn as ConversationTurn).speaker)
-            && typeof (turn as ConversationTurn).text === 'string'
-          ))
-          .map((turn) => ({
-            speaker: turn.speaker,
-            text: turn.text.trim(),
-            tone: ['consequence', 'saved'].includes(String(turn.tone)) ? turn.tone : 'normal',
-          }))
-          .filter((turn) => turn.text.length > 0)
-          // #302 model-led replies replaced these deterministic placeholders.
-          // Scrub persisted old RH bubbles so a stale browser session cannot
-          // make the current build look canned after deploy.
-          .filter((turn) => !isRetiredCannedRightHandTurn(turn));
+            .map((turn) => turn.trim())
+            .filter(Boolean);
+        conversationTurns = normalizeStoredConversationTurns(parsed.conversationTurns);
         attachedSourceNames = Array.isArray(parsed.attachedSourceNames)
           ? parsed.attachedSourceNames
             .filter((name): name is string => typeof name === 'string')
@@ -408,17 +461,76 @@ const { t } = createLayoutContext();
       }
     };
 
-    const clearPersistedConversation = () => {
-      try { sessionStorage.removeItem(VOICE_CONVERSATION_SESSION_KEY); } catch { /* noop */ }
+    const restoreConversationFromServer = async (): Promise<boolean> => {
+      try {
+        const tenantId = currentTenantId();
+        if (!tenantId) return false;
+        const res = await fetch(`/api/v1/right-hand/conversation?conversation_id=${encodeURIComponent(getConversationId())}`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (!res.ok) return false;
+        const body = await res.json() as { snapshot?: unknown };
+        const snapshot = body.snapshot as {
+          workingDraftTurns?: unknown;
+          conversationTurns?: unknown;
+          attachedSourceNames?: unknown;
+          conversationDestinationLabel?: unknown;
+        } | null;
+        if (!snapshot) return false;
+        const restoredWorkingDraftTurns = Array.isArray(snapshot.workingDraftTurns)
+          ? snapshot.workingDraftTurns
+            .filter((turn): turn is string => typeof turn === 'string')
+            .map((turn) => turn.trim())
+            .filter(Boolean)
+          : [];
+        const restoredConversationTurns = normalizeStoredConversationTurns(snapshot.conversationTurns);
+        if (restoredWorkingDraftTurns.length === 0 && restoredConversationTurns.length === 0) return false;
+        workingDraftTurns = restoredWorkingDraftTurns;
+        conversationTurns = restoredConversationTurns;
+        attachedSourceNames = Array.isArray(snapshot.attachedSourceNames)
+          ? snapshot.attachedSourceNames
+            .filter((name): name is string => typeof name === 'string')
+            .map((name) => name.trim())
+            .filter(Boolean)
+          : [];
+        conversationDestinationLabel = typeof snapshot.conversationDestinationLabel === 'string'
+          ? cleanDestinationLabel(snapshot.conversationDestinationLabel)
+          : '';
+        renderThread();
+        surfaceUnfiledDraftLoop();
+        persistConversation();
+        return true;
+      } catch {
+        return false;
+      }
     };
 
-    const resetConversation = (options: { clearStored?: boolean } = {}) => {
+    const clearPersistedConversation = (options: { server?: boolean } = {}) => {
+      try {
+        localStorage.removeItem(VOICE_CONVERSATION_LOCAL_KEY);
+      } catch { /* noop */ }
+      if (options.server) {
+        try {
+          const tenantId = currentTenantId();
+          if (!tenantId) return;
+          void fetch('/api/v1/right-hand/conversation', {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversationId: getConversationId() }),
+          }).catch(() => {});
+        } catch { /* noop */ }
+      }
+    };
+
+    const resetConversation = (options: { clearStored?: boolean; clearServer?: boolean } = {}) => {
       workingDraftTurns = [];
       conversationTurns = [];
       attachedSourceNames = [];
       conversationDestinationLabel = '';
       renderThread();
-      if (options.clearStored) clearPersistedConversation();
+      if (options.clearStored) clearPersistedConversation({ server: options.clearServer });
     };
 
     const workingDraftText = () => workingDraftTurns.map((turn) => turn.trim()).filter(Boolean).join('\n\n');
@@ -487,10 +599,6 @@ const { t } = createLayoutContext();
       }
       return '';
     };
-
-    const latestLooksLikeUnderstandingCheck = (text: string): boolean => (
-      /\b(?:i'?m sorry|are you able to understand|do you understand|can you understand|you keep repeating|same thing|not understanding)\b/i.test(text)
-    );
 
     const setState = (next: OverlayState) => {
       state = next;
@@ -691,7 +799,7 @@ const { t } = createLayoutContext();
     const closeOverlay = () => {
       teardown();
       setState('idle');
-      clearPersistedConversation();
+      persistConversation();
       overlay.hidden = true;
     };
 
@@ -785,9 +893,6 @@ const { t } = createLayoutContext();
         : 'Got it — keep going, or say "save it" when you are ready.';
     };
 
-    const latestAsksForScope = (text: string): boolean => (
-      /\b(rundown|what do you need|what else do you need|understanding|questions|scope)\b/i.test(text)
-    );
     const latestLooksLikeProductFeedback = (text: string): boolean => (
       /\b(button|screen|scroll|interface|mic|microphone|working correctly|improved|not working|doesn'?t work|response|conversation)\b/i.test(text)
     );
@@ -808,39 +913,9 @@ const { t } = createLayoutContext();
       }
       return classified;
     };
-    const latestLooksCritical = (text: string): boolean => (
-      /\b(safety|unsafe|injury|injured|fall|gas leak|electrical hazard|mold|asbestos|lead paint|stop work|policy|violation|illegal|client threat|lawsuit)\b/i.test(text)
-    );
-    const humbleFallbackReplyForTurn = (latestText: string, trp: TurnResolutionPacket): string => {
-      const entity = conversationDestinationFor(trp, latestText);
-      const frame = trp.context_hypothesis.frame;
-      const isEstimate = trp.intent === 'job_intake' || trp.intent === 'estimate_update' || frame === 'estimate_walk';
-      const isNote = trp.intent === 'job_note' || trp.intent === 'job_log' || frame === 'field_note';
-      if (latestLooksCritical(latestText)) {
-        return 'Flagging that. Do not let the crew work past the safety issue.';
-      }
-      if (latestLooksLikeUnderstandingCheck(latestText)) {
-        return entity ? `Yes. I have this on ${entity}.` : 'Yes. I have the thread.';
-      }
-      if (textIsDestinationCorrection(latestText)) {
-        return entity ? `Got it — ${entity}.` : 'Got it.';
-      }
-      if (latestAsksForScope(latestText)) {
-        return isEstimate
-          ? 'Scope, rough dimensions, selections, constraints.'
-          : 'Status, blocker, next move, who needs to know.';
-      }
-      if (latestLooksLikeProductFeedback(latestText)) {
-        return 'Noted.';
-      }
-      if (latestLooksLikeFieldStatus(latestText) || isNote) {
-        return entity ? `I have it on ${entity}.` : 'I have the note.';
-      }
-      if (isEstimate) {
-        return entity ? `I have it for ${entity}.` : 'I have the estimate thread.';
-      }
-      return 'Got it.';
-    };
+    // Client placeholder is a single non-committal ack ('Got it.', inlined at the
+    // enterReply call site). The server reply resolver is the sole reply authority
+    // per turn — no client-side reply tree (avoids a second voice generator).
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
       confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave(trp);
@@ -1067,9 +1142,7 @@ const { t } = createLayoutContext();
 
     const resolveTurnServerSide = async (text: string, fallback: TurnResolutionPacket): Promise<TurnResolutionPacket> => {
       try {
-        const tenantId = currentTenantId();
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (tenantId) headers['x-kerf-tenant'] = tenantId;
         const res = await fetch('/api/v1/right-hand/resolve-turn', {
           method: 'POST',
           credentials: 'include',
@@ -1107,9 +1180,7 @@ const { t } = createLayoutContext();
       turnsForModel: ConversationTurn[],
     ): Promise<string | null> => {
       try {
-        const tenantId = currentTenantId();
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (tenantId) headers['x-kerf-tenant'] = tenantId;
         const res = await fetch('/api/v1/right-hand/resolve-reply', {
           method: 'POST',
           credentials: 'include',
@@ -1122,6 +1193,9 @@ const { t } = createLayoutContext();
             userRole: 'owner',
             userPreferenceSummary: rightHandVoiceProfileSummary(),
             knownEntities: collectKnownEntities(),
+            conversationDestinationLabel,
+            workingDraft: currentWorkingDraft(),
+            conversationId: getConversationId(),
             conversationTurns: turnsForModel.map((turn) => ({
               speaker: turn.speaker,
               text: turn.text,
@@ -1193,7 +1267,7 @@ const { t } = createLayoutContext();
       clearComposer();
       appendTurn('operator', clean);
       const turnsForModel = [...conversationTurns];
-      const fallbackReply = humbleFallbackReplyForTurn(clean, trp);
+      const fallbackReply = 'Got it.';
       const replyIndex = appendTurn('right_hand', fallbackReply);
       showActions('listening');
       persistConversation();
@@ -1328,9 +1402,7 @@ const { t } = createLayoutContext();
 
     const commitTurnServerSide = async (trp: TurnResolutionPacket): Promise<{ ok: true; trp: TurnResolutionPacket } | { ok: false; message: string; projectCorrection: boolean }> => {
       try {
-        const tenantId = currentTenantId();
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (tenantId) headers['x-kerf-tenant'] = tenantId;
         const res = await fetch('/api/v1/right-hand/commit-turn', {
           method: 'POST',
           credentials: 'include',
@@ -1372,7 +1444,9 @@ const { t } = createLayoutContext();
             ? 'adu'
             : '';
       const archetypeParam = archetype ? `&archetype=${archetype}` : '';
-      navigate(`/projects/new?src=voice&intent=estimate_walk${archetypeParam}`);
+      const conversationParam = `&conversation_id=${encodeURIComponent(getConversationId())}`;
+      persistConversation();
+      navigate(`/projects/new?src=voice&intent=estimate_walk${archetypeParam}${conversationParam}`);
     };
 
     // ── Turn commit (Packet #27): Save asks the server to create a durable
@@ -1442,6 +1516,8 @@ const { t } = createLayoutContext();
         ? template(overlay.dataset.headFiled ?? '✓ Filed to {job} · Daily Log · via voice', { job: filedEntity })
         : overlay.dataset.headFiledGeneric ?? '✓ Filed · Daily Log · via voice', 'saved');
       appendTurn('right_hand', overlay.dataset.filedPrompt ?? 'Anything else, or want to add a photo to it?');
+      workingDraftTurns = [];
+      persistConversation();
       showActions('resolved');
     };
 
@@ -1531,6 +1607,12 @@ const { t } = createLayoutContext();
     const recoverVoiceTurn = (message?: string) => {
       awaitingConfirm = false;
       parkedTranscript = '';
+      const partial = currentCaptionText();
+      if (partial && workingDraftTurns.at(-1) !== partial) {
+        workingDraftTurns.push(partial);
+        appendTurn('operator', partial);
+      }
+      persistConversation();
       lastInterim = '';
       teardown();
       setState('capped');
@@ -1742,7 +1824,7 @@ const { t } = createLayoutContext();
       clearComposer();
       const restored = options.restoreConversation ? restoreConversation() : false;
       if (!restored) {
-        resetConversation({ clearStored: true });
+        resetConversation({ clearStored: false });
       } else {
         surfaceUnfiledDraftLoop();
       }
@@ -1753,6 +1835,7 @@ const { t } = createLayoutContext();
       overlay.hidden = false;
       startTimer();
       scrollConversationToLatest('auto');
+      if (options.restoreConversation && !restored) void restoreConversationFromServer();
       void beginSession();
     };
 
@@ -1765,7 +1848,7 @@ const { t } = createLayoutContext();
       e.preventDefault();
       const speakEvent = new CustomEvent('kerf:rh-speak', { cancelable: true });
       window.dispatchEvent(speakEvent);
-      openOverlay();
+      openOverlay({ restoreConversation: true });
     });
 
     overlay.querySelectorAll('[data-rhvo-dismiss]').forEach((el) => {

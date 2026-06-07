@@ -30,9 +30,16 @@ import { hasSynthesisConsent } from '../../tenant/synthesisConsent.js';
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import { appendDailyLogEntryAndSurface } from '../lib/dailyLogCommit.js';
+import {
+  buildRightHandConversationSnapshot,
+  cleanConversationId,
+  deleteRightHandConversationSnapshot,
+  readRightHandConversationSnapshot,
+  saveRightHandConversationSnapshot,
+} from '../lib/rightHandConversationStore.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
-import { requireApiTenant } from '../lib/tenantContext.js';
+import { requireApiSession, requireApiTenant } from '../lib/tenantContext.js';
 import {
   resolveTurnWithModel,
   type KnownEntityContext,
@@ -48,6 +55,10 @@ import {
   parseTurnResolution,
   type TurnResolutionPacket,
 } from '../../voice/realtime/turnResolution.js';
+import {
+  deriveWorkingDraftFields,
+  type WorkingDraftFields,
+} from '../../voice/realtime/workingDraft.js';
 
 export const rightHandTurnRoutes = new Hono<{ Variables: ApiVariables }>();
 const DEFAULT_GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
@@ -80,6 +91,14 @@ function resolveDeps(): RightHandTurnRouteDeps {
     groqDepsFactory: defaultGroqClientDeps,
     groqChatFn: groqChat,
   };
+}
+
+function conversationActorIdFromSessionToken(token: string): string {
+  return `actor_${crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex')
+    .slice(0, 24)}`;
 }
 
 function cleanKnownEntities(value: unknown): readonly KnownEntityContext[] {
@@ -118,6 +137,17 @@ function cleanConversationTurns(value: unknown): readonly ConversationReplyTurn[
     })
     .filter((item): item is ConversationReplyTurn => item !== null)
     .slice(-12);
+}
+
+function cleanWorkingDraft(
+  value: unknown,
+  fallbackText: string,
+  destinationLabel = '',
+): WorkingDraftFields {
+  const raw = value && typeof value === 'object' && typeof (value as Record<string, unknown>)['rawText'] === 'string'
+    ? String((value as Record<string, unknown>)['rawText'])
+    : fallbackText;
+  return deriveWorkingDraftFields(raw, destinationLabel);
 }
 
 function safeProjectId(raw: unknown): string | null {
@@ -305,6 +335,52 @@ async function maybeAppendProposalDraft(params: {
   return { event, duplicate: false };
 }
 
+rightHandTurnRoutes.get('/right-hand/conversation', async (c) => {
+  const tenant = requireApiTenant(c);
+  const actorId = conversationActorIdFromSessionToken(requireApiSession(c).token);
+  const conversationId = cleanConversationId(c.req.query('conversation_id'));
+  const snapshot = await readRightHandConversationSnapshot(tenant, actorId, conversationId);
+  return c.json({ snapshot });
+});
+
+rightHandTurnRoutes.put('/right-hand/conversation', async (c) => {
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400);
+  }
+
+  const tenant = requireApiTenant(c);
+  const actorId = conversationActorIdFromSessionToken(requireApiSession(c).token);
+  const conversationId = cleanConversationId(body['conversationId'] ?? body['conversation_id']);
+  const snapshot = buildRightHandConversationSnapshot({
+    tenant,
+    actorId,
+    conversationId,
+    body,
+    now: resolveDeps().now?.() ?? new Date(),
+  });
+  await saveRightHandConversationSnapshot(snapshot);
+  return c.json({ snapshot });
+});
+
+rightHandTurnRoutes.delete('/right-hand/conversation', async (c) => {
+  let body: Record<string, unknown> = {};
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    body = {};
+  }
+  const tenant = requireApiTenant(c);
+  const actorId = conversationActorIdFromSessionToken(requireApiSession(c).token);
+  const conversationId = cleanConversationId(
+    body['conversationId'] ?? body['conversation_id'] ?? c.req.query('conversation_id'),
+  );
+  await deleteRightHandConversationSnapshot(tenant, actorId, conversationId);
+  return c.json({ ok: true, conversation_id: conversationId });
+});
+
 rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
   let body: Record<string, unknown>;
   try {
@@ -381,9 +457,13 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
 
   const deps = resolveDeps();
   const tenantId = requireApiTenant(c);
+  const draftText = typeof body['draftText'] === 'string' ? body['draftText'].slice(0, 6000) : trp.heard_text;
+  const destinationLabel = typeof body['conversationDestinationLabel'] === 'string'
+    ? body['conversationDestinationLabel'].slice(0, 160)
+    : '';
   const baseInput = {
     latestText,
-    draftText: typeof body['draftText'] === 'string' ? body['draftText'].slice(0, 1800) : trp.heard_text,
+    draftText,
     currentPath: typeof body['currentPath'] === 'string' ? body['currentPath'].slice(0, 160) : undefined,
     userRole: typeof body['userRole'] === 'string' ? body['userRole'].slice(0, 48) : 'owner',
     tenantId,
@@ -392,6 +472,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
       ? body['userPreferenceSummary'].slice(0, 480)
       : undefined,
     trp,
+    workingDraft: cleanWorkingDraft(body['workingDraft'], draftText, destinationLabel),
     conversationTurns: cleanConversationTurns(body['conversationTurns']),
     now: deps.now,
   };
@@ -415,6 +496,8 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     });
   }
 
+  // Altitude-eval signal: one rung-log line per model-led reply turn (no PII — mode/authority only).
+  console.info(`[right_hand] reply turn tenant=${tenantId} mode=${result.mode} authority=${result.authority}${result.fallback_reason ? ` fallback=${result.fallback_reason}` : ''}`);
   return c.json({
     reply: result.reply,
     mode: result.mode,

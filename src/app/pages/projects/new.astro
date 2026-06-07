@@ -81,6 +81,7 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
 
   <script define:vars={{ tenantId: context.tenantId, successMsg: 'Project created — opens in Projects.', errorMsg: 'Could not create project.' }}>
     const TURN_RESOLUTION_SESSION_KEY = 'kerf.turnResolution';
+    const VOICE_CONVERSATION_STORAGE_KEY = 'kerf.voiceConversation';
 
     const parseTurnResolution = (raw) => {
       try {
@@ -91,6 +92,23 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
       } catch {
         return null;
       }
+    };
+
+    const readVoiceConversation = () => {
+      try {
+        const raw = localStorage.getItem(VOICE_CONVERSATION_STORAGE_KEY)
+          || sessionStorage.getItem(VOICE_CONVERSATION_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const voiceWorkingDraft = (voice) => {
+      const draft = voice?.workingDraft || voice?.working_draft;
+      return draft && typeof draft === 'object' ? draft : null;
     };
 
     const inferProjectName = (trp) => {
@@ -123,15 +141,19 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
         raw = null;
       }
       const trp = parseTurnResolution(raw);
+      const voice = readVoiceConversation();
+      const workingDraft = voiceWorkingDraft(voice);
       const handoff = document.getElementById('rh-project-handoff');
       const heard = document.getElementById('rh-project-handoff-heard');
       const contextEl = document.getElementById('rh-project-handoff-context');
-      if (!trp && !archetypeHint) return;
+      if (!trp && !archetypeHint && !workingDraft) return;
 
       if (heard) {
-        heard.textContent = trp?.heard_text || 'Right Hand started this from your last conversation.';
+        heard.textContent = workingDraft?.rawText || trp?.heard_text || 'Right Hand started this from your last conversation.';
       }
-      if (contextEl && trp) {
+      if (contextEl && Array.isArray(workingDraft?.scopeFacts) && workingDraft.scopeFacts.length) {
+        contextEl.textContent = `New project intake · ${workingDraft.scopeFacts.join(', ')}`;
+      } else if (contextEl && trp) {
         const routed = trp.context_hypothesis?.routed_label ?? 'Create a new estimate';
         contextEl.textContent = routed
           .replace(/estimate intake/gi, 'estimate')
@@ -153,7 +175,7 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
       const clientName = form?.querySelector('[name="client_name"]');
       const archetype = form?.querySelector('[name="archetype_hint"]');
       const likely = trp?.context_hypothesis?.likely_entity;
-      const projectSuggestion = trp
+      const projectSuggestion = workingDraft?.projectName || (trp
         ? inferProjectName(trp)
         : archetypeHint === 'bath_refresh'
           ? 'Bath estimate walk'
@@ -161,11 +183,12 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
             ? 'Kitchen estimate walk'
             : archetypeHint === 'adu'
               ? 'Addition estimate walk'
-              : '';
-      const archetypeSuggestion = trp ? inferArchetype(trp) : archetypeHint;
+              : '');
+      const archetypeSuggestion = workingDraft?.archetypeHint || (trp ? inferArchetype(trp) : archetypeHint);
 
       if (projectName && !projectName.value && projectSuggestion) projectName.value = projectSuggestion;
-      if (clientName && !clientName.value && likely?.type === 'client' && likely.label) clientName.value = likely.label;
+      if (clientName && !clientName.value && workingDraft?.clientName) clientName.value = workingDraft.clientName;
+      else if (clientName && !clientName.value && likely?.type === 'client' && likely.label) clientName.value = likely.label;
       if (archetype && !archetype.value && archetypeSuggestion) archetype.value = archetypeSuggestion;
     };
 
