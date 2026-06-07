@@ -420,7 +420,7 @@ test('trust loop: durable-capable committed intent replies in place and does NOT
   assert.doesNotMatch(routeCommitted, /navigate\(/);
 
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
-  assert.match(enterReply, /workingDraftTurns\.push\(clean\)/);
+  assert.match(enterReply, /pushWorkingDraftTurn\(clean\)/);
   assert.match(enterReply, /appendTurn\('operator', clean\)/);
   assert.match(enterReply, /appendTurn\('right_hand'/);
   assert.doesNotMatch(enterReply, /enterConfirm\(/);
@@ -464,7 +464,7 @@ test('trust loop: confirm projects the TRP as a Right Hand conversation, not aud
 test('trust loop: meaningful unclassified speech defaults to a saveable note', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
-  assert.match(routeCommitted, /const cleanText = text\.trim\(\)/);
+  assert.match(routeCommitted, /const cleanText = cleanCommittedTranscript\(text\)/);
   assert.match(routeCommitted, /if \(cleanText\.length > 0\) \{/);
   assert.match(routeCommitted, /enterReply\(cleanText\)/);
   assert.doesNotMatch(
@@ -495,7 +495,7 @@ test('mic-off immediately pauses the mic/session before any clarify or route dec
   );
   assert.match(
     finishCurrentTurn,
-    /releaseListeningResources\(\);\s*const interim = currentCaptionText\(\);/,
+    /releaseListeningResources\(\);\s*const interim = cleanCommittedTranscript\(currentCaptionText\(\)\);/,
   );
   const currentCaptionText = sliceDecl(src, 'currentCaptionText', 'clearTimers');
   assert.match(currentCaptionText, /lastInterim\.trim\(\)/);
@@ -765,7 +765,8 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   assert.match(enterReply, /const fallbackReply = 'Got it\.'/);
   assert.match(enterReply, /const replyIndex = appendTurn\('right_hand', fallbackReply\)/);
   assert.match(enterReply, /resolveReplyServerSide\(clean, draftText, trp, turnsForModel\)/);
-  assert.match(enterReply, /replaceTurn\(replyIndex, 'right_hand', reply\)/);
+  assert.match(enterReply, /canonicalWorkingDraft = payload\.workingDraft/);
+  assert.match(enterReply, /replaceTurn\(replyIndex, 'right_hand', payload\.reply\)/);
   assert.doesNotMatch(enterReply, /\$\{replyForTurn\(trp\)\} What else\?/);
 });
 
@@ -801,7 +802,7 @@ test('F-RH3 conversation surface: correction turns stay visible without becoming
   assert.match(enterReply, /const isDestinationCorrection = textIsDestinationCorrection\(clean\)/);
   assert.match(enterReply, /const spokenDestination = isDestinationCorrection \? extractDestinationLabel\(clean\) : ''/);
   assert.match(enterReply, /if \(spokenDestination\) conversationDestinationLabel = spokenDestination/);
-  assert.match(enterReply, /if \(!isDestinationCorrection\) workingDraftTurns\.push\(clean\)/);
+  assert.match(enterReply, /pushWorkingDraftTurn\(clean\)/);
   assert.match(enterReply, /const draftText = workingDraftText\(\) \|\| clean/);
   assert.match(enterReply, /appendTurn\('operator', clean\)/);
   assert.match(enterReply, /persistConversation\(\)/);
@@ -833,8 +834,9 @@ test('F-RH3 conversation surface: destination memory survives session restore', 
   assert.match(restoreConversation, /parsed\.conversationDestinationLabel/);
   assert.match(restoreConversation, /cleanDestinationLabel\(parsed\.conversationDestinationLabel\)/);
 
-  const resetConversation = sliceDecl(src, 'resetConversation', 'workingDraftText');
+  const resetConversation = sliceDecl(src, 'resetConversation', 'surfaceUnfiledDraftLoop');
   assert.match(resetConversation, /conversationDestinationLabel = ''/);
+  assert.match(resetConversation, /canonicalWorkingDraft = emptyWorkingDraft\(\)/);
 });
 
 test('F-RH3 conversation surface: reopening an unfiled draft surfaces the loop once', () => {
@@ -858,10 +860,30 @@ test('F-RH3 conversation surface: an inline "save a note that…" opens the cons
   const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
   assert.match(routeCommitted, /textContainsInlineDurableDraft\(cleanText\)/);
   assert.match(routeCommitted, /const draft = draftText\.length > 0 \? draftText : cleanText/);
-  assert.match(routeCommitted, /if \(existingDraftText\.length === 0\) \{\s*workingDraftTurns\.push\(cleanText\);\s*\}/);
+  assert.match(routeCommitted, /if \(existingDraftText\.length === 0\) \{\s*pushWorkingDraftTurn\(cleanText\);\s*\}/);
   assert.match(routeCommitted, /appendTurn\('operator', cleanText\)/);
   assert.match(routeCommitted, /persistConversation\(\)/);
   assert.match(routeCommitted, /enterSorting\(draft\)/);
+});
+
+test('F-RH3 conversation surface: committed transcripts are cleaned before they become turns', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  assert.match(src, /const FALSE_LANGUAGE_TRANSCRIPT_RE = \/[\s\S]*hvað er þetta[\s\S]*það er hann/);
+  assert.match(src, /const PUNCTUATION_ONLY_TRANSCRIPT_RE/);
+  assert.match(src, /const cleanCommittedTranscript/);
+  assert.match(src, /if \(!clean \|\| PUNCTUATION_ONLY_TRANSCRIPT_RE\.test\(clean\)\) return ''/);
+  assert.match(src, /if \(FALSE_LANGUAGE_TRANSCRIPT_RE\.test\(clean\)\) return ''/);
+
+  const routeCommitted = sliceDecl(src, 'routeCommitted', 'resumeListeningWithCorrection');
+  assert.match(routeCommitted, /const cleanText = cleanCommittedTranscript\(text\)/);
+  assert.match(routeCommitted, /recoverVoiceTurn\('I didn’t catch usable speech\. Tap Continue and say it again\.'\)/);
+
+  const onCommitted = sliceDecl(src, 'onCommitted', 'finishCurrentTurn');
+  assert.match(onCommitted, /const finalText = cleanCommittedTranscript/);
+  const finishCurrentTurn = sliceDecl(src, 'finishCurrentTurn', 'armHardCap');
+  assert.match(finishCurrentTurn, /const interim = cleanCommittedTranscript\(currentCaptionText\(\)\)/);
+  const recoverVoiceTurn = sliceDecl(src, 'recoverVoiceTurn', 'SPEECH_RMS');
+  assert.match(recoverVoiceTurn, /const partial = cleanCommittedTranscript\(currentCaptionText\(\)\)/);
 });
 
 test('F-RH3 stage 4: the consequence bubble answers where-it-goes (Save to <job> · Change job · Keep talking)', () => {
@@ -1166,7 +1188,9 @@ test('F-RH3 conversation surface preserves unfiled working drafts across close a
   const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
   assert.match(src, /VOICE_CONVERSATION_LOCAL_KEY = VOICE_CONVERSATION_SESSION_KEY/);
   assert.match(src, /VOICE_CONVERSATION_ID_KEY = 'kerf\.voiceConversationId'/);
-  assert.match(src, /deriveWorkingDraftFields/);
+  assert.doesNotMatch(src, /deriveWorkingDraftFields/);
+  assert.match(src, /let canonicalWorkingDraft: WorkingDraftFields = emptyWorkingDraft\(\)/);
+  assert.match(src, /canonicalWorkingDraft = payload\.workingDraft/);
   assert.match(src, /\/api\/v1\/right-hand\/conversation/);
   assert.match(src, /workingDraft: currentWorkingDraft\(\)/);
   assert.match(src, /restoreConversationFromServer/);

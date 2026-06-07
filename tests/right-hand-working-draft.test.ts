@@ -26,6 +26,44 @@ test('working draft extracts a new Chen kitchen scope from a long voice turn', (
   assert.ok(draft.scopeFacts.includes('cabinetry'));
   assert.ok(draft.scopeFacts.includes('countertops'));
   assert.ok(draft.scopeFacts.includes('rough square footage'));
+  assert.ok(draft.scope.includes('kitchen remodel'));
+  assert.ok(draft.scope.includes('downstairs flooring'));
+  assert.ok(draft.scope.includes('paint'));
+  assert.ok(draft.scope.includes('cabinetry'));
+  assert.ok(draft.scope.includes('countertops'));
+  assert.ok(draft.known_entities.some((entity) => entity.kind === 'client' && entity.label === 'Chen'));
+  assert.ok(draft.known_entities.some((entity) => entity.kind === 'project' && entity.label === 'Chen kitchen remodel'));
+  assert.ok(draft.allowances.includes('1000 sqft flooring'));
+  assert.deepEqual(draft.open_items, []);
+  assert.equal(draft.next_action, 'prepare project intake draft');
+  assert.equal(draft.proposed_artifact, 'project_intake');
+  assert.ok(draft.source_refs.length > 0);
+});
+
+test('working draft absorbs scope and allowances instead of chasing address first', () => {
+  const draft = deriveWorkingDraftFields(
+    [
+      'The Chen project is a kitchen plus whole downstairs remodel.',
+      'We are going to do about 60 lineal feet of white oak cabinetry,',
+      'quartzite countertops, remove existing tile and carpet, install glue-down wood flooring,',
+      'paint the downstairs, and it is about a thousand square foot of flooring.',
+    ].join(' '),
+  );
+
+  assert.equal(draft.clientName, 'Chen');
+  assert.equal(draft.projectName, 'Chen kitchen remodel');
+  assert.equal(draft.proposed_artifact, 'project_intake');
+  assert.ok(draft.scope.includes('kitchen remodel'));
+  assert.ok(draft.scope.includes('downstairs flooring'));
+  assert.ok(draft.scope.includes('tile/carpet flooring demo'));
+  assert.ok(draft.scope.includes('glue-down wood flooring'));
+  assert.ok(draft.scope.includes('paint'));
+  assert.ok(draft.scope.includes('cabinetry'));
+  assert.ok(draft.scope.includes('countertops'));
+  assert.ok(draft.allowances.includes('60 LF cabinetry'));
+  assert.ok(draft.allowances.includes('1000 sqft flooring'));
+  assert.ok(draft.allowances.includes('quartzite countertops'));
+  assert.ok(!draft.open_items.some((item) => /address/i.test(item)));
 });
 
 test('working draft accepts a spoken destination as project context after a drop', () => {
