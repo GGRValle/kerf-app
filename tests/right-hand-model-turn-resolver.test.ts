@@ -681,6 +681,34 @@ test('reply resolver strips fabricated draft numbers, clients, and prices', asyn
   assert.ok(result.draft_fabrication_flags?.some((flag) => flag.includes('$125k')));
 });
 
+test('reply resolver treats trade nouns as scope vocabulary, not client entities', async () => {
+  const input: ResolveReplyInput = {
+    latestText: 'Uppers are 42 LF, lowers are 30 LF, demo the old cabinets, rough-in for the sink, and add slab counters.',
+    draftText: 'Uppers are 42 LF, lowers are 30 LF, demo the old cabinets, rough-in for the sink, and add slab counters.',
+    currentPath: '/right-hand',
+    userRole: 'owner',
+    tenantId: 'tenant_ggr' as never,
+    trp: buildTurnResolutionPacket({
+      heardText: 'Uppers are 42 LF, lowers are 30 LF, demo the old cabinets, rough-in for the sink, and add slab counters.',
+      intent: 'job_intake',
+    }),
+    workingDraft: deriveWorkingDraftFields('Uppers are 42 LF, lowers are 30 LF, demo the old cabinets, rough-in for the sink, and add slab counters.'),
+  };
+  const cleaned = cleanWorkingDraftUpdateWithFlags({
+    known_entities: [
+      { type: 'client', label: 'Uppers', source: 'operator' },
+      { type: 'project', label: 'Demo', source: 'operator' },
+      { type: 'site', label: 'Slab', source: 'operator' },
+    ],
+    scope: ['42 LF uppers', '30 LF lowers', 'sink rough-in', 'slab counters'],
+  }, input);
+  assert.deepEqual(cleaned.update?.known_entities, undefined);
+  assert.ok(cleaned.flags.includes('trade_vocab_entity:client:Uppers'));
+  assert.ok(cleaned.flags.includes('trade_vocab_entity:project:Demo'));
+  assert.ok(cleaned.flags.includes('trade_vocab_entity:site:Slab'));
+  assert.ok(cleaned.update?.scope?.includes('sink rough-in'));
+});
+
 test('reply resolver keeps faithful paraphrase scope with anchored source support', async () => {
   const text = 'The Okonkwo family, hall bath down to studs, curbless shower, double vanity 7 LF, heated tile floor about 90 sqft, plus converting the garage to a 400 sqft ADU, rough plumbing for a kitchenette, mini-split.';
   const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });

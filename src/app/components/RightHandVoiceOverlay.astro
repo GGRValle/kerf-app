@@ -1019,9 +1019,20 @@ const { t } = createLayoutContext();
       }
       return classified;
     };
-    // Client placeholder is a single non-committal ack ('Got it.', inlined at the
-    // enterReply call site). The server reply resolver is the sole reply authority
-    // per turn — no client-side reply tree (avoids a second voice generator).
+    const textRequestsEstimateAssembly = (text: string): boolean => (
+      /\b(?:put it together|take me there|let'?s build it|build it|assemble(?: it)?|start the estimate|make the estimate|open the estimate|price it out)\b/i.test(text)
+    );
+
+    const textLooksLikeEstimatePageUpdate = (text: string): boolean => (
+      /^\/estimate\/[A-Za-z0-9_-]+/.test(window.location.pathname)
+      && /\b(?:add|include|bump|raise|increase|change|swap|allowance|backsplash|flooring|slab|counter|cabinet)\b/i.test(text)
+    );
+
+    const pendingReplyText = (): string => {
+      const variants = ['Working…', 'On it…', 'I’m checking the draft…'];
+      const index = conversationTurns.filter((turn) => turn.speaker === 'right_hand').length % variants.length;
+      return variants[index] ?? 'Working…';
+    };
 
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
       confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave(trp);
@@ -1136,7 +1147,7 @@ const { t } = createLayoutContext();
     };
 
     const projectIdFromPath = (): string | null => {
-      const match = window.location.pathname.match(/^\/projects\/([A-Za-z0-9_-]+)(?:\/|$)/);
+      const match = window.location.pathname.match(/^\/(?:projects|estimate)\/([A-Za-z0-9_-]+)(?:\/|$)/);
       return match?.[1] ?? null;
     };
 
@@ -1329,6 +1340,53 @@ const { t } = createLayoutContext();
       }
     };
 
+    type AssembleEstimateResponse = {
+      ok?: boolean;
+      status?: string;
+      route?: string;
+      draft?: unknown;
+      working_draft?: unknown;
+      workingDraft?: unknown;
+    };
+
+    const assembleEstimateServerSide = async (
+      latestText: string,
+      draftText: string,
+      turnsForModel: ConversationTurn[],
+    ): Promise<{ route: string; workingDraft: WorkingDraftFields } | null> => {
+      try {
+        const res = await fetch('/api/v1/right-hand/assemble-estimate', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            latestText,
+            draftText,
+            currentPath: window.location.pathname,
+            project_id: projectIdFromPath(),
+            userRole: 'owner',
+            conversationDestinationLabel,
+            workingDraft: currentWorkingDraft(),
+            conversationId: getConversationId(),
+            conversationTurns: turnsForModel.map((turn) => ({
+              speaker: turn.speaker,
+              text: turn.text,
+            })),
+          }),
+        });
+        if (!res.ok) return null;
+        const body = await res.json() as AssembleEstimateResponse;
+        const route = typeof body.route === 'string' && body.route.trim() ? body.route.trim() : '';
+        if (!route) return null;
+        return {
+          route,
+          workingDraft: cleanStoredWorkingDraft(body.workingDraft ?? body.working_draft, draftText),
+        };
+      } catch {
+        return null;
+      }
+    };
+
     // ── Stage 4 consequence bubble (F-RH3): durable intents NEVER auto-navigate.
     // The reply is appended in place (You said · Right Hand reply · where-it-goes
     // prompt) on the same blurred surface — the mic stays available — and the
@@ -1385,10 +1443,25 @@ const { t } = createLayoutContext();
       clearComposer();
       appendTurn('operator', clean);
       const turnsForModel = [...conversationTurns];
-      const fallbackReply = 'Got it.';
+      const wantsAssembly = textRequestsEstimateAssembly(clean) || textLooksLikeEstimatePageUpdate(clean);
+      const fallbackReply = wantsAssembly ? 'Assembling the estimate draft…' : pendingReplyText();
       const replyIndex = appendTurn('right_hand', fallbackReply);
       showActions('listening');
       persistConversation();
+      if (wantsAssembly) {
+        void assembleEstimateServerSide(clean, draftText, turnsForModel).then((payload) => {
+          if (!payload) {
+            replaceTurn(replyIndex, 'right_hand', 'I can keep shaping the estimate here, but I could not open the estimate page yet.');
+            persistConversation();
+            return;
+          }
+          canonicalWorkingDraft = payload.workingDraft;
+          replaceTurn(replyIndex, 'right_hand', 'I’m opening the estimate draft for review. The conversation stays parked here.');
+          persistConversation();
+          window.setTimeout(() => navigate(payload.route, { resume: true }), 180);
+        });
+        return;
+      }
       void resolveReplyServerSide(clean, draftText, trp, turnsForModel).then((payload) => {
         if (!payload) return;
         canonicalWorkingDraft = payload.workingDraft;

@@ -144,6 +144,7 @@ Working draft memory:
 - Treat working_draft scope, known_entities, open_items, assumptions, allowances, next_action, proposed_artifact, and source_refs as the current working draft state.
 - Do not ask again for a client, job, project, or scope fact that appears in working draft memory or recent conversation.
 - If the operator gives a person/family name in a new-project thread, accept it as the client/project candidate unless tenant entities prove a conflict.
+- Trade vocabulary is not identity. Terms like uppers, lowers, LF, SF, demo, rough-in, slab, backsplash, vanity, cabinet runs, and countertops are scope words, not client/project/site candidates.
 - Absorb-first intake: if the operator gives a rich new project or estimate narrative, preserve the scope first. Address, budget range, timeline, decision maker, access, and similar details are open_items, not intake blockers.
 - A new client/project may begin as a placeholder working draft. Do not force address or customer details before absorbing the job narrative.
 - Identity/logistics fields are open_items, not questions: client name, address, budget range, timeline, decision maker, access, and contact details must not be asked during absorb-first scope capture unless the operator explicitly asks what is missing for filing.
@@ -422,6 +423,27 @@ const SUPPORT_STOP_WORDS = new Set([
   'supplied',
 ]);
 
+const TRADE_NOUN_ENTITY_BLOCKLIST = new Set([
+  'backsplash',
+  'cabinet',
+  'cabinet run',
+  'cabinetry',
+  'counter',
+  'countertop',
+  'countertops',
+  'demo',
+  'lf',
+  'lower',
+  'lowers',
+  'rough in',
+  'rough-in',
+  'sf',
+  'slab',
+  'upper',
+  'uppers',
+  'vanity',
+]);
+
 const NUMBER_WORDS: Readonly<Record<string, string>> = {
   zero: '0',
   one: '1',
@@ -583,6 +605,10 @@ function cleanDraftKnownEntities(
       : null;
     const label = cleanNullableString(record['label'], 120);
     if (!type || !label) continue;
+    if (TRADE_NOUN_ENTITY_BLOCKLIST.has(normalized(label))) {
+      flags.push(`trade_vocab_entity:${type}:${label}`);
+      continue;
+    }
     if (!hasSourceSupport(label, corpus)) {
       flags.push(`unsupported_entity:${type}:${label}`);
       continue;

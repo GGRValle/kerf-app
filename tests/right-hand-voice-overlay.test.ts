@@ -431,7 +431,7 @@ test('trust loop: durable-capable committed intent replies in place and does NOT
 
   // The confirm step parks the transcript but performs NO navigation and NO
   // persistence — front-door only.
-  const enterConfirm = sliceDecl(src, 'enterConfirm', 'SORTING_BEAT_MS');
+  const enterConfirm = sliceDecl(src, 'enterConfirm', 'enterReply');
   assert.match(enterConfirm, /awaitingConfirm = true/);
   assert.match(enterConfirm, /parkedTranscript = text/);
   assert.doesNotMatch(enterConfirm, /navigate\(/);
@@ -762,12 +762,32 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
   assert.match(enterReply, /const intent = conversationIntentForTurn\(clean, draftText\)/);
   assert.match(enterReply, /const turnsForModel = \[\.\.\.conversationTurns\]/);
-  assert.match(enterReply, /const fallbackReply = 'Got it\.'/);
+  assert.match(enterReply, /const wantsAssembly = textRequestsEstimateAssembly\(clean\) \|\| textLooksLikeEstimatePageUpdate\(clean\)/);
+  assert.match(enterReply, /const fallbackReply = wantsAssembly \? 'Assembling the estimate draft…' : pendingReplyText\(\)/);
   assert.match(enterReply, /const replyIndex = appendTurn\('right_hand', fallbackReply\)/);
+  assert.match(enterReply, /assembleEstimateServerSide\(clean, draftText, turnsForModel\)/);
   assert.match(enterReply, /resolveReplyServerSide\(clean, draftText, trp, turnsForModel\)/);
   assert.match(enterReply, /canonicalWorkingDraft = payload\.workingDraft/);
   assert.match(enterReply, /replaceTurn\(replyIndex, 'right_hand', payload\.reply\)/);
   assert.doesNotMatch(enterReply, /\$\{replyForTurn\(trp\)\} What else\?/);
+});
+
+test('Dispatch 3: assembly accept routes to server-owned estimate draft and keeps live conversation link', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const estimatePage = readFileSync(path.join(ROOT, 'src/app/pages/estimate/[projectId].astro'), 'utf8');
+  assert.match(src, /const textRequestsEstimateAssembly/);
+  assert.match(src, /put it together\|take me there/);
+  assert.match(src, /const assembleEstimateServerSide/);
+  assert.match(src, /\/api\/v1\/right-hand\/assemble-estimate/);
+  assert.match(src, /conversationId: getConversationId\(\)/);
+  assert.match(src, /navigate\(payload\.route, \{ resume: true \}\)/);
+  assert.match(src, /I’m opening the estimate draft for review\. The conversation stays parked here\./);
+  assert.match(estimatePage, /readRightHandEstimateDraft/);
+  assert.match(estimatePage, /Back to conversation/);
+  assert.match(estimatePage, /source_type/);
+  assert.match(estimatePage, /data-rh-conversation/);
+  assert.match(estimatePage, /kerf\.voiceConversationId/);
+  assert.doesNotMatch(src, /saved estimate/i);
 });
 
 test('F-RH3 conversation surface: no raw action placeholder can render in Right Hand copy', () => {

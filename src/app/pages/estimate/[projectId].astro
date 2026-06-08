@@ -9,10 +9,14 @@ import {
   clientVisibleLines,
   selectionsForProject,
 } from '../../../sales/index.js';
+import { readRightHandEstimateDraft } from '../../../api/lib/rightHandAssemblyStore.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
+const rightHandEstimateId = Astro.url.searchParams.get('estimate_id') ?? '';
+const rightHandConversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
+const rightHandDraft = rightHandEstimateId ? await readRightHandEstimateDraft(tenant, rightHandEstimateId) : null;
 const lines = estimateLinesForProject(tenant, projectId);
 const breakdowns = lines.map(lineBreakdown);
 const totals = estimateTotals(lines);
@@ -22,13 +26,48 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
 ---
 
 <Layout title="Estimate builder" activeHref="/sales">
-  <article class="es-page" data-project={projectId}>
+  <article class="es-page" data-project={projectId} data-project-id={projectId} data-rh-conversation={rightHandConversationId}>
     <a class="es-back" href={`/design/${projectId}`}>‹ Design</a>
     <header>
       <div class="es-crumb">Estimate · {projectId}</div>
       <h1>Estimate builder</h1>
       <p class="es-sub">Operator total = client total. Markup is folded into the price, never shown to the client.</p>
     </header>
+
+    {rightHandDraft ? (
+      <section class="es-rh-draft" aria-label="Right Hand assembly draft">
+        <div class="es-rh-head">
+          <div>
+            <div class="es-crumb">Right Hand assembly · draft for review</div>
+            <h2>{rightHandDraft.title}</h2>
+            <p class="es-meta">Source-labeled working estimate. Not filed, not sent, and not money-authoritative until you review and confirm.</p>
+          </div>
+          <a class="es-rh-bubble" href={`/right-hand?conversation_id=${rightHandDraft.conversation_id}&return_to=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`}>
+            Back to conversation
+          </a>
+        </div>
+        <div class="es-rh-lines">
+          {rightHandDraft.lines.length === 0 ? <p class="es-empty">Right Hand has not assembled lines yet.</p> : null}
+          {rightHandDraft.lines.map((line) => (
+            <div class="es-rh-line" data-open={line.open_item ? 'true' : 'false'}>
+              <span class="es-ln-label">
+                {line.label}
+                <span class={`es-source ${line.source_type}`}>{line.source_type}</span>
+                {line.open_item ? <span class="es-tag pending">TBD</span> : null}
+                {line.flags.map((flag) => <span class="es-tag">{flag}</span>)}
+              </span>
+              <span class="es-meta">{line.source_ref}</span>
+            </div>
+          ))}
+        </div>
+        {rightHandDraft.open_items.length > 0 ? (
+          <div class="es-rh-open">
+            <strong>Open placeholders</strong>
+            {rightHandDraft.open_items.map((item) => <span>{item}</span>)}
+          </div>
+        ) : null}
+      </section>
+    ) : null}
 
     <div class="es-toolbar">
       <button class="es-btn" id="seed" data-approved={approvedCount}>Seed from approved Selections ({approvedCount})</button>
@@ -100,6 +139,11 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
 <script>
   const root = document.querySelector('.es-page');
   const projectId = root?.getAttribute('data-project') ?? '';
+  const rhConversation = root?.getAttribute('data-rh-conversation') ?? '';
+  if (rhConversation) {
+    window.sessionStorage.setItem('kerf.voiceConversationId', rhConversation);
+    window.localStorage.setItem('kerf.voiceConversationId', rhConversation);
+  }
 
   async function post(url: string, body: Record<string, unknown>, confirmMsg: string) {
     if (!confirm(confirmMsg)) return null;
@@ -175,4 +219,18 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
   .es-propose { margin-top: 0.5rem; }
   .es-draft { margin-top: 0.7rem; padding: 0.7rem; border: 1px solid var(--field-green, #2f8f5b); border-radius: 10px; background: var(--surface, #11151c); }
   .es-empty { color: var(--text-muted, #6a7282); }
+  .es-rh-draft { border: 1px solid var(--field-green, #2f8f5b); border-radius: 8px; padding: 0.85rem; background: color-mix(in srgb, var(--surface, #11151c) 88%, var(--field-green, #2f8f5b)); margin: 1rem 0; }
+  .es-rh-head { display: flex; gap: 1rem; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+  .es-rh-head h2 { margin: 0.15rem 0 0.25rem; font-size: 1.05rem; }
+  .es-rh-bubble { position: sticky; top: 0.75rem; display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0.45rem 0.7rem; border-radius: 999px; background: var(--field-green, #2f8f5b); color: #fff; text-decoration: none; font-weight: 700; white-space: nowrap; }
+  .es-rh-lines { margin-top: 0.7rem; border-top: 1px solid var(--border, #2a3140); }
+  .es-rh-line { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border, #222a36); }
+  .es-rh-line[data-open='true'] { background: color-mix(in srgb, var(--accent, #f5b544) 10%, transparent); }
+  .es-source { font-size: 0.65rem; padding: 0.05rem 0.35rem; border: 1px solid currentColor; border-radius: 999px; margin-left: 0.3rem; }
+  .es-source.company_data { color: var(--field-green, #38c977); }
+  .es-source.model_knowledge { color: #60a5fa; }
+  .es-source.allowance { color: var(--accent, #f5b544); }
+  .es-tag.pending { color: var(--accent, #f5b544); border-color: var(--accent, #f5b544); }
+  .es-rh-open { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.75rem; color: var(--text-muted, #98a1b3); font-size: 0.8rem; }
+  .es-rh-open span { border: 1px solid var(--border, #2a3140); border-radius: 999px; padding: 0.1rem 0.45rem; }
 </style>
