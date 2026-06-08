@@ -401,11 +401,16 @@ const SUPPORT_STOP_WORDS = new Set([
   'this',
   'turn',
   'with',
+  'plus',
+  'demo',
+  'demolition',
   'conversion',
   'converted',
   'converting',
   'install',
   'installed',
+  'installing',
+  'installation',
   'approximately',
   'rebuild',
   'rebuilding',
@@ -413,22 +418,8 @@ const SUPPORT_STOP_WORDS = new Set([
   'remodeling',
   'renovation',
   'roughly',
-]);
-
-const SCOPE_CLARIFIER_TOKENS = new Set([
-  'conversion',
-  'converted',
-  'converting',
-  'hvac',
-  'install',
-  'installed',
-  'approximately',
-  'rebuild',
-  'rebuilding',
-  'remodel',
-  'remodeling',
-  'renovation',
-  'roughly',
+  'supply',
+  'supplied',
 ]);
 
 const NUMBER_WORDS: Readonly<Record<string, string>> = {
@@ -470,6 +461,30 @@ function meaningfulTokens(value: string): readonly string[] {
     .filter((token) => token.length >= 4 && !SUPPORT_STOP_WORDS.has(token));
 }
 
+function canonicalScopeToken(token: string): string {
+  if (token === 'bathroom') return 'bath';
+  if (token === 'cabinetry' || token === 'cabinets') return 'cabinet';
+  if (token === 'countertops') return 'countertop';
+  if (token === 'floors' || token === 'flooring') return 'floor';
+  if (token === 'studs') return 'stud';
+  if (token.endsWith('ies') && token.length > 5) return `${token.slice(0, -3)}y`;
+  if (token.endsWith('ing') && token.length > 6) return token.slice(0, -3);
+  if (token.endsWith('ed') && token.length > 5) return token.slice(0, -2);
+  if (token.endsWith('s') && token.length > 5) return token.slice(0, -1);
+  return token;
+}
+
+function uniqueScopeTokens(value: string): readonly string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const token of meaningfulTokens(value).map(canonicalScopeToken)) {
+    if (!token || seen.has(token)) continue;
+    seen.add(token);
+    out.push(token);
+  }
+  return out;
+}
+
 function numberTokens(value: string): readonly string[] {
   return normalized(value)
     .split(' ')
@@ -490,15 +505,20 @@ function hasSourceSupport(value: string, corpus: string): boolean {
   return tokens.every((token) => source.includes(token));
 }
 
-function hasScopeSourceSupport(value: string, corpus: string): boolean {
-  if (!numbersHaveExactSupport(value, corpus)) return false;
-  const source = normalized(corpus);
-  const tokens = meaningfulTokens(value);
-  if (tokens.length === 0) return false;
-  const anchorTokens = tokens.filter((token) => !SCOPE_CLARIFIER_TOKENS.has(token));
-  if (anchorTokens.length === 0) return false;
-  const supported = anchorTokens.filter((token) => source.includes(token));
-  return supported.length === anchorTokens.length;
+type ScopeSupportStatus = 'full' | 'partial' | 'unsupported';
+
+function scopeSourceSupportStatus(value: string, corpus: string): ScopeSupportStatus {
+  if (!numbersHaveExactSupport(value, corpus)) return 'unsupported';
+  const sourceTokens = new Set(uniqueScopeTokens(corpus));
+  const tokens = uniqueScopeTokens(value);
+  if (tokens.length === 0) return 'unsupported';
+  const supported = tokens.filter((token) => sourceTokens.has(token));
+  if (supported.length === tokens.length) return 'full';
+  const unsupported = tokens.length - supported.length;
+  const coverage = supported.length / tokens.length;
+  return supported.length >= 2 && coverage >= 0.6 && unsupported <= supported.length
+    ? 'partial'
+    : 'unsupported';
 }
 
 function cleanNullableString(value: unknown, max = 160): string | null {
@@ -525,12 +545,18 @@ function cleanStringList(
   for (const item of value) {
     const clean = cleanNullableString(item, options.maxLength ?? 140);
     if (!clean) continue;
-    const supported = options.supportMode === 'scope'
-      ? hasScopeSourceSupport(clean, options.corpus ?? '')
+    const scopeStatus = options.supportMode === 'scope'
+      ? scopeSourceSupportStatus(clean, options.corpus ?? '')
+      : null;
+    const supported = scopeStatus !== null
+      ? scopeStatus !== 'unsupported'
       : hasSourceSupport(clean, options.corpus ?? '');
     if (options.requireSupport && !supported) {
       options.flags?.push(`${options.flagPrefix ?? 'unsupported'}:${clean}`);
       continue;
+    }
+    if (options.requireSupport && scopeStatus === 'partial') {
+      options.flags?.push(`partial_support:${clean}`);
     }
     const key = normalized(clean);
     if (!key || seen.has(key)) continue;
