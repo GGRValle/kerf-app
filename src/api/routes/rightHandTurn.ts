@@ -42,6 +42,14 @@ import {
   readRightHandConversationSnapshot,
   saveRightHandConversationSnapshot,
 } from '../lib/rightHandConversationStore.js';
+import {
+  buildRightHandEstimateDraft,
+  estimateIdForRightHandAssembly,
+  projectIdForRightHandAssembly,
+  readRightHandEstimateDraft,
+  saveRightHandEstimateDraft,
+  searchRightHandEstimateDrafts,
+} from '../lib/rightHandAssemblyStore.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiSession, requireApiTenant } from '../lib/tenantContext.js';
@@ -172,6 +180,37 @@ function cleanWorkingDraft(
   return deriveWorkingDraftFields(raw, destinationLabel);
 }
 
+function cleanStringListForDraft(value: unknown, maxItems: number, maxChars: number): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, maxItems)
+    .map((item) => item.slice(0, maxChars));
+}
+
+function cleanWorkingDraftFromBody(
+  value: unknown,
+  fallbackText: string,
+  destinationLabel = '',
+): WorkingDraftFields {
+  const derived = cleanWorkingDraft(value, fallbackText, destinationLabel);
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return derived;
+  const record = value as Record<string, unknown>;
+  return mergeWorkingDraftFields(derived, {
+    scope: cleanStringListForDraft(record['scope'], 24, 180),
+    open_items: cleanStringListForDraft(record['open_items'], 18, 140),
+    assumptions: cleanStringListForDraft(record['assumptions'], 12, 160),
+    allowances: cleanStringListForDraft(record['allowances'], 16, 160),
+    next_action: typeof record['next_action'] === 'string' ? record['next_action'].slice(0, 180) : undefined,
+    proposed_artifact: ['job_note', 'project_intake', 'estimate_draft'].includes(String(record['proposed_artifact']))
+      ? record['proposed_artifact'] as WorkingDraftFields['proposed_artifact']
+      : undefined,
+    source_refs: cleanStringListForDraft(record['source_refs'], 12, 140),
+  });
+}
+
 function textMentionsEntity(text: string, entity: KnownEntityContext): boolean {
   return textMentionsProject(text, entity.label) || (entity.id ? textMentionsProject(text, entity.id) : false);
 }
@@ -214,7 +253,7 @@ function safeProjectId(raw: unknown): string | null {
 
 function projectIdFromPath(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
-  const match = raw.match(/^\/projects\/([A-Za-z0-9_-]+)(?:\/|$)/);
+  const match = raw.match(/^\/(?:projects|estimate)\/([A-Za-z0-9_-]+)(?:\/|$)/);
   return match?.[1] ?? null;
 }
 
@@ -543,6 +582,113 @@ rightHandTurnRoutes.delete('/right-hand/conversation', async (c) => {
   return c.json({ ok: true, conversation_id: conversationId });
 });
 
+rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400);
+  }
+
+  const tenant = requireApiTenant(c);
+  const actorId = conversationActorIdFromSessionToken(requireApiSession(c).token);
+  const conversationId = cleanConversationId(body['conversationId'] ?? body['conversation_id']);
+  const latestText = typeof body['latestText'] === 'string' ? body['latestText'].replace(/\s+/g, ' ').trim().slice(0, 600) : '';
+  const destinationLabel = typeof body['conversationDestinationLabel'] === 'string'
+    ? body['conversationDestinationLabel'].slice(0, 160)
+    : '';
+  const draftText = typeof body['draftText'] === 'string' ? body['draftText'].slice(0, 6000) : latestText;
+  const existingSnapshot = await readRightHandConversationSnapshot(tenant, actorId, conversationId);
+  const clientDraft = cleanWorkingDraftFromBody(body['workingDraft'], draftText, destinationLabel);
+  const workingDraft = existingSnapshot
+    ? mergeWorkingDraftFields(existingSnapshot.working_draft, {
+        scope: clientDraft.scope,
+        known_entities: clientDraft.known_entities,
+        open_items: clientDraft.open_items,
+        assumptions: clientDraft.assumptions,
+        allowances: clientDraft.allowances,
+        next_action: clientDraft.next_action,
+        proposed_artifact: clientDraft.proposed_artifact ?? 'estimate_draft',
+        source_refs: clientDraft.source_refs,
+      })
+    : mergeWorkingDraftFields(clientDraft, { proposed_artifact: 'estimate_draft' });
+
+  const projectId = projectIdForRightHandAssembly({
+    explicitProjectId: body['project_id'],
+    currentPath: body['currentPath'],
+    conversationId,
+    workingDraft,
+  });
+  const estimateId = estimateIdForRightHandAssembly(conversationId, projectId);
+  const existingDraft = await readRightHandEstimateDraft(tenant, estimateId);
+  const draft = buildRightHandEstimateDraft({
+    tenant,
+    projectId,
+    estimateId,
+    conversationId,
+    workingDraft,
+    existing: existingDraft,
+    latestText,
+    now: resolveDeps().now?.() ?? new Date(),
+  });
+  await saveRightHandEstimateDraft(draft);
+
+  const snapshot = buildRightHandConversationSnapshot({
+    tenant,
+    actorId,
+    conversationId,
+    body: {
+      ...body,
+      workingDraft,
+      conversationDestinationLabel: destinationLabel || draft.title,
+    },
+    now: resolveDeps().now?.() ?? new Date(),
+  });
+  await saveRightHandConversationSnapshot({
+    ...snapshot,
+    working_draft: mergeWorkingDraftFields(workingDraft, {
+      proposed_artifact: 'estimate_draft',
+      next_action: 'estimate assembly opened for review',
+      source_refs: [`right-hand-estimate:${estimateId}`],
+    }),
+  });
+
+  return c.json({
+    ok: true,
+    status: 'assembling',
+    project_id: projectId,
+    estimate_id: estimateId,
+    route: draft.route,
+    draft,
+    working_draft: workingDraft,
+  });
+});
+
+rightHandTurnRoutes.get('/right-hand/estimates/search', async (c) => {
+  const tenant = requireApiTenant(c);
+  const query = c.req.query('q') ?? '';
+  const drafts = await searchRightHandEstimateDrafts(tenant, query);
+  return c.json({
+    estimates: drafts.map((draft) => ({
+      estimate_id: draft.estimate_id,
+      project_id: draft.project_id,
+      title: draft.title,
+      route: draft.route,
+      status: draft.status,
+      updated_at: draft.updated_at,
+      open_items: draft.open_items,
+      line_count: draft.lines.length,
+    })),
+  });
+});
+
+rightHandTurnRoutes.get('/right-hand/estimates/:estimateId', async (c) => {
+  const tenant = requireApiTenant(c);
+  const draft = await readRightHandEstimateDraft(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  return c.json({ draft });
+});
+
 rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
   let body: Record<string, unknown>;
   try {
@@ -626,7 +772,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     ? body['conversationDestinationLabel'].slice(0, 160)
     : '';
   const currentPath = typeof body['currentPath'] === 'string' ? body['currentPath'].slice(0, 160) : undefined;
-  const clientWorkingDraft = cleanWorkingDraft(body['workingDraft'], draftText, destinationLabel);
+  const clientWorkingDraft = cleanWorkingDraftFromBody(body['workingDraft'], draftText, destinationLabel);
   const existingSnapshot = await readRightHandConversationSnapshot(tenantId, actorId, conversationId);
   const workingDraft = existingSnapshot
     ? mergeWorkingDraftFields(existingSnapshot.working_draft, {
