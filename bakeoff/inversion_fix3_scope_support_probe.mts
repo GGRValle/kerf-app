@@ -48,6 +48,12 @@ const cases: Case[] = [
   { id: 'FAB shared-stem', corpus: OKONKWO, scope: 'bathroom skylight', keep: false, note: 'OVER-LOOSEN GUARD: "bath" stem-anchors but "skylight" is the invented head noun — must strip' },
   // LEAK GUARDS — the two demonstrated fail-open shapes (both fail until the hardening lands)
   { id: 'LEAK cabana   ', corpus: OKONKWO, scope: 'Mini-split plus rooftop cabana', keep: false, note: 'connective "plus" (in corpus) must NOT anchor — invented "rooftop cabana" must STRIP' },
+  // FAST-FOLLOW (2026-06-07): the cabana leak generalizes past literal "plus" — ANY coincidental
+  // common token in the corpus inflates coverage. "down" (op "bath down to studs") and "rough"
+  // (op "rough plumbing") each tip 'Mini-split <x> rooftop cabana' to 3/5=0.6 and smuggle "rooftop
+  // cabana" in as partial_support. The generic distinctive-token fix must STRIP these, not flag them.
+  { id: 'LEAK cabana-down ', corpus: OKONKWO, scope: 'Mini-split down rooftop cabana', keep: false, note: 'common token "down" must NOT anchor — invented "rooftop cabana" must STRIP (not partial_support)' },
+  { id: 'LEAK cabana-rough', corpus: OKONKWO, scope: 'Mini-split rough rooftop cabana', keep: false, note: 'common token "rough" must NOT anchor — invented "rooftop cabana" must STRIP (not partial_support)' },
   { id: 'LEAK steam    ', corpus: OKONKWO, scope: 'Curbless shower steam', keep: true, requireFlag: 'partial_support', note: 'coverage cannot separate steam (0.67) from real "tile liner drain" (0.6) → KEEP but SURFACE via partial_support flag, never silent' },
 ];
 
@@ -63,5 +69,5 @@ for (const c of cases) {
   console.log(`${ok ? '  ok ' : 'XX  '}[${c.id}] want=${want} got=${kept ? 'kept' : 'stripped'}${gotFlag}   (${c.note})`);
   if (flags.length) console.log(`          flags: ${JSON.stringify(flags)}`);
 }
-console.log(`\nFIX-3 acceptance: ${cases.length - fails}/${cases.length} as-expected${fails ? '  — NOT YET HARDENED (reach 11/11: cabana STRIPs, steam KEPT+partial_support; no regression to fabrication 4/4 / honesty 7/7)' : '  ✓ HARDENED'}`);
+console.log(`\nFIX-3 acceptance: ${cases.length - fails}/${cases.length} as-expected${fails ? '  — NOT YET HARDENED (reach 13/13: ALL cabana variants STRIP via a generic distinctive-token rule — not just literal "plus" but any coincidental common token e.g. "down"/"rough"; steam KEPT+partial_support; no regression to fabrication 4/4 / honesty 7/7)' : '  ✓ HARDENED'}`);
 process.exit(fails ? 1 : 0);
