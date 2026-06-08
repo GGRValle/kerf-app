@@ -7,15 +7,19 @@
  * mislabels it `unsupported_scope`. This bit in prod: Sonnet said "Mini-split supply and install"
  * → the decisive Okonkwo item was dropped + flagged as fabrication.
  *
- * FIX-3 must move support from token-whitelist to ANCHORED COVERAGE: keep a line whose distinctive
+ * FIX-3 moves support from token-whitelist to ANCHORED COVERAGE: keep a line whose distinctive
  * operator content is present (stem/lemma-matched) while tolerating model elaboration — WITHOUT
- * going permissive (no operator anchor, a contradicting number, or an invented distinctive head
- * noun must still strip). Stemming alone is NOT sufficient: "supply"/"liner"/"drain"/"demo" are not
- * stems of any operator word.
+ * going permissive. Two demonstrated fail-OPEN shapes the hardening must close (LEAK GUARDS below):
+ *   (1) connective inflation — a non-distinctive filler that happens to be in the corpus ("plus")
+ *       counts as an anchor and tips coverage, letting an invented noun ride in → must STRIP.
+ *   (2) minority invention on a 2-anchor line ("Curbless shower steam", 0.67) is coverage-
+ *       indistinguishable from real elaboration ("…tile, liner, drain", 0.6), so it cannot be
+ *       stripped without regressing real scope → KEEP but SURFACE via a `partial_support` flag
+ *       (source-or-silent applied to the floor), never silent.
  *
- * ACCEPTANCE (all green against the fix): this probe 9/9 AND inversion_fabrication_floor_probe.mts
+ * ACCEPTANCE (all green against the fix): this probe 11/11 AND inversion_fabrication_floor_probe.mts
  * 4/4 AND inversion_floor_probe.mts 7/7 AND the resolver suite AND `tsc --noEmit`.
- * Run: node --import tsx bakeoff/inversion_fix3_scope_support_probe.mts   (exit 0 = 9/9)
+ * Run: node --import tsx bakeoff/inversion_fix3_scope_support_probe.mts   (exit 0 = 11/11)
  */
 import { cleanWorkingDraftUpdateWithFlags, type ResolveReplyInput } from '../src/voice/realtime/modelReplyResolver.js';
 import { buildTurnResolutionPacket } from '../src/voice/realtime/turnResolution.js';
@@ -29,7 +33,7 @@ const ctx = (corpus: string): ResolveReplyInput => ({
   conversationTurns: [{ speaker: 'operator', text: corpus }],
 });
 
-type Case = { id: string; corpus: string; scope: string; keep: boolean; note: string };
+type Case = { id: string; corpus: string; scope: string; keep: boolean; note: string; requireFlag?: string };
 const cases: Case[] = [
   // KEEP — operator-anchored, model-elaborated (the live prod drops + morphological variants)
   { id: 'PROD mini-split', corpus: OKONKWO, scope: 'Mini-split supply and install', keep: true, note: 'op "mini-split"; "supply" elaboration — DECISIVE Okonkwo item, dropped live' },
@@ -42,16 +46,22 @@ const cases: Case[] = [
   { id: 'FAB invented  ', corpus: OKONKWO, scope: 'skylight and 600 sqft rooftop deck', keep: false, note: 'no operator anchor — strip' },
   { id: 'FAB number    ', corpus: OKONKWO, scope: 'heated tile floor about 120 sqft', keep: false, note: 'op said 90 sqft; 120 inflation — strip' },
   { id: 'FAB shared-stem', corpus: OKONKWO, scope: 'bathroom skylight', keep: false, note: 'OVER-LOOSEN GUARD: "bath" stem-anchors but "skylight" is the invented head noun — must strip' },
+  // LEAK GUARDS — the two demonstrated fail-open shapes (both fail until the hardening lands)
+  { id: 'LEAK cabana   ', corpus: OKONKWO, scope: 'Mini-split plus rooftop cabana', keep: false, note: 'connective "plus" (in corpus) must NOT anchor — invented "rooftop cabana" must STRIP' },
+  { id: 'LEAK steam    ', corpus: OKONKWO, scope: 'Curbless shower steam', keep: true, requireFlag: 'partial_support', note: 'coverage cannot separate steam (0.67) from real "tile liner drain" (0.6) → KEEP but SURFACE via partial_support flag, never silent' },
 ];
 
 let fails = 0;
 for (const c of cases) {
   const { update, flags } = cleanWorkingDraftUpdateWithFlags({ scope: [c.scope] }, ctx(c.corpus));
   const kept = !!update?.scope?.includes(c.scope);
-  const ok = kept === c.keep;
+  const flagOk = !c.requireFlag || flags.some((f) => f.includes(c.requireFlag!));
+  const ok = kept === c.keep && flagOk;
   if (!ok) fails++;
-  console.log(`${ok ? '  ok ' : 'XX  '}[${c.id}] want=${c.keep ? 'KEEP ' : 'STRIP'} got=${kept ? 'kept' : 'stripped'}   (${c.note})`);
+  const want = c.keep ? (c.requireFlag ? `KEEP+${c.requireFlag}` : 'KEEP') : 'STRIP';
+  const gotFlag = c.requireFlag ? (flagOk ? `+${c.requireFlag}` : ' NOflag') : '';
+  console.log(`${ok ? '  ok ' : 'XX  '}[${c.id}] want=${want} got=${kept ? 'kept' : 'stripped'}${gotFlag}   (${c.note})`);
   if (flags.length) console.log(`          flags: ${JSON.stringify(flags)}`);
 }
-console.log(`\nFIX-3 acceptance: ${cases.length - fails}/${cases.length} as-expected${fails ? '  — NOT YET FIXED (fix must reach 9/9 without regressing fabrication 4/4 + honesty 7/7)' : '  ✓ FIXED'}`);
+console.log(`\nFIX-3 acceptance: ${cases.length - fails}/${cases.length} as-expected${fails ? '  — NOT YET HARDENED (reach 11/11: cabana STRIPs, steam KEPT+partial_support; no regression to fabrication 4/4 / honesty 7/7)' : '  ✓ HARDENED'}`);
 process.exit(fails ? 1 : 0);

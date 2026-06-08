@@ -731,7 +731,10 @@ test('reply resolver keeps faithful paraphrase scope with anchored source suppor
   assert.ok(result.updated_working_draft?.scope?.includes('Hall bath rebuild: curbless shower and double vanity 7 LF'));
   assert.ok(result.updated_working_draft?.scope?.includes('Heated tile floor, approximately 90 sqft'));
   assert.ok(result.updated_working_draft?.scope?.includes('Garage ADU conversion: 400 sqft, rough plumbing for kitchenette, mini-split HVAC'));
-  assert.deepEqual(result.draft_fabrication_flags, undefined);
+  assert.ok(result.draft_fabrication_flags?.some((flag) => (
+    flag === 'partial_support:Garage ADU conversion: 400 sqft, rough plumbing for kitchenette, mini-split HVAC'
+  )));
+  assert.ok(!result.draft_fabrication_flags?.some((flag) => flag.startsWith('unsupported_scope:')));
 });
 
 test('draft fabrication floor keeps anchored scope elaboration but strips invented heads', () => {
@@ -748,19 +751,26 @@ test('draft fabrication floor keeps anchored scope elaboration but strips invent
   const kept = [
     { corpus: okonkwo, scope: 'Mini-split supply and install' },
     { corpus: okonkwo, scope: 'Hall bath demo to studs' },
-    { corpus: okonkwo, scope: 'Curbless shower — tile, liner, drain' },
+    { corpus: okonkwo, scope: 'Curbless shower — tile, liner, drain', partial: true },
+    { corpus: okonkwo, scope: 'Curbless shower steam', partial: true },
     { corpus: gold, scope: 'glue-down wood floors' },
     { corpus: gold, scope: 'white oak cabinets' },
   ];
   for (const item of kept) {
     const { update, flags } = cleanWorkingDraftUpdateWithFlags({ scope: [item.scope] }, ctx(item.corpus));
     assert.ok(update?.scope?.includes(item.scope), `${item.scope} should be kept`);
-    assert.deepEqual(flags, [], `${item.scope} should not be flagged`);
+    assert.ok(!flags.some((flag) => flag.startsWith('unsupported_scope:')), `${item.scope} should not be hard-stripped`);
+    assert.equal(
+      flags.some((flag) => flag === `partial_support:${item.scope}`),
+      !!item.partial,
+      `${item.scope} partial_support flag mismatch`,
+    );
   }
 
   const stripped = [
     { corpus: okonkwo, scope: 'bathroom skylight' },
     { corpus: okonkwo, scope: 'heated tile floor about 120 sqft' },
+    { corpus: okonkwo, scope: 'Mini-split plus rooftop cabana' },
   ];
   for (const item of stripped) {
     const { update, flags } = cleanWorkingDraftUpdateWithFlags({ scope: [item.scope] }, ctx(item.corpus));

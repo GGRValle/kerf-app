@@ -401,6 +401,7 @@ const SUPPORT_STOP_WORDS = new Set([
   'this',
   'turn',
   'with',
+  'plus',
   'demo',
   'demolition',
   'conversion',
@@ -504,16 +505,20 @@ function hasSourceSupport(value: string, corpus: string): boolean {
   return tokens.every((token) => source.includes(token));
 }
 
-function hasScopeSourceSupport(value: string, corpus: string): boolean {
-  if (!numbersHaveExactSupport(value, corpus)) return false;
+type ScopeSupportStatus = 'full' | 'partial' | 'unsupported';
+
+function scopeSourceSupportStatus(value: string, corpus: string): ScopeSupportStatus {
+  if (!numbersHaveExactSupport(value, corpus)) return 'unsupported';
   const sourceTokens = new Set(uniqueScopeTokens(corpus));
   const tokens = uniqueScopeTokens(value);
-  if (tokens.length === 0) return false;
+  if (tokens.length === 0) return 'unsupported';
   const supported = tokens.filter((token) => sourceTokens.has(token));
-  if (supported.length === tokens.length) return true;
+  if (supported.length === tokens.length) return 'full';
   const unsupported = tokens.length - supported.length;
   const coverage = supported.length / tokens.length;
-  return supported.length >= 2 && coverage >= 0.6 && unsupported <= supported.length;
+  return supported.length >= 2 && coverage >= 0.6 && unsupported <= supported.length
+    ? 'partial'
+    : 'unsupported';
 }
 
 function cleanNullableString(value: unknown, max = 160): string | null {
@@ -540,12 +545,18 @@ function cleanStringList(
   for (const item of value) {
     const clean = cleanNullableString(item, options.maxLength ?? 140);
     if (!clean) continue;
-    const supported = options.supportMode === 'scope'
-      ? hasScopeSourceSupport(clean, options.corpus ?? '')
+    const scopeStatus = options.supportMode === 'scope'
+      ? scopeSourceSupportStatus(clean, options.corpus ?? '')
+      : null;
+    const supported = scopeStatus !== null
+      ? scopeStatus !== 'unsupported'
       : hasSourceSupport(clean, options.corpus ?? '');
     if (options.requireSupport && !supported) {
       options.flags?.push(`${options.flagPrefix ?? 'unsupported'}:${clean}`);
       continue;
+    }
+    if (options.requireSupport && scopeStatus === 'partial') {
+      options.flags?.push(`partial_support:${clean}`);
     }
     const key = normalized(clean);
     if (!key || seen.has(key)) continue;
