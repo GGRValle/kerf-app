@@ -27,7 +27,9 @@ import {
   type TurnResolverLlmClient,
 } from '../src/voice/realtime/modelTurnResolver.js';
 import {
+  cleanWorkingDraftUpdateWithFlags,
   resolveReplyWithModel,
+  type ResolveReplyInput,
 } from '../src/voice/realtime/modelReplyResolver.js';
 import { buildTurnResolutionPacket } from '../src/voice/realtime/turnResolution.js';
 import { deriveWorkingDraftFields } from '../src/voice/realtime/workingDraft.js';
@@ -730,6 +732,41 @@ test('reply resolver keeps faithful paraphrase scope with anchored source suppor
   assert.ok(result.updated_working_draft?.scope?.includes('Heated tile floor, approximately 90 sqft'));
   assert.ok(result.updated_working_draft?.scope?.includes('Garage ADU conversion: 400 sqft, rough plumbing for kitchenette, mini-split HVAC'));
   assert.deepEqual(result.draft_fabrication_flags, undefined);
+});
+
+test('draft fabrication floor keeps anchored scope elaboration but strips invented heads', () => {
+  const okonkwo = 'The Okonkwo family, hall bath down to studs, curbless shower, double vanity 7 LF, heated tile floor about 90 sqft, plus converting the garage to a 400 sqft ADU, rough plumbing for a kitchenette, mini-split.';
+  const gold = "Kitchen plus a whole downstairs remodel. About 60 lineal feet of white oak cabinetry, quartzite countertops, and replace wood flooring. The existing tile and carpet will be removed and we will install glue-down wood flooring, about a thousand square foot. We're going to paint the downstairs — baseboards, walls, ceilings. Quartzite for budget purposes. About a 12x15 kitchen with an island.";
+  const ctx = (corpus: string): ResolveReplyInput => ({
+    latestText: corpus,
+    draftText: corpus,
+    tenantId: 'tenant_ggr' as never,
+    trp: buildTurnResolutionPacket({ heardText: corpus, intent: 'job_intake' }),
+    conversationTurns: [{ speaker: 'operator', text: corpus }],
+  });
+
+  const kept = [
+    { corpus: okonkwo, scope: 'Mini-split supply and install' },
+    { corpus: okonkwo, scope: 'Hall bath demo to studs' },
+    { corpus: okonkwo, scope: 'Curbless shower — tile, liner, drain' },
+    { corpus: gold, scope: 'glue-down wood floors' },
+    { corpus: gold, scope: 'white oak cabinets' },
+  ];
+  for (const item of kept) {
+    const { update, flags } = cleanWorkingDraftUpdateWithFlags({ scope: [item.scope] }, ctx(item.corpus));
+    assert.ok(update?.scope?.includes(item.scope), `${item.scope} should be kept`);
+    assert.deepEqual(flags, [], `${item.scope} should not be flagged`);
+  }
+
+  const stripped = [
+    { corpus: okonkwo, scope: 'bathroom skylight' },
+    { corpus: okonkwo, scope: 'heated tile floor about 120 sqft' },
+  ];
+  for (const item of stripped) {
+    const { update, flags } = cleanWorkingDraftUpdateWithFlags({ scope: [item.scope] }, ctx(item.corpus));
+    assert.equal(update?.scope?.includes(item.scope), undefined, `${item.scope} should be stripped`);
+    assert.ok(flags.some((flag) => flag.includes(item.scope)), `${item.scope} should be flagged`);
+  }
 });
 
 test('reply resolver honesty floor rejects false durable model copy', async () => {
