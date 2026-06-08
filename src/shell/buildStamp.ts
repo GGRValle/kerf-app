@@ -1,10 +1,18 @@
 import { execSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /** Served on `/health` and `/api/v1/health` for lane report-back gates. */
 export interface BuildStamp {
   readonly commit: string;
   readonly dirty: boolean;
-  readonly source: 'git' | 'env' | 'unknown';
+  readonly source: 'file' | 'git' | 'env' | 'fly_image' | 'unknown';
+  readonly built_at?: string;
+}
+
+export interface ReadBuildStampOptions {
+  readonly imageStampPath?: string;
 }
 
 function parseDirtyEnv(raw: string | undefined): boolean | null {
@@ -13,7 +21,38 @@ function parseDirtyEnv(raw: string | undefined): boolean | null {
   return null;
 }
 
-export function readBuildStamp(): BuildStamp {
+const DEFAULT_IMAGE_STAMP_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../build-stamp.json',
+);
+
+function parseImageBuildStamp(raw: string): BuildStamp | null {
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const commit = typeof parsed['commit'] === 'string' ? parsed['commit'].trim() : '';
+    const dirty = parsed['dirty'];
+    const builtAt = typeof parsed['built_at'] === 'string' ? parsed['built_at'].trim() : '';
+    if (!commit || typeof dirty !== 'boolean') return null;
+    return {
+      commit,
+      dirty,
+      source: 'file',
+      ...(builtAt ? { built_at: builtAt } : {}),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readImageBuildStamp(stampPath = DEFAULT_IMAGE_STAMP_PATH): BuildStamp | null {
+  if (!existsSync(stampPath)) return null;
+  return parseImageBuildStamp(readFileSync(stampPath, 'utf8'));
+}
+
+export function readBuildStamp(options: ReadBuildStampOptions = {}): BuildStamp {
+  const imageStamp = readImageBuildStamp(options.imageStampPath);
+  if (imageStamp) return imageStamp;
+
   const envCommit = process.env['KERF_BUILD_COMMIT']?.trim();
   const envDirty = parseDirtyEnv(process.env['KERF_BUILD_DIRTY']);
   if (envCommit) {
@@ -25,6 +64,10 @@ export function readBuildStamp(): BuildStamp {
       dirty: envDirty ?? true,
       source,
     };
+  }
+  const flyImageRef = process.env['FLY_IMAGE_REF']?.trim();
+  if (flyImageRef) {
+    return { commit: flyImageRef, dirty: true, source: 'fly_image' };
   }
   try {
     const commit = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
@@ -46,6 +89,7 @@ export function buildStampPayload(stamp: BuildStamp): Record<string, unknown> {
       commit: stamp.commit,
       dirty: stamp.dirty,
       source: stamp.source,
+      ...(stamp.built_at ? { built_at: stamp.built_at } : {}),
     },
   };
 }
