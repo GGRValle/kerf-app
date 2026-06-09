@@ -23,6 +23,11 @@ const totals = estimateTotals(lines);
 const clientLines = clientVisibleLines(lines).map(lineBreakdown);
 const approvedCount = selectionsForProject(tenant, projectId).filter((s) => s.lifecycle === 'approved').length;
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const rhPricedLines = rightHandDraft?.lines.filter((line) => typeof line.extended_cents === 'number' && line.extended_cents > 0) ?? [];
+const rhTotalCents = rhPricedLines.reduce((sum, line) => sum + (line.extended_cents ?? 0), 0);
+const qtyFor = (line: { quantity?: number; uom?: string }) => (
+  typeof line.quantity === 'number' && line.uom ? `${line.quantity.toLocaleString('en-US')} ${line.uom}` : ''
+);
 ---
 
 <Layout title="Estimate builder" activeHref="/sales">
@@ -54,11 +59,12 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
             <div class="es-rh-line" data-open={line.open_item ? 'true' : 'false'}>
               <span class="es-ln-label">
                 {line.label}
-                <span class={`es-source ${line.source_type}`}>{line.source_type}</span>
+                <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
                 {line.open_item ? <span class="es-tag pending">TBD</span> : null}
-                {line.flags.map((flag) => <span class="es-tag">{flag}</span>)}
+                {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
+                {qtyFor(line) ? <span class="es-tag">{qtyFor(line)}</span> : null}
               </span>
-              <span class="es-meta">{line.source_ref}</span>
+              <span class="es-ln-num strong">{typeof line.extended_cents === 'number' ? fmt(line.extended_cents) : 'Needs pricing'}</span>
             </div>
           ))}
         </div>
@@ -97,41 +103,72 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
     <!-- Operator view: cost + markup + client price -->
     <section class="es-table">
       <h2>Operator view</h2>
-      {breakdowns.length === 0 ? <p class="es-empty">No lines yet. Seed from approved Selections or add a line.</p> : null}
-      {breakdowns.map((b) => (
-        <div class="es-row" data-internal={b.line.client_visible ? 'false' : 'true'}>
-          <span class="es-ln-label">{b.line.label} <span class="es-tag">{b.line.line_type}</span>{b.line.client_visible ? null : <span class="es-tag internal">internal</span>}</span>
-          <span class="es-ln-num">cost {fmt(b.extended_cost_cents)}</span>
-          <span class="es-ln-num">+mkup {fmt(b.markup_cents)}</span>
-          <span class="es-ln-num strong">{fmt(b.client_price_cents)}</span>
-        </div>
-      ))}
-      <div class="es-totals">
-        <span>Cost {fmt(totals.cost_cents)}</span>
-        <span>Markup {fmt(totals.markup_cents)}</span>
-        <span class="strong">Operator total {fmt(totals.operator_total_cents)}</span>
-        <span class={totals.reconciles ? 'es-recon ok' : 'es-recon bad'}>
-          {totals.reconciles ? '✓ reconciles' : '✗ does not reconcile'}
-        </span>
-      </div>
+      {rightHandDraft ? (
+        <>
+          {rhPricedLines.length === 0 ? <p class="es-empty">Right Hand captured the scope, but the draft still needs pricing.</p> : null}
+          {rhPricedLines.map((line) => (
+            <div class="es-row">
+              <span class="es-ln-label">
+                {line.label}
+                <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
+                {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
+              </span>
+              <span class="es-ln-num">{qtyFor(line)}</span>
+              <span class="es-ln-num">{typeof line.unit_cents === 'number' ? fmt(line.unit_cents) + '/' + (line.uom ?? 'unit') : ''}</span>
+              <span class="es-ln-num strong">{fmt(line.extended_cents ?? 0)}</span>
+            </div>
+          ))}
+          <div class="es-totals">
+            <span class="strong">Operator total {fmt(rhTotalCents)}</span>
+            <span class={rightHandDraft.gate.allowed ? 'es-recon ok' : 'es-recon bad'}>
+              {rightHandDraft.gate.allowed ? 'review-ready' : 'source basis required before file/send'}
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
+          {breakdowns.length === 0 ? <p class="es-empty">No lines yet. Seed from approved Selections or add a line.</p> : null}
+          {breakdowns.map((b) => (
+            <div class="es-row" data-internal={b.line.client_visible ? 'false' : 'true'}>
+              <span class="es-ln-label">{b.line.label} <span class="es-tag">{b.line.line_type}</span>{b.line.client_visible ? null : <span class="es-tag internal">internal</span>}</span>
+              <span class="es-ln-num">cost {fmt(b.extended_cost_cents)}</span>
+              <span class="es-ln-num">+mkup {fmt(b.markup_cents)}</span>
+              <span class="es-ln-num strong">{fmt(b.client_price_cents)}</span>
+            </div>
+          ))}
+          <div class="es-totals">
+            <span>Cost {fmt(totals.cost_cents)}</span>
+            <span>Markup {fmt(totals.markup_cents)}</span>
+            <span class="strong">Operator total {fmt(totals.operator_total_cents)}</span>
+            <span class={totals.reconciles ? 'es-recon ok' : 'es-recon bad'}>
+              {totals.reconciles ? '✓ reconciles' : '✗ does not reconcile'}
+            </span>
+          </div>
+        </>
+      )}
     </section>
 
     <!-- Client view: prices only; markup never appears -->
     <section class="es-table es-client">
       <h2>Client view <span class="es-meta">(what the client sees — no cost, no markup)</span></h2>
-      {clientLines.map((b) => (
-        <div class="es-row">
-          <span class="es-ln-label">{b.line.label}</span>
-          <span class="es-ln-num strong">{fmt(b.client_price_cents)}</span>
-        </div>
-      ))}
+      {rightHandDraft ? rhPricedLines.map((line) => (
+          <div class="es-row">
+            <span class="es-ln-label">{line.label}</span>
+            <span class="es-ln-num strong">{fmt(line.extended_cents ?? 0)}</span>
+          </div>
+        )) : clientLines.map((b) => (
+          <div class="es-row">
+            <span class="es-ln-label">{b.line.label}</span>
+            <span class="es-ln-num strong">{fmt(b.client_price_cents)}</span>
+          </div>
+        ))}
       <div class="es-totals">
-        <span class="strong">Total {fmt(totals.client_total_cents)}</span>
+        <span class="strong">Total {fmt(rightHandDraft ? rhTotalCents : totals.client_total_cents)}</span>
       </div>
     </section>
 
     <section class="es-propose">
-      <button class="es-btn primary" id="gen-proposal" disabled={breakdowns.length === 0}>Generate proposal draft ›</button>
+      <button class="es-btn primary" id="gen-proposal" disabled={rightHandDraft ? rhPricedLines.length === 0 || !rightHandDraft.gate.allowed : breakdowns.length === 0}>Generate proposal draft ›</button>
       <p class="es-meta">Drafts only. Kerf never auto-sends — sending is a separate, human-gated step.</p>
       <div id="draft-result" class="es-draft" hidden></div>
     </section>

@@ -370,7 +370,7 @@ test('Adversarial: Whisper transcript primes an unbacked price, but voice path k
 // 6. V7 / V8 acceptance on the voice-derived AltitudePacket
 // ──────────────────────────────────────────────────────────────────────────
 
-test('Voice-derived AltitudePacket passes V7 (source-basis-required) — voice transcript ID lives in evidence_ids', async () => {
+test('Voice-derived AltitudePacket blocks V7 when the priced band is directional/model-backed', async () => {
   const eventLog = createMemoryEventLog();
   const result = await runVoiceEstimate(
     {
@@ -392,7 +392,8 @@ test('Voice-derived AltitudePacket passes V7 (source-basis-required) — voice t
     },
   );
   const v7 = runV7SourceBasisRequired(result.estimate.altitudePacket);
-  assert.equal(v7.passed, true, `V7 should pass; got reason=${v7.reason}`);
+  assert.equal(v7.passed, false);
+  assert.equal(v7.reason, 'source_basis_required');
 });
 
 test('Voice-derived AltitudePacket passes V8 — labels match the band tier', async () => {

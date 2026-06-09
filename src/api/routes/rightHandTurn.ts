@@ -711,6 +711,8 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     estimateId,
     conversationId,
     titleSeed: workingDraft.projectName ?? workingDraft.clientName ?? workingDraft.scopeSummary,
+    scopeText: workingDraft.rawText,
+    scopeLines: workingDraft.scope,
     estimatorResponse: estimateResult.estimatorResponse,
     gateAllowed: estimateResult.allowed,
     gateBlockedReasons: estimateResult.blockedReasons,

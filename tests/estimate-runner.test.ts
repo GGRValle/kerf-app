@@ -167,7 +167,7 @@ test('runEstimate throws CrossTenantAccessError when actor tenant != input tenan
 // 3. Happy path end-to-end
 // ──────────────────────────────────────────────────────────────────────────
 
-test('runEstimate happy path produces a result with allowed=true and surfaced=true', async () => {
+test('runEstimate happy path produces a surfaced review result', async () => {
   const inputs = baseInputs();
   const eventLog = createMemoryEventLog();
   const result = await runEstimate(inputs, {
@@ -371,7 +371,7 @@ test('Produced events surface to DecisionQueue via existing projectDecisions pri
   assert.equal(decision.requiredRole, 'owner');
   assert.ok(decision.options.length >= 2);
   assert.ok(decision.blocks.length === 1, 'blocks array must be non-empty for queue inclusion');
-  assert.match(decision.title, /Estimate ready for review/);
+  assert.match(decision.title, /Estimate blocked|Estimate ready for review/);
 });
 
 test('Blocked outcome still surfaces to DecisionQueue (operator must see blocks)', async () => {

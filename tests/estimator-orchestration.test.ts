@@ -319,6 +319,62 @@ test('Test 1 belt-and-suspenders: packetBuilder rejects unbacked priced lines un
   assert.equal(packet.money_fields?.source_class, 'model_inference');
 });
 
+test('Test 1 itemized: MODEL_INFERENCE component rows stay visible and remain consequence-blocked', () => {
+  const inputs = baseInputs({ scopeTags: ['cabinetry'] });
+  const band = renderVarianceBand(
+    getVarianceBand({
+      projectTypeTag: 'kitchen_remodel',
+      scopeSubset: ['cabinetry'],
+      comparablePool: kitchenWithCabinetryPool.slice(0, 1),
+      computedAt: REQUESTED_AT,
+    }),
+  );
+  assert.equal(band.precision_allowed, false);
+  const bandsByScope = new Map<ScopeTag, ReturnType<typeof renderVarianceBand>>();
+  bandsByScope.set('cabinetry', band);
+
+  const clean = enforceTrustDiscipline({
+    raw: parseRawResponse(JSON.stringify({
+      line_items: [],
+      itemized_lines: [
+        {
+          scope_tag: 'cabinetry',
+          division_code: '12',
+          division_label: 'Furnishings',
+          description: '36 LF base cabinets',
+          quantity: 36,
+          uom: 'LF',
+          unit_cents: 42_500,
+          confidence: 'HIGH',
+          source_ref: band.source_refs[0]?.uri ?? null,
+        },
+      ],
+      project_total_cents: null,
+      gaps_flagged: [],
+      operator_summary: 'Itemized draft.',
+    })),
+    bandsByScope,
+  });
+
+  assert.equal(clean.itemized_lines.length, 1);
+  assert.equal(clean.itemized_lines[0]?.extended_cents, 1_530_000);
+  assert.equal(clean.itemized_lines[0]?.confidence, 'MODEL_INFERENCE');
+  assert.equal(clean.project_total_cents, 1_530_000);
+  assert.ok(clean.gaps_flagged.some((gap) => gap.scope_tag === 'cabinetry' && /source basis/i.test(gap.reason)));
+
+  const packet = buildEstimatorAltitudePacket({
+    inputs,
+    response: clean,
+    bandsByScope,
+    modelCallerOutput: MODEL_CALLER_OUTPUT_FIXTURE,
+  });
+  assert.equal(packet.money_fields?.amount_cents, 1_530_000);
+  assert.equal(packet.money_fields?.source_class, 'model_inference');
+  const v7 = runV7SourceBasisRequired(packet);
+  assert.equal(v7.passed, false);
+  assert.equal(v7.reason, 'source_basis_required');
+});
+
 // ──────────────────────────────────────────────────────────────────────────
 // TEST 2 — LOW BAND HEDGE LANGUAGE
 // ──────────────────────────────────────────────────────────────────────────
@@ -580,7 +636,7 @@ test('buildEstimatorPrompt system message contains trust-discipline instructions
   assert.match(prompt.systemMessage, /PRECISION GATE/);
   assert.match(prompt.systemMessage, /MODEL_INFERENCE/);
   assert.match(prompt.systemMessage, /source basis is still/);
-  assert.match(prompt.systemMessage, /PROJECT-TOTAL FRAMING/);
+  assert.match(prompt.systemMessage, /ITEMIZED DRAFT FIRST/);
 });
 
 // ──────────────────────────────────────────────────────────────────────────

@@ -44,6 +44,7 @@ export interface EstimatorInputs {
  */
 export interface RawEstimatorResponse {
   readonly line_items: readonly RawLineItem[];
+  readonly itemized_lines: readonly RawItemizedLine[];
   readonly project_total_cents: number | null;
   readonly gaps_flagged: readonly RawGap[];
   readonly operator_summary: string;
@@ -56,6 +57,18 @@ export interface RawLineItem {
   /** LLM's claim about confidence; we re-derive from the actual band. */
   readonly confidence: string;
   readonly band_source_uri: string | null;
+}
+
+export interface RawItemizedLine {
+  readonly scope_tag: string;
+  readonly division_code: string;
+  readonly division_label: string;
+  readonly description: string;
+  readonly quantity: number;
+  readonly uom: string;
+  readonly unit_cents: number;
+  readonly confidence: string;
+  readonly source_ref: string | null;
 }
 
 export interface RawGap {
@@ -73,6 +86,7 @@ export interface RawGap {
  */
 export interface EstimatorResponse {
   readonly line_items: readonly EstimatorLineItem[];
+  readonly itemized_lines: readonly EstimatorItemizedLine[];
   readonly project_total_cents: Cents | null;
   readonly gaps_flagged: readonly EstimatorGap[];
   readonly operator_summary: string;
@@ -84,6 +98,19 @@ export interface EstimatorLineItem {
   readonly price_cents: Cents | null;
   readonly confidence: 'HIGH' | 'LOW' | 'MODEL_INFERENCE';
   readonly band_source_uri: string | null;
+}
+
+export interface EstimatorItemizedLine {
+  readonly scope_tag: ScopeTag;
+  readonly division_code: string;
+  readonly division_label: string;
+  readonly description: string;
+  readonly quantity: number;
+  readonly uom: string;
+  readonly unit_cents: Cents;
+  readonly extended_cents: Cents;
+  readonly confidence: 'HIGH' | 'LOW' | 'MODEL_INFERENCE';
+  readonly source_ref: string | null;
 }
 
 export interface EstimatorGap {

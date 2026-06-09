@@ -25,10 +25,12 @@ import { isScopeTag, type ScopeTag } from '../../projects/index.js';
 import type { RenderedBand } from '../varianceIntegration/index.js';
 import type {
   EstimatorGap,
+  EstimatorItemizedLine,
   EstimatorLineItem,
   EstimatorResponse,
   RawEstimatorResponse,
   RawGap,
+  RawItemizedLine,
   RawLineItem,
 } from './types.js';
 
@@ -90,6 +92,15 @@ export function parseRawResponse(content: string): RawEstimatorResponse {
     parsedLineItems.push(parseRawLineItem(raw, i));
   }
 
+  const itemizedRaw = parsed['itemized_lines'];
+  if (itemizedRaw !== undefined && !Array.isArray(itemizedRaw)) {
+    throw new ResponseParseError('"itemized_lines" must be an array when present');
+  }
+  const parsedItemizedLines: RawItemizedLine[] = [];
+  for (const [i, raw] of (itemizedRaw ?? []).entries()) {
+    parsedItemizedLines.push(parseRawItemizedLine(raw, i));
+  }
+
   const gapsRaw = parsed['gaps_flagged'];
   if (!Array.isArray(gapsRaw)) {
     throw new ResponseParseError('"gaps_flagged" must be an array');
@@ -111,6 +122,7 @@ export function parseRawResponse(content: string): RawEstimatorResponse {
 
   return {
     line_items: parsedLineItems,
+    itemized_lines: parsedItemizedLines,
     project_total_cents: projectTotal,
     gaps_flagged: parsedGaps,
     operator_summary: operatorSummary,
@@ -147,6 +159,59 @@ function parseRawLineItem(raw: unknown, index: number): RawLineItem {
     price_cents: price,
     confidence,
     band_source_uri: bandUri,
+  };
+}
+
+function parseRawItemizedLine(raw: unknown, index: number): RawItemizedLine {
+  if (!isObject(raw)) {
+    throw new ResponseParseError(`itemized_lines[${index}] must be an object`);
+  }
+  const scopeTag = raw['scope_tag'];
+  if (typeof scopeTag !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].scope_tag must be a string`);
+  }
+  const divisionCode = raw['division_code'];
+  if (typeof divisionCode !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].division_code must be a string`);
+  }
+  const divisionLabel = raw['division_label'];
+  if (typeof divisionLabel !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].division_label must be a string`);
+  }
+  const description = raw['description'];
+  if (typeof description !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].description must be a string`);
+  }
+  const quantity = raw['quantity'];
+  if (!(typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0)) {
+    throw new ResponseParseError(`itemized_lines[${index}].quantity must be a positive number`);
+  }
+  const uom = raw['uom'];
+  if (typeof uom !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].uom must be a string`);
+  }
+  const unitCents = raw['unit_cents'];
+  if (!(typeof unitCents === 'number' && Number.isInteger(unitCents) && unitCents >= 0)) {
+    throw new ResponseParseError(`itemized_lines[${index}].unit_cents must be a non-negative integer`);
+  }
+  const confidence = raw['confidence'];
+  if (typeof confidence !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].confidence must be a string`);
+  }
+  const sourceRef = raw['source_ref'];
+  if (sourceRef !== null && typeof sourceRef !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].source_ref must be a string or null`);
+  }
+  return {
+    scope_tag: scopeTag,
+    division_code: divisionCode,
+    division_label: divisionLabel,
+    description,
+    quantity,
+    uom,
+    unit_cents: unitCents,
+    confidence,
+    source_ref: sourceRef,
   };
 }
 
@@ -199,6 +264,7 @@ export function enforceTrustDiscipline(
 ): EstimatorResponse {
   const { raw, bandsByScope } = input;
   const cleanLineItems: EstimatorLineItem[] = [];
+  const cleanItemizedLines: EstimatorItemizedLine[] = [];
   const cleanGaps: EstimatorGap[] = raw.gaps_flagged
     .map((g) => coerceGap(g))
     .filter((g): g is EstimatorGap => g !== null);
@@ -252,11 +318,46 @@ export function enforceTrustDiscipline(
     });
   }
 
+  for (const rawLine of raw.itemized_lines ?? []) {
+    const scopeTag = coerceScopeTag(rawLine.scope_tag);
+    if (scopeTag === null) continue;
+    const band = bandsByScope.get(scopeTag);
+    let confidence = coerceConfidence(rawLine.confidence);
+    if (band === undefined || band.precision_allowed === false) {
+      confidence = 'MODEL_INFERENCE';
+      if (!scopesAlreadyInGaps.has(scopeTag)) {
+        cleanGaps.push({
+          scope_tag: scopeTag,
+          reason: modelKnowledgeGapReason(scopeTag, rawLine.unit_cents, band),
+        });
+        scopesAlreadyInGaps.add(scopeTag);
+      }
+    }
+    const extended = Math.round(rawLine.quantity * rawLine.unit_cents);
+    cleanItemizedLines.push({
+      scope_tag: scopeTag,
+      division_code: rawLine.division_code.trim().slice(0, 12) || '01',
+      division_label: rawLine.division_label.replace(/\s+/g, ' ').trim().slice(0, 80) || 'General Requirements',
+      description: rawLine.description.replace(/\s+/g, ' ').trim().slice(0, 180) || scopeTag,
+      quantity: rawLine.quantity,
+      uom: rawLine.uom.replace(/\s+/g, ' ').trim().slice(0, 16) || 'EA',
+      unit_cents: rawLine.unit_cents,
+      extended_cents: extended,
+      confidence,
+      source_ref: rawLine.source_ref,
+    });
+  }
+
+  const itemizedTotal = cleanItemizedLines.reduce((sum, line) => sum + line.extended_cents, 0);
+
   return {
     line_items: cleanLineItems,
+    itemized_lines: cleanItemizedLines,
     project_total_cents:
       raw.project_total_cents !== null && Number.isInteger(raw.project_total_cents)
         ? raw.project_total_cents
+        : itemizedTotal > 0
+          ? itemizedTotal
         : null,
     gaps_flagged: cleanGaps,
     operator_summary: raw.operator_summary,
