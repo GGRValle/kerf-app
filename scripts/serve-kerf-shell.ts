@@ -51,6 +51,11 @@ function tryServeAstroClientAsset(pathname: string, res: http.ServerResponse): b
   return true;
 }
 
+function setHtmlDocumentCacheHeaders(res: http.ServerResponse): void {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+}
+
 type AstroMiddleware = (
   req: http.IncomingMessage,
   res: http.ServerResponse,
@@ -118,6 +123,7 @@ async function main(): Promise<void> {
     if (tryServeAstroClientAsset(pathname, res)) {
       return;
     }
+    setHtmlDocumentCacheHeaders(res);
     void astroHandler(req, res, () => {
       if (!res.headersSent) {
         res.statusCode = 404;
