@@ -1,10 +1,10 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import pg from 'pg';
 
 import type { PersistenceTenantId } from '../../persistence/events.js';
-import type { WorkingDraftFields } from '../../voice/realtime/workingDraft.js';
-import { getApiDeps } from './deps.js';
+import type { EstimatorResponse } from '../../estimator/orchestration/index.js';
 import { cleanConversationId } from './rightHandConversationStore.js';
+
+const { Pool } = pg;
 
 export type RightHandEstimateSourceType = 'company_data' | 'model_knowledge' | 'allowance';
 
@@ -15,10 +15,12 @@ export interface RightHandEstimateLine {
   readonly source_ref: string;
   readonly open_item: boolean;
   readonly flags: readonly string[];
+  readonly price_cents?: number | null;
+  readonly confidence?: string;
 }
 
 export interface RightHandEstimateDraft {
-  readonly version: 1;
+  readonly version: 2;
   readonly tenant_id: PersistenceTenantId;
   readonly project_id: string;
   readonly estimate_id: string;
@@ -30,11 +32,35 @@ export interface RightHandEstimateDraft {
   readonly lines: readonly RightHandEstimateLine[];
   readonly open_items: readonly string[];
   readonly source_refs: readonly string[];
+  readonly estimator_response: EstimatorResponse;
+  readonly gate: {
+    readonly fired: true;
+    readonly allowed: boolean;
+    readonly blocked_reasons: readonly string[];
+  };
+  readonly pricing_data_label: string;
   readonly artifact_state: {
     readonly durable_record: true;
     readonly filed: false;
     readonly sent: false;
   };
+}
+
+export interface EstimateStoreSummary {
+  readonly estimate_id: string;
+  readonly project_id: string;
+  readonly title: string;
+  readonly route: string;
+  readonly status: RightHandEstimateDraft['status'];
+  readonly updated_at: string;
+  readonly open_items: readonly string[];
+  readonly line_count: number;
+}
+
+export interface RightHandEstimateStore {
+  save(draft: RightHandEstimateDraft): Promise<void>;
+  read(tenant: PersistenceTenantId, estimateId: string): Promise<RightHandEstimateDraft | null>;
+  search(tenant: PersistenceTenantId, query: string): Promise<readonly RightHandEstimateDraft[]>;
 }
 
 function cleanSegment(value: unknown, fallback: string): string {
@@ -61,7 +87,7 @@ function uniqueStrings(...lists: readonly (readonly string[] | undefined)[]): re
   const seen = new Set<string>();
   for (const list of lists) {
     for (const item of list ?? []) {
-      const clean = compact(item).slice(0, 160);
+      const clean = compact(item).slice(0, 180);
       const key = normalized(clean);
       if (!clean || seen.has(key)) continue;
       seen.add(key);
@@ -73,61 +99,54 @@ function uniqueStrings(...lists: readonly (readonly string[] | undefined)[]): re
 
 function lineId(label: string, sourceType: RightHandEstimateSourceType): string {
   const slug = normalized(label).replace(/\s+/g, '_').slice(0, 46) || 'line';
-  return `rh_${sourceType}_${slug}`;
+  return `est_${sourceType}_${slug}`;
 }
 
-function placeholderLabel(openItem: string): string {
-  const clean = compact(openItem).replace(/\b(?:needed|required|open|tbd)\b/gi, '').trim();
-  if (!clean) return 'Placeholder TBD';
-  return /\btbd\b/i.test(openItem) ? compact(openItem) : `${clean} TBD`;
+function sourceTypeForLine(confidence: string, priceCents: number | null): RightHandEstimateSourceType {
+  if (priceCents === null) return 'allowance';
+  if (confidence === 'HIGH') return 'company_data';
+  return 'model_knowledge';
 }
 
-function buildLine(params: {
-  readonly label: string;
-  readonly sourceType: RightHandEstimateSourceType;
-  readonly sourceRef: string;
-  readonly openItem?: boolean;
-  readonly flags?: readonly string[];
-}): RightHandEstimateLine {
-  const label = compact(params.label).slice(0, 160);
+function buildEstimatorLine(line: EstimatorResponse['line_items'][number]): RightHandEstimateLine {
+  const sourceType = sourceTypeForLine(line.confidence, line.price_cents);
+  const label = compact(line.description || line.scope_tag);
   return {
-    id: lineId(label, params.sourceType),
+    id: lineId(`${line.scope_tag}:${label}`, sourceType),
     label,
-    source_type: params.sourceType,
-    source_ref: params.sourceRef,
-    open_item: Boolean(params.openItem),
-    flags: params.flags ?? [],
+    source_type: sourceType,
+    source_ref: line.band_source_uri ?? `variance-band:${line.scope_tag}`,
+    open_item: line.price_cents === null,
+    flags: [
+      line.scope_tag,
+      line.confidence,
+      ...(line.price_cents === null ? ['tbd_price'] : []),
+    ],
+    price_cents: line.price_cents,
+    confidence: line.confidence,
   };
 }
 
-function mergeLines(...lists: readonly (readonly RightHandEstimateLine[] | undefined)[]): readonly RightHandEstimateLine[] {
-  const out: RightHandEstimateLine[] = [];
-  const seen = new Set<string>();
-  for (const list of lists) {
-    for (const line of list ?? []) {
-      const key = `${line.source_type}:${normalized(line.label)}`;
-      if (!line.label || seen.has(key)) continue;
-      seen.add(key);
-      out.push(line);
-    }
-  }
-  return out;
-}
-
-function assemblyDir(tenant: PersistenceTenantId): string {
-  const { persistenceDir } = getApiDeps();
-  return path.join(persistenceDir, 'right-hand-estimates', cleanSegment(tenant, 'tenant'));
-}
-
-function assemblyPath(tenant: PersistenceTenantId, estimateId: string): string {
-  return path.join(assemblyDir(tenant), `${cleanSegment(estimateId, 'estimate')}.json`);
+function buildOpenItemLine(label: string, sourceRef: string, flag = 'placeholder'): RightHandEstimateLine {
+  const clean = /\btbd\b/i.test(label) ? compact(label) : `${compact(label)} TBD`;
+  return {
+    id: lineId(clean, 'allowance'),
+    label: clean,
+    source_type: 'allowance',
+    source_ref: sourceRef,
+    open_item: true,
+    flags: [flag],
+    price_cents: null,
+  };
 }
 
 export function projectIdForRightHandAssembly(params: {
   readonly explicitProjectId?: unknown;
   readonly currentPath?: unknown;
   readonly conversationId: string;
-  readonly workingDraft: WorkingDraftFields;
+  readonly workingDraft: {
+    readonly known_entities: readonly { type: string; id?: string }[];
+  };
 }): string {
   const explicit = cleanSegment(params.explicitProjectId, '');
   if (explicit) return explicit;
@@ -144,56 +163,29 @@ export function estimateIdForRightHandAssembly(conversationId: string, projectId
   return `rhe_${cleanSegment(projectId, 'project')}_${cleanConversationId(conversationId)}`.slice(0, 120);
 }
 
-export function buildRightHandEstimateDraft(params: {
+export function buildRightHandEstimateArtifact(params: {
   readonly tenant: PersistenceTenantId;
   readonly projectId: string;
   readonly estimateId: string;
   readonly conversationId: string;
-  readonly workingDraft: WorkingDraftFields;
-  readonly existing?: RightHandEstimateDraft | null;
-  readonly latestText?: string;
+  readonly titleSeed: string | null;
+  readonly estimatorResponse: EstimatorResponse;
+  readonly gateAllowed: boolean;
+  readonly gateBlockedReasons: readonly string[];
+  readonly openItems: readonly string[];
+  readonly unmatchedScope: readonly string[];
+  readonly sourceRefs: readonly string[];
   readonly now?: Date;
 }): RightHandEstimateDraft {
-  const draft = params.workingDraft;
-  const baseTitle = cleanTitle(
-    draft.projectName ?? draft.clientName ?? draft.scopeSummary,
-    `${params.projectId} estimate draft`,
-  );
+  const baseTitle = cleanTitle(params.titleSeed, `${params.projectId} estimate draft`);
   const title = /\bestimate\b/i.test(baseTitle) ? baseTitle : `${baseTitle} estimate draft`;
   const sourceRef = `right-hand-conversation:${cleanConversationId(params.conversationId)}`;
-  const scopeLines = draft.scope.map((scope) => buildLine({
-    label: scope,
-    sourceType: 'company_data',
-    sourceRef,
-  }));
-  const allowanceLines = draft.allowances.map((allowance) => buildLine({
-    label: allowance,
-    sourceType: 'allowance',
-    sourceRef,
-    openItem: /\btbd|allowance|placeholder|species|slab\b/i.test(allowance),
-    flags: /\btbd|placeholder\b/i.test(allowance) ? ['placeholder'] : [],
-  }));
-  const openItems = uniqueStrings(draft.open_items, params.existing?.open_items);
-  const placeholderLines = openItems.map((item) => buildLine({
-    label: placeholderLabel(item),
-    sourceType: 'allowance',
-    sourceRef,
-    openItem: true,
-    flags: ['placeholder'],
-  }));
-  const latestUpdateLines = params.latestText && /\b(?:add|include|bump|raise|increase|allowance|backsplash)\b/i.test(params.latestText)
-    ? [buildLine({
-        label: params.latestText,
-        sourceType: /\ballowance|bump|raise|increase\b/i.test(params.latestText) ? 'allowance' : 'company_data',
-        sourceRef,
-        openItem: /\btbd|allowance\b/i.test(params.latestText),
-        flags: ['conversation_update'],
-      })]
-    : [];
-  const lines = mergeLines(params.existing?.lines, scopeLines, allowanceLines, placeholderLines, latestUpdateLines);
-  const route = `/estimate/${encodeURIComponent(params.projectId)}?estimate_id=${encodeURIComponent(params.estimateId)}&rh_conversation=${encodeURIComponent(params.conversationId)}`;
+  const estimatorLines = params.estimatorResponse.line_items.map(buildEstimatorLine);
+  const gapItems = params.estimatorResponse.gaps_flagged.map((gap) => `${gap.scope_tag}: ${gap.reason}`);
+  const openItems = uniqueStrings(params.openItems, gapItems, params.unmatchedScope.map((scope) => `captured - not yet classified: ${scope}`));
+  const openLines = openItems.map((item) => buildOpenItemLine(item, sourceRef));
   return {
-    version: 1,
+    version: 2,
     tenant_id: params.tenant,
     project_id: params.projectId,
     estimate_id: params.estimateId,
@@ -201,10 +193,17 @@ export function buildRightHandEstimateDraft(params: {
     title,
     status: 'draft_for_review',
     updated_at: (params.now ?? new Date()).toISOString(),
-    route,
-    lines,
+    route: `/estimate/${encodeURIComponent(params.projectId)}?estimate_id=${encodeURIComponent(params.estimateId)}&rh_conversation=${encodeURIComponent(params.conversationId)}`,
+    lines: [...estimatorLines, ...openLines],
     open_items: openItems,
-    source_refs: uniqueStrings(params.existing?.source_refs, draft.source_refs, [sourceRef]),
+    source_refs: uniqueStrings(params.sourceRefs, [sourceRef]),
+    estimator_response: params.estimatorResponse,
+    gate: {
+      fired: true,
+      allowed: params.gateAllowed,
+      blocked_reasons: [...params.gateBlockedReasons],
+    },
+    pricing_data_label: 'Illustrative pricing - sample cost data, not yet your historical rates',
     artifact_state: {
       durable_record: true,
       filed: false,
@@ -213,56 +212,144 @@ export function buildRightHandEstimateDraft(params: {
   };
 }
 
-export async function saveRightHandEstimateDraft(draft: RightHandEstimateDraft): Promise<void> {
-  await mkdir(assemblyDir(draft.tenant_id), { recursive: true });
-  await writeFile(assemblyPath(draft.tenant_id, draft.estimate_id), `${JSON.stringify(draft, null, 2)}\n`, 'utf8');
-}
-
-export async function readRightHandEstimateDraft(
-  tenant: PersistenceTenantId,
-  estimateId: string,
-): Promise<RightHandEstimateDraft | null> {
-  try {
-    const raw = await readFile(assemblyPath(tenant, estimateId), 'utf8');
-    const parsed = JSON.parse(raw) as RightHandEstimateDraft;
-    if (parsed?.version !== 1 || parsed.tenant_id !== tenant) return null;
-    return parsed;
-  } catch {
-    return null;
+export function createMemoryRightHandEstimateStore(): RightHandEstimateStore {
+  const byTenant = new Map<PersistenceTenantId, Map<string, RightHandEstimateDraft>>();
+  function tenantMap(tenant: PersistenceTenantId): Map<string, RightHandEstimateDraft> {
+    const existing = byTenant.get(tenant);
+    if (existing) return existing;
+    const next = new Map<string, RightHandEstimateDraft>();
+    byTenant.set(tenant, next);
+    return next;
   }
+  return {
+    async save(draft) {
+      tenantMap(draft.tenant_id).set(draft.estimate_id, draft);
+    },
+    async read(tenant, estimateId) {
+      return tenantMap(tenant).get(estimateId) ?? null;
+    },
+    async search(tenant, query) {
+      const needle = normalized(query);
+      const drafts = [...tenantMap(tenant).values()];
+      if (!needle) return drafts;
+      return drafts.filter((draft) => {
+        const haystack = normalized([
+          draft.title,
+          draft.project_id,
+          draft.estimate_id,
+          draft.conversation_id,
+          draft.lines.map((line) => line.label).join(' '),
+          draft.open_items.join(' '),
+        ].join(' '));
+        return needle.split(' ').every((part) => haystack.includes(part));
+      });
+    },
+  };
 }
 
-export async function listRightHandEstimateDrafts(tenant: PersistenceTenantId): Promise<readonly RightHandEstimateDraft[]> {
-  try {
-    const dir = assemblyDir(tenant);
-    const names = await readdir(dir);
-    const drafts = await Promise.all(
-      names
-        .filter((name) => name.endsWith('.json'))
-        .map((name) => readRightHandEstimateDraft(tenant, name.replace(/\.json$/i, ''))),
-    );
-    return drafts.filter((draft): draft is RightHandEstimateDraft => draft !== null);
-  } catch {
-    return [];
+export function createPgRightHandEstimateStore(connectionString: string): RightHandEstimateStore {
+  const pool = new Pool({ connectionString });
+  let ready: Promise<void> | null = null;
+  async function ensureReady(): Promise<void> {
+    ready ??= (async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS right_hand_estimate_artifacts (
+          tenant_id text NOT NULL,
+          estimate_id text NOT NULL,
+          project_id text NOT NULL,
+          conversation_id text NOT NULL,
+          title text NOT NULL,
+          status text NOT NULL,
+          updated_at timestamptz NOT NULL,
+          search_text text NOT NULL,
+          artifact jsonb NOT NULL,
+          PRIMARY KEY (tenant_id, estimate_id)
+        )
+      `);
+      await pool.query('CREATE INDEX IF NOT EXISTS right_hand_estimate_artifacts_search_idx ON right_hand_estimate_artifacts (tenant_id, updated_at DESC)');
+    })();
+    await ready;
   }
+  return {
+    async save(draft) {
+      await ensureReady();
+      const searchText = normalized([
+        draft.title,
+        draft.project_id,
+        draft.estimate_id,
+        draft.conversation_id,
+        draft.lines.map((line) => line.label).join(' '),
+        draft.open_items.join(' '),
+      ].join(' '));
+      await pool.query(
+        `INSERT INTO right_hand_estimate_artifacts
+          (tenant_id, estimate_id, project_id, conversation_id, title, status, updated_at, search_text, artifact)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8, $9::jsonb)
+         ON CONFLICT (tenant_id, estimate_id) DO UPDATE SET
+          project_id = EXCLUDED.project_id,
+          conversation_id = EXCLUDED.conversation_id,
+          title = EXCLUDED.title,
+          status = EXCLUDED.status,
+          updated_at = EXCLUDED.updated_at,
+          search_text = EXCLUDED.search_text,
+          artifact = EXCLUDED.artifact`,
+        [
+          draft.tenant_id,
+          draft.estimate_id,
+          draft.project_id,
+          draft.conversation_id,
+          draft.title,
+          draft.status,
+          draft.updated_at,
+          searchText,
+          JSON.stringify(draft),
+        ],
+      );
+    },
+    async read(tenant, estimateId) {
+      await ensureReady();
+      const res = await pool.query(
+        'SELECT artifact FROM right_hand_estimate_artifacts WHERE tenant_id = $1 AND estimate_id = $2',
+        [tenant, estimateId],
+      );
+      const draft = res.rows[0]?.artifact as RightHandEstimateDraft | undefined;
+      return draft?.tenant_id === tenant ? draft : null;
+    },
+    async search(tenant, query) {
+      await ensureReady();
+      const terms = normalized(query).split(' ').filter(Boolean);
+      const clauses = ['tenant_id = $1'];
+      const values: unknown[] = [tenant];
+      for (const term of terms) {
+        values.push(`%${term}%`);
+        clauses.push(`search_text LIKE $${values.length}`);
+      }
+      const res = await pool.query(
+        `SELECT artifact FROM right_hand_estimate_artifacts
+         WHERE ${clauses.join(' AND ')}
+         ORDER BY updated_at DESC
+         LIMIT 25`,
+        values,
+      );
+      return res.rows
+        .map((row) => row.artifact as RightHandEstimateDraft)
+        .filter((draft) => draft.tenant_id === tenant);
+    },
+  };
 }
 
-export async function searchRightHandEstimateDrafts(
-  tenant: PersistenceTenantId,
-  query: string,
-): Promise<readonly RightHandEstimateDraft[]> {
-  const needle = normalized(query);
-  const drafts = await listRightHandEstimateDrafts(tenant);
-  if (!needle) return drafts;
-  return drafts.filter((draft) => {
-    const haystack = normalized([
-      draft.title,
-      draft.project_id,
-      draft.estimate_id,
-      draft.conversation_id,
-      draft.lines.map((line) => line.label).join(' '),
-      draft.open_items.join(' '),
-    ].join(' '));
-    return needle.split(' ').every((part) => haystack.includes(part));
-  });
+let cachedStore: RightHandEstimateStore | null = null;
+
+export function getRightHandEstimateStore(): RightHandEstimateStore {
+  if (cachedStore) return cachedStore;
+  const connectionString = process.env['DATABASE_URL'] ?? process.env['POSTGRES_URL'];
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is required for shared Right Hand estimate artifacts');
+  }
+  cachedStore = createPgRightHandEstimateStore(connectionString);
+  return cachedStore;
+}
+
+export function resetRightHandEstimateStoreForTests(): void {
+  cachedStore = null;
 }
