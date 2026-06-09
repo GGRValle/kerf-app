@@ -514,12 +514,33 @@ test('V7 passes when source_refs, evidence_ids, and claim_ids are all present', 
   assert.equal(decision.status, 'READY_FOR_REVIEW');
 });
 
+test('V7 blocks priced model-inference money even when refs exist', () => {
+  const decision = runPolicyGate(
+    basePacket({
+      model_inference_label: 'INFERRED',
+      money_fields: {
+        amount_cents: 150_000,
+        source_class: 'model_inference',
+        source_status: 'needs_review',
+      },
+    }),
+    { evaluatedAt: '2026-04-30T19:42:45.000Z' },
+  );
+
+  const v7 = decision.policy_gate_result.validator_results.find((result) => result.validator_id === 'V7');
+  assert.equal(v7?.passed, false);
+  assert.equal(v7?.critical, true);
+  assert.equal(v7?.reason, 'source_basis_required');
+  assert.equal(decision.policy_gate_result.allowed, false);
+  assert.equal(decision.status, 'BLOCKED_PENDING_SOURCE');
+});
+
 test('V8 blocks model inference that is mislabeled as direct evidence', () => {
   const decision = runPolicyGate(
     basePacket({
       model_inference_label: 'DIRECT_EVIDENCE',
       money_fields: {
-        amount_cents: 150_000,
+        amount_cents: 0,
         source_class: 'model_inference',
         source_status: 'needs_review',
       },

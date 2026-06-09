@@ -1,9 +1,10 @@
 // Estimator system + user prompt assembly.
 //
 // The prompt is the BELT in our belt-and-suspenders trust discipline. It
-// instructs the LLM to honor `precision_allowed: false` bands by surfacing
-// gaps. The PARSER + PACKET BUILDER are the suspenders — they enforce the
-// same rule in code regardless of whether the LLM listens.
+// instructs the LLM to honor `precision_allowed: false` bands by labeling
+// any illustrative ballpark as model knowledge and surfacing a gap. The
+// PARSER + PACKET BUILDER are the suspenders — they enforce the same rule in
+// code regardless of whether the LLM listens.
 //
 // Per Thread 8 vocabulary: HIGH bands → tight ranges; LOW bands →
 // directional only; INSUFFICIENT_DATA → no fabrication; MODEL_INFERENCE →
@@ -55,10 +56,12 @@ function buildSystemMessage(): string {
     '   figures as expected total project cost or as components of that total.',
     '',
     '2. PRECISION GATE. Each rendered band carries a precision_allowed flag.',
-    '   If a band shows "No usable historical band" or its operator_summary',
-    '   contains no dollar figure, that scope MUST go in gaps_flagged with',
-    '   `price_cents: null`. DO NOT FABRICATE A NUMBER. Even if you have an',
-    '   intuition, surfacing the gap is the correct answer.',
+    '   If precision_allowed=false, company data cannot support a precise',
+    '   price. You may either leave `price_cents: null` as an allowance/TBD,',
+    '   OR include a clearly illustrative ballpark only when useful for draft',
+    '   review. Any such ballpark MUST be `confidence: "MODEL_INFERENCE"`',
+    '   and MUST also have a gaps_flagged entry saying source basis is still',
+    '   required before consequence use. Never label it HIGH or LOW.',
     '',
     '3. HIGH BANDS. Use the band\'s P50 as your line price. Quote the range',
     '   (P25-P75) in your description. Mark `confidence: "HIGH"`.',
@@ -70,8 +73,9 @@ function buildSystemMessage(): string {
     '',
     '5. UNBACKED LINE ITEMS. If you produce a line item for a scope without a',
     '   matching variance band (i.e., a scope NOT in the bands block), mark',
-    '   `confidence: "MODEL_INFERENCE"` and `band_source_uri: null`. Use only',
-    '   when explicitly required for project completeness.',
+    '   `confidence: "MODEL_INFERENCE"` and `band_source_uri: null`, and add',
+    '   a gaps_flagged entry. Use only when explicitly required for project',
+    '   completeness.',
     '',
     'OUTPUT FORMAT (STRICT JSON, NO PROSE OUTSIDE THE JSON):',
     '{',
@@ -93,14 +97,15 @@ function buildSystemMessage(): string {
     '',
     'Rules on the output:',
     '  - For EACH scope_tag in the input, produce EITHER a line_item OR a gap',
-    '    entry, NOT both. Items with price_cents=null may live in line_items',
-    '    (with corresponding gap entry) when you want to surface the scope',
-    '    without pricing it.',
+    '    entry, NOT both, except MODEL_INFERENCE priced ballparks and',
+    '    price_cents=null placeholders MUST also carry a gaps_flagged entry',
+    '    so the source-basis gap is visible.',
     '  - All money fields are integer cents. No floats. No dollar signs.',
     '  - operator_summary must NOT attach a price to any individual scope tag.',
     '    Frame totals only.',
-    '  - If you cannot produce any priced line item, emit an empty line_items',
-    '    array and populate gaps_flagged with all requested scopes.',
+    '  - If you cannot produce even an illustrative MODEL_INFERENCE ballpark,',
+    '    emit an empty line_items array and populate gaps_flagged with all',
+    '    requested scopes.',
   ].join('\n');
 }
 

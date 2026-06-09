@@ -1,11 +1,11 @@
 // Estimator response parser — the SUSPENDERS in our belt-and-suspenders
 // trust-discipline architecture.
 //
-// Per Thread 9 brief: even if the LLM ignores the prompt and returns
-// fabricated prices for `precision_allowed: false` scopes, this parser
-// REJECTS those prices and converts the offending lines into
-// `gaps_flagged` entries. The packetBuilder is the second enforcement
-// layer (defense in depth).
+// Per Thread 9 brief + three-tier precision update: if the LLM returns
+// prices for `precision_allowed: false` scopes, this parser keeps them only
+// as labeled `MODEL_INFERENCE` draft ballparks and adds `gaps_flagged`
+// entries. The packetBuilder is the second enforcement layer (defense in
+// depth) and the policy gate still blocks consequence use.
 //
 // Two-phase design:
 //
@@ -17,8 +17,8 @@
 //   2. enforceTrustDiscipline(raw, bandsByScope) → EstimatorResponse
 //      The trust core. For each line item with a price, look up the
 //      corresponding band by scope_tag. If the band's
-//      precision_allowed === false, the price is REJECTED and the line
-//      is moved to gaps_flagged with a reason citing the band rung.
+//      precision_allowed === false, any price is forced to MODEL_INFERENCE
+//      and paired with a gap reason citing the band rung.
 //      LOW-band line items get hedge language injected if absent.
 
 import { isScopeTag, type ScopeTag } from '../../projects/index.js';
@@ -43,6 +43,9 @@ const LOW_HEDGE_KEYWORDS: readonly string[] = [
 
 /** Prefix prepended to LOW-band descriptions that don't already carry a hedge. */
 const LOW_HEDGE_PREFIX = '[Directional, cross-archetype] ';
+
+/** Prefix prepended to unbacked priced lines so prose matches the trust chip. */
+const MODEL_KNOWLEDGE_PREFIX = '[Illustrative model-knowledge ballpark] ';
 
 export class ResponseParseError extends Error {
   constructor(message: string) {
@@ -177,9 +180,9 @@ export interface EnforceTrustDisciplineInput {
  *
  *   - Drop line_items whose `scope_tag` is not a valid `ScopeTag` value.
  *   - For each line item with a price_cents:
- *       If its band has `precision_allowed: false` → REJECT the price.
- *         Move the line to gaps_flagged with a reason naming the band
- *         rung; remove the offending line_item.
+ *       If its band has `precision_allowed: false` or no band at all, keep
+ *         the price only as a MODEL_INFERENCE draft ballpark and add a
+ *         gaps_flagged reason. Consequence gates must still block it.
  *   - For each LOW-band line item: ensure the description contains a hedge
  *     keyword. If absent, prepend the hedge prefix.
  *   - Coerce confidence values to the closed union; default to MODEL_INFERENCE
@@ -214,30 +217,28 @@ export function enforceTrustDiscipline(
 
     const band = bandsByScope.get(scopeTag);
     const linePrice = rawLine.price_cents;
+    let confidence = coerceConfidence(rawLine.confidence);
+    let description = rawLine.description;
 
     // ── TRUST DISCIPLINE ENFORCEMENT ──────────────────────────────────
-    // If the band exists and precision_allowed is false, the LLM is not
-    // permitted to attach a price to this scope. Move to gaps.
-    if (band !== undefined && band.precision_allowed === false && linePrice !== null) {
+    // If a price lacks company-backed precision, keep it only as model
+    // knowledge: useful in a draft, never promotable as company truth.
+    if ((band === undefined || band.precision_allowed === false) && linePrice !== null) {
+      confidence = 'MODEL_INFERENCE';
+      if (!descriptionHasModelKnowledgeLabel(description)) {
+        description = MODEL_KNOWLEDGE_PREFIX + description;
+      }
       if (!scopesAlreadyInGaps.has(scopeTag)) {
         cleanGaps.push({
           scope_tag: scopeTag,
-          reason:
-            `Trust-discipline override: model returned price ${linePrice} cents but the variance band for ` +
-            `${scopeTag} carries precision_allowed=false (basis=${band.basis}, rung=${band.cascade_rung}). ` +
-            `Price rejected; surface the gap honestly.`,
+          reason: modelKnowledgeGapReason(scopeTag, linePrice, band),
         });
         scopesAlreadyInGaps.add(scopeTag);
       }
-      continue;
     }
-
-    // Coerce confidence into the closed union.
-    const confidence = coerceConfidence(rawLine.confidence);
 
     // LOW-band hedge enforcement: even if the LLM dropped the hedge, we
     // ensure it's present.
-    let description = rawLine.description;
     if (band !== undefined && band.confidence === 'LOW' && !descriptionHasHedge(description)) {
       description = LOW_HEDGE_PREFIX + description;
     }
@@ -286,6 +287,29 @@ function coerceConfidence(s: string): EstimatorLineItem['confidence'] {
 function descriptionHasHedge(description: string): boolean {
   const lower = description.toLowerCase();
   return LOW_HEDGE_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+function descriptionHasModelKnowledgeLabel(description: string): boolean {
+  const lower = description.toLowerCase();
+  return lower.includes('model-knowledge') || lower.includes('model knowledge') || lower.includes('illustrative');
+}
+
+function modelKnowledgeGapReason(
+  scopeTag: ScopeTag,
+  linePrice: number,
+  band: RenderedBand | undefined,
+): string {
+  if (band === undefined) {
+    return (
+      `Model-knowledge ballpark: model returned price ${linePrice} cents for ${scopeTag}, ` +
+      'but no variance band was rendered for that scope. Keep visible for review only; source basis required before consequence use.'
+    );
+  }
+  return (
+    `Model-knowledge ballpark: model returned price ${linePrice} cents but the variance band for ` +
+    `${scopeTag} carries precision_allowed=false (basis=${band.basis}, rung=${band.cascade_rung}). ` +
+    'Keep visible for review only; source basis required before consequence use.'
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────────────

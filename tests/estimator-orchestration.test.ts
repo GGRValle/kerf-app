@@ -3,8 +3,8 @@
 // The trust-discipline tests are the CORE of this file:
 //
 //   Test 1 — Adversarial mock returns a price for an INSUFFICIENT_DATA-backed
-//            scope. The parser drops the price; the packet builder verifies;
-//            final AltitudePacket carries zero price for that scope.
+//            scope. The parser keeps it only as MODEL_INFERENCE model
+//            knowledge, flags the gap, and the gate blocks consequence use.
 //
 //   Test 2 — LOW band line items receive hedge language ("directional",
 //            "cross-archetype") at the parser layer even if the LLM
@@ -167,10 +167,10 @@ test('parseRawResponse throws on float price_cents (we want integer cents)', () 
 // ──────────────────────────────────────────────────────────────────────────
 // TEST 1 — ADVERSARIAL MOCK
 // The mock returns a fabricated price for an INSUFFICIENT_DATA scope.
-// The orchestration MUST drop that price.
+// The orchestration MUST keep it only as model knowledge and gate-block it.
 // ──────────────────────────────────────────────────────────────────────────
 
-test('Test 1 (adversarial): mock returns a price for an INSUFFICIENT_DATA scope; final packet contains ZERO price for that scope', async () => {
+test('Test 1 (adversarial): INSUFFICIENT_DATA price is visible as model knowledge and gate-blocked', async () => {
   const inputs = baseInputs(); // scopes: [cabinetry, hvac]; hvac has no comparables → INSUFFICIENT_DATA
 
   const adversarialResponse = JSON.stringify({
@@ -203,13 +203,9 @@ test('Test 1 (adversarial): mock returns a price for an INSUFFICIENT_DATA scope;
 
   const result = await estimateProject(inputs, deps);
 
-  // Cabinetry line item still has its price (HIGH band valid).
-  const cabinetryLine = result.packet.extracted_facts['line_item_count'];
-  // Confirm cabinetry survived but hvac did NOT have a priced line.
-  // We check via the packet's claim_ids + the parser-cleaned response shape.
-  // The cleanest assertion: bandsByScope confirms hvac was INSUFFICIENT_DATA;
-  // the packet's extracted_facts.line_item_count is 1 (only cabinetry priced);
-  // gap_count is 1 (hvac flagged).
+  // Cabinetry line item still has its price (HIGH band valid). HVAC also
+  // survives, but only as model-knowledge: labeled MODEL_INFERENCE and
+  // flagged as source-basis required.
 
   const hvacBand = result.bandsByScope.get('hvac');
   assert.ok(hvacBand);
@@ -219,27 +215,27 @@ test('Test 1 (adversarial): mock returns a price for an INSUFFICIENT_DATA scope;
     'hvac band must be precision_allowed=false for this test to be meaningful',
   );
 
-  assert.equal(result.packet.extracted_facts['line_item_count'], 1, 'expected 1 surviving priced line (cabinetry only)');
+  assert.equal(result.packet.extracted_facts['line_item_count'], 2, 'expected cabinetry plus model-knowledge hvac');
   assert.equal(result.packet.extracted_facts['gap_count'], 1, 'expected 1 flagged gap (hvac)');
-  assert.equal(cabinetryLine, 1);
+  assert.equal(result.estimatorResponse.line_items.length, 2);
+  const hvacLine = result.estimatorResponse.line_items.find((line) => line.scope_tag === 'hvac');
+  assert.ok(hvacLine);
+  assert.equal(hvacLine.price_cents, 800_000);
+  assert.equal(hvacLine.confidence, 'MODEL_INFERENCE');
+  assert.match(hvacLine.description, /model-knowledge|illustrative/i);
+  assert.match(result.estimatorResponse.gaps_flagged[0]?.reason ?? '', /source basis required/i);
 
   // Most-conservative aggregation: any unbacked → source_class='model_inference'.
-  // (hvac still appears unbacked from the aggregator's view, even though its
-  // price was rejected; this ensures the packet doesn't claim TENANT_HISTORICAL
-  // when there are gaps.)
-  // BUT in this test, hvac was REJECTED into gaps_flagged, not retained as a
-  // line_item. Aggregation only looks at line_items. So if cabinetry is HIGH
-  // and there are no other line items, source_class stays historical_actual.
   assert.equal(
     result.packet.money_fields?.source_class,
-    'historical_actual',
-    'with cabinetry HIGH and hvac dropped to gaps, source_class is historical_actual',
+    'model_inference',
+    'with hvac retained as model knowledge, source_class is model_inference',
   );
 });
 
-test('Test 1 belt-and-suspenders: if a malicious parser leaked a violating line, packetBuilder catches it', () => {
-  // Hand-construct a clean response that has a price for an
-  // INSUFFICIENT_DATA scope, simulating a parser bug.
+test('Test 1 belt-and-suspenders: packetBuilder rejects unbacked priced lines unless labeled and gap-flagged', () => {
+  // Hand-construct responses for an INSUFFICIENT_DATA scope, simulating
+  // parser bugs around the model-knowledge fence.
   const hvacInsufficient = renderVarianceBand(
     getVarianceBand({
       projectTypeTag: 'kitchen_remodel',
@@ -250,11 +246,12 @@ test('Test 1 belt-and-suspenders: if a malicious parser leaked a violating line,
   );
   const bandsByScope = new Map<ScopeTag, ReturnType<typeof renderVarianceBand>>();
   bandsByScope.set('hvac', hvacInsufficient);
+  const inputs = baseInputs({ scopeTags: ['hvac'] });
 
   assert.throws(
     () =>
       buildEstimatorAltitudePacket({
-        inputs: baseInputs({ scopeTags: ['hvac'] }),
+        inputs,
         response: {
           line_items: [
             {
@@ -274,6 +271,52 @@ test('Test 1 belt-and-suspenders: if a malicious parser leaked a violating line,
       }),
     PacketBuildViolationError,
   );
+
+  assert.throws(
+    () =>
+      buildEstimatorAltitudePacket({
+        inputs,
+        response: {
+          line_items: [
+            {
+              scope_tag: 'hvac',
+              description: 'illustrative',
+              price_cents: 800_000,
+              confidence: 'MODEL_INFERENCE',
+              band_source_uri: null,
+            },
+          ],
+          project_total_cents: 800_000,
+          gaps_flagged: [],
+          operator_summary: 'x',
+        },
+        bandsByScope,
+        modelCallerOutput: MODEL_CALLER_OUTPUT_FIXTURE,
+      }),
+    PacketBuildViolationError,
+    'MODEL_INFERENCE price without a gap must still fail',
+  );
+
+  const packet = buildEstimatorAltitudePacket({
+    inputs,
+    response: {
+      line_items: [
+        {
+          scope_tag: 'hvac',
+          description: 'illustrative',
+          price_cents: 800_000,
+          confidence: 'MODEL_INFERENCE',
+          band_source_uri: null,
+        },
+      ],
+      project_total_cents: 800_000,
+      gaps_flagged: [{ scope_tag: 'hvac', reason: 'source basis required before consequence use' }],
+      operator_summary: 'x',
+    },
+    bandsByScope,
+    modelCallerOutput: MODEL_CALLER_OUTPUT_FIXTURE,
+  });
+  assert.equal(packet.money_fields?.source_class, 'model_inference');
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -535,7 +578,8 @@ test('buildEstimatorPrompt system message contains trust-discipline instructions
   });
   assert.match(prompt.systemMessage, /TRUST DISCIPLINE/);
   assert.match(prompt.systemMessage, /PRECISION GATE/);
-  assert.match(prompt.systemMessage, /DO NOT FABRICATE/);
+  assert.match(prompt.systemMessage, /MODEL_INFERENCE/);
+  assert.match(prompt.systemMessage, /source basis is still/);
   assert.match(prompt.systemMessage, /PROJECT-TOTAL FRAMING/);
 });
 

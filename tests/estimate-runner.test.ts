@@ -5,8 +5,9 @@
 //   2. Happy path: end-to-end runner produces allowed DecisionPacket
 //   3. Honest blocked outcome: gate-block (V2 critical-fail synthesized)
 //      surfaces as allowed=false with full audit trail
-//   4. Adversarial belt-and-suspenders re-test: fabricated price for
-//      INSUFFICIENT_DATA scope is rejected end-to-end
+//   4. Adversarial belt-and-suspenders re-test: unbacked price for
+//      INSUFFICIENT_DATA scope is kept only as model knowledge and blocked
+//      from consequence use
 //   5. Event log persistence: 3-event sequence (drafted → audit → queue)
 //   6. DecisionQueue surfacing: projectDecisions reads the queue event
 //   7. Cross-tenant guard at runner: actor mismatch throws
@@ -83,7 +84,8 @@ function happyPathContent(): string {
 }
 
 function adversarialContent(): string {
-  // Fabricates a price for hvac (INSUFFICIENT_DATA scope).
+  // Returns a price for hvac (INSUFFICIENT_DATA scope). The parser should
+  // keep it visible only as model knowledge, not company-backed truth.
   return JSON.stringify({
     line_items: [
       {
@@ -247,10 +249,10 @@ test('runEstimate honest blocked outcome: input forces V2 critical-fail; allowed
 });
 
 // ──────────────────────────────────────────────────────────────────────────
-// 4. Adversarial: fabricated price for INSUFFICIENT_DATA scope rejected end-to-end
+// 4. Adversarial: INSUFFICIENT_DATA price kept as model knowledge, gate-blocked
 // ──────────────────────────────────────────────────────────────────────────
 
-test('runEstimate adversarial: fabricated price for INSUFFICIENT_DATA scope is rejected end-to-end', async () => {
+test('runEstimate adversarial: INSUFFICIENT_DATA price is model knowledge and gate-blocked', async () => {
   // hvac has no comparables in the GGR pool → INSUFFICIENT_DATA band.
   const inputs = baseInputs({ scopeTags: ['cabinetry', 'hvac'] });
   const result = await runEstimate(inputs, {
@@ -265,12 +267,26 @@ test('runEstimate adversarial: fabricated price for INSUFFICIENT_DATA scope is r
   assert.ok(hvacBand);
   assert.equal(hvacBand.precision_allowed, false, 'precondition: hvac band is precision_allowed=false');
 
-  // The runner's underlying Estimator orchestration enforces trust discipline.
-  // The packet's extracted_facts capture how many lines survived enforcement.
+  // The runner's underlying Estimator orchestration enforces trust discipline:
+  // the price is visible in the draft, but only as MODEL_INFERENCE with a
+  // source-basis gap. Policy gate must not allow consequence use.
   const lineItemCount = result.altitudePacket.extracted_facts['line_item_count'];
   const gapCount = result.altitudePacket.extracted_facts['gap_count'];
-  assert.equal(lineItemCount, 1, 'cabinetry should be the only surviving priced line');
+  assert.equal(lineItemCount, 2, 'cabinetry plus hvac model-knowledge line should survive');
   assert.equal(gapCount, 1, 'hvac should be flagged as a gap');
+  assert.equal(result.estimatorResponse.line_items.length, 2);
+  const hvacLine = result.estimatorResponse.line_items.find((line) => line.scope_tag === 'hvac');
+  assert.ok(hvacLine);
+  assert.equal(hvacLine.price_cents, 800_000);
+  assert.equal(hvacLine.confidence, 'MODEL_INFERENCE');
+  assert.match(hvacLine.description, /model-knowledge|illustrative/i);
+  assert.equal(result.altitudePacket.money_fields?.source_class, 'model_inference');
+  assert.equal(result.allowed, false);
+  assert.ok(
+    result.blockedReasons.includes('source_basis_required'),
+    `expected source_basis_required; got ${JSON.stringify(result.blockedReasons)}`,
+  );
+  assert.equal(result.decisionPacket.policy_gate_result.allowed, false);
 });
 
 // ──────────────────────────────────────────────────────────────────────────
