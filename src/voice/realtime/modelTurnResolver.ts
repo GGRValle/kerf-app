@@ -26,6 +26,7 @@ import {
   VOICE_INTENTS,
   type VoiceIntent,
 } from './voiceActionGate.js';
+import { parseModelJsonObject } from './modelJson.js';
 
 export const TURN_RESOLVER_LLM_ENDPOINT = 'groq://llama-70b' as const;
 export const TURN_RESOLVER_LLM_MODEL = 'llama-3.3-70b-versatile' as const;
@@ -359,22 +360,6 @@ function safeOperatorCopy(
   return cleaned;
 }
 
-function parseJsonObject(content: string): Record<string, unknown> | null {
-  try {
-    const cleaned = content
-      .trim()
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-    const parsed = JSON.parse(cleaned);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 function hypothesisFromModel(
   parsed: Record<string, unknown>,
   fallback: TurnContextHypothesis,
@@ -456,6 +441,7 @@ export async function resolveTurnWithModel(
       workflow: 'right-hand-voice-overlay',
       temperature: 0,
       maxTokens: 500,
+      response_format: { type: 'json_object' },
       requestedAt: now.toISOString() as ISO8601,
     });
   } catch (err) {
@@ -466,7 +452,7 @@ export async function resolveTurnWithModel(
     return deterministicResult(input, `model_${result.kind}`);
   }
 
-  const parsed = parseJsonObject(result.content);
+  const parsed = parseModelJsonObject(result.content);
   if (!parsed) {
     return deterministicResult(input, 'model_invalid_json');
   }

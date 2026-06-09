@@ -16,6 +16,7 @@ import {
   TURN_RESOLVER_LLM_MODEL,
   type KnownEntityContext,
 } from './modelTurnResolver.js';
+import { parseModelJsonObject } from './modelJson.js';
 import type { TurnResolutionPacket } from './turnResolution.js';
 import type { WorkingDraftFields } from './workingDraft.js';
 
@@ -246,22 +247,6 @@ function cleanText(value: unknown, fallback: string, max = 320): string {
 
 function cleanMode(value: unknown): ReplyMode {
   return ALLOWED_MODES.includes(value as ReplyMode) ? value as ReplyMode : 'minimal_ack';
-}
-
-function parseJsonObject(content: string): Record<string, unknown> | null {
-  try {
-    const cleaned = content
-      .trim()
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-    const parsed = JSON.parse(cleaned);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : null;
-  } catch {
-    return null;
-  }
 }
 
 function shortEntityLabel(trp: TurnResolutionPacket): string {
@@ -792,6 +777,7 @@ export async function resolveReplyWithModel(
       workflow: 'right-hand-voice-overlay',
       temperature: 0.45,
       maxTokens: 650,
+      response_format: { type: 'json_object' },
       requestedAt: now.toISOString() as ISO8601,
     });
   } catch (err) {
@@ -802,7 +788,7 @@ export async function resolveReplyWithModel(
     return humbleReplyFallback(input, `model_${result.kind}`);
   }
 
-  const parsed = parseJsonObject(result.content);
+  const parsed = parseModelJsonObject(result.content);
   if (!parsed) return humbleReplyFallback(input, 'model_invalid_json');
 
   const reply = cleanText(parsed['reply'], '');
