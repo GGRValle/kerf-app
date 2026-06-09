@@ -23,7 +23,7 @@
     "demo:decision-card": "tsx src/examples/decision-card-demo.ts",
     "demo:decision-queue": "tsx src/examples/decision-queue-demo.ts",
     "demo:w1-queue:esbuild": "npx --yes esbuild@0.25.0 src/examples/w1-decision-queue-demo.ts --bundle --platform=browser --format=iife --outfile=src/examples/w1-decision-queue-demo.bundle.js",
-    "demo:w1-queue": "npm run demo:w1-queue:esbuild && node -e \"console.log('Built src/examples/w1-decision-queue-demo.bundle.js \u2014 open src/examples/w1-decision-queue-demo.html in a browser.')\"",
+    "demo:w1-queue": "npm run demo:w1-queue:esbuild && node -e \"console.log('Built src/examples/w1-decision-queue-demo.bundle.js \\u2014 open src/examples/w1-decision-queue-demo.html in a browser.')\"",
     "demo:w1-queue:serve": "npm run demo:w1-queue:esbuild && node -e \"console.log('\\nKerf W1 demo: http://localhost:8000/examples/w1-decision-queue-demo.html\\n(static server; no auth, no fetch, no backend writes; Ctrl-C to stop)\\n')\" && python3 -m http.server 8000 --directory src",
     "demo:v15-slice:esbuild": "npm run demo:v15-vertical-slice:esbuild",
     "demo:v15-slice": "npm run demo:v15-vertical-slice",
@@ -47,11 +47,13 @@
     "@astrojs/node": "^9.0.0",
     "@hono/node-server": "^1.14.0",
     "astro": "^5.0.0",
-    "hono": "^4.7.0"
+    "hono": "^4.7.0",
+    "pg": "^8.21.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.20.0",
     "tsx": "^4.7.0",
-    "@types/node": "^20.11.0"
+    "typescript": "^5.4.0"
   }
 }

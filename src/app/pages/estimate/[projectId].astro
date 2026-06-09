@@ -9,14 +9,14 @@ import {
   clientVisibleLines,
   selectionsForProject,
 } from '../../../sales/index.js';
-import { readRightHandEstimateDraft } from '../../../api/lib/rightHandAssemblyStore.js';
+import { getRightHandEstimateStore } from '../../../api/lib/rightHandAssemblyStore.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
 const rightHandEstimateId = Astro.url.searchParams.get('estimate_id') ?? '';
 const rightHandConversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
-const rightHandDraft = rightHandEstimateId ? await readRightHandEstimateDraft(tenant, rightHandEstimateId) : null;
+const rightHandDraft = rightHandEstimateId ? await getRightHandEstimateStore().read(tenant, rightHandEstimateId) : null;
 const lines = estimateLinesForProject(tenant, projectId);
 const breakdowns = lines.map(lineBreakdown);
 const totals = estimateTotals(lines);
@@ -41,6 +41,8 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
             <div class="es-crumb">Right Hand assembly · draft for review</div>
             <h2>{rightHandDraft.title}</h2>
             <p class="es-meta">Source-labeled working estimate. Not filed, not sent, and not money-authoritative until you review and confirm.</p>
+            <p class="es-seed-label">{rightHandDraft.pricing_data_label}</p>
+            <p class="es-meta">Policy gate fired · {rightHandDraft.gate.allowed ? 'draft allowed' : `downstream action blocked: ${rightHandDraft.gate.blocked_reasons.join(', ') || 'review required'}`}</p>
           </div>
           <a class="es-rh-bubble" href={`/right-hand?conversation_id=${rightHandDraft.conversation_id}&return_to=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`}>
             Back to conversation
@@ -216,6 +218,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
   .es-recon.bad { color: #f87171; }
   .es-client { border-color: var(--field-green, #2f8f5b); }
   .es-meta { font-size: 0.75rem; color: var(--text-muted, #6a7282); font-weight: 400; }
+  .es-seed-label { display: inline-block; margin: 0.15rem 0; padding: 0.2rem 0.45rem; border: 1px solid var(--accent, #f5b544); border-radius: 999px; color: var(--accent, #f5b544); font-size: 0.72rem; }
   .es-propose { margin-top: 0.5rem; }
   .es-draft { margin-top: 0.7rem; padding: 0.7rem; border: 1px solid var(--field-green, #2f8f5b); border-radius: 10px; background: var(--surface, #11151c); }
   .es-empty { color: var(--text-muted, #6a7282); }

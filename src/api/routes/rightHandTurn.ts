@@ -24,6 +24,7 @@ import {
   type GroqChatResult,
 } from '../../altitude/modelAdapter/index.js';
 import type { EntityId } from '../../blackboard/types.js';
+import type { EventLog } from '../../blackboard/eventLog.js';
 import type {
   DailyLogEntryCapturedEvent,
   DailyLogEntryKind,
@@ -43,13 +44,21 @@ import {
   saveRightHandConversationSnapshot,
 } from '../lib/rightHandConversationStore.js';
 import {
-  buildRightHandEstimateDraft,
+  buildRightHandEstimateArtifact,
+  getRightHandEstimateStore,
   estimateIdForRightHandAssembly,
   projectIdForRightHandAssembly,
-  readRightHandEstimateDraft,
-  saveRightHandEstimateDraft,
-  searchRightHandEstimateDrafts,
+  type RightHandEstimateStore,
 } from '../lib/rightHandAssemblyStore.js';
+import {
+  buildEstimatorInputsFromRightHand,
+  classifyScopeTagsWithModel,
+  type ScopeClassifier,
+} from '../lib/rightHandEstimatorAdapter.js';
+import { createPgEventLog } from '../lib/sharedEstimateEventLog.js';
+import { makeGroqModelCaller, type ModelCaller } from '../../estimator/orchestration/index.js';
+import { runEstimate } from '../../runner/estimateRunner.js';
+import { createFixtureTenantStore } from '../../tenant/index.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiSession, requireApiTenant } from '../lib/tenantContext.js';
@@ -90,6 +99,8 @@ export interface RightHandTurnRouteDeps {
     readonly ANTHROPIC_API_KEY?: string;
     readonly ANTHROPIC_BASE_URL?: string;
     readonly REPLY_BRAIN?: string;
+    readonly DATABASE_URL?: string;
+    readonly POSTGRES_URL?: string;
   };
   readonly now?: () => Date;
   readonly groqDepsFactory?: (apiKey: string, baseUrl: string) => GroqClientDeps;
@@ -97,6 +108,10 @@ export interface RightHandTurnRouteDeps {
   readonly anthropicDepsFactory?: (apiKey: string, baseUrl: string) => AnthropicClientDeps;
   readonly anthropicChatFn?: (request: AnthropicChatRequest, deps: AnthropicClientDeps) => Promise<AnthropicChatResult>;
   readonly appendDailyLogEntryAndSurfaceFn?: typeof appendDailyLogEntryAndSurface;
+  readonly estimateStore?: RightHandEstimateStore;
+  readonly estimateEventLog?: EventLog;
+  readonly estimatorModelCaller?: ModelCaller;
+  readonly scopeClassifier?: ScopeClassifier;
 }
 
 let depsOverride: RightHandTurnRouteDeps | null = null;
@@ -114,6 +129,8 @@ function resolveDeps(): RightHandTurnRouteDeps {
       ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
       ANTHROPIC_BASE_URL: process.env['ANTHROPIC_BASE_URL'],
       REPLY_BRAIN: process.env['REPLY_BRAIN'],
+      DATABASE_URL: process.env['DATABASE_URL'],
+      POSTGRES_URL: process.env['POSTGRES_URL'],
     },
     now: () => new Date(),
     groqDepsFactory: defaultGroqClientDeps,
@@ -121,6 +138,30 @@ function resolveDeps(): RightHandTurnRouteDeps {
     anthropicDepsFactory: defaultAnthropicClientDeps,
     anthropicChatFn: anthropicChat,
   };
+}
+
+let cachedEstimateEventLog: Promise<EventLog> | null = null;
+
+async function estimateEventLogFor(deps: RightHandTurnRouteDeps): Promise<EventLog> {
+  if (deps.estimateEventLog) return deps.estimateEventLog;
+  const connectionString = deps.env.DATABASE_URL ?? deps.env.POSTGRES_URL;
+  if (!connectionString) throw new Error('DATABASE_URL is required for shared estimate event log');
+  cachedEstimateEventLog ??= createPgEventLog({ connectionString });
+  return cachedEstimateEventLog;
+}
+
+function estimateStoreFor(deps: RightHandTurnRouteDeps): RightHandEstimateStore {
+  return deps.estimateStore ?? getRightHandEstimateStore();
+}
+
+function estimatorModelCallerFor(deps: RightHandTurnRouteDeps): ModelCaller {
+  if (deps.estimatorModelCaller) return deps.estimatorModelCaller;
+  const apiKey = deps.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('GROQ_API_KEY is required for estimator handoff');
+  return makeGroqModelCaller({
+    apiKey,
+    baseUrl: deps.env.GROQ_BASE_URL ?? DEFAULT_GROQ_BASE_URL,
+  });
 }
 
 function conversationActorIdFromSessionToken(token: string): string {
@@ -620,18 +661,69 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     workingDraft,
   });
   const estimateId = estimateIdForRightHandAssembly(conversationId, projectId);
-  const existingDraft = await readRightHandEstimateDraft(tenant, estimateId);
-  const draft = buildRightHandEstimateDraft({
+  const routeDeps = resolveDeps();
+  const now = routeDeps.now?.() ?? new Date();
+  const requestedAt = now.toISOString();
+  const invocationId = `rh_est_${crypto.createHash('sha256').update(`${tenant}:${conversationId}:${projectId}:${draftText}`).digest('hex').slice(0, 18)}`;
+  const groqDeps = (routeDeps.groqDepsFactory ?? defaultGroqClientDeps)(
+    routeDeps.env.GROQ_API_KEY ?? '',
+    routeDeps.env.GROQ_BASE_URL ?? DEFAULT_GROQ_BASE_URL,
+  );
+  const groqChatForClassifier = (request: GroqChatRequest) =>
+    (routeDeps.groqChatFn ?? groqChat)(request, groqDeps);
+  const classification = await (routeDeps.scopeClassifier ?? classifyScopeTagsWithModel)({
+    tenant,
+    invocationId,
+    requestedAt,
+    workingDraft,
+    groqChat: groqChatForClassifier,
+  });
+  const estimatorInputs = buildEstimatorInputsFromRightHand({
+    tenant,
+    invocationId,
+    requestedAt,
+    workingDraft,
+    classification,
+    latestText,
+    projectId,
+  });
+
+  let estimateResult: Awaited<ReturnType<typeof runEstimate>>;
+  try {
+    estimateResult = await runEstimate(estimatorInputs, {
+      modelCaller: estimatorModelCallerFor(routeDeps),
+      tenantStore: createFixtureTenantStore(),
+      eventLog: await estimateEventLogFor(routeDeps),
+      actorTenantId: tenant,
+      actor: { id: actorId as EntityId, role: 'owner' },
+    });
+  } catch (err) {
+    return c.json({
+      error: 'estimate_assembly_failed',
+      reason: err instanceof Error ? err.message : String(err),
+      operator_message: 'I could not build the estimate draft yet. Nothing was filed or sent.',
+    }, 503);
+  }
+
+  const draft = buildRightHandEstimateArtifact({
     tenant,
     projectId,
     estimateId,
     conversationId,
-    workingDraft,
-    existing: existingDraft,
-    latestText,
-    now: resolveDeps().now?.() ?? new Date(),
+    titleSeed: workingDraft.projectName ?? workingDraft.clientName ?? workingDraft.scopeSummary,
+    estimatorResponse: estimateResult.estimatorResponse,
+    gateAllowed: estimateResult.allowed,
+    gateBlockedReasons: estimateResult.blockedReasons,
+    openItems: workingDraft.open_items,
+    unmatchedScope: classification.unmatchedScope,
+    sourceRefs: [
+      ...workingDraft.source_refs,
+      ...estimateResult.appendedEventIds.map((id) => `event:${id}`),
+      estimateResult.altitudePacket.packet_id,
+    ],
+    now,
   });
-  await saveRightHandEstimateDraft(draft);
+  await estimateStoreFor(routeDeps).save(draft);
 
   const snapshot = buildRightHandConversationSnapshot({
     tenant,
@@ -648,7 +740,7 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     ...snapshot,
     working_draft: mergeWorkingDraftFields(workingDraft, {
       proposed_artifact: 'estimate_draft',
-      next_action: 'estimate assembly opened for review',
+      next_action: 'estimate draft opened for review',
       source_refs: [`right-hand-estimate:${estimateId}`],
     }),
   });
@@ -661,13 +753,21 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     route: draft.route,
     draft,
     working_draft: workingDraft,
+    estimator: {
+      policy_gate_fired: true,
+      policy_gate_allowed: estimateResult.allowed,
+      blocked_reasons: estimateResult.blockedReasons,
+      scope_tags: estimatorInputs.scopeTags,
+      unmatched_scope: classification.unmatchedScope,
+      classifier_source: classification.source,
+    },
   });
 });
 
 rightHandTurnRoutes.get('/right-hand/estimates/search', async (c) => {
   const tenant = requireApiTenant(c);
   const query = c.req.query('q') ?? '';
-  const drafts = await searchRightHandEstimateDrafts(tenant, query);
+  const drafts = await estimateStoreFor(resolveDeps()).search(tenant, query);
   return c.json({
     estimates: drafts.map((draft) => ({
       estimate_id: draft.estimate_id,
@@ -684,7 +784,7 @@ rightHandTurnRoutes.get('/right-hand/estimates/search', async (c) => {
 
 rightHandTurnRoutes.get('/right-hand/estimates/:estimateId', async (c) => {
   const tenant = requireApiTenant(c);
-  const draft = await readRightHandEstimateDraft(tenant, c.req.param('estimateId'));
+  const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
   return c.json({ draft });
 });
