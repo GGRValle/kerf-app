@@ -270,6 +270,73 @@ test('model failure falls back to deterministic resolver without throwing', asyn
   assert.equal(result.trp.context_hypothesis.frame, 'estimate_walk');
 });
 
+test('model resolver parses prose-wrapped JSON instead of falling back', async () => {
+  let capturedBody: GroqChatRequest | null = null;
+  const result = await resolveTurnWithModel(
+    BASE_INPUT,
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => {
+        capturedBody = req;
+        return {
+          ok: true,
+          content: `Here's the JSON:\n${JSON.stringify({
+            intent: 'job_intake',
+            frame: 'estimate_walk',
+            label: 'Estimate walk',
+            confidence: 'high',
+            likely_entity: null,
+            routed_label: 'Estimate walk → estimate',
+            preparing_label: 'Estimate ready to start',
+            prompt: 'Create estimate from this?',
+            missing_facts: [],
+          })}\nThanks.`,
+          model: req.model,
+          inputTokens: 50,
+          outputTokens: 20,
+          totalTokens: 70,
+          latencyMs: 10,
+          costNanoUsd: 1_000 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-05-31T12:00:00.000Z',
+        };
+      },
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.trp.context_hypothesis.frame, 'estimate_walk');
+  assert.deepEqual(capturedBody?.response_format, { type: 'json_object' });
+});
+
+test('model resolver still falls back on truly unparseable JSON', async () => {
+  const result = await resolveTurnWithModel(
+    BASE_INPUT,
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: '{"intent":"job_intake"',
+        model: req.model,
+        inputTokens: 50,
+        outputTokens: 20,
+        totalTokens: 70,
+        latencyMs: 10,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-05-31T12:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'deterministic_fallback');
+  assert.equal(result.fallback_reason, 'model_invalid_json');
+});
+
 test('route uses deterministic fallback when GROQ is not configured and still applies known job context', async () => {
   __setRightHandTurnDepsForTests({
     env: { GROQ_API_KEY: undefined },
@@ -421,6 +488,7 @@ test('route invokes configured model server-side and returns client-safe TRP', a
   assert.equal(capturedAuth, 'gsk-test-secret');
   assert.equal(capturedBody?.endpoint, TURN_RESOLVER_LLM_ENDPOINT);
   assert.equal(capturedBody?.model, TURN_RESOLVER_LLM_MODEL);
+  assert.deepEqual(capturedBody?.response_format, { type: 'json_object' });
   assert.match(capturedBody?.messages.at(-1)?.content ?? '', /project:proj_wegrzyn_kitchen:Wegrzyn kitchen \+ primary bath/);
   assert.match(capturedBody?.messages.at(-1)?.content ?? '', /client:client_wegrzyn:Wegrzyn, Mark & Grace/);
 });
@@ -492,6 +560,7 @@ test('reply resolver calls model with peer-altitude doctrine and returns its nat
   assert.equal(capturedBody?.purpose, 'right_hand_peer_conversation_reply');
   assert.equal(capturedBody?.endpoint, TURN_RESOLVER_LLM_ENDPOINT);
   assert.equal(capturedBody?.model, TURN_RESOLVER_LLM_MODEL);
+  assert.deepEqual(capturedBody?.response_format, { type: 'json_object' });
   const system = capturedBody?.messages[0]?.content ?? '';
   assert.match(system, /Start at peer altitude/);
   assert.match(system, /tenant isolation · source validation · durable-write gate · money\/send gate · classification\/envelope stamping · health\/safety\/policy gates · humble fallback/);
@@ -500,6 +569,88 @@ test('reply resolver calls model with peer-altitude doctrine and returns its nat
   assert.match(system, /claims_durable_action=true only when your reply says an action already happened/);
   assert.match(system, /proposed_action is a closed go-now handoff signal/);
   assert.match(system, /"proposed_action": "assemble_estimate\|null"/);
+});
+
+test('reply resolver parses fenced JSON with trailing commentary', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Kitchen estimate with cabinets and tile.',
+    intent: 'job_intake',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'Can you take me to the estimate?',
+      draftText: trp.heard_text,
+      currentPath: '/',
+      userRole: 'owner',
+      tenantId: 'tenant_ggr' as never,
+      trp,
+      now: () => new Date('2026-06-09T12:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: `\`\`\`json\n${JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Estimate draft is ready to open.',
+          proposed_action: 'assemble_estimate',
+        })}\n\`\`\`\nI can help after this.`,
+        model: req.model,
+        inputTokens: 50,
+        outputTokens: 12,
+        totalTokens: 62,
+        latencyMs: 20,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T12:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.reply, 'Estimate draft is ready to open.');
+  assert.equal(result.proposed_action, 'assemble_estimate');
+});
+
+test('reply resolver still falls back on truly unparseable JSON', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Kitchen estimate with cabinets and tile.',
+    intent: 'job_intake',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'Keep going',
+      draftText: trp.heard_text,
+      currentPath: '/',
+      userRole: 'owner',
+      tenantId: 'tenant_ggr' as never,
+      trp,
+      now: () => new Date('2026-06-09T12:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: '{"reply":"cut off"',
+        model: req.model,
+        inputTokens: 50,
+        outputTokens: 12,
+        totalTokens: 62,
+        latencyMs: 20,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T12:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'humble_fallback');
+  assert.equal(result.fallback_reason, 'model_invalid_json');
 });
 
 test('reply resolver returns closed assemble_estimate action only when model emits the token', async () => {

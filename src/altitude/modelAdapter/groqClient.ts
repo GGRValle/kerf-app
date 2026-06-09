@@ -52,6 +52,7 @@ export interface GroqChatRequest {
   readonly workflow?: string;
   readonly temperature?: number;
   readonly maxTokens?: number;
+  readonly response_format?: { readonly type: 'json_object' };
   readonly requestedAt: ISO8601;
 }
 
@@ -179,6 +180,7 @@ export async function groqChat(
     messages: request.messages,
     temperature: request.temperature ?? 0,
     ...(request.maxTokens !== undefined ? { max_tokens: request.maxTokens } : {}),
+    ...(request.response_format !== undefined ? { response_format: request.response_format } : {}),
   });
 
   const timeoutMs = deps.timeoutMs ?? DEFAULT_GROQ_TIMEOUT_MS;
