@@ -104,6 +104,24 @@ test('groqChat sends OpenAI-compatible POST with auth header to /chat/completion
   assert.deepEqual(body.messages, SCOUT_REQUEST.messages);
 });
 
+test('groqChat includes JSON mode response_format when requested', async () => {
+  const { deps, calls } = makeDeps({
+    body: {
+      choices: [{ message: { content: '{"ok":true}' }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    },
+  });
+
+  const result = await groqChat({
+    ...SCOUT_REQUEST,
+    response_format: { type: 'json_object' },
+  }, deps);
+
+  assert.equal(result.ok, true);
+  const body = JSON.parse(calls[0]!.init!.body as string);
+  assert.deepEqual(body.response_format, { type: 'json_object' });
+});
+
 test('groqChat returns success result with parsed usage + cost in nano-USD', async () => {
   const { deps } = makeDeps({
     body: {
