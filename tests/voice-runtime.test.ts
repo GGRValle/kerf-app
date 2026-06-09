@@ -318,11 +318,12 @@ test('runVoiceEstimate emits a real voice_transcript_id (not synthetic from invo
 // 5. ADVERSARIAL — belt-and-suspenders trust discipline survives voice path
 // ──────────────────────────────────────────────────────────────────────────
 
-test('Adversarial: Whisper transcript primes a fabricated price, but the parser/builder catches it on the voice path too', async () => {
+test('Adversarial: Whisper transcript primes an unbacked price, but voice path keeps it as model knowledge and blocks', async () => {
   // The voice transcript implies operator wants HVAC pricing; the LLM
-  // (mock) responds with a fabricated $8K HVAC price even though the band
+  // (mock) responds with an $8K HVAC price even though the band
   // is INSUFFICIENT_DATA (no comparables for hvac in GGR pool).
-  // The runner's parser/builder must drop that price.
+  // The runner's parser/builder must keep that price only as model
+  // knowledge and block consequence use.
   const eventLog = createMemoryEventLog();
   const transcript =
     'Kitchen remodel needs cabinets, plus an HVAC system upgrade with new ductwork.';
@@ -353,10 +354,16 @@ test('Adversarial: Whisper transcript primes a fabricated price, but the parser/
   assert.ok(hvacBand);
   assert.equal(hvacBand.precision_allowed, false);
 
-  // Trust discipline outcome: cabinetry survives as priced; hvac is
-  // dropped from line_items into gaps_flagged.
-  assert.equal(result.estimate.altitudePacket.extracted_facts['line_item_count'], 1);
+  // Trust discipline outcome: cabinetry survives as company-backed; hvac
+  // survives only as model knowledge and is flagged as source-basis required.
+  assert.equal(result.estimate.altitudePacket.extracted_facts['line_item_count'], 2);
   assert.equal(result.estimate.altitudePacket.extracted_facts['gap_count'], 1);
+  const hvacLine = result.estimate.estimatorResponse.line_items.find((line) => line.scope_tag === 'hvac');
+  assert.ok(hvacLine);
+  assert.equal(hvacLine.price_cents, 800_000);
+  assert.equal(hvacLine.confidence, 'MODEL_INFERENCE');
+  assert.equal(result.estimate.allowed, false);
+  assert.ok(result.estimate.blockedReasons.includes('source_basis_required'));
 });
 
 // ──────────────────────────────────────────────────────────────────────────

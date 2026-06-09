@@ -5,10 +5,11 @@
 // trust risk is dual-layer:
 //
 //   1. PROMPT (belt) — system prompt instructs the LLM to honor
-//      `precision_allowed: false` bands by surfacing gaps, not fabricating.
-//   2. PARSER + PACKET BUILDER (suspenders) — code rejects/converts any
-//      price the LLM emits for a `precision_allowed: false` scope, even
-//      if Groq misbehaves and ignores the prompt.
+//      `precision_allowed: false` bands by labeling any illustrative
+//      ballpark as MODEL_INFERENCE and surfacing a gap.
+//   2. PARSER + PACKET BUILDER (suspenders) — code coerces any unbacked
+//      price to MODEL_INFERENCE + gap, even if the model misbehaves and
+//      ignores the prompt.
 //
 // "LLM proposes; Kerf disposes." — discipline is enforced in code, not
 // just words.
@@ -64,7 +65,8 @@ export interface RawGap {
 
 /**
  * Post-enforcement structured response. By construction:
- *   - No `price_cents` on a line whose band had `precision_allowed: false`.
+ *   - Any `price_cents` on a line whose band had `precision_allowed: false`
+ *     is labeled MODEL_INFERENCE and paired with a gap, never company truth.
  *   - LOW-band line descriptions carry hedge language ("directional",
  *     "cross-archetype", or equivalent) — added by parser if absent.
  *   - All `scope_tag` values are valid `ScopeTag` enum members.

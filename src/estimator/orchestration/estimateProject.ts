@@ -57,8 +57,10 @@ export interface EstimateProjectResult {
    * gaps, and operator summary — none of which survive the AltitudePacket
    * shape (the packet keeps only counts in `extracted_facts`).
    *
-   * Discipline guarantee from PR #130: no `price_cents` for any scope whose
-   * band had `precision_allowed: false`. Safe to render verbatim.
+   * Discipline guarantee from PR #130 + three-tier precision: any
+   * `price_cents` for a scope whose band had `precision_allowed: false`
+   * is labeled MODEL_INFERENCE and paired with a visible gap. Safe to render
+   * as a draft, not as consequence-ready company truth.
    */
   readonly estimatorResponse: EstimatorResponse;
 }
@@ -69,10 +71,10 @@ export interface EstimateProjectResult {
  * model-call I/O which is DI'd through `deps.modelCaller`.
  *
  * Trust discipline is enforced TWICE on the response path:
- *   1. responseParser.enforceTrustDiscipline drops fabricated prices for
- *      `precision_allowed: false` scopes.
- *   2. packetBuilder verifies again before constructing the packet —
- *      throws PacketBuildViolationError if the parser missed any.
+ *   1. responseParser.enforceTrustDiscipline coerces unbacked prices to
+ *      MODEL_INFERENCE + visible gaps.
+ *   2. packetBuilder verifies again before constructing the packet — throws
+ *      PacketBuildViolationError if the parser missed that fence.
  */
 export async function estimateProject(
   inputs: EstimatorInputs,

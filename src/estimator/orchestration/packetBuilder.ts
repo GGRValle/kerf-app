@@ -1,13 +1,14 @@
 // Estimator AltitudePacket builder — the SECOND ENFORCEMENT layer.
 //
-// Per Thread 9 brief: "even if the parser somehow lets a price through,
-// packetBuilder verifies no price_cents on `precision_allowed: false`
-// scopes before constructing the packet."
+// Per Thread 9 brief + three-tier precision update: "even if the parser
+// somehow lets a price through, packetBuilder verifies any price on a
+// `precision_allowed: false` scope is labeled MODEL_INFERENCE and paired
+// with a gap before constructing the packet."
 //
-// In normal operation, the parser already drops such prices. This builder
+// In normal operation, the parser already coerces such prices. This builder
 // re-checks anyway — defense in depth. If a violation reaches this layer,
-// it means the parser has a bug; we throw loudly rather than silently
-// emit a tainted packet.
+// it means the parser has a bug; we throw loudly rather than silently emit
+// a tainted packet.
 
 import type {
   AltitudePacket,
@@ -52,14 +53,22 @@ export interface BuildPacketOpts {
 export function buildEstimatorAltitudePacket(opts: BuildPacketOpts): AltitudePacket {
   // ── SECOND ENFORCEMENT: re-verify trust discipline. ──────────────────
   // If this throws, the parser has a bug — fix the parser, don't catch here.
+  const gapScopes = new Set(opts.response.gaps_flagged.map((gap) => gap.scope_tag));
   for (const line of opts.response.line_items) {
     if (line.price_cents !== null) {
       const band = opts.bandsByScope.get(line.scope_tag);
-      if (band !== undefined && band.precision_allowed === false) {
+      if ((band === undefined || band.precision_allowed === false) && line.confidence !== 'MODEL_INFERENCE') {
         throw new PacketBuildViolationError(
           `line_item for scope ${line.scope_tag} has price_cents=${line.price_cents} ` +
-            `but its band has precision_allowed=false. ` +
-            `Parser should have dropped this; this is a P0 invariant violation.`,
+            `without company-backed precision but confidence=${line.confidence}. ` +
+            `Parser should have forced MODEL_INFERENCE; this is a P0 invariant violation.`,
+        );
+      }
+      if ((band === undefined || band.precision_allowed === false) && !gapScopes.has(line.scope_tag)) {
+        throw new PacketBuildViolationError(
+          `line_item for scope ${line.scope_tag} has price_cents=${line.price_cents} ` +
+            `without company-backed precision but no gaps_flagged entry. ` +
+            `Parser should have surfaced the source-basis gap; this is a P0 invariant violation.`,
         );
       }
     }

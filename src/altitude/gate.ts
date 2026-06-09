@@ -311,8 +311,13 @@ export function runV7SourceBasisRequired(packet: AltitudePacket): ValidatorResul
   const started = Date.now();
   const hasCompleteSourceBasis =
     packet.source_refs.length > 0 && packet.evidence_ids.length > 0 && packet.claim_ids.length > 0;
+  const moneySourceClass = packet.money_fields?.source_class;
+  // SourceRefs can prove what context the model saw; they do not make an
+  // illustrative model-knowledge price company-backed money.
+  const pricedModelInference =
+    isMoneyMutation(packet) && moneySourceClass === 'model_inference';
 
-  if (!hasCompleteSourceBasis) {
+  if (!hasCompleteSourceBasis || pricedModelInference) {
     return validatorResult('V7', false, true, {
       reason: 'source_basis_required',
       fieldCorrected: {
