@@ -498,6 +498,88 @@ test('reply resolver calls model with peer-altitude doctrine and returns its nat
   assert.match(system, /Never let the safety floor impersonate judgment/);
   assert.match(system, /Density never eats the honesty seam/);
   assert.match(system, /claims_durable_action=true only when your reply says an action already happened/);
+  assert.match(system, /proposed_action is a closed go-now handoff signal/);
+  assert.match(system, /"proposed_action": "assemble_estimate\|null"/);
+});
+
+test('reply resolver returns closed assemble_estimate action only when model emits the token', async () => {
+  const text = 'Take me to the estimate.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: text,
+      draftText: 'Kitchen estimate draft with cabinets and countertops.',
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      conversationTurns: [{ speaker: 'operator', text }],
+      now: () => new Date('2026-06-09T12:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Opening the estimate draft for review.',
+          proposed_action: 'assemble_estimate',
+        }),
+        model: req.model,
+        inputTokens: 50,
+        outputTokens: 12,
+        totalTokens: 62,
+        latencyMs: 20,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T12:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.proposed_action, 'assemble_estimate');
+});
+
+test('reply resolver normalizes unrecognized proposed_action to null', async () => {
+  const text = 'Keep shaping the estimate.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: text,
+      draftText: 'Kitchen estimate draft with cabinets and countertops.',
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      conversationTurns: [{ speaker: 'operator', text }],
+      now: () => new Date('2026-06-09T12:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Still shaping the estimate draft.',
+          proposed_action: 'prepare estimate draft',
+        }),
+        model: req.model,
+        inputTokens: 50,
+        outputTokens: 12,
+        totalTokens: 62,
+        latencyMs: 20,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T12:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.proposed_action, undefined);
 });
 
 test('reply resolver absorbs a rich Chen project narrative into working draft updates', async () => {
