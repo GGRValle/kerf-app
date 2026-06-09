@@ -768,8 +768,51 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   assert.match(enterReply, /assembleEstimateServerSide\(clean, draftText, turnsForModel\)/);
   assert.match(enterReply, /resolveReplyServerSide\(clean, draftText, trp, turnsForModel\)/);
   assert.match(enterReply, /canonicalWorkingDraft = payload\.workingDraft/);
+  assert.match(enterReply, /payload\.proposedAction === 'assemble_estimate'/);
   assert.match(enterReply, /replaceTurn\(replyIndex, 'right_hand', payload\.reply\)/);
   assert.doesNotMatch(enterReply, /\$\{replyForTurn\(trp\)\} What else\?/);
+});
+
+test('F-RH3 estimate handoff: trigger phrases cover live-walk wording and proposed_action is closed', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const trigger = sliceDecl(src, 'textRequestsEstimateAssembly', 'textLooksLikeEstimatePageUpdate');
+  const regexMatch = trigger.match(/\/(.+)\/i\.test\(text\)/s);
+  assert.ok(regexMatch?.[1], 'textRequestsEstimateAssembly must use a testable regex literal');
+  const triggerRegex = new RegExp(regexMatch[1], 'i');
+  const expectedPhrases = [
+    'put it together',
+    'take me there',
+    'take me to the estimate',
+    'take me to the proposal',
+    'build it',
+    'build the estimate',
+    'build the proposal',
+    'assemble it',
+    'assemble the estimate',
+    'start the estimate',
+    'make the estimate',
+    'open the estimate',
+    'price it out',
+    'start the quote',
+    'build the bid',
+  ];
+  for (const phrase of expectedPhrases) {
+    assert.equal(triggerRegex.test(phrase), true, `missing trigger phrase: ${phrase}`);
+  }
+  const overFirePhrases = [
+    'assemble the cabinets',
+    'assemble the island',
+    'assemble the crew',
+    "let's assemble the materials",
+  ];
+  for (const phrase of overFirePhrases) {
+    assert.equal(triggerRegex.test(phrase), false, `over-fired on scope/additional work phrase: ${phrase}`);
+  }
+  assert.match(src, /type RightHandProposedAction = 'assemble_estimate'/);
+  assert.match(src, /const normalizeProposedAction = \(value: unknown\): RightHandProposedAction \| null/);
+  assert.match(src, /clean === 'assemble_estimate' \? 'assemble_estimate' : null/);
+  assert.match(src, /proposedAction: normalizeProposedAction\(body\.proposed_action\)/);
+  assert.doesNotMatch(src, /proposedAction: body\.proposed_action/);
 });
 
 test('Dispatch 3: assembly accept routes to server-owned estimate draft and keeps live conversation link', () => {

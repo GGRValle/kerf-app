@@ -26,6 +26,7 @@ export type ReplyMode =
   | 'clarify'
   | 'advisor_flag'
   | 'gate_ready';
+export type ReplyProposedAction = 'assemble_estimate';
 
 export interface ConversationReplyTurn {
   readonly speaker: 'operator' | 'right_hand' | 'system';
@@ -62,7 +63,7 @@ export interface ResolveReplyResult {
   readonly open_items?: readonly string[];
   readonly asked_questions_ack?: readonly string[];
   readonly next_question?: string | null;
-  readonly proposed_action?: string | null;
+  readonly proposed_action?: ReplyProposedAction | null;
   readonly draft_fabrication_flags?: readonly string[];
   readonly fallback_reason?: string;
 }
@@ -164,6 +165,7 @@ Density never eats the honesty seam.
 - If the job is unresolved, keep drafting without pestering; surface the missing job at the consequence gate or when directly asked.
 - No internal words: packet, TRP, work artifact, attention artifact, resolver, hypothesis, pipeline.
 - A safety/policy/health issue may be pushy. Ordinary progress should not be.
+- proposed_action is a closed go-now handoff signal. Emit "assemble_estimate" only when the operator clearly asks to move from conversation into an estimate/proposal/bid/quote view now (for example: build the estimate, take me to the estimate, open the proposal, put it together). Otherwise return null. Do not emit it merely because the working draft is an estimate_draft or the operator is still adding scope.
 
 Return STRICT JSON only:
 {
@@ -182,7 +184,7 @@ Return STRICT JSON only:
   },
   "asked_questions_ack": ["questions from prior turns that the operator has now answered"],
   "next_question": null,
-  "proposed_action": "short action you are preparing, if any"
+  "proposed_action": "assemble_estimate|null"
 }`;
 
 const ALLOWED_MODES: readonly ReplyMode[] = [
@@ -192,6 +194,12 @@ const ALLOWED_MODES: readonly ReplyMode[] = [
   'advisor_flag',
   'gate_ready',
 ] as const;
+
+function cleanProposedAction(value: unknown): ReplyProposedAction | null {
+  if (typeof value !== 'string') return null;
+  const clean = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return clean === 'assemble_estimate' ? 'assemble_estimate' : null;
+}
 
 const FALSE_COMPLETION_VERBS = [
   'filed',
@@ -810,7 +818,7 @@ export async function resolveReplyWithModel(
   const openItems = cleanStringList(parsed['open_items'], { maxItems: 12, maxLength: 120 });
   const askedQuestionsAck = cleanStringList(parsed['asked_questions_ack'], { maxItems: 8, maxLength: 160 });
   const nextQuestion = cleanNullableString(parsed['next_question'], 180);
-  const proposedAction = cleanNullableString(parsed['proposed_action'], 180);
+  const proposedAction = cleanProposedAction(parsed['proposed_action']);
 
   return {
     reply,

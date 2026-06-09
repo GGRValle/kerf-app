@@ -1020,8 +1020,16 @@ const { t } = createLayoutContext();
       return classified;
     };
     const textRequestsEstimateAssembly = (text: string): boolean => (
-      /\b(?:put it together|take me there|let'?s build it|build it|assemble(?: it)?|start the estimate|make the estimate|open the estimate|price it out)\b/i.test(text)
+      /\b(?:put it together|take me there|take me to (?:the )?(?:estimate|proposal|quote|bid)|let'?s build it|build it|build (?:the )?(?:estimate|proposal|quote|bid)|assemble(?: it| the (?:estimate|proposal|quote|bid))|start (?:the )?(?:estimate|proposal|quote|bid)|make (?:the )?(?:estimate|proposal|quote|bid)|open (?:the )?(?:estimate|proposal|quote|bid)|price it out)\b/i.test(text)
     );
+
+    type RightHandProposedAction = 'assemble_estimate';
+
+    const normalizeProposedAction = (value: unknown): RightHandProposedAction | null => {
+      if (typeof value !== 'string') return null;
+      const clean = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      return clean === 'assemble_estimate' ? 'assemble_estimate' : null;
+    };
 
     const textLooksLikeEstimatePageUpdate = (text: string): boolean => (
       /^\/estimate\/[A-Za-z0-9_-]+/.test(window.location.pathname)
@@ -1290,12 +1298,14 @@ const { t } = createLayoutContext();
       fallback_reason?: string;
       workingDraft?: unknown;
       working_draft?: unknown;
+      proposed_action?: unknown;
       draft_fabrication_flags?: unknown;
     };
 
     type ResolvedReplyPayload = {
       readonly reply: string;
       readonly workingDraft: WorkingDraftFields;
+      readonly proposedAction: RightHandProposedAction | null;
     };
 
     const resolveReplyServerSide = async (
@@ -1334,6 +1344,7 @@ const { t } = createLayoutContext();
         return {
           reply,
           workingDraft: cleanStoredWorkingDraft(body.workingDraft ?? body.working_draft, draftText),
+          proposedAction: normalizeProposedAction(body.proposed_action),
         };
       } catch {
         return null;
@@ -1465,6 +1476,22 @@ const { t } = createLayoutContext();
       void resolveReplyServerSide(clean, draftText, trp, turnsForModel).then((payload) => {
         if (!payload) return;
         canonicalWorkingDraft = payload.workingDraft;
+        if (payload.proposedAction === 'assemble_estimate') {
+          replaceTurn(replyIndex, 'right_hand', 'Assembling the estimate draft…');
+          persistConversation();
+          void assembleEstimateServerSide(clean, draftText, turnsForModel).then((assemblyPayload) => {
+            if (!assemblyPayload) {
+              replaceTurn(replyIndex, 'right_hand', 'I can keep shaping the estimate here, but I could not open the estimate page yet.');
+              persistConversation();
+              return;
+            }
+            canonicalWorkingDraft = assemblyPayload.workingDraft;
+            replaceTurn(replyIndex, 'right_hand', 'I’m opening the estimate draft for review. The conversation stays parked here.');
+            persistConversation();
+            window.setTimeout(() => navigate(assemblyPayload.route, { resume: true }), 180);
+          });
+          return;
+        }
         if (payload.reply === fallbackReply) {
           persistConversation();
           return;
