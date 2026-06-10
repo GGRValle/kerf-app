@@ -34,6 +34,44 @@ export interface ConversationReplyTurn {
   readonly text: string;
 }
 
+export interface EstimateArtifactReplyLineContext {
+  readonly label: string;
+  readonly quantity?: number;
+  readonly uom?: string;
+  readonly unit_cents?: number | null;
+  readonly extended_cents?: number | null;
+  readonly source_type: string;
+  readonly source_label: string;
+  readonly source_ref: string;
+  readonly tier: string;
+  readonly open_item: boolean;
+  readonly flags: readonly string[];
+  readonly division?: string;
+  readonly editable_fields: readonly string[];
+}
+
+export interface EstimateArtifactReplyContext {
+  readonly estimate_id: string;
+  readonly project_id: string;
+  readonly title: string;
+  readonly status: string;
+  readonly route: string;
+  readonly pricing_data_label: string;
+  readonly total_cents: number | null;
+  readonly project_total_cents: number | null;
+  readonly gate: {
+    readonly allowed: boolean;
+    readonly blocked_reasons: readonly string[];
+  };
+  readonly artifact_state: {
+    readonly filed: boolean;
+    readonly sent: boolean;
+  };
+  readonly open_items: readonly string[];
+  readonly source_refs: readonly string[];
+  readonly lines: readonly EstimateArtifactReplyLineContext[];
+}
+
 export interface ResolveReplyInput {
   readonly latestText: string;
   readonly draftText?: string;
@@ -45,6 +83,7 @@ export interface ResolveReplyInput {
   readonly trp: TurnResolutionPacket;
   readonly workingDraft?: WorkingDraftFields;
   readonly conversationTurns?: readonly ConversationReplyTurn[];
+  readonly estimateArtifactContext?: EstimateArtifactReplyContext | null;
   readonly now?: () => Date;
 }
 
@@ -167,6 +206,13 @@ Density never eats the honesty seam.
 - No internal words: packet, TRP, work artifact, attention artifact, resolver, hypothesis, pipeline.
 - A safety/policy/health issue may be pushy. Ordinary progress should not be.
 - proposed_action is a closed go-now handoff signal. Emit "assemble_estimate" only when the operator clearly asks to move from conversation into an estimate/proposal/bid/quote view now (for example: build the estimate, take me to the estimate, open the proposal, put it together). Otherwise return null. Do not emit it merely because the working draft is an estimate_draft or the operator is still adding scope.
+
+Active estimate artifact context:
+- If active_estimate_artifact is present, it is the visible estimate draft the operator is looking at. Use it to answer estimate questions about visible lines, quantities, LF/SF/unit prices, totals, tiers, source labels, provenance/source refs, open items, blocked/draft status, and what is editable.
+- This context is read-only. You may explain it, compare lines, and say what the operator can edit, but you must not claim that you changed, saved, filed, sent, approved, or priced anything from this context.
+- If the estimate gate is blocked or the artifact is not filed/sent, say so plainly when the operator asks about pricing basis, approval, send/file status, or whether the number is final.
+- For source questions, name the line source_label, tier, source_ref, and pricing_data_label when available. Do not say "No pricing loaded yet" when priced lines are present in active_estimate_artifact.
+- Do not use stale thread-holding copy like "I have the estimate thread" for estimate-aware questions; answer from active_estimate_artifact or say which visible field is missing.
 
 Return STRICT JSON only:
 {
@@ -320,7 +366,7 @@ export function humbleReplyFallback(input: ResolveReplyInput, fallbackReason?: s
   } else if (entity && isEstimate) {
     reply = `I have it for ${entity}.`;
   } else if (isEstimate) {
-    reply = 'I have the estimate thread.';
+    reply = 'I have the estimate draft in view.';
   } else if (isNote) {
     reply = 'I have the note.';
   }
@@ -365,6 +411,7 @@ function normalized(value: string): string {
 
 function supportCorpus(input: ResolveReplyInput): string {
   const draft = input.workingDraft;
+  const estimate = input.estimateArtifactContext;
   return [
     input.latestText,
     input.draftText ?? '',
@@ -373,6 +420,19 @@ function supportCorpus(input: ResolveReplyInput): string {
     draft?.scopeFacts.join(' ') ?? '',
     draft?.allowances.join(' ') ?? '',
     draft?.known_entities.map((entity) => entity.label).join(' ') ?? '',
+    estimate?.title ?? '',
+    estimate?.pricing_data_label ?? '',
+    estimate?.lines.map((line) => [
+      line.label,
+      line.quantity,
+      line.uom,
+      line.unit_cents,
+      line.extended_cents,
+      line.source_label,
+      line.source_ref,
+      line.tier,
+      line.flags.join(' '),
+    ].filter((part) => part !== undefined && part !== null).join(' ')).join('\n') ?? '',
     (input.conversationTurns ?? []).map((turn) => turn.text).join(' '),
   ].join('\n');
 }
@@ -708,6 +768,60 @@ function workingDraftPrompt(input: ResolveReplyInput): string {
   ].join('\n');
 }
 
+function centsPrompt(value: number | null | undefined): string {
+  if (value === null || value === undefined) return 'none';
+  const dollars = value / 100;
+  return `$${dollars.toLocaleString('en-US', {
+    minimumFractionDigits: Number.isInteger(dollars) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function estimateArtifactPrompt(input: ResolveReplyInput): string {
+  const artifact = input.estimateArtifactContext;
+  if (!artifact) return '(none)';
+  const lines = artifact.lines.length
+    ? artifact.lines.map((line, index) => {
+        const quantity = line.quantity !== undefined && line.uom
+          ? `${line.quantity} ${line.uom}`
+          : 'none';
+        const division = line.division ? `, division=${line.division}` : '';
+        return [
+          `${index + 1}. ${line.label}`,
+          `quantity=${quantity}`,
+          `unit=${centsPrompt(line.unit_cents)}`,
+          `extended=${centsPrompt(line.extended_cents)}`,
+          `tier=${line.tier}`,
+          `source_label=${line.source_label}`,
+          `source_type=${line.source_type}`,
+          `source_ref=${line.source_ref}`,
+          `open_item=${line.open_item}`,
+          `flags=${line.flags.length ? line.flags.join('|') : 'none'}`,
+          `editable=${line.editable_fields.length ? line.editable_fields.join('|') : 'none'}${division}`,
+        ].join('; ');
+      }).join('\n')
+    : '(no visible lines)';
+  return [
+    'READ ONLY: this is visible estimate context. It cannot save, send, file, approve, price, or mutate anything.',
+    `estimate_id: ${artifact.estimate_id}`,
+    `project_id: ${artifact.project_id}`,
+    `title: ${artifact.title}`,
+    `status: ${artifact.status}`,
+    `route: ${artifact.route}`,
+    `pricing_data_label: ${artifact.pricing_data_label}`,
+    `visible_line_total: ${centsPrompt(artifact.total_cents)}`,
+    `project_total_cents_from_estimator: ${centsPrompt(artifact.project_total_cents)}`,
+    `gate_allowed: ${artifact.gate.allowed}`,
+    `gate_blocked_reasons: ${artifact.gate.blocked_reasons.length ? artifact.gate.blocked_reasons.join(', ') : 'none'}`,
+    `artifact_filed: ${artifact.artifact_state.filed}`,
+    `artifact_sent: ${artifact.artifact_state.sent}`,
+    `open_items: ${artifact.open_items.length ? artifact.open_items.join(', ') : 'none'}`,
+    `source_refs: ${artifact.source_refs.length ? artifact.source_refs.join(', ') : 'none'}`,
+    'visible_lines:',
+    lines,
+  ].join('\n');
+}
+
 function userPrompt(input: ResolveReplyInput): string {
   const entities = (input.knownEntities ?? [])
     .slice(0, 8)
@@ -730,6 +844,9 @@ function userPrompt(input: ResolveReplyInput): string {
     '',
     'Working draft memory:',
     workingDraftPrompt(input),
+    '',
+    'Active estimate artifact:',
+    estimateArtifactPrompt(input),
     '',
     'Draft so far:',
     (input.draftText ?? trp.heard_text).slice(0, 1400) || '(empty)',
