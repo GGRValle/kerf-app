@@ -20,6 +20,10 @@ import {
   type RightHandTurnRouteDeps,
 } from '../src/api/routes/rightHandTurn.js';
 import {
+  createMemoryRightHandEstimateStore,
+  type RightHandEstimateDraft,
+} from '../src/api/lib/rightHandAssemblyStore.js';
+import {
   resolveTurnWithModel,
   TURN_RESOLVER_LLM_ENDPOINT,
   TURN_RESOLVER_LLM_MODEL,
@@ -44,6 +48,73 @@ import { checkHostingRoute } from '../src/hosting/routeCheck.js';
 
 function authHeader(): string {
   return `Basic ${Buffer.from('christian:test').toString('base64')}`;
+}
+
+function estimateFixture(overrides: Partial<RightHandEstimateDraft> = {}): RightHandEstimateDraft {
+  return {
+    version: 2,
+    tenant_id: 'tenant_ggr',
+    project_id: 'proj_active_kitchen',
+    estimate_id: 'est_active_kitchen',
+    conversation_id: 'conv_active_kitchen',
+    title: 'Active kitchen estimate draft',
+    status: 'draft_for_review',
+    updated_at: '2026-06-09T18:00:00.000Z',
+    route: '/estimate/proj_active_kitchen?estimate_id=est_active_kitchen',
+    lines: [
+      {
+        id: 'est_model_base_cabinets',
+        label: 'Base cabinets (36 LF)',
+        description: 'Base cabinets (36 LF)',
+        source_type: 'model_knowledge',
+        source_label: 'Illustrative',
+        source_ref: 'kerf://seed-cost-kb/cabinetry/base',
+        open_item: false,
+        flags: ['cabinetry', 'itemized'],
+        tier: 'illustrative',
+        division: { code: '12', label: 'Furnishings', subtotal_cents: 2_805_000 },
+        quantity: 36,
+        uom: 'LF',
+        unit_cents: 42_500,
+        extended_cents: 1_530_000,
+        price_cents: 1_530_000,
+        confidence: 'MODEL_INFERENCE',
+        proposal_line: null,
+      },
+      {
+        id: 'est_model_upper_cabinets',
+        label: 'Upper cabinets (34 LF)',
+        description: 'Upper cabinets (34 LF)',
+        source_type: 'model_knowledge',
+        source_label: 'Illustrative',
+        source_ref: 'kerf://seed-cost-kb/cabinetry/uppers',
+        open_item: false,
+        flags: ['cabinetry', 'itemized'],
+        tier: 'illustrative',
+        division: { code: '12', label: 'Furnishings', subtotal_cents: 2_805_000 },
+        quantity: 34,
+        uom: 'LF',
+        unit_cents: 37_500,
+        extended_cents: 1_275_000,
+        price_cents: 1_275_000,
+        confidence: 'MODEL_INFERENCE',
+        proposal_line: null,
+      },
+    ],
+    open_items: ['confirm cabinet finish package'],
+    source_refs: ['right-hand-conversation:conv_active_kitchen', 'packet:test-estimator'],
+    estimator_response: {
+      itemized_lines: [],
+      line_items: [],
+      project_total_cents: null,
+      gaps_flagged: [],
+      operator_summary: 'Draft for review.',
+    },
+    gate: { fired: true, allowed: false, blocked_reasons: ['source_basis_required'] },
+    pricing_data_label: 'Illustrative pricing - sample cost data, not yet your historical rates',
+    artifact_state: { durable_record: true, filed: false, sent: false },
+    ...overrides,
+  };
 }
 
 test.afterEach(() => {
@@ -1454,6 +1525,218 @@ test('reply route sends Chen draft memory to the model without stale Wegrzyn ble
   assert.match(prompt, /clientName: Chen/);
   assert.match(prompt, /projectName: Chen kitchen remodel/);
   assert.match(prompt, /open_items: none/);
+});
+
+test('reply route feeds active estimate artifact context for LF price questions', async () => {
+  const estimateStore = createMemoryRightHandEstimateStore();
+  await estimateStore.save(estimateFixture());
+  const trp = buildTurnResolutionPacket({
+    heardText: 'what LF price are you using for cabinets?',
+    intent: 'estimate_update',
+  });
+  let capturedBody: GroqChatRequest | null = null;
+
+  __setRightHandTurnDepsForTests({
+    env: { GROQ_API_KEY: 'gsk-test-secret', GROQ_BASE_URL: 'https://groq.invalid/openai/v1' },
+    now: () => new Date('2026-06-09T18:00:00.000Z'),
+    estimateStore,
+    groqDepsFactory: () => ({} as never),
+    groqChatFn: async (req) => {
+      capturedBody = req;
+      return {
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Base cabinets are $425/LF and uppers are $375/LF on the visible draft.',
+          updated_working_draft: null,
+          proposed_action: null,
+        }),
+        model: req.model,
+        inputTokens: 80,
+        outputTokens: 45,
+        totalTokens: 125,
+        latencyMs: 12,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T18:00:00.000Z',
+      };
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: 'what LF price are you using for cabinets?',
+      draftText: 'Active kitchen estimate draft',
+      trp,
+      conversationId: 'conv_active_kitchen',
+      currentPath: '/estimate/proj_active_kitchen?estimate_id=est_active_kitchen',
+      workingDraft: { proposed_artifact: 'estimate_draft' },
+      conversationTurns: [{ speaker: 'operator', text: 'what LF price are you using for cabinets?' }],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as { authority: string; reply: string; proposed_action?: string };
+  assert.equal(body.authority, 'llm_inferred');
+  assert.match(body.reply, /\$425\/LF/);
+  assert.match(body.reply, /\$375\/LF/);
+  assert.doesNotMatch(body.reply, /No pricing loaded yet|I have the estimate thread/i);
+  assert.equal(body.proposed_action, undefined);
+
+  const prompt = capturedBody?.messages.at(-1)?.content ?? '';
+  assert.match(prompt, /Active estimate artifact:/);
+  assert.match(prompt, /READ ONLY: this is visible estimate context/);
+  assert.match(prompt, /Base cabinets \(36 LF\).*quantity=36 LF.*unit=\$425.*extended=\$15,300/s);
+  assert.match(prompt, /Upper cabinets \(34 LF\).*quantity=34 LF.*unit=\$375.*extended=\$12,750/s);
+  assert.match(prompt, /source_label=Illustrative/);
+  assert.match(prompt, /source_ref=kerf:\/\/seed-cost-kb\/cabinetry\/base/);
+});
+
+test('reply route exposes pricing basis, source provenance, and blocked draft status from active estimate', async () => {
+  const estimateStore = createMemoryRightHandEstimateStore();
+  await estimateStore.save(estimateFixture());
+  const trp = buildTurnResolutionPacket({
+    heardText: 'what is this pricing based on?',
+    intent: 'estimate_update',
+  });
+  let capturedBody: GroqChatRequest | null = null;
+
+  __setRightHandTurnDepsForTests({
+    env: { GROQ_API_KEY: 'gsk-test-secret', GROQ_BASE_URL: 'https://groq.invalid/openai/v1' },
+    now: () => new Date('2026-06-09T18:00:00.000Z'),
+    estimateStore,
+    groqDepsFactory: () => ({} as never),
+    groqChatFn: async (req) => {
+      capturedBody = req;
+      return {
+        ok: true,
+        content: JSON.stringify({
+          mode: 'advisor_flag',
+          claims_durable_action: false,
+          reply: 'It is illustrative seed-cost pricing, tier illustrative, from the cabinetry source refs; the draft is blocked, not final.',
+          updated_working_draft: null,
+          proposed_action: null,
+        }),
+        model: req.model,
+        inputTokens: 80,
+        outputTokens: 45,
+        totalTokens: 125,
+        latencyMs: 12,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T18:00:00.000Z',
+      };
+    },
+  });
+
+  const res = await apiRouter.request('/right-hand/resolve-reply', {
+    method: 'POST',
+    headers: { authorization: authHeader(), 'content-type': 'application/json' },
+    body: JSON.stringify({
+      latestText: 'what is this pricing based on?',
+      draftText: 'Active kitchen estimate draft',
+      trp,
+      conversationId: 'conv_active_kitchen',
+      currentPath: '/estimate/proj_active_kitchen?estimate_id=est_active_kitchen',
+      workingDraft: { proposed_artifact: 'estimate_draft' },
+      conversationTurns: [{ speaker: 'operator', text: 'what is this pricing based on?' }],
+    }),
+  });
+
+  assert.equal(res.status, 200);
+  const body = await res.json() as { authority: string; reply: string; proposed_action?: string };
+  assert.equal(body.authority, 'llm_inferred');
+  assert.match(body.reply, /illustrative/i);
+  assert.match(body.reply, /blocked|not final/i);
+  assert.doesNotMatch(body.reply, /No pricing loaded yet|I have the estimate thread/i);
+  assert.equal(body.proposed_action, undefined);
+
+  const prompt = capturedBody?.messages.at(-1)?.content ?? '';
+  assert.match(prompt, /pricing_data_label: Illustrative pricing - sample cost data, not yet your historical rates/);
+  assert.match(prompt, /gate_allowed: false/);
+  assert.match(prompt, /gate_blocked_reasons: source_basis_required/);
+  assert.match(prompt, /artifact_filed: false/);
+  assert.match(prompt, /artifact_sent: false/);
+  assert.match(prompt, /tier=illustrative/);
+});
+
+test('reply resolver keeps active estimate context read-only under durable-action honesty floor', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'save that cabinet price',
+    intent: 'estimate_update',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'save that cabinet price',
+      draftText: 'Active kitchen estimate draft',
+      trp,
+      tenantId: 'tenant_ggr' as never,
+      estimateArtifactContext: {
+        estimate_id: 'est_active_kitchen',
+        project_id: 'proj_active_kitchen',
+        title: 'Active kitchen estimate draft',
+        status: 'draft_for_review',
+        route: '/estimate/proj_active_kitchen?estimate_id=est_active_kitchen',
+        pricing_data_label: 'Illustrative pricing - sample cost data, not yet your historical rates',
+        total_cents: 1_530_000,
+        project_total_cents: null,
+        gate: { allowed: false, blocked_reasons: ['source_basis_required'] },
+        artifact_state: { filed: false, sent: false },
+        open_items: [],
+        source_refs: ['right-hand-conversation:conv_active_kitchen'],
+        lines: [{
+          label: 'Base cabinets (36 LF)',
+          quantity: 36,
+          uom: 'LF',
+          unit_cents: 42_500,
+          extended_cents: 1_530_000,
+          source_type: 'model_knowledge',
+          source_label: 'Illustrative',
+          source_ref: 'kerf://seed-cost-kb/cabinetry/base',
+          tier: 'illustrative',
+          open_item: false,
+          flags: ['cabinetry'],
+          editable_fields: ['quantity', 'unit price', 'source/provenance'],
+        }],
+      },
+      now: () => new Date('2026-06-09T18:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'gate_ready',
+          claims_durable_action: true,
+          reply: 'Saved the cabinet price.',
+          updated_working_draft: null,
+          proposed_action: null,
+        }),
+        model: req.model,
+        inputTokens: 1,
+        outputTokens: 1,
+        totalTokens: 2,
+        latencyMs: 1,
+        costNanoUsd: 1 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T18:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'humble_fallback');
+  assert.equal(result.claims_durable_action, false);
+  assert.equal(result.fallback_reason, 'model_reply_failed_honesty_floor');
+  assert.doesNotMatch(result.reply, /saved|filed|sent|I have the estimate thread/i);
 });
 
 test('reply route can run the reply brain through Anthropic with Groq-shaped parity', async () => {

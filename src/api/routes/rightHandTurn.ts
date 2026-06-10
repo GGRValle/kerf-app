@@ -72,6 +72,7 @@ import {
   resolveReplyWithModel,
   selectReplyBrain,
   type ConversationReplyTurn,
+  type EstimateArtifactReplyContext,
   type ReplyBrainConfig,
   type ReplyResolverLlmClient,
   type ResolveReplyResult,
@@ -152,6 +153,111 @@ async function estimateEventLogFor(deps: RightHandTurnRouteDeps): Promise<EventL
 
 function estimateStoreFor(deps: RightHandTurnRouteDeps): RightHandEstimateStore {
   return deps.estimateStore ?? getRightHandEstimateStore();
+}
+
+function cleanEstimateId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const clean = value.trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 140);
+  return clean || null;
+}
+
+function estimateIdFromPath(currentPath: string | undefined): string | null {
+  if (!currentPath) return null;
+  try {
+    const url = new URL(currentPath, 'https://kerf.local');
+    return cleanEstimateId(url.searchParams.get('estimate_id'));
+  } catch {
+    const match = currentPath.match(/[?&]estimate_id=([^&#]+)/);
+    return cleanEstimateId(match?.[1] ? decodeURIComponent(match[1]) : null);
+  }
+}
+
+function estimateIdFromSourceRefs(sourceRefs: readonly string[]): string | null {
+  for (const ref of sourceRefs) {
+    const match = ref.match(/^right-hand-estimate:([A-Za-z0-9_-]+)/);
+    const estimateId = cleanEstimateId(match?.[1] ?? null);
+    if (estimateId) return estimateId;
+  }
+  return null;
+}
+
+function editableFieldsForEstimateLine(line: { readonly open_item: boolean; readonly unit_cents?: number | null; readonly quantity?: number; readonly uom?: string }): readonly string[] {
+  if (line.open_item || line.unit_cents === null || line.unit_cents === undefined) {
+    return ['label', 'scope', 'quantity', 'unit', 'unit price', 'source/provenance'];
+  }
+  return [
+    'description',
+    ...(line.quantity !== undefined ? ['quantity'] : []),
+    ...(line.uom ? ['unit'] : []),
+    'unit price',
+    'source/provenance',
+  ];
+}
+
+function buildEstimateArtifactReplyContext(draft: Awaited<ReturnType<RightHandEstimateStore['read']>>): EstimateArtifactReplyContext | null {
+  if (!draft) return null;
+  const total = draft.lines.reduce((sum, line) => {
+    const value = line.extended_cents ?? line.price_cents ?? null;
+    return Number.isFinite(value) ? sum + Number(value) : sum;
+  }, 0);
+  return {
+    estimate_id: draft.estimate_id,
+    project_id: draft.project_id,
+    title: draft.title,
+    status: draft.status,
+    route: draft.route,
+    pricing_data_label: draft.pricing_data_label,
+    total_cents: draft.lines.some((line) =>
+      (line.extended_cents !== null && line.extended_cents !== undefined)
+      || (line.price_cents !== null && line.price_cents !== undefined),
+    ) ? total : null,
+    project_total_cents: draft.estimator_response.project_total_cents,
+    gate: {
+      allowed: draft.gate.allowed,
+      blocked_reasons: draft.gate.blocked_reasons,
+    },
+    artifact_state: {
+      filed: draft.artifact_state.filed,
+      sent: draft.artifact_state.sent,
+    },
+    open_items: draft.open_items,
+    source_refs: draft.source_refs,
+    lines: draft.lines.slice(0, 40).map((line) => ({
+      label: line.label,
+      ...(line.quantity !== undefined ? { quantity: line.quantity } : {}),
+      ...(line.uom ? { uom: line.uom } : {}),
+      unit_cents: line.unit_cents ?? null,
+      extended_cents: line.extended_cents ?? null,
+      source_type: line.source_type,
+      source_label: line.source_label,
+      source_ref: line.source_ref,
+      tier: line.tier,
+      open_item: line.open_item,
+      flags: line.flags,
+      ...(line.division ? { division: `${line.division.code} ${line.division.label}` } : {}),
+      editable_fields: editableFieldsForEstimateLine(line),
+    })),
+  };
+}
+
+async function activeEstimateArtifactContext(params: {
+  readonly deps: RightHandTurnRouteDeps;
+  readonly tenantId: PersistenceTenantId;
+  readonly body: Record<string, unknown>;
+  readonly currentPath?: string;
+  readonly workingDraft: WorkingDraftFields;
+}): Promise<EstimateArtifactReplyContext | null> {
+  const estimateId = cleanEstimateId(params.body['estimate_id'])
+    ?? cleanEstimateId(params.body['estimateId'])
+    ?? estimateIdFromPath(params.currentPath)
+    ?? estimateIdFromSourceRefs(params.workingDraft.source_refs);
+  if (!estimateId) return null;
+  try {
+    const draft = await estimateStoreFor(params.deps).read(params.tenantId, estimateId);
+    return buildEstimateArtifactReplyContext(draft);
+  } catch {
+    return null;
+  }
 }
 
 function estimatorModelCallerFor(deps: RightHandTurnRouteDeps): ModelCaller {
@@ -888,6 +994,13 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
         source_refs: clientWorkingDraft.source_refs,
       })
     : clientWorkingDraft;
+  const estimateArtifactContext = await activeEstimateArtifactContext({
+    deps,
+    tenantId,
+    body,
+    currentPath,
+    workingDraft,
+  });
   const knownEntities = filterKnownEntitiesForReply({
     entities: cleanKnownEntities(body['knownEntities']),
     workingDraft,
@@ -909,6 +1022,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     trp,
     workingDraft,
     conversationTurns: cleanConversationTurns(body['conversationTurns']),
+    estimateArtifactContext,
     now: deps.now,
   };
 

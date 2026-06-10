@@ -25,7 +25,7 @@ const approvedCount = selectionsForProject(tenant, projectId).filter((s) => s.li
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const rhPricedLines = rightHandDraft?.lines.filter((line) => typeof line.extended_cents === 'number' && line.extended_cents > 0) ?? [];
 const rhOpenLines = rightHandDraft?.lines.filter((line) => line.open_item || !(typeof line.extended_cents === 'number' && line.extended_cents > 0)) ?? [];
-const rhTotalCents = rhPricedLines.reduce((sum, line) => sum + (line.extended_cents ?? 0), 0);
+const rhTotalCents = rhPricedLines.reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
 const qtyFor = (line: { quantity?: number; uom?: string }) => (
   typeof line.quantity === 'number' && line.uom ? `${line.quantity.toLocaleString('en-US')} ${line.uom}` : ''
 );
