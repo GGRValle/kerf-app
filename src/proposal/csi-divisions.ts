@@ -1,6 +1,6 @@
 /**
- * CSI MasterFormat 2018 — division labels used on the CLIENT-FACING
- * proposal artifact.
+ * Kerf proposal divisions — broad, tenant-configurable grouping labels used
+ * on the CLIENT-FACING proposal artifact.
  *
  * Grounded in real GGR proposal practice (Dunne project, May 2026):
  *   Div 01 — General Requirements
@@ -20,11 +20,10 @@
  * we wire xlsx import later, a mapping table converts GGR-internal
  * phases → CSI divisions for the printable proposal.
  *
- * Why we use CSI MasterFormat for the client-facing artifact:
- *   - Industry-standard divisions every architect/designer/owner recognizes
- *     (Heather Ault — Del Sur Designs — reads CSI fluently)
- *   - Subcontractor scope letters reference CSI divisions
- *   - Permit/plan-check reviewers expect CSI organization
+ * These divisions are CSI-compatible at the broad two-digit trade-grouping
+ * level, but Kerf does not redistribute the MasterFormat taxonomy or detailed
+ * section titles. Tenants can map their own cost codes to these broad Kerf
+ * divisions, or supply a licensed/custom mapping later.
  *
  * The full MasterFormat 2018 has 50+ divisions. Below is the
  * residential-remodel subset GGR actually uses. Operator can type a

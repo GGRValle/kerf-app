@@ -24,6 +24,7 @@ import type {
 } from '../../blackboard/types.js';
 import type { RenderedBand } from '../varianceIntegration/index.js';
 import type { ScopeTag } from '../../projects/index.js';
+import { isTenantRateCardSourceRef } from '../rateCard.js';
 import type {
   EstimatorInputs,
   EstimatorResponse,
@@ -77,6 +78,12 @@ export function buildEstimatorAltitudePacket(opts: BuildPacketOpts): AltitudePac
   for (const band of opts.bandsByScope.values()) {
     for (const ref of band.source_refs) {
       sourceRefs.push(ref);
+    }
+  }
+  for (const line of [...opts.response.line_items, ...(opts.response.itemized_lines ?? [])]) {
+    const uri = 'source_ref' in line ? line.source_ref : line.band_source_uri;
+    if (typeof uri === 'string' && isTenantRateCardSourceRef(uri)) {
+      sourceRefs.push({ kind: 'doc', uri, excerpt: 'KERF_SEED rate-card line, review required' });
     }
   }
 
@@ -227,17 +234,18 @@ interface PriceBearingLine {
   readonly scope_tag: ScopeTag;
   readonly price_cents: number;
   readonly confidence: 'HIGH' | 'LOW' | 'MODEL_INFERENCE';
+  readonly source_ref: string | null;
 }
 
 function priceBearingLines(response: EstimatorResponse): PriceBearingLine[] {
   const out: PriceBearingLine[] = [];
   for (const line of response.line_items) {
     if (line.price_cents !== null) {
-      out.push({ scope_tag: line.scope_tag, price_cents: line.price_cents, confidence: line.confidence });
+      out.push({ scope_tag: line.scope_tag, price_cents: line.price_cents, confidence: line.confidence, source_ref: line.band_source_uri });
     }
   }
   for (const line of response.itemized_lines ?? []) {
-    out.push({ scope_tag: line.scope_tag, price_cents: line.extended_cents, confidence: line.confidence });
+    out.push({ scope_tag: line.scope_tag, price_cents: line.extended_cents, confidence: line.confidence, source_ref: line.source_ref });
   }
   return out;
 }

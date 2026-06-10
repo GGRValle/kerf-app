@@ -16,6 +16,7 @@
 
 import type { Cents, EntityId, ISO8601 } from '../../blackboard/types.js';
 import type { ProjectTypeTag, ScopeTag } from '../../projects/index.js';
+import type { TenantRateCardLine } from '../rateCard.js';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Inputs
@@ -60,6 +61,8 @@ export interface RawLineItem {
 }
 
 export interface RawItemizedLine {
+  readonly line_id?: string | null;
+  readonly cost_code?: string | null;
   readonly scope_tag: string;
   readonly division_code: string;
   readonly division_label: string;
@@ -102,6 +105,7 @@ export interface EstimatorLineItem {
 
 export interface EstimatorItemizedLine {
   readonly scope_tag: ScopeTag;
+  readonly cost_code: string;
   readonly division_code: string;
   readonly division_label: string;
   readonly description: string;
@@ -173,4 +177,5 @@ export interface EstimatorDeps {
    * V1 dev/tests; production passes the tenant's session in).
    */
   readonly onboardingSession?: import('../../onboarding/index.js').OnboardingSession;
+  readonly rateCard?: readonly TenantRateCardLine[];
 }

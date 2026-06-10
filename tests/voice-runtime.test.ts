@@ -354,13 +354,14 @@ test('Adversarial: Whisper transcript primes an unbacked price, but voice path k
   assert.ok(hvacBand);
   assert.equal(hvacBand.precision_allowed, false);
 
-  // Trust discipline outcome: cabinetry survives as company-backed; hvac
-  // survives only as model knowledge and is flagged as source-basis required.
+  // Trust discipline outcome: model-provided summary prices are ignored
+  // unless an approved tenant rate-card line matches. Both summary prices
+  // become TBD gaps here.
   assert.equal(result.estimate.altitudePacket.extracted_facts['line_item_count'], 2);
-  assert.equal(result.estimate.altitudePacket.extracted_facts['gap_count'], 1);
+  assert.equal(result.estimate.altitudePacket.extracted_facts['gap_count'], 2);
   const hvacLine = result.estimate.estimatorResponse.line_items.find((line) => line.scope_tag === 'hvac');
   assert.ok(hvacLine);
-  assert.equal(hvacLine.price_cents, 800_000);
+  assert.equal(hvacLine.price_cents, null);
   assert.equal(hvacLine.confidence, 'MODEL_INFERENCE');
   assert.equal(result.estimate.allowed, false);
   assert.ok(result.estimate.blockedReasons.includes('source_basis_required'));

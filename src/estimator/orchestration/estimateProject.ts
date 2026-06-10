@@ -31,6 +31,7 @@ import {
   parseRawResponse,
 } from './responseParser.js';
 import { buildEstimatorAltitudePacket } from './packetBuilder.js';
+import { tenantRateCardFor } from '../rateCard.js';
 import type {
   EstimatorDeps,
   EstimatorInputs,
@@ -96,10 +97,12 @@ export async function estimateProject(
   }
 
   // ── 2. Prompt assembly ───────────────────────────────────────────────
+  const rateCard = deps.rateCard ?? tenantRateCardFor(inputs.tenantId);
   const prompt = buildEstimatorPrompt({
     inputs,
     renderedBands,
     ...(deps.onboardingSession !== undefined ? { onboardingSession: deps.onboardingSession } : {}),
+    rateCard,
   });
 
   // ── 3. Model call (DI) ───────────────────────────────────────────────
@@ -119,7 +122,13 @@ export async function estimateProject(
 
   // ── 4. Parse + trust-discipline ──────────────────────────────────────
   const raw = parseRawResponse(modelResult.content);
-  const cleanResponse = enforceTrustDiscipline({ raw, bandsByScope });
+  const cleanResponse = enforceTrustDiscipline({
+    raw,
+    bandsByScope,
+    tenantId: inputs.tenantId,
+    rateCard,
+    requireRateCardPricing: true,
+  });
 
   // ── 5. Build AltitudePacket (second enforcement) ─────────────────────
   const packet = buildEstimatorAltitudePacket({
