@@ -22,7 +22,13 @@
 //      LOW-band line items get hedge language injected if absent.
 
 import { isScopeTag, type ScopeTag } from '../../projects/index.js';
+import type { EntityId } from '../../blackboard/types.js';
 import type { RenderedBand } from '../varianceIntegration/index.js';
+import {
+  isTenantRateCardSourceRef,
+  matchTenantRateCardLine,
+  type TenantRateCardLine,
+} from '../rateCard.js';
 import type {
   EstimatorGap,
   EstimatorItemizedLine,
@@ -202,7 +208,17 @@ function parseRawItemizedLine(raw: unknown, index: number): RawItemizedLine {
   if (sourceRef !== null && typeof sourceRef !== 'string') {
     throw new ResponseParseError(`itemized_lines[${index}].source_ref must be a string or null`);
   }
+  const lineId = raw['line_id'];
+  if (lineId !== undefined && lineId !== null && typeof lineId !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].line_id must be a string or null when present`);
+  }
+  const costCode = raw['cost_code'];
+  if (costCode !== undefined && costCode !== null && typeof costCode !== 'string') {
+    throw new ResponseParseError(`itemized_lines[${index}].cost_code must be a string or null when present`);
+  }
   return {
+    line_id: lineId ?? null,
+    cost_code: costCode ?? null,
     scope_tag: scopeTag,
     division_code: divisionCode,
     division_label: divisionLabel,
@@ -238,6 +254,9 @@ export interface EnforceTrustDisciplineInput {
   readonly raw: RawEstimatorResponse;
   /** Bands keyed by scope_tag — the bands that were embedded in the prompt. */
   readonly bandsByScope: ReadonlyMap<ScopeTag, RenderedBand>;
+  readonly tenantId?: EntityId;
+  readonly rateCard?: readonly TenantRateCardLine[];
+  readonly requireRateCardPricing?: boolean;
 }
 
 /**
@@ -282,9 +301,21 @@ export function enforceTrustDiscipline(
     }
 
     const band = bandsByScope.get(scopeTag);
-    const linePrice = rawLine.price_cents;
+    let linePrice = rawLine.price_cents;
     let confidence = coerceConfidence(rawLine.confidence);
     let description = rawLine.description;
+
+    if (input.requireRateCardPricing === true && linePrice !== null && !isTenantRateCardSourceRef(rawLine.band_source_uri)) {
+      linePrice = null;
+      confidence = 'MODEL_INFERENCE';
+      if (!scopesAlreadyInGaps.has(scopeTag)) {
+        cleanGaps.push({
+          scope_tag: scopeTag,
+          reason: `Rate-card required: ignored model-provided summary price for ${scopeTag}; use an approved tenant rate before consequence use.`,
+        });
+        scopesAlreadyInGaps.add(scopeTag);
+      }
+    }
 
     // ── TRUST DISCIPLINE ENFORCEMENT ──────────────────────────────────
     // If a price lacks company-backed precision, keep it only as model
@@ -322,10 +353,35 @@ export function enforceTrustDiscipline(
     const scopeTag = coerceScopeTag(rawLine.scope_tag);
     if (scopeTag === null) continue;
     const band = bandsByScope.get(scopeTag);
-    let confidence = coerceConfidence(rawLine.confidence);
+    const rate = matchTenantRateCardLine({
+      tenantId: input.tenantId ?? 'tenant_unknown',
+      scopeTag,
+      description: rawLine.description,
+      uom: rawLine.uom,
+      lineId: rawLine.line_id ?? rawLine.cost_code ?? null,
+      rateCard: input.rateCard,
+    });
+    if (input.requireRateCardPricing === true && rate === null) {
+      if (!scopesAlreadyInGaps.has(scopeTag)) {
+        cleanGaps.push({
+          scope_tag: scopeTag,
+          reason: `Rate-card required: ${rawLine.quantity} ${rawLine.uom} ${rawLine.description} has no approved tenant cost code/rate. Keep as TBD until selected.`,
+        });
+        scopesAlreadyInGaps.add(scopeTag);
+      }
+      continue;
+    }
+    let confidence = rate !== null ? 'MODEL_INFERENCE' : coerceConfidence(rawLine.confidence);
+    if (rate !== null && !scopesAlreadyInGaps.has(scopeTag)) {
+      cleanGaps.push({
+        scope_tag: scopeTag,
+        reason: `KERF_SEED rate ${rate.cost_code} is a draft starting point, not tenant-approved company data. Review before file/send or promote explicitly.`,
+      });
+      scopesAlreadyInGaps.add(scopeTag);
+    }
     if (band === undefined || band.precision_allowed === false) {
       confidence = 'MODEL_INFERENCE';
-      if (!scopesAlreadyInGaps.has(scopeTag)) {
+      if (rate === null && !scopesAlreadyInGaps.has(scopeTag)) {
         cleanGaps.push({
           scope_tag: scopeTag,
           reason: modelKnowledgeGapReason(scopeTag, rawLine.unit_cents, band),
@@ -333,18 +389,22 @@ export function enforceTrustDiscipline(
         scopesAlreadyInGaps.add(scopeTag);
       }
     }
-    const extended = Math.round(rawLine.quantity * rawLine.unit_cents);
+    const unitCents = rate?.unit_cents ?? rawLine.unit_cents;
+    const extended = Math.round(rawLine.quantity * unitCents);
+    const divisionCode = rate?.kerf_division.code ?? rawLine.division_code;
+    const divisionLabel = rate?.kerf_division.label ?? rawLine.division_label;
     cleanItemizedLines.push({
       scope_tag: scopeTag,
-      division_code: rawLine.division_code.trim().slice(0, 12) || '01',
-      division_label: rawLine.division_label.replace(/\s+/g, ' ').trim().slice(0, 80) || 'General Requirements',
+      cost_code: rate?.cost_code ?? 'UNMAPPED',
+      division_code: divisionCode.trim().slice(0, 12) || '01',
+      division_label: divisionLabel.replace(/\s+/g, ' ').trim().slice(0, 80) || 'General',
       description: rawLine.description.replace(/\s+/g, ' ').trim().slice(0, 180) || scopeTag,
       quantity: rawLine.quantity,
       uom: rawLine.uom.replace(/\s+/g, ' ').trim().slice(0, 16) || 'EA',
-      unit_cents: rawLine.unit_cents,
+      unit_cents: unitCents,
       extended_cents: extended,
       confidence,
-      source_ref: rawLine.source_ref,
+      source_ref: rate?.source_ref ?? rawLine.source_ref,
     });
   }
 

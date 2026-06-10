@@ -14,6 +14,7 @@ import type { OnboardingSession } from '../../onboarding/index.js';
 import { deriveTenantContextFacts } from '../../onboarding/contextProjection.js';
 import type { RenderedBand } from '../varianceIntegration/index.js';
 import { SCOPE_TAGS } from '../../projects/index.js';
+import type { TenantRateCardLine } from '../rateCard.js';
 import type { EstimatorInputs } from './types.js';
 
 const SCOPE_TAG_LIST = SCOPE_TAGS.join(', ');
@@ -25,6 +26,7 @@ export interface BuildPromptOpts {
     readonly band: RenderedBand;
   }>;
   readonly onboardingSession?: OnboardingSession;
+  readonly rateCard?: readonly TenantRateCardLine[];
 }
 
 export interface BuiltPrompt {
@@ -52,9 +54,12 @@ function buildSystemMessage(): string {
     'NON-NEGOTIABLE TRUST DISCIPLINE:',
     '',
     '1. ITEMIZED DRAFT FIRST. Decompose the operator scope into component',
-    '   estimate lines grouped by CSI division. Use quantity × unit_cents for',
-    '   rows the operator can edit. Do not use one giant trade-band line when',
-    '   the scope can be broken into components.',
+    '   estimate lines grouped by Kerf division. Use the quantity and UOM the',
+    '   operator gave. Prefer an exact rate-card line_id/cost_code when the',
+    '   prompt provides one. Do not invent unit costs or divisions; Kerf',
+    '   replaces your placeholders with KERF_SEED cost-code rates after parsing.',
+    '   Do not use one giant trade-band line when the scope can be broken',
+    '   into components.',
     '',
     '2. PRECISION GATE. Each rendered band carries a precision_allowed flag.',
     '   If precision_allowed=false, company data cannot support a precise',
@@ -82,7 +87,9 @@ function buildSystemMessage(): string {
     '{',
     '  "line_items": [',
     '    {',
-    '      "scope_tag": "<one of: ' + SCOPE_TAG_LIST + '>",',
+    '      "line_id": "<rate-card line id / cost_code if selected, else null>",',
+    '      "cost_code": "<same as line_id when selected, else null>",',
+      '      "scope_tag": "<one of: ' + SCOPE_TAG_LIST + '>",',
     '      "description": "<short operator-facing string>",',
     '      "price_cents": <integer or null>,',
     '      "confidence": "HIGH" | "LOW" | "MODEL_INFERENCE",',
@@ -92,12 +99,12 @@ function buildSystemMessage(): string {
     '  "itemized_lines": [',
     '    {',
     '      "scope_tag": "<one of: ' + SCOPE_TAG_LIST + '>",',
-    '      "division_code": "<2 digit CSI code>",',
-    '      "division_label": "<CSI label>",',
+    '      "division_code": "<Kerf division code, placeholder ok>",',
+    '      "division_label": "<Kerf division label, placeholder ok>",',
     '      "description": "<component line, e.g. 36 LF base cabinets>",',
     '      "quantity": <positive number>,',
     '      "uom": "LF" | "SF" | "EA" | "LS" | "HR",',
-    '      "unit_cents": <integer cents per unit>,',
+    '      "unit_cents": 0,',
     '      "confidence": "HIGH" | "LOW" | "MODEL_INFERENCE",',
     '      "source_ref": "<URI from rendered band, or null>"',
     '    }',
@@ -115,6 +122,11 @@ function buildSystemMessage(): string {
     '    price_cents=null placeholders MUST also carry a gaps_flagged entry',
     '    so the source-basis gap is visible.',
     '  - All money fields are integer cents. No floats. No dollar signs.',
+    '  - For itemized_lines, unit_cents MUST be 0. The parser ignores',
+    '    model-invented unit prices and uses KERF_SEED / tenant-selected',
+    '    cost-code rows only.',
+    '  - KERF_SEED prices are illustrative draft starts, not company truth;',
+    '    they stay blocked until the operator explicitly promotes them.',
     '  - itemized_lines are the operator-facing estimate. line_items are',
     '    fallback per-scope summaries only when you cannot decompose a scope.',
     '  - If itemized_lines cover a scope, do not also create a trade-band',
@@ -148,6 +160,22 @@ function buildUserMessage(opts: BuildPromptOpts): string {
       lines.push('TENANT CONTEXT:');
       for (const fact of facts) {
         lines.push(`  - ${fact.label}: ${fact.displayValue}`);
+      }
+    }
+  }
+
+  if (opts.rateCard !== undefined) {
+    const candidates = opts.rateCard
+      .filter((line) => opts.inputs.scopeTags.includes(line.scope_tag))
+      .slice(0, 40);
+    if (candidates.length > 0) {
+      lines.push('');
+      lines.push('RATE-CARD SEED CANDIDATES (review-required KERF_SEED, not company truth):');
+      for (const line of candidates) {
+        lines.push(
+          `  - line_id=${line.cost_code} scope=${line.scope_tag} division=${line.kerf_division.code} ${line.kerf_division.label} ` +
+          `uom=${line.uom} label=${line.label}`,
+        );
       }
     }
   }

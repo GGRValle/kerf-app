@@ -172,6 +172,8 @@ export interface ProposalLineItem {
   readonly extended_cents: number;
   /** Operator-controlled notes (rendered as a small note under the line on print). */
   readonly notes: string;
+  /** Optional tenant-owned job-cost/accounting code. Not a public taxonomy. */
+  readonly cost_code?: string;
   /** Optional materials-taxable flag (relevant when tax_treatment === 'materials_only'). */
   readonly is_materials_taxable: boolean;
   /** Provenance when the line came from a scaffold; null when operator-typed. */

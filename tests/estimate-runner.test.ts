@@ -68,18 +68,24 @@ function stubModelCaller(content: string): ModelCaller {
 
 function happyPathContent(): string {
   return JSON.stringify({
-    line_items: [
+    itemized_lines: [
       {
         scope_tag: 'cabinetry',
-        description: 'Kitchen cabinetry — based on tenant historicals.',
-        price_cents: 12_500_000,
-        confidence: 'HIGH',
-        band_source_uri: 'kerf://variance-band/rung1/kitchen_remodel/cabinetry',
+        line_id: 'CB-001',
+        division_code: '13',
+        division_label: 'Cabinetry',
+        description: 'Base cabinets from captured LF',
+        quantity: 30,
+        uom: 'LF',
+        unit_cents: 0,
+        confidence: 'MODEL_INFERENCE',
+        source_ref: null,
       },
     ],
-    project_total_cents: 12_500_000,
+    line_items: [],
+    project_total_cents: null,
     gaps_flagged: [],
-    operator_summary: 'Kitchen total project price expected around $125,000 based on tenant historicals.',
+    operator_summary: 'Kitchen cabinetry draft from approved tenant rate card.',
   });
 }
 
@@ -203,11 +209,17 @@ test('runEstimate result surfaces the disciplined EstimatorResponse for CLI / UI
     actor: ACTOR,
   });
   assert.ok(result.estimatorResponse);
-  assert.equal(result.estimatorResponse.line_items.length, 1);
-  assert.equal(result.estimatorResponse.line_items[0]?.scope_tag, 'cabinetry');
-  assert.equal(result.estimatorResponse.line_items[0]?.price_cents, 12_500_000);
-  assert.equal(result.estimatorResponse.project_total_cents, 12_500_000);
-  assert.match(result.estimatorResponse.operator_summary, /Kitchen total project price/);
+  assert.equal(result.estimatorResponse.line_items.length, 0);
+  assert.equal(result.estimatorResponse.itemized_lines.length, 1);
+  assert.equal(result.estimatorResponse.itemized_lines[0]?.scope_tag, 'cabinetry');
+  assert.equal(result.estimatorResponse.itemized_lines[0]?.cost_code, 'CB-001');
+  assert.equal(result.estimatorResponse.itemized_lines[0]?.confidence, 'MODEL_INFERENCE');
+  assert.equal(result.estimatorResponse.itemized_lines[0]?.unit_cents, 106_000);
+  assert.equal(result.estimatorResponse.itemized_lines[0]?.extended_cents, 3_180_000);
+  assert.equal(result.estimatorResponse.project_total_cents, 3_180_000);
+  assert.equal(result.allowed, false);
+  assert.ok(result.decisionPacket?.policy_gate_result.blocked_reasons.includes('source_basis_required'));
+  assert.match(result.estimatorResponse.operator_summary, /rate card/);
 });
 
 test('runEstimate honest blocked outcome: input forces V2 critical-fail; allowed=false; full audit trail returned', async () => {
@@ -252,7 +264,7 @@ test('runEstimate honest blocked outcome: input forces V2 critical-fail; allowed
 // 4. Adversarial: INSUFFICIENT_DATA price kept as model knowledge, gate-blocked
 // ──────────────────────────────────────────────────────────────────────────
 
-test('runEstimate adversarial: INSUFFICIENT_DATA price is model knowledge and gate-blocked', async () => {
+test('runEstimate adversarial: INSUFFICIENT_DATA price is ignored unless an approved rate-card line matches', async () => {
   // hvac has no comparables in the GGR pool → INSUFFICIENT_DATA band.
   const inputs = baseInputs({ scopeTags: ['cabinetry', 'hvac'] });
   const result = await runEstimate(inputs, {
@@ -268,18 +280,17 @@ test('runEstimate adversarial: INSUFFICIENT_DATA price is model knowledge and ga
   assert.equal(hvacBand.precision_allowed, false, 'precondition: hvac band is precision_allowed=false');
 
   // The runner's underlying Estimator orchestration enforces trust discipline:
-  // the price is visible in the draft, but only as MODEL_INFERENCE with a
-  // source-basis gap. Policy gate must not allow consequence use.
+  // model-provided summary prices are ignored. They survive only as TBD gaps
+  // until a tenant-approved rate-card line is selected.
   const lineItemCount = result.altitudePacket.extracted_facts['line_item_count'];
   const gapCount = result.altitudePacket.extracted_facts['gap_count'];
-  assert.equal(lineItemCount, 2, 'cabinetry plus hvac model-knowledge line should survive');
-  assert.equal(gapCount, 1, 'hvac should be flagged as a gap');
+  assert.equal(lineItemCount, 2, 'cabinetry plus hvac summary placeholders should survive');
+  assert.equal(gapCount, 2, 'cabinetry and hvac model prices should be flagged as gaps');
   assert.equal(result.estimatorResponse.line_items.length, 2);
   const hvacLine = result.estimatorResponse.line_items.find((line) => line.scope_tag === 'hvac');
   assert.ok(hvacLine);
-  assert.equal(hvacLine.price_cents, 800_000);
+  assert.equal(hvacLine.price_cents, null);
   assert.equal(hvacLine.confidence, 'MODEL_INFERENCE');
-  assert.match(hvacLine.description, /model-knowledge|illustrative/i);
   assert.equal(result.altitudePacket.money_fields?.source_class, 'model_inference');
   assert.equal(result.allowed, false);
   assert.ok(

@@ -38,6 +38,11 @@ import { runV7SourceBasisRequired, runV8ModelInferenceLabeling } from '../src/al
 import type { ProjectTypeTag, ScopeTag } from '../src/projects/index.js';
 import type { PastProjectComparable } from '../src/onboarding/index.js';
 import type { ISO8601 } from '../src/blackboard/index.js';
+import {
+  RICARDO_FILLED_EXPECTED,
+  ricardoFilledIncludedRows,
+  tenantRateCardFor,
+} from '../src/estimator/rateCard.js';
 
 const REQUESTED_AT: ISO8601 = '2026-05-07T21:00:00.000Z';
 
@@ -170,7 +175,7 @@ test('parseRawResponse throws on float price_cents (we want integer cents)', () 
 // The orchestration MUST keep it only as model knowledge and gate-block it.
 // ──────────────────────────────────────────────────────────────────────────
 
-test('Test 1 (adversarial): INSUFFICIENT_DATA price is visible as model knowledge and gate-blocked', async () => {
+test('Test 1 (adversarial): model-provided summary prices are ignored without approved rate-card lines', async () => {
   const inputs = baseInputs(); // scopes: [cabinetry, hvac]; hvac has no comparables → INSUFFICIENT_DATA
 
   const adversarialResponse = JSON.stringify({
@@ -215,15 +220,14 @@ test('Test 1 (adversarial): INSUFFICIENT_DATA price is visible as model knowledg
     'hvac band must be precision_allowed=false for this test to be meaningful',
   );
 
-  assert.equal(result.packet.extracted_facts['line_item_count'], 2, 'expected cabinetry plus model-knowledge hvac');
-  assert.equal(result.packet.extracted_facts['gap_count'], 1, 'expected 1 flagged gap (hvac)');
+  assert.equal(result.packet.extracted_facts['line_item_count'], 2, 'expected cabinetry plus hvac placeholders');
+  assert.equal(result.packet.extracted_facts['gap_count'], 2, 'expected model-provided prices to be flagged as gaps');
   assert.equal(result.estimatorResponse.line_items.length, 2);
   const hvacLine = result.estimatorResponse.line_items.find((line) => line.scope_tag === 'hvac');
   assert.ok(hvacLine);
-  assert.equal(hvacLine.price_cents, 800_000);
+  assert.equal(hvacLine.price_cents, null);
   assert.equal(hvacLine.confidence, 'MODEL_INFERENCE');
-  assert.match(hvacLine.description, /model-knowledge|illustrative/i);
-  assert.match(result.estimatorResponse.gaps_flagged[0]?.reason ?? '', /source basis required/i);
+  assert.match(result.estimatorResponse.gaps_flagged[0]?.reason ?? '', /rate-card required/i);
 
   // Most-conservative aggregation: any unbacked → source_class='model_inference'.
   assert.equal(
@@ -319,7 +323,25 @@ test('Test 1 belt-and-suspenders: packetBuilder rejects unbacked priced lines un
   assert.equal(packet.money_fields?.source_class, 'model_inference');
 });
 
-test('Test 1 itemized: MODEL_INFERENCE component rows stay visible and remain consequence-blocked', () => {
+test('Ricardo FILLED seed converter preserves workbook totals and GGR divisions', () => {
+  const rows = ricardoFilledIncludedRows(tenantRateCardFor('tenant_ggr'));
+  assert.equal(rows.length, RICARDO_FILLED_EXPECTED.included_line_count);
+  assert.equal(
+    rows.reduce((sum, row) => sum + (row.ricardo_sell_total_cents ?? 0), 0),
+    RICARDO_FILLED_EXPECTED.row_rounded_sell_total_cents,
+  );
+  assert.equal(
+    rows.reduce((sum, row) => sum + (row.ricardo_cost_total_cents ?? 0), 0),
+    RICARDO_FILLED_EXPECTED.row_rounded_cost_total_cents,
+  );
+  assert.equal(RICARDO_FILLED_EXPECTED.summary_sell_total_cents, 18_249_889);
+  assert.equal(RICARDO_FILLED_EXPECTED.summary_cost_total_cents, 11_862_428);
+  assert.ok(rows.some((row) => row.cost_code === 'CB-001' && row.kerf_division.code === '12' && row.kerf_division.label === 'Cabinetry'));
+  assert.ok(rows.some((row) => row.cost_code === 'CT-002' && row.kerf_division.code === '12b' && row.kerf_division.label === 'Countertops & Stone'));
+  assert.ok(rows.every((row) => row.source_layer === 'KERF_SEED' && row.review_required === true));
+});
+
+test('Test 1 itemized: KERF_SEED rate-card rows stay illustrative and consequence-blocked', () => {
   const inputs = baseInputs({ scopeTags: ['cabinetry'] });
   const band = renderVarianceBand(
     getVarianceBand({
@@ -342,9 +364,10 @@ test('Test 1 itemized: MODEL_INFERENCE component rows stay visible and remain co
           division_code: '12',
           division_label: 'Furnishings',
           description: '36 LF base cabinets',
+          line_id: 'CB-001',
           quantity: 36,
           uom: 'LF',
-          unit_cents: 42_500,
+          unit_cents: 0,
           confidence: 'HIGH',
           source_ref: band.source_refs[0]?.uri ?? null,
         },
@@ -354,13 +377,17 @@ test('Test 1 itemized: MODEL_INFERENCE component rows stay visible and remain co
       operator_summary: 'Itemized draft.',
     })),
     bandsByScope,
+    tenantId: 'tenant_ggr',
+    requireRateCardPricing: true,
   });
 
   assert.equal(clean.itemized_lines.length, 1);
-  assert.equal(clean.itemized_lines[0]?.extended_cents, 1_530_000);
+  assert.equal(clean.itemized_lines[0]?.cost_code, 'CB-001');
+  assert.equal(clean.itemized_lines[0]?.unit_cents, 106_000);
+  assert.equal(clean.itemized_lines[0]?.extended_cents, 3_816_000);
   assert.equal(clean.itemized_lines[0]?.confidence, 'MODEL_INFERENCE');
-  assert.equal(clean.project_total_cents, 1_530_000);
-  assert.ok(clean.gaps_flagged.some((gap) => gap.scope_tag === 'cabinetry' && /source basis/i.test(gap.reason)));
+  assert.equal(clean.project_total_cents, 3_816_000);
+  assert.ok(clean.gaps_flagged.some((gap) => gap.scope_tag === 'cabinetry' && /KERF_SEED/i.test(gap.reason)));
 
   const packet = buildEstimatorAltitudePacket({
     inputs,
@@ -368,11 +395,63 @@ test('Test 1 itemized: MODEL_INFERENCE component rows stay visible and remain co
     bandsByScope,
     modelCallerOutput: MODEL_CALLER_OUTPUT_FIXTURE,
   });
-  assert.equal(packet.money_fields?.amount_cents, 1_530_000);
+  assert.equal(packet.money_fields?.amount_cents, 3_816_000);
   assert.equal(packet.money_fields?.source_class, 'model_inference');
   const v7 = runV7SourceBasisRequired(packet);
   assert.equal(v7.passed, false);
   assert.equal(v7.reason, 'source_basis_required');
+});
+
+test('Test 1 itemized: unmatched model component price fails closed to a rate-card gap', () => {
+  const inputs = baseInputs({ scopeTags: ['tile'] });
+  const band = renderVarianceBand(
+    getVarianceBand({
+      projectTypeTag: 'kitchen_remodel',
+      scopeSubset: ['tile'],
+      comparablePool: [],
+      computedAt: REQUESTED_AT,
+    }),
+  );
+  const bandsByScope = new Map<ScopeTag, ReturnType<typeof renderVarianceBand>>();
+  bandsByScope.set('tile', band);
+
+  const clean = enforceTrustDiscipline({
+    raw: parseRawResponse(JSON.stringify({
+      line_items: [],
+      itemized_lines: [
+        {
+          scope_tag: 'tile',
+          division_code: '99',
+          division_label: 'Model invented division',
+          description: 'Decorative mystery medallion',
+          quantity: 42,
+          uom: 'SF',
+          unit_cents: 1,
+          confidence: 'HIGH',
+          source_ref: null,
+        },
+      ],
+      project_total_cents: null,
+      gaps_flagged: [],
+      operator_summary: 'Itemized draft.',
+    })),
+    bandsByScope,
+    tenantId: 'tenant_ggr',
+    requireRateCardPricing: true,
+  });
+
+  assert.equal(clean.itemized_lines.length, 0);
+  assert.equal(clean.project_total_cents, null);
+  assert.ok(clean.gaps_flagged.some((gap) => gap.scope_tag === 'tile' && /rate-card required/i.test(gap.reason)));
+
+  const packet = buildEstimatorAltitudePacket({
+    inputs,
+    response: clean,
+    bandsByScope,
+    modelCallerOutput: MODEL_CALLER_OUTPUT_FIXTURE,
+  });
+  assert.equal(packet.money_fields?.amount_cents, undefined);
+  assert.equal(runV7SourceBasisRequired(packet).passed, true);
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -467,7 +546,7 @@ test('Test 2: LOW band line item that already has hedge is left untouched', () =
 // V7 / V8 acceptance on the produced AltitudePacket
 // ──────────────────────────────────────────────────────────────────────────
 
-test('Produced AltitudePacket passes V7 (source-basis-required)', async () => {
+test('Produced AltitudePacket blocks V7 when the model only supplies a summary price', async () => {
   const inputs = baseInputs({ scopeTags: ['cabinetry'] });
   const response = JSON.stringify({
     line_items: [
@@ -488,7 +567,8 @@ test('Produced AltitudePacket passes V7 (source-basis-required)', async () => {
     comparablePool: kitchenWithCabinetryPool,
   });
   const v7 = runV7SourceBasisRequired(result.packet);
-  assert.equal(v7.passed, true, `V7 expected to pass; got reason=${v7.reason}`);
+  assert.equal(v7.passed, false);
+  assert.equal(v7.reason, 'source_basis_required');
 });
 
 test('Produced AltitudePacket passes V8 (model-inference-labeling) when all bands HIGH', async () => {

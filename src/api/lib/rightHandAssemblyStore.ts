@@ -2,8 +2,13 @@ import pg from 'pg';
 
 import type { PersistenceTenantId } from '../../persistence/events.js';
 import type { EstimatorResponse } from '../../estimator/orchestration/index.js';
+import {
+  matchTenantRateCardLine,
+  tenantRateCardFor,
+} from '../../estimator/rateCard.js';
 import type { ProposalLineItem } from '../../proposal/types.js';
 import { defaultLabelForCsiCode } from '../../proposal/csi-divisions.js';
+import type { ScopeTag } from '../../projects/index.js';
 import { cleanConversationId } from './rightHandConversationStore.js';
 
 const { Pool } = pg;
@@ -21,6 +26,7 @@ export interface RightHandEstimateLine {
   readonly id: string;
   readonly label: string;
   readonly description: string;
+  readonly cost_code?: string;
   readonly source_type: RightHandEstimateSourceType;
   readonly source_label: string;
   readonly source_ref: string;
@@ -92,6 +98,32 @@ function cleanTitle(value: unknown, fallback: string): string {
   return value.replace(/\s+/g, ' ').trim().slice(0, 140) || fallback;
 }
 
+function estimateTitleFromContext(params: {
+  readonly titleSeed: string | null;
+  readonly scopeText?: string;
+  readonly projectId: string;
+}): string {
+  const seed = cleanTitle(params.titleSeed, '');
+  const text = `${seed} ${params.scopeText ?? ''}`.toLowerCase();
+  const seedLooksLikeTranscript =
+    seed.length > 72 ||
+    /^(okay|hey|so|we have|we're|i just|this is|customer|client)\b/i.test(seed) ||
+    /\b(roughly|about|linear feet|square feet|we're going to)\b/i.test(seed);
+  if (seed && !seedLooksLikeTranscript) {
+    return /\bestimate\b/i.test(seed) ? seed : `${seed} estimate draft`;
+  }
+  if (/\b(kitchen|cabinet|countertop|backsplash|island|uppers|lowers)\b/.test(text)) {
+    return 'Kitchen remodel estimate draft';
+  }
+  if (/\b(bath|bathroom|shower|vanity|tub)\b/.test(text)) {
+    return 'Bathroom remodel estimate draft';
+  }
+  if (/\b(adu|garage conversion|accessory dwelling)\b/.test(text)) {
+    return 'ADU estimate draft';
+  }
+  return `${params.projectId} estimate draft`;
+}
+
 function compact(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
@@ -150,6 +182,7 @@ function cleanDivision(code: string, label: string): RightHandEstimateDivision {
 function proposalLineFor(params: {
   readonly id: string;
   readonly label: string;
+  readonly costCode?: string;
   readonly quantity: number;
   readonly uom: string;
   readonly unitCents: number;
@@ -165,6 +198,7 @@ function proposalLineFor(params: {
     notes: '',
     is_materials_taxable: true,
     scaffold_provenance: null,
+    ...(params.costCode !== undefined ? { cost_code: params.costCode } : {}),
   };
 }
 
@@ -208,6 +242,7 @@ function buildItemizedEstimatorLine(line: EstimatorResponse['itemized_lines'][nu
     id,
     label,
     description: label,
+    cost_code: line.cost_code,
     source_type: sourceType,
     source_label: sourceLabelForTier(tier),
     source_ref: line.source_ref ?? `variance-band:${line.scope_tag}`,
@@ -221,7 +256,7 @@ function buildItemizedEstimatorLine(line: EstimatorResponse['itemized_lines'][nu
     extended_cents: line.extended_cents,
     price_cents: line.extended_cents,
     confidence: line.confidence,
-    proposal_line: proposalLineFor({ id, label, quantity: line.quantity, uom: line.uom, unitCents: line.unit_cents, extendedCents: line.extended_cents }),
+    proposal_line: proposalLineFor({ id, label, costCode: line.cost_code, quantity: line.quantity, uom: line.uom, unitCents: line.unit_cents, extendedCents: line.extended_cents }),
   };
 }
 
@@ -283,45 +318,54 @@ function hasAny(text: string, words: readonly RegExp[]): boolean {
 }
 
 function fallbackItemizedLinesFromScope(params: {
+  readonly tenant: PersistenceTenantId;
   readonly text: string;
   readonly sourceRef: string;
 }): RightHandEstimateLine[] {
   const text = params.text.toLowerCase();
   const out: RightHandEstimateLine[] = [];
+  const rateCard = tenantRateCardFor(params.tenant);
   function add(paramsLine: {
-    readonly scope: string;
-    readonly divisionCode: string;
+    readonly scope: ScopeTag;
     readonly label: string;
     readonly quantity: number;
     readonly uom: string;
-    readonly unitCents: number;
   }) {
-    const divisionLabel = defaultLabelForCsiCode(paramsLine.divisionCode) ?? 'General Requirements';
-    const extended = Math.round(paramsLine.quantity * paramsLine.unitCents);
-    const id = lineId(`${paramsLine.divisionCode}:${paramsLine.scope}:${paramsLine.label}`, 'model_knowledge');
+    const rate = matchTenantRateCardLine({
+      tenantId: params.tenant,
+      scopeTag: paramsLine.scope,
+      description: paramsLine.label,
+      uom: paramsLine.uom,
+      rateCard,
+    });
+    if (rate === null) return;
+    const extended = Math.round(paramsLine.quantity * rate.unit_cents);
+    const id = lineId(`${rate.cost_code}:${paramsLine.scope}:${paramsLine.label}`, 'model_knowledge');
     out.push({
       id,
       label: paramsLine.label,
       description: paramsLine.label,
+      cost_code: rate.cost_code,
       source_type: 'model_knowledge',
       source_label: sourceLabelForTier('illustrative'),
-      source_ref: params.sourceRef,
+      source_ref: rate.source_ref,
       open_item: false,
-      flags: [paramsLine.scope, 'itemized'],
+      flags: [paramsLine.scope, 'itemized', rate.cost_code],
       tier: 'illustrative',
-      division: { code: paramsLine.divisionCode, label: divisionLabel, subtotal_cents: 0 },
+      division: { code: rate.kerf_division.code, label: rate.kerf_division.label, subtotal_cents: 0 },
       quantity: paramsLine.quantity,
       uom: paramsLine.uom,
-      unit_cents: paramsLine.unitCents,
+      unit_cents: rate.unit_cents,
       extended_cents: extended,
       price_cents: extended,
       confidence: 'MODEL_INFERENCE',
       proposal_line: proposalLineFor({
         id,
         label: paramsLine.label,
+        costCode: rate.cost_code,
         quantity: paramsLine.quantity,
         uom: paramsLine.uom,
-        unitCents: paramsLine.unitCents,
+        unitCents: rate.unit_cents,
         extendedCents: extended,
       }),
     });
@@ -330,24 +374,20 @@ function fallbackItemizedLinesFromScope(params: {
   if (hasAny(text, [/\bcabinet/, /\bupper/, /\blower/, /\bisland/])) {
     const baseLf = firstNumberBefore(text, /\b(?:base|lower)s?\b/) ?? firstNumberBefore(text, /\blower cabinets?\b/) ?? null;
     const upperLf = firstNumberBefore(text, /\buppers?\b/) ?? firstNumberBefore(text, /\bupper cabinets?\b/) ?? null;
-    if (baseLf !== null) add({ scope: 'cabinetry', divisionCode: '12', label: `Base cabinets (${baseLf} LF)`, quantity: baseLf, uom: 'LF', unitCents: 42_500 });
-    if (upperLf !== null) add({ scope: 'cabinetry', divisionCode: '12', label: `Upper cabinets (${upperLf} LF)`, quantity: upperLf, uom: 'LF', unitCents: 37_500 });
-    if (/\bisland\b/.test(text)) add({ scope: 'cabinetry', divisionCode: '12', label: 'Island cabinet allowance', quantity: 1, uom: 'LS', unitCents: 450_000 });
-    add({ scope: 'cabinetry', divisionCode: '12', label: 'Cabinet install, hardware, and finish allowance', quantity: 1, uom: 'LS', unitCents: 650_000 });
+    if (baseLf !== null) add({ scope: 'cabinetry', label: `Base cabinets (${baseLf} LF)`, quantity: baseLf, uom: 'LF' });
+    if (upperLf !== null) add({ scope: 'cabinetry', label: `Upper cabinets (${upperLf} LF)`, quantity: upperLf, uom: 'LF' });
   }
   if (hasAny(text, [/\bcounter/, /\bslab/, /\bquartz/, /\bquartzite/])) {
-    add({ scope: 'countertops', divisionCode: '12', label: 'Countertop slab fabrication and install allowance', quantity: 1, uom: 'LS', unitCents: 850_000 });
+    const sf = firstNumberBefore(text, /\bsquare feet\b|\bsq\.?\s*ft\b|\bsf\b/) ?? null;
+    if (sf !== null) add({ scope: 'countertops', label: `Countertop slab fabrication and install (${sf} SF)`, quantity: sf, uom: 'SF' });
   }
   if (hasAny(text, [/\btile/, /\bfloor/])) {
     const sf = firstNumberBefore(text, /\bsquare feet\b|\bsq\.?\s*ft\b|\bsf\b/) ?? null;
-    if (sf !== null) add({ scope: 'flooring', divisionCode: '09', label: `Flooring / tile install (${sf} SF)`, quantity: sf, uom: 'SF', unitCents: 3_500 });
-    else add({ scope: 'tile', divisionCode: '09', label: 'Tile / flooring allowance', quantity: 1, uom: 'LS', unitCents: 750_000 });
+    if (sf !== null) add({ scope: 'flooring', label: `Flooring / tile install (${sf} SF)`, quantity: sf, uom: 'SF' });
   }
   if (hasAny(text, [/\blighting/, /\bcan lights?/, /\btoe kick/, /\bunder cabinet/])) {
     const cans = firstNumberBefore(text, /\bcan lights?\b/) ?? null;
-    if (cans !== null) add({ scope: 'lighting', divisionCode: '26', label: `Can lights (${cans} EA)`, quantity: cans, uom: 'EA', unitCents: 42_500 });
-    if (/\bunder cabinet/.test(text)) add({ scope: 'lighting', divisionCode: '26', label: 'Under-cabinet lighting allowance', quantity: 1, uom: 'LS', unitCents: 180_000 });
-    if (/\btoe kick/.test(text)) add({ scope: 'lighting', divisionCode: '26', label: 'Toe-kick lighting allowance', quantity: 1, uom: 'LS', unitCents: 150_000 });
+    if (cans !== null) add({ scope: 'lighting', label: `Can lights (${cans} EA)`, quantity: cans, uom: 'EA' });
   }
 
   return out;
@@ -387,12 +427,16 @@ export function buildRightHandEstimateArtifact(params: {
   readonly sourceRefs: readonly string[];
   readonly now?: Date;
 }): RightHandEstimateDraft {
-  const baseTitle = cleanTitle(params.titleSeed, `${params.projectId} estimate draft`);
-  const title = /\bestimate\b/i.test(baseTitle) ? baseTitle : `${baseTitle} estimate draft`;
+  const title = estimateTitleFromContext({
+    titleSeed: params.titleSeed,
+    scopeText: params.scopeText,
+    projectId: params.projectId,
+  });
   const sourceRef = `right-hand-conversation:${cleanConversationId(params.conversationId)}`;
   const itemizedFromEstimator = params.estimatorResponse.itemized_lines.map(buildItemizedEstimatorLine);
   const estimatorItemizedScopes = new Set(itemizedFromEstimator.map((line) => line.flags[0]).filter(Boolean));
   const itemizedFallback = fallbackItemizedLinesFromScope({
+    tenant: params.tenant,
     text: uniqueStrings([params.scopeText ?? ''], params.scopeLines).join(' '),
     sourceRef,
   }).filter((line) => !estimatorItemizedScopes.has(line.flags[0]));
@@ -428,7 +472,9 @@ export function buildRightHandEstimateArtifact(params: {
       allowed: params.gateAllowed && blockedReasons.length === 0,
       blocked_reasons: blockedReasons,
     },
-    pricing_data_label: 'Illustrative pricing - sample cost data, not yet your historical rates',
+    pricing_data_label: draftOnlyPricedLines
+      ? 'Mixed draft pricing - review non-company lines before file/send'
+      : 'Tenant rate-card pricing - review before file/send',
     artifact_state: {
       durable_record: true,
       filed: false,
