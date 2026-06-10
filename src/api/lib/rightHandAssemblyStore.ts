@@ -2,21 +2,39 @@ import pg from 'pg';
 
 import type { PersistenceTenantId } from '../../persistence/events.js';
 import type { EstimatorResponse } from '../../estimator/orchestration/index.js';
+import type { ProposalLineItem } from '../../proposal/types.js';
+import { defaultLabelForCsiCode } from '../../proposal/csi-divisions.js';
 import { cleanConversationId } from './rightHandConversationStore.js';
 
 const { Pool } = pg;
 
 export type RightHandEstimateSourceType = 'company_data' | 'model_knowledge' | 'allowance';
+export type RightHandEstimateTier = 'company' | 'directional' | 'illustrative' | 'allowance';
+
+export interface RightHandEstimateDivision {
+  readonly code: string;
+  readonly label: string;
+  readonly subtotal_cents: number;
+}
 
 export interface RightHandEstimateLine {
   readonly id: string;
   readonly label: string;
+  readonly description: string;
   readonly source_type: RightHandEstimateSourceType;
+  readonly source_label: string;
   readonly source_ref: string;
   readonly open_item: boolean;
   readonly flags: readonly string[];
+  readonly tier: RightHandEstimateTier;
+  readonly division: RightHandEstimateDivision | null;
+  readonly quantity?: number;
+  readonly uom?: string;
+  readonly unit_cents?: number | null;
+  readonly extended_cents?: number | null;
   readonly price_cents?: number | null;
   readonly confidence?: string;
+  readonly proposal_line?: ProposalLineItem | null;
 }
 
 export interface RightHandEstimateDraft {
@@ -108,22 +126,102 @@ function sourceTypeForLine(confidence: string, priceCents: number | null): Right
   return 'model_knowledge';
 }
 
+function tierForLine(confidence: string, priceCents: number | null): RightHandEstimateTier {
+  if (priceCents === null) return 'allowance';
+  if (confidence === 'HIGH') return 'company';
+  if (confidence === 'LOW') return 'directional';
+  return 'illustrative';
+}
+
+function sourceLabelForTier(tier: RightHandEstimateTier): string {
+  if (tier === 'company') return 'Company data';
+  if (tier === 'directional') return 'Directional';
+  if (tier === 'illustrative') return 'Illustrative';
+  return 'Needs pricing';
+}
+
+function cleanDivision(code: string, label: string): RightHandEstimateDivision {
+  const cleanCode = /^[0-9]{2}$/.test(code) ? code : '01';
+  const fallback = defaultLabelForCsiCode(cleanCode) ?? 'General Requirements';
+  const cleanLabel = compact(label || fallback).slice(0, 80) || fallback;
+  return { code: cleanCode, label: cleanLabel, subtotal_cents: 0 };
+}
+
+function proposalLineFor(params: {
+  readonly id: string;
+  readonly label: string;
+  readonly quantity: number;
+  readonly uom: string;
+  readonly unitCents: number;
+  readonly extendedCents: number;
+}): ProposalLineItem {
+  return {
+    line_id: params.id,
+    description: params.label,
+    quantity: params.quantity,
+    uom: params.uom,
+    unit_cents: params.unitCents,
+    extended_cents: params.extendedCents,
+    notes: '',
+    is_materials_taxable: true,
+    scaffold_provenance: null,
+  };
+}
+
 function buildEstimatorLine(line: EstimatorResponse['line_items'][number]): RightHandEstimateLine {
   const sourceType = sourceTypeForLine(line.confidence, line.price_cents);
+  const tier = tierForLine(line.confidence, line.price_cents);
   const label = compact(line.description || line.scope_tag);
+  const price = line.price_cents ?? null;
+  const id = lineId(`${line.scope_tag}:${label}`, sourceType);
   return {
-    id: lineId(`${line.scope_tag}:${label}`, sourceType),
+    id,
     label,
+    description: label,
     source_type: sourceType,
+    source_label: sourceLabelForTier(tier),
     source_ref: line.band_source_uri ?? `variance-band:${line.scope_tag}`,
-    open_item: line.price_cents === null,
+    open_item: price === null,
     flags: [
       line.scope_tag,
-      line.confidence,
-      ...(line.price_cents === null ? ['tbd_price'] : []),
+      ...(price === null ? ['needs_pricing'] : []),
     ],
-    price_cents: line.price_cents,
+    tier,
+    division: null,
+    quantity: price === null ? undefined : 1,
+    uom: price === null ? undefined : 'LS',
+    unit_cents: price,
+    extended_cents: price,
+    price_cents: price,
     confidence: line.confidence,
+    proposal_line: price === null ? null : proposalLineFor({ id, label, quantity: 1, uom: 'LS', unitCents: price, extendedCents: price }),
+  };
+}
+
+function buildItemizedEstimatorLine(line: EstimatorResponse['itemized_lines'][number]): RightHandEstimateLine {
+  const sourceType = sourceTypeForLine(line.confidence, line.extended_cents);
+  const tier = tierForLine(line.confidence, line.extended_cents);
+  const label = compact(line.description || line.scope_tag);
+  const division = cleanDivision(line.division_code, line.division_label);
+  const id = lineId(`${line.division_code}:${line.scope_tag}:${label}`, sourceType);
+  return {
+    id,
+    label,
+    description: label,
+    source_type: sourceType,
+    source_label: sourceLabelForTier(tier),
+    source_ref: line.source_ref ?? `variance-band:${line.scope_tag}`,
+    open_item: false,
+    flags: [line.scope_tag],
+    tier,
+    division,
+    quantity: line.quantity,
+    uom: line.uom,
+    unit_cents: line.unit_cents,
+    extended_cents: line.extended_cents,
+    price_cents: line.extended_cents,
+    confidence: line.confidence,
+    proposal_line: proposalLineFor({ id, label, quantity: line.quantity, uom: line.uom, unitCents: line.unit_cents, extendedCents: line.extended_cents }),
   };
 }
 
@@ -132,11 +230,18 @@ function buildOpenItemLine(label: string, sourceRef: string, flag = 'placeholder
   return {
     id: lineId(clean, 'allowance'),
     label: clean,
+    description: clean,
     source_type: 'allowance',
+    source_label: sourceLabelForTier('allowance'),
     source_ref: sourceRef,
     open_item: true,
-    flags: [flag],
+    flags: [flag === 'placeholder' ? 'needs_pricing' : flag],
+    tier: 'allowance',
+    division: null,
+    unit_cents: null,
+    extended_cents: null,
     price_cents: null,
+    proposal_line: null,
   };
 }
 
@@ -163,12 +268,117 @@ export function estimateIdForRightHandAssembly(conversationId: string, projectId
   return `rhe_${cleanSegment(projectId, 'project')}_${cleanConversationId(conversationId)}`.slice(0, 120);
 }
 
+function firstNumberBefore(text: string, pattern: RegExp): number | null {
+  const lower = text.toLowerCase();
+  const match = pattern.exec(lower);
+  if (!match || match.index < 0) return null;
+  const prefix = lower.slice(Math.max(0, match.index - 80), match.index + (match[0]?.length ?? 0));
+  const numbers = [...prefix.matchAll(/\b(\d+(?:\.\d+)?)\b/g)].map((m) => Number(m[1]));
+  const found = numbers.reverse().find((n) => Number.isFinite(n) && n > 0);
+  return found ?? null;
+}
+
+function hasAny(text: string, words: readonly RegExp[]): boolean {
+  return words.some((word) => word.test(text));
+}
+
+function fallbackItemizedLinesFromScope(params: {
+  readonly text: string;
+  readonly sourceRef: string;
+}): RightHandEstimateLine[] {
+  const text = params.text.toLowerCase();
+  const out: RightHandEstimateLine[] = [];
+  function add(paramsLine: {
+    readonly scope: string;
+    readonly divisionCode: string;
+    readonly label: string;
+    readonly quantity: number;
+    readonly uom: string;
+    readonly unitCents: number;
+  }) {
+    const divisionLabel = defaultLabelForCsiCode(paramsLine.divisionCode) ?? 'General Requirements';
+    const extended = Math.round(paramsLine.quantity * paramsLine.unitCents);
+    const id = lineId(`${paramsLine.divisionCode}:${paramsLine.scope}:${paramsLine.label}`, 'model_knowledge');
+    out.push({
+      id,
+      label: paramsLine.label,
+      description: paramsLine.label,
+      source_type: 'model_knowledge',
+      source_label: sourceLabelForTier('illustrative'),
+      source_ref: params.sourceRef,
+      open_item: false,
+      flags: [paramsLine.scope, 'itemized'],
+      tier: 'illustrative',
+      division: { code: paramsLine.divisionCode, label: divisionLabel, subtotal_cents: 0 },
+      quantity: paramsLine.quantity,
+      uom: paramsLine.uom,
+      unit_cents: paramsLine.unitCents,
+      extended_cents: extended,
+      price_cents: extended,
+      confidence: 'MODEL_INFERENCE',
+      proposal_line: proposalLineFor({
+        id,
+        label: paramsLine.label,
+        quantity: paramsLine.quantity,
+        uom: paramsLine.uom,
+        unitCents: paramsLine.unitCents,
+        extendedCents: extended,
+      }),
+    });
+  }
+
+  if (hasAny(text, [/\bcabinet/, /\bupper/, /\blower/, /\bisland/])) {
+    const baseLf = firstNumberBefore(text, /\b(?:base|lower)s?\b/) ?? firstNumberBefore(text, /\blower cabinets?\b/) ?? null;
+    const upperLf = firstNumberBefore(text, /\buppers?\b/) ?? firstNumberBefore(text, /\bupper cabinets?\b/) ?? null;
+    if (baseLf !== null) add({ scope: 'cabinetry', divisionCode: '12', label: `Base cabinets (${baseLf} LF)`, quantity: baseLf, uom: 'LF', unitCents: 42_500 });
+    if (upperLf !== null) add({ scope: 'cabinetry', divisionCode: '12', label: `Upper cabinets (${upperLf} LF)`, quantity: upperLf, uom: 'LF', unitCents: 37_500 });
+    if (/\bisland\b/.test(text)) add({ scope: 'cabinetry', divisionCode: '12', label: 'Island cabinet allowance', quantity: 1, uom: 'LS', unitCents: 450_000 });
+    add({ scope: 'cabinetry', divisionCode: '12', label: 'Cabinet install, hardware, and finish allowance', quantity: 1, uom: 'LS', unitCents: 650_000 });
+  }
+  if (hasAny(text, [/\bcounter/, /\bslab/, /\bquartz/, /\bquartzite/])) {
+    add({ scope: 'countertops', divisionCode: '12', label: 'Countertop slab fabrication and install allowance', quantity: 1, uom: 'LS', unitCents: 850_000 });
+  }
+  if (hasAny(text, [/\btile/, /\bfloor/])) {
+    const sf = firstNumberBefore(text, /\bsquare feet\b|\bsq\.?\s*ft\b|\bsf\b/) ?? null;
+    if (sf !== null) add({ scope: 'flooring', divisionCode: '09', label: `Flooring / tile install (${sf} SF)`, quantity: sf, uom: 'SF', unitCents: 3_500 });
+    else add({ scope: 'tile', divisionCode: '09', label: 'Tile / flooring allowance', quantity: 1, uom: 'LS', unitCents: 750_000 });
+  }
+  if (hasAny(text, [/\blighting/, /\bcan lights?/, /\btoe kick/, /\bunder cabinet/])) {
+    const cans = firstNumberBefore(text, /\bcan lights?\b/) ?? null;
+    if (cans !== null) add({ scope: 'lighting', divisionCode: '26', label: `Can lights (${cans} EA)`, quantity: cans, uom: 'EA', unitCents: 42_500 });
+    if (/\bunder cabinet/.test(text)) add({ scope: 'lighting', divisionCode: '26', label: 'Under-cabinet lighting allowance', quantity: 1, uom: 'LS', unitCents: 180_000 });
+    if (/\btoe kick/.test(text)) add({ scope: 'lighting', divisionCode: '26', label: 'Toe-kick lighting allowance', quantity: 1, uom: 'LS', unitCents: 150_000 });
+  }
+
+  return out;
+}
+
+function recomputeDivisionSubtotals(lines: readonly RightHandEstimateLine[]): readonly RightHandEstimateLine[] {
+  const subtotals = new Map<string, number>();
+  for (const line of lines) {
+    if (!line.division || line.extended_cents === null || line.extended_cents === undefined) continue;
+    subtotals.set(line.division.code, (subtotals.get(line.division.code) ?? 0) + line.extended_cents);
+  }
+  return lines.map((line) => {
+    if (!line.division) return line;
+    return {
+      ...line,
+      division: {
+        ...line.division,
+        subtotal_cents: subtotals.get(line.division.code) ?? 0,
+      },
+    };
+  });
+}
+
 export function buildRightHandEstimateArtifact(params: {
   readonly tenant: PersistenceTenantId;
   readonly projectId: string;
   readonly estimateId: string;
   readonly conversationId: string;
   readonly titleSeed: string | null;
+  readonly scopeText?: string;
+  readonly scopeLines?: readonly string[];
   readonly estimatorResponse: EstimatorResponse;
   readonly gateAllowed: boolean;
   readonly gateBlockedReasons: readonly string[];
@@ -180,10 +390,25 @@ export function buildRightHandEstimateArtifact(params: {
   const baseTitle = cleanTitle(params.titleSeed, `${params.projectId} estimate draft`);
   const title = /\bestimate\b/i.test(baseTitle) ? baseTitle : `${baseTitle} estimate draft`;
   const sourceRef = `right-hand-conversation:${cleanConversationId(params.conversationId)}`;
-  const estimatorLines = params.estimatorResponse.line_items.map(buildEstimatorLine);
+  const itemizedFromEstimator = params.estimatorResponse.itemized_lines.map(buildItemizedEstimatorLine);
+  const estimatorItemizedScopes = new Set(itemizedFromEstimator.map((line) => line.flags[0]).filter(Boolean));
+  const itemizedFallback = fallbackItemizedLinesFromScope({
+    text: uniqueStrings([params.scopeText ?? ''], params.scopeLines).join(' '),
+    sourceRef,
+  }).filter((line) => !estimatorItemizedScopes.has(line.flags[0]));
+  const itemizedScopes = new Set([...itemizedFromEstimator, ...itemizedFallback].map((line) => line.flags[0]).filter(Boolean));
+  const estimatorLines = params.estimatorResponse.line_items
+    .filter((line) => !itemizedScopes.has(line.scope_tag))
+    .map(buildEstimatorLine);
   const gapItems = params.estimatorResponse.gaps_flagged.map((gap) => `${gap.scope_tag}: ${gap.reason}`);
   const openItems = uniqueStrings(params.openItems, gapItems, params.unmatchedScope.map((scope) => `captured - not yet classified: ${scope}`));
   const openLines = openItems.map((item) => buildOpenItemLine(item, sourceRef));
+  const lines = recomputeDivisionSubtotals([...itemizedFromEstimator, ...itemizedFallback, ...estimatorLines, ...openLines]);
+  const draftOnlyPricedLines = lines.some((line) => line.price_cents !== null && line.price_cents !== undefined && line.source_type !== 'company_data');
+  const blockedReasons = uniqueStrings(
+    params.gateBlockedReasons,
+    draftOnlyPricedLines ? ['source_basis_required'] : [],
+  );
   return {
     version: 2,
     tenant_id: params.tenant,
@@ -194,14 +419,14 @@ export function buildRightHandEstimateArtifact(params: {
     status: 'draft_for_review',
     updated_at: (params.now ?? new Date()).toISOString(),
     route: `/estimate/${encodeURIComponent(params.projectId)}?estimate_id=${encodeURIComponent(params.estimateId)}&rh_conversation=${encodeURIComponent(params.conversationId)}`,
-    lines: [...estimatorLines, ...openLines],
+    lines,
     open_items: openItems,
     source_refs: uniqueStrings(params.sourceRefs, [sourceRef]),
     estimator_response: params.estimatorResponse,
     gate: {
       fired: true,
-      allowed: params.gateAllowed,
-      blocked_reasons: [...params.gateBlockedReasons],
+      allowed: params.gateAllowed && blockedReasons.length === 0,
+      blocked_reasons: blockedReasons,
     },
     pricing_data_label: 'Illustrative pricing - sample cost data, not yet your historical rates',
     artifact_state: {

@@ -54,23 +54,21 @@ export function buildEstimatorAltitudePacket(opts: BuildPacketOpts): AltitudePac
   // ── SECOND ENFORCEMENT: re-verify trust discipline. ──────────────────
   // If this throws, the parser has a bug — fix the parser, don't catch here.
   const gapScopes = new Set(opts.response.gaps_flagged.map((gap) => gap.scope_tag));
-  for (const line of opts.response.line_items) {
-    if (line.price_cents !== null) {
-      const band = opts.bandsByScope.get(line.scope_tag);
-      if ((band === undefined || band.precision_allowed === false) && line.confidence !== 'MODEL_INFERENCE') {
-        throw new PacketBuildViolationError(
-          `line_item for scope ${line.scope_tag} has price_cents=${line.price_cents} ` +
-            `without company-backed precision but confidence=${line.confidence}. ` +
-            `Parser should have forced MODEL_INFERENCE; this is a P0 invariant violation.`,
-        );
-      }
-      if ((band === undefined || band.precision_allowed === false) && !gapScopes.has(line.scope_tag)) {
-        throw new PacketBuildViolationError(
-          `line_item for scope ${line.scope_tag} has price_cents=${line.price_cents} ` +
-            `without company-backed precision but no gaps_flagged entry. ` +
-            `Parser should have surfaced the source-basis gap; this is a P0 invariant violation.`,
-        );
-      }
+  for (const line of priceBearingLines(opts.response)) {
+    const band = opts.bandsByScope.get(line.scope_tag);
+    if ((band === undefined || band.precision_allowed === false) && line.confidence !== 'MODEL_INFERENCE') {
+      throw new PacketBuildViolationError(
+        `line_item for scope ${line.scope_tag} has price_cents=${line.price_cents} ` +
+          `without company-backed precision but confidence=${line.confidence}. ` +
+          `Parser should have forced MODEL_INFERENCE; this is a P0 invariant violation.`,
+      );
+    }
+    if ((band === undefined || band.precision_allowed === false) && !gapScopes.has(line.scope_tag)) {
+      throw new PacketBuildViolationError(
+        `line_item for scope ${line.scope_tag} has price_cents=${line.price_cents} ` +
+          `without company-backed precision but no gaps_flagged entry. ` +
+          `Parser should have surfaced the source-basis gap; this is a P0 invariant violation.`,
+      );
     }
   }
 
@@ -97,7 +95,7 @@ export function buildEstimatorAltitudePacket(opts: BuildPacketOpts): AltitudePac
   }
 
   // Aggregate confidence + source_class from line items. Most-conservative wins.
-  const aggregate = aggregateConfidenceAndSource(opts.response.line_items, opts.bandsByScope);
+  const aggregate = aggregateConfidenceAndSource(priceBearingLines(opts.response), opts.bandsByScope);
 
   const classification: AltitudeClassification = {
     intent: 'produce a structured project estimate from variance bands and tenant context',
@@ -159,8 +157,8 @@ export function buildEstimatorAltitudePacket(opts: BuildPacketOpts): AltitudePac
 //   - All line_items HIGH band-backed → source_class='historical_actual',
 //                                       label='DIRECT_EVIDENCE',
 //                                       confidence_band='HIGH'
-//   - Any LOW band-backed line item → source_class='historical_actual',
-//                                     label='INFERRED' (cross-archetype is inference),
+//   - Any LOW/directional line item → source_class='model_inference',
+//                                     label='INFERRED',
 //                                     confidence_band='LOW'
 //   - Any unbacked / MODEL_INFERENCE line item → source_class='model_inference',
 //                                                label='INFERRED',
@@ -179,11 +177,10 @@ interface AggregateResult {
 }
 
 function aggregateConfidenceAndSource(
-  lineItems: readonly EstimatorResponse['line_items'][number][],
+  lineItems: readonly PriceBearingLine[],
   bandsByScope: ReadonlyMap<ScopeTag, RenderedBand>,
 ): AggregateResult {
   let sawAnyUnbacked = false;
-  let sawAnyLow = false;
   let sawAnyHigh = false;
 
   for (const line of lineItems) {
@@ -195,7 +192,7 @@ function aggregateConfidenceAndSource(
     if (band.confidence === 'HIGH') {
       sawAnyHigh = true;
     } else if (band.confidence === 'LOW' || band.confidence === 'MEDIUM') {
-      sawAnyLow = true;
+      sawAnyUnbacked = true;
     } else {
       sawAnyUnbacked = true;
     }
@@ -207,14 +204,6 @@ function aggregateConfidenceAndSource(
       modelInferenceLabel: 'INFERRED',
       confidenceBand: 'LOW',
       classificationConfidence: 0.55,
-    };
-  }
-  if (sawAnyLow) {
-    return {
-      sourceClass: 'historical_actual',
-      modelInferenceLabel: 'INFERRED',
-      confidenceBand: 'LOW',
-      classificationConfidence: 0.7,
     };
   }
   if (sawAnyHigh) {
@@ -234,6 +223,25 @@ function aggregateConfidenceAndSource(
   };
 }
 
+interface PriceBearingLine {
+  readonly scope_tag: ScopeTag;
+  readonly price_cents: number;
+  readonly confidence: 'HIGH' | 'LOW' | 'MODEL_INFERENCE';
+}
+
+function priceBearingLines(response: EstimatorResponse): PriceBearingLine[] {
+  const out: PriceBearingLine[] = [];
+  for (const line of response.line_items) {
+    if (line.price_cents !== null) {
+      out.push({ scope_tag: line.scope_tag, price_cents: line.price_cents, confidence: line.confidence });
+    }
+  }
+  for (const line of response.itemized_lines ?? []) {
+    out.push({ scope_tag: line.scope_tag, price_cents: line.extended_cents, confidence: line.confidence });
+  }
+  return out;
+}
+
 function syntheticClaimId(invocationId: string, scopeTag: ScopeTag): string {
   return `claim_estimator_${invocationId}_${scopeTag}`;
 }
@@ -242,7 +250,7 @@ function extractedFactsFor(opts: BuildPacketOpts): AltitudePacket['extracted_fac
   const out: Record<string, unknown> = {
     project_archetype: opts.inputs.projectArchetype,
     requested_scope_tags: [...opts.inputs.scopeTags],
-    line_item_count: opts.response.line_items.length,
+    line_item_count: opts.response.line_items.length + (opts.response.itemized_lines?.length ?? 0),
     gap_count: opts.response.gaps_flagged.length,
   };
   if (opts.response.project_total_cents !== null) {

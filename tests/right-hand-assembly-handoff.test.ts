@@ -39,6 +39,65 @@ async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
     return {
       ok: true,
       content: JSON.stringify({
+        itemized_lines: tags.flatMap((tag) => {
+          if (tag === 'cabinetry') {
+            return [
+              {
+                scope_tag: 'cabinetry',
+                division_code: '12',
+                division_label: 'Furnishings',
+                description: 'Base cabinets from captured LF',
+                quantity: 36,
+                uom: 'LF',
+                unit_cents: 42_500,
+                confidence: 'MODEL_INFERENCE',
+                source_ref: 'kerf://seed-cost-kb/cabinetry/base',
+              },
+              {
+                scope_tag: 'cabinetry',
+                division_code: '12',
+                division_label: 'Furnishings',
+                description: 'Upper cabinets from captured LF',
+                quantity: 34,
+                uom: 'LF',
+                unit_cents: 37_500,
+                confidence: 'MODEL_INFERENCE',
+                source_ref: 'kerf://seed-cost-kb/cabinetry/uppers',
+              },
+            ];
+          }
+          if (tag === 'countertops') {
+            return [
+              {
+                scope_tag: 'countertops',
+                division_code: '12',
+                division_label: 'Furnishings',
+                description: 'Countertop slab fabrication and install allowance',
+                quantity: 1,
+                uom: 'LS',
+                unit_cents: 850_000,
+                confidence: 'MODEL_INFERENCE',
+                source_ref: 'kerf://seed-cost-kb/countertops/slab',
+              },
+            ];
+          }
+          if (tag === 'tile' || tag === 'flooring') {
+            return [
+              {
+                scope_tag: tag,
+                division_code: '09',
+                division_label: 'Finishes',
+                description: `${tag} itemized allowance from captured scope`,
+                quantity: tag === 'flooring' ? 280 : 1,
+                uom: tag === 'flooring' ? 'SF' : 'LS',
+                unit_cents: tag === 'flooring' ? 3_500 : 750_000,
+                confidence: 'MODEL_INFERENCE',
+                source_ref: `kerf://seed-cost-kb/${tag}`,
+              },
+            ];
+          }
+          return [];
+        }),
         line_items: tags.map((tag) => ({
           scope_tag: tag,
           description: `${tag.replace(/_/g, ' ')} draft allowance from captured Right Hand scope`,
@@ -77,13 +136,13 @@ async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 const kitchenDraft = mergeWorkingDraftFields(
-  deriveWorkingDraftFields('Uppers kitchen estimate. Kitchen remodel with cabinet uppers, lowers, backsplash, slab counters, and flooring.'),
+  deriveWorkingDraftFields('Uppers kitchen estimate. Kitchen remodel with 36 linear feet of base cabinets, 34 linear feet of uppers, backsplash, slab counters, and 280 square feet of flooring.'),
   {
     scope: [
-      'Cabinet uppers and lowers',
+      '36 LF base cabinets and 34 LF uppers',
       'Tile backsplash',
       'Stone slab countertops',
-      'Downstairs flooring',
+      '280 SF flooring',
     ],
     open_items: ['flooring species', 'slab allowance'],
     allowances: ['flooring species TBD', 'slab allowance TBD'],
@@ -107,6 +166,7 @@ function tinyDraft(tenant_id: 'tenant_ggr' | 'tenant_valle', estimate_id: string
     open_items: [],
     source_refs: [],
     estimator_response: {
+      itemized_lines: [],
       line_items: [],
       project_total_cents: null,
       gaps_flagged: [],
@@ -158,7 +218,17 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
         artifact_state: { durable_record: boolean; filed: boolean; sent: boolean };
         gate: { fired: boolean; allowed: boolean; blocked_reasons: readonly string[] };
         pricing_data_label: string;
-        lines: readonly { label: string; source_type: string; open_item: boolean; flags: readonly string[] }[];
+        lines: readonly {
+          label: string;
+          source_type: string;
+          source_label: string;
+          open_item: boolean;
+          flags: readonly string[];
+          quantity?: number;
+          uom?: string;
+          unit_cents?: number | null;
+          extended_cents?: number | null;
+        }[];
         open_items: readonly string[];
       };
     };
@@ -167,11 +237,15 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
     assert.equal(body.draft.artifact_state.durable_record, true);
     assert.equal(body.draft.artifact_state.filed, false);
     assert.equal(body.draft.artifact_state.sent, false);
-    assert.ok(body.draft.lines.some((line) => /tile draft allowance/i.test(line.label) && line.source_type === 'allowance'));
+    assert.ok(body.draft.lines.some((line) => /base cabinets/i.test(line.label) && line.source_type === 'model_knowledge' && line.quantity === 36 && line.uom === 'LF' && (line.extended_cents ?? 0) > 0));
+    assert.ok(body.draft.lines.some((line) => /upper cabinets/i.test(line.label) && line.source_type === 'model_knowledge' && line.quantity === 34 && line.uom === 'LF' && (line.extended_cents ?? 0) > 0));
+    assert.ok(body.draft.lines.some((line) => /countertop slab/i.test(line.label) && line.source_label === 'Illustrative' && (line.extended_cents ?? 0) > 0));
     assert.ok(body.draft.lines.some((line) => /flooring species TBD/i.test(line.label) && line.source_type === 'allowance' && line.open_item));
-    assert.ok(body.draft.lines.some((line) => /slab allowance TBD/i.test(line.label) && line.flags.includes('placeholder')));
+    assert.ok(body.draft.lines.some((line) => /slab allowance TBD/i.test(line.label) && line.flags.includes('needs_pricing')));
     assert.ok(body.draft.open_items.includes('flooring species'));
     assert.equal(body.draft.gate.fired, true);
+    assert.equal(body.draft.gate.allowed, false);
+    assert.ok(body.draft.gate.blocked_reasons.includes('source_basis_required'));
     assert.match(body.draft.pricing_data_label, /sample cost data/i);
 
     const search = await app.request('/right-hand/estimates/search?q=Uppers%20kitchen%20estimate');
@@ -183,8 +257,8 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
 
     const reload = await app.request(`/right-hand/estimates/${body.draft.estimate_id}`);
     assert.equal(reload.status, 200);
-    const reloadBody = await reload.json() as { draft: { lines: readonly { label: string }[] } };
-    assert.ok(reloadBody.draft.lines.some((line) => /countertops draft allowance/i.test(line.label)));
+    const reloadBody = await reload.json() as { draft: { lines: readonly { label: string; extended_cents?: number | null }[] } };
+    assert.ok(reloadBody.draft.lines.some((line) => /countertop slab/i.test(line.label) && (line.extended_cents ?? 0) > 0));
   });
 });
 
@@ -275,7 +349,7 @@ test('Right Hand estimate page updates from later conversation turns', async () 
       }),
     });
     assert.equal(update.status, 200);
-    const body = await update.json() as { draft: { lines: readonly { label: string; flags: readonly string[] }[] } };
-    assert.ok(body.draft.lines.some((line) => /tile draft allowance/i.test(line.label) && line.flags.includes('tile')));
+    const body = await update.json() as { draft: { lines: readonly { label: string; flags: readonly string[]; extended_cents?: number | null }[] } };
+    assert.ok(body.draft.lines.some((line) => /tile itemized allowance/i.test(line.label) && line.flags.includes('tile') && (line.extended_cents ?? 0) > 0));
   });
 });

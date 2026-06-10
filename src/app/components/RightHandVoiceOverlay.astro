@@ -1467,7 +1467,7 @@ const { t } = createLayoutContext();
             return;
           }
           canonicalWorkingDraft = payload.workingDraft;
-          replaceTurn(replyIndex, 'right_hand', 'I’m opening the estimate draft for review. The conversation stays parked here.');
+          replaceTurn(replyIndex, 'right_hand', 'Estimate draft is open. I’m still here if you want to adjust it.');
           persistConversation();
           window.setTimeout(() => navigate(payload.route, { resume: true }), 180);
         });
@@ -1486,7 +1486,7 @@ const { t } = createLayoutContext();
               return;
             }
             canonicalWorkingDraft = assemblyPayload.workingDraft;
-            replaceTurn(replyIndex, 'right_hand', 'I’m opening the estimate draft for review. The conversation stays parked here.');
+            replaceTurn(replyIndex, 'right_hand', 'Estimate draft is open. I’m still here if you want to adjust it.');
             persistConversation();
             window.setTimeout(() => navigate(assemblyPayload.route, { resume: true }), 180);
           });

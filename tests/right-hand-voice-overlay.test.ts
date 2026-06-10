@@ -824,7 +824,7 @@ test('Dispatch 3: assembly accept routes to server-owned estimate draft and keep
   assert.match(src, /\/api\/v1\/right-hand\/assemble-estimate/);
   assert.match(src, /conversationId: getConversationId\(\)/);
   assert.match(src, /navigate\(payload\.route, \{ resume: true \}\)/);
-  assert.match(src, /I’m opening the estimate draft for review\. The conversation stays parked here\./);
+  assert.match(src, /Estimate draft is open\. I’m still here if you want to adjust it\./);
   assert.match(estimatePage, /getRightHandEstimateStore/);
   assert.doesNotMatch(estimatePage, /readRightHandEstimateDraft/);
   assert.match(estimatePage, /pricing_data_label/);
