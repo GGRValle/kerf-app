@@ -24,6 +24,7 @@ const clientLines = clientVisibleLines(lines).map(lineBreakdown);
 const approvedCount = selectionsForProject(tenant, projectId).filter((s) => s.lifecycle === 'approved').length;
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const rhPricedLines = rightHandDraft?.lines.filter((line) => typeof line.extended_cents === 'number' && line.extended_cents > 0) ?? [];
+const rhOpenLines = rightHandDraft?.lines.filter((line) => line.open_item || !(typeof line.extended_cents === 'number' && line.extended_cents > 0)) ?? [];
 const rhTotalCents = rhPricedLines.reduce((sum, line) => sum + (line.extended_cents ?? 0), 0);
 const qtyFor = (line: { quantity?: number; uom?: string }) => (
   typeof line.quantity === 'number' && line.uom ? `${line.quantity.toLocaleString('en-US')} ${line.uom}` : ''
@@ -54,14 +55,15 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
           </a>
         </div>
         <div class="es-rh-lines">
-          {rightHandDraft.lines.length === 0 ? <p class="es-empty">Right Hand has not assembled lines yet.</p> : null}
-          {rightHandDraft.lines.map((line) => (
+          {rhPricedLines.length === 0 ? <p class="es-empty">Right Hand captured the scope, but the draft still needs approved rates.</p> : null}
+          {rhPricedLines.map((line) => (
             <div class="es-rh-line" data-open={line.open_item ? 'true' : 'false'}>
               <span class="es-ln-label">
                 {line.label}
                 <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
                 {line.open_item ? <span class="es-tag pending">TBD</span> : null}
                 {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
+                {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
                 {qtyFor(line) ? <span class="es-tag">{qtyFor(line)}</span> : null}
               </span>
               <span class="es-ln-num strong">{typeof line.extended_cents === 'number' ? fmt(line.extended_cents) : 'Needs pricing'}</span>
@@ -112,6 +114,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
                 {line.label}
                 <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
                 {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
+                {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
               </span>
               <span class="es-ln-num">{qtyFor(line)}</span>
               <span class="es-ln-num">{typeof line.unit_cents === 'number' ? fmt(line.unit_cents) + '/' + (line.uom ?? 'unit') : ''}</span>
@@ -147,6 +150,23 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
         </>
       )}
     </section>
+
+    {rightHandDraft && rhOpenLines.length > 0 ? (
+      <section class="es-table es-open-items">
+        <h2>Needs pricing or confirmation</h2>
+        {rhOpenLines.map((line) => (
+          <div class="es-row">
+            <span class="es-ln-label">
+              {line.label}
+              <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
+              {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
+              {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
+            </span>
+            <span class="es-ln-num strong">TBD</span>
+          </div>
+        ))}
+      </section>
+    ) : null}
 
     <!-- Client view: prices only; markup never appears -->
     <section class="es-table es-client">

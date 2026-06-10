@@ -8,7 +8,7 @@ import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.j
 import { createMemoryEventLog } from '../src/blackboard/eventLog.js';
 import type { ModelCaller } from '../src/estimator/orchestration/index.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
-import { createMemoryRightHandEstimateStore, resetRightHandEstimateStoreForTests } from '../src/api/lib/rightHandAssemblyStore.js';
+import { buildRightHandEstimateArtifact, createMemoryRightHandEstimateStore, resetRightHandEstimateStoreForTests } from '../src/api/lib/rightHandAssemblyStore.js';
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
 import type { ScopeClassifier } from '../src/api/lib/rightHandEstimatorAdapter.js';
 import { deriveWorkingDraftFields, mergeWorkingDraftFields } from '../src/voice/realtime/workingDraft.js';
@@ -44,23 +44,25 @@ async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
             return [
               {
                 scope_tag: 'cabinetry',
+                line_id: 'CB-001',
                 division_code: '12',
                 division_label: 'Furnishings',
                 description: 'Base cabinets from captured LF',
                 quantity: 36,
                 uom: 'LF',
-                unit_cents: 42_500,
+                unit_cents: 0,
                 confidence: 'MODEL_INFERENCE',
                 source_ref: 'kerf://seed-cost-kb/cabinetry/base',
               },
               {
                 scope_tag: 'cabinetry',
+                line_id: 'CB-002',
                 division_code: '12',
                 division_label: 'Furnishings',
                 description: 'Upper cabinets from captured LF',
                 quantity: 34,
                 uom: 'LF',
-                unit_cents: 37_500,
+                unit_cents: 0,
                 confidence: 'MODEL_INFERENCE',
                 source_ref: 'kerf://seed-cost-kb/cabinetry/uppers',
               },
@@ -70,12 +72,13 @@ async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
             return [
               {
                 scope_tag: 'countertops',
+                line_id: 'CT-002',
                 division_code: '12',
                 division_label: 'Furnishings',
-                description: 'Countertop slab fabrication and install allowance',
-                quantity: 1,
-                uom: 'LS',
-                unit_cents: 850_000,
+                description: 'Quartzite countertop slab fabrication and install',
+                quantity: 42,
+                uom: 'SF',
+                unit_cents: 0,
                 confidence: 'MODEL_INFERENCE',
                 source_ref: 'kerf://seed-cost-kb/countertops/slab',
               },
@@ -85,12 +88,13 @@ async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
             return [
               {
                 scope_tag: tag,
+                line_id: tag === 'tile' ? 'TL-002' : null,
                 division_code: '09',
                 division_label: 'Finishes',
-                description: `${tag} itemized allowance from captured scope`,
-                quantity: tag === 'flooring' ? 280 : 1,
-                uom: tag === 'flooring' ? 'SF' : 'LS',
-                unit_cents: tag === 'flooring' ? 3_500 : 750_000,
+                description: tag === 'tile' ? 'Floor tile from captured scope' : `${tag} itemized allowance from captured scope`,
+                quantity: tag === 'flooring' ? 280 : 120,
+                uom: 'SF',
+                unit_cents: 0,
                 confidence: 'MODEL_INFERENCE',
                 source_ref: `kerf://seed-cost-kb/${tag}`,
               },
@@ -189,6 +193,58 @@ test('Right Hand estimate store is tenant scoped for read and search', async () 
   assert.equal(ggrSearch[0]?.estimate_id, 'est_ggr');
 });
 
+test('Right Hand assembly suppresses whole-scope bands when itemized rows cover that scope', () => {
+  const draft = buildRightHandEstimateArtifact({
+    tenant: 'tenant_ggr',
+    projectId: 'rh_scope_dedup',
+    estimateId: 'est_scope_dedup',
+    conversationId: 'rh_scope_dedup',
+    titleSeed: 'Kitchen cabinetry estimate',
+    scopeText: 'Kitchen with 36 LF base cabinets.',
+    estimatorResponse: {
+      itemized_lines: [
+        {
+          scope_tag: 'cabinetry',
+          cost_code: 'CB-001',
+          division_code: '12',
+          division_label: 'Cabinetry',
+          description: 'Base cabinets from captured LF',
+          quantity: 36,
+          uom: 'LF',
+          unit_cents: 106_000,
+          extended_cents: 3_816_000,
+          confidence: 'MODEL_INFERENCE',
+          source_ref: 'kerf://kerf-seed/rate-card/ricardo-filled-v1/CB-001',
+        },
+      ],
+      line_items: [
+        {
+          scope_tag: 'cabinetry',
+          description: 'Cabinetry whole-scope fallback band that must not double count',
+          price_cents: 9_999_999,
+          confidence: 'MODEL_INFERENCE',
+          band_source_uri: 'kerf://variance-band/rung2/kitchen_remodel/cabinetry',
+        },
+      ],
+      project_total_cents: null,
+      gaps_flagged: [],
+      operator_summary: 'Draft.',
+    },
+    gateAllowed: false,
+    gateBlockedReasons: ['source_basis_required'],
+    openItems: [],
+    unmatchedScope: [],
+    sourceRefs: ['turn:latest'],
+    now: new Date('2026-06-08T16:00:00.000Z'),
+  });
+
+  assert.equal(draft.lines.filter((line) => line.flags.includes('cabinetry')).length, 1);
+  assert.equal(draft.lines[0]?.cost_code, 'CB-001');
+  assert.equal(draft.lines[0]?.extended_cents, 3_816_000);
+  assert.equal(draft.lines.some((line) => /whole-scope fallback/i.test(line.label)), false);
+  assert.equal(draft.lines.reduce((sum, line) => sum + (line.price_cents ?? 0), 0), 3_816_000);
+});
+
 test('Right Hand assembly handoff creates a durable source-labeled estimate draft and route', async () => {
   await withTempPersistence(async () => {
     const app = createAuthenticatedApiRouter();
@@ -228,6 +284,7 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
           uom?: string;
           unit_cents?: number | null;
           extended_cents?: number | null;
+          cost_code?: string;
         }[];
         open_items: readonly string[];
       };
@@ -237,16 +294,16 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
     assert.equal(body.draft.artifact_state.durable_record, true);
     assert.equal(body.draft.artifact_state.filed, false);
     assert.equal(body.draft.artifact_state.sent, false);
-    assert.ok(body.draft.lines.some((line) => /base cabinets/i.test(line.label) && line.source_type === 'model_knowledge' && line.quantity === 36 && line.uom === 'LF' && (line.extended_cents ?? 0) > 0));
-    assert.ok(body.draft.lines.some((line) => /upper cabinets/i.test(line.label) && line.source_type === 'model_knowledge' && line.quantity === 34 && line.uom === 'LF' && (line.extended_cents ?? 0) > 0));
-    assert.ok(body.draft.lines.some((line) => /countertop slab/i.test(line.label) && line.source_label === 'Illustrative' && (line.extended_cents ?? 0) > 0));
+    assert.ok(body.draft.lines.some((line) => /base cabinets/i.test(line.label) && line.source_type === 'model_knowledge' && line.cost_code === 'CB-001' && line.quantity === 36 && line.uom === 'LF' && line.unit_cents === 106_000 && line.extended_cents === 3_816_000));
+    assert.ok(body.draft.lines.some((line) => /upper cabinets/i.test(line.label) && line.source_type === 'model_knowledge' && line.cost_code === 'CB-002' && line.quantity === 34 && line.uom === 'LF' && line.unit_cents === 84_800 && line.extended_cents === 2_883_200));
+    assert.ok(body.draft.lines.some((line) => /countertop slab/i.test(line.label) && line.source_label === 'Illustrative' && line.cost_code === 'CT-002' && (line.extended_cents ?? 0) > 0));
     assert.ok(body.draft.lines.some((line) => /flooring species TBD/i.test(line.label) && line.source_type === 'allowance' && line.open_item));
     assert.ok(body.draft.lines.some((line) => /slab allowance TBD/i.test(line.label) && line.flags.includes('needs_pricing')));
     assert.ok(body.draft.open_items.includes('flooring species'));
     assert.equal(body.draft.gate.fired, true);
     assert.equal(body.draft.gate.allowed, false);
     assert.ok(body.draft.gate.blocked_reasons.includes('source_basis_required'));
-    assert.match(body.draft.pricing_data_label, /sample cost data/i);
+    assert.match(body.draft.pricing_data_label, /Mixed draft pricing/i);
 
     const search = await app.request('/right-hand/estimates/search?q=Uppers%20kitchen%20estimate');
     assert.equal(search.status, 200);
@@ -349,7 +406,7 @@ test('Right Hand estimate page updates from later conversation turns', async () 
       }),
     });
     assert.equal(update.status, 200);
-    const body = await update.json() as { draft: { lines: readonly { label: string; flags: readonly string[]; extended_cents?: number | null }[] } };
-    assert.ok(body.draft.lines.some((line) => /tile itemized allowance/i.test(line.label) && line.flags.includes('tile') && (line.extended_cents ?? 0) > 0));
+    const body = await update.json() as { draft: { lines: readonly { label: string; flags: readonly string[]; extended_cents?: number | null; cost_code?: string }[] } };
+    assert.ok(body.draft.lines.some((line) => /Floor tile/i.test(line.label) && line.flags.includes('tile') && line.cost_code === 'TL-002' && (line.extended_cents ?? 0) > 0));
   });
 });
