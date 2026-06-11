@@ -21,16 +21,22 @@ const included = card.filter((l) => l.ricardo_included);
 const includedCodes = new Set(included.map((l) => l.cost_code));
 const statedDims: Record<string, number> = { 'CB-001': 35, 'CB-002': 30, 'CB-003': 8, 'EL-004': 8 };
 
-async function runOnce(label: string): Promise<boolean> {
+async function runOnce(label: string, caller: any): Promise<boolean> {
   const inputs: any = {
     tenantId: 'tenant_ggr', projectArchetype: 'kitchen_remodel', scopeTags: allTags,
     scopeNarrative: SCOPE_NARRATIVE, invocationId: 'ricardo_eval', requestedAt: new Date().toISOString(),
   };
   const prompt = buildEstimatorPrompt({ inputs, renderedBands: [], rateCard: card });
-  const caller = makeGroqModelCaller({ apiKey: process.env.GROQ_API_KEY!, baseUrl: 'https://api.groq.com/openai/v1' });
+
   const r = await caller({ systemMessage: prompt.systemMessage, userMessage: prompt.userMessage + '\n\nOPERATOR SCOPE:\n' + SCOPE_NARRATIVE, tenantId: 'tenant_ggr', invocationId: 'ricardo_eval', purpose: 'estimator_project_generation', workflow: 'proposal_generation', requestedAt: new Date().toISOString() });
   if (!r.ok) { console.log(label, 'MODEL CALL FAILED:', r.reason); return false; }
-  const clean = enforceTrustDiscipline({ raw: parseRawResponse(r.content), bandsByScope: new Map(), tenantId: 'tenant_ggr' as any, rateCard: card, requireRateCardPricing: true });
+  let clean;
+  try {
+    clean = enforceTrustDiscipline({ raw: parseRawResponse(r.content), bandsByScope: new Map(), tenantId: 'tenant_ggr' as any, rateCard: card, requireRateCardPricing: true });
+  } catch (e: any) {
+    console.log(label, 'PARSE FAILED:', String(e.message).slice(0, 100));
+    return false;
+  }
   const priced = clean.itemized_lines.filter((l) => l.unit_cents > 0);
   const exactId = priced.filter((l) => l.matched_by === 'line_id').length;
   const selectedCodes = new Set(priced.map((l) => l.line_id ?? l.cost_code).filter(Boolean) as string[]);
@@ -53,7 +59,31 @@ async function runOnce(label: string): Promise<boolean> {
   return within10 && exactId / Math.max(1, priced.length) >= 0.6 && qtyOk >= Math.max(1, qtyTotal - 1);
 }
 
-const groqPass = await runOnce('GROQ (llama-4-scout)');
+function anthropicEstimatorCaller(model: string) {
+  return async (input: any) => {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model, max_tokens: 16000, system: input.systemMessage, messages: [{ role: 'user', content: input.userMessage }] }),
+    });
+    if (!res.ok) return { ok: false, reason: `anthropic ${res.status}: ${(await res.text()).slice(0, 120)}` };
+    const data = await res.json() as { content: { type: string; text?: string }[] };
+    const text = data.content.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
+    return { ok: true, content: text, tokensIn: 1, tokensOut: 1, costNanoUsd: 1, modelId: model, endpoint: 'anthropic' };
+  };
+}
+
+const groqCaller = makeGroqModelCaller({ apiKey: process.env.GROQ_API_KEY!, baseUrl: 'https://api.groq.com/openai/v1' });
+const groqPass = await runOnce('GROQ (llama-4-scout)', groqCaller);
+let frontierPass = false;
+if (!groqPass && process.env.ANTHROPIC_API_KEY) {
+  console.log('');
+  frontierPass = await runOnce('FRONTIER (claude-sonnet-4-6)', anthropicEstimatorCaller('claude-sonnet-4-6'));
+}
 console.log('');
-console.log(groqPass ? 'TIER VERDICT: groq PASSES the seed eval - no escalation needed.' : 'TIER VERDICT: groq FAILED the seed eval - escalate the selection call to frontier (policy: rate-card card).');
+console.log(groqPass
+  ? 'TIER VERDICT: groq PASSES the seed eval - no escalation needed.'
+  : frontierPass
+    ? 'TIER VERDICT: groq FAILED, FRONTIER PASSES - route the estimator selection call to frontier.'
+    : 'TIER VERDICT: both tiers below threshold - coverage gap is extrapolation-shaped (unstated periphery); re-run after the extrapolation card.');
 process.exit(0);

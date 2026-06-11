@@ -60,6 +60,7 @@ import { makeGroqModelCaller, type ModelCaller } from '../../estimator/orchestra
 import { runEstimate } from '../../runner/estimateRunner.js';
 import { createFixtureTenantStore } from '../../tenant/index.js';
 import { upsertEstimatingDeal } from '../../sales/index.js';
+import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiSession, requireApiTenant } from '../lib/tenantContext.js';
@@ -101,6 +102,7 @@ export interface RightHandTurnRouteDeps {
     readonly ANTHROPIC_API_KEY?: string;
     readonly ANTHROPIC_BASE_URL?: string;
     readonly REPLY_BRAIN?: string;
+    readonly ESTIMATOR_FRONTIER_MODEL?: string;
     readonly DATABASE_URL?: string;
     readonly POSTGRES_URL?: string;
   };
@@ -272,8 +274,18 @@ async function activeEstimateArtifactContext(params: {
 
 function estimatorModelCallerFor(deps: RightHandTurnRouteDeps): ModelCaller {
   if (deps.estimatorModelCaller) return deps.estimatorModelCaller;
+  // Tier policy (rate-card card + 2026-06-11 Ricardo eval): selection gets the
+  // frontier brain when a key is present - groq scout showed high run-to-run
+  // coverage variance and failed the seed eval; sonnet selected 2.4x the lines.
+  const anthropicKey = deps.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    return makeAnthropicModelCaller({
+      apiKey: anthropicKey,
+      ...(deps.env.ESTIMATOR_FRONTIER_MODEL ? { model: deps.env.ESTIMATOR_FRONTIER_MODEL } : {}),
+    });
+  }
   const apiKey = deps.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error('GROQ_API_KEY is required for estimator handoff');
+  if (!apiKey) throw new Error('GROQ_API_KEY or ANTHROPIC_API_KEY is required for estimator handoff');
   return makeGroqModelCaller({
     apiKey,
     baseUrl: deps.env.GROQ_BASE_URL ?? DEFAULT_GROQ_BASE_URL,

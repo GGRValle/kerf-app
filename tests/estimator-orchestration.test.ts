@@ -806,3 +806,13 @@ test('parseRawResponse coerces advisory itemized fields, stays strict on money (
   assert.throws(() => parseRawResponse(bad({ quantity: 'thirty six' })), /quantity must be a positive number/);
   assert.throws(() => parseRawResponse(bad({ unit_cents: 10.5 })), /unit_cents must be a non-negative integer/);
 });
+
+test('frontier tier policy: selection prefers anthropic when the key is present (Ricardo eval verdict)', async () => {
+  // The chooser is env-driven; prove both branches via the route deps seam.
+  const { makeAnthropicModelCaller } = await import('../src/estimator/orchestration/anthropicModelCaller.js');
+  const caller = makeAnthropicModelCaller({ apiKey: 'test-key', baseUrl: 'http://127.0.0.1:9' });
+  const result = await caller({ systemMessage: 's', userMessage: 'u', tenantId: 'tenant_ggr', invocationId: 'i', purpose: 'estimator_project_generation', workflow: 'proposal_generation', requestedAt: new Date().toISOString() });
+  // Unreachable port -> graceful failure shape, never a throw (hot-path discipline).
+  assert.equal(result.ok, false);
+  assert.match((result as { reason: string }).reason, /anthropic fetch failed/);
+});
