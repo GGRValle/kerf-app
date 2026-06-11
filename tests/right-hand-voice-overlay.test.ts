@@ -636,7 +636,7 @@ test('F-RH3 conversation surface: route-resume restores the same thread instead 
   assert.match(src, /filter\(\(turn\) => !isRetiredCannedRightHandTurn\(turn\)\)/);
 
   const navigate = sliceDecl(src, 'navigate', 'routeLive');
-  assert.match(navigate, /persistConversation\(\)[\s\S]*?sessionStorage\.setItem\('kerf\.voiceResume'/);
+  assert.match(navigate, /persistConversation\(\)[\s\S]*?writeResumeState\(sessionStorage/);
 
   const openOverlay = sliceDecl(src, 'openOverlay', 'speakEvent');
   assert.match(openOverlay, /options: \{ restoreConversation\?: boolean \} = \{\}/);
@@ -644,8 +644,8 @@ test('F-RH3 conversation surface: route-resume restores the same thread instead 
   assert.match(openOverlay, /if \(!restored\) \{/);
   assert.match(openOverlay, /resetConversation\(\{ clearStored: false \}\)/);
 
-  const resume = src.match(/const resumeRaw = sessionStorage\.getItem\('kerf\.voiceResume'\)[\s\S]*?\n {4}\} catch/);
-  assert.ok(resume, 'expected voiceResume restore block');
+  const resume = src.match(/const resumeState = readResumeState\(sessionStorage\)[\s\S]*?resumeBubble\?\.addEventListener\('click'[\s\S]*?\}\);/);
+  assert.ok(resume, 'expected voiceResume restore block (persistent bubble contract)');
   assert.match(resume![0], /openOverlay\(\{ restoreConversation: true \}\)/);
 });
 
@@ -1010,12 +1010,13 @@ test('reversible LIVE intent still routes immediately (unchanged)', () => {
 test('LIVE frame shifts keep Right Hand in the conversation on the destination frame', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const navigate = sliceDecl(src, 'navigate', 'routeLive');
-  assert.match(navigate, /sessionStorage\.setItem\('kerf\.voiceResume'/);
+  assert.match(navigate, /writeResumeState\(sessionStorage/);
   const routeLive = sliceDecl(src, 'routeLive', 'enterConfirm');
   assert.match(routeLive, /navigate\(`\$\{route\}\?src=voice`, \{ resume: intent !== 'open_field_capture' \}\)/);
   assert.match(routeLive, /navigate\('\/projects\?src=voice', \{ resume: true \}\)/);
-  assert.match(src, /sessionStorage\.getItem\('kerf\.voiceResume'\)/);
-  assert.match(src, /if \(overlay\.hidden\) openOverlay\(\{ restoreConversation: true \}\)/);
+  assert.match(src, /readResumeState\(sessionStorage\)/); // persistent bubble state — never consumed on read
+  assert.match(src, /showResumeBubble\(bubbleLabelFor\(resumeState\)\)/); // bubble, not auto-open (walk: 'popped in and out')
+  assert.match(src, /resumeBubble\?\.addEventListener\('click'[\s\S]*?openOverlay\(\{ restoreConversation: true \}\)/);
 });
 
 test('fallback mic-off cannot freeze forever on empty audio or hanging transcription', () => {

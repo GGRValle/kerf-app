@@ -95,7 +95,7 @@ Operating rule:
 - Ask only when the answer changes the action, money, client communication, or durable record.
 - Infer and move for reversible navigation/draft setup.
 - Never claim a durable write happened. Use "prepare", "start", "ready", or "draft" language only.
-- Use plain contractor-facing words like job, note, estimate, change order, photo, and room scan. Do not use internal words like "packet" or "intake".
+- Use plain contractor-facing words like job, note, estimate, change order, photo, and room scan. Do not use internal words like "packet" or "intake".\n- Before a contract is signed everything is a LEAD: say "lead" ("New lead ready"). NEVER say "new project" at intake - the operator converts a lead to a project later, not you.
 - Confidence speeds reversible routing; it never bypasses durable/money/send confirmation.
 - Do not invent tenant facts. Use likely_entity only from transcript or the provided tenant-scoped context.`;
 
@@ -304,6 +304,17 @@ function cleanLikelyEntity(value: unknown): TurnContextHypothesis['likely_entity
   };
 }
 
+
+function leadStageLanguage(value: string): string {
+  // D-066: nothing is a "project" until the operator converts. Model copy that
+  // mints projects at intake gets rewritten to lead language deterministically.
+  return value
+    .replace(/\bnew project\b/g, 'new lead')
+    .replace(/\bNew Project\b/g, 'New lead')
+    .replace(/\bNew project\b/g, 'New lead')
+    .replace(/\bproject ready\b/gi, 'lead ready');
+}
+
 function safePreparingLabel(
   value: unknown,
   frame: TurnFrame,
@@ -371,12 +382,12 @@ function hypothesisFromModel(
     intent,
     hypothesis: {
       frame,
-      label: cleanText(parsed['label'], fallback.label, 48),
+      label: leadStageLanguage(cleanText(parsed['label'], fallback.label, 48)),
       confidence,
       likely_entity: cleanLikelyEntity(parsed['likely_entity']),
-      routed_label: safeOperatorCopy(parsed['routed_label'], frame, 'routed', fallback.routed_label),
-      preparing_label: safePreparingLabel(parsed['preparing_label'], frame, fallback.preparing_label),
-      prompt: safeOperatorCopy(parsed['prompt'], frame, 'prompt', fallback.prompt),
+      routed_label: leadStageLanguage(safeOperatorCopy(parsed['routed_label'], frame, 'routed', fallback.routed_label)),
+      preparing_label: leadStageLanguage(safePreparingLabel(parsed['preparing_label'], frame, fallback.preparing_label)),
+      prompt: leadStageLanguage(safeOperatorCopy(parsed['prompt'], frame, 'prompt', fallback.prompt)),
       missing_facts: Array.isArray(parsed['missing_facts'])
         ? parsed['missing_facts']
           .filter((item): item is string => typeof item === 'string')
