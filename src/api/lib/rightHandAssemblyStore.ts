@@ -41,6 +41,7 @@ export interface RightHandEstimateLine {
   readonly price_cents?: number | null;
   readonly confidence?: string;
   readonly matched_by?: 'line_id' | 'keyword';
+  readonly suggested?: boolean;
   readonly proposal_line?: ProposalLineItem | null;
 }
 
@@ -281,7 +282,7 @@ function buildItemizedEstimatorLine(line: EstimatorResponse['itemized_lines'][nu
     source_label: sourceLabelForTier(tier),
     source_ref: line.source_ref ?? `variance-band:${line.scope_tag}`,
     open_item: false,
-    flags: [line.scope_tag],
+    flags: line.suggested === true ? [line.scope_tag, 'suggested'] : [line.scope_tag],
     tier,
     division,
     quantity: line.quantity,
@@ -291,6 +292,7 @@ function buildItemizedEstimatorLine(line: EstimatorResponse['itemized_lines'][nu
     price_cents: line.extended_cents,
     confidence: line.confidence,
     ...(line.matched_by ? { matched_by: line.matched_by } : {}),
+    ...(line.suggested === true ? { suggested: true } : {}),
     proposal_line: proposalLineFor({ id, label, costCode: line.cost_code, quantity: line.quantity, uom: line.uom, unitCents: line.unit_cents, extendedCents: line.extended_cents }),
   };
 }
@@ -530,7 +532,8 @@ export function buildRightHandEstimateArtifact(params: {
   // Placeholders + gaps are NOT estimate lines (walk finding: "client name
   // TBD" rows wearing "Needs pricing" stamps). They live on open_items and
   // render as their own section.
-  const openItems = uniqueStrings(params.openItems, gapItems);
+  const questionItems = (params.estimatorResponse.questions ?? []).map((q) => `Needs your call: ${q.topic}`);
+  const openItems = uniqueStrings(questionItems, params.openItems, gapItems);
   const lines = recomputeDivisionSubtotals([...workLines, ...allowanceLines, ...unmatchedLines]);
   const draftOnlyPricedLines = lines.some((line) => line.price_cents !== null && line.price_cents !== undefined && line.source_type !== 'company_data');
   const blockedReasons = uniqueStrings(

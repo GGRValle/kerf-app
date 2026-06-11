@@ -47,6 +47,8 @@ export class RunnerError extends Error {
  * real project entity IDs.
  */
 export interface RunnerInputs {
+  /** Operator's stated scope narrative (feeds extrapolation pass-2). */
+  readonly scopeNarrative?: string;
   readonly tenantId: EntityId;
   readonly projectArchetype: ProjectTypeTag;
   readonly scopeTags: readonly ScopeTag[];

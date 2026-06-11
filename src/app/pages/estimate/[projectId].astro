@@ -28,6 +28,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
 const rhPricedLines = rightHandDraft?.lines.filter((line) => typeof line.extended_cents === 'number' && line.extended_cents > 0) ?? [];
 const rhOpenLines = rightHandDraft?.lines.filter((line) => line.open_item || !(typeof line.extended_cents === 'number' && line.extended_cents > 0)) ?? [];
 const rhTotalCents = rhPricedLines.filter((line) => !line.flags.includes('removed')).reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
+const rhSuggestedCents = rhPricedLines.filter((line) => !line.flags.includes('removed') && line.flags.includes('suggested')).reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
 const qtyFor = (line: { quantity?: number; uom?: string }) => (
   typeof line.quantity === 'number' && line.uom ? `${line.quantity.toLocaleString('en-US')} ${line.uom}` : ''
 );
@@ -103,7 +104,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
       {rightHandDraft ? (
         <>
           {rhPricedLines.length === 0 ? <p class="es-empty">Right Hand captured the scope, but the draft still needs pricing.</p> : null}
-          {rhPricedLines.filter((line) => !line.flags.includes('removed')).map((line) => (
+          {rhPricedLines.filter((line) => !line.flags.includes('removed') && !line.flags.includes('suggested')).map((line) => (
             <div class="es-row" data-line-id={line.id}>
               <span class="es-ln-label">
                 {line.label}
@@ -121,6 +122,25 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
               </span>
             </div>
           ))}
+          {rhPricedLines.some((line) => line.flags.includes('suggested') && !line.flags.includes('removed')) ? (
+            <div class="es-suggested">
+              <h3>Suggested for this scope — keep or remove</h3>
+              {rhPricedLines.filter((line) => line.flags.includes('suggested') && !line.flags.includes('removed')).map((line) => (
+                <div class="es-row es-row-suggested" data-line-id={line.id}>
+                  <span class="es-ln-label">
+                    {line.label}
+                    <span class="es-tag es-suggested-tag">Suggested</span>
+                    {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
+                    {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
+                  </span>
+                  <span class="es-ln-num">{qtyFor(line)}</span>
+                  <span class="es-ln-num">{typeof line.unit_cents === 'number' ? fmt(line.unit_cents) + '/' + (line.uom ?? 'unit') : ''}</span>
+                  <span class="es-ln-num strong">{fmt(line.extended_cents ?? 0)}</span>
+                  <span class="es-ln-edit"><button class="es-btn es-btn-mini" type="button" data-remove-suggested={line.id}>Remove</button></span>
+                </div>
+              ))}
+            </div>
+          ) : null}
           {rhPricedLines.some((line) => line.flags.includes('removed')) ? (
             <div class="es-removed-row">
               Removed ({rhPricedLines.filter((line) => line.flags.includes('removed')).length})
@@ -130,7 +150,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
             </div>
           ) : null}
           <div class="es-totals">
-            <span class="strong">Operator total {fmt(rhTotalCents)}</span>
+            <span class="strong">Operator total {fmt(rhTotalCents)}{rhSuggestedCents > 0 ? <span class="es-suggested-split"> — includes {fmt(rhSuggestedCents)} suggested, review</span> : null}</span>
             <span class={rightHandDraft.gate.allowed ? 'es-recon ok' : 'es-recon bad'}>
               {rightHandDraft.gate.allowed ? 'review-ready' : 'source basis required before file/send'}
             </span>
@@ -258,6 +278,12 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
       if (Object.keys(body).length === 0) return;
       if (Number.isNaN(body['quantity'] as number) || Number.isNaN(body['unit_cents'] as number)) { alert('Numbers only.'); return; }
       if (await patchLine(lineId, body)) window.location.reload();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-remove-suggested]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const lineId = btn.getAttribute('data-remove-suggested') ?? '';
+      if (await patchLine(lineId, { removed: true })) window.location.reload();
     });
   });
   document.querySelectorAll<HTMLButtonElement>('[data-restore-line]').forEach((btn) => {

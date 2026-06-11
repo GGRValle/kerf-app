@@ -996,6 +996,30 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
   const lines = draft.lines.map((item, i) => (i === idx ? nextLine : item));
   const next = { ...draft, lines, updated_at: new Date().toISOString() };
   await store.save(next);
+  // Training signal (D-061, extrapolation card): keep/remove of a SUGGESTED
+  // line is the operator teaching scope judgment. Reuses the registered
+  // suggestion.overridden event type - no schema change.
+  if (removedRaw !== undefined && line.flags.includes('suggested')) {
+    try {
+      const { eventStore } = getApiDeps();
+      await appendValidatedEvent(
+        { store: eventStore, tenant_id: tenant, correlation_id: draft.deal_id ?? draft.project_id },
+        {
+          type: 'suggestion.overridden',
+          suggestion_id: `scope_suggestion_${line.cost_code ?? lineId}`,
+          surface: 'estimate.scope_suggestion',
+          suggestion_payload: {
+            line_id: line.cost_code ?? lineId,
+            label: line.label.slice(0, 120),
+            estimate_id: draft.estimate_id,
+          },
+          chosen_alternative: { action: removedRaw === true ? 'removed' : 'kept' },
+          reason_text: removedRaw === true ? 'operator removed suggested scope line' : 'operator restored suggested scope line',
+          source_refs: [{ kind: 'doc', uri: `kerf://estimate/${draft.estimate_id}/suggestion/${lineId}`, excerpt: line.label.slice(0, 80) }],
+        },
+      );
+    } catch { /* the edit succeeded; the signal is best-effort */ }
+  }
   return c.json({ ok: true, draft: next, edited_line_id: lineId });
 });
 

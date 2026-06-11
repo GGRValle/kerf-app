@@ -213,6 +213,7 @@ function parseRawItemizedLine(raw: unknown, index: number): RawItemizedLine {
   const costCodeRaw = raw['cost_code'];
   const costCode = typeof costCodeRaw === 'string' ? costCodeRaw : typeof costCodeRaw === 'number' ? String(costCodeRaw) : null;
   return {
+    ...(raw['suggested'] === true ? { suggested: true } : {}),
     line_id: lineId ?? null,
     cost_code: costCode ?? null,
     scope_tag: scopeTag,
@@ -401,6 +402,7 @@ export function enforceTrustDiscipline(
       unit_cents: unitCents,
       extended_cents: extended,
       ...(match ? { matched_by: match.matched_by } : {}),
+      ...(rawLine.suggested === true ? { suggested: true } : {}),
       confidence,
       source_ref: rate?.source_ref ?? rawLine.source_ref,
     });
@@ -487,4 +489,44 @@ function stripCodeFence(text: string): string {
   const fenceRe = /^```(?:json)?\s*([\s\S]*?)\s*```$/i;
   const match = fenceRe.exec(text);
   return match !== null ? (match[1] ?? text).trim() : text;
+}
+
+/** Parse the extrapolation pass response: suggestions + questions. Advisory
+ * fields coerce; qty stays strict-positive; anything unparseable -> empty
+ * (the hot path never dies on a bad second pass). */
+export function parseSuggestionsResponse(content: string): {
+  readonly suggestions: readonly { readonly line_id: string; readonly qty: number; readonly reason: string }[];
+  readonly questions: readonly { readonly topic: string; readonly why: string }[];
+} {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripCodeFence(content.trim()));
+  } catch {
+    parsed = parseModelJsonObject(content);
+  }
+  if (typeof parsed !== 'object' || parsed === null) return { suggestions: [], questions: [] };
+  const obj = parsed as Record<string, unknown>;
+  const suggestions: { line_id: string; qty: number; reason: string }[] = [];
+  if (Array.isArray(obj['suggestions'])) {
+    for (const raw of obj['suggestions']) {
+      if (typeof raw !== 'object' || raw === null) continue;
+      const r = raw as Record<string, unknown>;
+      const lineId = typeof r['line_id'] === 'string' ? r['line_id'].trim() : typeof r['line_id'] === 'number' ? String(r['line_id']) : '';
+      const qty = r['qty'] ?? r['quantity'];
+      if (!lineId || !(typeof qty === 'number' && Number.isFinite(qty) && qty > 0)) continue;
+      const reason = typeof r['reason'] === 'string' ? r['reason'].replace(/\s+/g, ' ').trim().slice(0, 90) : '';
+      suggestions.push({ line_id: lineId, qty, reason });
+    }
+  }
+  const questions: { topic: string; why: string }[] = [];
+  if (Array.isArray(obj['questions'])) {
+    for (const raw of obj['questions']) {
+      if (typeof raw !== 'object' || raw === null) continue;
+      const r = raw as Record<string, unknown>;
+      const topic = typeof r['topic'] === 'string' ? r['topic'].replace(/\s+/g, ' ').trim().slice(0, 120) : '';
+      if (!topic) continue;
+      questions.push({ topic, why: typeof r['why'] === 'string' ? r['why'].replace(/\s+/g, ' ').trim().slice(0, 120) : '' });
+    }
+  }
+  return { suggestions: suggestions.slice(0, 18), questions: questions.slice(0, 5) };
 }

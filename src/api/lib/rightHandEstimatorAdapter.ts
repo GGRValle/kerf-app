@@ -151,6 +151,7 @@ export function buildEstimatorInputsFromRightHand(params: {
     tenantId: params.tenant,
     projectArchetype: archetype,
     scopeTags: uniqueScopeTags(params.classification.scopeTags),
+    scopeNarrative: [params.workingDraft.rawText, params.workingDraft.scope.join('; ')].filter(Boolean).join(' — ').slice(0, 2000),
     operatorNotes: notes.join('\n').slice(0, 6000),
     invocationId: params.invocationId,
     requestedAt: params.requestedAt,
