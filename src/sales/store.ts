@@ -123,6 +123,46 @@ export function dealById(tenant: PersistenceTenantId, dealId: string): Deal | un
   return getSalesStore(tenant).deals.find((d) => d.id === dealId);
 }
 
+export function upsertEstimatingDeal(input: {
+  readonly tenant: PersistenceTenantId;
+  readonly dealId: string;
+  readonly name: string;
+  readonly clientName?: string | null;
+  readonly valueCents: number;
+  readonly source: string;
+  readonly createdAt: string;
+}): Deal {
+  const store = getSalesStore(input.tenant);
+  const idx = store.deals.findIndex((d) => d.id === input.dealId);
+  const cleanName = input.name.replace(/\s+/g, ' ').trim().slice(0, 120) || 'Right Hand estimate';
+  const cleanClient = input.clientName?.replace(/\s+/g, ' ').trim().slice(0, 120) || 'Client TBD';
+  const value = Number.isInteger(input.valueCents) && input.valueCents >= 0 ? input.valueCents : 0;
+  if (idx >= 0) {
+    const existing = store.deals[idx]!;
+    const next: Deal = {
+      ...existing,
+      name: cleanName || existing.name,
+      client_name: existing.client_name === 'Client TBD' ? cleanClient : existing.client_name,
+      stage: existing.stage === 'won' || existing.stage === 'lost' ? existing.stage : 'estimating',
+      value_cents: Math.max(existing.value_cents, value),
+    };
+    store.deals[idx] = next;
+    return next;
+  }
+  const deal: Deal = {
+    id: input.dealId,
+    tenant: input.tenant,
+    name: cleanName,
+    client_name: cleanClient,
+    stage: 'estimating',
+    value_cents: value,
+    source: input.source,
+    created_at: input.createdAt,
+  };
+  store.deals.push(deal);
+  return deal;
+}
+
 export function catalogItemById(tenant: PersistenceTenantId, itemId: string): CatalogItem | undefined {
   return getSalesStore(tenant).items.find((i) => i.id === itemId);
 }

@@ -52,6 +52,8 @@ export interface EstimateArtifactReplyLineContext {
 
 export interface EstimateArtifactReplyContext {
   readonly estimate_id: string;
+  readonly anchor_type?: string;
+  readonly deal_id?: string;
   readonly project_id: string;
   readonly title: string;
   readonly status: string;
@@ -804,6 +806,8 @@ function estimateArtifactPrompt(input: ResolveReplyInput): string {
   return [
     'READ ONLY: this is visible estimate context. It cannot save, send, file, approve, price, or mutate anything.',
     `estimate_id: ${artifact.estimate_id}`,
+    `anchor_type: ${artifact.anchor_type ?? 'project'}`,
+    `deal_id: ${artifact.deal_id ?? 'none'}`,
     `project_id: ${artifact.project_id}`,
     `title: ${artifact.title}`,
     `status: ${artifact.status}`,

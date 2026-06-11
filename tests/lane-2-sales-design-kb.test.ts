@@ -35,6 +35,7 @@ import {
   LANE2_SURFACES,
   getSalesStore,
   resetSalesStore,
+  upsertEstimatingDeal,
   type EstimateLine,
   type CatalogItem,
 } from '../src/sales/index.js';
@@ -212,6 +213,25 @@ test('GET /sales/deals returns pipeline columns for the tenant', async () => {
   assert.equal(body.tenant, 'tenant_ggr');
   assert.ok(Array.isArray(body.columns));
   assert.ok(body.deals.length > 0);
+});
+
+test('Right Hand estimating creates a lead-stage deal without minting a project', () => {
+  const deal = upsertEstimatingDeal({
+    tenant: 'tenant_ggr',
+    dealId: 'deal_rh_rodriguez',
+    name: 'Rodriguez kitchen estimate draft',
+    clientName: 'Rodriguez',
+    valueCents: 7_500_000,
+    source: 'Right Hand',
+    createdAt: '2026-06-11T12:00:00.000Z',
+  });
+  assert.equal(deal.stage, 'estimating');
+  assert.equal(deal.project_id, undefined);
+  assert.equal(deal.value_cents, 7_500_000);
+
+  const storeDeal = getSalesStore('tenant_ggr').deals.find((item) => item.id === 'deal_rh_rodriguez');
+  assert.equal(storeDeal?.stage, 'estimating');
+  assert.equal(storeDeal?.project_id, undefined);
 });
 
 test('POST pull without confirm is gated (409); with confirm it writes', async () => {

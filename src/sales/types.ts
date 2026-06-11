@@ -133,7 +133,7 @@ export interface Deal {
   readonly value_cents: Cents;
   readonly source: string;
   readonly created_at: string;
-  /** Set once the lead enters Design — the working job/project id. */
+  /** Set only after the operator explicitly converts the lead into a project. */
   readonly project_id?: string;
 }
 

@@ -12,11 +12,13 @@ import { buildRightHandEstimateArtifact, createMemoryRightHandEstimateStore, res
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
 import type { ScopeClassifier } from '../src/api/lib/rightHandEstimatorAdapter.js';
 import { deriveWorkingDraftFields, mergeWorkingDraftFields } from '../src/voice/realtime/workingDraft.js';
+import { getSalesStore, resetSalesStore } from '../src/sales/index.js';
 
 async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
   const dir = await mkdtemp(path.join(tmpdir(), 'kerf-rh-assembly-'));
   process.env['PERSISTENCE_DIR'] = dir;
   resetApiDepsForTests();
+  resetSalesStore();
   const estimateStore = createMemoryRightHandEstimateStore();
   const scopeClassifier: ScopeClassifier = async ({ workingDraft }) => {
     const text = `${workingDraft.rawText} ${workingDraft.scope.join(' ')}`.toLowerCase();
@@ -135,6 +137,7 @@ async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
     delete process.env['PERSISTENCE_DIR'];
     resetApiDepsForTests();
     resetRightHandEstimateStoreForTests();
+    resetSalesStore();
     await rm(dir, { recursive: true, force: true });
   }
 }
@@ -159,6 +162,7 @@ function tinyDraft(tenant_id: 'tenant_ggr' | 'tenant_valle', estimate_id: string
   return {
     version: 2 as const,
     tenant_id,
+    anchor_type: 'project' as const,
     project_id: `proj_${estimate_id}`,
     estimate_id,
     conversation_id: `conv_${estimate_id}`,
@@ -267,8 +271,13 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
     assert.equal(res.status, 200);
     const body = await res.json() as {
       status: string;
+      anchor_type: string;
+      deal_id: string;
+      project_id: null;
       route: string;
       draft: {
+        anchor_type: string;
+        deal_id: string;
         project_id: string;
         estimate_id: string;
         artifact_state: { durable_record: boolean; filed: boolean; sent: boolean };
@@ -290,7 +299,14 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
       };
     };
     assert.equal(body.status, 'assembling');
-    assert.match(body.route, /^\/estimate\/rh_rh_uppers_walk\?estimate_id=/);
+    assert.equal(body.anchor_type, 'deal');
+    assert.equal(body.project_id, null);
+    assert.match(body.deal_id, /^deal_rh_rh_uppers_walk$/);
+    assert.equal(body.draft.anchor_type, 'deal');
+    assert.equal(body.draft.deal_id, body.deal_id);
+    assert.equal(body.draft.project_id, body.deal_id);
+    assert.match(body.route, /^\/estimate\/deal_rh_rh_uppers_walk\?estimate_id=/);
+    assert.match(body.route, /deal_id=deal_rh_rh_uppers_walk/);
     assert.equal(body.draft.artifact_state.durable_record, true);
     assert.equal(body.draft.artifact_state.filed, false);
     assert.equal(body.draft.artifact_state.sent, false);
@@ -305,12 +321,25 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
     assert.ok(body.draft.gate.blocked_reasons.includes('source_basis_required'));
     assert.match(body.draft.pricing_data_label, /Mixed draft pricing/i);
 
+    const deal = getSalesStore('tenant_ggr').deals.find((item) => item.id === body.deal_id);
+    assert.ok(deal, 'Right Hand assembly should create a lead-stage deal');
+    assert.equal(deal.stage, 'estimating');
+    assert.equal(deal.project_id, undefined);
+    assert.equal(deal.name, body.draft.title);
+    assert.ok(deal.value_cents > 0);
+
     const search = await app.request('/right-hand/estimates/search?q=Uppers%20kitchen%20estimate');
     assert.equal(search.status, 200);
     const searchBody = await search.json() as { estimates: readonly { estimate_id: string; route: string }[] };
     assert.equal(searchBody.estimates.length, 1);
     assert.equal(searchBody.estimates[0]?.estimate_id, body.draft.estimate_id);
     assert.equal(searchBody.estimates[0]?.route, body.route);
+
+    const pipeline = await app.request('/sales/deals');
+    assert.equal(pipeline.status, 200);
+    const pipelineBody = await pipeline.json() as { columns: readonly { stage: string; deals: readonly { id: string; project_id?: string }[] }[] };
+    const estimating = pipelineBody.columns.find((column) => column.stage === 'estimating');
+    assert.ok(estimating?.deals.some((item) => item.id === body.deal_id && item.project_id === undefined));
 
     const reload = await app.request(`/right-hand/estimates/${body.draft.estimate_id}`);
     assert.equal(reload.status, 200);

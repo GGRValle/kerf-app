@@ -46,6 +46,8 @@ export interface RightHandEstimateLine {
 export interface RightHandEstimateDraft {
   readonly version: 2;
   readonly tenant_id: PersistenceTenantId;
+  readonly anchor_type: 'deal' | 'project';
+  readonly deal_id?: string;
   readonly project_id: string;
   readonly estimate_id: string;
   readonly conversation_id: string;
@@ -72,6 +74,8 @@ export interface RightHandEstimateDraft {
 
 export interface EstimateStoreSummary {
   readonly estimate_id: string;
+  readonly anchor_type: RightHandEstimateDraft['anchor_type'];
+  readonly deal_id?: string;
   readonly project_id: string;
   readonly title: string;
   readonly route: string;
@@ -299,6 +303,27 @@ export function projectIdForRightHandAssembly(params: {
   return `rh_${cleanConversationId(params.conversationId)}`;
 }
 
+export function dealIdForRightHandAssembly(params: {
+  readonly explicitDealId?: unknown;
+  readonly currentPath?: unknown;
+  readonly conversationId: string;
+  readonly workingDraft: {
+    readonly known_entities: readonly { type: string; id?: string }[];
+  };
+}): string {
+  const explicit = cleanSegment(params.explicitDealId, '');
+  if (explicit) return explicit;
+  if (typeof params.currentPath === 'string') {
+    const match = params.currentPath.match(/^\/(?:sales|estimate)\/(deal_[A-Za-z0-9_-]+)(?:\/|$)/);
+    if (match?.[1]) return match[1];
+  }
+  const dealEntity = params.workingDraft.known_entities.find((entity) =>
+    (entity.type === 'lead' || entity.type === 'deal') && entity.id,
+  );
+  if (dealEntity?.id) return cleanSegment(dealEntity.id, `deal_rh_${params.conversationId}`);
+  return `deal_rh_${cleanConversationId(params.conversationId)}`;
+}
+
 export function estimateIdForRightHandAssembly(conversationId: string, projectId: string): string {
   return `rhe_${cleanSegment(projectId, 'project')}_${cleanConversationId(conversationId)}`.slice(0, 120);
 }
@@ -413,6 +438,8 @@ function recomputeDivisionSubtotals(lines: readonly RightHandEstimateLine[]): re
 
 export function buildRightHandEstimateArtifact(params: {
   readonly tenant: PersistenceTenantId;
+  readonly anchorType?: 'deal' | 'project';
+  readonly dealId?: string;
   readonly projectId: string;
   readonly estimateId: string;
   readonly conversationId: string;
@@ -456,13 +483,15 @@ export function buildRightHandEstimateArtifact(params: {
   return {
     version: 2,
     tenant_id: params.tenant,
+    anchor_type: params.anchorType ?? 'project',
+    ...(params.dealId ? { deal_id: params.dealId } : {}),
     project_id: params.projectId,
     estimate_id: params.estimateId,
     conversation_id: cleanConversationId(params.conversationId),
     title,
     status: 'draft_for_review',
     updated_at: (params.now ?? new Date()).toISOString(),
-    route: `/estimate/${encodeURIComponent(params.projectId)}?estimate_id=${encodeURIComponent(params.estimateId)}&rh_conversation=${encodeURIComponent(params.conversationId)}`,
+    route: `/estimate/${encodeURIComponent(params.projectId)}?estimate_id=${encodeURIComponent(params.estimateId)}&rh_conversation=${encodeURIComponent(params.conversationId)}${params.dealId ? `&deal_id=${encodeURIComponent(params.dealId)}` : ''}`,
     lines,
     open_items: openItems,
     source_refs: uniqueStrings(params.sourceRefs, [sourceRef]),
@@ -506,6 +535,8 @@ export function createMemoryRightHandEstimateStore(): RightHandEstimateStore {
       return drafts.filter((draft) => {
         const haystack = normalized([
           draft.title,
+          draft.anchor_type,
+          draft.deal_id ?? '',
           draft.project_id,
           draft.estimate_id,
           draft.conversation_id,
@@ -546,6 +577,8 @@ export function createPgRightHandEstimateStore(connectionString: string): RightH
       await ensureReady();
       const searchText = normalized([
         draft.title,
+        draft.anchor_type,
+        draft.deal_id ?? '',
         draft.project_id,
         draft.estimate_id,
         draft.conversation_id,
