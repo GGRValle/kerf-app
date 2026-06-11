@@ -110,7 +110,8 @@ test('hosting registry approves openai://gpt-4o-transcribe-realtime', () => {
 test('realtime session config is transcription-only — no assistant audio output', () => {
   const config = buildTranscriptionSessionConfig();
   assert.ok('input_audio_transcription' in config, 'must request transcription');
-  assert.deepEqual(config['input_audio_transcription'], { model: 'gpt-4o-transcribe' });
+  assert.deepEqual(config['input_audio_transcription'], { model: 'gpt-4o-transcribe', language: 'en' }); // language pin (ASR hallucination guard, walk 2026-06-11)
+  assert.equal((config['turn_detection'] as { threshold?: number }).threshold, 0.6); // VAD ignores breath/room noise
   // No speech-to-speech / audio output ever: these keys must be absent.
   assert.equal('modalities' in config, false);
   assert.equal('voice' in config, false);

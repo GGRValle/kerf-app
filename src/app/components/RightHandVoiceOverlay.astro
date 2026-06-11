@@ -207,6 +207,7 @@ const { t } = createLayoutContext();
     bubbleLabelFor,
     shouldNavigateAfterAssembly,
   } from '../../voice/realtime/overlayResume.js';
+  import { checkTranscript } from '../../voice/realtime/transcriptGuard.js';
 
   type OverlayState = 'idle' | 'listening' | 'sorting' | 'reply' | 'confirm' | 'resolved' | 'fallback' | 'capped';
 
@@ -1464,6 +1465,15 @@ const { t } = createLayoutContext();
       if (timerEl) timerEl.textContent = '';
       setCaption('');
       clearComposer();
+      {
+        const verdict = checkTranscript(clean);
+        if (!verdict.ok) {
+          // ASR hallucination guard: drop the phantom turn, tell the operator.
+          setStatus('Didn\u2019t catch that \u2014 try again.');
+          showActions('listening');
+          return;
+        }
+      }
       appendTurn('operator', clean);
       const turnsForModel = [...conversationTurns];
       const wantsAssembly = textRequestsEstimateAssembly(clean) || textLooksLikeEstimatePageUpdate(clean);

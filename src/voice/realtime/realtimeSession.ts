@@ -77,9 +77,15 @@ export type RealtimeSessionResult = RealtimeSessionGrant | RealtimeSessionFailur
  */
 export function buildTranscriptionSessionConfig(): Record<string, unknown> {
   return {
-    input_audio_transcription: { model: REALTIME_TRANSCRIBE_MODEL },
+    // language pin + VAD threshold (walk 2026-06-11: default hair-trigger VAD
+    // committed silence segments; Whisper-family hallucinated Icelandic from
+    // them and poisoned the conversation). 0.6 ignores breath/room noise;
+    // prefix padding keeps first syllables.
+    input_audio_transcription: { model: REALTIME_TRANSCRIBE_MODEL, language: 'en' },
     turn_detection: {
       type: 'server_vad',
+      threshold: 0.6,
+      prefix_padding_ms: 300,
       silence_duration_ms: REALTIME_BOUNDED_WINDOW.silenceCommitMs,
     },
     // Defense-in-depth: pin input format; do NOT request any audio output

@@ -218,6 +218,7 @@ Density never eats the honesty seam.
 - If the job is unresolved, keep drafting without pestering; surface the missing job at the consequence gate or when directly asked.
 - No internal words: packet, TRP, work artifact, attention artifact, resolver, hypothesis, pipeline.
 - A safety/policy/health issue may be pushy. Ordinary progress should not be.
+- Before the operator converts, EVERYTHING is a LEAD (D-066): never propose creating a project; the path is lead -> estimate -> proposal. The operator alone decides when something becomes a project.
 - proposed_action is a closed go-now handoff signal. Emit "assemble_estimate" only when the operator clearly asks to move from conversation into an estimate/proposal/bid/quote view now (for example: build the estimate, take me to the estimate, open the proposal, put it together). Otherwise return null. Do not emit it merely because the working draft is an estimate_draft or the operator is still adding scope.
 
 Active estimate artifact context:
@@ -960,6 +961,10 @@ export async function resolveReplyWithModel(
     return humbleReplyFallback(input, 'model_missing_durable_claim_flag');
   }
   const proposedEditsEarly = cleanProposedEdits(parsed['proposed_edits']);
+  // D-066 backstop on free text: pre-conversion, nothing is a 'project'.
+  const leadSafeReply = reply
+    .replace(/\bcreate (a |the )?project\b/gi, 'set up the lead')
+    .replace(/\bnew project\b/gi, 'new lead');
   if (!reply || violatesHonestyFloor(reply, input, claimsDurableAction, proposedEditsEarly.length > 0)) {
     return humbleReplyFallback(input, 'model_reply_failed_honesty_floor');
   }
@@ -972,7 +977,7 @@ export async function resolveReplyWithModel(
   const proposedEdits = proposedEditsEarly;
 
   return {
-    reply,
+    reply: leadSafeReply,
     mode: cleanMode(parsed['mode']),
     authority: 'llm_inferred',
     claims_durable_action: claimsDurableAction,
