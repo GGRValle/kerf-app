@@ -762,3 +762,47 @@ test('Unknown confidence value coerces to MODEL_INFERENCE (safe default)', () =>
   const clean = enforceTrustDiscipline({ raw, bandsByScope });
   assert.equal(clean.line_items[0]?.confidence, 'MODEL_INFERENCE');
 });
+
+test('parseRawResponse recovers prose-wrapped JSON (path-truth loop: deployed 503 estimate_assembly_failed)', () => {
+  const inner = JSON.stringify({
+    line_items: [],
+    itemized_lines: [],
+    project_total_cents: null,
+    gaps_flagged: [{ scope_tag: 'cabinetry', reason: 'probe' }],
+    operator_summary: 'probe',
+  });
+  // The exact live failure shape: model led with prose before the JSON object.
+  const parsed = parseRawResponse(`Here is the estimate JSON you asked for:\n${inner}\nLet me know if you need changes.`);
+  assert.equal(parsed.operator_summary, 'probe');
+  assert.equal(parsed.gaps_flagged.length, 1);
+  // Pure garbage must still throw — recovery is for wrapped JSON only.
+  assert.throws(() => parseRawResponse('no json here at all'), /JSON parse failed/);
+});
+
+test('parseRawResponse coerces advisory itemized fields, stays strict on money (live 3/3 repro: numeric division_code)', () => {
+  const parsed = parseRawResponse(JSON.stringify({
+    line_items: [],
+    itemized_lines: [{
+      scope_tag: 'cabinetry', line_id: 12, cost_code: 12,
+      division_code: 12, division_label: null, description: null,
+      quantity: 36, uom: 7, unit_cents: 0, confidence: null, source_ref: 7,
+    }],
+    project_total_cents: null,
+    gaps_flagged: [],
+    operator_summary: 'probe',
+  }));
+  const line = parsed.itemized_lines[0]!;
+  assert.equal(line.division_code, '12');
+  assert.equal(line.description, 'cabinetry');
+  assert.equal(line.uom, '7'); // numbers stringify; empty/null falls back to 'EA'
+  assert.equal(line.confidence, 'MODEL_INFERENCE');
+  assert.equal(line.source_ref, null);
+  assert.equal(line.line_id, '12');
+  // Money stays strict: bad quantity / unit_cents still throw.
+  const bad = (patch: Record<string, unknown>) => JSON.stringify({
+    line_items: [], itemized_lines: [{ scope_tag: 'cabinetry', division_code: '12', division_label: 'Cabinetry', description: 'x', quantity: 1, uom: 'LF', unit_cents: 0, confidence: 'HIGH', source_ref: null, ...patch }],
+    project_total_cents: null, gaps_flagged: [], operator_summary: 'probe',
+  });
+  assert.throws(() => parseRawResponse(bad({ quantity: 'thirty six' })), /quantity must be a positive number/);
+  assert.throws(() => parseRawResponse(bad({ unit_cents: 10.5 })), /unit_cents must be a non-negative integer/);
+});
