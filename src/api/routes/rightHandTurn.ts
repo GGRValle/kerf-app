@@ -45,9 +45,9 @@ import {
 } from '../lib/rightHandConversationStore.js';
 import {
   buildRightHandEstimateArtifact,
+  dealIdForRightHandAssembly,
   getRightHandEstimateStore,
   estimateIdForRightHandAssembly,
-  projectIdForRightHandAssembly,
   type RightHandEstimateStore,
 } from '../lib/rightHandAssemblyStore.js';
 import {
@@ -59,6 +59,7 @@ import { createPgEventLog } from '../lib/sharedEstimateEventLog.js';
 import { makeGroqModelCaller, type ModelCaller } from '../../estimator/orchestration/index.js';
 import { runEstimate } from '../../runner/estimateRunner.js';
 import { createFixtureTenantStore } from '../../tenant/index.js';
+import { upsertEstimatingDeal } from '../../sales/index.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiSession, requireApiTenant } from '../lib/tenantContext.js';
@@ -155,6 +156,13 @@ function estimateStoreFor(deps: RightHandTurnRouteDeps): RightHandEstimateStore 
   return deps.estimateStore ?? getRightHandEstimateStore();
 }
 
+function rightHandDraftVisibleTotalCents(draft: { readonly lines: readonly { readonly extended_cents?: number | null; readonly price_cents?: number | null }[] }): number {
+  return draft.lines.reduce((sum, line) => {
+    const value = line.extended_cents ?? line.price_cents ?? null;
+    return typeof value === 'number' && Number.isInteger(value) && value > 0 ? sum + value : sum;
+  }, 0);
+}
+
 function cleanEstimateId(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const clean = value.trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 140);
@@ -202,6 +210,8 @@ function buildEstimateArtifactReplyContext(draft: Awaited<ReturnType<RightHandEs
   }, 0);
   return {
     estimate_id: draft.estimate_id,
+    anchor_type: draft.anchor_type,
+    deal_id: draft.deal_id,
     project_id: draft.project_id,
     title: draft.title,
     status: draft.status,
@@ -760,12 +770,16 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
       })
     : mergeWorkingDraftFields(clientDraft, { proposed_artifact: 'estimate_draft' });
 
-  const projectId = projectIdForRightHandAssembly({
-    explicitProjectId: body['project_id'],
+  const dealId = dealIdForRightHandAssembly({
+    explicitDealId: body['deal_id'] ?? body['dealId'],
     currentPath: body['currentPath'],
     conversationId,
     workingDraft,
   });
+  // Compatibility key for the existing /estimate/:id page. This is deliberately
+  // the deal id, not an auto-minted project id; project creation is a later,
+  // explicit win/conversion gate.
+  const projectId = dealId;
   const estimateId = estimateIdForRightHandAssembly(conversationId, projectId);
   const routeDeps = resolveDeps();
   const now = routeDeps.now?.() ?? new Date();
@@ -813,6 +827,8 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
 
   const draft = buildRightHandEstimateArtifact({
     tenant,
+    anchorType: 'deal',
+    dealId,
     projectId,
     estimateId,
     conversationId,
@@ -831,6 +847,15 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     ],
     now,
   });
+  const deal = upsertEstimatingDeal({
+    tenant,
+    dealId,
+    name: draft.title,
+    clientName: workingDraft.clientName,
+    valueCents: rightHandDraftVisibleTotalCents(draft),
+    source: 'Right Hand',
+    createdAt: requestedAt,
+  });
   await estimateStoreFor(routeDeps).save(draft);
 
   const snapshot = buildRightHandConversationSnapshot({
@@ -848,15 +873,17 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     ...snapshot,
     working_draft: mergeWorkingDraftFields(workingDraft, {
       proposed_artifact: 'estimate_draft',
-      next_action: 'estimate draft opened for review',
-      source_refs: [`right-hand-estimate:${estimateId}`],
+      next_action: 'lead-stage estimate draft opened for review',
+      source_refs: [`right-hand-estimate:${estimateId}`, `right-hand-deal:${dealId}`],
     }),
   });
 
   return c.json({
     ok: true,
     status: 'assembling',
-    project_id: projectId,
+    anchor_type: 'deal',
+    deal_id: deal.id,
+    project_id: null,
     estimate_id: estimateId,
     route: draft.route,
     draft,
@@ -879,6 +906,8 @@ rightHandTurnRoutes.get('/right-hand/estimates/search', async (c) => {
   return c.json({
     estimates: drafts.map((draft) => ({
       estimate_id: draft.estimate_id,
+      anchor_type: draft.anchor_type,
+      deal_id: draft.deal_id,
       project_id: draft.project_id,
       title: draft.title,
       route: draft.route,

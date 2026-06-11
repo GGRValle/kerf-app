@@ -17,6 +17,8 @@ const projectId = Astro.params.projectId ?? '';
 const rightHandEstimateId = Astro.url.searchParams.get('estimate_id') ?? '';
 const rightHandConversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
 const rightHandDraft = rightHandEstimateId ? await getRightHandEstimateStore().read(tenant, rightHandEstimateId) : null;
+const isLeadStageEstimate = rightHandDraft?.anchor_type === 'deal';
+const dealId = rightHandDraft?.deal_id ?? Astro.url.searchParams.get('deal_id') ?? '';
 const lines = estimateLinesForProject(tenant, projectId);
 const breakdowns = lines.map(lineBreakdown);
 const totals = estimateTotals(lines);
@@ -32,10 +34,10 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
 ---
 
 <Layout title="Estimate builder" activeHref="/sales">
-  <article class="es-page" data-project={projectId} data-project-id={projectId} data-rh-conversation={rightHandConversationId}>
-    <a class="es-back" href={`/design/${projectId}`}>‹ Design</a>
+  <article class="es-page" data-project={projectId} data-project-id={projectId} data-deal-id={dealId} data-rh-conversation={rightHandConversationId}>
+    <a class="es-back" href={isLeadStageEstimate && dealId ? `/sales/${dealId}` : `/design/${projectId}`}>{isLeadStageEstimate ? '‹ Deal' : '‹ Design'}</a>
     <header>
-      <div class="es-crumb">Estimate · {projectId}</div>
+      <div class="es-crumb">{isLeadStageEstimate ? 'Lead estimate' : 'Estimate'} · {isLeadStageEstimate && dealId ? dealId : projectId}</div>
       <h1>Estimate builder</h1>
       <p class="es-sub">Operator total = client total. Markup is folded into the price, never shown to the client.</p>
     </header>
@@ -46,7 +48,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
           <div>
             <div class="es-crumb">Right Hand assembly · draft for review</div>
             <h2>{rightHandDraft.title}</h2>
-            <p class="es-meta">Source-labeled working estimate. Not filed, not sent, and not money-authoritative until you review and confirm.</p>
+            <p class="es-meta">Source-labeled lead-stage estimate. Not filed, not sent, not a project, and not money-authoritative until you review and confirm.</p>
             <p class="es-seed-label">{rightHandDraft.pricing_data_label}</p>
             <p class="es-meta">Policy gate fired · {rightHandDraft.gate.allowed ? 'draft allowed' : `downstream action blocked: ${rightHandDraft.gate.blocked_reasons.join(', ') || 'review required'}`}</p>
           </div>
