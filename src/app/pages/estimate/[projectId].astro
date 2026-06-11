@@ -56,6 +56,10 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
           <a class="es-rh-bubble" href={`/right-hand?conversation_id=${rightHandDraft.conversation_id}&return_to=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`}>
             Back to conversation
           </a>
+          <div class="es-wb-actions">
+            <a class="es-btn" href={`/api/v1/right-hand/estimates/${encodeURIComponent(rightHandEstimateId)}/workbook`} download>Download workbook</a>
+            <label class="es-btn es-wb-import">Import edited workbook<input id="wb-import" type="file" accept=".xlsx" hidden /></label>
+          </div>
         </div>
                 {rightHandDraft.open_items.length > 0 ? (
           <div class="es-rh-open">
@@ -280,6 +284,19 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
       if (await patchLine(lineId, body)) window.location.reload();
     });
   });
+  document.getElementById('wb-import')?.addEventListener('change', async (ev) => {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const res = await fetch(`/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/workbook-import`, {
+      method: 'POST', credentials: 'same-origin', body: file,
+    });
+    const out = await res.json().catch(() => null) as { ok?: boolean; applied?: string[]; added?: string[]; removed?: string[]; rejected?: { reason: string }[]; structural_error?: string } | null;
+    if (!res.ok || !out?.ok) { alert('Workbook rejected: ' + (out?.structural_error ?? res.status)); input.value = ''; return; }
+    alert(`Imported — ${out.applied?.length ?? 0} edited, ${out.added?.length ?? 0} added, ${out.removed?.length ?? 0} removed` + ((out.rejected?.length ?? 0) > 0 ? `, ${out.rejected!.length} rejected` : ''));
+    window.location.reload();
+  });
+
   document.querySelectorAll<HTMLButtonElement>('[data-remove-suggested]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const lineId = btn.getAttribute('data-remove-suggested') ?? '';
