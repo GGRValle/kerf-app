@@ -9,6 +9,7 @@ import type {
 } from '../../persistence/events.js';
 import { generateEventId } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import { listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 import {
@@ -64,6 +65,25 @@ fieldDailyRoutes.post('/projects/:id/daily-log/entries', async (c) => {
   const projectId = c.req.param('id');
   const body = await c.req.json<Record<string, unknown>>();
   const tenant = requireApiTenant(c);
+
+  // Daily logs are project-stage artifacts (D-066). A capture against an
+  // unknown project must fail honestly, not 201 into the void (path-truth
+  // loop finding: orphan events keyed to phantom ids were invisible on every
+  // read surface). Existence = fixture project OR a project.created event —
+  // never bootstrapped by previously-orphaned events.
+  const isFixtureProject = listLane23Projects(tenant).some((p) => p.project_id === projectId);
+  if (!isFixtureProject) {
+    const { tenantReader } = getApiDeps();
+    const priorEvents = await tenantReader.readEventsForProject(tenant, projectId);
+    const projectCreated = priorEvents.some((event) => event.type === 'project.created');
+    if (!projectCreated) {
+      return c.json({
+        error: 'project_not_found',
+        project_id: projectId,
+        operator_message: 'No active job matches this capture. If this is for a lead, attach it to the deal instead — nothing was saved.',
+      }, 404);
+    }
+  }
 
   const entryKind = parseEntryKind(body['entry_kind'] ?? 'progress_update');
   if (entryKind === null) {
