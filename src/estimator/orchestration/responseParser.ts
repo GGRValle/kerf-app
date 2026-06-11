@@ -22,6 +22,7 @@
 //      LOW-band line items get hedge language injected if absent.
 
 import { isScopeTag, type ScopeTag } from '../../projects/index.js';
+import { parseModelJsonObject } from '../../voice/realtime/modelJson.js';
 import type { EntityId } from '../../blackboard/types.js';
 import type { RenderedBand } from '../varianceIntegration/index.js';
 import {
@@ -80,9 +81,14 @@ export function parseRawResponse(content: string): RawEstimatorResponse {
   try {
     parsed = JSON.parse(stripped);
   } catch (err) {
-    throw new ResponseParseError(
-      `JSON parse failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    // Prose-wrapped JSON ("Here is the estimate: {...}") — same recovery as the
+    // reply path (#314): string-aware brace-depth extraction before failing.
+    parsed = parseModelJsonObject(stripped);
+    if (parsed === null) {
+      throw new ResponseParseError(
+        `JSON parse failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 
   if (!isObject(parsed)) {
@@ -168,6 +174,12 @@ function parseRawLineItem(raw: unknown, index: number): RawLineItem {
   };
 }
 
+function coerceAdvisoryString(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return '';
+}
+
 function parseRawItemizedLine(raw: unknown, index: number): RawItemizedLine {
   if (!isObject(raw)) {
     throw new ResponseParseError(`itemized_lines[${index}] must be an object`);
@@ -176,46 +188,30 @@ function parseRawItemizedLine(raw: unknown, index: number): RawItemizedLine {
   if (typeof scopeTag !== 'string') {
     throw new ResponseParseError(`itemized_lines[${index}].scope_tag must be a string`);
   }
-  const divisionCode = raw['division_code'];
-  if (typeof divisionCode !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].division_code must be a string`);
-  }
-  const divisionLabel = raw['division_label'];
-  if (typeof divisionLabel !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].division_label must be a string`);
-  }
-  const description = raw['description'];
-  if (typeof description !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].description must be a string`);
-  }
+  // Advisory fields coerce instead of throwing (path-truth loop, live 3/3 repro:
+  // groq emits numeric division codes; per the rate-card design the LIBRARY
+  // assigns divisions/uom/labels downstream, so a type drift here must not kill
+  // the assembly). Money fields (quantity, unit_cents) stay strict below.
+  const divisionCode = coerceAdvisoryString(raw['division_code']);
+  const divisionLabel = coerceAdvisoryString(raw['division_label']);
+  const description = coerceAdvisoryString(raw['description']) || scopeTag;
   const quantity = raw['quantity'];
   if (!(typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0)) {
     throw new ResponseParseError(`itemized_lines[${index}].quantity must be a positive number`);
   }
-  const uom = raw['uom'];
-  if (typeof uom !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].uom must be a string`);
-  }
+  const uom = coerceAdvisoryString(raw['uom']) || 'EA';
   const unitCents = raw['unit_cents'];
   if (!(typeof unitCents === 'number' && Number.isInteger(unitCents) && unitCents >= 0)) {
     throw new ResponseParseError(`itemized_lines[${index}].unit_cents must be a non-negative integer`);
   }
-  const confidence = raw['confidence'];
-  if (typeof confidence !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].confidence must be a string`);
-  }
-  const sourceRef = raw['source_ref'];
-  if (sourceRef !== null && typeof sourceRef !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].source_ref must be a string or null`);
-  }
-  const lineId = raw['line_id'];
-  if (lineId !== undefined && lineId !== null && typeof lineId !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].line_id must be a string or null when present`);
-  }
-  const costCode = raw['cost_code'];
-  if (costCode !== undefined && costCode !== null && typeof costCode !== 'string') {
-    throw new ResponseParseError(`itemized_lines[${index}].cost_code must be a string or null when present`);
-  }
+  const confidenceRaw = raw['confidence'];
+  const confidence = typeof confidenceRaw === 'string' ? confidenceRaw : 'MODEL_INFERENCE';
+  const sourceRefRaw = raw['source_ref'];
+  const sourceRef = typeof sourceRefRaw === 'string' ? sourceRefRaw : null;
+  const lineIdRaw = raw['line_id'];
+  const lineId = typeof lineIdRaw === 'string' ? lineIdRaw : typeof lineIdRaw === 'number' ? String(lineIdRaw) : null;
+  const costCodeRaw = raw['cost_code'];
+  const costCode = typeof costCodeRaw === 'string' ? costCodeRaw : typeof costCodeRaw === 'number' ? String(costCodeRaw) : null;
   return {
     line_id: lineId ?? null,
     cost_code: costCode ?? null,

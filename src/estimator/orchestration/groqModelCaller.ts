@@ -46,6 +46,7 @@ export function makeGroqModelCaller(opts: MakeGroqModelCallerOpts): ModelCaller 
         purpose: input.purpose,
         workflow: input.workflow,
         temperature: 0,
+        response_format: { type: 'json_object' },
         requestedAt: input.requestedAt,
       },
       groqDeps,
