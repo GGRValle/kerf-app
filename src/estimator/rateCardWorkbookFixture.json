@@ -1,0 +1,1961 @@
+{
+ "source": "RightHand_Estimate_Workbook_v2_1.xlsx",
+ "region": "San Diego, CA",
+ "labor_factor": 1.13,
+ "material_factor": 1.06,
+ "gm": 0.35,
+ "base_lead": 70,
+ "base_helper": 42,
+ "lines": [
+  {
+   "cost_code": "GC-001",
+   "label": "Project management & supervision",
+   "uom": "WK",
+   "unit_cents": 48677,
+   "division": "01",
+   "lead_hrs": 4.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "GC-002",
+   "label": "Site protection — floors/dust/zipwall",
+   "uom": "LS",
+   "unit_cents": 118652,
+   "division": "01",
+   "lead_hrs": 4.0,
+   "help_hrs": 4.0,
+   "rate_cost": 250.0
+  },
+  {
+   "cost_code": "GC-003",
+   "label": "Daily cleanup & protection upkeep",
+   "uom": "WK",
+   "unit_cents": 18680,
+   "division": "01",
+   "lead_hrs": 0.0,
+   "help_hrs": 2.0,
+   "rate_cost": 25.0
+  },
+  {
+   "cost_code": "GC-004",
+   "label": "Final clean & punch list",
+   "uom": "LS",
+   "unit_cents": 102345,
+   "division": "01",
+   "lead_hrs": 4.0,
+   "help_hrs": 4.0,
+   "rate_cost": 150.0
+  },
+  {
+   "cost_code": "GC-005",
+   "label": "Dumpster — 10/12 yd",
+   "uom": "EA",
+   "unit_cents": 106000,
+   "division": "01",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 650.0
+  },
+  {
+   "cost_code": "GC-006",
+   "label": "Trailer load — haul to dump",
+   "uom": "EA",
+   "unit_cents": 63403,
+   "division": "01",
+   "lead_hrs": 2.0,
+   "help_hrs": 2.0,
+   "rate_cost": 150.0
+  },
+  {
+   "cost_code": "GC-007",
+   "label": "Portable toilet",
+   "uom": "MO",
+   "unit_cents": 30169,
+   "division": "01",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 185.0
+  },
+  {
+   "cost_code": "GC-008",
+   "label": "Temporary power / generator",
+   "uom": "MO",
+   "unit_cents": 40769,
+   "division": "01",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 250.0
+  },
+  {
+   "cost_code": "GC-009",
+   "label": "Permit running & inspection coordination",
+   "uom": "LS",
+   "unit_cents": 73015,
+   "division": "01",
+   "lead_hrs": 6.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "GC-010",
+   "label": "Permit fees — pass-through at cost",
+   "uom": "LS",
+   "unit_cents": 0,
+   "division": "01",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "GC-011",
+   "label": "Plans / engineering coordination",
+   "uom": "LS",
+   "unit_cents": 48677,
+   "division": "01",
+   "lead_hrs": 4.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "GC-012",
+   "label": "Material procurement & staging",
+   "uom": "LS",
+   "unit_cents": 63280,
+   "division": "01",
+   "lead_hrs": 4.0,
+   "help_hrs": 2.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "GC-013",
+   "label": "Mobilization / demobilization",
+   "uom": "LS",
+   "unit_cents": 55249,
+   "division": "01",
+   "lead_hrs": 2.0,
+   "help_hrs": 2.0,
+   "rate_cost": 100.0
+  },
+  {
+   "cost_code": "DM-001",
+   "label": "Kitchen demo — full (cabinets/counters/splash)",
+   "uom": "LS",
+   "unit_cents": 263102,
+   "division": "02",
+   "lead_hrs": 8.0,
+   "help_hrs": 16.0,
+   "rate_cost": 300.0
+  },
+  {
+   "cost_code": "DM-002",
+   "label": "Bathroom demo — full gut",
+   "uom": "EA",
+   "unit_cents": 271255,
+   "division": "02",
+   "lead_hrs": 8.0,
+   "help_hrs": 16.0,
+   "rate_cost": 350.0
+  },
+  {
+   "cost_code": "DM-003",
+   "label": "Cabinet/vanity removal only",
+   "uom": "LF",
+   "unit_cents": 5841,
+   "division": "02",
+   "lead_hrs": 0.3,
+   "help_hrs": 0.3,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "DM-004",
+   "label": "Countertop removal — stone",
+   "uom": "SF",
+   "unit_cents": 1258,
+   "division": "02",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.15,
+   "rate_cost": 1.0
+  },
+  {
+   "cost_code": "DM-005",
+   "label": "Flooring removal — wood/engineered",
+   "uom": "SF",
+   "unit_cents": 408,
+   "division": "02",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 2.5
+  },
+  {
+   "cost_code": "DM-006",
+   "label": "Flooring removal — tile + thinset grind",
+   "uom": "SF",
+   "unit_cents": 652,
+   "division": "02",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 4.0
+  },
+  {
+   "cost_code": "DM-007",
+   "label": "Flooring removal — carpet & pad",
+   "uom": "SF",
+   "unit_cents": 122,
+   "division": "02",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.75
+  },
+  {
+   "cost_code": "DM-008",
+   "label": "Wall removal — non-bearing",
+   "uom": "LF",
+   "unit_cents": 23548,
+   "division": "02",
+   "lead_hrs": 1.0,
+   "help_hrs": 1.0,
+   "rate_cost": 25.0
+  },
+  {
+   "cost_code": "DM-009",
+   "label": "Wall removal — bearing (structural by Div 06)",
+   "uom": "LF",
+   "unit_cents": 63403,
+   "division": "02",
+   "lead_hrs": 2.0,
+   "help_hrs": 2.0,
+   "rate_cost": 150.0
+  },
+  {
+   "cost_code": "DM-010",
+   "label": "Drywall selective demo",
+   "uom": "SF",
+   "unit_cents": 520,
+   "division": "02",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.06,
+   "rate_cost": 0.5
+  },
+  {
+   "cost_code": "DM-011",
+   "label": "Baseboard/trim removal",
+   "uom": "LF",
+   "unit_cents": 292,
+   "division": "02",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.04,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "DM-012",
+   "label": "Door & frame removal",
+   "uom": "EA",
+   "unit_cents": 9735,
+   "division": "02",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.5,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "DM-013",
+   "label": "Window removal",
+   "uom": "EA",
+   "unit_cents": 21102,
+   "division": "02",
+   "lead_hrs": 1.0,
+   "help_hrs": 1.0,
+   "rate_cost": 10.0
+  },
+  {
+   "cost_code": "DM-014",
+   "label": "Fixture/appliance disconnect & removal",
+   "uom": "EA",
+   "unit_cents": 9735,
+   "division": "02",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.5,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "DM-015",
+   "label": "Concrete sawcut & removal",
+   "uom": "SF",
+   "unit_cents": 1957,
+   "division": "02",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 12.0
+  },
+  {
+   "cost_code": "CN-001",
+   "label": "Footing excavation & form",
+   "uom": "LF",
+   "unit_cents": 7338,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 45.0
+  },
+  {
+   "cost_code": "CN-002",
+   "label": "Concrete footing pour",
+   "uom": "LF",
+   "unit_cents": 6197,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 38.0
+  },
+  {
+   "cost_code": "CN-003",
+   "label": "Slab on grade — 4 in w/ mesh",
+   "uom": "SF",
+   "unit_cents": 1794,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 11.0
+  },
+  {
+   "cost_code": "CN-004",
+   "label": "Slab raise / infill",
+   "uom": "SF",
+   "unit_cents": 2609,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 16.0
+  },
+  {
+   "cost_code": "CN-005",
+   "label": "Stem wall / curb",
+   "uom": "LF",
+   "unit_cents": 8969,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 55.0
+  },
+  {
+   "cost_code": "CN-006",
+   "label": "Flatwork — patio/walk broom finish",
+   "uom": "SF",
+   "unit_cents": 2120,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 13.0
+  },
+  {
+   "cost_code": "CN-007",
+   "label": "Vapor barrier & base prep",
+   "uom": "SF",
+   "unit_cents": 245,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1.5
+  },
+  {
+   "cost_code": "CN-008",
+   "label": "Rebar/dowel into existing",
+   "uom": "EA",
+   "unit_cents": 2935,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 18.0
+  },
+  {
+   "cost_code": "CN-009",
+   "label": "Moisture test / mitigation coat",
+   "uom": "SF",
+   "unit_cents": 367,
+   "division": "03",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 2.25
+  },
+  {
+   "cost_code": "FR-001",
+   "label": "Wall framing — new partition 2x4 @16",
+   "uom": "LF",
+   "unit_cents": 18512,
+   "division": "06",
+   "lead_hrs": 0.8,
+   "help_hrs": 0.8,
+   "rate_cost": 18.0
+  },
+  {
+   "cost_code": "FR-002",
+   "label": "Furring / shimming existing",
+   "uom": "LF",
+   "unit_cents": 6657,
+   "division": "06",
+   "lead_hrs": 0.3,
+   "help_hrs": 0.3,
+   "rate_cost": 5.0
+  },
+  {
+   "cost_code": "FR-003",
+   "label": "Header install — opening to 6 ft",
+   "uom": "EA",
+   "unit_cents": 118652,
+   "division": "06",
+   "lead_hrs": 4.0,
+   "help_hrs": 4.0,
+   "rate_cost": 250.0
+  },
+  {
+   "cost_code": "FR-004",
+   "label": "Beam install — LVL/steel w/ posts",
+   "uom": "EA",
+   "unit_cents": 351458,
+   "division": "06",
+   "lead_hrs": 8.0,
+   "help_hrs": 8.0,
+   "rate_cost": 1200.0
+  },
+  {
+   "cost_code": "FR-005",
+   "label": "Pocket / archway reframe",
+   "uom": "EA",
+   "unit_cents": 165748,
+   "division": "06",
+   "lead_hrs": 6.0,
+   "help_hrs": 6.0,
+   "rate_cost": 300.0
+  },
+  {
+   "cost_code": "FR-006",
+   "label": "Subfloor repair/replace",
+   "uom": "SF",
+   "unit_cents": 1544,
+   "division": "06",
+   "lead_hrs": 0.05,
+   "help_hrs": 0.05,
+   "rate_cost": 3.5
+  },
+  {
+   "cost_code": "FR-007",
+   "label": "Ceiling joist sister/repair",
+   "uom": "EA",
+   "unit_cents": 51988,
+   "division": "06",
+   "lead_hrs": 2.0,
+   "help_hrs": 2.0,
+   "rate_cost": 80.0
+  },
+  {
+   "cost_code": "FR-008",
+   "label": "Blocking/backing for cabinets & fixtures",
+   "uom": "LS",
+   "unit_cents": 71458,
+   "division": "06",
+   "lead_hrs": 3.0,
+   "help_hrs": 3.0,
+   "rate_cost": 80.0
+  },
+  {
+   "cost_code": "FR-009",
+   "label": "Decorative box/recess framing",
+   "uom": "EA",
+   "unit_cents": 114489,
+   "division": "06",
+   "lead_hrs": 6.0,
+   "help_hrs": 3.0,
+   "rate_cost": 120.0
+  },
+  {
+   "cost_code": "FR-010",
+   "label": "Stair tread/riser repair",
+   "uom": "EA",
+   "unit_cents": 30862,
+   "division": "06",
+   "lead_hrs": 2.0,
+   "help_hrs": 0.0,
+   "rate_cost": 40.0
+  },
+  {
+   "cost_code": "FR-011",
+   "label": "Exterior wall infill (opening delete)",
+   "uom": "EA",
+   "unit_cents": 173902,
+   "division": "06",
+   "lead_hrs": 6.0,
+   "help_hrs": 6.0,
+   "rate_cost": 350.0
+  },
+  {
+   "cost_code": "FR-012",
+   "label": "1-hr firewall — 5/8 Type X to code",
+   "uom": "SF",
+   "unit_cents": 1138,
+   "division": "06",
+   "lead_hrs": 0.04,
+   "help_hrs": 0.04,
+   "rate_cost": 2.2
+  },
+  {
+   "cost_code": "FC-001",
+   "label": "Baseboard — 5 in flat stock, supply+install",
+   "uom": "LF",
+   "unit_cents": 1142,
+   "division": "06b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 7.0
+  },
+  {
+   "cost_code": "FC-002",
+   "label": "Baseboard — premium profile",
+   "uom": "LF",
+   "unit_cents": 1794,
+   "division": "06b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 11.0
+  },
+  {
+   "cost_code": "FC-003",
+   "label": "Casing — door/window",
+   "uom": "LF",
+   "unit_cents": 1305,
+   "division": "06b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 8.0
+  },
+  {
+   "cost_code": "FC-004",
+   "label": "Crown molding — standard",
+   "uom": "LF",
+   "unit_cents": 1957,
+   "division": "06b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 12.0
+  },
+  {
+   "cost_code": "FC-005",
+   "label": "Modern flat trim / closure to ceiling",
+   "uom": "LF",
+   "unit_cents": 2283,
+   "division": "06b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 14.0
+  },
+  {
+   "cost_code": "FC-006",
+   "label": "Box beam — shop fabrication",
+   "uom": "LF",
+   "unit_cents": 23646,
+   "division": "06b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 145.0
+  },
+  {
+   "cost_code": "FC-007",
+   "label": "Box beam — site install",
+   "uom": "LF",
+   "unit_cents": 10356,
+   "division": "06b",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.25,
+   "rate_cost": 15.0
+  },
+  {
+   "cost_code": "FC-008",
+   "label": "Wainscot/panel molding",
+   "uom": "SF",
+   "unit_cents": 2283,
+   "division": "06b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 14.0
+  },
+  {
+   "cost_code": "FC-009",
+   "label": "Floating shelves — supply & install",
+   "uom": "EA",
+   "unit_cents": 35389,
+   "division": "06b",
+   "lead_hrs": 1.0,
+   "help_hrs": 0.5,
+   "rate_cost": 120.0
+  },
+  {
+   "cost_code": "FC-010",
+   "label": "Interior door — slab swap",
+   "uom": "EA",
+   "unit_cents": 47608,
+   "division": "06b",
+   "lead_hrs": 1.5,
+   "help_hrs": 0.0,
+   "rate_cost": 180.0
+  },
+  {
+   "cost_code": "FC-011",
+   "label": "Interior door — new prehung",
+   "uom": "EA",
+   "unit_cents": 80125,
+   "division": "06b",
+   "lead_hrs": 2.5,
+   "help_hrs": 1.0,
+   "rate_cost": 260.0
+  },
+  {
+   "cost_code": "FC-012",
+   "label": "Door hardware",
+   "uom": "EA",
+   "unit_cents": 16685,
+   "division": "06b",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.0,
+   "rate_cost": 65.0
+  },
+  {
+   "cost_code": "FC-013",
+   "label": "Closet build-out",
+   "uom": "LF",
+   "unit_cents": 24789,
+   "division": "06b",
+   "lead_hrs": 1.0,
+   "help_hrs": 0.5,
+   "rate_cost": 55.0
+  },
+  {
+   "cost_code": "FC-014",
+   "label": "Window sill/stool & apron",
+   "uom": "EA",
+   "unit_cents": 28038,
+   "division": "06b",
+   "lead_hrs": 1.5,
+   "help_hrs": 0.0,
+   "rate_cost": 60.0
+  },
+  {
+   "cost_code": "CB-001",
+   "label": "Custom cabinetry — base, material+fab",
+   "uom": "LF",
+   "unit_cents": 106000,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 650.0
+  },
+  {
+   "cost_code": "CB-002",
+   "label": "Custom cabinetry — uppers, material+fab",
+   "uom": "LF",
+   "unit_cents": 84800,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 520.0
+  },
+  {
+   "cost_code": "CB-003",
+   "label": "Custom cabinetry — tall/pantry, material+fab",
+   "uom": "LF",
+   "unit_cents": 146769,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 900.0
+  },
+  {
+   "cost_code": "CB-004",
+   "label": "Semi-custom line — installed-equivalent",
+   "uom": "LF",
+   "unit_cents": 65231,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 400.0
+  },
+  {
+   "cost_code": "CB-005",
+   "label": "Reface — doors/fronts/ends on existing boxes",
+   "uom": "LF",
+   "unit_cents": 100292,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 615.0
+  },
+  {
+   "cost_code": "CB-006",
+   "label": "Slab door/front upcharge — premium veneer",
+   "uom": "LF",
+   "unit_cents": 14677,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 90.0
+  },
+  {
+   "cost_code": "CB-007",
+   "label": "Hardwax-oil finish (e.g., Rubio class)",
+   "uom": "LF",
+   "unit_cents": 8969,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 55.0
+  },
+  {
+   "cost_code": "CB-008",
+   "label": "Uppers raised to ceiling + closure",
+   "uom": "LF",
+   "unit_cents": 13862,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 85.0
+  },
+  {
+   "cost_code": "CB-009",
+   "label": "Island add-on — back-side cabinets",
+   "uom": "LF",
+   "unit_cents": 65231,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 400.0
+  },
+  {
+   "cost_code": "CB-010",
+   "label": "Hardware — soft-close pkg",
+   "uom": "EA",
+   "unit_cents": 4566,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 28.0
+  },
+  {
+   "cost_code": "CB-011",
+   "label": "Spice pullout insert",
+   "uom": "EA",
+   "unit_cents": 62785,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 385.0
+  },
+  {
+   "cost_code": "CB-012",
+   "label": "Corner lazy Susan / blind-corner unit",
+   "uom": "EA",
+   "unit_cents": 69308,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 425.0
+  },
+  {
+   "cost_code": "CB-013",
+   "label": "Toe-kick LED provision in cabinetry",
+   "uom": "EA",
+   "unit_cents": 22015,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 135.0
+  },
+  {
+   "cost_code": "CB-014",
+   "label": "Vanity — supplied unit ALLOWANCE",
+   "uom": "EA",
+   "unit_cents": 195692,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1200.0
+  },
+  {
+   "cost_code": "CB-015",
+   "label": "Delivery to site",
+   "uom": "EA",
+   "unit_cents": 48923,
+   "division": "12",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 300.0
+  },
+  {
+   "cost_code": "CB-016",
+   "label": "Install — set/level/scribe",
+   "uom": "LF",
+   "unit_cents": 16550,
+   "division": "12",
+   "lead_hrs": 1.0,
+   "help_hrs": 0.6,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "CT-001",
+   "label": "Quartz — material",
+   "uom": "SF",
+   "unit_cents": 8969,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 55.0
+  },
+  {
+   "cost_code": "CT-002",
+   "label": "Quartzite — material",
+   "uom": "SF",
+   "unit_cents": 12231,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 75.0
+  },
+  {
+   "cost_code": "CT-003",
+   "label": "Honed finish upcharge",
+   "uom": "SF",
+   "unit_cents": 2446,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 15.0
+  },
+  {
+   "cost_code": "CT-004",
+   "label": "Fabrication",
+   "uom": "SF",
+   "unit_cents": 4892,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 30.0
+  },
+  {
+   "cost_code": "CT-005",
+   "label": "Install & seam",
+   "uom": "SF",
+   "unit_cents": 2762,
+   "division": "12b",
+   "lead_hrs": 0.1,
+   "help_hrs": 0.1,
+   "rate_cost": 5.0
+  },
+  {
+   "cost_code": "CT-006",
+   "label": "Template & coordination",
+   "uom": "LS",
+   "unit_cents": 102222,
+   "division": "12b",
+   "lead_hrs": 6.0,
+   "help_hrs": 4.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "CT-007",
+   "label": "Full-height splash — vertical INSTALL premium only",
+   "uom": "SF",
+   "unit_cents": 3588,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 22.0
+  },
+  {
+   "cost_code": "CT-008",
+   "label": "4 in splash",
+   "uom": "LF",
+   "unit_cents": 2935,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 18.0
+  },
+  {
+   "cost_code": "CT-009",
+   "label": "Edge upgrade (mitered/built-up)",
+   "uom": "LF",
+   "unit_cents": 6197,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 38.0
+  },
+  {
+   "cost_code": "CT-010",
+   "label": "Sink/cooktop cutout",
+   "uom": "EA",
+   "unit_cents": 20385,
+   "division": "12b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 125.0
+  },
+  {
+   "cost_code": "DW-001",
+   "label": "Window — retrofit vinyl, supply+install",
+   "uom": "EA",
+   "unit_cents": 71557,
+   "division": "08",
+   "lead_hrs": 2.0,
+   "help_hrs": 2.0,
+   "rate_cost": 200.0
+  },
+  {
+   "cost_code": "DW-002",
+   "label": "Window — new-construction w/ flash+patch",
+   "uom": "EA",
+   "unit_cents": 175606,
+   "division": "08",
+   "lead_hrs": 6.0,
+   "help_hrs": 4.0,
+   "rate_cost": 450.0
+  },
+  {
+   "cost_code": "DW-003",
+   "label": "Patio slider — retrofit",
+   "uom": "EA",
+   "unit_cents": 183883,
+   "division": "08",
+   "lead_hrs": 4.0,
+   "help_hrs": 4.0,
+   "rate_cost": 650.0
+  },
+  {
+   "cost_code": "DW-004",
+   "label": "French doors — supply+install",
+   "uom": "EA",
+   "unit_cents": 875009,
+   "division": "08",
+   "lead_hrs": 8.0,
+   "help_hrs": 6.0,
+   "rate_cost": 4500.0
+  },
+  {
+   "cost_code": "DW-005",
+   "label": "Entry door — prehung exterior",
+   "uom": "EA",
+   "unit_cents": 169280,
+   "division": "08",
+   "lead_hrs": 4.0,
+   "help_hrs": 2.0,
+   "rate_cost": 650.0
+  },
+  {
+   "cost_code": "DW-006",
+   "label": "Pocketing/folding glass wall",
+   "uom": "LF",
+   "unit_cents": 234634,
+   "division": "08",
+   "lead_hrs": 2.0,
+   "help_hrs": 2.0,
+   "rate_cost": 1200.0
+  },
+  {
+   "cost_code": "DW-007",
+   "label": "Skylight — new incl roof tie-in",
+   "uom": "EA",
+   "unit_cents": 248991,
+   "division": "08",
+   "lead_hrs": 6.0,
+   "help_hrs": 4.0,
+   "rate_cost": 900.0
+  },
+  {
+   "cost_code": "DR-001",
+   "label": "Hang & finish — new walls L4",
+   "uom": "SF",
+   "unit_cents": 530,
+   "division": "09a",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 3.25
+  },
+  {
+   "cost_code": "DR-002",
+   "label": "Patch & repair — per location",
+   "uom": "EA",
+   "unit_cents": 32078,
+   "division": "09a",
+   "lead_hrs": 1.5,
+   "help_hrs": 1.0,
+   "rate_cost": 40.0
+  },
+  {
+   "cost_code": "DR-003",
+   "label": "Level 5 smooth-wall finish",
+   "uom": "SF",
+   "unit_cents": 391,
+   "division": "09a",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 2.4
+  },
+  {
+   "cost_code": "DR-004",
+   "label": "Skim coat existing — full wall",
+   "uom": "SF",
+   "unit_cents": 342,
+   "division": "09a",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 2.1
+  },
+  {
+   "cost_code": "DR-005",
+   "label": "Texture match",
+   "uom": "SF",
+   "unit_cents": 228,
+   "division": "09a",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1.4
+  },
+  {
+   "cost_code": "DR-006",
+   "label": "Ceiling repair after recan/HVAC",
+   "uom": "EA",
+   "unit_cents": 41425,
+   "division": "09a",
+   "lead_hrs": 2.0,
+   "help_hrs": 1.0,
+   "rate_cost": 60.0
+  },
+  {
+   "cost_code": "DR-007",
+   "label": "Acoustic ceiling removal & refinish",
+   "uom": "SF",
+   "unit_cents": 734,
+   "division": "09a",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 4.5
+  },
+  {
+   "cost_code": "TL-001",
+   "label": "Tile install — standard format, floor",
+   "uom": "SF",
+   "unit_cents": 1305,
+   "division": "09b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 8.0
+  },
+  {
+   "cost_code": "TL-002",
+   "label": "Tile install — LARGE FORMAT (24in+), floor",
+   "uom": "SF",
+   "unit_cents": 1794,
+   "division": "09b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 11.0
+  },
+  {
+   "cost_code": "TL-003",
+   "label": "Tile — MATERIAL allowance",
+   "uom": "SF",
+   "unit_cents": 978,
+   "division": "09b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 6.0
+  },
+  {
+   "cost_code": "TL-004",
+   "label": "Tile install — wall/splash",
+   "uom": "SF",
+   "unit_cents": 1957,
+   "division": "09b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 12.0
+  },
+  {
+   "cost_code": "TL-005",
+   "label": "Substrate prep / self-leveler",
+   "uom": "SF",
+   "unit_cents": 367,
+   "division": "09b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 2.25
+  },
+  {
+   "cost_code": "TL-006",
+   "label": "Shower pan — hot mop or equal",
+   "uom": "EA",
+   "unit_cents": 81538,
+   "division": "09b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 500.0
+  },
+  {
+   "cost_code": "TL-007",
+   "label": "Shower waterproof — board/liquid system",
+   "uom": "EA",
+   "unit_cents": 138615,
+   "division": "09b",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 850.0
+  },
+  {
+   "cost_code": "TL-008",
+   "label": "Curb & bench build",
+   "uom": "EA",
+   "unit_cents": 75572,
+   "division": "09b",
+   "lead_hrs": 3.0,
+   "help_hrs": 2.0,
+   "rate_cost": 150.0
+  },
+  {
+   "cost_code": "TL-009",
+   "label": "Niche build & waterproof",
+   "uom": "EA",
+   "unit_cents": 46317,
+   "division": "09b",
+   "lead_hrs": 2.0,
+   "help_hrs": 1.0,
+   "rate_cost": 90.0
+  },
+  {
+   "cost_code": "TL-010",
+   "label": "Tile repair — small patch",
+   "uom": "LS",
+   "unit_cents": 79588,
+   "division": "09b",
+   "lead_hrs": 4.0,
+   "help_hrs": 2.0,
+   "rate_cost": 100.0
+  },
+  {
+   "cost_code": "TL-011",
+   "label": "Grout/caulk refresh",
+   "uom": "LS",
+   "unit_cents": 58462,
+   "division": "09b",
+   "lead_hrs": 4.0,
+   "help_hrs": 0.0,
+   "rate_cost": 60.0
+  },
+  {
+   "cost_code": "FL-001",
+   "label": "Engineered wood — material ALLOWANCE",
+   "uom": "SF",
+   "unit_cents": 897,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 5.5
+  },
+  {
+   "cost_code": "FL-002",
+   "label": "Engineered glue-down — install",
+   "uom": "SF",
+   "unit_cents": 571,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 3.5
+  },
+  {
+   "cost_code": "FL-003",
+   "label": "Engineered float/click — install",
+   "uom": "SF",
+   "unit_cents": 489,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 3.0
+  },
+  {
+   "cost_code": "FL-004",
+   "label": "Hardwood sand & refinish",
+   "uom": "SF",
+   "unit_cents": 815,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 5.0
+  },
+  {
+   "cost_code": "FL-005",
+   "label": "Hardwax-oil floor finish system",
+   "uom": "SF",
+   "unit_cents": 978,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 6.0
+  },
+  {
+   "cost_code": "FL-006",
+   "label": "LVP — supply & install",
+   "uom": "SF",
+   "unit_cents": 1223,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 7.5
+  },
+  {
+   "cost_code": "FL-007",
+   "label": "Carpet — supply & install",
+   "uom": "SY",
+   "unit_cents": 8969,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 55.0
+  },
+  {
+   "cost_code": "FL-008",
+   "label": "Floor prep / leveling / moisture",
+   "uom": "SF",
+   "unit_cents": 196,
+   "division": "09c",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1.2
+  },
+  {
+   "cost_code": "FL-009",
+   "label": "Transitions & reducers",
+   "uom": "EA",
+   "unit_cents": 10162,
+   "division": "09c",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.0,
+   "rate_cost": 25.0
+  },
+  {
+   "cost_code": "FL-010",
+   "label": "Stair — retread hardwood",
+   "uom": "EA",
+   "unit_cents": 53217,
+   "division": "09c",
+   "lead_hrs": 2.5,
+   "help_hrs": 1.0,
+   "rate_cost": 95.0
+  },
+  {
+   "cost_code": "PT-001",
+   "label": "Interior — walls only, per room",
+   "uom": "EA",
+   "unit_cents": 73385,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 450.0
+  },
+  {
+   "cost_code": "PT-002",
+   "label": "Interior — walls+ceiling+trim, per room",
+   "uom": "EA",
+   "unit_cents": 122308,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 750.0
+  },
+  {
+   "cost_code": "PT-003",
+   "label": "Interior repaint — by floor area",
+   "uom": "SF",
+   "unit_cents": 506,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 3.1
+  },
+  {
+   "cost_code": "PT-004",
+   "label": "Walls+ceiling — by wall/ceiling SF",
+   "uom": "SF",
+   "unit_cents": 261,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1.6
+  },
+  {
+   "cost_code": "PT-005",
+   "label": "Baseboard/trim paint",
+   "uom": "LF",
+   "unit_cents": 408,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 2.5
+  },
+  {
+   "cost_code": "PT-006",
+   "label": "Cabinet paint — spray finish",
+   "uom": "LF",
+   "unit_cents": 15492,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 95.0
+  },
+  {
+   "cost_code": "PT-007",
+   "label": "Exterior body & trim",
+   "uom": "SF",
+   "unit_cents": 554,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 3.4
+  },
+  {
+   "cost_code": "PT-008",
+   "label": "Specialty stain/seal — wood walls",
+   "uom": "SF",
+   "unit_cents": 1794,
+   "division": "09d",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 11.0
+  },
+  {
+   "cost_code": "PT-009",
+   "label": "Accent/feature piece",
+   "uom": "EA",
+   "unit_cents": 41425,
+   "division": "09d",
+   "lead_hrs": 2.0,
+   "help_hrs": 1.0,
+   "rate_cost": 60.0
+  },
+  {
+   "cost_code": "SP-001",
+   "label": "Mirror install — owner supplied",
+   "uom": "EA",
+   "unit_cents": 19897,
+   "division": "10",
+   "lead_hrs": 1.0,
+   "help_hrs": 0.5,
+   "rate_cost": 25.0
+  },
+  {
+   "cost_code": "SP-002",
+   "label": "Bath accessories set",
+   "uom": "EA",
+   "unit_cents": 30862,
+   "division": "10",
+   "lead_hrs": 2.0,
+   "help_hrs": 0.0,
+   "rate_cost": 40.0
+  },
+  {
+   "cost_code": "SP-003",
+   "label": "Shower glass — frameless, supply+install",
+   "uom": "EA",
+   "unit_cents": 301692,
+   "division": "10",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1850.0
+  },
+  {
+   "cost_code": "SP-004",
+   "label": "Wallpaper installation",
+   "uom": "SF",
+   "unit_cents": 734,
+   "division": "10",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 4.5
+  },
+  {
+   "cost_code": "SP-005",
+   "label": "Wallpaper material ALLOWANCE",
+   "uom": "SF",
+   "unit_cents": 652,
+   "division": "10",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 4.0
+  },
+  {
+   "cost_code": "SP-006",
+   "label": "Closet system — wire",
+   "uom": "LF",
+   "unit_cents": 10845,
+   "division": "10",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.25,
+   "rate_cost": 18.0
+  },
+  {
+   "cost_code": "SP-007",
+   "label": "Closet system — melamine/custom",
+   "uom": "LF",
+   "unit_cents": 22015,
+   "division": "10",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 135.0
+  },
+  {
+   "cost_code": "SP-008",
+   "label": "Fireplace facing modernization",
+   "uom": "LS",
+   "unit_cents": 478018,
+   "division": "10",
+   "lead_hrs": 16.0,
+   "help_hrs": 12.0,
+   "rate_cost": 1200.0
+  },
+  {
+   "cost_code": "SP-009",
+   "label": "TV mount / AV bracket",
+   "uom": "EA",
+   "unit_cents": 21528,
+   "division": "10",
+   "lead_hrs": 1.0,
+   "help_hrs": 0.5,
+   "rate_cost": 35.0
+  },
+  {
+   "cost_code": "AP-001",
+   "label": "Appliance R&R — save & reinstall pkg (6 pc)",
+   "uom": "LS",
+   "unit_cents": 165502,
+   "division": "11",
+   "lead_hrs": 10.0,
+   "help_hrs": 6.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "AP-002",
+   "label": "Appliance install — new, per unit",
+   "uom": "EA",
+   "unit_cents": 30448,
+   "division": "11",
+   "lead_hrs": 1.5,
+   "help_hrs": 1.0,
+   "rate_cost": 30.0
+  },
+  {
+   "cost_code": "AP-003",
+   "label": "Hood install — ducted, minor duct",
+   "uom": "EA",
+   "unit_cents": 70680,
+   "division": "11",
+   "lead_hrs": 3.0,
+   "help_hrs": 2.0,
+   "rate_cost": 120.0
+  },
+  {
+   "cost_code": "AP-004",
+   "label": "Gas appliance set & leak test",
+   "uom": "EA",
+   "unit_cents": 41425,
+   "division": "11",
+   "lead_hrs": 2.0,
+   "help_hrs": 1.0,
+   "rate_cost": 60.0
+  },
+  {
+   "cost_code": "AP-005",
+   "label": "Built-in panel/anti-tip hardware",
+   "uom": "EA",
+   "unit_cents": 56855,
+   "division": "11",
+   "lead_hrs": 3.0,
+   "help_hrs": 1.0,
+   "rate_cost": 80.0
+  },
+  {
+   "cost_code": "PL-001",
+   "label": "Fixture disconnect/reconnect",
+   "uom": "EA",
+   "unit_cents": 37508,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 230.0
+  },
+  {
+   "cost_code": "PL-002",
+   "label": "Faucet/sink install — owner supplied",
+   "uom": "EA",
+   "unit_cents": 30169,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 185.0
+  },
+  {
+   "cost_code": "PL-003",
+   "label": "Toilet — install new",
+   "uom": "EA",
+   "unit_cents": 36692,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 225.0
+  },
+  {
+   "cost_code": "PL-004",
+   "label": "Toilet — unit ALLOWANCE",
+   "uom": "EA",
+   "unit_cents": 73385,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 450.0
+  },
+  {
+   "cost_code": "PL-005",
+   "label": "Shower valve replace (incl access)",
+   "uom": "EA",
+   "unit_cents": 106000,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 650.0
+  },
+  {
+   "cost_code": "PL-006",
+   "label": "Tub set — alcove",
+   "uom": "EA",
+   "unit_cents": 138615,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 850.0
+  },
+  {
+   "cost_code": "PL-007",
+   "label": "Disposal install",
+   "uom": "EA",
+   "unit_cents": 26908,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 165.0
+  },
+  {
+   "cost_code": "PL-008",
+   "label": "Dishwasher hookup",
+   "uom": "EA",
+   "unit_cents": 24462,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 150.0
+  },
+  {
+   "cost_code": "PL-009",
+   "label": "Gas line — run/extend per appliance",
+   "uom": "EA",
+   "unit_cents": 122308,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 750.0
+  },
+  {
+   "cost_code": "PL-010",
+   "label": "Water line relocation — per point",
+   "uom": "EA",
+   "unit_cents": 69308,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 425.0
+  },
+  {
+   "cost_code": "PL-011",
+   "label": "Drain relocation — per point",
+   "uom": "EA",
+   "unit_cents": 93769,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 575.0
+  },
+  {
+   "cost_code": "PL-012",
+   "label": "Sewer lateral replace",
+   "uom": "LF",
+   "unit_cents": 45662,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 280.0
+  },
+  {
+   "cost_code": "PL-013",
+   "label": "Water heater — tank swap",
+   "uom": "EA",
+   "unit_cents": 301692,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1850.0
+  },
+  {
+   "cost_code": "PL-014",
+   "label": "Tankless conversion",
+   "uom": "EA",
+   "unit_cents": 684923,
+   "division": "22",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 4200.0
+  },
+  {
+   "cost_code": "HV-001",
+   "label": "System changeout — condenser+coil+furnace",
+   "uom": "LS",
+   "unit_cents": 2038462,
+   "division": "23",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 12500.0
+  },
+  {
+   "cost_code": "HV-002",
+   "label": "Heat pump conversion",
+   "uom": "LS",
+   "unit_cents": 2527692,
+   "division": "23",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 15500.0
+  },
+  {
+   "cost_code": "HV-003",
+   "label": "Ductwork — replace per run",
+   "uom": "EA",
+   "unit_cents": 73385,
+   "division": "23",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 450.0
+  },
+  {
+   "cost_code": "HV-004",
+   "label": "Full duct replacement (typ home)",
+   "uom": "LS",
+   "unit_cents": 782769,
+   "division": "23",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 4800.0
+  },
+  {
+   "cost_code": "HV-005",
+   "label": "Register/grille swap",
+   "uom": "EA",
+   "unit_cents": 13423,
+   "division": "23",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.0,
+   "rate_cost": 45.0
+  },
+  {
+   "cost_code": "HV-006",
+   "label": "Mini-split — single zone",
+   "uom": "EA",
+   "unit_cents": 684923,
+   "division": "23",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 4200.0
+  },
+  {
+   "cost_code": "HV-007",
+   "label": "Bath exhaust fan — new/upgrade",
+   "uom": "EA",
+   "unit_cents": 60994,
+   "division": "23",
+   "lead_hrs": 2.0,
+   "help_hrs": 1.0,
+   "rate_cost": 180.0
+  },
+  {
+   "cost_code": "HV-008",
+   "label": "Kitchen hood duct — new run",
+   "uom": "LS",
+   "unit_cents": 120357,
+   "division": "23",
+   "lead_hrs": 4.0,
+   "help_hrs": 2.0,
+   "rate_cost": 350.0
+  },
+  {
+   "cost_code": "HV-009",
+   "label": "Smart thermostat",
+   "uom": "EA",
+   "unit_cents": 48046,
+   "division": "23",
+   "lead_hrs": 1.0,
+   "help_hrs": 0.0,
+   "rate_cost": 220.0
+  },
+  {
+   "cost_code": "EL-001",
+   "label": "Panel upgrade — 200A",
+   "uom": "EA",
+   "unit_cents": 619692,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 3800.0
+  },
+  {
+   "cost_code": "EL-002",
+   "label": "Subpanel add",
+   "uom": "EA",
+   "unit_cents": 260923,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1600.0
+  },
+  {
+   "cost_code": "EL-003",
+   "label": "New dedicated circuit",
+   "uom": "EA",
+   "unit_cents": 69308,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 425.0
+  },
+  {
+   "cost_code": "EL-004",
+   "label": "Recessed can — new, per light",
+   "uom": "EA",
+   "unit_cents": 37508,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 230.0
+  },
+  {
+   "cost_code": "EL-005",
+   "label": "Fixture install — owner supplied",
+   "uom": "EA",
+   "unit_cents": 53815,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 330.0
+  },
+  {
+   "cost_code": "EL-006",
+   "label": "Sconce install — owner supplied",
+   "uom": "EA",
+   "unit_cents": 55446,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 340.0
+  },
+  {
+   "cost_code": "EL-007",
+   "label": "Switch/outlet — replace/add",
+   "uom": "EA",
+   "unit_cents": 15492,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 95.0
+  },
+  {
+   "cost_code": "EL-008",
+   "label": "Dimmer / smart switch",
+   "uom": "EA",
+   "unit_cents": 22831,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 140.0
+  },
+  {
+   "cost_code": "EL-009",
+   "label": "Under-cabinet LED — hardwired, per LF",
+   "uom": "LF",
+   "unit_cents": 6849,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 42.0
+  },
+  {
+   "cost_code": "EL-010",
+   "label": "Toe-kick LED — per LF",
+   "uom": "LF",
+   "unit_cents": 4566,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 28.0
+  },
+  {
+   "cost_code": "EL-011",
+   "label": "LED lighting circuit + driver + switch",
+   "uom": "LS",
+   "unit_cents": 106000,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 650.0
+  },
+  {
+   "cost_code": "EL-012",
+   "label": "EV charger circuit",
+   "uom": "EA",
+   "unit_cents": 203846,
+   "division": "26",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 1250.0
+  },
+  {
+   "cost_code": "EL-013",
+   "label": "Smoke/CO to code",
+   "uom": "EA",
+   "unit_cents": 15054,
+   "division": "26",
+   "lead_hrs": 0.5,
+   "help_hrs": 0.0,
+   "rate_cost": 55.0
+  },
+  {
+   "cost_code": "EX-001",
+   "label": "Stucco patch & color coat",
+   "uom": "SF",
+   "unit_cents": 2283,
+   "division": "31",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 14.0
+  },
+  {
+   "cost_code": "EX-002",
+   "label": "Siding repair/replace",
+   "uom": "SF",
+   "unit_cents": 1957,
+   "division": "31",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 12.0
+  },
+  {
+   "cost_code": "EX-003",
+   "label": "Exterior window rehab ALLOWANCE",
+   "uom": "LS",
+   "unit_cents": 407692,
+   "division": "31",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 2500.0
+  },
+  {
+   "cost_code": "EX-004",
+   "label": "Deck — framing & decking",
+   "uom": "SF",
+   "unit_cents": 8969,
+   "division": "31",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 55.0
+  },
+  {
+   "cost_code": "EX-005",
+   "label": "Structure removal (pergola/shed)",
+   "uom": "LS",
+   "unit_cents": 102345,
+   "division": "31",
+   "lead_hrs": 4.0,
+   "help_hrs": 4.0,
+   "rate_cost": 150.0
+  },
+  {
+   "cost_code": "EX-006",
+   "label": "Fence — wood per LF",
+   "uom": "LF",
+   "unit_cents": 13862,
+   "division": "31",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 85.0
+  },
+  {
+   "cost_code": "EX-007",
+   "label": "Drainage — area drain per point",
+   "uom": "EA",
+   "unit_cents": 69308,
+   "division": "31",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 425.0
+  },
+  {
+   "cost_code": "SB-001",
+   "label": "Specialty cabinetry/millwork shop — pass-through",
+   "uom": "LS",
+   "unit_cents": 0,
+   "division": "XX",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "SB-002",
+   "label": "Designer-supplied materials — excluded",
+   "uom": "LS",
+   "unit_cents": 0,
+   "division": "XX",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "SB-003",
+   "label": "Specialty sub — quote-based",
+   "uom": "LS",
+   "unit_cents": 0,
+   "division": "XX",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "SB-004",
+   "label": "Engineering — pass-through",
+   "uom": "LS",
+   "unit_cents": 0,
+   "division": "XX",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  },
+  {
+   "cost_code": "SB-005",
+   "label": "Permit fees — pass-through at cost",
+   "uom": "LS",
+   "unit_cents": 0,
+   "division": "XX",
+   "lead_hrs": 0.0,
+   "help_hrs": 0.0,
+   "rate_cost": 0.0
+  }
+ ]
+}

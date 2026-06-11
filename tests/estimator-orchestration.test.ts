@@ -816,3 +816,39 @@ test('frontier tier policy: selection prefers anthropic when the key is present 
   assert.equal(result.ok, false);
   assert.match((result as { reason: string }).reason, /anthropic fetch failed/);
 });
+
+test('workbook fixture ↔ seed golden test (drift detector — the TL-shift class can never recur silently)', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const fixture = JSON.parse(await readFile(new URL('../src/estimator/rateCardWorkbookFixture.json', import.meta.url), 'utf8')) as {
+    gm: number; labor_factor: number; material_factor: number; base_lead: number; base_helper: number;
+    lines: readonly { cost_code: string; label: string; uom: string; unit_cents: number; division: string; lead_hrs: number; help_hrs: number; rate_cost: number }[];
+  };
+  const card = tenantRateCardFor('tenant_ggr');
+  const byCode = new Map(card.map((l) => [l.cost_code, l]));
+  assert.equal(card.length, fixture.lines.length, 'id-set size matches the canonical workbook');
+  for (const f of fixture.lines) {
+    const line = byCode.get(f.cost_code);
+    assert.ok(line, `seed missing ${f.cost_code}`);
+    assert.equal(line!.label, f.label, `${f.cost_code} label drift`);
+    assert.equal(line!.uom, f.uom, `${f.cost_code} uom drift`);
+    assert.equal(line!.unit_cents, f.unit_cents, `${f.cost_code} sell-cents drift`);
+    assert.equal(line!.kerf_division.code, f.division, `${f.cost_code} division drift`);
+    // the math itself, to the cent
+    const tl = fixture.base_lead * fixture.labor_factor;
+    const th = fixture.base_helper * fixture.labor_factor;
+    const cost = f.lead_hrs * tl + f.help_hrs * th + f.rate_cost * fixture.material_factor;
+    assert.equal(Math.round((cost / (1 - fixture.gm)) * 100), f.unit_cents, `${f.cost_code} sell math`);
+  }
+  // tile-family canary: the v2.1 canonical meanings
+  assert.match(byCode.get('TL-003')!.label, /MATERIAL allowance/i);
+  assert.match(byCode.get('TL-004')!.label, /wall\/splash/i);
+  assert.match(byCode.get('TL-005')!.label, /Substrate prep/i);
+  assert.ok(byCode.get('CT-007'), 'CT-007 full-height splash present');
+  assert.ok(byCode.get('TL-011'), 'TL-011 present');
+  // pass-through rows: rate-less by design, priced 0, review-required
+  for (const sb of ['SB-001', 'SB-002', 'SB-003', 'SB-004', 'SB-005', 'GC-010']) {
+    const line = byCode.get(sb)!;
+    assert.equal(line.unit_cents, 0, `${sb} is quote-required (no seed price)`);
+    assert.equal(line.review_required, true);
+  }
+});
