@@ -199,6 +199,21 @@ const RICARDO_FILLED_RATE_CARD: readonly TenantRateCardLine[] = [
   {"cost_code": "EX-006", "scope_tag": "exterior", "label": "Fence — wood per LF", "kerf_division": {"code": "31", "label": "Exterior & Site"}, "uom": "LF", "unit_cents": 13862, "source_layer": "KERF_SEED", "review_required": true, "keywords": ["fence", "wood"], "source_ref": "kerf://kerf-seed/rate-card/ricardo-filled-v1/EX-006", "ricardo_included": false, "ricardo_quantity": null, "ricardo_sell_total_cents": 0, "ricardo_cost_total_cents": 0},
   {"cost_code": "EX-007", "scope_tag": "exterior", "label": "Drainage — area drain per point", "kerf_division": {"code": "31", "label": "Exterior & Site"}, "uom": "EA", "unit_cents": 69308, "source_layer": "KERF_SEED", "review_required": true, "keywords": ["drainage", "area", "drain", "point"], "source_ref": "kerf://kerf-seed/rate-card/ricardo-filled-v1/EX-007", "ricardo_included": false, "ricardo_quantity": null, "ricardo_sell_total_cents": 0, "ricardo_cost_total_cents": 0},
 ] as const satisfies readonly TenantRateCardLine[];
+
+// ── Kerf division registry (derived from the founder seed; the canonical GGR-19 codes) ──
+const KERF_DIVISION_BY_CODE: ReadonlyMap<string, KerfDivision> = (() => {
+  const byCode = new Map<string, KerfDivision>();
+  for (const line of RICARDO_FILLED_RATE_CARD) {
+    if (!byCode.has(line.kerf_division.code)) byCode.set(line.kerf_division.code, line.kerf_division);
+  }
+  return byCode;
+})();
+
+/** Canonical Kerf division for a code (accepts letter-suffixed GGR codes like 06b, 09a-09d, 12b). */
+export function kerfDivisionForCode(code: string): KerfDivision | null {
+  return KERF_DIVISION_BY_CODE.get(code.trim().toLowerCase()) ?? KERF_DIVISION_BY_CODE.get(code.trim()) ?? null;
+}
+
 export function tenantRateCardFor(tenantId: string): readonly TenantRateCardLine[] { return tenantId === 'tenant_ggr' ? RICARDO_FILLED_RATE_CARD : []; }
 export function isTenantRateCardSourceRef(sourceRef: string | null | undefined): boolean { return typeof sourceRef === 'string' && sourceRef.startsWith('kerf://kerf-seed/rate-card/'); }
 export function ricardoFilledIncludedRows(rateCard: readonly TenantRateCardLine[] = RICARDO_FILLED_RATE_CARD): readonly TenantRateCardLine[] { return rateCard.filter((line) => line.ricardo_included === true); }
