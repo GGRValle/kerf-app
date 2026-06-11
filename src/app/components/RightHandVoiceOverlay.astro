@@ -16,6 +16,7 @@ import { createLayoutContext } from '../lib/createLayoutContext.js';
 const { t } = createLayoutContext();
 ---
 
+<button class="rhvo-bubble" id="rhvo-bubble" type="button" hidden>Back to the conversation</button>
 <div
   class="rhvo"
   id="rh-voice-overlay"
@@ -200,6 +201,12 @@ const { t } = createLayoutContext();
     type TurnResolutionPacket,
   } from '../../voice/realtime/turnResolution.js';
   import type { WorkingDraftFields } from '../../voice/realtime/workingDraft.js';
+  import {
+    readResumeState,
+    writeResumeState,
+    bubbleLabelFor,
+    shouldNavigateAfterAssembly,
+  } from '../../voice/realtime/overlayResume.js';
 
   type OverlayState = 'idle' | 'listening' | 'sorting' | 'reply' | 'confirm' | 'resolved' | 'fallback' | 'capped';
 
@@ -907,6 +914,11 @@ const { t } = createLayoutContext();
       setState('idle');
       persistConversation();
       overlay.hidden = true;
+      if (conversationTurns.length > 0) {
+        // Parked, not gone — the bubble is the continuity affordance.
+        writeResumeState(sessionStorage, { at: Date.now(), href: window.location.pathname });
+        showResumeBubble();
+      }
     };
 
     // ── Routing (no PII in URLs — enums/ids only; transcript stashed in
@@ -921,7 +933,7 @@ const { t } = createLayoutContext();
       if (options.resume) {
         try {
           persistConversation();
-          sessionStorage.setItem('kerf.voiceResume', JSON.stringify({ at: Date.now(), href }));
+          writeResumeState(sessionStorage, { at: Date.now(), href });
         } catch { /* storage may be unavailable; navigation still works */ }
       }
       teardown();
@@ -1469,7 +1481,13 @@ const { t } = createLayoutContext();
           canonicalWorkingDraft = payload.workingDraft;
           replaceTurn(replyIndex, 'right_hand', 'Estimate draft is open. I’m still here if you want to adjust it.');
           persistConversation();
-          window.setTimeout(() => navigate(payload.route, { resume: true }), 180);
+          if (shouldNavigateAfterAssembly({ overlayHidden: overlay.hidden })) {
+            window.setTimeout(() => navigate(payload.route, { resume: true }), 180);
+          } else {
+            // Operator moved on mid-assembly — never yank (walk: "popped in and out").
+            writeResumeState(sessionStorage, { at: Date.now(), href: payload.route, hint: 'Estimate draft ready' });
+            showResumeBubble('Estimate draft ready');
+          }
         });
         return;
       }
@@ -1488,7 +1506,12 @@ const { t } = createLayoutContext();
             canonicalWorkingDraft = assemblyPayload.workingDraft;
             replaceTurn(replyIndex, 'right_hand', 'Estimate draft is open. I’m still here if you want to adjust it.');
             persistConversation();
-            window.setTimeout(() => navigate(assemblyPayload.route, { resume: true }), 180);
+            if (shouldNavigateAfterAssembly({ overlayHidden: overlay.hidden })) {
+              window.setTimeout(() => navigate(assemblyPayload.route, { resume: true }), 180);
+            } else {
+              writeResumeState(sessionStorage, { at: Date.now(), href: assemblyPayload.route, hint: 'Estimate draft ready' });
+              showResumeBubble('Estimate draft ready');
+            }
           });
           return;
         }
@@ -2043,8 +2066,17 @@ const { t } = createLayoutContext();
       }
     };
 
+    const resumeBubble = document.getElementById('rhvo-bubble') as HTMLButtonElement | null;
+    const showResumeBubble = (label?: string) => {
+      if (!resumeBubble) return;
+      resumeBubble.textContent = label ?? bubbleLabelFor(readResumeState(sessionStorage));
+      resumeBubble.hidden = false;
+    };
+    const hideResumeBubble = () => { if (resumeBubble) resumeBubble.hidden = true; };
+
     const openOverlay = (options: { restoreConversation?: boolean } = {}) => {
       if (!overlay.hidden) return;
+      hideResumeBubble();
       setMicActive(false);
       routedLive = false;
       lastInterim = '';
@@ -2165,18 +2197,39 @@ const { t } = createLayoutContext();
       el.addEventListener('click', () => routeMove(el.getAttribute('data-move')));
     });
     try {
-      const resumeRaw = sessionStorage.getItem('kerf.voiceResume');
-      if (resumeRaw) {
-        sessionStorage.removeItem('kerf.voiceResume');
-        window.setTimeout(() => {
-          if (overlay.hidden) openOverlay({ restoreConversation: true });
-        }, 450);
+      // Persistent re-entry bubble (replaces the one-shot auto-open that read
+      // as "the screen popped in and out" and died on reload). State is NOT
+      // consumed here — it survives reloads until the conversation ends.
+      const resumeState = readResumeState(sessionStorage);
+      if (resumeState && overlay.hidden) {
+        showResumeBubble(bubbleLabelFor(resumeState));
       }
     } catch { /* storage may be unavailable; user can tap Speak again */ }
+    resumeBubble?.addEventListener('click', () => {
+      hideResumeBubble();
+      openOverlay({ restoreConversation: true });
+    });
   }
 </script>
 
 <style>
+  .rhvo-bubble {
+    position: fixed;
+    right: 14px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+    z-index: 150;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    background: #1f7a3d;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(10, 14, 18, 0.35);
+    cursor: pointer;
+  }
+  .rhvo-bubble:active { transform: scale(0.97); }
+
   .rhvo {
     position: fixed;
     inset: 0;

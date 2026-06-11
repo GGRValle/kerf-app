@@ -37,7 +37,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
   <article class="es-page" data-project={projectId} data-project-id={projectId} data-deal-id={dealId} data-rh-conversation={rightHandConversationId}>
     <a class="es-back" href={isLeadStageEstimate && dealId ? `/sales/${dealId}` : `/design/${projectId}`}>{isLeadStageEstimate ? '‹ Deal' : '‹ Design'}</a>
     <header>
-      <div class="es-crumb">{isLeadStageEstimate ? 'Lead estimate' : 'Estimate'} · {isLeadStageEstimate && dealId ? dealId : projectId}</div>
+      <div class="es-crumb">{isLeadStageEstimate ? 'LEAD' : 'Estimate'} · {rightHandDraft ? rightHandDraft.title.replace(/\s*estimate draft$/i, '') : (isLeadStageEstimate && dealId ? dealId : projectId)}{isLeadStageEstimate ? ' · estimating' : ''}</div>
       <h1>Estimate builder</h1>
       <p class="es-sub">Operator total = client total. Markup is folded into the price, never shown to the client.</p>
     </header>
@@ -56,23 +56,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
             Back to conversation
           </a>
         </div>
-        <div class="es-rh-lines">
-          {rhPricedLines.length === 0 ? <p class="es-empty">Right Hand captured the scope, but the draft still needs approved rates.</p> : null}
-          {rhPricedLines.map((line) => (
-            <div class="es-rh-line" data-open={line.open_item ? 'true' : 'false'}>
-              <span class="es-ln-label">
-                {line.label}
-                <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
-                {line.open_item ? <span class="es-tag pending">TBD</span> : null}
-                {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
-                {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
-                {qtyFor(line) ? <span class="es-tag">{qtyFor(line)}</span> : null}
-              </span>
-              <span class="es-ln-num strong">{typeof line.extended_cents === 'number' ? fmt(line.extended_cents) : 'Needs pricing'}</span>
-            </div>
-          ))}
-        </div>
-        {rightHandDraft.open_items.length > 0 ? (
+                {rightHandDraft.open_items.length > 0 ? (
           <div class="es-rh-open">
             <strong>Open items</strong>
             {rightHandDraft.open_items.slice(0, 5).map((item) => <span>{item}</span>)}
@@ -181,8 +165,9 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
     ) : null}
 
     <!-- Client view: prices only; markup never appears -->
+    <details class="es-client-toggle">
+      <summary>Show client view <span class="es-meta">(what the client sees — no cost, no markup)</span></summary>
     <section class="es-table es-client">
-      <h2>Client view <span class="es-meta">(what the client sees — no cost, no markup)</span></h2>
       {rightHandDraft ? rhPricedLines.map((line) => (
           <div class="es-row">
             <span class="es-ln-label">{line.label}</span>
@@ -198,6 +183,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
         <span class="strong">Total {fmt(rightHandDraft ? rhTotalCents : totals.client_total_cents)}</span>
       </div>
     </section>
+    </details>
 
     <section class="es-propose">
       <button class="es-btn primary" id="gen-proposal" disabled={rightHandDraft ? rhPricedLines.length === 0 || !rightHandDraft.gate.allowed : breakdowns.length === 0}>Generate proposal draft ›</button>
