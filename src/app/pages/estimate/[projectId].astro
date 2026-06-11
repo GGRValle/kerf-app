@@ -27,7 +27,7 @@ const approvedCount = selectionsForProject(tenant, projectId).filter((s) => s.li
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const rhPricedLines = rightHandDraft?.lines.filter((line) => typeof line.extended_cents === 'number' && line.extended_cents > 0) ?? [];
 const rhOpenLines = rightHandDraft?.lines.filter((line) => line.open_item || !(typeof line.extended_cents === 'number' && line.extended_cents > 0)) ?? [];
-const rhTotalCents = rhPricedLines.reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
+const rhTotalCents = rhPricedLines.filter((line) => !line.flags.includes('removed')).reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
 const qtyFor = (line: { quantity?: number; uom?: string }) => (
   typeof line.quantity === 'number' && line.uom ? `${line.quantity.toLocaleString('en-US')} ${line.uom}` : ''
 );
@@ -103,20 +103,32 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
       {rightHandDraft ? (
         <>
           {rhPricedLines.length === 0 ? <p class="es-empty">Right Hand captured the scope, but the draft still needs pricing.</p> : null}
-          {rhPricedLines.map((line) => (
-            <div class="es-row">
+          {rhPricedLines.filter((line) => !line.flags.includes('removed')).map((line) => (
+            <div class="es-row" data-line-id={line.id}>
               <span class="es-ln-label">
                 {line.label}
                 <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
                 {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
                 {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
                 {line.matched_by ? <span class="es-tag es-match">{line.matched_by === 'line_id' ? 'exact' : 'matched'}</span> : null}
+                {line.flags.includes('operator_edited') ? <span class="es-tag es-edited">edited</span> : null}
               </span>
               <span class="es-ln-num">{qtyFor(line)}</span>
               <span class="es-ln-num">{typeof line.unit_cents === 'number' ? fmt(line.unit_cents) + '/' + (line.uom ?? 'unit') : ''}</span>
               <span class="es-ln-num strong">{fmt(line.extended_cents ?? 0)}</span>
+              <span class="es-ln-edit">
+                <button class="es-btn es-btn-mini" type="button" data-edit-line={line.id} data-qty={line.quantity ?? ''} data-unit={line.unit_cents ?? ''}>Edit</button>
+              </span>
             </div>
           ))}
+          {rhPricedLines.some((line) => line.flags.includes('removed')) ? (
+            <div class="es-removed-row">
+              Removed ({rhPricedLines.filter((line) => line.flags.includes('removed')).length})
+              {rhPricedLines.filter((line) => line.flags.includes('removed')).map((line) => (
+                <button class="es-btn es-btn-mini" type="button" data-restore-line={line.id}>restore {line.label.slice(0, 24)}</button>
+              ))}
+            </div>
+          ) : null}
           <div class="es-totals">
             <span class="strong">Operator total {fmt(rhTotalCents)}</span>
             <span class={rightHandDraft.gate.allowed ? 'es-recon ok' : 'es-recon bad'}>
@@ -213,6 +225,47 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
     if (!res.ok) { alert('Failed (' + res.status + '): ' + (await res.text())); return null; }
     return res.json();
   }
+
+  // Lead-first card Part 5: tap-edit qty / unit override / remove-restore.
+  // D-065 rung-0: server copies tier/source/gate untouched; edits never graduate.
+  const estimateIdParam = new URLSearchParams(window.location.search).get('estimate_id') ?? '';
+  async function patchLine(lineId: string, body: Record<string, unknown>): Promise<boolean> {
+    const res = await fetch(`/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/lines/${encodeURIComponent(lineId)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { alert('Edit failed (' + res.status + '): ' + (await res.text())); return false; }
+    return true;
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-edit-line]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const lineId = btn.getAttribute('data-edit-line') ?? '';
+      const currentQty = btn.getAttribute('data-qty') ?? '';
+      const currentUnit = btn.getAttribute('data-unit') ?? '';
+      const qtyRaw = prompt('Quantity (blank = keep, r = remove line):', currentQty);
+      if (qtyRaw === null) return;
+      if (qtyRaw.trim().toLowerCase() === 'r') {
+        if (await patchLine(lineId, { removed: true })) window.location.reload();
+        return;
+      }
+      const unitRaw = prompt('Unit price in dollars (blank = keep):', currentUnit ? String(Number(currentUnit) / 100) : '');
+      if (unitRaw === null) return;
+      const body: Record<string, unknown> = {};
+      if (qtyRaw.trim()) body['quantity'] = Number(qtyRaw);
+      if (unitRaw.trim()) body['unit_cents'] = Math.round(Number(unitRaw) * 100);
+      if (Object.keys(body).length === 0) return;
+      if (Number.isNaN(body['quantity'] as number) || Number.isNaN(body['unit_cents'] as number)) { alert('Numbers only.'); return; }
+      if (await patchLine(lineId, body)) window.location.reload();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-restore-line]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const lineId = btn.getAttribute('data-restore-line') ?? '';
+      if (await patchLine(lineId, { removed: false })) window.location.reload();
+    });
+  });
 
   document.getElementById('seed')?.addEventListener('click', async () => {
     const out = await post(`/api/v1/estimate/${projectId}/seed-from-selections`, {}, 'Create estimate lines from approved Selections?');

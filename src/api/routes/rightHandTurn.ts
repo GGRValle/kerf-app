@@ -927,6 +927,66 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId', async (c) => {
   return c.json({ draft });
 });
 
+/**
+ * Text-edit a draft line (lead-first card Part 5; founder: "it also needs text").
+ * D-065 rung-0 ONLY: quantity / unit-rate override / remove-restore. Tier,
+ * source label, and gate state NEVER change from a page edit - no graduation,
+ * no library write. Beats 1/2 stay conversational + explicit (write-back card).
+ */
+rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', async (c) => {
+  const tenant = requireApiTenant(c);
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400);
+  }
+  const store = estimateStoreFor(resolveDeps());
+  const draft = await store.read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  const lineId = c.req.param('lineId');
+  const idx = draft.lines.findIndex((line) => line.id === lineId);
+  if (idx < 0) return c.json({ error: 'line_not_found', line_id: lineId }, 404);
+  const line = draft.lines[idx]!;
+
+  const qtyRaw = body['quantity'];
+  const unitRaw = body['unit_cents'];
+  const removedRaw = body['removed'];
+  if (qtyRaw !== undefined && !(typeof qtyRaw === 'number' && Number.isFinite(qtyRaw) && qtyRaw > 0)) {
+    return c.json({ error: 'invalid_quantity' }, 400);
+  }
+  if (unitRaw !== undefined && !(typeof unitRaw === 'number' && Number.isInteger(unitRaw) && unitRaw >= 0)) {
+    return c.json({ error: 'invalid_unit_cents' }, 400);
+  }
+  if (removedRaw !== undefined && typeof removedRaw !== 'boolean') {
+    return c.json({ error: 'invalid_removed' }, 400);
+  }
+
+  const quantity = typeof qtyRaw === 'number' ? qtyRaw : line.quantity;
+  const unitCents = typeof unitRaw === 'number' ? unitRaw : line.unit_cents;
+  const priced = typeof unitCents === 'number' && typeof quantity === 'number';
+  const extended = priced ? Math.round((quantity as number) * (unitCents as number)) : line.extended_cents;
+  const flags = new Set(line.flags);
+  if (qtyRaw !== undefined || unitRaw !== undefined) flags.add('operator_edited');
+  if (removedRaw === true) flags.add('removed');
+  if (removedRaw === false) flags.delete('removed');
+
+  // D-065: tier / source_type / source_label / matched_by are COPIED, never
+  // recomputed - a text edit cannot graduate a line.
+  const nextLine = {
+    ...line,
+    ...(quantity !== undefined ? { quantity } : {}),
+    unit_cents: unitCents ?? null,
+    extended_cents: extended ?? null,
+    price_cents: extended ?? line.price_cents ?? null,
+    flags: [...flags],
+  };
+  const lines = draft.lines.map((item, i) => (i === idx ? nextLine : item));
+  const next = { ...draft, lines, updated_at: new Date().toISOString() };
+  await store.save(next);
+  return c.json({ ok: true, draft: next, edited_line_id: lineId });
+});
+
 rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
   let body: Record<string, unknown>;
   try {
