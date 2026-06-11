@@ -839,6 +839,7 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     gateAllowed: estimateResult.allowed,
     gateBlockedReasons: estimateResult.blockedReasons,
     openItems: workingDraft.open_items,
+    allowances: workingDraft.allowances,
     unmatchedScope: classification.unmatchedScope,
     sourceRefs: [
       ...workingDraft.source_refs,
@@ -850,7 +851,7 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
   const deal = upsertEstimatingDeal({
     tenant,
     dealId,
-    name: draft.title,
+    name: draft.title.replace(/\s*estimate draft$/i, '').trim() || draft.title,
     clientName: workingDraft.clientName,
     valueCents: rightHandDraftVisibleTotalCents(draft),
     source: 'Right Hand',

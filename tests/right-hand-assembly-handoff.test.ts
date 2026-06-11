@@ -325,7 +325,7 @@ test('Right Hand assembly handoff creates a durable source-labeled estimate draf
     assert.ok(deal, 'Right Hand assembly should create a lead-stage deal');
     assert.equal(deal.stage, 'estimating');
     assert.equal(deal.project_id, undefined);
-    assert.equal(deal.name, body.draft.title);
+    assert.equal(deal.name, body.draft.title.replace(/\s*estimate draft$/i, '').trim()); // deal names read clean in the pipeline
     assert.ok(deal.value_cents > 0);
 
     const search = await app.request('/right-hand/estimates/search?q=Uppers%20kitchen%20estimate');
@@ -397,14 +397,14 @@ test('Right Hand assembly persists a draft even when the policy gate blocks down
     assert.ok(body.draft.artifact_state.durable_record);
     assert.equal(body.draft.artifact_state.filed, false);
     assert.equal(body.draft.artifact_state.sent, false);
-    assert.ok(body.draft.open_items.some((item) => /captured - not yet classified: mystery scope/i.test(item)));
-    assert.ok(body.draft.lines.some((line) => /mystery scope TBD/i.test(line.label) && line.source_type === 'allowance' && line.open_item));
+    assert.ok(body.draft.lines.some((line) => /mystery scope — allowance TBD/i.test(line.label) && line.flags.includes('needs_pricing')), 'unmatched scope keeps a flagged allowance LINE (new contract: placeholders are chips, captured scope is a line)');
+    assert.ok(body.draft.lines.some((line) => /mystery scope — allowance TBD/i.test(line.label) && line.source_type === 'allowance' && line.open_item));
 
     const reload = await app.request(`/right-hand/estimates/${body.draft.estimate_id}`);
     assert.equal(reload.status, 200);
     const reloadBody = await reload.json() as { draft: { gate: { allowed: boolean }; open_items: readonly string[] } };
     assert.equal(reloadBody.draft.gate.allowed, false);
-    assert.ok(reloadBody.draft.open_items.some((item) => /mystery scope/i.test(item)));
+    assert.ok(reloadBody.draft.lines.some((line) => /mystery scope — allowance TBD/i.test(line.label)), 'unmatched scope survives reload as a flagged allowance line');
   });
 });
 

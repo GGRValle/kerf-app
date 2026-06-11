@@ -7,7 +7,7 @@ import {
   tenantRateCardFor,
 } from '../../estimator/rateCard.js';
 import type { ProposalLineItem } from '../../proposal/types.js';
-import { defaultLabelForCsiCode } from '../../proposal/csi-divisions.js';
+import { kerfDivisionForCode } from '../../estimator/rateCard.js';
 import type { ScopeTag } from '../../projects/index.js';
 import { cleanConversationId } from './rightHandConversationStore.js';
 
@@ -107,12 +107,20 @@ function estimateTitleFromContext(params: {
   readonly scopeText?: string;
   readonly projectId: string;
 }): string {
-  const seed = cleanTitle(params.titleSeed, '');
+  // A seed like "Alvarez bath remodel: 12 LF vanity cabinets, 80 SF tile"
+  // keeps its name half and drops the scope tail (walk: wordy titles became
+  // wordy deal names).
+  let seed = cleanTitle(params.titleSeed, '');
+  const colonAt = seed.indexOf(':');
+  if (colonAt > 0 && /\b\d+\s*(lf|sf|ea|ls|hr|linear|square)\b/i.test(seed.slice(colonAt))) {
+    seed = seed.slice(0, colonAt).trim();
+  }
   const text = `${seed} ${params.scopeText ?? ''}`.toLowerCase();
   const seedLooksLikeTranscript =
     seed.length > 72 ||
     /^(okay|hey|so|we have|we're|i just|this is|customer|client)\b/i.test(seed) ||
-    /\b(roughly|about|linear feet|square feet|we're going to)\b/i.test(seed);
+    /\b(roughly|about|linear feet|square feet|we're going to)\b/i.test(seed) ||
+    /\b\d+\s*(lf|sf|ea|ls|hr)\b/i.test(seed);
   if (seed && !seedLooksLikeTranscript) {
     return /\bestimate\b/i.test(seed) ? seed : `${seed} estimate draft`;
   }
@@ -176,11 +184,32 @@ function sourceLabelForTier(tier: RightHandEstimateTier): string {
   return 'Needs pricing';
 }
 
+
+function operatorGapText(scope: string, reason: string): string {
+  const r = reason.toLowerCase();
+  if (r.includes('rate-card required') || r.includes('no approved tenant') || r.includes('use an approved tenant rate')) {
+    return `${scope} — needs your rate`;
+  }
+  if (r.includes('no variance band') || r.includes('no historical data') || r.includes('insufficient')) {
+    return `${scope} — needs pricing`;
+  }
+  if (r.includes('source basis')) {
+    return `${scope} — needs a confirmed source before send`;
+  }
+  return `${scope} — ${compact(reason).slice(0, 90)}`;
+}
+
 function cleanDivision(code: string, label: string): RightHandEstimateDivision {
-  const cleanCode = /^[0-9]{2}$/.test(code) ? code : '01';
-  const fallback = defaultLabelForCsiCode(cleanCode) ?? 'General Requirements';
-  const cleanLabel = compact(label || fallback).slice(0, 80) || fallback;
-  return { code: cleanCode, label: cleanLabel, subtotal_cents: 0 };
+  // Validate against the Kerf division registry (the founder's GGR codes,
+  // including letter-suffixed 06b / 09a-09d / 12b — a 2-digit regex collapsed
+  // those to "01" on the 2026-06-10 walk). Registry label wins over model text.
+  const registry = kerfDivisionForCode(code);
+  if (registry !== null) {
+    return { code: registry.code, label: registry.label, subtotal_cents: 0 };
+  }
+  const fallback = kerfDivisionForCode('01');
+  const cleanLabel = compact(label).slice(0, 80) || fallback?.label || 'General Conditions';
+  return { code: fallback?.code ?? '01', label: cleanLabel, subtotal_cents: 0 };
 }
 
 function proposalLineFor(params: {
@@ -450,6 +479,7 @@ export function buildRightHandEstimateArtifact(params: {
   readonly gateAllowed: boolean;
   readonly gateBlockedReasons: readonly string[];
   readonly openItems: readonly string[];
+  readonly allowances?: readonly string[];
   readonly unmatchedScope: readonly string[];
   readonly sourceRefs: readonly string[];
   readonly now?: Date;
@@ -471,10 +501,35 @@ export function buildRightHandEstimateArtifact(params: {
   const estimatorLines = params.estimatorResponse.line_items
     .filter((line) => !itemizedScopes.has(line.scope_tag))
     .map(buildEstimatorLine);
-  const gapItems = params.estimatorResponse.gaps_flagged.map((gap) => `${gap.scope_tag}: ${gap.reason}`);
-  const openItems = uniqueStrings(params.openItems, gapItems, params.unmatchedScope.map((scope) => `captured - not yet classified: ${scope}`));
-  const openLines = openItems.map((item) => buildOpenItemLine(item, sourceRef));
-  const lines = recomputeDivisionSubtotals([...itemizedFromEstimator, ...itemizedFallback, ...estimatorLines, ...openLines]);
+  // Suppression + operator-English (walk 2026-06-10: "captured - not yet
+  // classified" twins and band-gap noise rendered for scopes that already
+  // carried priced lines; gap text read like code). A captured-scope entry or
+  // gap whose scope/text matched a priced line is consumed — genuine no-match
+  // scope keeps its honest open item (nothing-silent intact).
+  const workLines = [...itemizedFromEstimator, ...itemizedFallback, ...estimatorLines];
+  const pricedWorkLines = workLines.filter((line) => typeof line.price_cents === 'number' && line.price_cents > 0);
+  const pricedScopes = new Set(pricedWorkLines.flatMap((line) => line.flags).filter(Boolean));
+  const pricedText = normalized(pricedWorkLines.map((line) => line.label).join(' · '));
+  const gapItems = params.estimatorResponse.gaps_flagged
+    .filter((gap) => !pricedScopes.has(gap.scope_tag))
+    .map((gap) => operatorGapText(gap.scope_tag, gap.reason));
+  // Genuine estimate content stays in the LINE list: conversation allowances
+  // ("flooring species TBD") and captured scope no line covered (the 4-ft
+  // arched hood) render as flagged allowance lines — nothing-silent intact.
+  const allowanceLines = uniqueStrings(params.allowances)
+    .filter((item) => !pricedText.includes(normalized(item)))
+    .map((item) => buildOpenItemLine(item, sourceRef, 'needs_pricing'));
+  const unmatchedLines = params.unmatchedScope
+    .filter((scope) => {
+      const probe = normalized(scope);
+      return probe.length > 0 && !pricedText.includes(probe);
+    })
+    .map((scope) => buildOpenItemLine(`${scope} — allowance TBD`, sourceRef, 'needs_pricing'));
+  // Placeholders + gaps are NOT estimate lines (walk finding: "client name
+  // TBD" rows wearing "Needs pricing" stamps). They live on open_items and
+  // render as their own section.
+  const openItems = uniqueStrings(params.openItems, gapItems);
+  const lines = recomputeDivisionSubtotals([...workLines, ...allowanceLines, ...unmatchedLines]);
   const draftOnlyPricedLines = lines.some((line) => line.price_cents !== null && line.price_cents !== undefined && line.source_type !== 'company_data');
   const blockedReasons = uniqueStrings(
     params.gateBlockedReasons,

@@ -74,13 +74,21 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
         </div>
         {rightHandDraft.open_items.length > 0 ? (
           <div class="es-rh-open">
-            <strong>Open placeholders</strong>
-            {rightHandDraft.open_items.map((item) => <span>{item}</span>)}
+            <strong>Open items</strong>
+            {rightHandDraft.open_items.slice(0, 5).map((item) => <span>{item}</span>)}
+            {rightHandDraft.open_items.length > 5 ? (
+              <details class="es-rh-open-more">
+                <summary>Show all ({rightHandDraft.open_items.length})</summary>
+                {rightHandDraft.open_items.slice(5).map((item) => <span>{item}</span>)}
+              </details>
+            ) : null}
           </div>
         ) : null}
       </section>
     ) : null}
 
+    <details class="es-editor">
+      <summary>Add or adjust lines</summary>
     <div class="es-toolbar">
       <button class="es-btn" id="seed" data-approved={approvedCount}>Seed from approved Selections ({approvedCount})</button>
       <button class="es-btn" id="add-toggle">+ Add line</button>
@@ -103,6 +111,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
       <input id="ln-markup" type="number" step="1" min="0" value="3000" placeholder="Markup bps" />
       <button class="es-btn primary" id="add-go" type="button">Add</button>
     </form>
+    </details>
 
     <!-- Operator view: cost + markup + client price -->
     <section class="es-table">
