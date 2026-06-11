@@ -25,6 +25,8 @@ import type { TenantRateCardLine } from '../rateCard.js';
 export interface EstimatorInputs {
   readonly tenantId: EntityId;
   readonly projectArchetype: ProjectTypeTag;
+  /** Operator's stated scope as natural language (feeds the extrapolation pass). */
+  readonly scopeNarrative?: string;
   /** Scopes the operator wants priced. Each becomes a variance-band query. */
   readonly scopeTags: readonly ScopeTag[];
   readonly operatorNotes?: string;
@@ -61,6 +63,7 @@ export interface RawLineItem {
 }
 
 export interface RawItemizedLine {
+  readonly suggested?: boolean;
   readonly line_id?: string | null;
   readonly cost_code?: string | null;
   readonly scope_tag: string;
@@ -88,6 +91,7 @@ export interface RawGap {
  *   - All `scope_tag` values are valid `ScopeTag` enum members.
  */
 export interface EstimatorResponse {
+  readonly questions?: readonly EstimatorScopeQuestion[];
   readonly line_items: readonly EstimatorLineItem[];
   readonly itemized_lines: readonly EstimatorItemizedLine[];
   readonly project_total_cents: Cents | null;
@@ -105,6 +109,7 @@ export interface EstimatorLineItem {
 
 export interface EstimatorItemizedLine {
   readonly matched_by?: 'line_id' | 'keyword';
+  readonly suggested?: boolean;
   readonly scope_tag: ScopeTag;
   readonly cost_code: string;
   readonly division_code: string;
@@ -179,4 +184,11 @@ export interface EstimatorDeps {
    */
   readonly onboardingSession?: import('../../onboarding/index.js').OnboardingSession;
   readonly rateCard?: readonly TenantRateCardLine[];
+}
+
+/** Implied-major-money question the extrapolation pass surfaces instead of
+ * auto-pricing (founder rule: ask, never silently price unstated majors). */
+export interface EstimatorScopeQuestion {
+  readonly topic: string;
+  readonly why: string;
 }

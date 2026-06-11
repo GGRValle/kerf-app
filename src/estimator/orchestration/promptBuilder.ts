@@ -221,3 +221,41 @@ function safeDeriveContext(
     return [];
   }
 }
+
+/** Pass-2 prompt — full-scope extrapolation (founder: "start from the whole
+ * perspective, delete down"). Selection-only against the unselected library;
+ * implied majors become QUESTIONS, never priced lines. */
+export function buildExtrapolationPrompt(opts: {
+  readonly archetype: string;
+  readonly scopeNarrative: string;
+  readonly statedSelections: readonly { readonly cost_code: string; readonly label: string }[];
+  readonly candidates: readonly { readonly cost_code: string; readonly label: string; readonly uom: string }[];
+}): { readonly systemMessage: string; readonly userMessage: string } {
+  const systemMessage = [
+    'You are a senior remodeling estimator completing the WHOLE-project scope.',
+    'The operator stated part of the scope; your job is the certain periphery a',
+    'complete job of this archetype always requires: demo, protection, cleanup,',
+    'general conditions, plumbing/electrical reconnects, appliance handling,',
+    'patches, reinstalls. SELECT ONLY from the candidate list - never invent',
+    'lines or prices. Output STRICT JSON:',
+    '{',
+    '  "suggestions": [ { "line_id": "<cost_code from candidates>", "qty": <positive number in the line uom>, "reason": "<one short clause>" } ],',
+    '  "questions": [ { "topic": "<implied major, e.g. New countertops with the new cabinets?>", "why": "<one clause>" } ]',
+    '}',
+    'Rules:',
+    '- Suggest the certain periphery ONLY (a good PM would assume it). Cap 18.',
+    '- Implied MAJOR money (countertops when cabinets replace, backsplash with',
+    '  counters, flooring under a full gut) is NEVER a suggestion - it is a',
+    '  QUESTION. Asking beats silently pricing scope nobody stated.',
+    '- Never repeat a stated selection. qty defaults: LS/EA=1; WK=project weeks',
+    '  (2-4 typical kitchen); LF/SF only when derivable from the stated scope.',
+  ].join('\n');
+  const userMessage = [
+    `ARCHETYPE: ${opts.archetype}`,
+    `STATED SCOPE: ${opts.scopeNarrative}`,
+    `ALREADY SELECTED (do not repeat): ${opts.statedSelections.map((l) => `${l.cost_code} ${l.label}`).join(' | ') || 'none'}`,
+    'CANDIDATES:',
+    ...opts.candidates.map((c) => `  - ${c.cost_code} (${c.uom}) ${c.label}`),
+  ].join('\n');
+  return { systemMessage, userMessage };
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -34,6 +34,22 @@ async function withTempPersistence<T>(fn: () => Promise<T>): Promise<T> {
     };
   };
   const estimatorModelCaller: ModelCaller = async (input) => {
+    // Pass-2 (extrapolation) gets its own deterministic response: two real
+    // periphery codes, one invented (must be dropped), one question.
+    if (input.invocationId.endsWith('_extrapolate')) {
+      return {
+        ok: true,
+        content: JSON.stringify({
+          suggestions: [
+            { line_id: 'GC-002', qty: 1, reason: 'cabinet demo needs floor/dust protection' },
+            { line_id: 'PL-002', qty: 1, reason: 'sink comes out with the counters' },
+            { line_id: 'XX-999', qty: 1, reason: 'invented - must be dropped' },
+          ],
+          questions: [{ topic: 'New countertops with the new cabinets?', why: 'cabinet replacement usually implies counters' }],
+        }),
+        tokensIn: 10, tokensOut: 10, costNanoUsd: 1, modelId: 'test-extrapolator', endpoint: 'test://extrapolator',
+      };
+    }
     const tags = (input.userMessage.match(/Requested scope tags: ([^\n]+)/)?.[1] ?? '')
       .split(',')
       .map((tag) => tag.trim())
@@ -504,5 +520,58 @@ test('Part 5 text edit: qty/rate/remove recompute but NEVER graduate (D-065 rung
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: -1 }),
     });
     assert.equal(bad.status, 400);
+  });
+});
+
+test('extrapolation pass: suggested periphery lands flagged+priced+blocked; invented ids dropped; keep/remove writes the training signal (THREE-APPROVALS proof)', async () => {
+  await withTempPersistence(async () => {
+    const app = createAuthenticatedApiRouter();
+    const res = await app.request('/right-hand/assemble-estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId: 'rh_extrap_walk',
+        latestText: 'build the estimate',
+        draftText: 'kitchen: 36 LF base cabinets, 250 SF large format tile',
+        workingDraft: {
+          rawText: 'kitchen: 36 LF base cabinets, 250 SF large format tile',
+          scope: ['36 LF base cabinets', '250 SF large format tile flooring'],
+          allowances: [], open_items: [], assumptions: [],
+          proposed_artifact: 'estimate_draft', source_refs: [], known_entities: [],
+        },
+        conversationTurns: [],
+      }),
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json() as { draft: { estimate_id: string; open_items: readonly string[]; lines: readonly Record<string, unknown>[]; gate: { allowed: boolean } } };
+    const suggested = body.draft.lines.filter((l) => (l['flags'] as string[]).includes('suggested'));
+    assert.ok(suggested.length >= 2, `expected suggested periphery lines, got ${suggested.length}`);
+    // priced from the card, Illustrative, never company
+    for (const line of suggested) {
+      assert.ok((line['price_cents'] as number) > 0, 'suggested lines are priced from the card');
+      assert.equal(line['source_label'], 'Illustrative');
+      assert.equal(line['tier'], 'illustrative');
+    }
+    // invented id (XX-999 in the fake response) must NOT appear
+    assert.ok(!body.draft.lines.some((l) => l['cost_code'] === 'XX-999'), 'invented ids dropped (selection-not-invention)');
+    // the question rule: implied major surfaces as a chip, never a line
+    assert.ok(body.draft.open_items.some((item) => /Needs your call:/i.test(item)), 'question chip present');
+    // gate still blocked with suggestions present
+    assert.equal(body.draft.gate.allowed, false);
+
+    // remove a suggested line -> training signal event (suggestion.overridden)
+    const target = suggested[0]!;
+    const rm = await app.request(`/right-hand/estimates/${body.draft.estimate_id}/lines/${target['id']}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ removed: true }),
+    });
+    assert.equal(rm.status, 200);
+    const rmBody = await rm.json() as { draft: { lines: readonly Record<string, unknown>[] } };
+    const removedLine = rmBody.draft.lines.find((l) => l['id'] === target['id'])!;
+    assert.ok((removedLine['flags'] as string[]).includes('removed'));
+    // THREE-APPROVALS: removal/keep never mutates tier
+    assert.equal(removedLine['tier'], 'illustrative');
+    const eventsRaw = await readFile(path.join(process.env['PERSISTENCE_DIR']!, 'events.jsonl'), 'utf8');
+    assert.ok(eventsRaw.includes('"suggestion_id":"scope_suggestion_'), 'scope-suggestion decision event written');
+    assert.ok(eventsRaw.includes('"action":"removed"'), 'removed decision recorded');
   });
 });
