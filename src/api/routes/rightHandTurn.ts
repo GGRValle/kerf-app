@@ -60,6 +60,7 @@ import { makeGroqModelCaller, type ModelCaller } from '../../estimator/orchestra
 import { runEstimate } from '../../runner/estimateRunner.js';
 import { createFixtureTenantStore } from '../../tenant/index.js';
 import { upsertEstimatingDeal } from '../../sales/index.js';
+import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
@@ -235,6 +236,7 @@ function buildEstimateArtifactReplyContext(draft: Awaited<ReturnType<RightHandEs
     open_items: draft.open_items,
     source_refs: draft.source_refs,
     lines: draft.lines.slice(0, 40).map((line) => ({
+      id: line.id,
       label: line.label,
       ...(line.quantity !== undefined ? { quantity: line.quantity } : {}),
       ...(line.uom ? { uom: line.uom } : {}),
@@ -258,7 +260,7 @@ async function activeEstimateArtifactContext(params: {
   readonly body: Record<string, unknown>;
   readonly currentPath?: string;
   readonly workingDraft: WorkingDraftFields;
-}): Promise<EstimateArtifactReplyContext | null> {
+}): Promise<{ context: EstimateArtifactReplyContext; estimateId: string } | null> {
   const estimateId = cleanEstimateId(params.body['estimate_id'])
     ?? cleanEstimateId(params.body['estimateId'])
     ?? estimateIdFromPath(params.currentPath)
@@ -266,7 +268,8 @@ async function activeEstimateArtifactContext(params: {
   if (!estimateId) return null;
   try {
     const draft = await estimateStoreFor(params.deps).read(params.tenantId, estimateId);
-    return buildEstimateArtifactReplyContext(draft);
+    const context = buildEstimateArtifactReplyContext(draft);
+    return context ? { context, estimateId } : null;
   } catch {
     return null;
   }
@@ -1120,7 +1123,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
         source_refs: clientWorkingDraft.source_refs,
       })
     : clientWorkingDraft;
-  const estimateArtifactContext = await activeEstimateArtifactContext({
+  const estimateArtifactLoaded = await activeEstimateArtifactContext({
     deps,
     tenantId,
     body,
@@ -1148,7 +1151,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     trp,
     workingDraft,
     conversationTurns: cleanConversationTurns(body['conversationTurns']),
-    estimateArtifactContext,
+    estimateArtifactContext: estimateArtifactLoaded?.context ?? null,
     now: deps.now,
   };
 
@@ -1173,7 +1176,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     }
   }
 
-  if (replyRepeatsPrevious(result.reply, baseInput.conversationTurns) && replyClient !== null) {
+  if (replyRepeatsPrevious(result.reply, baseInput.conversationTurns) && replyClient !== null && !(result.proposed_edits && result.proposed_edits.length > 0)) {
     const retry = await resolveReplyWithModel(
       {
         ...baseInput,
@@ -1229,12 +1232,46 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
   const canonicalSnapshot = { ...snapshot, working_draft: mergedWithExisting };
   await saveRightHandConversationSnapshot(canonicalSnapshot);
 
+  // F-RH7 stage 6 / F-VW1: the apply-loop. Rung-0 voice/text edits LAND on the
+  // active estimate (qty / unit override / remove-restore) via the same shared
+  // helper as touch edits. Tier and gate are untouched by construction (D-065);
+  // misapplied edits are draft-layer, visible (voice-edited flag), reversible.
+  const appliedEditIds: string[] = [];
+  if (estimateArtifactLoaded && result.proposed_edits && result.proposed_edits.length > 0) {
+    try {
+      const store = estimateStoreFor(deps);
+      let draft = await store.read(tenantId, estimateArtifactLoaded.estimateId);
+      if (draft) {
+        for (const edit of result.proposed_edits) {
+          const patch = edit.field === 'quantity'
+            ? { quantity: edit.value as number }
+            : edit.field === 'unit_cents'
+              ? { unit_cents: edit.value as number }
+              : { removed: edit.value as boolean };
+          const next = applyRungZeroLineEdit(draft, edit.line_id, patch, 'voice_edited');
+          if (next) {
+            draft = next;
+            appliedEditIds.push(edit.line_id);
+          }
+        }
+        if (appliedEditIds.length > 0) await store.save(draft);
+        const failed = result.proposed_edits.length - appliedEditIds.length;
+        if (failed > 0) {
+          // The floor allowed edit-narration because edits were backed; if any
+          // failed to apply, the reply must say so (nothing-silent).
+          result = { ...result, reply: `${result.reply} (${failed} change${failed > 1 ? 's' : ''} could not be applied — check the estimate.)` };
+        }
+      }
+    } catch { /* edits are additive; the reply still returns */ }
+  }
+
   // Altitude-eval signal: one rung-log line per model-led reply turn (no PII — mode/authority only).
   console.info(`[right_hand] reply turn tenant=${tenantId} mode=${result.mode} authority=${result.authority}${result.fallback_reason ? ` fallback=${result.fallback_reason}` : ''}`);
   return c.json({
     reply: result.reply,
     mode: result.mode,
     authority: result.authority,
+    ...(appliedEditIds.length > 0 ? { applied_edits: appliedEditIds } : {}),
     ...(result.updated_working_draft ? { updated_working_draft: result.updated_working_draft } : {}),
     working_draft: canonicalSnapshot.working_draft,
     workingDraft: canonicalSnapshot.working_draft,

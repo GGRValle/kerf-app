@@ -1590,7 +1590,7 @@ test('reply route feeds active estimate artifact context for LF price questions'
 
   const prompt = capturedBody?.messages.at(-1)?.content ?? '';
   assert.match(prompt, /Active estimate artifact:/);
-  assert.match(prompt, /READ ONLY: this is visible estimate context/);
+  assert.match(prompt, /EDIT PROTOCOL \(rung-0 drafts only\)/);
   assert.match(prompt, /Base cabinets \(36 LF\).*quantity=36 LF.*unit=\$425.*extended=\$15,300/s);
   assert.match(prompt, /Upper cabinets \(34 LF\).*quantity=34 LF.*unit=\$375.*extended=\$12,750/s);
   assert.match(prompt, /source_label=Illustrative/);
@@ -2064,4 +2064,50 @@ test('reply route retries repeated model replies and fails closed if repetition 
   assert.equal(body.authority, 'humble_fallback');
   assert.equal(body.fallback_reason, 'model_repeated_previous_reply');
   assert.notEqual(body.reply, 'Tell me the address.');
+});
+
+test('apply-loop: reply resolver parses proposed_edits (valid kept, garbage dropped) — F-RH7 stage 6', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Change the base cabinets to 40 feet and remove the dumpster.',
+    intent: 'estimate_update',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'Change the base cabinets to 40 feet and remove the dumpster.',
+      draftText: trp.heard_text,
+      currentPath: '/estimate/deal_x?estimate_id=rhe_x',
+      userRole: 'owner',
+      tenantId: 'tenant_ggr' as never,
+      knownEntities: [],
+      trp,
+      conversationTurns: [{ speaker: 'operator', text: trp.heard_text }],
+      now: () => new Date('2026-06-11T16:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: JSON.stringify({
+          mode: 'peer_update',
+          claims_durable_action: false,
+          reply: 'Base cabinets → 40 LF. Dumpster removed. Say undo to revert.',
+          proposed_edits: [
+            { line_id: 'est_model_knowledge_x', field: 'quantity', value: 40 },
+            { line_id: 'est_gc_dumpster', field: 'removed', value: true },
+            { line_id: 'bad', field: 'quantity', value: -5 },
+            { line_id: '', field: 'unit_cents', value: 100 },
+            { line_id: 'bad2', field: 'tier', value: 'company' },
+          ],
+        }),
+        model: req.model, inputTokens: 10, outputTokens: 10, totalTokens: 20, latencyMs: 5,
+        costNanoUsd: 1_000 as never, finishReason: 'stop', route: {} as never,
+        invocationId: req.invocationId, completedAt: '2026-06-11T16:00:00.000Z',
+      }),
+    },
+  );
+  assert.equal(result.proposed_edits?.length, 2, 'two valid edits kept, three garbage dropped');
+  assert.deepEqual(result.proposed_edits?.[0], { line_id: 'est_model_knowledge_x', field: 'quantity', value: 40 });
+  assert.deepEqual(result.proposed_edits?.[1], { line_id: 'est_gc_dumpster', field: 'removed', value: true });
+  // a tier-field edit can never parse (D-065: no graduation path through edits)
+  assert.ok(!result.proposed_edits?.some((e) => (e as { field: string }).field === 'tier'));
 });

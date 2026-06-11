@@ -575,3 +575,26 @@ test('extrapolation pass: suggested periphery lands flagged+priced+blocked; inve
     assert.ok(eventsRaw.includes('"action":"removed"'), 'removed decision recorded');
   });
 });
+
+test('applyRungZeroLineEdit: recompute without graduation (shared seam for touch + voice)', async () => {
+  const { applyRungZeroLineEdit } = await import('../src/api/lib/rightHandAssemblyStore.js');
+  const draft = {
+    version: 2, tenant_id: 'tenant_ggr', anchor_type: 'deal', project_id: 'deal_x', estimate_id: 'rhe_x',
+    conversation_id: 'c', title: 'T', status: 'draft_for_review', updated_at: 'now', route: '/estimate/deal_x',
+    lines: [{ id: 'l1', label: '36 LF base cabinets', description: 'x', source_type: 'model_knowledge', source_label: 'Illustrative', source_ref: 'r', open_item: false, flags: ['cabinetry'], tier: 'illustrative', division: null, quantity: 36, uom: 'LF', unit_cents: 106000, extended_cents: 3816000, price_cents: 3816000 }],
+    open_items: [], source_refs: [], estimator_response: {} as never,
+    gate: { fired: true, allowed: false, blocked_reasons: ['source_basis_required'] },
+    pricing_data_label: 'x', artifact_state: { durable_record: true, filed: false, sent: false },
+  } as never;
+  const next = applyRungZeroLineEdit(draft, 'l1', { quantity: 40 }, 'voice_edited');
+  assert.ok(next);
+  const line = next!.lines[0]!;
+  assert.equal(line.quantity, 40);
+  assert.equal(line.extended_cents, 4_240_000);
+  assert.ok(line.flags.includes('voice_edited'));
+  assert.equal(line.tier, 'illustrative'); // never graduates
+  assert.equal(line.source_label, 'Illustrative');
+  assert.equal(next!.gate.allowed, false); // gate untouched
+  assert.equal(applyRungZeroLineEdit(draft, 'l1', { quantity: -2 }, 'voice_edited'), null); // money strict
+  assert.equal(applyRungZeroLineEdit(draft, 'nope', { quantity: 2 }, 'voice_edited'), null); // unknown line
+});

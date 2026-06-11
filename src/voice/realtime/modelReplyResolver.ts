@@ -29,12 +29,22 @@ export type ReplyMode =
   | 'gate_ready';
 export type ReplyProposedAction = 'assemble_estimate';
 
+/** Rung-0 voice/text edit the reply brain proposes against the ACTIVE
+ * estimate artifact (F-RH7 stage 6 / F-VW1; D-065 rung-0: draft-layer only,
+ * never a tier change, never a library write). Server validates + applies. */
+export interface ReplyProposedEdit {
+  readonly line_id: string;
+  readonly field: 'quantity' | 'unit_cents' | 'removed';
+  readonly value: number | boolean;
+}
+
 export interface ConversationReplyTurn {
   readonly speaker: 'operator' | 'right_hand' | 'system';
   readonly text: string;
 }
 
 export interface EstimateArtifactReplyLineContext {
+  readonly id?: string;
   readonly label: string;
   readonly quantity?: number;
   readonly uom?: string;
@@ -106,6 +116,7 @@ export interface ResolveReplyResult {
   readonly asked_questions_ack?: readonly string[];
   readonly next_question?: string | null;
   readonly proposed_action?: ReplyProposedAction | null;
+  readonly proposed_edits?: readonly ReplyProposedEdit[];
   readonly draft_fabrication_flags?: readonly string[];
   readonly fallback_reason?: string;
 }
@@ -233,7 +244,8 @@ Return STRICT JSON only:
   },
   "asked_questions_ack": ["questions from prior turns that the operator has now answered"],
   "next_question": null,
-  "proposed_action": "assemble_estimate|null"
+  "proposed_action": "assemble_estimate|null",
+  "proposed_edits": [{"line_id": "...", "field": "quantity|unit_cents|removed", "value": 0}]
 }`;
 
 const ALLOWED_MODES: readonly ReplyMode[] = [
@@ -243,6 +255,26 @@ const ALLOWED_MODES: readonly ReplyMode[] = [
   'advisor_flag',
   'gate_ready',
 ] as const;
+
+function cleanProposedEdits(value: unknown): ReplyProposedEdit[] {
+  if (!Array.isArray(value)) return [];
+  const out: ReplyProposedEdit[] = [];
+  for (const raw of value.slice(0, 5)) {
+    if (typeof raw !== 'object' || raw === null) continue;
+    const r = raw as Record<string, unknown>;
+    const lineId = typeof r['line_id'] === 'string' ? r['line_id'].trim() : '';
+    const field = r['field'];
+    if (!lineId) continue;
+    if (field === 'quantity' && typeof r['value'] === 'number' && Number.isFinite(r['value']) && (r['value'] as number) > 0) {
+      out.push({ line_id: lineId, field: 'quantity', value: r['value'] as number });
+    } else if (field === 'unit_cents' && typeof r['value'] === 'number' && Number.isInteger(r['value']) && (r['value'] as number) >= 0) {
+      out.push({ line_id: lineId, field: 'unit_cents', value: r['value'] as number });
+    } else if (field === 'removed' && typeof r['value'] === 'boolean') {
+      out.push({ line_id: lineId, field: 'removed', value: r['value'] as boolean });
+    }
+  }
+  return out;
+}
 
 function cleanProposedAction(value: unknown): ReplyProposedAction | null {
   if (typeof value !== 'string') return null;
@@ -390,8 +422,11 @@ function replyClaimsCompletedAction(reply: string): boolean {
     || SUBJECT_DONE_COMPLETION_RE.test(reply);
 }
 
-function violatesHonestyFloor(reply: string, input: ResolveReplyInput, claimsDurableAction: boolean): boolean {
-  if (!input.trp.work_artifact && (
+function violatesHonestyFloor(reply: string, input: ResolveReplyInput, claimsDurableAction: boolean, hasBackedEdits = false): boolean {
+  // Claim-with-teeth: when proposed_edits accompany the reply, the server
+  // applies them in the SAME turn (and corrects the reply if one fails) -
+  // edit narration is backed, not fabricated.
+  if (!input.trp.work_artifact && !hasBackedEdits && (
     claimsDurableAction
     || replyClaimsCompletedAction(reply)
   )) {
@@ -789,7 +824,7 @@ function estimateArtifactPrompt(input: ResolveReplyInput): string {
           : 'none';
         const division = line.division ? `, division=${line.division}` : '';
         return [
-          `${index + 1}. ${line.label}`,
+          `${index + 1}. [${line.id ?? 'no-id'}] ${line.label}`,
           `quantity=${quantity}`,
           `unit=${centsPrompt(line.unit_cents)}`,
           `extended=${centsPrompt(line.extended_cents)}`,
@@ -804,7 +839,14 @@ function estimateArtifactPrompt(input: ResolveReplyInput): string {
       }).join('\n')
     : '(no visible lines)';
   return [
-    'READ ONLY: this is visible estimate context. It cannot save, send, file, approve, price, or mutate anything.',
+    'EDIT PROTOCOL (rung-0 drafts only): when the operator asks to change a line on THIS estimate',
+    '(quantity, unit rate, or remove/restore), emit proposed_edits with the line id in [brackets]:',
+    '  "proposed_edits": [{ "line_id": "<id>", "field": "quantity"|"unit_cents"|"removed", "value": <number|boolean> }]',
+    'Rules: only lines listed below; unit_cents is integer cents; ALWAYS narrate exactly what changed',
+    'in the reply ("Base cabinets -> 40 LF, $42,400 - say undo to revert"). These edit the DRAFT only -',
+    'tier stays Illustrative, the gate stays blocked, nothing files or sends. If the request is ambiguous',
+    'about WHICH line, ask instead of guessing. Never use proposed_edits to add NEW scope lines.',
+    'READ ONLY otherwise: this context cannot save, send, file, approve, or graduate anything.',
     `estimate_id: ${artifact.estimate_id}`,
     `anchor_type: ${artifact.anchor_type ?? 'project'}`,
     `deal_id: ${artifact.deal_id ?? 'none'}`,
@@ -917,7 +959,8 @@ export async function resolveReplyWithModel(
   if (typeof claimsDurableAction !== 'boolean') {
     return humbleReplyFallback(input, 'model_missing_durable_claim_flag');
   }
-  if (!reply || violatesHonestyFloor(reply, input, claimsDurableAction)) {
+  const proposedEditsEarly = cleanProposedEdits(parsed['proposed_edits']);
+  if (!reply || violatesHonestyFloor(reply, input, claimsDurableAction, proposedEditsEarly.length > 0)) {
     return humbleReplyFallback(input, 'model_reply_failed_honesty_floor');
   }
   const cleanedWorkingDraft = cleanWorkingDraftUpdateWithFlags(parsed['updated_working_draft'], input);
@@ -926,6 +969,7 @@ export async function resolveReplyWithModel(
   const askedQuestionsAck = cleanStringList(parsed['asked_questions_ack'], { maxItems: 8, maxLength: 160 });
   const nextQuestion = cleanNullableString(parsed['next_question'], 180);
   const proposedAction = cleanProposedAction(parsed['proposed_action']);
+  const proposedEdits = proposedEditsEarly;
 
   return {
     reply,
@@ -937,6 +981,7 @@ export async function resolveReplyWithModel(
     ...(askedQuestionsAck.length > 0 ? { asked_questions_ack: askedQuestionsAck } : {}),
     ...(nextQuestion ? { next_question: nextQuestion } : {}),
     ...(proposedAction ? { proposed_action: proposedAction } : {}),
+    ...(proposedEdits.length > 0 ? { proposed_edits: proposedEdits } : {}),
     ...(cleanedWorkingDraft.flags.length > 0 ? { draft_fabrication_flags: cleanedWorkingDraft.flags } : {}),
   };
 }
