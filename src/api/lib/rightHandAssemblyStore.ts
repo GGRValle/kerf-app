@@ -717,3 +717,41 @@ export function getRightHandEstimateStore(): RightHandEstimateStore {
 export function resetRightHandEstimateStoreForTests(): void {
   cachedStore = null;
 }
+
+/** Rung-0 line edit (D-065): quantity / unit-rate override / remove-restore.
+ * Tier, source label, matched_by are COPIED never recomputed - an edit can
+ * never graduate a line. Shared by the PATCH endpoint (touch edits) and the
+ * conversation apply-loop (voice/text edits, F-RH7 stage 6). */
+export function applyRungZeroLineEdit(
+  draft: RightHandEstimateDraft,
+  lineId: string,
+  edit: { readonly quantity?: number; readonly unit_cents?: number; readonly removed?: boolean },
+  editedFlag: 'operator_edited' | 'voice_edited',
+): RightHandEstimateDraft | null {
+  const idx = draft.lines.findIndex((line) => line.id === lineId);
+  if (idx < 0) return null;
+  const line = draft.lines[idx]!;
+  if (edit.quantity !== undefined && !(Number.isFinite(edit.quantity) && edit.quantity > 0)) return null;
+  if (edit.unit_cents !== undefined && !(Number.isInteger(edit.unit_cents) && edit.unit_cents >= 0)) return null;
+  const quantity = edit.quantity ?? line.quantity;
+  const unitCents = edit.unit_cents ?? line.unit_cents;
+  const priced = typeof unitCents === 'number' && typeof quantity === 'number';
+  const extended = priced ? Math.round((quantity as number) * (unitCents as number)) : line.extended_cents;
+  const flags = new Set(line.flags);
+  if (edit.quantity !== undefined || edit.unit_cents !== undefined) flags.add(editedFlag);
+  if (edit.removed === true) flags.add('removed');
+  if (edit.removed === false) flags.delete('removed');
+  const nextLine: RightHandEstimateLine = {
+    ...line,
+    ...(quantity !== undefined ? { quantity } : {}),
+    unit_cents: unitCents ?? null,
+    extended_cents: extended ?? null,
+    price_cents: extended ?? line.price_cents ?? null,
+    flags: [...flags],
+  };
+  return {
+    ...draft,
+    lines: draft.lines.map((item, i) => (i === idx ? nextLine : item)),
+    updated_at: new Date().toISOString(),
+  };
+}
