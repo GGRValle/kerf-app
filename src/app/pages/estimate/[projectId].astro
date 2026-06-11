@@ -126,6 +126,7 @@ const qtyFor = (line: { quantity?: number; uom?: string }) => (
                 <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
                 {line.division ? <span class="es-tag">{line.division.code} · {line.division.label}</span> : null}
                 {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
+                {line.matched_by ? <span class="es-tag es-match">{line.matched_by === 'line_id' ? 'exact' : 'matched'}</span> : null}
               </span>
               <span class="es-ln-num">{qtyFor(line)}</span>
               <span class="es-ln-num">{typeof line.unit_cents === 'number' ? fmt(line.unit_cents) + '/' + (line.uom ?? 'unit') : ''}</span>

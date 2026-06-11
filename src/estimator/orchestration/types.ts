@@ -104,6 +104,7 @@ export interface EstimatorLineItem {
 }
 
 export interface EstimatorItemizedLine {
+  readonly matched_by?: 'line_id' | 'keyword';
   readonly scope_tag: ScopeTag;
   readonly cost_code: string;
   readonly division_code: string;

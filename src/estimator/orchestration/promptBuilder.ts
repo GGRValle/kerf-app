@@ -171,6 +171,14 @@ function buildUserMessage(opts: BuildPromptOpts): string {
     if (candidates.length > 0) {
       lines.push('');
       lines.push('RATE-CARD SEED CANDIDATES (review-required KERF_SEED, not company truth):');
+      lines.push('SELECTION RULES:');
+      lines.push('  - One selection per distinct scope item; do not merge separate items.');
+      lines.push('  - quantity = the operator\'s stated count or measurement, in the line\'s uom');
+      lines.push('    (2 pendant lights => qty 2 of a per-EA line, never qty 1).');
+      lines.push('  - Never fold per-EA items into an LS line; pick the per-EA line and count them.');
+      lines.push('  - Prefer the candidate whose label matches the material/system named, not just the trade.');
+      lines.push('  - When a candidate fits, line_id and cost_code MUST be its exact cost_code');
+      lines.push('    (e.g. "CB-001") — never null, never invented. Null only when NO candidate fits.');
       for (const line of candidates) {
         lines.push(
           `  - line_id=${line.cost_code} scope=${line.scope_tag} division=${line.kerf_division.code} ${line.kerf_division.label} ` +

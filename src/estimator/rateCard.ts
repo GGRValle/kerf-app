@@ -217,18 +217,39 @@ export function kerfDivisionForCode(code: string): KerfDivision | null {
 export function tenantRateCardFor(tenantId: string): readonly TenantRateCardLine[] { return tenantId === 'tenant_ggr' ? RICARDO_FILLED_RATE_CARD : []; }
 export function isTenantRateCardSourceRef(sourceRef: string | null | undefined): boolean { return typeof sourceRef === 'string' && sourceRef.startsWith('kerf://kerf-seed/rate-card/'); }
 export function ricardoFilledIncludedRows(rateCard: readonly TenantRateCardLine[] = RICARDO_FILLED_RATE_CARD): readonly TenantRateCardLine[] { return rateCard.filter((line) => line.ricardo_included === true); }
-export function matchTenantRateCardLine(input: RateCardMatchInput): TenantRateCardLine | null {
+export type RateCardMatchKind = 'line_id' | 'keyword';
+
+export interface RateCardMatchDetail {
+  readonly line: TenantRateCardLine;
+  readonly matched_by: RateCardMatchKind;
+}
+
+/** Like matchTenantRateCardLine, but reports WHICH path matched — the telemetry
+ * that keeps the keyword fallback measurable (polish card Part A). */
+export function matchTenantRateCardLineDetailed(input: RateCardMatchInput): RateCardMatchDetail | null {
   const rates = input.rateCard ?? tenantRateCardFor(input.tenantId);
   const exactId = normalizeId(input.lineId);
-  if (exactId) { const exact = rates.find((line) => normalizeId(line.cost_code) === exactId); if (exact) return exact; }
+  if (exactId) {
+    const exact = rates.find((line) => normalizeId(line.cost_code) === exactId);
+    if (exact) return { line: exact, matched_by: 'line_id' };
+  }
   const normalizedUom = normalizeToken(input.uom);
   const description = normalizeText(input.description);
   const scoped = rates.filter((line) => line.scope_tag === input.scopeTag && normalizeToken(line.uom) === normalizedUom);
   if (scoped.length === 0) return null;
   let best: { line: TenantRateCardLine; score: number } | null = null;
-  for (const line of scoped) { const score = scoreKeywords(description, line.keywords); if (score <= 0) continue; if (best === null || score > best.score) best = { line, score }; }
-  return best?.line ?? null;
+  for (const line of scoped) {
+    const score = scoreKeywords(description, line.keywords);
+    if (score <= 0) continue;
+    if (best === null || score > best.score) best = { line, score };
+  }
+  return best ? { line: best.line, matched_by: 'keyword' } : null;
 }
+
+export function matchTenantRateCardLine(input: RateCardMatchInput): TenantRateCardLine | null {
+  return matchTenantRateCardLineDetailed(input)?.line ?? null;
+}
+
 function scoreKeywords(description: string, keywords: readonly string[]): number {
   let score = 0;
   const descriptionTokens = new Set(description.split(' ').filter(Boolean));
