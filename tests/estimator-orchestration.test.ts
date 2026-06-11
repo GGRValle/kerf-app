@@ -336,8 +336,8 @@ test('Ricardo FILLED seed converter preserves workbook totals and GGR divisions'
   );
   assert.equal(RICARDO_FILLED_EXPECTED.summary_sell_total_cents, 18_249_889);
   assert.equal(RICARDO_FILLED_EXPECTED.summary_cost_total_cents, 11_862_428);
-  assert.ok(rows.some((row) => row.cost_code === 'CB-001' && row.kerf_division.code === '12' && row.kerf_division.label === 'Cabinetry'));
-  assert.ok(rows.some((row) => row.cost_code === 'CT-002' && row.kerf_division.code === '12b' && row.kerf_division.label === 'Countertops & Stone'));
+  assert.ok(rows.some((row) => row.cost_code === 'CB-001' && row.kerf_division.code === 'KD-06' && row.kerf_division.label === 'Cabinetry')); // v2.2 KD registry
+  assert.ok(rows.some((row) => row.cost_code === 'CT-002' && row.kerf_division.code === 'KD-07' && row.kerf_division.label === 'Countertops & Stone'));
   assert.ok(rows.every((row) => row.source_layer === 'KERF_SEED' && row.review_required === true));
 });
 
