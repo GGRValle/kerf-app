@@ -47,6 +47,7 @@
     "@astrojs/node": "^9.0.0",
     "@hono/node-server": "^1.14.0",
     "astro": "^5.0.0",
+    "exceljs": "^4.4.0",
     "hono": "^4.7.0",
     "pg": "^8.21.0"
   },

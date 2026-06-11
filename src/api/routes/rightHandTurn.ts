@@ -61,6 +61,7 @@ import { runEstimate } from '../../runner/estimateRunner.js';
 import { createFixtureTenantStore } from '../../tenant/index.js';
 import { upsertEstimatingDeal } from '../../sales/index.js';
 import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
+import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
 import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
@@ -1024,6 +1025,51 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
     } catch { /* the edit succeeded; the signal is best-effort */ }
   }
   return c.json({ ok: true, draft: next, edited_line_id: lineId });
+});
+
+/**
+ * D-068 render: the estimate's editable workbook projection (xlsx download).
+ * Values from the graph; the graph stays truth.
+ */
+rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/workbook', async (c) => {
+  const tenant = requireApiTenant(c);
+  const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  const buffer = await renderEstimateWorkbook(draft);
+  c.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  c.header('Content-Disposition', `attachment; filename="${draft.estimate_id}_workbook.xlsx"`);
+  return c.body(new Uint8Array(buffer));
+});
+
+/**
+ * D-068 ingest: EXPORT-sheet diff -> rung-0 edits. THE CONSEQUENCE EDGE -
+ * fail-closed (see estimateWorkbook.ts header). D-049 answer: ingest writes
+ * the graph; wrong answers escape review; therefore deterministic,
+ * validator-gated, fail-closed - the model appears nowhere in this path.
+ */
+rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/workbook-import', async (c) => {
+  const tenant = requireApiTenant(c);
+  const store = estimateStoreFor(resolveDeps());
+  const draft = await store.read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  const body = await c.req.arrayBuffer();
+  if (body.byteLength === 0) return c.json({ error: 'empty_body' }, 400);
+  if (body.byteLength > 2_000_000) return c.json({ error: 'file_too_large_2mb_cap' }, 413);
+  const result = await ingestEstimateWorkbook(draft, Buffer.from(body));
+  if (!result.ok) {
+    return c.json({ error: 'workbook_rejected', structural_error: result.structural_error, applied: [], rejected: result.rejected }, 422);
+  }
+  if (result.applied.length + result.added.length + result.removed.length > 0) {
+    await store.save(result.draft);
+  }
+  return c.json({
+    ok: true,
+    applied: result.applied,
+    added: result.added,
+    removed: result.removed,
+    rejected: result.rejected,
+    draft: result.draft,
+  });
 });
 
 rightHandTurnRoutes.post('/right-hand/resolve-turn', async (c) => {
