@@ -152,6 +152,14 @@ export const DEFAULT_REPLY_BRAIN: ReplyBrainConfig = {
 export const APPROVED_REPLY_BRAINS = [
   DEFAULT_REPLY_BRAIN,
   {
+    // Frontier per-turn option (founder directive 2026-06-11 / D-069): flip
+    // REPLY_BRAIN to this endpoint to escalate the conversation brain too.
+    // Per-turn latency cost is real, so escalation stays an operator choice.
+    endpoint: 'anthropic://claude-opus-4-8',
+    model: 'claude-opus-4-8',
+    provider: 'anthropic',
+  },
+  {
     endpoint: 'anthropic://claude-sonnet-4-6',
     model: 'claude-sonnet-4-6',
     provider: 'anthropic',
