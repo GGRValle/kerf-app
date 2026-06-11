@@ -502,7 +502,7 @@ export const EN: TranslationMap = {
   'shell.nav.capture': 'Capture',
   'shell.nav.relay': 'Review',
   'shell.nav.projects': 'Projects',
-  'shell.nav.create': 'Create',
+  'shell.nav.create': 'Start',
   'shell.nav.camera': 'Camera',
   'shell.nav.more': 'More',
   'shell.nav.speak': 'Speak',
