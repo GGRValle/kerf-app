@@ -439,3 +439,70 @@ test('Right Hand estimate page updates from later conversation turns', async () 
     assert.ok(body.draft.lines.some((line) => /Floor tile/i.test(line.label) && line.flags.includes('tile') && line.cost_code === 'TL-002' && (line.extended_cents ?? 0) > 0));
   });
 });
+
+test('Part 5 text edit: qty/rate/remove recompute but NEVER graduate (D-065 rung-0)', async () => {
+  await withTempPersistence(async () => {
+    const app = createAuthenticatedApiRouter();
+    const res = await app.request('/right-hand/assemble-estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId: 'rh_edit_walk',
+        latestText: 'build the estimate',
+        draftText: 'kitchen: 36 LF base cabinets',
+        workingDraft: {
+          rawText: 'kitchen: 36 LF base cabinets',
+          scope: ['36 LF base cabinets'],
+          allowances: [], open_items: [], assumptions: [],
+          proposed_artifact: 'estimate_draft', source_refs: [], known_entities: [],
+        },
+        conversationTurns: [],
+      }),
+    });
+    assert.equal(res.status, 200);
+    const body = await res.json() as { draft: { estimate_id: string; lines: readonly Record<string, unknown>[]; gate: { allowed: boolean; blocked_reasons: readonly string[] } } };
+    const priced = body.draft.lines.find((l) => typeof l['price_cents'] === 'number' && (l['price_cents'] as number) > 0);
+    assert.ok(priced, 'expected a priced line to edit');
+    const lineId = priced!['id'] as string;
+    const tierBefore = priced!['tier'];
+    const sourceLabelBefore = priced!['source_label'];
+
+    // qty + unit override
+    const patch = await app.request(`/right-hand/estimates/${body.draft.estimate_id}/lines/${lineId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: 40, unit_cents: 120_000 }),
+    });
+    assert.equal(patch.status, 200);
+    const patched = await patch.json() as { draft: { lines: readonly Record<string, unknown>[]; gate: { allowed: boolean; blocked_reasons: readonly string[] } } };
+    const edited = patched.draft.lines.find((l) => l['id'] === lineId)!;
+    assert.equal(edited['quantity'], 40);
+    assert.equal(edited['unit_cents'], 120_000);
+    assert.equal(edited['extended_cents'], 4_800_000);
+    assert.ok((edited['flags'] as string[]).includes('operator_edited'));
+    // D-065: NO graduation from a text edit — tier/source identical, gate still blocked.
+    assert.equal(edited['tier'], tierBefore);
+    assert.equal(edited['source_label'], sourceLabelBefore);
+    assert.equal(patched.draft.gate.allowed, false);
+    assert.ok(patched.draft.gate.blocked_reasons.includes('source_basis_required'));
+
+    // remove → restore
+    const rm = await app.request(`/right-hand/estimates/${body.draft.estimate_id}/lines/${lineId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ removed: true }),
+    });
+    assert.equal(rm.status, 200);
+    const rmBody = await rm.json() as { draft: { lines: readonly Record<string, unknown>[] } };
+    assert.ok((rmBody.draft.lines.find((l) => l['id'] === lineId)!['flags'] as string[]).includes('removed'));
+    const restore = await app.request(`/right-hand/estimates/${body.draft.estimate_id}/lines/${lineId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ removed: false }),
+    });
+    const restoreBody = await restore.json() as { draft: { lines: readonly Record<string, unknown>[] } };
+    assert.ok(!(restoreBody.draft.lines.find((l) => l['id'] === lineId)!['flags'] as string[]).includes('removed'));
+
+    // money stays strict
+    const bad = await app.request(`/right-hand/estimates/${body.draft.estimate_id}/lines/${lineId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: -1 }),
+    });
+    assert.equal(bad.status, 400);
+  });
+});
