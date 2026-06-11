@@ -1,0 +1,59 @@
+/**
+ * Ricardo rate-card eval (polish card Part A) — the founder's triplet as the
+ * seed answer key (NOT a generalization claim; keep/remove signal becomes the
+ * expanding key). Keyed: GROQ_API_KEY required; optional ANTHROPIC_API_KEY for
+ * the frontier escalation run.
+ *
+ * Input: the Ricardo summary SCOPE OF WORK narrative (founder's own artifact).
+ * Answer key: the seed's ricardo_* fields (RICARDO_FILLED_EXPECTED + per-line
+ * ricardo_included / ricardo_quantity).
+ */
+import { buildEstimatorPrompt } from '../src/estimator/orchestration/promptBuilder.js';
+import { makeGroqModelCaller } from '../src/estimator/orchestration/groqModelCaller.js';
+import { parseRawResponse, enforceTrustDiscipline } from '../src/estimator/orchestration/responseParser.js';
+import { tenantRateCardFor, RICARDO_FILLED_EXPECTED } from '../src/estimator/rateCard.js';
+
+const SCOPE_NARRATIVE = "Full kitchen remodel: remove existing cabinetry and install new full-custom cabinets \u2014 35 LF base, 30 LF uppers, 8 LF tall \u2014 in a warm wood, modern slab-door style finished in hardwax oil (Rubio Monocoat class), with uppers raised to the 9-ft ceiling and closed with a modern flat trim. New honed black quartzite countertops with full-height splash in the same material. Kitchen flooring replaced with approximately 250 SF of large-format tile over a self-leveled substrate. New 5-inch flat-stock baseboards, and full paint of the kitchen area walls and ceiling. Lighting package: eight new recessed cans, hardwired under-cabinet LED across the upper runs, and toe-kick LED at the bases, on dedicated driver/switching. Powder bathroom modernization: new contractor-supplied vanity and countertop, new toilet (supplied and installed), wainscoting with wallpaper above, and new light fixtures.";
+
+const card = tenantRateCardFor('tenant_ggr');
+const allTags = [...new Set(card.map((l) => l.scope_tag))];
+const included = card.filter((l) => l.ricardo_included);
+const includedCodes = new Set(included.map((l) => l.cost_code));
+const statedDims: Record<string, number> = { 'CB-001': 35, 'CB-002': 30, 'CB-003': 8, 'EL-004': 8 };
+
+async function runOnce(label: string): Promise<boolean> {
+  const inputs: any = {
+    tenantId: 'tenant_ggr', projectArchetype: 'kitchen_remodel', scopeTags: allTags,
+    scopeNarrative: SCOPE_NARRATIVE, invocationId: 'ricardo_eval', requestedAt: new Date().toISOString(),
+  };
+  const prompt = buildEstimatorPrompt({ inputs, renderedBands: [], rateCard: card });
+  const caller = makeGroqModelCaller({ apiKey: process.env.GROQ_API_KEY!, baseUrl: 'https://api.groq.com/openai/v1' });
+  const r = await caller({ systemMessage: prompt.systemMessage, userMessage: prompt.userMessage + '\n\nOPERATOR SCOPE:\n' + SCOPE_NARRATIVE, tenantId: 'tenant_ggr', invocationId: 'ricardo_eval', purpose: 'estimator_project_generation', workflow: 'proposal_generation', requestedAt: new Date().toISOString() });
+  if (!r.ok) { console.log(label, 'MODEL CALL FAILED:', r.reason); return false; }
+  const clean = enforceTrustDiscipline({ raw: parseRawResponse(r.content), bandsByScope: new Map(), tenantId: 'tenant_ggr' as any, rateCard: card, requireRateCardPricing: true });
+  const priced = clean.itemized_lines.filter((l) => l.unit_cents > 0);
+  const exactId = priced.filter((l) => l.matched_by === 'line_id').length;
+  const selectedCodes = new Set(priced.map((l) => l.line_id ?? l.cost_code).filter(Boolean) as string[]);
+  const hit = [...selectedCodes].filter((c) => includedCodes.has(c));
+  const precision = selectedCodes.size ? hit.length / selectedCodes.size : 0;
+  const recall = hit.length / includedCodes.size;
+  let qtyOk = 0, qtyTotal = 0;
+  for (const [code, dim] of Object.entries(statedDims)) {
+    const line = priced.find((l) => (l.line_id ?? l.cost_code) === code);
+    if (line) { qtyTotal++; if (Math.abs(line.quantity - dim) < 0.01) qtyOk++; }
+  }
+  const total = priced.reduce((s, l) => s + l.extended_cents, 0);
+  const target = RICARDO_FILLED_EXPECTED.summary_sell_total_cents;
+  const within10 = Math.abs(total - target) / target <= 0.10;
+  console.log(label + ' SCORECARD');
+  console.log('  priced lines: ' + priced.length + ' | exact-id: ' + exactId + '/' + priced.length + ' (' + Math.round(100 * exactId / Math.max(1, priced.length)) + '%)');
+  console.log('  precision vs FILLED: ' + (100 * precision).toFixed(0) + '% | recall vs FILLED(46): ' + (100 * recall).toFixed(0) + '% (pre-extrapolation: unstated GC/demo periphery not expected)');
+  console.log('  stated-dim qty accuracy: ' + qtyOk + '/' + qtyTotal);
+  console.log('  total: $' + (total / 100).toLocaleString() + ' vs $' + (target / 100).toLocaleString() + ' -> within ±10%: ' + within10);
+  return within10 && exactId / Math.max(1, priced.length) >= 0.6 && qtyOk >= Math.max(1, qtyTotal - 1);
+}
+
+const groqPass = await runOnce('GROQ (llama-4-scout)');
+console.log('');
+console.log(groqPass ? 'TIER VERDICT: groq PASSES the seed eval - no escalation needed.' : 'TIER VERDICT: groq FAILED the seed eval - escalate the selection call to frontier (policy: rate-card card).');
+process.exit(0);

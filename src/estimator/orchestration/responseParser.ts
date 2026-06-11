@@ -27,7 +27,7 @@ import type { EntityId } from '../../blackboard/types.js';
 import type { RenderedBand } from '../varianceIntegration/index.js';
 import {
   isTenantRateCardSourceRef,
-  matchTenantRateCardLine,
+  matchTenantRateCardLineDetailed,
   type TenantRateCardLine,
 } from '../rateCard.js';
 import type {
@@ -349,7 +349,7 @@ export function enforceTrustDiscipline(
     const scopeTag = coerceScopeTag(rawLine.scope_tag);
     if (scopeTag === null) continue;
     const band = bandsByScope.get(scopeTag);
-    const rate = matchTenantRateCardLine({
+    const match = matchTenantRateCardLineDetailed({
       tenantId: input.tenantId ?? 'tenant_unknown',
       scopeTag,
       description: rawLine.description,
@@ -357,7 +357,7 @@ export function enforceTrustDiscipline(
       lineId: rawLine.line_id ?? rawLine.cost_code ?? null,
       rateCard: input.rateCard,
     });
-    if (input.requireRateCardPricing === true && rate === null) {
+    if (input.requireRateCardPricing === true && match === null) {
       if (!scopesAlreadyInGaps.has(scopeTag)) {
         cleanGaps.push({
           scope_tag: scopeTag,
@@ -367,6 +367,7 @@ export function enforceTrustDiscipline(
       }
       continue;
     }
+    const rate = match?.line ?? null;
     let confidence = rate !== null ? 'MODEL_INFERENCE' : coerceConfidence(rawLine.confidence);
     if (rate !== null && !scopesAlreadyInGaps.has(scopeTag)) {
       cleanGaps.push({
@@ -399,6 +400,7 @@ export function enforceTrustDiscipline(
       uom: rawLine.uom.replace(/\s+/g, ' ').trim().slice(0, 16) || 'EA',
       unit_cents: unitCents,
       extended_cents: extended,
+      ...(match ? { matched_by: match.matched_by } : {}),
       confidence,
       source_ref: rate?.source_ref ?? rawLine.source_ref,
     });

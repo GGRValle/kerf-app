@@ -40,6 +40,7 @@ export interface RightHandEstimateLine {
   readonly extended_cents?: number | null;
   readonly price_cents?: number | null;
   readonly confidence?: string;
+  readonly matched_by?: 'line_id' | 'keyword';
   readonly proposal_line?: ProposalLineItem | null;
 }
 
@@ -289,6 +290,7 @@ function buildItemizedEstimatorLine(line: EstimatorResponse['itemized_lines'][nu
     extended_cents: line.extended_cents,
     price_cents: line.extended_cents,
     confidence: line.confidence,
+    ...(line.matched_by ? { matched_by: line.matched_by } : {}),
     proposal_line: proposalLineFor({ id, label, costCode: line.cost_code, quantity: line.quantity, uom: line.uom, unitCents: line.unit_cents, extendedCents: line.extended_cents }),
   };
 }
