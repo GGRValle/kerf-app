@@ -1093,11 +1093,24 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) =
   const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
   const milestoneQuery = c.req.query('milestone');
+  if (
+    milestoneQuery !== undefined
+    && milestoneQuery !== ''
+    && milestoneQuery !== 'down_payment'
+    && milestoneQuery !== 'final'
+  ) {
+    return c.json({
+      error: 'invalid_invoice_milestone',
+      allowed: ['down_payment', 'final'],
+      operator_message: 'Choose down payment or final. Nothing was filed or sent.',
+    }, 400);
+  }
   let projection: InvoiceProjectionResult;
   try {
     projection = buildInvoiceFromRightHandEstimate(draft, {
       now: resolveDeps().now?.() ?? new Date(),
       ...(milestoneQuery === 'final' ? { milestone: 'final' as const } : {}),
+      ...(milestoneQuery === 'down_payment' ? { milestone: 'down_payment' as const } : {}),
     });
   } catch (err) {
     return c.json({

@@ -11,7 +11,15 @@ import {
   renderInvoiceHtml,
   InvoiceProjectionError,
 } from '../src/api/lib/estimateInvoiceProjection.js';
-import type { RightHandEstimateDraft, RightHandEstimateLine } from '../src/api/lib/rightHandAssemblyStore.js';
+import {
+  createMemoryRightHandEstimateStore,
+  resetRightHandEstimateStoreForTests,
+  type RightHandEstimateDraft,
+  type RightHandEstimateLine,
+} from '../src/api/lib/rightHandAssemblyStore.js';
+import { resetApiDepsForTests } from '../src/api/lib/deps.js';
+import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
+import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
 
 const NOW = new Date('2026-06-12T04:00:00.000Z');
 
@@ -108,4 +116,59 @@ test('rendered HTML is client-clean: DRAFT watermark, license, money rows, zero 
   assert.match(html, /Amount due this invoice/);
   assert.match(html, /\$1,000\.00/);
   assert.ok(!/KERF_SEED|MODEL_INFERENCE|illustrative|suggested|rung/i.test(html));
+});
+
+test('invoice route rejects unknown milestone values instead of silently billing the down payment', async () => {
+  const estimateStore = createMemoryRightHandEstimateStore();
+  await estimateStore.save(fixtureDraft());
+  __setRightHandTurnDepsForTests({
+    env: {},
+    now: () => NOW,
+    estimateStore,
+  });
+  try {
+    const app = createAuthenticatedApiRouter();
+    const res = await app.request('/right-hand/estimates/rhe_deal_inv_conv/invoice?milestone=garbage&format=json');
+    assert.equal(res.status, 400);
+    const body = await res.json() as {
+      error: string;
+      allowed: readonly string[];
+      operator_message: string;
+    };
+    assert.equal(body.error, 'invalid_invoice_milestone');
+    assert.deepEqual(body.allowed, ['down_payment', 'final']);
+    assert.match(body.operator_message, /Nothing was filed or sent/);
+  } finally {
+    __setRightHandTurnDepsForTests(null);
+    resetApiDepsForTests();
+    resetRightHandEstimateStoreForTests();
+  }
+});
+
+test('invoice route still accepts explicit down_payment and final milestones', async () => {
+  const estimateStore = createMemoryRightHandEstimateStore();
+  await estimateStore.save(fixtureDraft());
+  __setRightHandTurnDepsForTests({
+    env: {},
+    now: () => NOW,
+    estimateStore,
+  });
+  try {
+    const app = createAuthenticatedApiRouter();
+    const down = await app.request('/right-hand/estimates/rhe_deal_inv_conv/invoice?milestone=down_payment&format=json');
+    assert.equal(down.status, 200);
+    const downBody = await down.json() as { invoice: { milestone: { kind: string }; amount_due_cents: number } };
+    assert.equal(downBody.invoice.milestone.kind, 'down_payment');
+    assert.equal(downBody.invoice.amount_due_cents, 100_000);
+
+    const final = await app.request('/right-hand/estimates/rhe_deal_inv_conv/invoice?milestone=final&format=json');
+    assert.equal(final.status, 200);
+    const finalBody = await final.json() as { invoice: { milestone: { kind: string }; amount_due_cents: number } };
+    assert.equal(finalBody.invoice.milestone.kind, 'final');
+    assert.equal(finalBody.invoice.amount_due_cents, 1_900_000);
+  } finally {
+    __setRightHandTurnDepsForTests(null);
+    resetApiDepsForTests();
+    resetRightHandEstimateStoreForTests();
+  }
 });
