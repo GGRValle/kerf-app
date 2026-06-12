@@ -4,9 +4,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ensureAstroBuilt } from './helpers/ensureAstroBuilt.js';
 import { reapOnExit } from './helpers/reapOnExit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -58,25 +58,7 @@ async function waitForHealth(baseUrl: string, attempts = 60): Promise<void> {
 }
 
 test('route shell serves all 13 legacy paths without 5xx', { timeout: 180_000, concurrency: false }, async () => {
-  const astroEntry = path.join(ROOT, 'dist/astro/server/entry.mjs');
-  let needsBuild = true;
-  try {
-    await fs.access(astroEntry);
-    needsBuild = false;
-  } catch {
-    needsBuild = true;
-  }
-
-  if (needsBuild) {
-    const build = spawn('npm', ['run', 'build:astro'], {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: { ...process.env, KERF_DISABLE_LIVE_MODELS: '1' },
-    });
-    await new Promise<void>((resolve, reject) => {
-      build.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`build:astro exited ${code}`))));
-    });
-  }
+  await ensureAstroBuilt(ROOT);
 
   const server = spawn('node', ['--import', 'tsx', 'scripts/serve-kerf-shell.ts'], {
     cwd: ROOT,
