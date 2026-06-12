@@ -100,6 +100,9 @@ const estimateTitle = rightHandDraft
           </a>
           <a class="es-btn" href={`/api/v1/right-hand/estimates/${encodeURIComponent(rightHandEstimateId)}/workbook`} download>Download workbook</a>
           <label class="es-btn es-wb-import">Import workbook<input id="wb-import" type="file" accept=".xlsx" hidden /></label>
+          {isLeadStageEstimate && dealId ? (
+            <button class="es-btn" id="rh-convert" type="button" data-deal-id={dealId}>Convert to project…</button>
+          ) : null}
         </div>
 
         {rightHandDraft.open_items.length > 0 ? (
@@ -357,6 +360,25 @@ const estimateTitle = rightHandDraft
     if (!res.ok || !out?.ok) { alert('Workbook rejected: ' + (out?.structural_error ?? res.status)); input.value = ''; return; }
     alert(`Imported — ${out.applied?.length ?? 0} edited, ${out.added?.length ?? 0} added, ${out.removed?.length ?? 0} removed` + ((out.rejected?.length ?? 0) > 0 ? `, ${out.rejected!.length} rejected` : ''));
     window.location.reload();
+  });
+
+  // D-066 conversion: explicit operator action, confirmed, one-way. The
+  // system never calls this — only this tap does.
+  document.getElementById('rh-convert')?.addEventListener('click', async (ev) => {
+    const dealIdAttr = (ev.currentTarget as HTMLButtonElement).dataset['dealId'];
+    if (!dealIdAttr) return;
+    const sure = window.confirm('Convert this lead into a project? This is one-way — there is no going back to lead status. The estimate carries over line-for-line.');
+    if (!sure) return;
+    const res = await fetch(`/api/v1/right-hand/deals/${encodeURIComponent(dealIdAttr)}/convert-to-project`, {
+      method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: '{}',
+    });
+    const out = await res.json().catch(() => null) as { ok?: boolean; project_id?: string; operator_message?: string } | null;
+    if (!res.ok || !out?.ok || !out.project_id) {
+      alert(out?.operator_message ?? `Conversion failed (${res.status}). Nothing was created.`);
+      return;
+    }
+    alert(out.operator_message ?? 'Project created.');
+    window.location.href = `/estimate/${encodeURIComponent(out.project_id)}?estimate_id=${encodeURIComponent(estimateIdParam)}`;
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-remove-suggested]').forEach((btn) => {

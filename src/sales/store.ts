@@ -163,6 +163,26 @@ export function upsertEstimatingDeal(input: {
   return deal;
 }
 
+/**
+ * D-066: the lead → project conversion marker. ONE-WAY by construction — a
+ * deal that already carries a project_id is returned unchanged (there is no
+ * path back to lead status, and no re-pointing). Stage moves to 'won'.
+ */
+export function markDealConverted(input: {
+  readonly tenant: PersistenceTenantId;
+  readonly dealId: string;
+  readonly projectId: string;
+}): Deal | null {
+  const store = getSalesStore(input.tenant);
+  const idx = store.deals.findIndex((d) => d.id === input.dealId);
+  if (idx < 0) return null;
+  const existing = store.deals[idx]!;
+  if (existing.project_id) return existing;
+  const next: Deal = { ...existing, stage: 'won', project_id: input.projectId };
+  store.deals[idx] = next;
+  return next;
+}
+
 export function catalogItemById(tenant: PersistenceTenantId, itemId: string): CatalogItem | undefined {
   return getSalesStore(tenant).items.find((i) => i.id === itemId);
 }
