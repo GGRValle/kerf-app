@@ -21,8 +21,10 @@ import {
   listScheduleEventsForProject,
   markWorkOrderSent,
   resolveSubToken,
+  type ProjectBrainSummary,
 } from '../../app/lib/lane3WorkFixtures.js';
 import { getLane23ProjectForTenant } from '../../app/lib/lane23Fixtures.js';
+import { getProjectRecordForTenant } from '../../app/lib/projectRecords.js';
 import {
   buildCameraCaptureJobNotePair,
   entryKindForCaptureKind,
@@ -33,37 +35,69 @@ import type { AttentionArtifact } from '../../contracts/lane1/attentionArtifact.
 
 export const lane3WorkRoutes = new Hono<{ Variables: ApiVariables }>();
 
-function projectVisibleToTenant(projectId: string, tenant: PersistenceTenantId): boolean {
-  return getLane23ProjectForTenant(projectId, tenant) !== null;
+type ProjectVisibility = 'fixture' | 'event_backed' | null;
+
+/**
+ * Lane3 project reads must see fixture projects AND event-backed projects —
+ * POST /projects and D-066 convert-to-project both emit project.created with
+ * no fixture row, and those projects were 404ing on every lane3 surface.
+ * Fixture hit short-circuits so fixture-project behavior is unchanged.
+ */
+async function resolveProjectVisibility(
+  projectId: string,
+  tenant: PersistenceTenantId,
+): Promise<ProjectVisibility> {
+  if (getLane23ProjectForTenant(projectId, tenant) !== null) return 'fixture';
+  const { tenantReader } = getApiDeps();
+  const record = await getProjectRecordForTenant(tenantReader, tenant, projectId);
+  return record !== null ? 'event_backed' : null;
 }
 
-lane3WorkRoutes.get('/projects/:id/brain', (c) => {
+async function projectVisibleToTenant(projectId: string, tenant: PersistenceTenantId): Promise<boolean> {
+  return (await resolveProjectVisibility(projectId, tenant)) !== null;
+}
+
+/** A just-created project has no brain data yet — present, empty, truthful. */
+const EMPTY_PROJECT_BRAIN: ProjectBrainSummary = {
+  next_action: '',
+  crew_on_site: '',
+  open_items: 0,
+  last_capture: '',
+};
+
+lane3WorkRoutes.get('/projects/:id/brain', async (c) => {
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('id');
-  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
+  const visibility = await resolveProjectVisibility(projectId, tenant);
+  if (visibility === null) return c.json({ error: 'project_not_found' }, 404);
   const brain = getProjectBrain(projectId);
-  if (brain === null) return c.json({ error: 'brain_not_found' }, 404);
+  if (brain === null) {
+    // Fixture projects keep their existing contract; event-backed projects
+    // are real but brainless at creation, which is a 200, not a 404.
+    if (visibility === 'fixture') return c.json({ error: 'brain_not_found' }, 404);
+    return c.json({ project_id: projectId, brain: EMPTY_PROJECT_BRAIN, ...tenantOverrideFlags(c) });
+  }
   return c.json({ project_id: projectId, brain, ...tenantOverrideFlags(c) });
 });
 
-lane3WorkRoutes.get('/projects/:id/selections', (c) => {
+lane3WorkRoutes.get('/projects/:id/selections', async (c) => {
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('id');
-  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
+  if (!(await projectVisibleToTenant(projectId, tenant))) return c.json({ error: 'project_not_found' }, 404);
   return c.json({ project_id: projectId, selections: listProjectSelections(projectId), ...tenantOverrideFlags(c) });
 });
 
-lane3WorkRoutes.get('/projects/:id/notes', (c) => {
+lane3WorkRoutes.get('/projects/:id/notes', async (c) => {
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('id');
-  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
+  if (!(await projectVisibleToTenant(projectId, tenant))) return c.json({ error: 'project_not_found' }, 404);
   return c.json({ project_id: projectId, notes: listProjectNotes(projectId), ...tenantOverrideFlags(c) });
 });
 
-lane3WorkRoutes.get('/projects/:id/schedule-substrate', (c) => {
+lane3WorkRoutes.get('/projects/:id/schedule-substrate', async (c) => {
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('id');
-  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
+  if (!(await projectVisibleToTenant(projectId, tenant))) return c.json({ error: 'project_not_found' }, 404);
   const events = listScheduleEventsForProject(tenant, projectId);
   const assignments = listAssignmentsForProject(tenant, projectId).map((a) => ({
     ...a,
@@ -81,7 +115,7 @@ lane3WorkRoutes.post('/projects/:id/camera-capture', async (c) => {
   };
   const body: CameraCaptureBody = await c.req.json<CameraCaptureBody>().catch(() => ({}));
   const tenant = requireApiTenant(c);
-  if (!projectVisibleToTenant(projectId, tenant)) return c.json({ error: 'project_not_found' }, 404);
+  if (!(await projectVisibleToTenant(projectId, tenant))) return c.json({ error: 'project_not_found' }, 404);
   const kind = body.capture_kind ?? 'photo';
   if (kind !== 'photo' && kind !== 'walkthrough' && kind !== 'scan') {
     return c.json({ error: 'invalid_capture_kind' }, 400);
