@@ -3,7 +3,6 @@
  */
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { access } from 'node:fs/promises';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -19,9 +18,9 @@ import {
   shellSessionSetCookieHeader,
   verifyDeployBasicAuth,
 } from '../src/shell/shellAuthSession.js';
+import { ensureAstroBuilt } from './helpers/ensureAstroBuilt.js';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
-const ASTRO_ENTRY = path.join(REPO_ROOT, 'dist/astro/server/entry.mjs');
 
 function withBasicAuthEnv<T>(fn: () => T | Promise<T>): T | Promise<T> {
   const prevUser = process.env['BASIC_AUTH_USER'];
@@ -122,25 +121,6 @@ function httpGet(url: string, headers: Record<string, string> = {}): Promise<Htt
   });
 }
 
-async function ensureAstroShellBuilt(): Promise<void> {
-  try {
-    await access(ASTRO_ENTRY);
-    return;
-  } catch {
-    // CI has no prebuilt Astro handler — build before spawning serve-kerf-shell.
-  }
-  const build = spawn('npm', ['run', 'build:astro'], {
-    cwd: REPO_ROOT,
-    stdio: 'inherit',
-    env: { ...process.env, KERF_DISABLE_LIVE_MODELS: '1' },
-  });
-  await new Promise<void>((resolve, reject) => {
-    build.on('exit', (code) =>
-      code === 0 ? resolve() : reject(new Error(`build:astro exited ${code}`)),
-    );
-  });
-}
-
 function tailChildOutput(logs: readonly string[], maxLines = 40): string {
   return logs
     .join('')
@@ -173,7 +153,7 @@ async function startShellServer(env: Record<string, string>): Promise<{
   port: number;
   persistenceDir: string;
 }> {
-  await ensureAstroShellBuilt();
+  await ensureAstroBuilt(REPO_ROOT);
   const port = 19_400 + Math.floor(Math.random() * 80);
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-shell-auth-'));
   const logs: string[] = [];
