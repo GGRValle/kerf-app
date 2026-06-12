@@ -9,11 +9,13 @@
  * upstream, JSON response shape, error pass-through.
  */
 import assert from 'node:assert/strict';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
+import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -158,7 +160,7 @@ interface ServeProcess {
 }
 
 async function startServe(env: NodeJS.ProcessEnv, port: number): Promise<ServeProcess> {
-  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
+  const child = spawnServeV15Process({
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -170,7 +172,6 @@ async function startServe(env: NodeJS.ProcessEnv, port: number): Promise<ServePr
       ...env,
       PORT: String(port),
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
   });
   // Surface child stderr if a test hangs — helps diagnose CI failures.
   child.stderr.on('data', (c: Buffer) => {
@@ -194,15 +195,11 @@ function stopServe(s: ServeProcess): Promise<void> {
   });
 }
 
-function randomPort(): number {
-  return 19_010 + Math.floor(Math.random() * 900);
-}
-
 test('POST /transcribe returns 200 with transcript when upstream Whisper succeeds', async () => {
   const stub = await startStubGroq({ kind: 'ok', transcript: 'hello world', duration: 1.5, language: 'en' });
   const serve = await startServe(
     { GROQ_API_KEY: 'test-key-abc', GROQ_BASE_URL: stub.url },
-    randomPort(),
+    await freeLoopbackPort(),
   );
   try {
     const audio = Buffer.from('FAKE_OGG_BYTES_BUT_WE_NEVER_DECODE_THEM');
@@ -235,7 +232,7 @@ test('POST /transcribe returns 502 with upstream error body when Groq returns 4x
   });
   const serve = await startServe(
     { GROQ_API_KEY: 'stale-key', GROQ_BASE_URL: stub.url },
-    randomPort(),
+    await freeLoopbackPort(),
   );
   try {
     const r = await httpPost(`${serve.baseUrl}/transcribe`, Buffer.from('audio-bytes'), {
@@ -256,7 +253,7 @@ test('POST /transcribe returns 415 when content-type is not audio/* or applicati
   const stub = await startStubGroq({ kind: 'ok', transcript: 'x', duration: 0.1, language: 'en' });
   const serve = await startServe(
     { GROQ_API_KEY: 'k', GROQ_BASE_URL: stub.url },
-    randomPort(),
+    await freeLoopbackPort(),
   );
   try {
     const r = await httpPost(`${serve.baseUrl}/transcribe`, Buffer.from('hello'), {
@@ -275,7 +272,7 @@ test('POST /transcribe returns 400 when body is empty', async () => {
   const stub = await startStubGroq({ kind: 'ok', transcript: 'x', duration: 0.1, language: 'en' });
   const serve = await startServe(
     { GROQ_API_KEY: 'k', GROQ_BASE_URL: stub.url },
-    randomPort(),
+    await freeLoopbackPort(),
   );
   try {
     const r = await httpPost(`${serve.baseUrl}/transcribe`, Buffer.alloc(0), {
@@ -293,7 +290,7 @@ test('POST /transcribe returns 400 when body is empty', async () => {
 test('POST /transcribe returns 503 when GROQ env vars are not set', async () => {
   // Explicitly blank both keys so any preexisting shell env doesn't leak into
   // the spawned process. The serve script must guard before touching upstream.
-  const serve = await startServe({ GROQ_API_KEY: '', GROQ_BASE_URL: '' }, randomPort());
+  const serve = await startServe({ GROQ_API_KEY: '', GROQ_BASE_URL: '' }, await freeLoopbackPort());
   try {
     const r = await httpPost(`${serve.baseUrl}/transcribe`, Buffer.from('audio-bytes'), {
       'Content-Type': 'audio/webm',
@@ -311,7 +308,7 @@ test('static V1.5 routes still serve after POST /transcribe is added (no regress
   const stub = await startStubGroq({ kind: 'ok', transcript: 'x', duration: 0.1, language: 'en' });
   const serve = await startServe(
     { GROQ_API_KEY: 'k', GROQ_BASE_URL: stub.url },
-    randomPort(),
+    await freeLoopbackPort(),
   );
   try {
     const dash = await httpGet(`${serve.baseUrl}/dashboard`);

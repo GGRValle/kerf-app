@@ -9,6 +9,7 @@ import type { ShellRoleRoot } from '../../contracts/lane1/domains.js';
 import { SHELL_ROLE_ROOTS } from '../../contracts/lane1/domains.js';
 import type { PersistenceTenantId } from '../../persistence/events.js';
 import { resolveAuthBinding } from '../../app/lib/roleRootAuth.js';
+import { platformSessionFromShellCookie } from '../../shell/shellAuthSession.js';
 
 export interface PlatformSession {
   readonly token: string;
@@ -96,12 +97,21 @@ export function resolvePlatformSession(
   c: Context,
 ): { ok: true; session: PlatformSession } | { ok: false; status: 401; error: string } {
   const authorization = c.req.header('authorization');
+  const cookieHeader = c.req.header('cookie');
+  const shellSession = platformSessionFromShellCookie(cookieHeader);
   const session =
     sessionFromBearer(authorization) ??
     (() => {
-      const token = sessionTokenFromCookieHeader(c.req.header('cookie'));
+      const token = sessionTokenFromCookieHeader(cookieHeader);
       return token ? SESSION_BY_TOKEN[token] ?? null : null;
     })() ??
+    (shellSession
+      ? {
+          token: shellSession.token,
+          tenantId: shellSession.tenantId,
+          roleRoot: shellSession.roleRoot,
+        }
+      : null) ??
     sessionFromBasicAuth(authorization);
 
   if (!session) {
