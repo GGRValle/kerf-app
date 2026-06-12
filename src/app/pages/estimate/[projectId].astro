@@ -81,7 +81,7 @@ const estimateTitle = rightHandDraft
           </div>
           <div class="es-stat-card">
             <span class="es-kicker">Open items</span>
-            <strong>{rhOpenLines.length}</strong>
+            <strong>{rightHandDraft.open_items.length}</strong>
           </div>
         </div>
 
@@ -101,6 +101,19 @@ const estimateTitle = rightHandDraft
           <a class="es-btn" href={`/api/v1/right-hand/estimates/${encodeURIComponent(rightHandEstimateId)}/workbook`} download>Download workbook</a>
           <label class="es-btn es-wb-import">Import workbook<input id="wb-import" type="file" accept=".xlsx" hidden /></label>
         </div>
+
+        {rightHandDraft.open_items.length > 0 ? (
+          <div class="es-rh-open" aria-label="Open questions">
+            <strong>Open items</strong>
+            {rightHandDraft.open_items.slice(0, 5).map((item) => <span>{item}</span>)}
+            {rightHandDraft.open_items.length > 5 ? (
+              <details class="es-rh-open-more">
+                <summary>Show all ({rightHandDraft.open_items.length})</summary>
+                {rightHandDraft.open_items.slice(5).map((item) => <span>{item}</span>)}
+              </details>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     ) : null}
 
@@ -155,7 +168,7 @@ const estimateTitle = rightHandDraft
                     <strong>{fmt(line.extended_cents ?? 0)}</strong>
                   </div>
                   <div class="es-line-math">
-                    <span>{qtyFor(line) || '1 LS'}</span>
+                    <span>{qtyFor(line) || 'Needs quantity'}</span>
                     <span>{typeof line.unit_cents === 'number' ? `${fmt(line.unit_cents)}/${line.uom ?? 'unit'}` : 'Needs rate'}</span>
                     <button class="es-btn es-btn-mini" type="button" data-edit-line={line.id} data-qty={line.quantity ?? ''} data-unit={line.unit_cents ?? ''}>Edit</button>
                   </div>
@@ -180,7 +193,7 @@ const estimateTitle = rightHandDraft
                     <strong>{fmt(line.extended_cents ?? 0)}</strong>
                   </div>
                   <div class="es-line-math">
-                    <span>{qtyFor(line) || '1 LS'}</span>
+                    <span>{qtyFor(line) || 'Needs quantity'}</span>
                     <span>{typeof line.unit_cents === 'number' ? `${fmt(line.unit_cents)}/${line.uom ?? 'unit'}` : 'Needs rate'}</span>
                     <button class="es-btn es-btn-mini" type="button" data-remove-suggested={line.id}>Remove</button>
                   </div>
@@ -535,6 +548,37 @@ const estimateTitle = rightHandDraft
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: 0.75rem;
+  }
+
+  .es-rh-open {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    color: var(--text-muted, #6a7282);
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .es-rh-open strong {
+    color: var(--text, #111827);
+  }
+
+  .es-rh-open span,
+  .es-rh-open-more summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.45rem;
+    padding: 0.12rem 0.45rem;
+    border: 1px solid color-mix(in srgb, var(--accent, #f5b544) 44%, var(--border, #cfd6e2));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface, #fff) 90%, var(--accent, #f5b544));
+    color: #7c4a03;
+  }
+
+  .es-rh-open-more {
+    display: contents;
   }
 
   .es-btn {
