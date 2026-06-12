@@ -10,6 +10,8 @@
  */
 import { buildEstimatorPrompt } from '../src/estimator/orchestration/promptBuilder.js';
 import { makeGroqModelCaller } from '../src/estimator/orchestration/groqModelCaller.js';
+import { makeAnthropicModelCaller } from '../src/estimator/orchestration/anthropicModelCaller.js';
+import { estimateProject } from '../src/estimator/orchestration/estimateProject.js';
 import { parseRawResponse, enforceTrustDiscipline } from '../src/estimator/orchestration/responseParser.js';
 import { tenantRateCardFor, RICARDO_FILLED_EXPECTED } from '../src/estimator/rateCard.js';
 
@@ -59,18 +61,70 @@ async function runOnce(label: string, caller: any): Promise<boolean> {
   return within10 && exactId / Math.max(1, priced.length) >= 0.6 && qtyOk >= Math.max(1, qtyTotal - 1);
 }
 
+// Production caller (NOT an inline copy): the eval exercises the exact code
+// path the deployed estimator runs — adaptive thinking, thinking-block
+// filtering, and the max_tokens truncation guard included.
 function anthropicEstimatorCaller(model: string) {
-  return async (input: any) => {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model, max_tokens: 16000, system: input.systemMessage, messages: [{ role: 'user', content: input.userMessage }] }),
-    });
-    if (!res.ok) return { ok: false, reason: `anthropic ${res.status}: ${(await res.text()).slice(0, 120)}` };
-    const data = await res.json() as { content: { type: string; text?: string }[] };
-    const text = data.content.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
-    return { ok: true, content: text, tokensIn: 1, tokensOut: 1, costNanoUsd: 1, modelId: model, endpoint: 'anthropic' };
+  return makeAnthropicModelCaller({ apiKey: process.env.ANTHROPIC_API_KEY!, model });
+}
+
+/** Full two-pass pipeline (selection + extrapolation) — the metric that
+ * matters post-extrapolation: whole-total vs the 46-line FILLED key. */
+async function runFullPipeline(label: string, caller: any) {
+  const inputs: any = {
+    tenantId: 'tenant_ggr', projectArchetype: 'kitchen_remodel', scopeTags: allTags,
+    // operatorNotes is how the production adapter feeds the narrative to
+    // pass-1 (buildEstimatorInputsFromRightHand); scopeNarrative feeds pass-2.
+    operatorNotes: SCOPE_NARRATIVE,
+    scopeNarrative: SCOPE_NARRATIVE, invocationId: 'ricardo_full_' + label.replace(/\W+/g, '_'), requestedAt: new Date().toISOString(),
   };
+  let result;
+  try {
+    result = await estimateProject(inputs, { modelCaller: caller, comparablePool: [], rateCard: card });
+  } catch (e: any) {
+    console.log(label, 'PIPELINE FAILED:', String(e.message).slice(0, 140));
+    return null;
+  }
+  const lines = result.estimatorResponse.itemized_lines.filter((l: any) => l.unit_cents > 0);
+  const stated = lines.filter((l: any) => !l.suggested);
+  const suggested = lines.filter((l: any) => l.suggested);
+  const exactId = lines.filter((l: any) => l.matched_by === 'line_id').length;
+  let qtyOk = 0, qtyTotal = 0;
+  for (const [code, dim] of Object.entries(statedDims)) {
+    const line = lines.find((l: any) => (l.line_id ?? l.cost_code) === code);
+    if (line) { qtyTotal++; if (Math.abs(line.quantity - dim) < 0.01) qtyOk++; }
+  }
+  const total = lines.reduce((s: number, l: any) => s + l.extended_cents, 0);
+  const target = RICARDO_FILLED_EXPECTED.summary_sell_total_cents;
+  const deltaPct = (100 * (total - target)) / target;
+  console.log(label + ' FULL-PIPELINE SCORECARD');
+  console.log('  lines: ' + stated.length + ' stated + ' + suggested.length + ' suggested | exact-id: ' + exactId + '/' + lines.length);
+  console.log('  stated-dim qty: ' + qtyOk + '/' + qtyTotal + ' | total: $' + (total / 100).toLocaleString() + ' vs $' + (target / 100).toLocaleString() + ' (' + deltaPct.toFixed(1) + '%)');
+  return { label, ok: Math.abs(deltaPct) <= 10, total, stated: stated.length, suggested: suggested.length, exactIdPct: Math.round(100 * exactId / Math.max(1, lines.length)), qty: qtyOk + '/' + qtyTotal, deltaPct };
+}
+
+// ── Tier-ladder mode (EVAL_TIER_LADDER=1): sonnet vs opus-4.8 vs fable on
+// the FULL pipeline, repeats for variance (variance is what killed groq).
+// The legacy groq→frontier selection-only tripwire below stays the default.
+if (process.env.EVAL_TIER_LADDER === '1') {
+  const ladder: Array<{ model: string; runs: number }> = [
+    { model: 'claude-sonnet-4-6', runs: 2 },
+    { model: 'claude-opus-4-8', runs: 2 },
+    { model: 'claude-fable-5', runs: 1 },
+  ];
+  const rows: any[] = [];
+  for (const rung of ladder) {
+    for (let i = 1; i <= rung.runs; i++) {
+      const row = await runFullPipeline(rung.model + ' #' + i, anthropicEstimatorCaller(rung.model));
+      if (row) rows.push(row);
+      console.log('');
+    }
+  }
+  console.log('TIER LADDER SUMMARY (target $' + (RICARDO_FILLED_EXPECTED.summary_sell_total_cents / 100).toLocaleString() + ' ±10%)');
+  for (const r of rows) {
+    console.log('  ' + r.label.padEnd(22) + ' $' + (r.total / 100).toLocaleString().padStart(11) + '  D' + r.deltaPct.toFixed(1).padStart(6) + '%  ' + (r.ok ? 'WITHIN' : 'OUTSIDE') + '  ' + r.stated + '+' + r.suggested + ' lines  exact-id ' + r.exactIdPct + '%  qty ' + r.qty);
+  }
+  process.exit(0);
 }
 
 const groqCaller = makeGroqModelCaller({ apiKey: process.env.GROQ_API_KEY!, baseUrl: 'https://api.groq.com/openai/v1' });

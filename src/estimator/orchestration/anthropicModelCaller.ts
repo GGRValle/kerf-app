@@ -6,8 +6,16 @@
  * stable totals. Selection is the money path's front door - it gets the
  * frontier brain when a key is present.)
  *
+ * Default tier is opus-class per founder directive 2026-06-11 ("the
+ * orchestrator has to have the biggest brain. or at least opus 4.8") - this
+ * seat runs per-lead, not per-turn, so the spend is bounded by estimate
+ * volume. D-069 (refining D-064 tier-3). ESTIMATOR_FRONTIER_MODEL overrides.
+ *
  * No response_format equivalent here: the parser's fence/prose recovery
- * (#318) plus 16k max_tokens handle the output shape.
+ * (#318) plus 16k max_tokens handle the output shape. NO thinking param:
+ * adaptive thinking shares the max_tokens budget and the 2026-06-11 tier
+ * ladder showed it thinking past 16k on the 195-line library prompt
+ * (truncated JSON, fail-closed). Revisit when this caller streams.
  */
 import type { ModelCaller } from './types.js';
 
@@ -17,7 +25,7 @@ export interface MakeAnthropicModelCallerOpts {
   readonly baseUrl?: string;
 }
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+const DEFAULT_MODEL = 'claude-opus-4-8';
 const DEFAULT_BASE_URL = 'https://api.anthropic.com';
 
 export function makeAnthropicModelCaller(opts: MakeAnthropicModelCallerOpts): ModelCaller {
@@ -49,8 +57,14 @@ export function makeAnthropicModelCaller(opts: MakeAnthropicModelCallerOpts): Mo
     }
     const data = await res.json() as {
       content?: { type: string; text?: string }[];
+      stop_reason?: string;
       usage?: { input_tokens?: number; output_tokens?: number };
     };
+    if (data.stop_reason === 'max_tokens') {
+      // A clipped selection JSON would otherwise surface as a downstream
+      // parser failure; name the real cause so telemetry stays honest.
+      return { ok: false, reason: 'anthropic output truncated at max_tokens' };
+    }
     const text = (data.content ?? []).filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
     if (!text) return { ok: false, reason: 'anthropic returned no text content' };
     return {
