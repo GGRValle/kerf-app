@@ -766,7 +766,10 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   assert.match(enterReply, /const wantsAssembly = textRequestsEstimateAssembly\(clean\) \|\| textLooksLikeEstimatePageUpdate\(clean\)/);
   assert.match(enterReply, /const fallbackReply = wantsAssembly \? 'Assembling the estimate draft…' : pendingReplyText\(\)/);
   assert.match(enterReply, /const replyIndex = appendTurn\('right_hand', fallbackReply\)/);
-  assert.match(enterReply, /assembleEstimateServerSide\(clean, draftText, turnsForModel\)/);
+  // Assembly routes through the shared presence path (thinking-state card):
+  // one state machine owns working → ready/question/snag at BOTH call sites,
+  // and the helper still drives the server-side assembler.
+  assert.match(enterReply, /runAssemblyWithPresence\(clean, draftText, turnsForModel, replyIndex\)/);
   assert.match(enterReply, /resolveReplyServerSide\(clean, draftText, trp, turnsForModel\)/);
   assert.match(enterReply, /canonicalWorkingDraft = payload\.workingDraft/);
   assert.match(enterReply, /payload\.proposedAction === 'assemble_estimate'/);
@@ -1016,8 +1019,39 @@ test('LIVE frame shifts keep Right Hand in the conversation on the destination f
   assert.match(routeLive, /navigate\(`\$\{route\}\?src=voice`, \{ resume: intent !== 'open_field_capture' \}\)/);
   assert.match(routeLive, /navigate\('\/projects\?src=voice', \{ resume: true \}\)/);
   assert.match(src, /readResumeState\(sessionStorage\)/); // persistent bubble state — never consumed on read
-  assert.match(src, /showResumeBubble\(bubbleLabelFor\(resumeState\)\)/); // bubble, not auto-open (walk: 'popped in and out')
+  // Bubble, not auto-open (walk: 'popped in and out') — and the label wears
+  // the PHASE truth first (working/ready/question/snag) before the hint.
+  assert.match(src, /showResumeBubble\(bubbleLabelForPhase\(phaseState, resumeState, Date\.now\(\)\)\)/);
   assert.match(src, /resumeBubble\?\.addEventListener\('click'[\s\S]*?openOverlay\(\{ restoreConversation: true \}\)/);
+});
+
+test('thinking-state presence: one state machine, real async edges, honest endings (card acceptance)', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  // The in-thread presence exists with continuous CSS motion + reduced-motion fallback.
+  assert.match(src, /id="rhvo-presence"/);
+  assert.match(src, /rhvoOrbBreathe/);
+  assert.match(src, /prefers-reduced-motion/);
+  // The shared helper owns the lifecycle: presence on → request → one ending.
+  const helper = src.slice(src.indexOf('const runAssemblyWithPresence'), src.indexOf('const enterConfirm'));
+  assert.match(helper, /showWorkingPresence\(\)/);
+  assert.match(helper, /hideWorkingPresence\(\)/);
+  assert.match(helper, /phaseAfterAssembly\(/);
+  assert.match(helper, /SNAG_REPLY/); // honest failure copy — never a spinner that outlives the work
+  assert.match(helper, /shouldNavigateAfterAssembly\(\{ overlayHidden: overlay\.hidden \}\)/); // no-yank preserved
+  // The request has a hard client bound (timeout → snag, never infinite).
+  assert.match(src, /ASSEMBLY_TIMEOUT_MS = 150_000/);
+  assert.match(src, /new AbortController\(\)/);
+  // The narration interval refreshes TEXT only — phase changes come from real
+  // edges (response or poll), never from the timer itself.
+  assert.match(src, /presenceTextEl\.textContent = workingNarration\(Date\.now\(\) - startedAt\)/);
+  // Parked recovery: a working phase that outlived its page polls the REAL
+  // server snapshot signal and degrades honestly at the stale bound.
+  assert.match(src, /startParkedRecoveryPoll/);
+  assert.match(src, /estimateIdFromSourceRefs/);
+  assert.match(src, /WORKING_PHASE_STALE_MS/);
+  // No agent names in the operator-facing presence copy (module tests cover
+  // narration; this covers the snag line).
+  assert.ok(!/SNAG_REPLY = '[^']*agent/i.test(src));
 });
 
 test('fallback mic-off cannot freeze forever on empty audio or hanging transcription', () => {
