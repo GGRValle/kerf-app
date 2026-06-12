@@ -2,7 +2,7 @@
  * HTTP integration tests for tier-2 KB routes on `scripts/serve-v15-vertical-slice.ts`.
  */
 import assert from 'node:assert/strict';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -10,6 +10,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
+import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -82,19 +83,14 @@ interface ServeProcess {
 async function startServe(): Promise<ServeProcess> {
   const port = await freeLoopbackPort();
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-v15-kb-api-'));
-  const child = spawn(
-    'node',
-    ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'],
-    {
-      cwd: REPO_ROOT,
-      env: {
-        ...process.env,
-        PORT: String(port),
-        PERSISTENCE_DIR: persistenceDir,
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
+  const child = spawnServeV15Process({
+    cwd: REPO_ROOT,
+    env: {
+      ...process.env,
+      PORT: String(port),
+      PERSISTENCE_DIR: persistenceDir,
     },
-  );
+  });
   await waitForReady(port, 15_000);
   return { child, port, persistenceDir };
 }

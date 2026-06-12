@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { reapOnExit } from './helpers/reapOnExit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -79,7 +80,10 @@ test('route shell serves all 13 legacy paths without 5xx', { timeout: 180_000, c
 
   const server = spawn('node', ['--import', 'tsx', 'scripts/serve-kerf-shell.ts'], {
     cwd: ROOT,
-    stdio: 'pipe',
+    // stdin must stay 'pipe' (not 'ignore') — the server's orphan guard
+    // exits on stdin close, the only teardown that survives runner SIGKILL.
+    stdio: ['pipe', 'pipe', 'pipe'],
+    detached: false,
     env: {
       ...process.env,
       PORT: String(PORT),
@@ -87,6 +91,7 @@ test('route shell serves all 13 legacy paths without 5xx', { timeout: 180_000, c
       PERSISTENCE_DIR: path.join(ROOT, '.tmp-route-shell-smoke'),
     },
   });
+  reapOnExit(server);
 
   const baseUrl = `http://127.0.0.1:${PORT}`;
   try {

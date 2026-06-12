@@ -8,7 +8,7 @@
  * (no surfacing endpoint yet). The review handler requires a prior surfaced row.
  */
 import assert from 'node:assert/strict';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -16,6 +16,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
+import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 import {
   validatePersistenceEvent,
@@ -132,7 +133,7 @@ async function startServeWithEvents(events: readonly PersistenceEvent[]): Promis
   const port = await freeLoopbackPort();
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-v15-rc-review-'));
   await writeEventsJsonl(persistenceDir, events);
-  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
+  const child = spawnServeV15Process({
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -141,7 +142,6 @@ async function startServeWithEvents(events: readonly PersistenceEvent[]): Promis
       // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
       KERF_DISABLE_LIVE_MODELS: '1',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
   });
   await waitForReady(port);
   return { child, port, persistenceDir };

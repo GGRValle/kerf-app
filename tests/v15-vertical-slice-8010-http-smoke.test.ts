@@ -3,12 +3,12 @@
  * Uses an OS-assigned ephemeral loopback port so parallel suites do not collide.
  */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
+import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -55,7 +55,7 @@ async function waitForOk(url: string, timeoutMs: number): Promise<void> {
 
 test('v15 vertical slice static server: index shell + app bundle (8010 stack)', async () => {
   const port = await freeLoopbackPort();
-  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
+  const child = spawnServeV15Process({
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -63,7 +63,6 @@ test('v15 vertical slice static server: index shell + app bundle (8010 stack)', 
       // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
       KERF_DISABLE_LIVE_MODELS: '1',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
   });
 
   try {
@@ -98,7 +97,7 @@ test('v15 vertical slice static server: index shell + app bundle (8010 stack)', 
  */
 test('v15 deep-link reload: HTML at nested routes contains root-relative asset paths', async () => {
   const port = await freeLoopbackPort();
-  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
+  const child = spawnServeV15Process({
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -106,7 +105,6 @@ test('v15 deep-link reload: HTML at nested routes contains root-relative asset p
       // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
       KERF_DISABLE_LIVE_MODELS: '1',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
   });
 
   try {
