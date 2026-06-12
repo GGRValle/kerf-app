@@ -65,12 +65,13 @@ function buildSystemMessage(): string {
     'NON-NEGOTIABLE TRUST DISCIPLINE:',
     '',
     '1. ITEMIZED DRAFT FIRST. Decompose the operator scope into component',
-    '   estimate lines grouped by Kerf division. Use the quantity and UOM the',
-    '   operator gave. Prefer an exact rate-card line_id/cost_code when the',
-    '   prompt provides one. Do not invent unit costs or divisions; Kerf',
-    '   replaces your placeholders with KERF_SEED cost-code rates after parsing.',
-    '   Do not use one giant trade-band line when the scope can be broken',
-    '   into components.',
+    '   estimate lines. For EVERY rate-card candidate that fits, emit it in',
+    '   the top-level selections[] array with its exact line_id (cost_code)',
+    '   and qty in that line\'s uom. Reserve itemized_lines ONLY for custom',
+    '   or unmatched scope with no candidate. Do not invent unit costs or',
+    '   divisions; Kerf replaces placeholders with KERF_SEED rates after',
+    '   parsing. Do not use one giant trade-band line when the scope can be',
+    '   broken into components.',
     '',
     '2. PRECISION GATE. Each rendered band carries a precision_allowed flag.',
     '   If precision_allowed=false, company data cannot support a precise',
@@ -107,12 +108,15 @@ function buildSystemMessage(): string {
     '      "band_source_uri": "<URI from rendered band, or null>"',
     '    }',
     '  ],',
+    '  "selections": [',
+    '    { "line_id": "<exact cost_code from RATE-CARD SEED CANDIDATES>", "qty": <positive number in that line uom> }',
+    '  ],',
     '  "itemized_lines": [',
     '    {',
     '      "scope_tag": "<one of: ' + SCOPE_TAG_LIST + '>",',
     '      "division_code": "<Kerf division code, placeholder ok>",',
     '      "division_label": "<Kerf division label, placeholder ok>",',
-    '      "description": "<component line, e.g. 36 LF base cabinets>",',
+    '      "description": "<custom/unmatched component only — NOT library picks>",',
     '      "quantity": <positive number>,',
     '      "uom": "LF" | "SF" | "EA" | "LS" | "HR",',
     '      "unit_cents": 0,',
@@ -133,9 +137,14 @@ function buildSystemMessage(): string {
     '    price_cents=null placeholders MUST also carry a gaps_flagged entry',
     '    so the source-basis gap is visible.',
     '  - All money fields are integer cents. No floats. No dollar signs.',
-    '  - For itemized_lines, unit_cents MUST be 0. The parser ignores',
-    '    model-invented unit prices and uses KERF_SEED / tenant-selected',
-    '    cost-code rows only.',
+    '  - selections[] is REQUIRED for every library candidate you pick.',
+    '    line_id MUST be the exact cost_code printed in RATE-CARD SEED',
+    '    CANDIDATES (e.g. "CB-001"). qty = the operator\'s stated count or',
+    '    measurement in that line\'s uom. Do NOT put library picks in',
+    '    itemized_lines.',
+    '  - For itemized_lines (custom/unmatched only), unit_cents MUST be 0.',
+    '    The parser ignores model-invented unit prices and uses KERF_SEED /',
+    '    tenant-selected cost-code rows only.',
     '  - KERF_SEED prices are illustrative draft starts, not company truth;',
     '    they stay blocked until the operator explicitly promotes them.',
     '  - itemized_lines are the operator-facing estimate. line_items are',
@@ -183,13 +192,15 @@ function buildUserMessage(opts: BuildPromptOpts): string {
       lines.push('');
       lines.push('RATE-CARD SEED CANDIDATES (review-required KERF_SEED, not company truth):');
       lines.push('SELECTION RULES:');
+      lines.push('  - Emit every library pick in the top-level selections[] array.');
       lines.push('  - One selection per distinct scope item; do not merge separate items.');
-      lines.push('  - quantity = the operator\'s stated count or measurement, in the line\'s uom');
+      lines.push('  - qty = the operator\'s stated count or measurement, in the line\'s uom');
       lines.push('    (2 pendant lights => qty 2 of a per-EA line, never qty 1).');
       lines.push('  - Never fold per-EA items into an LS line; pick the per-EA line and count them.');
       lines.push('  - Prefer the candidate whose label matches the material/system named, not just the trade.');
-      lines.push('  - When a candidate fits, line_id and cost_code MUST be its exact cost_code');
-      lines.push('    (e.g. "CB-001") — never null, never invented. Null only when NO candidate fits.');
+      lines.push('  - line_id MUST be the exact cost_code printed below (e.g. "CB-001").');
+      lines.push('  - Do NOT duplicate library picks in itemized_lines; that array is for');
+      lines.push('    custom/unmatched scope only.');
       for (const line of candidates) {
         lines.push(
           `  - line_id=${line.cost_code} scope=${line.scope_tag} division=${line.kerf_division.code} ${line.kerf_division.label} ` +
