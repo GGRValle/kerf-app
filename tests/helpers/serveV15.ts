@@ -8,10 +8,14 @@ const SERVE_ARGS = ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'] as
 const liveChildren = new Set<ChildProcessWithoutNullStreams>();
 let handlersInstalled = false;
 
-function killLiveChildren(signal: NodeJS.Signals = 'SIGTERM'): void {
+function killLiveChildren(signal: NodeJS.Signals): void {
   for (const child of liveChildren) {
     if (child.exitCode === null && child.signalCode === null) {
-      child.kill(signal);
+      try {
+        child.kill(signal);
+      } catch {
+        // child already gone
+      }
     }
   }
 }
@@ -21,7 +25,9 @@ function installExitHandlers(): void {
     return;
   }
   handlersInstalled = true;
-  process.once('exit', () => killLiveChildren('SIGTERM'));
+  // Last-resort reaper: synchronous SIGKILL on graceful test-process exit.
+  // A SIGKILLed parent runs no handlers; that path is covered server-side.
+  process.once('exit', () => killLiveChildren('SIGKILL'));
   process.once('SIGINT', () => {
     killLiveChildren('SIGTERM');
     process.exit(130);

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
 import { once } from 'node:events';
 import http from 'node:http';
 import path from 'node:path';
@@ -67,5 +68,32 @@ test('serve-v15 exits when the parent-owned stdin pipe closes', async () => {
     if (child.exitCode === null && child.signalCode === null) {
       child.kill('SIGKILL');
     }
+  }
+});
+
+test('serve-v15 orphan guard includes ppid reparent fallback', () => {
+  const src = readFileSync(
+    new URL('../scripts/serve-v15-vertical-slice.ts', import.meta.url),
+    'utf8',
+  );
+  assert.match(src, /KERF_PARENT_STDIN_WATCH/);
+  assert.match(src, /process\.ppid !== 1/);
+  assert.match(src, /process\.ppid === 1/);
+});
+
+test('integration tests spawn serve-v15 only through tests/helpers/serveV15.ts', () => {
+  const testsDir = path.resolve(fileURLToPath(new URL('.', import.meta.url)));
+  const directSpawn = /spawn\s*\(\s*['"]node['"][\s\S]*serve-v15-vertical-slice\.ts/;
+  for (const name of readdirSync(testsDir)) {
+    if (!name.endsWith('.test.ts') || name === 'v15-serve-teardown.test.ts') {
+      continue;
+    }
+    const filePath = path.join(testsDir, name);
+    const src = readFileSync(filePath, 'utf8');
+    assert.doesNotMatch(
+      src,
+      directSpawn,
+      `${name} must use spawnServeV15Process from tests/helpers/serveV15.ts`,
+    );
   }
 });

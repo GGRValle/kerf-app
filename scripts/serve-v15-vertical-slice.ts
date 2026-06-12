@@ -1681,3 +1681,20 @@ server.listen(PORT, () => {
     }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/projects/<id>/daily-log/entries — Field Daily entry (daily_log.entry_captured)\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
   );
 });
+
+// Orphan guard (ppid fallback) — covers spawns that do not opt into
+// KERF_PARENT_STDIN_WATCH (non-helper integration tests, legacy spawns).
+// Manual demo runs keep their shell parent (ppid !== 1) until the user
+// stops the server; intentionally daemonized processes (ppid === 1 at
+// startup) skip the poll.
+if (process.ppid !== 1) {
+  const ppidPoll = setInterval(() => {
+    if (process.ppid === 1) {
+      console.warn('[serve-v15] reparented to PID 1 — parent gone; exiting orphaned server');
+      const forceExit = setTimeout(() => process.exit(0), 500);
+      forceExit.unref();
+      server.close(() => process.exit(0));
+    }
+  }, 1_000);
+  ppidPoll.unref();
+}
