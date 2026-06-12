@@ -27,6 +27,7 @@
  */
 import http from 'node:http';
 import fs from 'node:fs/promises';
+import { fstatSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
@@ -1656,3 +1657,48 @@ server.listen(PORT, () => {
     }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/projects/<id>/daily-log/entries — Field Daily entry (daily_log.entry_captured)\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
   );
 });
+
+// ---------------------------------------------------------------------------
+// Orphan guard — die with the parent.
+//
+// Integration tests spawn this server once per test file. POSIX reparents
+// children when the parent dies — it never kills them — so a SIGKILLed test
+// runner (terminal close, harness stop) runs no teardown and leaks live
+// servers (observed 2026-06-11: 87 orphans from three killed runners,
+// degrading every later suite run). Two independent watchers; either one is
+// enough:
+//
+//   1. stdin watch — armed only when stdin is a pipe (test spawns pass
+//      stdio[0]='pipe'). The OS closes the pipe when the parent dies, no
+//      matter how it dies. A TTY (manual `npm run demo:v15-vertical-slice:serve`)
+//      or /dev/null (stdio[0]='ignore') is not a FIFO, so interactive runs
+//      are unaffected.
+//   2. ppid poll — an orphaned process is reparented to PID 1; covers
+//      spawners that don't pipe stdin. Skipped if ppid is already 1 at
+//      startup (intentionally daemonized).
+
+let stdinIsPipe = false;
+try {
+  stdinIsPipe = fstatSync(0).isFIFO();
+} catch {
+  // stdin closed or unusable — rely on the ppid poll.
+}
+if (stdinIsPipe) {
+  const exitOnStdinGone = (): void => {
+    console.error('[serve-v15] stdin pipe closed — parent gone; exiting');
+    process.exit(0);
+  };
+  process.stdin.once('end', exitOnStdinGone);
+  process.stdin.once('error', exitOnStdinGone);
+  process.stdin.resume();
+  process.stdin.unref();
+}
+if (process.ppid !== 1) {
+  const ppidPoll = setInterval(() => {
+    if (process.ppid === 1) {
+      console.error('[serve-v15] reparented to PID 1 — parent gone; exiting');
+      process.exit(0);
+    }
+  }, 1_000);
+  ppidPoll.unref();
+}

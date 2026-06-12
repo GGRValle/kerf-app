@@ -8,6 +8,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { MOBILE_PROBE_QUERY_PARAM } from '../src/examples/v15-vertical-slice/m-dom-probe.js';
+import { reapOnExit } from './helpers/reapOnExit.js';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -62,8 +63,12 @@ test('v15 mobile harness: /m/check + probe-enabled V1.5 routes return 200', asyn
       // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
       KERF_DISABLE_LIVE_MODELS: '1',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    // stdin must stay 'pipe' (not 'ignore') — the server's orphan guard
+    // exits on stdin close, the only teardown that survives runner SIGKILL.
+    stdio: ['pipe', 'pipe', 'pipe'],
+    detached: false,
   });
+  reapOnExit(child);
 
   try {
     await waitForOk(`http://127.0.0.1:${port}/m/check`, 12_000);

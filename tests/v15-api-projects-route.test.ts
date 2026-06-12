@@ -22,6 +22,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { reapOnExit } from './helpers/reapOnExit.js';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -124,9 +125,13 @@ async function startServe(): Promise<ServeProcess> {
         // deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
         KERF_DISABLE_LIVE_MODELS: '1',
       },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      // stdin must stay 'pipe' (not 'ignore') — the server's orphan guard
+      // exits on stdin close, the only teardown that survives runner SIGKILL.
+      stdio: ['pipe', 'pipe', 'pipe'],
+      detached: false,
     },
   );
+  reapOnExit(child);
   child.stderr.on('data', (c: Buffer) => {
     if (process.env['DEBUG_V15_API_TEST'] !== undefined) {
       process.stderr.write(`[serve-v15] ${c.toString()}`);

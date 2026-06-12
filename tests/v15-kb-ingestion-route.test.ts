@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { reapOnExit } from './helpers/reapOnExit.js';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -91,9 +92,13 @@ async function startServe(): Promise<ServeProcess> {
         PORT: String(port),
         PERSISTENCE_DIR: persistenceDir,
       },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      // stdin must stay 'pipe' (not 'ignore') — the server's orphan guard
+      // exits on stdin close, the only teardown that survives runner SIGKILL.
+      stdio: ['pipe', 'pipe', 'pipe'],
+      detached: false,
     },
   );
+  reapOnExit(child);
   await waitForReady(port, 15_000);
   return { child, port, persistenceDir };
 }

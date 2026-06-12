@@ -14,6 +14,7 @@ import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { reapOnExit } from './helpers/reapOnExit.js';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -170,8 +171,12 @@ async function startServe(env: NodeJS.ProcessEnv, port: number): Promise<ServePr
       ...env,
       PORT: String(port),
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    // stdin must stay 'pipe' (not 'ignore') — the server's orphan guard
+    // exits on stdin close, the only teardown that survives runner SIGKILL.
+    stdio: ['pipe', 'pipe', 'pipe'],
+    detached: false,
   });
+  reapOnExit(child);
   // Surface child stderr if a test hangs — helps diagnose CI failures.
   child.stderr.on('data', (c: Buffer) => {
     if (process.env['DEBUG_V15_TRANSCRIBE_TEST'] !== undefined) {
