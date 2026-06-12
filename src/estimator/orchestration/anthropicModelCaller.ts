@@ -11,10 +11,11 @@
  * seat runs per-lead, not per-turn, so the spend is bounded by estimate
  * volume. D-069 (refining D-064 tier-3). ESTIMATOR_FRONTIER_MODEL overrides.
  *
- * Transport: SSE streaming (`stream: true`) so adaptive thinking can run
- * without fetch-level no-response timeouts. Thinking deltas are ignored for
- * content — only text_block_delta text accumulates, as before. max_tokens is
- * 32k so thinking headroom does not starve the JSON output shape.
+ * Transport: SSE streaming (`stream: true`) so long frontier calls avoid
+ * fetch-level no-response timeouts. Thinking is an explicit opt-in dial after
+ * the 2026-06-12 keyed ladder showed adaptive thinking hurt this selection
+ * task; when enabled, thinking deltas are ignored for content — only
+ * text_block_delta text accumulates, as before.
  */
 import type { ModelCaller } from './types.js';
 
@@ -22,6 +23,7 @@ export interface MakeAnthropicModelCallerOpts {
   readonly apiKey: string;
   readonly model?: string;
   readonly baseUrl?: string;
+  readonly thinkingMode?: 'off' | 'adaptive';
 }
 
 const DEFAULT_MODEL = 'claude-opus-4-8';
@@ -113,6 +115,7 @@ export async function parseAnthropicSseStream(
 export function makeAnthropicModelCaller(opts: MakeAnthropicModelCallerOpts): ModelCaller {
   const model = opts.model ?? DEFAULT_MODEL;
   const baseUrl = (opts.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
+  const thinkingMode = opts.thinkingMode ?? 'off';
   return async (input) => {
     let res: Response;
     try {
@@ -127,7 +130,7 @@ export function makeAnthropicModelCaller(opts: MakeAnthropicModelCallerOpts): Mo
           model,
           max_tokens: MAX_TOKENS,
           stream: true,
-          thinking: { type: 'adaptive' },
+          ...(thinkingMode === 'adaptive' ? { thinking: { type: 'adaptive' } } : {}),
           system: input.systemMessage,
           messages: [{ role: 'user', content: input.userMessage }],
         }),

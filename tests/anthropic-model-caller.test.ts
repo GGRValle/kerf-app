@@ -2,10 +2,10 @@
 //
 // Hermetic: globalThis.fetch is swapped per-test and restored. Locks the
 // founder-directed tier default (opus-4-8), SSE streaming transport,
-// adaptive-thinking request shape, thinking-delta exclusion on the way out,
-// text-delta accumulation order, usage from message_start + message_delta,
-// and the max_tokens truncation guard (a clipped selection JSON must fail
-// HONESTLY at the caller, not as a mystery parser error downstream).
+// default-off thinking dial, thinking-delta exclusion on the way out, text-
+// delta accumulation order, usage from message_start + message_delta, and the
+// max_tokens truncation guard (a clipped selection JSON must fail HONESTLY at
+// the caller, not as a mystery parser error downstream).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -81,7 +81,7 @@ const SUCCESS_SSE = [
   { type: 'message_stop' },
 ] as const;
 
-void test('default model is claude-opus-4-8; streams with adaptive thinking and 32k max_tokens', async () => {
+void test('default model is claude-opus-4-8; streams with thinking off and 32k max_tokens', async () => {
   await withStubbedFetch({ sseEvents: SUCCESS_SSE }, async (captured) => {
     const caller = makeAnthropicModelCaller({ apiKey: 'k_test' });
     const result = await caller({ ...CALLER_INPUT });
@@ -90,7 +90,7 @@ void test('default model is claude-opus-4-8; streams with adaptive thinking and 
     assert.equal(captured[0]!.body['model'], 'claude-opus-4-8');
     assert.equal(captured[0]!.body['stream'], true);
     assert.equal(captured[0]!.body['max_tokens'], 32_000);
-    assert.deepEqual(captured[0]!.body['thinking'], { type: 'adaptive' });
+    assert.equal('thinking' in captured[0]!.body, false);
     if (result.ok) {
       assert.equal(result.modelId, 'claude-opus-4-8');
       assert.equal(result.content, '{"ok":true}');
@@ -98,6 +98,15 @@ void test('default model is claude-opus-4-8; streams with adaptive thinking and 
       assert.equal(result.tokensOut, 7);
       assert.equal(result.endpoint, 'https://api.anthropic.com/v1/messages');
     }
+  });
+});
+
+void test('adaptive thinking is env/dial opt-in, not the default', async () => {
+  await withStubbedFetch({ sseEvents: SUCCESS_SSE }, async (captured) => {
+    const caller = makeAnthropicModelCaller({ apiKey: 'k_test', thinkingMode: 'adaptive' });
+    const result = await caller({ ...CALLER_INPUT });
+    assert.equal(result.ok, true);
+    assert.deepEqual(captured[0]!.body['thinking'], { type: 'adaptive' });
   });
 });
 

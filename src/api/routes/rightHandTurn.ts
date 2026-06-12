@@ -108,6 +108,7 @@ export interface RightHandTurnRouteDeps {
     readonly ANTHROPIC_BASE_URL?: string;
     readonly REPLY_BRAIN?: string;
     readonly ESTIMATOR_FRONTIER_MODEL?: string;
+    readonly ESTIMATOR_FRONTIER_THINKING?: string;
     readonly DATABASE_URL?: string;
     readonly POSTGRES_URL?: string;
   };
@@ -138,6 +139,7 @@ function resolveDeps(): RightHandTurnRouteDeps {
       ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
       ANTHROPIC_BASE_URL: process.env['ANTHROPIC_BASE_URL'],
       REPLY_BRAIN: process.env['REPLY_BRAIN'],
+      ESTIMATOR_FRONTIER_THINKING: process.env['ESTIMATOR_FRONTIER_THINKING'],
       DATABASE_URL: process.env['DATABASE_URL'],
       POSTGRES_URL: process.env['POSTGRES_URL'],
     },
@@ -300,6 +302,7 @@ function estimatorModelCallerFor(deps: RightHandTurnRouteDeps): ModelCaller {
     return makeAnthropicModelCaller({
       apiKey: anthropicKey,
       ...(deps.env.ESTIMATOR_FRONTIER_MODEL ? { model: deps.env.ESTIMATOR_FRONTIER_MODEL } : {}),
+      thinkingMode: deps.env.ESTIMATOR_FRONTIER_THINKING === 'adaptive' ? 'adaptive' : 'off',
     });
   }
   const apiKey = deps.env.GROQ_API_KEY;
