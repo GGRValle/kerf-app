@@ -27,13 +27,14 @@
  * Christian's manual demo against the deployed app.
  */
 import assert from 'node:assert/strict';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -130,15 +131,10 @@ async function startServe(envOverrides: Record<string, string | undefined> = {})
     }
   }
 
-  const child = spawn(
-    'node',
-    ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'],
-    {
-      cwd: REPO_ROOT,
-      env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
-  );
+  const child = spawnServeV15Process({
+    cwd: REPO_ROOT,
+    env,
+  });
   child.stderr.on('data', (c: Buffer) => {
     if (process.env['DEBUG_V15_LLM_WIRING_TEST'] !== undefined) {
       process.stderr.write(`[serve-v15] ${c.toString()}`);

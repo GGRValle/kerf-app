@@ -141,3 +141,47 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+// ---------------------------------------------------------------------------
+// Orphan guard — die with the parent. (Append-only block; keep at EOF.)
+//
+// tests/route-shell-smoke.test.ts spawns this server. POSIX reparents
+// children when the parent dies — it never kills them — so a SIGKILLed test
+// runner (terminal close, harness stop) runs no teardown and leaks a live
+// server (same failure class as the 2026-06-11 serve-v15 incident: 87
+// orphans from three killed runners, degrading every later suite run).
+// Two independent watchers; either one is enough:
+//
+//   1. stdin watch — armed only when stdin is a pipe (test spawns pass
+//      stdio[0]='pipe'). The OS closes the pipe when the parent dies, no
+//      matter how it dies. A TTY (manual `npm run serve:shell`) or /dev/null
+//      (stdio[0]='ignore') is not a FIFO, so interactive runs are unaffected.
+//   2. ppid poll — an orphaned process is reparented to PID 1; covers
+//      spawners that don't pipe stdin. Skipped if ppid is already 1 at
+//      startup (intentionally daemonized).
+
+let stdinIsPipe = false;
+try {
+  stdinIsPipe = fs.fstatSync(0).isFIFO();
+} catch {
+  // stdin closed or unusable — rely on the ppid poll.
+}
+if (stdinIsPipe) {
+  const exitOnStdinGone = (): void => {
+    console.error('[shell] stdin pipe closed — parent gone; exiting');
+    process.exit(0);
+  };
+  process.stdin.once('end', exitOnStdinGone);
+  process.stdin.once('error', exitOnStdinGone);
+  process.stdin.resume();
+  process.stdin.unref();
+}
+if (process.ppid !== 1) {
+  const ppidPoll = setInterval(() => {
+    if (process.ppid === 1) {
+      console.error('[shell] reparented to PID 1 — parent gone; exiting');
+      process.exit(0);
+    }
+  }, 1_000);
+  ppidPoll.unref();
+}
