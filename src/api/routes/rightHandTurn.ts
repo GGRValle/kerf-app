@@ -62,6 +62,8 @@ import { createFixtureTenantStore } from '../../tenant/index.js';
 import { upsertEstimatingDeal } from '../../sales/index.js';
 import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
+import { buildProposalFromRightHandEstimate, type ProposalProjectionResult } from '../lib/estimateProposalProjection.js';
+import { renderProposalHtml } from '../../proposal/render.js';
 import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
@@ -274,6 +276,17 @@ async function activeEstimateArtifactContext(params: {
   } catch {
     return null;
   }
+}
+
+/**
+ * Frontier callers see the full scope-filtered library (bounded at 200 against
+ * future library growth); ids the model never sees cannot be echoed (D-069
+ * tier-ladder finding). Cheap-tier fallback keeps the prompt-size default.
+ */
+const FRONTIER_CANDIDATE_LIMIT = 200;
+
+function estimatorCandidateLimitFor(deps: RightHandTurnRouteDeps): number | undefined {
+  return deps.env.ANTHROPIC_API_KEY ? FRONTIER_CANDIDATE_LIMIT : undefined;
 }
 
 function estimatorModelCallerFor(deps: RightHandTurnRouteDeps): ModelCaller {
@@ -826,12 +839,14 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
 
   let estimateResult: Awaited<ReturnType<typeof runEstimate>>;
   try {
+    const candidateLimit = estimatorCandidateLimitFor(routeDeps);
     estimateResult = await runEstimate(estimatorInputs, {
       modelCaller: estimatorModelCallerFor(routeDeps),
       tenantStore: createFixtureTenantStore(),
       eventLog: await estimateEventLogFor(routeDeps),
       actorTenantId: tenant,
       actor: { id: actorId as EntityId, role: 'owner' },
+      ...(candidateLimit !== undefined ? { candidateLimit } : {}),
     });
   } catch (err) {
     return c.json({
@@ -862,6 +877,12 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
       ...estimateResult.appendedEventIds.map((id) => `event:${id}`),
       estimateResult.altitudePacket.packet_id,
     ],
+    assemblyReceipt: {
+      model_id: estimateResult.modelCallerOutput.modelId,
+      endpoint: estimateResult.modelCallerOutput.endpoint,
+      tokens_in: estimateResult.modelCallerOutput.tokensIn,
+      tokens_out: estimateResult.modelCallerOutput.tokensOut,
+    },
     now,
   });
   const deal = upsertEstimatingDeal({
@@ -1025,6 +1046,39 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
     } catch { /* the edit succeeded; the signal is best-effort */ }
   }
   return c.json({ ok: true, draft: next, edited_line_id: lineId });
+});
+
+/**
+ * D-068 segment 2: the Proposal projection — a DRAFT client-artifact render
+ * from the estimate graph. The render fence holds back rank-7 and
+ * pending-review content (operator annex in ?format=json); the tie-out
+ * validators run inside the builder and fail closed. The send wall is a
+ * separate, untouched consequence edge — this endpoint only renders.
+ */
+rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) => {
+  const tenant = requireApiTenant(c);
+  const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  let projection: ProposalProjectionResult;
+  try {
+    projection = buildProposalFromRightHandEstimate(draft, { now: resolveDeps().now?.() ?? new Date() });
+  } catch (err) {
+    return c.json({
+      error: 'proposal_projection_failed',
+      reason: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+      operator_message: 'The proposal draft could not be built from this estimate. Nothing was filed or sent.',
+    }, 422);
+  }
+  if (c.req.query('format') === 'json') {
+    return c.json({
+      ok: true,
+      proposal: projection.proposal,
+      held_back: projection.held_back,
+      rendered_line_ids: projection.rendered_line_ids,
+    });
+  }
+  c.header('Content-Type', 'text/html; charset=utf-8');
+  return c.body(renderProposalHtml(projection.proposal));
 });
 
 /**

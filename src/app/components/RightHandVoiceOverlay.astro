@@ -92,6 +92,15 @@ const { t } = createLayoutContext();
 
     <div class="rhvo__thread" id="rhvo-thread" aria-live="polite"></div>
 
+    <!-- Working-state presence (thinking-state card): the in-thread liveness
+         frame between heard and created. Continuous gold motion while real
+         work is in flight; honest elapsed-keyed narration; resolves to
+         ready/question/snag, never outlives the work. -->
+    <div class="rhvo__presence" id="rhvo-presence" hidden aria-live="polite">
+      <span class="rhvo__presence-orb" aria-hidden="true"></span>
+      <span class="rhvo__presence-text" id="rhvo-presence-text"></span>
+    </div>
+
     <div class="rhvo__caption" id="rhvo-caption" aria-live="polite" data-empty="true">
       <span class="rhvo__caption-label" id="rhvo-caption-label">{t('rh_voice.caption_label')}</span>
       <span class="rhvo__caption-text" id="rhvo-caption-text"></span
@@ -206,6 +215,14 @@ const { t } = createLayoutContext();
     writeResumeState,
     bubbleLabelFor,
     shouldNavigateAfterAssembly,
+    readPhaseState,
+    writePhaseState,
+    clearPhaseState,
+    phaseAfterAssembly,
+    workingNarration,
+    bubbleLabelForPhase,
+    estimateIdFromSourceRefs,
+    WORKING_PHASE_STALE_MS,
   } from '../../voice/realtime/overlayResume.js';
   import { checkTranscript } from '../../voice/realtime/transcriptGuard.js';
 
@@ -1373,16 +1390,24 @@ const { t } = createLayoutContext();
       workingDraft?: unknown;
     };
 
+    // Hard client bound on the assembly request: ~40s is normal frontier
+    // assembly; at 150s something is genuinely wrong and the operator gets an
+    // honest snag, never an indicator that outlives the work.
+    const ASSEMBLY_TIMEOUT_MS = 150_000;
+
     const assembleEstimateServerSide = async (
       latestText: string,
       draftText: string,
       turnsForModel: ConversationTurn[],
-    ): Promise<{ route: string; workingDraft: WorkingDraftFields } | null> => {
+    ): Promise<{ route: string; workingDraft: WorkingDraftFields; openQuestionCount: number } | null> => {
+      const abort = new AbortController();
+      const timeoutHandle = window.setTimeout(() => abort.abort(), ASSEMBLY_TIMEOUT_MS);
       try {
         const res = await fetch('/api/v1/right-hand/assemble-estimate', {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
+          signal: abort.signal,
           body: JSON.stringify({
             latestText,
             draftText,
@@ -1402,13 +1427,102 @@ const { t } = createLayoutContext();
         const body = await res.json() as AssembleEstimateResponse;
         const route = typeof body.route === 'string' && body.route.trim() ? body.route.trim() : '';
         if (!route) return null;
+        const draftQuestions = (body.draft as { open_questions?: unknown } | undefined)?.open_questions;
         return {
           route,
           workingDraft: cleanStoredWorkingDraft(body.workingDraft ?? body.working_draft, draftText),
+          openQuestionCount: Array.isArray(draftQuestions) ? draftQuestions.length : 0,
         };
       } catch {
         return null;
+      } finally {
+        window.clearTimeout(timeoutHandle);
       }
+    };
+
+    // ── Working-state presence (thinking-state card) ─────────────────────
+    // One state machine drives the orb, the narration, the bubble label, and
+    // the resolution copy. Phases bind to real async edges only.
+    const presenceEl = document.getElementById('rhvo-presence');
+    const presenceTextEl = document.getElementById('rhvo-presence-text');
+    let presenceTimer: number | null = null;
+
+    const showWorkingPresence = () => {
+      const startedAt = Date.now();
+      writePhaseState(sessionStorage, { phase: 'working', at: startedAt, conversationId: getConversationId() });
+      if (presenceEl) presenceEl.hidden = false;
+      if (presenceTextEl) presenceTextEl.textContent = workingNarration(0);
+      if (presenceTimer !== null) window.clearInterval(presenceTimer);
+      // The interval refreshes elapsed-keyed TEXT; it never advances the
+      // phase — only a real response/poll result does that.
+      presenceTimer = window.setInterval(() => {
+        if (presenceTextEl) presenceTextEl.textContent = workingNarration(Date.now() - startedAt);
+      }, 5_000);
+    };
+
+    const hideWorkingPresence = () => {
+      if (presenceTimer !== null) {
+        window.clearInterval(presenceTimer);
+        presenceTimer = null;
+      }
+      if (presenceEl) presenceEl.hidden = true;
+    };
+
+    const SNAG_REPLY = 'Hit a snag building the estimate — nothing was lost. Say it again or tap the mic to retry.';
+
+    /**
+     * The one assembly path both call sites share: presence on → real
+     * request → exactly one honest ending (ready | question | snag), with
+     * the no-yank guard deciding navigate-vs-park.
+     */
+    const runAssemblyWithPresence = (
+      latestText: string,
+      draftText: string,
+      turnsForModel: ConversationTurn[],
+      replyIndex: number,
+    ): void => {
+      showWorkingPresence();
+      void assembleEstimateServerSide(latestText, draftText, turnsForModel).then((payload) => {
+        hideWorkingPresence();
+        const phase = phaseAfterAssembly({
+          ok: payload !== null,
+          hasRoute: payload !== null,
+          openQuestionCount: payload?.openQuestionCount ?? 0,
+        });
+        if (phase === 'snag' || payload === null) {
+          writePhaseState(sessionStorage, { phase: 'snag', at: Date.now(), conversationId: getConversationId() });
+          replaceTurn(replyIndex, 'right_hand', SNAG_REPLY);
+          persistConversation();
+          return;
+        }
+        canonicalWorkingDraft = payload.workingDraft;
+        const questionDetail = payload.openQuestionCount > 0
+          ? `Needs your call: ${payload.openQuestionCount} question${payload.openQuestionCount === 1 ? '' : 's'}`
+          : undefined;
+        writePhaseState(sessionStorage, {
+          phase,
+          at: Date.now(),
+          conversationId: getConversationId(),
+          ...(questionDetail ? { detail: questionDetail } : {}),
+        });
+        replaceTurn(
+          replyIndex,
+          'right_hand',
+          phase === 'question'
+            ? `Estimate draft is open — ${payload.openQuestionCount} question${payload.openQuestionCount === 1 ? '' : 's'} need your call. I'm still here if you want to adjust it.`
+            : 'Estimate draft is open. I’m still here if you want to adjust it.',
+        );
+        persistConversation();
+        if (shouldNavigateAfterAssembly({ overlayHidden: overlay.hidden })) {
+          clearPhaseState(sessionStorage);
+          window.setTimeout(() => navigate(payload.route, { resume: true }), 180);
+        } else {
+          // Operator moved on mid-assembly — never yank (walk: "popped in and out").
+          const bubbleHint = questionDetail ?? 'Estimate draft ready';
+          writeResumeState(sessionStorage, { at: Date.now(), href: payload.route, hint: bubbleHint });
+          showResumeBubble(bubbleHint);
+        }
+      });
     };
 
     // ── Stage 4 consequence bubble (F-RH3): durable intents NEVER auto-navigate.
@@ -1482,23 +1596,7 @@ const { t } = createLayoutContext();
       showActions('listening');
       persistConversation();
       if (wantsAssembly) {
-        void assembleEstimateServerSide(clean, draftText, turnsForModel).then((payload) => {
-          if (!payload) {
-            replaceTurn(replyIndex, 'right_hand', 'I can keep shaping the estimate here, but I could not open the estimate page yet.');
-            persistConversation();
-            return;
-          }
-          canonicalWorkingDraft = payload.workingDraft;
-          replaceTurn(replyIndex, 'right_hand', 'Estimate draft is open. I’m still here if you want to adjust it.');
-          persistConversation();
-          if (shouldNavigateAfterAssembly({ overlayHidden: overlay.hidden })) {
-            window.setTimeout(() => navigate(payload.route, { resume: true }), 180);
-          } else {
-            // Operator moved on mid-assembly — never yank (walk: "popped in and out").
-            writeResumeState(sessionStorage, { at: Date.now(), href: payload.route, hint: 'Estimate draft ready' });
-            showResumeBubble('Estimate draft ready');
-          }
-        });
+        runAssemblyWithPresence(clean, draftText, turnsForModel, replyIndex);
         return;
       }
       void resolveReplyServerSide(clean, draftText, trp, turnsForModel).then((payload) => {
@@ -1507,22 +1605,7 @@ const { t } = createLayoutContext();
         if (payload.proposedAction === 'assemble_estimate') {
           replaceTurn(replyIndex, 'right_hand', 'Assembling the estimate draft…');
           persistConversation();
-          void assembleEstimateServerSide(clean, draftText, turnsForModel).then((assemblyPayload) => {
-            if (!assemblyPayload) {
-              replaceTurn(replyIndex, 'right_hand', 'I can keep shaping the estimate here, but I could not open the estimate page yet.');
-              persistConversation();
-              return;
-            }
-            canonicalWorkingDraft = assemblyPayload.workingDraft;
-            replaceTurn(replyIndex, 'right_hand', 'Estimate draft is open. I’m still here if you want to adjust it.');
-            persistConversation();
-            if (shouldNavigateAfterAssembly({ overlayHidden: overlay.hidden })) {
-              window.setTimeout(() => navigate(assemblyPayload.route, { resume: true }), 180);
-            } else {
-              writeResumeState(sessionStorage, { at: Date.now(), href: assemblyPayload.route, hint: 'Estimate draft ready' });
-              showResumeBubble('Estimate draft ready');
-            }
-          });
+          runAssemblyWithPresence(clean, draftText, turnsForModel, replyIndex);
           return;
         }
         if (payload.reply === fallbackReply) {
@@ -2084,9 +2167,80 @@ const { t } = createLayoutContext();
     };
     const hideResumeBubble = () => { if (resumeBubble) resumeBubble.hidden = true; };
 
+    // ── Parked-recovery poll (thinking-state card, Part 3) ────────────────
+    // A full-page navigation kills the in-flight assembly fetch, but the
+    // server finishes the work and stamps the conversation snapshot's
+    // source_refs with `right-hand-estimate:<id>`. While the bubble wears a
+    // parked "working" phase, poll that REAL signal so the bubble resolves to
+    // ready/question — and degrade honestly at the stale bound rather than
+    // claim work we can no longer confirm.
+    let parkedPollTimer: number | null = null;
+    const stopParkedRecoveryPoll = () => {
+      if (parkedPollTimer !== null) {
+        window.clearInterval(parkedPollTimer);
+        parkedPollTimer = null;
+      }
+    };
+    const startParkedRecoveryPoll = (workingState: { at: number; conversationId?: string }) => {
+      if (parkedPollTimer !== null) return;
+      const conversationId = workingState.conversationId ?? getConversationId();
+      const tick = async () => {
+        if (Date.now() - workingState.at >= WORKING_PHASE_STALE_MS) {
+          stopParkedRecoveryPoll();
+          clearPhaseState(sessionStorage);
+          if (resumeBubble && !resumeBubble.hidden) {
+            resumeBubble.textContent = bubbleLabelFor(readResumeState(sessionStorage));
+          }
+          return;
+        }
+        try {
+          const res = await fetch(`/api/v1/right-hand/conversation?conversation_id=${encodeURIComponent(conversationId)}`, {
+            method: 'GET',
+            credentials: 'include',
+          });
+          if (!res.ok) return;
+          const body = await res.json() as { snapshot?: { working_draft?: { source_refs?: unknown[] }; workingDraft?: { source_refs?: unknown[] } } | null };
+          const workingDraftRefs = body.snapshot?.working_draft?.source_refs ?? body.snapshot?.workingDraft?.source_refs;
+          const estimateId = estimateIdFromSourceRefs(workingDraftRefs);
+          if (!estimateId) return; // genuinely still working
+          stopParkedRecoveryPoll();
+          const draftRes = await fetch(`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}`, {
+            method: 'GET',
+            credentials: 'include',
+          });
+          if (!draftRes.ok) return;
+          const draftBody = await draftRes.json() as { draft?: { route?: unknown; open_questions?: unknown } | null };
+          const route = typeof draftBody.draft?.route === 'string' ? draftBody.draft.route : '';
+          if (!route) return;
+          const questionCount = Array.isArray(draftBody.draft?.open_questions) ? draftBody.draft.open_questions.length : 0;
+          const phase = phaseAfterAssembly({ ok: true, hasRoute: true, openQuestionCount: questionCount });
+          const detail = questionCount > 0
+            ? `Needs your call: ${questionCount} question${questionCount === 1 ? '' : 's'}`
+            : undefined;
+          writePhaseState(sessionStorage, { phase, at: Date.now(), conversationId, ...(detail ? { detail } : {}) });
+          writeResumeState(sessionStorage, { at: Date.now(), href: route, hint: detail ?? 'Estimate draft ready' });
+          if (resumeBubble && !resumeBubble.hidden) {
+            resumeBubble.textContent = detail ?? 'Estimate draft ready';
+          }
+        } catch {
+          /* transient poll failure — the stale bound still ends the claim */
+        }
+      };
+      parkedPollTimer = window.setInterval(() => void tick(), 5_000);
+      void tick();
+    };
+
     const openOverlay = (options: { restoreConversation?: boolean } = {}) => {
       if (!overlay.hidden) return;
       hideResumeBubble();
+      stopParkedRecoveryPoll();
+      {
+        // Re-entry consumes a DELIVERED phase (ready/question/snag) — the
+        // operator is back in the conversation. A live working phase stays:
+        // the in-flight presence picks it up if its request still runs.
+        const phaseAtOpen = readPhaseState(sessionStorage);
+        if (phaseAtOpen && phaseAtOpen.phase !== 'working') clearPhaseState(sessionStorage);
+      }
       setMicActive(false);
       routedLive = false;
       lastInterim = '';
@@ -2210,9 +2364,16 @@ const { t } = createLayoutContext();
       // Persistent re-entry bubble (replaces the one-shot auto-open that read
       // as "the screen popped in and out" and died on reload). State is NOT
       // consumed here — it survives reloads until the conversation ends.
+      // The bubble wears the PHASE truth first: a parked working phase shows
+      // "Building your estimate…" and starts the recovery poll so it resolves
+      // from the real server state, never from a guess.
+      const phaseState = readPhaseState(sessionStorage);
       const resumeState = readResumeState(sessionStorage);
-      if (resumeState && overlay.hidden) {
-        showResumeBubble(bubbleLabelFor(resumeState));
+      if ((phaseState || resumeState) && overlay.hidden) {
+        showResumeBubble(bubbleLabelForPhase(phaseState, resumeState, Date.now()));
+      }
+      if (phaseState?.phase === 'working' && overlay.hidden) {
+        startParkedRecoveryPoll(phaseState);
       }
     } catch { /* storage may be unavailable; user can tap Speak again */ }
     resumeBubble?.addEventListener('click', () => {
@@ -2223,6 +2384,52 @@ const { t } = createLayoutContext();
 </script>
 
 <style>
+  /* Working-state presence — Right Hand's thinking-face (thinking-state
+     card). Continuous organic motion in RH gold; reads on light and dark.
+     Motion is pure CSS (always alive while visible); narration text is the
+     only thing the script updates. */
+  .rhvo__presence {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 4px;
+  }
+  .rhvo__presence[hidden] { display: none; }
+  .rhvo__presence-orb {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    background:
+      radial-gradient(circle at 32% 30%, #e8d4a4 0%, #c9a961 48%, #9c7c3c 100%);
+    box-shadow: 0 0 14px rgba(201, 169, 97, 0.55), 0 0 2px rgba(201, 169, 97, 0.9);
+    animation: rhvoOrbBreathe 3.2s ease-in-out infinite, rhvoOrbMorph 7s ease-in-out infinite;
+  }
+  .rhvo__presence-text {
+    color: rgba(232, 237, 244, 0.92);
+    font-size: 14px;
+    line-height: 1.35;
+  }
+  @keyframes rhvoOrbBreathe {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.12) rotate(8deg); }
+  }
+  @keyframes rhvoOrbMorph {
+    0%, 100% { border-radius: 52% 48% 58% 42% / 46% 56% 44% 54%; }
+    25% { border-radius: 44% 56% 42% 58% / 58% 40% 60% 42%; }
+    50% { border-radius: 58% 42% 50% 50% / 42% 58% 46% 54%; }
+    75% { border-radius: 46% 54% 56% 44% / 54% 44% 58% 42%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rhvo__presence-orb {
+      animation: rhvoOrbPulse 2.4s ease-in-out infinite;
+      border-radius: 50%;
+    }
+    @keyframes rhvoOrbPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+  }
+
   .rhvo-bubble {
     position: fixed;
     right: 14px;

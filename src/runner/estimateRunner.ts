@@ -61,6 +61,9 @@ export async function runEstimate(
       projectArchetype: inputs.projectArchetype,
       scopeTags: inputs.scopeTags,
       ...(inputs.operatorNotes !== undefined ? { operatorNotes: inputs.operatorNotes } : {}),
+      // Pass-2 extrapolation reads the narrative; without this forward it
+      // fell back to scope-tag soup (found during the #337 visibility work).
+      ...(inputs.scopeNarrative !== undefined ? { scopeNarrative: inputs.scopeNarrative } : {}),
       ...(inputs.voiceTranscriptId !== undefined ? { voiceTranscriptId: inputs.voiceTranscriptId } : {}),
       invocationId: inputs.invocationId,
       requestedAt: inputs.requestedAt,
@@ -69,6 +72,7 @@ export async function runEstimate(
       modelCaller: deps.modelCaller,
       comparablePool: tenantContext.comparablePool,
       onboardingSession: tenantContext.onboardingSession,
+      ...(deps.candidateLimit !== undefined ? { candidateLimit: deps.candidateLimit } : {}),
     },
   );
 

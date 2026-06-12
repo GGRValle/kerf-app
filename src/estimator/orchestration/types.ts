@@ -184,6 +184,13 @@ export interface EstimatorDeps {
    */
   readonly onboardingSession?: import('../../onboarding/index.js').OnboardingSession;
   readonly rateCard?: readonly TenantRateCardLine[];
+  /**
+   * Pass-1 candidate visibility budget forwarded to the prompt builder.
+   * Prompt construction only — never gating. Frontier-tier callers (D-069)
+   * pass a high budget so the model can echo exact ids; cheap-tier callers
+   * keep the default 40 (prompt-size discipline).
+   */
+  readonly candidateLimit?: number;
 }
 
 /** Implied-major-money question the extrapolation pass surfaces instead of
