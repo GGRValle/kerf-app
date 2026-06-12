@@ -1,6 +1,6 @@
 /**
  * HTTP smoke for `scripts/serve-v15-vertical-slice.ts` (default port 8010 in docs).
- * Uses a high ephemeral PORT to avoid colliding with a dev server on 8010.
+ * Uses an OS-assigned ephemeral loopback port so parallel suites do not collide.
  */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -8,6 +8,7 @@ import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -53,7 +54,7 @@ async function waitForOk(url: string, timeoutMs: number): Promise<void> {
 }
 
 test('v15 vertical slice static server: index shell + app bundle (8010 stack)', async () => {
-  const port = 18_010 + Math.floor(Math.random() * 900);
+  const port = await freeLoopbackPort();
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
     env: {
@@ -96,7 +97,7 @@ test('v15 vertical slice static server: index shell + app bundle (8010 stack)', 
  * paths. This test locks that directly so the bug cannot regress unnoticed.
  */
 test('v15 deep-link reload: HTML at nested routes contains root-relative asset paths', async () => {
-  const port = 18_010 + Math.floor(Math.random() * 900);
+  const port = await freeLoopbackPort();
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
     cwd: REPO_ROOT,
     env: {

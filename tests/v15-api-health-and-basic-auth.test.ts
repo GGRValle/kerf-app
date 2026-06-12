@@ -22,6 +22,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -99,7 +100,7 @@ interface ServeProcess {
 }
 
 async function startServe(envOverrides: Record<string, string> = {}): Promise<ServeProcess> {
-  const port = 19_300 + Math.floor(Math.random() * 90);
+  const port = await freeLoopbackPort();
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-v15-auth-'));
   const child = spawn(
     'node',
