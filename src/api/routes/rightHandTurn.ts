@@ -62,6 +62,8 @@ import { createFixtureTenantStore } from '../../tenant/index.js';
 import { upsertEstimatingDeal } from '../../sales/index.js';
 import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
+import { buildProposalFromRightHandEstimate, type ProposalProjectionResult } from '../lib/estimateProposalProjection.js';
+import { renderProposalHtml } from '../../proposal/render.js';
 import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
@@ -1044,6 +1046,39 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
     } catch { /* the edit succeeded; the signal is best-effort */ }
   }
   return c.json({ ok: true, draft: next, edited_line_id: lineId });
+});
+
+/**
+ * D-068 segment 2: the Proposal projection — a DRAFT client-artifact render
+ * from the estimate graph. The render fence holds back rank-7 and
+ * pending-review content (operator annex in ?format=json); the tie-out
+ * validators run inside the builder and fail closed. The send wall is a
+ * separate, untouched consequence edge — this endpoint only renders.
+ */
+rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) => {
+  const tenant = requireApiTenant(c);
+  const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  let projection: ProposalProjectionResult;
+  try {
+    projection = buildProposalFromRightHandEstimate(draft, { now: resolveDeps().now?.() ?? new Date() });
+  } catch (err) {
+    return c.json({
+      error: 'proposal_projection_failed',
+      reason: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+      operator_message: 'The proposal draft could not be built from this estimate. Nothing was filed or sent.',
+    }, 422);
+  }
+  if (c.req.query('format') === 'json') {
+    return c.json({
+      ok: true,
+      proposal: projection.proposal,
+      held_back: projection.held_back,
+      rendered_line_ids: projection.rendered_line_ids,
+    });
+  }
+  c.header('Content-Type', 'text/html; charset=utf-8');
+  return c.body(renderProposalHtml(projection.proposal));
 });
 
 /**
