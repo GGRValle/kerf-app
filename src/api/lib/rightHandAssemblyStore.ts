@@ -59,12 +59,30 @@ export interface RightHandEstimateDraft {
   readonly route: string;
   readonly lines: readonly RightHandEstimateLine[];
   readonly open_items: readonly string[];
+  /**
+   * The pass-2 "Needs your call" question chips ONLY — operator decisions,
+   * distinct from the gap/audit notes that share open_items. Consumers route
+   * these to an actionable surface, never an audit drawer (conductor
+   * amendment, 2026-06-11). Back-compat: questions ALSO remain in open_items
+   * until every consumer reads this field; do not double-render.
+   */
+  readonly open_questions?: readonly string[];
   readonly source_refs: readonly string[];
   readonly estimator_response: EstimatorResponse;
   readonly gate: {
     readonly fired: true;
     readonly allowed: boolean;
     readonly blocked_reasons: readonly string[];
+  };
+  /**
+   * Which model assembled this draft (D-069 governance receipt — "you can't
+   * govern a model tier you can't observe"). Absent on pre-#337 drafts.
+   */
+  readonly assembly_receipt?: {
+    readonly model_id: string;
+    readonly endpoint: string;
+    readonly tokens_in: number;
+    readonly tokens_out: number;
   };
   readonly pricing_data_label: string;
   readonly artifact_state: {
@@ -486,6 +504,7 @@ export function buildRightHandEstimateArtifact(params: {
   readonly allowances?: readonly string[];
   readonly unmatchedScope: readonly string[];
   readonly sourceRefs: readonly string[];
+  readonly assemblyReceipt?: RightHandEstimateDraft['assembly_receipt'];
   readonly now?: Date;
 }): RightHandEstimateDraft {
   const title = estimateTitleFromContext({
@@ -554,6 +573,8 @@ export function buildRightHandEstimateArtifact(params: {
     route: `/estimate/${encodeURIComponent(params.projectId)}?estimate_id=${encodeURIComponent(params.estimateId)}&rh_conversation=${encodeURIComponent(params.conversationId)}${params.dealId ? `&deal_id=${encodeURIComponent(params.dealId)}` : ''}`,
     lines,
     open_items: openItems,
+    open_questions: uniqueStrings(questionItems),
+    ...(params.assemblyReceipt ? { assembly_receipt: params.assemblyReceipt } : {}),
     source_refs: uniqueStrings(params.sourceRefs, [sourceRef]),
     estimator_response: params.estimatorResponse,
     gate: {

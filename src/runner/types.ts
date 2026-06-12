@@ -71,6 +71,12 @@ export interface RunnerDeps {
    */
   readonly actorTenantId: EntityId;
   readonly actor: Actor;
+  /**
+   * Pass-1 candidate visibility budget, threaded to the estimator prompt
+   * builder (D-069: frontier callers see the full scope-filtered library;
+   * cheap-tier callers keep the 40-line default). Prompt construction only.
+   */
+  readonly candidateLimit?: number;
 }
 
 /**

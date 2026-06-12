@@ -8,6 +8,14 @@ import {
   clearResumeState,
   bubbleLabelFor,
   shouldNavigateAfterAssembly,
+  readPhaseState,
+  writePhaseState,
+  clearPhaseState,
+  phaseAfterAssembly,
+  workingNarration,
+  bubbleLabelForPhase,
+  estimateIdFromSourceRefs,
+  WORKING_PHASE_STALE_MS,
 } from '../src/voice/realtime/overlayResume.js';
 
 function memStorage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
@@ -47,4 +55,64 @@ test('bubble label prefers the hint; falls back to the standing label', () => {
 test('no-yank guard: navigate only while the overlay is open', () => {
   assert.equal(shouldNavigateAfterAssembly({ overlayHidden: false }), true);
   assert.equal(shouldNavigateAfterAssembly({ overlayHidden: true }), false);
+});
+
+// ── Conversation phase state machine (thinking-state card) ──────────────────
+
+test('phase state round-trips, validates the phase whitelist, never throws on garbage', () => {
+  const s = memStorage();
+  writePhaseState(s, { phase: 'working', at: 1000, conversationId: 'conv_1' });
+  assert.equal(readPhaseState(s)?.phase, 'working');
+  assert.equal(readPhaseState(s)?.conversationId, 'conv_1'); // read never consumes
+  s.setItem('kerf.voicePhase', JSON.stringify({ phase: 'percolating', at: 1 })); // unknown phase
+  assert.equal(readPhaseState(s), null);
+  s.setItem('kerf.voicePhase', 'not json');
+  assert.equal(readPhaseState(s), null);
+  clearPhaseState(s);
+  assert.equal(readPhaseState(s), null);
+});
+
+test('assembly resolves to exactly one honest ending: ready, question, or snag', () => {
+  assert.equal(phaseAfterAssembly({ ok: true, hasRoute: true, openQuestionCount: 0 }), 'ready');
+  assert.equal(phaseAfterAssembly({ ok: true, hasRoute: true, openQuestionCount: 3 }), 'question');
+  assert.equal(phaseAfterAssembly({ ok: false, hasRoute: false, openQuestionCount: 0 }), 'snag');
+  assert.equal(phaseAfterAssembly({ ok: true, hasRoute: false, openQuestionCount: 5 }), 'snag'); // no route = not done, questions cannot mask it
+});
+
+test('working narration is honest: elapsed-keyed text, no percentages, no agent names, no fake stages', () => {
+  const samples = [workingNarration(0), workingNarration(15_000), workingNarration(45_000), workingNarration(120_000)];
+  assert.equal(samples[0], samples[1] === samples[0] ? samples[0] : samples[0]); // deterministic at a given elapsed
+  assert.notEqual(samples[0], samples[2]); // acknowledges real elapsed time
+  assert.notEqual(samples[2], samples[3]);
+  for (const text of samples) {
+    assert.ok(!/%|\d+\s*percent/i.test(text), 'no percentage claims');
+    assert.ok(!/agent/i.test(text), 'no agent names in operator copy');
+    assert.ok(!/almost (done|ready|there)/i.test(text), 'no unverifiable completion claims');
+  }
+});
+
+test('bubble wears the phase truth: working → ready/question/snag, stale-working degrades honestly', () => {
+  const resume = { at: 1, href: '/x', hint: 'Estimate draft ready' };
+  assert.equal(bubbleLabelForPhase({ phase: 'working', at: 1000 }, resume, 2000), 'Building your estimate…');
+  assert.equal(bubbleLabelForPhase({ phase: 'ready', at: 1000 }, null, 2000), 'Estimate draft ready');
+  assert.equal(
+    bubbleLabelForPhase({ phase: 'question', at: 1000, detail: 'Needs your call: 3 questions' }, null, 2000),
+    'Needs your call: 3 questions',
+  );
+  assert.equal(bubbleLabelForPhase({ phase: 'snag', at: 1000 }, null, 2000), 'Hit a snag — tap to reopen');
+  // A working phase the poll could not confirm within the stale window must
+  // NOT keep claiming work — degrade to the resume fallback (honest unknown).
+  assert.equal(
+    bubbleLabelForPhase({ phase: 'working', at: 1000 }, resume, 1000 + WORKING_PHASE_STALE_MS),
+    'Estimate draft ready',
+  );
+  assert.equal(bubbleLabelForPhase(null, null, 0), 'Back to the conversation');
+});
+
+test('parked-recovery completion signal: estimate id parsed from snapshot source_refs only when real', () => {
+  assert.equal(estimateIdFromSourceRefs(['right-hand-deal:deal_1', 'right-hand-estimate:rhe_deal_1_c1']), 'rhe_deal_1_c1');
+  assert.equal(estimateIdFromSourceRefs(['event:e1', 'kerf://x']), null);
+  assert.equal(estimateIdFromSourceRefs([]), null);
+  assert.equal(estimateIdFromSourceRefs(undefined), null);
+  assert.equal(estimateIdFromSourceRefs([42, null, 'right-hand-estimate:']), null);
 });

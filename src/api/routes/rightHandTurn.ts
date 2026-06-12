@@ -276,6 +276,17 @@ async function activeEstimateArtifactContext(params: {
   }
 }
 
+/**
+ * Frontier callers see the full scope-filtered library (bounded at 200 against
+ * future library growth); ids the model never sees cannot be echoed (D-069
+ * tier-ladder finding). Cheap-tier fallback keeps the prompt-size default.
+ */
+const FRONTIER_CANDIDATE_LIMIT = 200;
+
+function estimatorCandidateLimitFor(deps: RightHandTurnRouteDeps): number | undefined {
+  return deps.env.ANTHROPIC_API_KEY ? FRONTIER_CANDIDATE_LIMIT : undefined;
+}
+
 function estimatorModelCallerFor(deps: RightHandTurnRouteDeps): ModelCaller {
   if (deps.estimatorModelCaller) return deps.estimatorModelCaller;
   // Tier policy (rate-card card + 2026-06-11 Ricardo eval): selection gets the
@@ -826,12 +837,14 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
 
   let estimateResult: Awaited<ReturnType<typeof runEstimate>>;
   try {
+    const candidateLimit = estimatorCandidateLimitFor(routeDeps);
     estimateResult = await runEstimate(estimatorInputs, {
       modelCaller: estimatorModelCallerFor(routeDeps),
       tenantStore: createFixtureTenantStore(),
       eventLog: await estimateEventLogFor(routeDeps),
       actorTenantId: tenant,
       actor: { id: actorId as EntityId, role: 'owner' },
+      ...(candidateLimit !== undefined ? { candidateLimit } : {}),
     });
   } catch (err) {
     return c.json({
@@ -862,6 +875,12 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
       ...estimateResult.appendedEventIds.map((id) => `event:${id}`),
       estimateResult.altitudePacket.packet_id,
     ],
+    assemblyReceipt: {
+      model_id: estimateResult.modelCallerOutput.modelId,
+      endpoint: estimateResult.modelCallerOutput.endpoint,
+      tokens_in: estimateResult.modelCallerOutput.tokensIn,
+      tokens_out: estimateResult.modelCallerOutput.tokensOut,
+    },
     now,
   });
   const deal = upsertEstimatingDeal({
