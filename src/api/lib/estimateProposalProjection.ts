@@ -25,6 +25,7 @@
  * inside its CSI group, so Kerf granularity survives the regrouping.
  */
 import type { RightHandEstimateDraft, RightHandEstimateLine } from './rightHandAssemblyStore.js';
+import { isTenantRateCardSourceRef } from '../../estimator/rateCard.js';
 import type {
   CsiDivision,
   PaymentMilestone,
@@ -71,6 +72,24 @@ const lineAmount = (line: RightHandEstimateLine): number =>
 
 const isPriced = (line: RightHandEstimateLine): boolean => lineAmount(line) > 0;
 
+/**
+ * Rank-7 discriminator (live-drive finding, 2026-06-11): the artifact's
+ * `source_type` is the legacy UI vocabulary — rung-0 seed-priced lines carry
+ * 'model_knowledge' because the TENANT hasn't graduated the rates, which is
+ * a D-065 statement, not a D-068 rank. The D-068 rank test is PRICE BASIS:
+ * a price that traces to the seed library (kerf://kerf-seed/rate-card/…),
+ * an allowance, or an operator action (edit/import) has a basis and renders
+ * in the PRELIMINARY draft — the send wall stays the consequence gate. A
+ * priced line with NO traceable basis is model-invented (rank 7) and never
+ * renders client-facing.
+ */
+const hasPriceBasis = (line: RightHandEstimateLine): boolean =>
+  isTenantRateCardSourceRef(line.source_ref) ||
+  line.source_type === 'allowance' ||
+  line.flags.includes('operator_edited') ||
+  line.flags.includes('voice_edited') ||
+  line.flags.includes('workbook_added');
+
 /** CA §7159: down payment may not exceed $1,000 or 10% of contract price,
  * whichever is LESS. */
 export function caDownPaymentCents(totalCents: number): number {
@@ -89,8 +108,9 @@ export function buildProposalFromRightHandEstimate(
       heldBack.push({ label: line.label, amount_cents: lineAmount(line), reason: 'removed' });
       continue;
     }
-    if (!isPriced(line) || line.source_type === 'model_knowledge') {
-      // Rank-7 / unpriced content: zero presence on client-facing artifacts.
+    if (!isPriced(line) || !hasPriceBasis(line)) {
+      // Rank-7 / unpriced / basis-less content: zero presence on
+      // client-facing artifacts.
       heldBack.push({ label: line.label, amount_cents: 0, reason: 'model_inference_unpriced' });
       continue;
     }
