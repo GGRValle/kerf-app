@@ -81,6 +81,13 @@ test('serve-v15 orphan guard includes ppid reparent fallback', () => {
   assert.match(src, /process\.ppid === 1/);
 });
 
+test('serveV15 helper SIGKILL-reaps still-live children on process exit (skipped-teardown path)', () => {
+  const src = readFileSync(new URL('./helpers/serveV15.ts', import.meta.url), 'utf8');
+  assert.match(src, /liveChildren\.add\(child\)/);
+  assert.match(src, /process\.once\('exit'/);
+  assert.match(src, /killLiveChildren\('SIGKILL'\)/);
+});
+
 test('integration tests spawn serve-v15 only through tests/helpers/serveV15.ts', () => {
   const testsDir = path.resolve(fileURLToPath(new URL('.', import.meta.url)));
   const directSpawn = /spawn\s*\(\s*['"]node['"][\s\S]*serve-v15-vertical-slice\.ts/;
