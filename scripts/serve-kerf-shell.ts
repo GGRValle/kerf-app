@@ -13,20 +13,20 @@ import { Hono } from 'hono';
 
 import { apiRouter } from '../src/api/router.ts';
 import { buildStampPayload, readBuildStamp } from '../src/shell/buildStamp.js';
+import {
+  decodeBasicAuthUsername,
+  isAuthExemptPath,
+  isBasicAuthEnabled,
+  issueShellSessionCookie,
+  parseShellSessionCookie,
+  resolveBindingFromBasicAuth,
+  shellSessionSetCookieHeader,
+  verifyDeployBasicAuth,
+} from '../src/shell/shellAuthSession.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env['PORT'] ?? 8020);
 const ASTRO_ENTRY = path.resolve(__dirname, '../dist/astro/server/entry.mjs');
-const BASIC_AUTH_USER = process.env['BASIC_AUTH_USER'];
-const BASIC_AUTH_PASS = process.env['BASIC_AUTH_PASS'];
-const BASIC_AUTH_ENABLED =
-  typeof BASIC_AUTH_USER === 'string' &&
-  BASIC_AUTH_USER.length > 0 &&
-  typeof BASIC_AUTH_PASS === 'string' &&
-  BASIC_AUTH_PASS.length > 0;
-const BASIC_AUTH_EXPECTED = BASIC_AUTH_ENABLED
-  ? `Basic ${Buffer.from(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`).toString('base64')}`
-  : null;
 
 const ASTRO_CLIENT_ROOT = path.resolve(__dirname, '../dist/astro/client');
 
@@ -62,6 +62,15 @@ type AstroMiddleware = (
   next: (err?: unknown) => void,
 ) => void | Promise<void>;
 
+/** True when the inbound connection is TLS or behind an HTTPS-terminating proxy. */
+function requestIsSecure(req: http.IncomingMessage): boolean {
+  const xfProto = req.headers['x-forwarded-proto'];
+  if (typeof xfProto === 'string' && xfProto.split(',')[0]?.trim().toLowerCase() === 'https') {
+    return true;
+  }
+  return Boolean((req.socket as { encrypted?: boolean }).encrypted);
+}
+
 async function loadAstroHandler(): Promise<AstroMiddleware> {
   try {
     const mod = await import(pathToFileURL(ASTRO_ENTRY).href);
@@ -93,30 +102,43 @@ async function main(): Promise<void> {
 
   const honoListener = getRequestListener(edge.fetch);
 
-  function isAuthExemptPath(pathname: string): boolean {
-    // iOS Safari often omits Authorization on module script requests; keep
-    // HTML/API gated but allow hashed Astro client bundles through.
-    return (
-      pathname === '/health' ||
-      pathname.startsWith('/_astro/') ||
-      pathname === '/favicon.ico' ||
-      pathname === '/favicon.svg'
-    );
-  }
-
   const server = http.createServer((req, res) => {
     const pathname = (req.url ?? '/').split('?')[0] ?? '/';
-    if (BASIC_AUTH_ENABLED && !isAuthExemptPath(pathname)) {
-      const header = req.headers.authorization;
-      if (header !== BASIC_AUTH_EXPECTED) {
+    let issuedSessionCookie: string | null = null;
+
+    if (isBasicAuthEnabled() && !isAuthExemptPath(pathname)) {
+      const authorized =
+        verifyDeployBasicAuth(req.headers.authorization) ||
+        parseShellSessionCookie(req.headers.cookie) !== null;
+      if (!authorized) {
         res.statusCode = 401;
         res.setHeader('WWW-Authenticate', 'Basic realm="Kerf"');
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.end('Unauthorized');
         return;
       }
+      if (verifyDeployBasicAuth(req.headers.authorization)) {
+        const username = decodeBasicAuthUsername(req.headers.authorization);
+        if (username !== null) {
+          const binding = resolveBindingFromBasicAuth(req.headers.authorization);
+          const signed = issueShellSessionCookie(binding, username);
+          if (signed !== null) {
+            issuedSessionCookie = shellSessionSetCookieHeader(signed, {
+              requestSecure: requestIsSecure(req),
+            });
+          }
+        }
+      }
     }
+
+    const finish = (): void => {
+      if (issuedSessionCookie !== null && !res.headersSent) {
+        res.setHeader('Set-Cookie', issuedSessionCookie);
+      }
+    };
+
     if (pathname === '/health' || pathname.startsWith('/api/v1')) {
+      finish();
       honoListener(req, res);
       return;
     }
@@ -124,6 +146,7 @@ async function main(): Promise<void> {
       return;
     }
     setHtmlDocumentCacheHeaders(res);
+    finish();
     void astroHandler(req, res, () => {
       if (!res.headersSent) {
         res.statusCode = 404;
