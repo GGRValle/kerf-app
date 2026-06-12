@@ -3,7 +3,8 @@
  */
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { access, mkdtemp, rm } from 'node:fs/promises';
+import { access } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
@@ -20,6 +21,7 @@ import {
 } from '../src/shell/shellAuthSession.js';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
+const ASTRO_ENTRY = path.join(REPO_ROOT, 'dist/astro/server/entry.mjs');
 
 function withBasicAuthEnv<T>(fn: () => T | Promise<T>): T | Promise<T> {
   const prevUser = process.env['BASIC_AUTH_USER'];
@@ -120,7 +122,35 @@ function httpGet(url: string, headers: Record<string, string> = {}): Promise<Htt
   });
 }
 
-async function waitForHealth(port: number): Promise<void> {
+async function ensureAstroShellBuilt(): Promise<void> {
+  try {
+    await access(ASTRO_ENTRY);
+    return;
+  } catch {
+    // CI has no prebuilt Astro handler — build before spawning serve-kerf-shell.
+  }
+  const build = spawn('npm', ['run', 'build:astro'], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+    env: { ...process.env, KERF_DISABLE_LIVE_MODELS: '1' },
+  });
+  await new Promise<void>((resolve, reject) => {
+    build.on('exit', (code) =>
+      code === 0 ? resolve() : reject(new Error(`build:astro exited ${code}`)),
+    );
+  });
+}
+
+function tailChildOutput(logs: readonly string[], maxLines = 40): string {
+  return logs
+    .join('')
+    .split('\n')
+    .slice(-maxLines)
+    .join('\n')
+    .trim();
+}
+
+async function waitForHealth(port: number, logs: string[]): Promise<void> {
   const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
     try {
@@ -131,31 +161,11 @@ async function waitForHealth(port: number): Promise<void> {
     }
     await new Promise((r) => setTimeout(r, 80));
   }
-  throw new Error('shell server never became ready');
-}
-
-async function ensureAstroBuilt(): Promise<void> {
-  const astroEntry = path.join(REPO_ROOT, 'dist/astro/server/entry.mjs');
-  try {
-    await access(astroEntry);
-    return;
-  } catch {
-    // Build below.
-  }
-
-  const build = spawn('npm', ['run', 'build:astro'], {
-    cwd: REPO_ROOT,
-    stdio: 'inherit',
-    env: { ...process.env, KERF_DISABLE_LIVE_MODELS: '1' },
-  });
-  await new Promise<void>((resolve, reject) => {
-    build.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`build:astro exited ${code}`))));
-    build.on('error', reject);
-  });
-}
-
-function tailLog(lines: readonly string[], maxChars = 4_000): string {
-  return lines.join('').slice(-maxChars).trim();
+  const tail = tailChildOutput(logs);
+  throw new Error(
+    `shell server never became ready at http://127.0.0.1:${port}/health` +
+      (tail.length > 0 ? `\n--- child output tail ---\n${tail}` : '\n(no child output captured)'),
+  );
 }
 
 async function startShellServer(env: Record<string, string>): Promise<{
@@ -163,11 +173,10 @@ async function startShellServer(env: Record<string, string>): Promise<{
   port: number;
   persistenceDir: string;
 }> {
-  await ensureAstroBuilt();
+  await ensureAstroShellBuilt();
   const port = 19_400 + Math.floor(Math.random() * 80);
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-shell-auth-'));
-  const stdout: string[] = [];
-  const stderr: string[] = [];
+  const logs: string[] = [];
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-kerf-shell.ts'], {
     cwd: REPO_ROOT,
     env: {
@@ -180,19 +189,13 @@ async function startShellServer(env: Record<string, string>): Promise<{
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  child.stdout.on('data', (chunk) => stdout.push(String(chunk)));
-  child.stderr.on('data', (chunk) => stderr.push(String(chunk)));
-  try {
-    await waitForHealth(port);
-  } catch (error) {
-    child.kill('SIGTERM');
-    const detail = [
-      error instanceof Error ? error.message : String(error),
-      `stdout:\n${tailLog(stdout) || '(empty)'}`,
-      `stderr:\n${tailLog(stderr) || '(empty)'}`,
-    ].join('\n\n');
-    throw new Error(detail);
-  }
+  child.stdout.on('data', (chunk: Buffer | string) => {
+    logs.push(String(chunk));
+  });
+  child.stderr.on('data', (chunk: Buffer | string) => {
+    logs.push(String(chunk));
+  });
+  await waitForHealth(port, logs);
   return { child, port, persistenceDir };
 }
 
@@ -206,7 +209,10 @@ async function stopShellServer(p: {
   await rm(p.persistenceDir, { recursive: true, force: true });
 }
 
-test('shell server: Basic once sets cookie; API works on cookie alone (no second Basic)', async () => {
+test(
+  'shell server: Basic once sets cookie; API works on cookie alone (no second Basic)',
+  { timeout: 180_000 },
+  async () => {
   const proc = await startShellServer({
     BASIC_AUTH_USER: 'christian',
     BASIC_AUTH_PASS: 'fleet-test-pass',
@@ -225,4 +231,5 @@ test('shell server: Basic once sets cookie; API works on cookie alone (no second
   } finally {
     await stopShellServer(proc);
   }
-});
+  },
+);
