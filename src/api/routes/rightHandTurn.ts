@@ -59,7 +59,7 @@ import { createPgEventLog } from '../lib/sharedEstimateEventLog.js';
 import { makeGroqModelCaller, type ModelCaller } from '../../estimator/orchestration/index.js';
 import { runEstimate } from '../../runner/estimateRunner.js';
 import { createFixtureTenantStore } from '../../tenant/index.js';
-import { upsertEstimatingDeal } from '../../sales/index.js';
+import { upsertEstimatingDeal, dealById, markDealConverted } from '../../sales/index.js';
 import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
 import { buildProposalFromRightHandEstimate, type ProposalProjectionResult } from '../lib/estimateProposalProjection.js';
@@ -1101,6 +1101,85 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/workbook', async (c) 
  * the graph; wrong answers escape review; therefore deterministic,
  * validator-gated, fail-closed - the model appears nowhere in this path.
  */
+/**
+ * D-066: lead → project conversion. EXPLICIT operator action (this POST is
+ * the gate — the system never calls it), ONE-WAY (409 once converted, no
+ * path back to lead), with artifact carry-over: every estimate draft
+ * anchored to the deal re-anchors to the new project with line_id
+ * continuity — same lines, same ids; the estimate becomes the project's
+ * opening budget. The scheduling hook is the substrate route returned for
+ * the scheduling agent (work-order send stays gated elsewhere). Timing is
+ * operator judgment, not system policy: no contract check, no stage check.
+ */
+rightHandTurnRoutes.post('/right-hand/deals/:dealId/convert-to-project', async (c) => {
+  const tenant = requireApiTenant(c);
+  requireApiSession(c);
+  const dealId = c.req.param('dealId');
+  const deal = dealById(tenant, dealId);
+  if (!deal) {
+    return c.json({ error: 'deal_not_found', operator_message: 'That lead is not on the board. Nothing was created.' }, 404);
+  }
+  const store = estimateStoreFor(resolveDeps());
+  const dealDrafts = (await store.search(tenant, '')).filter((d) => d.deal_id === dealId);
+  const alreadyConverted = deal.project_id
+    ?? dealDrafts.find((d) => d.anchor_type === 'project')?.project_id
+    ?? null;
+  if (alreadyConverted) {
+    return c.json({
+      error: 'already_converted',
+      project_id: alreadyConverted,
+      operator_message: 'This lead already became a project — conversion is one-way.',
+    }, 409);
+  }
+  const projectId = `proj_${Date.now().toString(36)}`;
+  const { eventStore } = getApiDeps();
+  const event = await appendValidatedEvent(
+    { store: eventStore, tenant_id: tenant, correlation_id: projectId },
+    {
+      type: 'project.created',
+      project_id: projectId,
+      project_name: deal.name,
+      client_name: deal.client_name,
+      source_refs: [],
+    },
+  );
+  let carriedLines = 0;
+  for (const draft of dealDrafts) {
+    carriedLines += draft.lines.length;
+    await store.save({
+      ...draft,
+      anchor_type: 'project',
+      project_id: projectId,
+      route: draft.route.replace(`/estimate/${dealId}`, `/estimate/${projectId}`),
+      source_refs: [
+        ...draft.source_refs,
+        `converted-from-deal:${dealId}`,
+        `project:${projectId}`,
+        `event:${event.event_id}`,
+      ],
+    });
+  }
+  const converted = markDealConverted({ tenant, dealId, projectId });
+  return c.json({
+    ok: true,
+    project_id: projectId,
+    deal_id: dealId,
+    stage: converted?.stage ?? 'won',
+    one_way: true,
+    carried: {
+      estimates: dealDrafts.length,
+      lines: carriedLines,
+      line_id_continuity: true,
+    },
+    schedule: {
+      substrate_route: `/api/v1/projects/${projectId}/schedule-substrate`,
+      status: 'ready_for_scheduling',
+    },
+    event_id: event.event_id,
+    operator_message: `Project created from "${deal.name}". The estimate carried over line-for-line; scheduling can start from the project.`,
+  }, 201);
+});
+
 rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/workbook-import', async (c) => {
   const tenant = requireApiTenant(c);
   const store = estimateStoreFor(resolveDeps());
