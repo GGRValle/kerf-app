@@ -68,11 +68,19 @@ function anthropicEstimatorCaller(model: string) {
   return makeAnthropicModelCaller({ apiKey: process.env.ANTHROPIC_API_KEY!, model });
 }
 
+// Classified-tags fixture (candidate-cap card): production runs classification
+// before assembly, so allTags overstates the tag surface. The FILLED key's own
+// tag set is the classifier-ideal pinned fixture for this narrative.
+const classifiedTags = [...new Set(included.map((l) => l.scope_tag))];
+const TAG_MODE = process.env.EVAL_TAG_MODE === 'classified' ? 'classified' : 'all';
+const EVAL_TAGS = TAG_MODE === 'classified' ? classifiedTags : allTags;
+const CANDIDATE_LIMIT = process.env.EVAL_CANDIDATE_LIMIT ? Number(process.env.EVAL_CANDIDATE_LIMIT) : undefined;
+
 /** Full two-pass pipeline (selection + extrapolation) — the metric that
  * matters post-extrapolation: whole-total vs the 46-line FILLED key. */
 async function runFullPipeline(label: string, caller: any) {
   const inputs: any = {
-    tenantId: 'tenant_ggr', projectArchetype: 'kitchen_remodel', scopeTags: allTags,
+    tenantId: 'tenant_ggr', projectArchetype: 'kitchen_remodel', scopeTags: EVAL_TAGS,
     // operatorNotes is how the production adapter feeds the narrative to
     // pass-1 (buildEstimatorInputsFromRightHand); scopeNarrative feeds pass-2.
     operatorNotes: SCOPE_NARRATIVE,
@@ -80,7 +88,10 @@ async function runFullPipeline(label: string, caller: any) {
   };
   let result;
   try {
-    result = await estimateProject(inputs, { modelCaller: caller, comparablePool: [], rateCard: card });
+    result = await estimateProject(inputs, {
+      modelCaller: caller, comparablePool: [], rateCard: card,
+      ...(CANDIDATE_LIMIT !== undefined ? { candidateLimit: CANDIDATE_LIMIT } : {}),
+    });
   } catch (e: any) {
     console.log(label, 'PIPELINE FAILED:', String(e.message).slice(0, 140));
     return null;
@@ -120,7 +131,7 @@ if (process.env.EVAL_TIER_LADDER === '1') {
       console.log('');
     }
   }
-  console.log('TIER LADDER SUMMARY (target $' + (RICARDO_FILLED_EXPECTED.summary_sell_total_cents / 100).toLocaleString() + ' ±10%)');
+  console.log('TIER LADDER SUMMARY (target $' + (RICARDO_FILLED_EXPECTED.summary_sell_total_cents / 100).toLocaleString() + ' ±10%) — tags=' + TAG_MODE + ' (' + EVAL_TAGS.length + ') candidateLimit=' + (CANDIDATE_LIMIT ?? 'default40'));
   for (const r of rows) {
     console.log('  ' + r.label.padEnd(22) + ' $' + (r.total / 100).toLocaleString().padStart(11) + '  D' + r.deltaPct.toFixed(1).padStart(6) + '%  ' + (r.ok ? 'WITHIN' : 'OUTSIDE') + '  ' + r.stated + '+' + r.suggested + ' lines  exact-id ' + r.exactIdPct + '%  qty ' + r.qty);
   }

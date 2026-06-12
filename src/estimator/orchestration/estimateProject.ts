@@ -103,6 +103,7 @@ export async function estimateProject(
     inputs,
     renderedBands,
     ...(deps.onboardingSession !== undefined ? { onboardingSession: deps.onboardingSession } : {}),
+    ...(deps.candidateLimit !== undefined ? { candidateLimit: deps.candidateLimit } : {}),
     rateCard,
   });
 

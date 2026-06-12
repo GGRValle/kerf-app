@@ -27,7 +27,18 @@ export interface BuildPromptOpts {
   }>;
   readonly onboardingSession?: OnboardingSession;
   readonly rateCard?: readonly TenantRateCardLine[];
+  /**
+   * Pass-1 candidate visibility budget (prompt construction, not gating).
+   * Default 40 is the cheap-tier (groq) prompt-size discipline. Frontier
+   * callers pass a higher budget: ids the model never sees cannot be echoed,
+   * which starves the exact-id channel and forces keyword fallback on the
+   * money lines (D-069 tier-ladder finding; pass-2, which shows its full
+   * candidate list, echoes ids reliably).
+   */
+  readonly candidateLimit?: number;
 }
+
+const DEFAULT_PASS1_CANDIDATE_LIMIT = 40;
 
 export interface BuiltPrompt {
   readonly systemMessage: string;
@@ -167,7 +178,7 @@ function buildUserMessage(opts: BuildPromptOpts): string {
   if (opts.rateCard !== undefined) {
     const candidates = opts.rateCard
       .filter((line) => opts.inputs.scopeTags.includes(line.scope_tag))
-      .slice(0, 40);
+      .slice(0, opts.candidateLimit ?? DEFAULT_PASS1_CANDIDATE_LIMIT);
     if (candidates.length > 0) {
       lines.push('');
       lines.push('RATE-CARD SEED CANDIDATES (review-required KERF_SEED, not company truth):');
