@@ -4,6 +4,7 @@ export {
   issueShellSessionCookie,
   parseShellSessionCookie,
   platformSessionFromShellCookie,
+  resolveShellSessionCookieSecure,
   shellSessionSetCookieHeader,
   verifyDeployBasicAuth,
 } from './shellAuthSession.js';

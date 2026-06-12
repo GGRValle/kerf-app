@@ -62,6 +62,15 @@ type AstroMiddleware = (
   next: (err?: unknown) => void,
 ) => void | Promise<void>;
 
+/** True when the inbound connection is TLS or behind an HTTPS-terminating proxy. */
+function requestIsSecure(req: http.IncomingMessage): boolean {
+  const xfProto = req.headers['x-forwarded-proto'];
+  if (typeof xfProto === 'string' && xfProto.split(',')[0]?.trim().toLowerCase() === 'https') {
+    return true;
+  }
+  return Boolean((req.socket as { encrypted?: boolean }).encrypted);
+}
+
 async function loadAstroHandler(): Promise<AstroMiddleware> {
   try {
     const mod = await import(pathToFileURL(ASTRO_ENTRY).href);
@@ -114,7 +123,9 @@ async function main(): Promise<void> {
           const binding = resolveBindingFromBasicAuth(req.headers.authorization);
           const signed = issueShellSessionCookie(binding, username);
           if (signed !== null) {
-            issuedSessionCookie = shellSessionSetCookieHeader(signed);
+            issuedSessionCookie = shellSessionSetCookieHeader(signed, {
+              requestSecure: requestIsSecure(req),
+            });
           }
         }
       }

@@ -18,6 +18,38 @@ export const SHELL_SESSION_COOKIE = 'kerf_shell_session';
 const SESSION_VERSION = 1;
 const SESSION_TTL_SEC = 12 * 60 * 60;
 
+export interface ShellSessionCookieOptions {
+  /** Force Secure on/off regardless of env/request signals. */
+  readonly secure?: boolean;
+  /** When true, treat the inbound request as HTTPS (TLS or x-forwarded-proto). */
+  readonly requestSecure?: boolean;
+}
+
+/**
+ * Whether `kerf_shell_session` Set-Cookie responses include `Secure`.
+ *
+ * Precedence (explicit, not accidental):
+ *   1. `opts.secure` when passed (hard override)
+ *   2. `KERF_SHELL_COOKIE_SECURE=1|0` deploy override
+ *   3. `opts.requestSecure === true` (TLS or x-forwarded-proto: https)
+ *   4. `NODE_ENV === 'production'` default
+ *
+ * Local/dev HTTP (localhost, integration tests) omits Secure unless forced.
+ */
+export function resolveShellSessionCookieSecure(opts?: ShellSessionCookieOptions): boolean {
+  if (opts?.secure === true) return true;
+  if (opts?.secure === false) return false;
+  const envFlag = process.env['KERF_SHELL_COOKIE_SECURE']?.trim().toLowerCase();
+  if (envFlag === '1' || envFlag === 'true') return true;
+  if (envFlag === '0' || envFlag === 'false') return false;
+  if (opts?.requestSecure === true) return true;
+  return process.env['NODE_ENV'] === 'production';
+}
+
+function cookieAttributeSuffix(opts?: ShellSessionCookieOptions): string {
+  return resolveShellSessionCookieSecure(opts) ? '; Secure' : '';
+}
+
 export interface ShellAuthSessionPayload {
   readonly v: number;
   readonly exp: number;
@@ -155,12 +187,15 @@ export function parseShellSessionCookie(cookieHeader: string | undefined): Shell
   return null;
 }
 
-export function shellSessionSetCookieHeader(signedValue: string): string {
-  return `${SHELL_SESSION_COOKIE}=${encodeURIComponent(signedValue)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_SEC}`;
+export function shellSessionSetCookieHeader(
+  signedValue: string,
+  opts?: ShellSessionCookieOptions,
+): string {
+  return `${SHELL_SESSION_COOKIE}=${encodeURIComponent(signedValue)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_SEC}${cookieAttributeSuffix(opts)}`;
 }
 
-export function shellSessionClearsCookieHeader(): string {
-  return `${SHELL_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+export function shellSessionClearsCookieHeader(opts?: ShellSessionCookieOptions): string {
+  return `${SHELL_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${cookieAttributeSuffix(opts)}`;
 }
 
 export function platformSessionFromShellCookie(
@@ -168,15 +203,12 @@ export function platformSessionFromShellCookie(
 ): { token: string; tenantId: PersistenceTenantId; roleRoot: ShellRoleRoot } | null {
   const payload = parseShellSessionCookie(cookieHeader);
   if (payload === null) return null;
-  if (payload.tenantId !== undefined && payload.roleRoot !== undefined) {
-    return {
-      token: `psess_bound_${payload.user}`,
-      tenantId: payload.tenantId,
-      roleRoot: payload.roleRoot,
-    };
-  }
   const binding = resolveAuthBinding(payload.user);
   if (binding === null) return null;
+  // Wall 1: tenant/role resolve server-side from the principal binding — never
+  // from tampered payload fields (even if HMAC were somehow wrong).
+  if (payload.tenantId !== undefined && payload.tenantId !== binding.tenantId) return null;
+  if (payload.roleRoot !== undefined && payload.roleRoot !== binding.roleRoot) return null;
   return {
     token: `psess_bound_${binding.username}`,
     tenantId: binding.tenantId,
