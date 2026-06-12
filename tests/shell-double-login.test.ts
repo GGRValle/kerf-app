@@ -3,7 +3,7 @@
  */
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
@@ -134,13 +134,40 @@ async function waitForHealth(port: number): Promise<void> {
   throw new Error('shell server never became ready');
 }
 
+async function ensureAstroBuilt(): Promise<void> {
+  const astroEntry = path.join(REPO_ROOT, 'dist/astro/server/entry.mjs');
+  try {
+    await access(astroEntry);
+    return;
+  } catch {
+    // Build below.
+  }
+
+  const build = spawn('npm', ['run', 'build:astro'], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+    env: { ...process.env, KERF_DISABLE_LIVE_MODELS: '1' },
+  });
+  await new Promise<void>((resolve, reject) => {
+    build.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`build:astro exited ${code}`))));
+    build.on('error', reject);
+  });
+}
+
+function tailLog(lines: readonly string[], maxChars = 4_000): string {
+  return lines.join('').slice(-maxChars).trim();
+}
+
 async function startShellServer(env: Record<string, string>): Promise<{
   child: ChildProcessWithoutNullStreams;
   port: number;
   persistenceDir: string;
 }> {
+  await ensureAstroBuilt();
   const port = 19_400 + Math.floor(Math.random() * 80);
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-shell-auth-'));
+  const stdout: string[] = [];
+  const stderr: string[] = [];
   const child = spawn('node', ['--import', 'tsx', 'scripts/serve-kerf-shell.ts'], {
     cwd: REPO_ROOT,
     env: {
@@ -153,7 +180,19 @@ async function startShellServer(env: Record<string, string>): Promise<{
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  await waitForHealth(port);
+  child.stdout.on('data', (chunk) => stdout.push(String(chunk)));
+  child.stderr.on('data', (chunk) => stderr.push(String(chunk)));
+  try {
+    await waitForHealth(port);
+  } catch (error) {
+    child.kill('SIGTERM');
+    const detail = [
+      error instanceof Error ? error.message : String(error),
+      `stdout:\n${tailLog(stdout) || '(empty)'}`,
+      `stderr:\n${tailLog(stderr) || '(empty)'}`,
+    ].join('\n\n');
+    throw new Error(detail);
+  }
   return { child, port, persistenceDir };
 }
 
