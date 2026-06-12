@@ -14,7 +14,7 @@
  * (which we DON'T run here — these routes don't need the app bundle).
  */
 import assert from 'node:assert/strict';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
 import net from 'node:net';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -22,6 +22,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -111,22 +112,17 @@ interface ServeProcess {
 async function startServe(): Promise<ServeProcess> {
   const port = await freeLoopbackPort();
   const persistenceDir = await mkdtemp(path.join(tmpdir(), 'kerf-v15-step4-'));
-  const child = spawn(
-    'node',
-    ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'],
-    {
-      cwd: REPO_ROOT,
-      env: {
-        ...process.env,
-        PORT: String(port),
-        PERSISTENCE_DIR: persistenceDir,
-        // Hermetic: ignore any inherited GROQ_/ANTHROPIC_ keys, force
-        // deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
-        KERF_DISABLE_LIVE_MODELS: '1',
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
+  const child = spawnServeV15Process({
+    cwd: REPO_ROOT,
+    env: {
+      ...process.env,
+      PORT: String(port),
+      PERSISTENCE_DIR: persistenceDir,
+      // Hermetic: ignore any inherited GROQ_/ANTHROPIC_ keys, force
+      // deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
+      KERF_DISABLE_LIVE_MODELS: '1',
     },
-  );
+  });
   child.stderr.on('data', (c: Buffer) => {
     if (process.env['DEBUG_V15_API_TEST'] !== undefined) {
       process.stderr.write(`[serve-v15] ${c.toString()}`);

@@ -76,6 +76,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../src/examples/v15-vertical-slice');
 const PORT = Number(process.env.PORT) || 8010;
 const ENV_FILE = path.resolve(__dirname, '../.env.local');
+const PARENT_STDIN_WATCH = process.env['KERF_PARENT_STDIN_WATCH'] === '1';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Hermetic-test gate · added 2026-05-23 (Play 3 hardening · Fix 1)
@@ -1647,6 +1648,30 @@ const server = http.createServer(async (req, res) => {
   }
   res.end(body);
 });
+
+function installParentStdinWatch(): void {
+  if (!PARENT_STDIN_WATCH) {
+    return;
+  }
+  let shuttingDown = false;
+  const shutdown = (reason: string): void => {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+    console.warn(`[serve-v15] parent stdin closed (${reason}); exiting orphaned test server`);
+    const forceExit = setTimeout(() => process.exit(0), 500);
+    forceExit.unref();
+    server.close(() => process.exit(0));
+  };
+
+  process.stdin.once('end', () => shutdown('end'));
+  process.stdin.once('close', () => shutdown('close'));
+  process.stdin.once('error', () => shutdown('error'));
+  process.stdin.resume();
+}
+
+installParentStdinWatch();
 
 server.listen(PORT, () => {
   const transcribeReady = Boolean(process.env.GROQ_API_KEY && process.env.GROQ_BASE_URL);
