@@ -76,6 +76,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../src/examples/v15-vertical-slice');
 const PORT = Number(process.env.PORT) || 8010;
 const ENV_FILE = path.resolve(__dirname, '../.env.local');
+const PARENT_STDIN_WATCH = process.env['KERF_PARENT_STDIN_WATCH'] === '1';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Hermetic-test gate · added 2026-05-23 (Play 3 hardening · Fix 1)
@@ -1648,6 +1649,30 @@ const server = http.createServer(async (req, res) => {
   res.end(body);
 });
 
+function installParentStdinWatch(): void {
+  if (!PARENT_STDIN_WATCH) {
+    return;
+  }
+  let shuttingDown = false;
+  const shutdown = (reason: string): void => {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+    console.warn(`[serve-v15] parent stdin closed (${reason}); exiting orphaned test server`);
+    const forceExit = setTimeout(() => process.exit(0), 500);
+    forceExit.unref();
+    server.close(() => process.exit(0));
+  };
+
+  process.stdin.once('end', () => shutdown('end'));
+  process.stdin.once('close', () => shutdown('close'));
+  process.stdin.once('error', () => shutdown('error'));
+  process.stdin.resume();
+}
+
+installParentStdinWatch();
+
 server.listen(PORT, () => {
   const transcribeReady = Boolean(process.env.GROQ_API_KEY && process.env.GROQ_BASE_URL);
   console.log(
@@ -1656,3 +1681,20 @@ server.listen(PORT, () => {
     }\n  POST/GET /api/projects                 — persistence event log + projections\n  POST     /api/projects/<id>/captures   — record field capture\n  POST     /api/projects/<id>/daily-log/entries — Field Daily entry (daily_log.entry_captured)\n  POST     /api/kb/ingestions             — tier-2 Cost KB ingestion (kb.ingested)\n  GET      /api/kb/ingestions?tenant_id= — list ingestion summaries\n  GET      /api/kb/tier2-rows?tenant_id= — tier-2 rows JSON (browser merge)\n  POST     /api/kb/tier2/review          — approve / flag / reject a tier-2 row\n  Persistence dir:                       ${PERSISTENCE_DIR}\n(no auth, no DB; Ctrl-C to stop)\n`,
   );
 });
+
+// Orphan guard (ppid fallback) — covers spawns that do not opt into
+// KERF_PARENT_STDIN_WATCH (non-helper integration tests, legacy spawns).
+// Manual demo runs keep their shell parent (ppid !== 1) until the user
+// stops the server; intentionally daemonized processes (ppid === 1 at
+// startup) skip the poll.
+if (process.ppid !== 1) {
+  const ppidPoll = setInterval(() => {
+    if (process.ppid === 1) {
+      console.warn('[serve-v15] reparented to PID 1 — parent gone; exiting orphaned server');
+      const forceExit = setTimeout(() => process.exit(0), 500);
+      forceExit.unref();
+      server.close(() => process.exit(0));
+    }
+  }, 1_000);
+  ppidPoll.unref();
+}
