@@ -16,12 +16,12 @@
 import assert from 'node:assert/strict';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import http from 'node:http';
-import net from 'node:net';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
 import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
@@ -85,22 +85,6 @@ async function waitForReady(port: number, timeoutMs: number): Promise<void> {
     await new Promise((r) => setTimeout(r, 60));
   }
   throw lastErr instanceof Error ? lastErr : new Error(`server never reported ready on ${port}`);
-}
-
-async function freeLoopbackPort(): Promise<number> {
-  return await new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      const port = typeof address === 'object' && address !== null ? address.port : 0;
-      server.close((err) => {
-        if (err) reject(err);
-        else resolve(port);
-      });
-    });
-  });
 }
 
 interface ServeProcess {

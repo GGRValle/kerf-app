@@ -7,6 +7,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { MOBILE_PROBE_QUERY_PARAM } from '../src/examples/v15-vertical-slice/m-dom-probe.js';
+import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
 import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
@@ -53,7 +54,7 @@ async function waitForOk(url: string, timeoutMs: number): Promise<void> {
 }
 
 test('v15 mobile harness: /m/check + probe-enabled V1.5 routes return 200', async () => {
-  const port = 18_110 + Math.floor(Math.random() * 900);
+  const port = await freeLoopbackPort();
   const child = spawnServeV15Process({
     cwd: REPO_ROOT,
     env: {
