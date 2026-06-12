@@ -31,6 +31,7 @@ const MAX_TOKENS = 32_000;
 interface ParsedStream {
   readonly text: string;
   readonly stopReason: string | undefined;
+  readonly streamError: string | undefined;
   readonly tokensIn: number;
   readonly tokensOut: number;
 }
@@ -44,6 +45,7 @@ export async function parseAnthropicSseStream(
   let buffer = '';
   let text = '';
   let stopReason: string | undefined;
+  let streamError: string | undefined;
   let tokensIn = 0;
   let tokensOut = 0;
 
@@ -80,6 +82,13 @@ export async function parseAnthropicSseStream(
           if (usage?.['output_tokens'] !== undefined) tokensOut = usage['output_tokens'];
           break;
         }
+        case 'error': {
+          const err = event['error'] as Record<string, unknown> | undefined;
+          streamError = typeof err?.['message'] === 'string'
+            ? err['message']
+            : 'unknown stream error';
+          break;
+        }
         default:
           break;
       }
@@ -98,7 +107,7 @@ export async function parseAnthropicSseStream(
   }
   if (buffer.trim().length > 0) ingestEvent(buffer);
 
-  return { text, stopReason, tokensIn, tokensOut };
+  return { text, stopReason, streamError, tokensIn, tokensOut };
 }
 
 export function makeAnthropicModelCaller(opts: MakeAnthropicModelCallerOpts): ModelCaller {
@@ -139,10 +148,19 @@ export function makeAnthropicModelCaller(opts: MakeAnthropicModelCallerOpts): Mo
     } catch (err) {
       return { ok: false, reason: `anthropic stream parse failed: ${err instanceof Error ? err.message : String(err)}` };
     }
+    if (parsed.streamError !== undefined) {
+      return { ok: false, reason: `anthropic stream error: ${parsed.streamError}` };
+    }
     if (parsed.stopReason === 'max_tokens') {
       // A clipped selection JSON would otherwise surface as a downstream
       // parser failure; name the real cause so telemetry stays honest.
       return { ok: false, reason: 'anthropic output truncated at max_tokens' };
+    }
+    if (parsed.stopReason !== 'end_turn') {
+      if (parsed.stopReason === undefined) {
+        return { ok: false, reason: 'anthropic stream ended without end_turn' };
+      }
+      return { ok: false, reason: `anthropic stream stopped: ${parsed.stopReason}` };
     }
     if (!parsed.text) return { ok: false, reason: 'anthropic returned no text content' };
     return {

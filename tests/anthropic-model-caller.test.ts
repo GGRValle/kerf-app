@@ -178,4 +178,76 @@ void test('parseAnthropicSseStream unit: text order + usage + stop_reason', asyn
   assert.equal(parsed.tokensIn, 99);
   assert.equal(parsed.tokensOut, 2);
   assert.equal(parsed.stopReason, 'end_turn');
+  assert.equal(parsed.streamError, undefined);
+});
+
+void test('parseAnthropicSseStream: split SSE event across two chunks still parses correctly', async () => {
+  const payload = [
+    `data: ${JSON.stringify({ type: 'message_start', message: { usage: { input_tokens: 3 } } })}\n\n`,
+    `data: ${JSON.stringify({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'split-' } })}\n\n`,
+    `data: ${JSON.stringify({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'ok' } })}\n\n`,
+    `data: ${JSON.stringify({ type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 2 } })}\n\n`,
+  ].join('');
+  const splitAt = Math.floor(payload.length / 2);
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(payload.slice(0, splitAt)));
+      controller.enqueue(new TextEncoder().encode(payload.slice(splitAt)));
+      controller.close();
+    },
+  });
+  const parsed = await parseAnthropicSseStream(body);
+  assert.equal(parsed.text, 'split-ok');
+  assert.equal(parsed.stopReason, 'end_turn');
+});
+
+void test('partial stream with text but no message_delta fails closed', async () => {
+  await withStubbedFetch(
+    {
+      sseEvents: [
+        { type: 'message_start', message: { usage: { input_tokens: 10 } } },
+        { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: '{"partial":' } },
+      ],
+    },
+    async () => {
+      const caller = makeAnthropicModelCaller({ apiKey: 'k_test' });
+      const result = await caller({ ...CALLER_INPUT });
+      assert.equal(result.ok, false);
+      if (!result.ok) assert.match(result.reason, /without end_turn/);
+    },
+  );
+});
+
+void test('SSE error event fails closed with stream error reason', async () => {
+  await withStubbedFetch(
+    {
+      sseEvents: [
+        { type: 'error', error: { type: 'overloaded_error', message: 'Overloaded' } },
+      ],
+    },
+    async () => {
+      const caller = makeAnthropicModelCaller({ apiKey: 'k_test' });
+      const result = await caller({ ...CALLER_INPUT });
+      assert.equal(result.ok, false);
+      if (!result.ok) assert.match(result.reason, /anthropic stream error: Overloaded/);
+    },
+  );
+});
+
+void test('non-end_turn stop_reason refusal fails closed', async () => {
+  await withStubbedFetch(
+    {
+      sseEvents: [
+        { type: 'message_start', message: { usage: { input_tokens: 10 } } },
+        { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'nope' } },
+        { type: 'message_delta', delta: { stop_reason: 'refusal' }, usage: { output_tokens: 1 } },
+      ],
+    },
+    async () => {
+      const caller = makeAnthropicModelCaller({ apiKey: 'k_test' });
+      const result = await caller({ ...CALLER_INPUT });
+      assert.equal(result.ok, false);
+      if (!result.ok) assert.match(result.reason, /stopped: refusal/);
+    },
+  );
 });
