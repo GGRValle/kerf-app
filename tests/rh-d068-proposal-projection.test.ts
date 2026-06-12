@@ -16,14 +16,18 @@ import type { RightHandEstimateDraft, RightHandEstimateLine } from '../src/api/l
 
 const NOW = new Date('2026-06-12T03:00:00.000Z');
 
+// Mirrors the REAL deployed artifact shape (live-drive finding 2026-06-11):
+// rung-0 seed-priced lines carry source_type 'model_knowledge' (legacy UI
+// vocabulary — the tenant hasn't graduated the rates) with a kerf-seed
+// source_ref as the actual price basis, and flags carry scope tags.
 function line(partial: Partial<RightHandEstimateLine> & { id: string; label: string }): RightHandEstimateLine {
   return {
     description: partial.label,
-    source_type: 'company_data',
-    source_label: 'Your rates',
+    source_type: 'model_knowledge',
+    source_label: 'Seed rates — review required',
     source_ref: 'kerf://kerf-seed/rate-card/x',
     open_item: false,
-    flags: ['scope'],
+    flags: ['cabinetry'],
     tier: 'illustrative',
     division: { code: 'KD-06', label: 'Cabinetry' },
     quantity: 1,
@@ -54,9 +58,9 @@ function fixtureDraft(): RightHandEstimateDraft {
       line({ id: 'l1', label: '28 LF custom base cabinets', cost_code: 'CB-001', quantity: 28, uom: 'LF', unit_cents: 100_000, extended_cents: 2_800_000 }),
       line({ id: 'l2', label: 'Tile floor 80 SF', cost_code: 'TL-001', division: { code: 'KD-10', label: 'Tile' }, quantity: 80, uom: 'SF', unit_cents: 4_000, extended_cents: 320_000 }),
       line({ id: 'l3', label: 'Appliance allowance', source_type: 'allowance', division: { code: 'KD-14', label: 'Appliances & Equipment' }, extended_cents: 500_000, unit_cents: 500_000 }),
-      line({ id: 'l4', label: 'Dumpster — suggested', flags: ['scope', 'suggested'], suggested: true, division: { code: 'KD-01', label: 'General Conditions' }, extended_cents: 65_000, unit_cents: 65_000 }),
-      line({ id: 'l5', label: 'Removed line', flags: ['scope', 'removed'], extended_cents: 90_000, unit_cents: 90_000 }),
-      line({ id: 'l6', label: 'Unpriced placeholder', unit_cents: 0, extended_cents: 0, source_type: 'model_knowledge' }),
+      line({ id: 'l4', label: 'Dumpster — suggested', flags: ['general_conditions', 'suggested'], suggested: true, division: { code: 'KD-01', label: 'General Conditions' }, extended_cents: 65_000, unit_cents: 65_000 }),
+      line({ id: 'l5', label: 'Removed line', flags: ['cabinetry', 'removed'], extended_cents: 90_000, unit_cents: 90_000 }),
+      line({ id: 'l6', label: 'Unpriced placeholder', unit_cents: 0, extended_cents: 0 }),
     ],
   } as unknown as RightHandEstimateDraft;
 }
@@ -101,6 +105,26 @@ test('KD divisions become labeled sections inside broad CSI groups (granularity 
 test('allowance lines stay priced AND surface in the Allowances section text', () => {
   const { proposal } = buildProposalFromRightHandEstimate(fixtureDraft(), { now: NOW });
   assert.ok(proposal.allowances.some((a) => a.startsWith('Appliance allowance')));
+});
+
+test('rank-7 is PRICE BASIS, not the legacy source_type label: seed-ref lines render preliminary; basis-less priced lines are annexed', () => {
+  const draft = fixtureDraft();
+  const withBasisless = {
+    ...draft,
+    lines: [
+      ...draft.lines,
+      // Priced but NO traceable basis: not seed-ref, not allowance, no
+      // operator action — model-invented, rank 7, never client-facing.
+      line({ id: 'l7', label: 'Mystery priced line', source_ref: 'kerf://model/invented', extended_cents: 123_456, unit_cents: 123_456 }),
+      // Operator-edited line without a seed ref: the operator IS the basis.
+      line({ id: 'l8', label: 'Operator-set custom line', source_ref: 'kerf://model/invented', flags: ['cabinetry', 'operator_edited'], extended_cents: 50_000, unit_cents: 50_000 }),
+    ],
+  } as RightHandEstimateDraft;
+  const { held_back, rendered_line_ids } = buildProposalFromRightHandEstimate(withBasisless, { now: NOW });
+  assert.ok(rendered_line_ids.includes('l1'), 'seed-ref model_knowledge line renders (KERF_SEED in a PRELIMINARY draft)');
+  assert.ok(rendered_line_ids.includes('l8'), 'operator-edited line renders (operator is the basis)');
+  assert.ok(!rendered_line_ids.includes('l7'), 'basis-less priced line never renders');
+  assert.equal(held_back.find((h) => h.label === 'Mystery priced line')?.reason, 'model_inference_unpriced');
 });
 
 test('a draft with nothing client-safe fails closed, never renders empty', () => {
