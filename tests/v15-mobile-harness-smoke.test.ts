@@ -2,12 +2,13 @@
  * HTTP smoke for /m/check mobile validation harness (port 8010 stack).
  */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { MOBILE_PROBE_QUERY_PARAM } from '../src/examples/v15-vertical-slice/m-dom-probe.js';
+import { freeLoopbackPort } from './helpers/freeLoopbackPort.ts';
+import { spawnServeV15Process } from './helpers/serveV15.ts';
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -53,8 +54,8 @@ async function waitForOk(url: string, timeoutMs: number): Promise<void> {
 }
 
 test('v15 mobile harness: /m/check + probe-enabled V1.5 routes return 200', async () => {
-  const port = 18_110 + Math.floor(Math.random() * 900);
-  const child = spawn('node', ['--import', 'tsx', 'scripts/serve-v15-vertical-slice.ts'], {
+  const port = await freeLoopbackPort();
+  const child = spawnServeV15Process({
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -62,7 +63,6 @@ test('v15 mobile harness: /m/check + probe-enabled V1.5 routes return 200', asyn
       // Hermetic: force deterministic LLM clients (Play 3 hardening · Fix 1 · 2026-05-23).
       KERF_DISABLE_LIVE_MODELS: '1',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
   });
 
   try {

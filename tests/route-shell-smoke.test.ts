@@ -4,9 +4,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ensureAstroBuilt } from './helpers/ensureAstroBuilt.js';
+import { reapOnExit } from './helpers/reapOnExit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -57,29 +58,14 @@ async function waitForHealth(baseUrl: string, attempts = 60): Promise<void> {
 }
 
 test('route shell serves all 13 legacy paths without 5xx', { timeout: 180_000, concurrency: false }, async () => {
-  const astroEntry = path.join(ROOT, 'dist/astro/server/entry.mjs');
-  let needsBuild = true;
-  try {
-    await fs.access(astroEntry);
-    needsBuild = false;
-  } catch {
-    needsBuild = true;
-  }
-
-  if (needsBuild) {
-    const build = spawn('npm', ['run', 'build:astro'], {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: { ...process.env, KERF_DISABLE_LIVE_MODELS: '1' },
-    });
-    await new Promise<void>((resolve, reject) => {
-      build.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`build:astro exited ${code}`))));
-    });
-  }
+  await ensureAstroBuilt(ROOT);
 
   const server = spawn('node', ['--import', 'tsx', 'scripts/serve-kerf-shell.ts'], {
     cwd: ROOT,
-    stdio: 'pipe',
+    // stdin must stay 'pipe' (not 'ignore') — the server's orphan guard
+    // exits on stdin close, the only teardown that survives runner SIGKILL.
+    stdio: ['pipe', 'pipe', 'pipe'],
+    detached: false,
     env: {
       ...process.env,
       PORT: String(PORT),
@@ -87,6 +73,7 @@ test('route shell serves all 13 legacy paths without 5xx', { timeout: 180_000, c
       PERSISTENCE_DIR: path.join(ROOT, '.tmp-route-shell-smoke'),
     },
   });
+  reapOnExit(server);
 
   const baseUrl = `http://127.0.0.1:${PORT}`;
   try {

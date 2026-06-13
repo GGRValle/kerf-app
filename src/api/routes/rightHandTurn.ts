@@ -63,6 +63,7 @@ import { upsertEstimatingDeal, dealById, markDealConverted } from '../../sales/i
 import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
 import { buildProposalFromRightHandEstimate, type ProposalProjectionResult } from '../lib/estimateProposalProjection.js';
+import { buildInvoiceFromRightHandEstimate, renderInvoiceHtml, type InvoiceProjectionResult } from '../lib/estimateInvoiceProjection.js';
 import { renderProposalHtml } from '../../proposal/render.js';
 import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
@@ -107,6 +108,7 @@ export interface RightHandTurnRouteDeps {
     readonly ANTHROPIC_BASE_URL?: string;
     readonly REPLY_BRAIN?: string;
     readonly ESTIMATOR_FRONTIER_MODEL?: string;
+    readonly ESTIMATOR_FRONTIER_THINKING?: string;
     readonly DATABASE_URL?: string;
     readonly POSTGRES_URL?: string;
   };
@@ -137,6 +139,7 @@ function resolveDeps(): RightHandTurnRouteDeps {
       ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
       ANTHROPIC_BASE_URL: process.env['ANTHROPIC_BASE_URL'],
       REPLY_BRAIN: process.env['REPLY_BRAIN'],
+      ESTIMATOR_FRONTIER_THINKING: process.env['ESTIMATOR_FRONTIER_THINKING'],
       DATABASE_URL: process.env['DATABASE_URL'],
       POSTGRES_URL: process.env['POSTGRES_URL'],
     },
@@ -299,6 +302,7 @@ function estimatorModelCallerFor(deps: RightHandTurnRouteDeps): ModelCaller {
     return makeAnthropicModelCaller({
       apiKey: anthropicKey,
       ...(deps.env.ESTIMATOR_FRONTIER_MODEL ? { model: deps.env.ESTIMATOR_FRONTIER_MODEL } : {}),
+      thinkingMode: deps.env.ESTIMATOR_FRONTIER_THINKING === 'adaptive' ? 'adaptive' : 'off',
     });
   }
   const apiKey = deps.env.GROQ_API_KEY;
@@ -1079,6 +1083,50 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) 
   }
   c.header('Content-Type', 'text/html; charset=utf-8');
   return c.body(renderProposalHtml(projection.proposal));
+});
+
+/**
+ * D-068 segment 3: the Invoice projection — DRAFT billing render against the
+ * proposal basis (same fence, same tie-outs; an invoice that doesn't
+ * reconcile throws and nothing renders). ?milestone=down_payment|final,
+ * ?format=json for the operator shape. Send wall untouched.
+ */
+rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) => {
+  const tenant = requireApiTenant(c);
+  const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  const milestoneQuery = c.req.query('milestone');
+  if (
+    milestoneQuery !== undefined
+    && milestoneQuery !== ''
+    && milestoneQuery !== 'down_payment'
+    && milestoneQuery !== 'final'
+  ) {
+    return c.json({
+      error: 'invalid_invoice_milestone',
+      allowed: ['down_payment', 'final'],
+      operator_message: 'Choose down payment or final. Nothing was filed or sent.',
+    }, 400);
+  }
+  let projection: InvoiceProjectionResult;
+  try {
+    projection = buildInvoiceFromRightHandEstimate(draft, {
+      now: resolveDeps().now?.() ?? new Date(),
+      ...(milestoneQuery === 'final' ? { milestone: 'final' as const } : {}),
+      ...(milestoneQuery === 'down_payment' ? { milestone: 'down_payment' as const } : {}),
+    });
+  } catch (err) {
+    return c.json({
+      error: 'invoice_projection_failed',
+      reason: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+      operator_message: 'The invoice draft could not be built from this estimate. Nothing was filed or sent.',
+    }, 422);
+  }
+  if (c.req.query('format') === 'json') {
+    return c.json({ ok: true, invoice: projection.invoice, held_back_count: projection.held_back_count });
+  }
+  c.header('Content-Type', 'text/html; charset=utf-8');
+  return c.body(renderInvoiceHtml(projection.invoice));
 });
 
 /**
