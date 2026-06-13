@@ -763,8 +763,10 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
   assert.match(enterReply, /const intent = conversationIntentForTurn\(clean, draftText\)/);
   assert.match(enterReply, /const turnsForModel = \[\.\.\.conversationTurns\]/);
-  assert.match(enterReply, /const wantsAssembly = textRequestsEstimateAssembly\(clean\) \|\| textLooksLikeEstimatePageUpdate\(clean\)/);
-  assert.match(enterReply, /const fallbackReply = wantsAssembly \? 'Assembling the estimate draft…' : pendingReplyText\(\)/);
+  assert.match(enterReply, /const wantsProposalPreview = textRequestsProposalPreview\(clean\)/);
+  assert.match(enterReply, /const wantsAssembly = !wantsProposalPreview && \(textRequestsEstimateAssembly\(clean\) \|\| textLooksLikeEstimatePageUpdate\(clean\)\)/);
+  assert.match(enterReply, /payload\.proposedAction === 'open_proposal'/);
+  assert.match(enterReply, /openProposalPreviewNavigation\(replyIndex\)/);
   assert.match(enterReply, /const replyIndex = appendTurn\('right_hand', fallbackReply\)/);
   // Assembly routes through the shared presence path (thinking-state card):
   // one state machine owns working → ready/question/snag at BOTH call sites,
@@ -779,7 +781,7 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
 
 test('F-RH3 estimate handoff: trigger phrases cover live-walk wording and proposed_action is closed', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
-  const trigger = sliceDecl(src, 'textRequestsEstimateAssembly', 'textLooksLikeEstimatePageUpdate');
+  const trigger = sliceDecl(src, 'textRequestsEstimateAssembly', 'textRequestsProposalPreview');
   const regexMatch = trigger.match(/\/(.+)\/i\.test\(text\)/s);
   assert.ok(regexMatch?.[1], 'textRequestsEstimateAssembly must use a testable regex literal');
   const triggerRegex = new RegExp(regexMatch[1], 'i');
@@ -787,10 +789,8 @@ test('F-RH3 estimate handoff: trigger phrases cover live-walk wording and propos
     'put it together',
     'take me there',
     'take me to the estimate',
-    'take me to the proposal',
     'build it',
     'build the estimate',
-    'build the proposal',
     'assemble it',
     'assemble the estimate',
     'start the estimate',
@@ -812,9 +812,10 @@ test('F-RH3 estimate handoff: trigger phrases cover live-walk wording and propos
   for (const phrase of overFirePhrases) {
     assert.equal(triggerRegex.test(phrase), false, `over-fired on scope/additional work phrase: ${phrase}`);
   }
-  assert.match(src, /type RightHandProposedAction = 'assemble_estimate'/);
+  assert.match(src, /type RightHandProposedAction = 'assemble_estimate' \| 'open_proposal'/);
   assert.match(src, /const normalizeProposedAction = \(value: unknown\): RightHandProposedAction \| null/);
-  assert.match(src, /clean === 'assemble_estimate' \? 'assemble_estimate' : null/);
+  assert.match(src, /if \(clean === 'assemble_estimate'\) return 'assemble_estimate'/);
+  assert.match(src, /if \(clean === 'open_proposal'\) return 'open_proposal'/);
   assert.match(src, /proposedAction: normalizeProposedAction\(body\.proposed_action\)/);
   assert.doesNotMatch(src, /proposedAction: body\.proposed_action/);
 });

@@ -98,6 +98,14 @@ const estimateTitle = rightHandDraft
           <a class="es-btn primary" href={`/right-hand?conversation_id=${rightHandDraft.conversation_id}&return_to=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`}>
             Back to conversation
           </a>
+          {rightHandEstimateId ? (
+            <a
+              class="es-btn primary"
+              href={`/estimate/${projectId}/proposal?estimate_id=${encodeURIComponent(rightHandEstimateId)}${dealId ? `&deal_id=${encodeURIComponent(dealId)}` : ''}`}
+            >
+              Proposal preview
+            </a>
+          ) : null}
           <a class="es-btn" href={`/api/v1/right-hand/estimates/${encodeURIComponent(rightHandEstimateId)}/workbook`} download>Download workbook</a>
           <label class="es-btn es-wb-import">Import workbook<input id="wb-import" type="file" accept=".xlsx" hidden /></label>
           {isLeadStageEstimate && dealId ? (

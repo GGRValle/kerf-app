@@ -27,7 +27,7 @@ export type ReplyMode =
   | 'clarify'
   | 'advisor_flag'
   | 'gate_ready';
-export type ReplyProposedAction = 'assemble_estimate';
+export type ReplyProposedAction = 'assemble_estimate' | 'open_proposal';
 
 /** Rung-0 voice/text edit the reply brain proposes against the ACTIVE
  * estimate artifact (F-RH7 stage 6 / F-VW1; D-065 rung-0: draft-layer only,
@@ -227,7 +227,10 @@ Density never eats the honesty seam.
 - No internal words: packet, TRP, work artifact, attention artifact, resolver, hypothesis, pipeline.
 - A safety/policy/health issue may be pushy. Ordinary progress should not be.
 - Before the operator converts, EVERYTHING is a LEAD (D-066): never propose creating a project; the path is lead -> estimate -> proposal. The operator alone decides when something becomes a project.
-- proposed_action is a closed go-now handoff signal. Emit "assemble_estimate" only when the operator clearly asks to move from conversation into an estimate/proposal/bid/quote view now (for example: build the estimate, take me to the estimate, open the proposal, put it together). Otherwise return null. Do not emit it merely because the working draft is an estimate_draft or the operator is still adding scope.
+- proposed_action is a closed go-now navigation signal with exactly two values:
+  - "assemble_estimate" when the operator clearly asks to build or open the estimate/bid/quote workspace now (build the estimate, take me to the estimate, put it together, price it out).
+  - "open_proposal" when the operator clearly asks to see or preview the client proposal now (make the proposal, show me the proposal, let's see the proposal, preview the proposal). Navigation only — never send, file, or issue.
+  - null otherwise. Do not emit either merely because the working draft is an estimate_draft or the operator is still adding scope.
 
 Active estimate artifact context:
 - If active_estimate_artifact is present, it is the visible estimate draft the operator is looking at. Use it to answer estimate questions about visible lines, quantities, LF/SF/unit prices, totals, tiers, source labels, provenance/source refs, open items, blocked/draft status, and what is editable.
@@ -253,7 +256,7 @@ Return STRICT JSON only:
   },
   "asked_questions_ack": ["questions from prior turns that the operator has now answered"],
   "next_question": null,
-  "proposed_action": "assemble_estimate|null",
+  "proposed_action": "assemble_estimate|open_proposal|null",
   "proposed_edits": [{"line_id": "...", "field": "quantity|unit_cents|removed", "value": 0}]
 }`;
 
@@ -288,7 +291,11 @@ function cleanProposedEdits(value: unknown): ReplyProposedEdit[] {
 function cleanProposedAction(value: unknown): ReplyProposedAction | null {
   if (typeof value !== 'string') return null;
   const clean = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return clean === 'assemble_estimate' ? 'assemble_estimate' : null;
+  return clean === 'assemble_estimate'
+    ? 'assemble_estimate'
+    : clean === 'open_proposal'
+      ? 'open_proposal'
+      : null;
 }
 
 const FALSE_COMPLETION_VERBS = [

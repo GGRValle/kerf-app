@@ -1,0 +1,228 @@
+---
+// F-EST-PROP · Client proposal preview from Right Hand estimate · /estimate/:projectId/proposal
+import Layout from '../../../layouts/Layout.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
+
+const projectId = Astro.params.projectId ?? '';
+const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
+const dealId = Astro.url.searchParams.get('deal_id') ?? '';
+const { context } = createLayoutContext();
+const draft = estimateId ? await getRightHandEstimateStore().read(context.tenantId, estimateId) : null;
+const isLeadStage = draft?.anchor_type === 'deal';
+const backHref = draft?.route ?? `/estimate/${projectId}${estimateId ? `?estimate_id=${encodeURIComponent(estimateId)}` : ''}${dealId ? `${estimateId ? '&' : '?'}deal_id=${encodeURIComponent(dealId)}` : ''}`;
+const previewTitle = draft?.title.replace(/\s*estimate draft$/i, '') ?? projectId;
+---
+
+<Layout title="Proposal preview" activeHref="/sales">
+  <article
+    class="ep-page"
+    data-estimate-id={estimateId}
+    data-project-id={projectId}
+    data-back={backHref}
+  >
+    <a class="ep-back" href={backHref}>{isLeadStage ? '‹ Estimate' : '‹ Back to estimate'}</a>
+    <header class="ep-hero">
+      <div class="ep-crumb">{isLeadStage ? 'Lead proposal preview' : 'Proposal preview'}</div>
+      <h1>{previewTitle}</h1>
+      <p class="ep-sub">Client-facing preview from your estimate draft. Read-only — nothing is filed or sent from here.</p>
+    </header>
+
+    {!estimateId ? (
+      <div class="ep-panel ep-error" role="alert">
+        <strong>No estimate linked</strong>
+        <p>Open an estimate draft first, then return to Proposal preview.</p>
+        <a class="ep-btn" href={`/estimate/${projectId}`}>Back to estimate builder</a>
+      </div>
+    ) : (
+      <>
+        <div id="ep-loading" class="ep-panel" aria-live="polite">
+          <strong>Loading proposal preview…</strong>
+          <p>Building the client view from your estimate. Nothing is sent automatically.</p>
+        </div>
+        <div id="ep-error" class="ep-panel ep-error" hidden role="alert">
+          <strong id="ep-error-title">Could not show the proposal</strong>
+          <p id="ep-error-detail"></p>
+          <a class="ep-btn" href={backHref}>Back to estimate</a>
+        </div>
+        <div id="ep-ready" class="ep-ready" hidden>
+          <div class="ep-send-fence" role="status">
+            <strong>Sending is gated</strong>
+            <p>Review your rates and source basis before sending to a client. This preview is illustrative until you promote it — nothing was filed or sent.</p>
+            <button type="button" class="ep-btn ep-btn--disabled" disabled aria-disabled="true">
+              Send to client (needs review)
+            </button>
+          </div>
+          <div class="ep-paper-wrap">
+            <iframe
+              id="ep-paper"
+              class="ep-paper"
+              title={`Proposal preview · ${previewTitle}`}
+              sandbox="allow-same-origin"
+            ></iframe>
+          </div>
+        </div>
+      </>
+    )}
+  </article>
+</Layout>
+
+<script>
+  const root = document.querySelector('.ep-page');
+  const estimateId = root?.getAttribute('data-estimate-id') ?? '';
+  const loading = document.getElementById('ep-loading');
+  const errorPanel = document.getElementById('ep-error');
+  const errorDetail = document.getElementById('ep-error-detail');
+  const ready = document.getElementById('ep-ready');
+  const frame = document.getElementById('ep-paper') as HTMLIFrameElement | null;
+
+  const showError = (message: string) => {
+    if (loading) loading.hidden = true;
+    if (ready) ready.hidden = true;
+    if (errorPanel) errorPanel.hidden = false;
+    if (errorDetail) errorDetail.textContent = message;
+  };
+
+  if (!estimateId) {
+    showError('No estimate is linked to this preview.');
+  } else {
+    void (async () => {
+      try {
+        const res = await fetch(`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/proposal`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          let message = `The proposal preview could not be built (${res.status}). Nothing was filed or sent.`;
+          try {
+            const body = await res.json() as { operator_message?: string; reason?: string };
+            if (typeof body.operator_message === 'string' && body.operator_message.trim()) {
+              message = body.operator_message;
+            } else if (typeof body.reason === 'string' && body.reason.trim()) {
+              message = body.reason;
+            }
+          } catch { /* non-json error body */ }
+          showError(message);
+          return;
+        }
+        const html = await res.text();
+        if (!html.trim()) {
+          showError('The proposal preview came back empty. Nothing was filed or sent.');
+          return;
+        }
+        if (loading) loading.hidden = true;
+        if (errorPanel) errorPanel.hidden = true;
+        if (ready) ready.hidden = false;
+        if (frame) {
+          frame.srcdoc = html;
+          const fit = () => {
+            try {
+              const doc = frame.contentDocument;
+              if (doc?.documentElement) frame.style.height = `${doc.documentElement.scrollHeight}px`;
+            } catch { /* defensive */ }
+          };
+          frame.addEventListener('load', fit);
+          fit();
+        }
+      } catch {
+        showError('Could not reach the proposal preview. Check your connection and try again. Nothing was filed or sent.');
+      }
+    })();
+  }
+</script>
+
+<style>
+  .ep-page {
+    width: min(100%, 920px);
+    margin: 0 auto;
+    padding: 0.9rem 0.9rem 6.25rem;
+    color: var(--text, #e8edf4);
+  }
+
+  .ep-back {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    color: var(--text-muted, #98a1b3);
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+
+  .ep-hero {
+    margin: 0.75rem 0 1rem;
+  }
+
+  .ep-crumb {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted, #6a7282);
+  }
+
+  .ep-sub {
+    color: var(--text-muted, #98a1b3);
+    font-size: 0.92rem;
+    max-width: 40rem;
+  }
+
+  .ep-panel {
+    padding: 1rem;
+    border: 1px solid var(--border, #2a3140);
+    border-radius: 12px;
+    background: var(--surface, #11151c);
+  }
+
+  .ep-error {
+    border-color: color-mix(in srgb, var(--danger, #c45c5c) 35%, var(--border, #2a3140));
+  }
+
+  .ep-send-fence {
+    margin-bottom: 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1px dashed var(--border, #2a3140);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface, #11151c) 90%, var(--bg, #0a0d11));
+  }
+
+  .ep-send-fence p {
+    margin: 0.35rem 0 0.75rem;
+    color: var(--text-muted, #98a1b3);
+    font-size: 0.88rem;
+  }
+
+  .ep-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.55rem 0.95rem;
+    border: 1px solid var(--border, #2a3140);
+    border-radius: 9px;
+    background: var(--bg, #0a0d11);
+    color: var(--text, #e8edf4);
+    text-decoration: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .ep-btn--disabled,
+  .ep-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .ep-paper-wrap {
+    border: 1px solid var(--border, #2a3140);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .ep-paper {
+    display: block;
+    width: 100%;
+    min-height: 24rem;
+    border: 0;
+    background: #fff;
+  }
+</style>
