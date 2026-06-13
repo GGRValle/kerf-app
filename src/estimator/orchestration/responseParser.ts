@@ -63,6 +63,37 @@ export class ResponseParseError extends Error {
   }
 }
 
+/** Pass-1 library picks — parsed alongside RawEstimatorResponse via side channel. */
+interface RawSelection {
+  readonly line_id: string;
+  readonly qty: number;
+}
+
+/** Side store: RawEstimatorResponse public shape is unchanged for downstream. */
+const rawSelectionsStore = new WeakMap<RawEstimatorResponse, readonly RawSelection[]>();
+const RAW_SELECTIONS_SYMBOL: unique symbol = Symbol('kerf.rawEstimatorSelections');
+
+type RawEstimatorResponseWithSelections = RawEstimatorResponse & {
+  readonly [RAW_SELECTIONS_SYMBOL]?: readonly RawSelection[];
+};
+
+function getRawSelections(raw: RawEstimatorResponse): readonly RawSelection[] {
+  return rawSelectionsStore.get(raw) ?? (raw as RawEstimatorResponseWithSelections)[RAW_SELECTIONS_SYMBOL] ?? [];
+}
+
+function attachRawSelections(raw: RawEstimatorResponse, selections: readonly RawSelection[]): void {
+  rawSelectionsStore.set(raw, selections);
+  // Object spread carries enumerable symbol keys, while JSON/object public
+  // shape stays unchanged. This keeps selections alive through pass-2's
+  // `{ ...raw, itemized_lines: ... }` without exposing a string field.
+  Object.defineProperty(raw, RAW_SELECTIONS_SYMBOL, {
+    value: selections,
+    enumerable: true,
+    configurable: false,
+    writable: false,
+  });
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Phase 1 — JSON parse + lenient shape validation
 // ──────────────────────────────────────────────────────────────────────────
@@ -132,13 +163,18 @@ export function parseRawResponse(content: string): RawEstimatorResponse {
     throw new ResponseParseError('"operator_summary" must be a string');
   }
 
-  return {
+  const result: RawEstimatorResponse = {
     line_items: parsedLineItems,
     itemized_lines: parsedItemizedLines,
     project_total_cents: projectTotal,
     gaps_flagged: parsedGaps,
     operator_summary: operatorSummary,
   };
+  const parsedSelections = parseRawSelections(parsed['selections']);
+  if (parsedSelections.length > 0) {
+    attachRawSelections(result, parsedSelections);
+  }
+  return result;
 }
 
 function parseRawLineItem(raw: unknown, index: number): RawLineItem {
@@ -243,6 +279,25 @@ function parseRawGap(raw: unknown, index: number): RawGap {
   return { scope_tag: scopeTag, reason };
 }
 
+/** Lenient pass-1 selections[] — invalid entries dropped; absent key => []. */
+function parseRawSelections(raw: unknown): RawSelection[] {
+  if (!Array.isArray(raw)) return [];
+  const selections: RawSelection[] = [];
+  for (const entry of raw) {
+    if (!isObject(entry)) continue;
+    const lineIdRaw = entry['line_id'];
+    const lineId = typeof lineIdRaw === 'string'
+      ? lineIdRaw.trim()
+      : typeof lineIdRaw === 'number'
+        ? String(lineIdRaw)
+        : '';
+    const qtyRaw = entry['qty'] ?? entry['quantity'];
+    if (!lineId || !(typeof qtyRaw === 'number' && Number.isFinite(qtyRaw) && qtyRaw > 0)) continue;
+    selections.push({ line_id: lineId, qty: qtyRaw });
+  }
+  return selections;
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Phase 2 — trust-discipline enforcement
 // ──────────────────────────────────────────────────────────────────────────
@@ -343,6 +398,50 @@ export function enforceTrustDiscipline(
       price_cents: linePrice,
       confidence,
       band_source_uri: rawLine.band_source_uri,
+    });
+  }
+
+
+  for (const sel of getRawSelections(raw)) {
+    const match = matchTenantRateCardLineDetailed({
+      tenantId: input.tenantId ?? 'tenant_unknown',
+      scopeTag: 'cabinetry',
+      description: '',
+      uom: 'EA',
+      lineId: sel.line_id,
+      rateCard: input.rateCard,
+    });
+    if (match === null || match.matched_by !== 'line_id') continue;
+    const rate = match.line;
+    const scopeTag = coerceScopeTag(rate.scope_tag);
+    if (scopeTag === null) continue;
+    const band = bandsByScope.get(scopeTag);
+    let confidence: EstimatorItemizedLine['confidence'] = 'MODEL_INFERENCE';
+    if (!scopesAlreadyInGaps.has(scopeTag)) {
+      cleanGaps.push({
+        scope_tag: scopeTag,
+        reason: `KERF_SEED rate ${rate.cost_code} is a draft starting point, not tenant-approved company data. Review before file/send or promote explicitly.`,
+      });
+      scopesAlreadyInGaps.add(scopeTag);
+    }
+    if (band === undefined || band.precision_allowed === false) {
+      confidence = 'MODEL_INFERENCE';
+    }
+    const unitCents = rate.unit_cents;
+    const extended = Math.round(sel.qty * unitCents);
+    cleanItemizedLines.push({
+      scope_tag: scopeTag,
+      cost_code: rate.cost_code,
+      division_code: rate.kerf_division.code.trim().slice(0, 12) || '01',
+      division_label: rate.kerf_division.label.replace(/\s+/g, ' ').trim().slice(0, 80) || 'General',
+      description: rate.label.replace(/\s+/g, ' ').trim().slice(0, 180) || scopeTag,
+      quantity: sel.qty,
+      uom: rate.uom.replace(/\s+/g, ' ').trim().slice(0, 16) || 'EA',
+      unit_cents: unitCents,
+      extended_cents: extended,
+      matched_by: 'line_id',
+      confidence,
+      source_ref: rate.source_ref,
     });
   }
 

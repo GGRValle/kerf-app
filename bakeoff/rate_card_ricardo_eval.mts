@@ -28,7 +28,10 @@ async function runOnce(label: string, caller: any): Promise<boolean> {
     tenantId: 'tenant_ggr', projectArchetype: 'kitchen_remodel', scopeTags: allTags,
     scopeNarrative: SCOPE_NARRATIVE, invocationId: 'ricardo_eval', requestedAt: new Date().toISOString(),
   };
-  const prompt = buildEstimatorPrompt({ inputs, renderedBands: [], rateCard: card });
+  const prompt = buildEstimatorPrompt({
+    inputs, renderedBands: [], rateCard: card,
+    ...(CANDIDATE_LIMIT !== undefined ? { candidateLimit: CANDIDATE_LIMIT } : {}),
+  });
 
   const r = await caller({ systemMessage: prompt.systemMessage, userMessage: prompt.userMessage + '\n\nOPERATOR SCOPE:\n' + SCOPE_NARRATIVE, tenantId: 'tenant_ggr', invocationId: 'ricardo_eval', purpose: 'estimator_project_generation', workflow: 'proposal_generation', requestedAt: new Date().toISOString() });
   if (!r.ok) { console.log(label, 'MODEL CALL FAILED:', r.reason); return false; }
@@ -41,13 +44,13 @@ async function runOnce(label: string, caller: any): Promise<boolean> {
   }
   const priced = clean.itemized_lines.filter((l) => l.unit_cents > 0);
   const exactId = priced.filter((l) => l.matched_by === 'line_id').length;
-  const selectedCodes = new Set(priced.map((l) => l.line_id ?? l.cost_code).filter(Boolean) as string[]);
+  const selectedCodes = new Set(priced.map((l) => l.cost_code).filter(Boolean));
   const hit = [...selectedCodes].filter((c) => includedCodes.has(c));
   const precision = selectedCodes.size ? hit.length / selectedCodes.size : 0;
   const recall = hit.length / includedCodes.size;
   let qtyOk = 0, qtyTotal = 0;
   for (const [code, dim] of Object.entries(statedDims)) {
-    const line = priced.find((l) => (l.line_id ?? l.cost_code) === code);
+    const line = priced.find((l) => l.cost_code === code);
     if (line) { qtyTotal++; if (Math.abs(line.quantity - dim) < 0.01) qtyOk++; }
   }
   const total = priced.reduce((s, l) => s + l.extended_cents, 0);
@@ -102,7 +105,7 @@ async function runFullPipeline(label: string, caller: any) {
   const exactId = lines.filter((l: any) => l.matched_by === 'line_id').length;
   let qtyOk = 0, qtyTotal = 0;
   for (const [code, dim] of Object.entries(statedDims)) {
-    const line = lines.find((l: any) => (l.line_id ?? l.cost_code) === code);
+    const line = lines.find((l: any) => l.cost_code === code);
     if (line) { qtyTotal++; if (Math.abs(line.quantity - dim) < 0.01) qtyOk++; }
   }
   const total = lines.reduce((s: number, l: any) => s + l.extended_cents, 0);
