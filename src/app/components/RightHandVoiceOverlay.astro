@@ -1053,13 +1053,28 @@ const { t } = createLayoutContext();
       /\b(?:put it together|take me there|take me to (?:the )?(?:estimate|proposal|quote|bid)|let'?s build it|build it|build (?:the )?(?:estimate|proposal|quote|bid)|assemble(?: it| the (?:estimate|proposal|quote|bid))|start (?:the )?(?:estimate|proposal|quote|bid)|make (?:the )?(?:estimate|proposal|quote|bid)|open (?:the )?(?:estimate|proposal|quote|bid)|price it out)\b/i.test(text)
     );
 
-    type RightHandProposedAction = 'assemble_estimate';
+    type RightHandProposedAction =
+      | 'assemble_estimate'
+      | 'draft_proposal'
+      | 'draft_invoice'
+      | 'draft_invoice_down_payment';
 
     const normalizeProposedAction = (value: unknown): RightHandProposedAction | null => {
       if (typeof value !== 'string') return null;
       const clean = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-      return clean === 'assemble_estimate' ? 'assemble_estimate' : null;
+      if (clean === 'assemble_estimate') return 'assemble_estimate';
+      if (clean === 'draft_proposal') return 'draft_proposal';
+      if (clean === 'draft_invoice' || clean === 'draft_invoice_down_payment' || clean === 'bill_down_payment') {
+        return clean === 'draft_invoice' ? 'draft_invoice' : 'draft_invoice_down_payment';
+      }
+      return null;
     };
+
+    const currentAppPath = (): string => `${window.location.pathname}${window.location.search}`;
+
+    const estimateIdFromLocation = (): string => (
+      new URLSearchParams(window.location.search).get('estimate_id')?.trim() ?? ''
+    );
 
     const textLooksLikeEstimatePageUpdate = (text: string): boolean => (
       /^\/estimate\/[A-Za-z0-9_-]+/.test(window.location.pathname)
@@ -1329,6 +1344,13 @@ const { t } = createLayoutContext();
       workingDraft?: unknown;
       working_draft?: unknown;
       proposed_action?: unknown;
+      artifact_handoff?: {
+        kind?: 'proposal' | 'invoice';
+        status?: 'blocked' | 'ready';
+        route?: string | null;
+        operator_message?: string;
+        blocked_reasons?: string[];
+      };
       draft_fabrication_flags?: unknown;
     };
 
@@ -1336,6 +1358,7 @@ const { t } = createLayoutContext();
       readonly reply: string;
       readonly workingDraft: WorkingDraftFields;
       readonly proposedAction: RightHandProposedAction | null;
+      readonly artifactHandoff: ResolveReplyResponse['artifact_handoff'] | null;
     };
 
     const resolveReplyServerSide = async (
@@ -1354,13 +1377,14 @@ const { t } = createLayoutContext();
             latestText,
             draftText,
             trp,
-            currentPath: window.location.pathname,
+            currentPath: currentAppPath(),
             userRole: 'owner',
             userPreferenceSummary: rightHandVoiceProfileSummary(),
             knownEntities: collectKnownEntities(),
             conversationDestinationLabel,
             workingDraft: currentWorkingDraft(),
             conversationId: getConversationId(),
+            ...(estimateIdFromLocation() ? { estimate_id: estimateIdFromLocation() } : {}),
             conversationTurns: turnsForModel.map((turn) => ({
               speaker: turn.speaker,
               text: turn.text,
@@ -1375,6 +1399,7 @@ const { t } = createLayoutContext();
           reply,
           workingDraft: cleanStoredWorkingDraft(body.workingDraft ?? body.working_draft, draftText),
           proposedAction: normalizeProposedAction(body.proposed_action),
+          artifactHandoff: body.artifact_handoff ?? null,
         };
       } catch {
         return null;
@@ -1606,6 +1631,17 @@ const { t } = createLayoutContext();
           replaceTurn(replyIndex, 'right_hand', 'Assembling the estimate draft…');
           persistConversation();
           runAssemblyWithPresence(clean, draftText, turnsForModel, replyIndex);
+          return;
+        }
+        if (payload.artifactHandoff?.status === 'ready' && payload.artifactHandoff.route) {
+          replaceTurn(replyIndex, 'right_hand', payload.reply);
+          persistConversation();
+          window.location.href = payload.artifactHandoff.route;
+          return;
+        }
+        if (payload.proposedAction === 'draft_proposal' || payload.proposedAction === 'draft_invoice' || payload.proposedAction === 'draft_invoice_down_payment') {
+          replaceTurn(replyIndex, 'right_hand', payload.reply);
+          persistConversation();
           return;
         }
         if (payload.reply === fallbackReply) {

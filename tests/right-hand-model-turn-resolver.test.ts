@@ -639,7 +639,7 @@ test('reply resolver calls model with peer-altitude doctrine and returns its nat
   assert.match(system, /Density never eats the honesty seam/);
   assert.match(system, /claims_durable_action=true only when your reply says an action already happened/);
   assert.match(system, /proposed_action is a closed go-now handoff signal/);
-  assert.match(system, /"proposed_action": "assemble_estimate\|null"/);
+  assert.match(system, /"proposed_action": "assemble_estimate\|draft_proposal\|draft_invoice_down_payment\|null"/);
 });
 
 test('reply resolver parses fenced JSON with trailing commentary', async () => {

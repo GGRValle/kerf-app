@@ -812,9 +812,11 @@ test('F-RH3 estimate handoff: trigger phrases cover live-walk wording and propos
   for (const phrase of overFirePhrases) {
     assert.equal(triggerRegex.test(phrase), false, `over-fired on scope/additional work phrase: ${phrase}`);
   }
-  assert.match(src, /type RightHandProposedAction = 'assemble_estimate'/);
+  assert.match(src, /type RightHandProposedAction =[\s\S]*'assemble_estimate'[\s\S]*'draft_proposal'/);
   assert.match(src, /const normalizeProposedAction = \(value: unknown\): RightHandProposedAction \| null/);
-  assert.match(src, /clean === 'assemble_estimate' \? 'assemble_estimate' : null/);
+  assert.match(src, /if \(clean === 'assemble_estimate'\) return 'assemble_estimate'/);
+  assert.match(src, /draft_proposal/);
+  assert.match(src, /artifactHandoff/);
   assert.match(src, /proposedAction: normalizeProposedAction\(body\.proposed_action\)/);
   assert.doesNotMatch(src, /proposedAction: body\.proposed_action/);
 });
@@ -836,7 +838,9 @@ test('Dispatch 3: assembly accept routes to server-owned estimate draft and keep
   assert.match(estimatePage, /Back to conversation/);
   assert.match(estimatePage, /source_type/);
   assert.match(estimatePage, /data-rh-conversation/);
-  assert.match(estimatePage, /kerf\.voiceConversationId/);
+  assert.match(estimatePage, /Proposal draft ›/);
+  assert.match(estimatePage, /Down-payment invoice ›/);
+  assert.match(estimatePage, /Use them here first/);
   assert.doesNotMatch(src, /saved estimate/i);
 });
 

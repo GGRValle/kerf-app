@@ -64,6 +64,7 @@ import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
 import { buildProposalFromRightHandEstimate, type ProposalProjectionResult } from '../lib/estimateProposalProjection.js';
 import { buildInvoiceFromRightHandEstimate, renderInvoiceHtml, type InvoiceProjectionResult } from '../lib/estimateInvoiceProjection.js';
+import { resolveProposalInvoiceHandoff, type ArtifactHandoff } from '../lib/proposalInvoiceHandoff.js';
 import { renderProposalHtml } from '../../proposal/render.js';
 import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
@@ -1494,6 +1495,26 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
 
   // Altitude-eval signal: one rung-log line per model-led reply turn (no PII — mode/authority only).
   console.info(`[right_hand] reply turn tenant=${tenantId} mode=${result.mode} authority=${result.authority}${result.fallback_reason ? ` fallback=${result.fallback_reason}` : ''}`);
+
+  let artifactHandoff: ArtifactHandoff | null = null;
+  if (estimateArtifactLoaded) {
+    const parkedDraft = await estimateStoreFor(deps).read(tenantId, estimateArtifactLoaded.estimateId);
+    if (parkedDraft) {
+      artifactHandoff = resolveProposalInvoiceHandoff({
+        draft: parkedDraft,
+        latestText,
+        proposedAction: result.proposed_action,
+      });
+      if (artifactHandoff) {
+        result = {
+          ...result,
+          reply: artifactHandoff.operator_message,
+          mode: artifactHandoff.status === 'blocked' ? 'gate_ready' : result.mode,
+        };
+      }
+    }
+  }
+
   return c.json({
     reply: result.reply,
     mode: result.mode,
@@ -1506,6 +1527,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     ...(result.asked_questions_ack ? { asked_questions_ack: result.asked_questions_ack } : {}),
     ...(result.next_question ? { next_question: result.next_question } : {}),
     ...(result.proposed_action ? { proposed_action: result.proposed_action } : {}),
+    ...(artifactHandoff ? { artifact_handoff: artifactHandoff } : {}),
     ...(result.draft_fabrication_flags ? { draft_fabrication_flags: result.draft_fabrication_flags } : {}),
     ...(result.fallback_reason ? { fallback_reason: result.fallback_reason } : {}),
   });

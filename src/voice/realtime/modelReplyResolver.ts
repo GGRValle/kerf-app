@@ -27,7 +27,11 @@ export type ReplyMode =
   | 'clarify'
   | 'advisor_flag'
   | 'gate_ready';
-export type ReplyProposedAction = 'assemble_estimate';
+export type ReplyProposedAction =
+  | 'assemble_estimate'
+  | 'draft_proposal'
+  | 'draft_invoice'
+  | 'draft_invoice_down_payment';
 
 /** Rung-0 voice/text edit the reply brain proposes against the ACTIVE
  * estimate artifact (F-RH7 stage 6 / F-VW1; D-065 rung-0: draft-layer only,
@@ -227,7 +231,12 @@ Density never eats the honesty seam.
 - No internal words: packet, TRP, work artifact, attention artifact, resolver, hypothesis, pipeline.
 - A safety/policy/health issue may be pushy. Ordinary progress should not be.
 - Before the operator converts, EVERYTHING is a LEAD (D-066): never propose creating a project; the path is lead -> estimate -> proposal. The operator alone decides when something becomes a project.
-- proposed_action is a closed go-now handoff signal. Emit "assemble_estimate" only when the operator clearly asks to move from conversation into an estimate/proposal/bid/quote view now (for example: build the estimate, take me to the estimate, open the proposal, put it together). Otherwise return null. Do not emit it merely because the working draft is an estimate_draft or the operator is still adding scope.
+- proposed_action is a closed go-now handoff signal. Emit exactly one token or null:
+  - "assemble_estimate" — operator asks to move into the estimate builder now (build/open the estimate, bid, quote view) while NO active_estimate_artifact is parked yet.
+  - "draft_proposal" — active_estimate_artifact is present AND the operator clearly asks to make/build/open the proposal now (not mid-scope design talk like "we need to propose moving the sink").
+  - "draft_invoice_down_payment" — active_estimate_artifact is present AND the operator asks to bill/charge/invoice the down payment or deposit.
+  - null — everything else, including scope capture and mid-conversation design discussion.
+  Do not emit merely because the working draft is an estimate_draft or the operator is still adding scope. Never claim a proposal or invoice exists unless the artifact handoff route will open.
 
 Active estimate artifact context:
 - If active_estimate_artifact is present, it is the visible estimate draft the operator is looking at. Use it to answer estimate questions about visible lines, quantities, LF/SF/unit prices, totals, tiers, source labels, provenance/source refs, open items, blocked/draft status, and what is editable.
@@ -253,7 +262,7 @@ Return STRICT JSON only:
   },
   "asked_questions_ack": ["questions from prior turns that the operator has now answered"],
   "next_question": null,
-  "proposed_action": "assemble_estimate|null",
+  "proposed_action": "assemble_estimate|draft_proposal|draft_invoice_down_payment|null",
   "proposed_edits": [{"line_id": "...", "field": "quantity|unit_cents|removed", "value": 0}]
 }`;
 
@@ -285,10 +294,19 @@ function cleanProposedEdits(value: unknown): ReplyProposedEdit[] {
   return out;
 }
 
+const PROPOSED_ACTION_TOKENS: Readonly<Record<string, ReplyProposedAction>> = {
+  assemble_estimate: 'assemble_estimate',
+  draft_proposal: 'draft_proposal',
+  draft_invoice: 'draft_invoice',
+  draft_invoice_down_payment: 'draft_invoice_down_payment',
+  bill_down_payment: 'draft_invoice_down_payment',
+  invoice_down_payment: 'draft_invoice_down_payment',
+};
+
 function cleanProposedAction(value: unknown): ReplyProposedAction | null {
   if (typeof value !== 'string') return null;
   const clean = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return clean === 'assemble_estimate' ? 'assemble_estimate' : null;
+  return PROPOSED_ACTION_TOKENS[clean] ?? null;
 }
 
 const FALSE_COMPLETION_VERBS = [

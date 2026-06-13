@@ -1,0 +1,100 @@
+---
+// RH estimate → invoice draft reachability (Agent C)
+import Layout from '../../../layouts/Layout.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
+import { buildInvoiceFromRightHandEstimate, renderInvoiceHtml } from '../../../../api/lib/estimateInvoiceProjection.js';
+import { blockedOperatorMessage } from '../../../../api/lib/proposalInvoiceHandoff.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const projectId = Astro.params.projectId ?? '';
+const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
+const rhConversation = Astro.url.searchParams.get('rh_conversation') ?? '';
+const milestone = Astro.url.searchParams.get('milestone') === 'final' ? 'final' : 'down_payment';
+const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const estimateRoute = draft?.route ?? `/estimate/${projectId}?estimate_id=${encodeURIComponent(estimateId)}`;
+const rhBack = rhConversation || draft?.conversation_id
+  ? `/right-hand?conversation_id=${encodeURIComponent(rhConversation || draft?.conversation_id || '')}&return_to=${encodeURIComponent(estimateRoute)}`
+  : estimateRoute;
+
+let blocked = true;
+let blockedMessage = 'Estimate not found.';
+let paperHtml = '';
+let amountDue = 0;
+let milestoneLabel = milestone === 'final' ? 'Final invoice draft' : 'Down-payment invoice draft';
+
+if (draft) {
+  if (!draft.gate.allowed) {
+    blocked = true;
+    blockedMessage = blockedOperatorMessage(draft);
+  } else {
+    try {
+      const projection = buildInvoiceFromRightHandEstimate(draft, {
+        now: new Date(),
+        milestone,
+      });
+      blocked = false;
+      paperHtml = renderInvoiceHtml(projection.invoice);
+      amountDue = projection.invoice.amount_due_cents;
+    } catch {
+      blocked = true;
+      blockedMessage = 'The invoice draft could not be built from this estimate. Nothing was filed or sent.';
+    }
+  }
+}
+---
+
+<Layout title="Invoice draft" activeHref="/sales">
+  <article class="pi-page" data-estimate-route={estimateRoute} data-rh-back={rhBack}>
+    <a class="pi-back" href={estimateRoute}>‹ Back to estimate</a>
+    <a class="pi-back pi-back-rh" href={rhBack}>‹ Back to conversation</a>
+
+    {blocked ? (
+      <section class="pi-blocked" aria-live="polite">
+        <h1>Invoice draft blocked</h1>
+        <p>{blockedMessage}</p>
+        <p class="pi-meta">Draft only — nothing was posted and nothing was sent.</p>
+        <a class="pi-btn" href={estimateRoute}>Review rates on the estimate ›</a>
+      </section>
+    ) : (
+      <>
+        <header class="pi-hero">
+          <div class="pi-crumb">{milestoneLabel} · from current estimate</div>
+          <h1>Invoice draft</h1>
+          <p class="pi-meta">Due {fmt(amountDue)} · draft · payment link requires separate confirmation</p>
+        </header>
+        <div class="pi-paper-wrap">
+          <iframe class="pi-paper" title="Invoice draft preview" sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
+        </div>
+      </>
+    )}
+  </article>
+</Layout>
+
+<script>
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.pi-paper')) {
+    const fit = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (doc?.documentElement) frame.style.height = `${doc.documentElement.scrollHeight}px`;
+      } catch { /* defensive */ }
+    };
+    frame.addEventListener('load', fit);
+    fit();
+  }
+</script>
+
+<style>
+  .pi-page { width: min(100%, 920px); margin: 0 auto; padding: 0.9rem 0.9rem 6rem; }
+  .pi-back { display: inline-flex; margin-right: 1rem; color: var(--text-muted, #6a7282); text-decoration: none; font-size: 0.85rem; }
+  .pi-back-rh { margin-top: 0.35rem; display: block; }
+  .pi-hero h1 { margin: 0.35rem 0; font-size: clamp(1.4rem, 5vw, 2rem); }
+  .pi-crumb, .pi-meta { color: var(--text-muted, #6a7282); font-size: 0.9rem; }
+  .pi-blocked { margin-top: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff8f0; }
+  .pi-btn { display: inline-flex; margin-top: 0.75rem; padding: 0.55rem 0.9rem; border-radius: 999px; background: #111; color: #fff; text-decoration: none; font-size: 0.9rem; }
+  .pi-paper-wrap { margin-top: 1rem; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+  .pi-paper { width: 100%; min-height: 480px; border: 0; }
+</style>

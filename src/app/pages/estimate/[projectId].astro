@@ -53,6 +53,16 @@ const gateStatus = rightHandDraft?.gate.allowed
 const gateDetail = rightHandDraft?.gate.allowed
   ? 'Nothing has been filed or sent.'
   : `Blocked from proposal/send: ${rightHandDraft?.gate.blocked_reasons.join(', ') || 'review required'}`;
+const rhArtifactQuery = rightHandDraft
+  ? `estimate_id=${encodeURIComponent(rightHandEstimateId)}&rh_conversation=${encodeURIComponent(rightHandConversationId || rightHandDraft.conversation_id)}${dealId ? `&deal_id=${encodeURIComponent(dealId)}` : ''}`
+  : '';
+const proposalDraftRoute = rightHandDraft
+  ? `/estimate/${encodeURIComponent(projectId)}/proposal?${rhArtifactQuery}`
+  : '';
+const invoiceDraftRoute = rightHandDraft
+  ? `/estimate/${encodeURIComponent(projectId)}/invoice?${rhArtifactQuery}&milestone=down_payment`
+  : '';
+const rhBlockedArtifactCopy = 'I can build proposal and invoice drafts after these rates are approved for this estimate. Use them here first on the lines above.';
 const estimateTitle = rightHandDraft
   ? rightHandDraft.title.replace(/\s*estimate draft$/i, '')
   : (isLeadStageEstimate && dealId ? dealId : projectId);
@@ -286,10 +296,40 @@ const estimateTitle = rightHandDraft
     </section>
     </details>
 
-    <section class="es-propose">
-      <button class="es-btn primary" id="gen-proposal" disabled={rightHandDraft ? rhActiveLines.length === 0 || !rightHandDraft.gate.allowed : breakdowns.length === 0}>Generate proposal draft ›</button>
-      <p class="es-meta">{rightHandDraft?.gate.allowed ? 'Drafts only. Sending is a separate, human-gated step.' : 'Proposal draft stays disabled until source review clears.'}</p>
-      <div id="draft-result" class="es-draft" hidden></div>
+    <section class="es-propose" aria-label="Proposal and invoice drafts">
+      {rightHandDraft ? (
+        <>
+          <div class="es-propose-actions">
+            <a
+              class:list={['es-btn', 'primary', { 'is-disabled': !rightHandDraft.gate.allowed || rhActiveLines.length === 0 }]}
+              href={rightHandDraft.gate.allowed && rhActiveLines.length > 0 ? proposalDraftRoute : '#'}
+              data-artifact="proposal"
+              aria-disabled={!rightHandDraft.gate.allowed || rhActiveLines.length === 0}
+            >
+              Proposal draft ›
+            </a>
+            <a
+              class:list={['es-btn', { 'is-disabled': !rightHandDraft.gate.allowed || rhActiveLines.length === 0 }]}
+              href={rightHandDraft.gate.allowed && rhActiveLines.length > 0 ? invoiceDraftRoute : '#'}
+              data-artifact="invoice"
+              aria-disabled={!rightHandDraft.gate.allowed || rhActiveLines.length === 0}
+            >
+              Down-payment invoice ›
+            </a>
+          </div>
+          <p class="es-meta">
+            {rightHandDraft.gate.allowed
+              ? 'Drafts only. Sending, filing, and payment links each require separate confirmation.'
+              : rhBlockedArtifactCopy}
+          </p>
+        </>
+      ) : (
+        <>
+          <button class="es-btn primary" id="gen-proposal" disabled={breakdowns.length === 0}>Generate proposal draft ›</button>
+          <p class="es-meta">Proposal draft stays disabled until estimate lines exist.</p>
+          <div id="draft-result" class="es-draft" hidden></div>
+        </>
+      )}
     </section>
   </article>
 </Layout>
@@ -425,6 +465,15 @@ const estimateTitle = rightHandDraft
         <br/>Total $${(out.draft.client_total_cents / 100).toFixed(2)} · send requires your review
         <br/><a href="${out.draft.surface_route}">Open proposal draft ›</a>`;
     }
+  });
+
+  document.querySelectorAll<HTMLAnchorElement>('[data-artifact]').forEach((link) => {
+    link.addEventListener('click', (ev) => {
+      if (link.getAttribute('aria-disabled') === 'true') {
+        ev.preventDefault();
+        alert('I can build that after these rates are approved for this estimate. Use them here first on the lines above.');
+      }
+    });
   });
 </script>
 
@@ -874,6 +923,23 @@ const estimateTitle = rightHandDraft
 
   .es-propose {
     padding: 0.8rem;
+  }
+
+  .es-propose-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .es-btn.is-disabled,
+  .es-btn.is-disabled:hover {
+    opacity: 0.55;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  a.es-btn.is-disabled {
+    pointer-events: auto;
   }
 
   .es-draft {
