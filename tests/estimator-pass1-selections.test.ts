@@ -7,6 +7,10 @@ import {
   enforceTrustDiscipline,
   parseRawResponse,
 } from '../src/estimator/orchestration/responseParser.js';
+import {
+  estimateProject,
+  type ModelCaller,
+} from '../src/estimator/orchestration/index.js';
 import { renderVarianceBand } from '../src/estimator/varianceIntegration/index.js';
 import { getVarianceBand } from '../src/variance/index.js';
 import type { ScopeTag } from '../src/projects/index.js';
@@ -152,6 +156,61 @@ test('pass-1 selections: invalid selection rows are ignored without breaking par
   assert.equal(clean.itemized_lines.length, 1);
   assert.equal(clean.itemized_lines[0]?.cost_code, 'CB-003');
   assert.equal(clean.itemized_lines[0]?.quantity, 8);
+});
+
+test('pass-1 selections survive pass-2 spread into final estimateProject response', async () => {
+  let calls = 0;
+  const modelCaller: ModelCaller = async () => {
+    calls += 1;
+    if (calls === 1) {
+      return {
+        ok: true,
+        content: JSON.stringify(basePayload({
+          selections: [{ line_id: 'CB-001', qty: 36 }],
+        })),
+        tokensIn: 100,
+        tokensOut: 40,
+        costNanoUsd: 1,
+        modelId: 'test-model',
+        endpoint: 'test://model',
+      };
+    }
+    return {
+      ok: true,
+      content: JSON.stringify({
+        suggestions: [{ line_id: 'EL-004', qty: 8, reason: 'kitchen lighting usually needs recessed cans' }],
+        questions: [{ topic: 'Countertop slab choice', why: 'This affects allowance accuracy.' }],
+      }),
+      tokensIn: 50,
+      tokensOut: 20,
+      costNanoUsd: 1,
+      modelId: 'test-model',
+      endpoint: 'test://model',
+    };
+  };
+
+  const result = await estimateProject({
+    tenantId: 'tenant_ggr',
+    projectArchetype: 'kitchen_remodel',
+    scopeNarrative: 'Kitchen remodel with 36 LF of base cabinets and likely lighting.',
+    scopeTags: ['cabinetry', 'lighting'],
+    invocationId: 'inv_pass1_spread',
+    requestedAt: REQUESTED_AT,
+  }, {
+    modelCaller,
+    comparablePool: [],
+  });
+
+  assert.equal(calls, 2, 'second pass must run so the raw response is spread');
+  const selected = result.estimatorResponse.itemized_lines.find((line) => line.cost_code === 'CB-001');
+  assert.ok(selected, 'pass-1 selection must survive into final estimatorResponse');
+  assert.equal(selected.quantity, 36);
+  assert.equal(selected.unit_cents, 106_000);
+  assert.equal(selected.matched_by, 'line_id');
+  assert.ok(
+    result.estimatorResponse.itemized_lines.some((line) => line.cost_code === 'EL-004' && line.suggested === true),
+    'test must exercise coexistence with pass-2 suggested lines',
+  );
 });
 
 test('buildEstimatorPrompt documents selections[] in system message', async () => {

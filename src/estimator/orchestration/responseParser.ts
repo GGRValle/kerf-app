@@ -71,9 +71,27 @@ interface RawSelection {
 
 /** Side store: RawEstimatorResponse public shape is unchanged for downstream. */
 const rawSelectionsStore = new WeakMap<RawEstimatorResponse, readonly RawSelection[]>();
+const RAW_SELECTIONS_SYMBOL: unique symbol = Symbol('kerf.rawEstimatorSelections');
+
+type RawEstimatorResponseWithSelections = RawEstimatorResponse & {
+  readonly [RAW_SELECTIONS_SYMBOL]?: readonly RawSelection[];
+};
 
 function getRawSelections(raw: RawEstimatorResponse): readonly RawSelection[] {
-  return rawSelectionsStore.get(raw) ?? [];
+  return rawSelectionsStore.get(raw) ?? (raw as RawEstimatorResponseWithSelections)[RAW_SELECTIONS_SYMBOL] ?? [];
+}
+
+function attachRawSelections(raw: RawEstimatorResponse, selections: readonly RawSelection[]): void {
+  rawSelectionsStore.set(raw, selections);
+  // Object spread carries enumerable symbol keys, while JSON/object public
+  // shape stays unchanged. This keeps selections alive through pass-2's
+  // `{ ...raw, itemized_lines: ... }` without exposing a string field.
+  Object.defineProperty(raw, RAW_SELECTIONS_SYMBOL, {
+    value: selections,
+    enumerable: true,
+    configurable: false,
+    writable: false,
+  });
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -154,7 +172,7 @@ export function parseRawResponse(content: string): RawEstimatorResponse {
   };
   const parsedSelections = parseRawSelections(parsed['selections']);
   if (parsedSelections.length > 0) {
-    rawSelectionsStore.set(result, parsedSelections);
+    attachRawSelections(result, parsedSelections);
   }
   return result;
 }
