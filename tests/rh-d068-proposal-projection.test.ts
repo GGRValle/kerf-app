@@ -182,7 +182,16 @@ test('rank-7 is PRICE BASIS: basis-less priced lines annexed; operator-edited li
     lines: [
       ...draft.lines,
       line({ id: 'l7', label: 'Mystery priced line', source_ref: 'kerf://model/invented', extended_cents: 123_456, unit_cents: 123_456, tier: 'company', source_type: 'company_data' }),
-      line({ id: 'l8', label: 'Operator-set custom line', source_ref: 'kerf://model/invented', flags: ['cabinetry', 'operator_edited'], extended_cents: 50_000, unit_cents: 50_000, tier: 'company', source_type: 'company_data' }),
+      line({
+        id: 'l8',
+        label: 'Operator-set custom line',
+        source_ref: 'operator-approval:estimate=rhe_deal_test_conv:line=l8',
+        flags: ['cabinetry', 'operator_edited', 'operator_graduated'],
+        extended_cents: 50_000,
+        unit_cents: 50_000,
+        tier: 'company',
+        source_type: 'company_data',
+      }),
     ],
   } as RightHandEstimateDraft;
   const { held_back, rendered_line_ids } = buildProposalFromRightHandEstimate(withBasisless, { now: NOW });

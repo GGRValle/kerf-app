@@ -113,14 +113,10 @@ export function containsInternalVocabulary(text: string): boolean {
 export function isGraduatedClientLine(line: RightHandEstimateLine): boolean {
   if (!isPriced(line)) return true;
   if (line.source_type === 'allowance') return true;
+  if (line.flags.includes('operator_graduated')) return true;
+  if (line.source_ref.startsWith('operator-approval:')) return true;
+  if (line.source_ref.startsWith('tenant-rate-standard:')) return true;
   if (line.tier === 'company') return true;
-  if (
-    line.flags.includes('operator_edited')
-    || line.flags.includes('voice_edited')
-    || line.flags.includes('workbook_added')
-  ) {
-    return true;
-  }
   return false;
 }
 
@@ -129,11 +125,11 @@ export function isGraduatedClientLine(line: RightHandEstimateLine): boolean {
  * prices are model-invented and never render client-facing.
  */
 const hasPriceBasis = (line: RightHandEstimateLine): boolean =>
-  isTenantRateCardSourceRef(line.source_ref)
-  || line.source_type === 'allowance'
-  || line.flags.includes('operator_edited')
-  || line.flags.includes('voice_edited')
-  || line.flags.includes('workbook_added');
+  line.flags.includes('operator_graduated') ||
+  line.source_ref.startsWith('operator-approval:') ||
+  line.source_ref.startsWith('tenant-rate-standard:') ||
+  isTenantRateCardSourceRef(line.source_ref) ||
+  line.source_type === 'allowance';
 
 function classifyLine(line: RightHandEstimateLine): { render: true } | { render: false; held: HeldBackLine } {
   if (line.flags.includes('removed')) {

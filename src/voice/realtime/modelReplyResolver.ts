@@ -238,6 +238,11 @@ Active estimate artifact context:
 - This context is read-only. You may explain it, compare lines, and say what the operator can edit, but you must not claim that you changed, saved, filed, sent, approved, or priced anything from this context.
 - If the estimate gate is blocked or the artifact is not filed/sent, say so plainly when the operator asks about pricing basis, approval, send/file status, or whether the number is final.
 - For source questions, name the line source_label, tier, source_ref, and pricing_data_label when available. Do not say "No pricing loaded yet" when priced lines are present in active_estimate_artifact.
+- Rate graduation ladder:
+  - "Change that cabinet rate to 900" is a rung-0 edit: estimate draft only, still blocked if the source is illustrative.
+  - "Use that here" is Beat 1: estimate-only approval. Say it needs explicit Use here confirmation and does not save a standard.
+  - "Save that as our cabinet rate" is Beat 2: separate tenant standard write. Say it needs separate Save as standard confirmation and affects future estimates for this tenant.
+  - Ambiguous approval like "looks good" must not claim approval, sendability, or standard creation. Offer the next explicit action.
 - Do not use stale thread-holding copy like "I have the estimate thread" for estimate-aware questions; answer from active_estimate_artifact or say which visible field is missing.
 
 Return STRICT JSON only:
@@ -403,6 +408,18 @@ function estimateRateFallbackReply(input: ResolveReplyInput): string | null {
   return `${line.label}: ${unit}${quantity}, from ${line.source_label} (${line.tier}; ${line.source_ref}). ${artifact.pricing_data_label}.${blocked}`;
 }
 
+function textLooksLikeUseHere(value: string): boolean {
+  return /\b(use (?:that|this|it|these)(?: price| rate| here)?(?: here)?|use (?:this|these) here|yes[, ]+use (?:this|that|it) here|approve (?:this|these) rate(?:s)? for (?:this|the) estimate)\b/i.test(value);
+}
+
+function textLooksLikeSaveStandard(value: string): boolean {
+  return /\b(save (?:that|this|it|these)(?: as)? (?:my|our|the)? ?(?:standard|rate)|use (?:this|that|it|these) going forward|make (?:this|that|it) (?:my|our|the)? ?standard)\b/i.test(value);
+}
+
+function textLooksLikeAmbiguousApproval(value: string): boolean {
+  return /^\s*(looks good|that looks good|good|ok|okay|fine|perfect|approved|ship it)\s*[.!]?\s*$/i.test(value);
+}
+
 function textLooksCritical(value: string): boolean {
   return /\b(safety|unsafe|injury|injured|fall|gas leak|electrical hazard|mold|asbestos|lead paint|stop work|policy|violation|illegal|client threat|lawsuit)\b/i.test(value);
 }
@@ -434,6 +451,15 @@ export function humbleReplyFallback(input: ResolveReplyInput, fallbackReason?: s
   if (estimateRateReply) {
     reply = estimateRateReply;
     mode = 'peer_update';
+  } else if (input.estimateArtifactContext && textLooksLikeSaveStandard(latest)) {
+    reply = 'That is separate from Use here. Confirm Save as standard on the line to teach future estimates for this tenant.';
+    mode = 'gate_ready';
+  } else if (input.estimateArtifactContext && textLooksLikeUseHere(latest)) {
+    reply = 'Use here approves this estimate only. Confirm Use here on the line or all priced lines; no standard gets saved.';
+    mode = 'gate_ready';
+  } else if (input.estimateArtifactContext && textLooksLikeAmbiguousApproval(latest)) {
+    reply = 'Looks ready to review. Next explicit step is Use here for this estimate, or Save as standard separately.';
+    mode = 'gate_ready';
   } else if (textLooksCritical(latest)) {
     reply = 'Flagging that. Do not let the crew work past the safety issue.';
     mode = 'advisor_flag';

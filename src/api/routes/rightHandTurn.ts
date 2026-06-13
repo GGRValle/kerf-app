@@ -44,11 +44,15 @@ import {
   saveRightHandConversationSnapshot,
 } from '../lib/rightHandConversationStore.js';
 import {
+  applyUseHereGraduation,
   buildRightHandEstimateArtifact,
   dealIdForRightHandAssembly,
+  getTenantRateStandardStore,
   getRightHandEstimateStore,
   estimateIdForRightHandAssembly,
+  standardFromGraduatedLine,
   type RightHandEstimateStore,
+  type TenantRateStandardStore,
 } from '../lib/rightHandAssemblyStore.js';
 import {
   buildEstimatorInputsFromRightHand,
@@ -126,6 +130,7 @@ export interface RightHandTurnRouteDeps {
   readonly anthropicChatFn?: (request: AnthropicChatRequest, deps: AnthropicClientDeps) => Promise<AnthropicChatResult>;
   readonly appendDailyLogEntryAndSurfaceFn?: typeof appendDailyLogEntryAndSurface;
   readonly estimateStore?: RightHandEstimateStore;
+  readonly rateStandardStore?: TenantRateStandardStore;
   readonly estimateEventLog?: EventLog;
   readonly estimatorModelCaller?: ModelCaller;
   readonly scopeClassifier?: ScopeClassifier;
@@ -170,6 +175,10 @@ async function estimateEventLogFor(deps: RightHandTurnRouteDeps): Promise<EventL
 
 function estimateStoreFor(deps: RightHandTurnRouteDeps): RightHandEstimateStore {
   return deps.estimateStore ?? getRightHandEstimateStore();
+}
+
+function rateStandardStoreFor(deps: RightHandTurnRouteDeps): TenantRateStandardStore {
+  return deps.rateStandardStore ?? getTenantRateStandardStore();
 }
 
 function rightHandDraftVisibleTotalCents(draft: { readonly lines: readonly { readonly extended_cents?: number | null; readonly price_cents?: number | null }[] }): number {
@@ -1012,8 +1021,6 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
   const lineId = c.req.param('lineId');
   const idx = draft.lines.findIndex((line) => line.id === lineId);
   if (idx < 0) return c.json({ error: 'line_not_found', line_id: lineId }, 404);
-  const line = draft.lines[idx]!;
-
   const qtyRaw = body['quantity'];
   const unitRaw = body['unit_cents'];
   const removedRaw = body['removed'];
@@ -1027,31 +1034,22 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
     return c.json({ error: 'invalid_removed' }, 400);
   }
 
-  const quantity = typeof qtyRaw === 'number' ? qtyRaw : line.quantity;
-  const unitCents = typeof unitRaw === 'number' ? unitRaw : line.unit_cents;
-  const priced = typeof unitCents === 'number' && typeof quantity === 'number';
-  const extended = priced ? Math.round((quantity as number) * (unitCents as number)) : line.extended_cents;
-  const flags = new Set(line.flags);
-  if (qtyRaw !== undefined || unitRaw !== undefined) flags.add('operator_edited');
-  if (removedRaw === true) flags.add('removed');
-  if (removedRaw === false) flags.delete('removed');
-
-  // D-065: tier / source_type / source_label / matched_by are COPIED, never
-  // recomputed - a text edit cannot graduate a line.
-  const nextLine = {
-    ...line,
-    ...(quantity !== undefined ? { quantity } : {}),
-    unit_cents: unitCents ?? null,
-    extended_cents: extended ?? null,
-    price_cents: extended ?? line.price_cents ?? null,
-    flags: [...flags],
-  };
-  const lines = draft.lines.map((item, i) => (i === idx ? nextLine : item));
-  const next = { ...draft, lines, updated_at: new Date().toISOString() };
+  const next = applyRungZeroLineEdit(
+    draft,
+    lineId,
+    {
+      ...(typeof qtyRaw === 'number' ? { quantity: qtyRaw } : {}),
+      ...(typeof unitRaw === 'number' ? { unit_cents: unitRaw } : {}),
+      ...(typeof removedRaw === 'boolean' ? { removed: removedRaw } : {}),
+    },
+    'operator_edited',
+  );
+  if (!next) return c.json({ error: 'invalid_line_edit' }, 400);
   await store.save(next);
   // Training signal (D-061, extrapolation card): keep/remove of a SUGGESTED
   // line is the operator teaching scope judgment. Reuses the registered
   // suggestion.overridden event type - no schema change.
+  const line = draft.lines[idx]!;
   if (removedRaw !== undefined && line.flags.includes('suggested')) {
     try {
       const { eventStore } = getApiDeps();
@@ -1074,6 +1072,144 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
     } catch { /* the edit succeeded; the signal is best-effort */ }
   }
   return c.json({ ok: true, draft: next, edited_line_id: lineId });
+});
+
+/**
+ * D-065 Beat 1: Use here. Graduates selected current estimate lines only.
+ * No rate standard/library write happens here.
+ */
+rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/use-here', async (c) => {
+  const tenant = requireApiTenant(c);
+  const session = requireApiSession(c);
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400);
+  }
+  if (body['confirmed'] !== true) {
+    return c.json({
+      error: 'confirmation_required',
+      operator_message: 'Use here approves selected rates for this estimate only. It will not save a standard.',
+    }, 409);
+  }
+  const target = body['target'];
+  const rawLineIds = body['line_ids'];
+  const lineIds = Array.isArray(rawLineIds)
+    ? rawLineIds.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    : undefined;
+  const allPricedIllustrative = target === 'all_priced_illustrative';
+  if (!allPricedIllustrative && (!lineIds || lineIds.length === 0)) {
+    return c.json({ error: 'line_ids_required' }, 400);
+  }
+  const deps = resolveDeps();
+  const store = estimateStoreFor(deps);
+  const draft = await store.read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  const result = applyUseHereGraduation(draft, {
+    ...(lineIds ? { lineIds } : {}),
+    allPricedIllustrative,
+    actorId: conversationActorIdFromSessionToken(session.token),
+    now: deps.now?.() ?? new Date(),
+  });
+  if (!result) {
+    return c.json({
+      error: 'graduation_rejected',
+      operator_message: 'Use here only applies to current, positive-priced estimate lines in this tenant.',
+    }, 400);
+  }
+  await store.save(result.draft);
+  return c.json({
+    ok: true,
+    beat: 'use_here',
+    library_writes: 0,
+    graduated_line_ids: result.graduated_line_ids,
+    draft: result.draft,
+    operator_message: `Approved ${result.graduated_line_ids.length} line${result.graduated_line_ids.length === 1 ? '' : 's'} for this estimate only. No standard was saved.`,
+  });
+});
+
+/**
+ * D-065 Beat 2: Save as standard. Separate explicit tenant-scoped library write.
+ */
+rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/save-rate-standard', async (c) => {
+  const tenant = requireApiTenant(c);
+  const session = requireApiSession(c);
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400);
+  }
+  if (body['confirmed'] !== true || body['consequence'] !== 'tenant_rate_standard') {
+    return c.json({
+      error: 'standard_confirmation_required',
+      consequence: 'tenant_rate_standard',
+      operator_message: 'Confirm Save as standard to use these rates going forward for this tenant.',
+    }, 409);
+  }
+  const rawLineIds = body['line_ids'];
+  const lineIds = Array.isArray(rawLineIds)
+    ? [...new Set(rawLineIds.filter((id): id is string => typeof id === 'string' && id.trim().length > 0))]
+    : [];
+  if (lineIds.length === 0) return c.json({ error: 'line_ids_required' }, 400);
+  const deps = resolveDeps();
+  const draft = await estimateStoreFor(deps).read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  const standards = lineIds.map((lineId) => standardFromGraduatedLine({
+    draft,
+    lineId,
+    actorId: conversationActorIdFromSessionToken(session.token),
+    now: deps.now?.() ?? new Date(),
+  }));
+  if (standards.some((standard) => standard === null)) {
+    return c.json({
+      error: 'standard_rejected',
+      operator_message: 'Save as standard only works after Use here on positive-priced lines in this tenant.',
+    }, 400);
+  }
+  const store = rateStandardStoreFor(deps);
+  for (const standard of standards) {
+    await store.save(standard!);
+  }
+  return c.json({
+    ok: true,
+    beat: 'save_as_standard',
+    consequence: 'tenant_rate_standard',
+    standard_ids: standards.map((standard) => standard!.standard_id),
+    operator_message: `Saved ${standards.length} tenant rate standard${standards.length === 1 ? '' : 's'} for future estimates in this tenant.`,
+  }, 201);
+});
+
+rightHandTurnRoutes.get('/right-hand/rate-standards', async (c) => {
+  const tenant = requireApiTenant(c);
+  const standards = await rateStandardStoreFor(resolveDeps()).search(tenant, c.req.query('q') ?? '');
+  return c.json({ standards });
+});
+
+rightHandTurnRoutes.get('/right-hand/rate-standards/:standardId', async (c) => {
+  const tenant = requireApiTenant(c);
+  const standard = await rateStandardStoreFor(resolveDeps()).read(tenant, c.req.param('standardId'));
+  if (!standard) return c.json({ error: 'rate_standard_not_found' }, 404);
+  return c.json({ standard });
+});
+
+rightHandTurnRoutes.post('/right-hand/rate-standards/:standardId/select', async (c) => {
+  const tenant = requireApiTenant(c);
+  const standard = await rateStandardStoreFor(resolveDeps()).read(tenant, c.req.param('standardId'));
+  if (!standard) return c.json({ error: 'rate_standard_not_found' }, 404);
+  return c.json({
+    ok: true,
+    selection: {
+      standard_id: standard.standard_id,
+      label: standard.label,
+      cost_code: standard.cost_code ?? null,
+      division: standard.division ?? null,
+      uom: standard.uom ?? null,
+      unit_cents: standard.unit_cents,
+      source_ref: standard.source_ref,
+    },
+  });
 });
 
 /**

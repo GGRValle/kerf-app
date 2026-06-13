@@ -56,7 +56,7 @@ function fixtureDraft(): RightHandEstimateDraft {
     open_items: [],
     open_questions: [],
     source_refs: [],
-    gate: { fired: true, allowed: false, blocked_reasons: ['source_basis_required'] },
+    gate: { fired: true, allowed: true, blocked_reasons: [] },
     lines: [
       line({ id: 'l1', label: 'Base cabinets', quantity: 20, uom: 'LF', unit_cents: 100_000, extended_cents: 2_000_000 }),
       line({ id: 'l2', label: 'Suggested dumpster', flags: ['general_conditions', 'suggested'], suggested: true, extended_cents: 65_000, unit_cents: 65_000 }),
