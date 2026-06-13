@@ -13,7 +13,11 @@ import { tmpdir } from 'node:os';
 import { Hono } from 'hono';
 
 import { createApiRouter } from '../src/api/router.js';
-import { resetApiDepsForTests } from '../src/api/lib/deps.js';
+import { getApiDeps, resetApiDepsForTests } from '../src/api/lib/deps.js';
+import {
+  getProjectRecordForTenant,
+  listProjectRecordsForTenant,
+} from '../src/app/lib/projectRecords.js';
 import {
   PLATFORM_SESSION_GGR_OWNER,
   PLATFORM_SESSION_VALLE_PM,
@@ -115,6 +119,24 @@ test('event-backed visibility stays tenant-scoped on lane3 surfaces', async () =
       const body = await res.json() as { error: string };
       assert.equal(body.error, 'project_not_found', surface);
     }
+  });
+});
+
+test('event-backed visibility reader: tenant B cannot read or count tenant A rows (Wall 1)', async () => {
+  await withPersistenceDir('lane3-vis-reader-xtenant-', async (app) => {
+    const projectId = await createEventBackedProject(app);
+    const { tenantReader } = getApiDeps();
+
+    const foreignEvents = await tenantReader.readEventsForProject('tenant_valle', projectId);
+    assert.equal(foreignEvents.length, 0, 'cross-tenant project read must return zero events');
+
+    const foreignCreated = await tenantReader.readEventsByTypeForTenant('tenant_valle', 'project.created');
+    const foreignCount = foreignCreated.filter((event) => event.project_id === projectId).length;
+    assert.equal(foreignCount, 0, 'cross-tenant project.created count must not leak');
+
+    assert.equal(await getProjectRecordForTenant(tenantReader, 'tenant_valle', projectId), null);
+    const valleRecords = await listProjectRecordsForTenant(tenantReader, 'tenant_valle');
+    assert.ok(!valleRecords.some((record) => record.project_id === projectId));
   });
 });
 
