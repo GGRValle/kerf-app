@@ -1,0 +1,113 @@
+---
+// D-068 · Proposal projection from Right Hand estimate · /estimate/:projectId/proposal
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/Card.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import { getRightHandEstimateStore } from '../../../api/lib/rightHandAssemblyStore.js';
+import { projectProposalFromEstimate } from '../../../api/lib/estimateProposalProjection.js';
+import { renderProposalHtml } from '../../../proposal/render.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const projectId = Astro.params.projectId ?? '';
+const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
+const conversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
+const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
+
+if (draft === null || draft.project_id !== projectId) {
+  return Astro.redirect(`/estimate/${encodeURIComponent(projectId)}`);
+}
+
+const outcome = projectProposalFromEstimate(draft, { now: new Date() });
+const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const conversationBack = conversationId || draft.conversation_id
+  ? `/right-hand?conversation_id=${encodeURIComponent(conversationId || draft.conversation_id)}&return_to=${encodeURIComponent(estimateBack)}`
+  : null;
+const paperHtml = outcome.status === 'ready' ? renderProposalHtml(outcome.proposal) : null;
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+---
+
+<Layout title="Proposal draft" activeHref="/sales">
+  <article class="pp-page" data-estimate-id={estimateId} data-project-id={projectId}>
+    <a class="pp-back" href={estimateBack}>‹ Back to estimate</a>
+    {conversationBack ? <a class="pp-back pp-back-secondary" href={conversationBack}>‹ Back to conversation</a> : null}
+
+    <header class="pp-hero">
+      <div class="pp-crumb">Proposal projection · draft only</div>
+      <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
+      <p class="pp-sub">Client-facing render from the estimate graph. Send is a separate confirm step.</p>
+    </header>
+
+    {outcome.status === 'blocked' ? (
+      <Card eyebrow="Not ready" title="Proposal blocked">
+        <p>{outcome.reason}</p>
+        <p><strong>Next:</strong> {outcome.next_action}</p>
+        <p class="pp-note">No client-authoritative prices were rendered. The estimate and rate library were not changed.</p>
+        {outcome.operator_annex.ungraduated_line_ids.length > 0 ? (
+          <p class="pp-note">{outcome.operator_annex.ungraduated_line_ids.length} line(s) still need rate graduation.</p>
+        ) : null}
+        {outcome.operator_annex.held_back.length > 0 ? (
+          <details class="pp-annex">
+            <summary>Operator annex ({outcome.operator_annex.held_back.length} held back)</summary>
+            <ul>
+              {outcome.operator_annex.held_back.map((row) => (
+                <li>{row.label} · {row.reason}{row.amount_cents > 0 ? ` · ${fmt(row.amount_cents)}` : ''}</li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+      </Card>
+    ) : (
+      <>
+        <Card eyebrow="Client body" title={`${outcome.proposal.proposal_number} · ${fmt(outcome.proposal.total_cents)}`}>
+          <p class="pp-note">PRELIMINARY draft — markup is folded into line prices. Nothing has been sent.</p>
+          <div class="pp-paper-wrap">
+            <iframe class="pp-paper-html" title="Proposal preview" sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
+          </div>
+        </Card>
+        {outcome.operator_annex.held_back.length > 0 ? (
+          <Card eyebrow="Operator annex" title="Held back from client body">
+            <ul class="pp-annex-list">
+              {outcome.operator_annex.held_back.map((row) => (
+                <li>{row.label} · {row.reason}{row.amount_cents > 0 ? ` · ${fmt(row.amount_cents)}` : ''}</li>
+              ))}
+            </ul>
+          </Card>
+        ) : null}
+        <div class="pp-actions">
+          <a class="pp-btn ghost" href={estimateBack}>Back to estimate</a>
+          <a class="pp-btn primary" href={`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/proposal`} target="_blank" rel="noopener">Open printable draft</a>
+        </div>
+      </>
+    )}
+  </article>
+</Layout>
+
+<script>
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.pp-paper-html')) {
+    const fit = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (doc?.documentElement) frame.style.height = `${doc.documentElement.scrollHeight}px`;
+      } catch { /* defensive */ }
+    };
+    frame.addEventListener('load', fit);
+    fit();
+  }
+</script>
+
+<style>
+  .pp-page { width: min(100%, 920px); margin: 0 auto; padding: 0.9rem 0.9rem 6rem; }
+  .pp-back { display: inline-flex; margin-right: 1rem; color: var(--text-muted, #6a7282); text-decoration: none; font-size: 0.85rem; }
+  .pp-back-secondary { margin-top: 0.25rem; }
+  .pp-hero h1 { margin: 0.2rem 0; font-size: clamp(1.5rem, 5vw, 2rem); }
+  .pp-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
+  .pp-sub, .pp-note { color: var(--text-muted, #6a7282); line-height: 1.45; }
+  .pp-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; overflow: hidden; }
+  .pp-paper-html { width: 100%; min-height: 480px; border: 0; display: block; }
+  .pp-annex, .pp-annex-list { margin-top: 0.75rem; font-size: 0.9rem; line-height: 1.45; }
+  .pp-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
+  .pp-btn { padding: 0.55rem 0.9rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--border, #d8dee6); }
+  .pp-btn.primary { background: var(--right-hand, #c9a961); color: #1a1300; border-color: transparent; }
+  .pp-btn.ghost { background: var(--surface, #fff); color: inherit; }
+</style>

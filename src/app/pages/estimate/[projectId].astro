@@ -287,8 +287,8 @@ const estimateTitle = rightHandDraft
     </details>
 
     <section class="es-propose">
-      <button class="es-btn primary" id="gen-proposal" disabled={rightHandDraft ? rhActiveLines.length === 0 || !rightHandDraft.gate.allowed : breakdowns.length === 0}>Generate proposal draft ›</button>
-      <p class="es-meta">{rightHandDraft?.gate.allowed ? 'Drafts only. Sending is a separate, human-gated step.' : 'Proposal draft stays disabled until source review clears.'}</p>
+      <button class="es-btn primary" id="gen-proposal" disabled={rightHandDraft ? rhActiveLines.length === 0 : breakdowns.length === 0}>Generate proposal draft ›</button>
+      <p class="es-meta">{rightHandDraft?.gate.allowed ? 'Drafts only — send requires your review before anything goes to the client.' : 'Proposal draft opens for review; send requires your review after rates graduate.'}</p>
       <div id="draft-result" class="es-draft" hidden></div>
     </section>
   </article>
@@ -416,15 +416,16 @@ const estimateTitle = rightHandDraft
     if (out) window.location.reload();
   });
 
-  document.getElementById('gen-proposal')?.addEventListener('click', async () => {
-    const out = await post(`/api/v1/estimate/${projectId}/generate-proposal`, {}, 'Generate a proposal draft from this estimate?');
-    if (out) {
-      const el = document.getElementById('draft-result') as HTMLElement;
-      el.hidden = false;
-      el.innerHTML = `<strong>Draft created.</strong> ${out.attention.headline}.
-        <br/>Total $${(out.draft.client_total_cents / 100).toFixed(2)} · send requires your review
-        <br/><a href="${out.draft.surface_route}">Open proposal draft ›</a>`;
+  document.getElementById('gen-proposal')?.addEventListener('click', () => {
+    const estimateIdParam = new URLSearchParams(window.location.search).get('estimate_id');
+    if (!estimateIdParam) {
+      alert('Open this estimate from Right Hand first.');
+      return;
     }
+    const rhConversation = new URLSearchParams(window.location.search).get('rh_conversation') ?? '';
+    const qs = new URLSearchParams({ estimate_id: estimateIdParam });
+    if (rhConversation) qs.set('rh_conversation', rhConversation);
+    window.location.href = `/estimate/${encodeURIComponent(projectId)}/proposal?${qs.toString()}`;
   });
 </script>
 

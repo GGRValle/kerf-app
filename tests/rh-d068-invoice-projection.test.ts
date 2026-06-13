@@ -64,8 +64,25 @@ function fixtureDraft(): RightHandEstimateDraft {
   } as unknown as RightHandEstimateDraft;
 }
 
+function graduatedInvoiceDraft(): RightHandEstimateDraft {
+  const base = fixtureDraft();
+  return {
+    ...base,
+    gate: { fired: true, allowed: true, blocked_reasons: [] },
+    lines: base.lines.map((row) => {
+      if (row.suggested || row.flags.includes('suggested')) return row;
+      return {
+        ...row,
+        tier: 'company',
+        source_type: 'company_data',
+        source_label: 'Company data',
+      };
+    }),
+  } as RightHandEstimateDraft;
+}
+
 test('invoice bills the down-payment milestone against the FENCED proposal basis — suggested lines never inflate the contract', () => {
-  const { invoice, held_back_count } = buildInvoiceFromRightHandEstimate(fixtureDraft(), { now: NOW });
+  const { invoice, held_back_count } = buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), { now: NOW });
   assert.equal(invoice.contract_base_cents, 2_000_000); // l1 only; the suggested 65_000 is held back
   assert.equal(held_back_count, 1);
   assert.equal(invoice.milestone.kind, 'down_payment');
@@ -77,7 +94,7 @@ test('invoice bills the down-payment milestone against the FENCED proposal basis
 });
 
 test('spec §5 formula: adjusted = base + ΣCOs; due never bills past the adjusted contract', () => {
-  const { invoice } = buildInvoiceFromRightHandEstimate(fixtureDraft(), {
+  const { invoice } = buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), {
     now: NOW,
     milestone: 'final',
     billedToDateCents: 100_000,
@@ -90,18 +107,18 @@ test('spec §5 formula: adjusted = base + ΣCOs; due never bills past the adjust
 });
 
 test('retention holds back the stated percent of the milestone', () => {
-  const { invoice } = buildInvoiceFromRightHandEstimate(fixtureDraft(), { now: NOW, milestone: 'final', billedToDateCents: 100_000, retentionPct: 10 });
+  const { invoice } = buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), { now: NOW, milestone: 'final', billedToDateCents: 100_000, retentionPct: 10 });
   assert.equal(invoice.retention_held_cents, 190_000);
   assert.equal(invoice.amount_due_cents, 1_710_000);
 });
 
 test('fail-closed reconciliation: overbilling, negative inputs, and basis-less drafts all throw', () => {
   assert.throws(
-    () => buildInvoiceFromRightHandEstimate(fixtureDraft(), { now: NOW, billedToDateCents: 3_000_000 }),
+    () => buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), { now: NOW, billedToDateCents: 3_000_000 }),
     InvoiceProjectionError,
   );
   assert.throws(
-    () => buildInvoiceFromRightHandEstimate(fixtureDraft(), { now: NOW, billedToDateCents: -1 }),
+    () => buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), { now: NOW, billedToDateCents: -1 }),
     InvoiceProjectionError,
   );
   const gutted = { ...fixtureDraft(), lines: fixtureDraft().lines.filter((l) => l.id === 'l2') } as RightHandEstimateDraft;
@@ -109,7 +126,7 @@ test('fail-closed reconciliation: overbilling, negative inputs, and basis-less d
 });
 
 test('rendered HTML is client-clean: DRAFT watermark, license, money rows, zero internal vocabulary', () => {
-  const { invoice } = buildInvoiceFromRightHandEstimate(fixtureDraft(), { now: NOW });
+  const { invoice } = buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), { now: NOW });
   const html = renderInvoiceHtml(invoice);
   assert.match(html, /Preliminary — draft for review, not a bill/);
   assert.match(html, new RegExp(invoice.cslb_license_number));
@@ -120,7 +137,7 @@ test('rendered HTML is client-clean: DRAFT watermark, license, money rows, zero 
 
 test('invoice route rejects unknown milestone values instead of silently billing the down payment', async () => {
   const estimateStore = createMemoryRightHandEstimateStore();
-  await estimateStore.save(fixtureDraft());
+  await estimateStore.save(graduatedInvoiceDraft());
   __setRightHandTurnDepsForTests({
     env: {},
     now: () => NOW,
@@ -147,7 +164,7 @@ test('invoice route rejects unknown milestone values instead of silently billing
 
 test('invoice route still accepts explicit down_payment and final milestones', async () => {
   const estimateStore = createMemoryRightHandEstimateStore();
-  await estimateStore.save(fixtureDraft());
+  await estimateStore.save(graduatedInvoiceDraft());
   __setRightHandTurnDepsForTests({
     env: {},
     now: () => NOW,
