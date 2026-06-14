@@ -27,6 +27,7 @@ const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${e
 const conversationBack = conversationId || draft.conversation_id
   ? `/right-hand?conversation_id=${encodeURIComponent(conversationId || draft.conversation_id)}&return_to=${encodeURIComponent(estimateBack)}`
   : null;
+const moneyLink = `/estimate/${encodeURIComponent(projectId)}/money?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const paperHtml = outcome.status === 'ready' ? renderProposalHtml(outcome.proposal) : null;
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const blockedReason = outcome.status === 'blocked'
@@ -85,9 +86,18 @@ const blockedReason = outcome.status === 'blocked'
             </ul>
           </Card>
         ) : null}
+        <Card eyebrow="Before you send" title="Ready for owner review">
+          <div class="pp-send-gate">
+            <span>Rates approved for this estimate</span>
+            <span>Client total tied to the estimate</span>
+            <span>Sending still needs your separate confirmation</span>
+          </div>
+          <p class="pp-note">This proposal is a phase, not an automatic send. Use Money to create invoice milestones from this approved basis.</p>
+        </Card>
         <div class="pp-actions">
           <a class="pp-btn ghost" href={estimateBack}>Back to estimate</a>
           <a class="pp-btn ghost" href={`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/proposal`} target="_blank" rel="noopener">Open printable draft</a>
+          <a class="pp-btn ghost" href={moneyLink}>Open Money</a>
           <a class="pp-btn primary" href={`/estimate/${encodeURIComponent(projectId)}/invoice?estimate_id=${encodeURIComponent(estimateId)}&milestone=down_payment${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`}>Create down-payment invoice ›</a>
         </div>
       </>
@@ -118,6 +128,8 @@ const blockedReason = outcome.status === 'blocked'
   .pp-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; overflow: hidden; }
   .pp-paper-html { width: 100%; min-height: 480px; border: 0; display: block; }
   .pp-annex, .pp-annex-list { margin-top: 0.75rem; font-size: 0.9rem; line-height: 1.45; }
+  .pp-send-gate { display: grid; gap: 0.45rem; margin-top: 0.65rem; }
+  .pp-send-gate span { display: block; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; background: color-mix(in srgb, var(--surface, #fff) 92%, var(--field-green, #2f8f5b)); }
   .pp-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
   .pp-btn { padding: 0.55rem 0.9rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--border, #d8dee6); }
   .pp-btn.primary { background: var(--right-hand, #c9a961); color: #1a1300; border-color: transparent; }

@@ -1,0 +1,475 @@
+---
+// Goal A · Owner money flow · /estimate/:projectId/money
+//
+// This page is a presentation surface over the verified M4 ledger. It reads
+// estimate + ledger state, asks the frozen invoice projection for current
+// amounts, and uses the existing issue endpoint for the consequence write.
+import Layout from '../../../layouts/Layout.astro';
+import Card from '../../../components/Card.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
+import {
+  buildInvoiceFromRightHandEstimate,
+  InvoiceProjectionError,
+  type EstimateInvoiceProjection,
+} from '../../../../api/lib/estimateInvoiceProjection.js';
+import {
+  getInvoiceLedgerStore,
+  type InvoiceLedgerRow,
+} from '../../../../api/lib/invoiceLedgerStore.js';
+import { operatorFacingBlockedReasons } from '../../../lib/operatorFacingReasons.js';
+
+type MilestoneKind = 'down_payment' | 'final';
+
+interface MilestoneView {
+  readonly kind: MilestoneKind;
+  readonly label: string;
+  readonly invoice: EstimateInvoiceProjection | null;
+  readonly billed_cents: number;
+  readonly remaining_cents: number;
+  readonly status: 'blocked' | 'ready' | 'issued';
+  readonly issued_rows: readonly InvoiceLedgerRow[];
+  readonly blocked_reason: string;
+}
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const projectId = Astro.params.projectId ?? '';
+const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
+const conversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
+const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
+
+if (draft === null || draft.project_id !== projectId) {
+  return Astro.redirect(`/estimate/${encodeURIComponent(projectId)}`);
+}
+
+const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const invoiceLink = (kind: MilestoneKind) =>
+  `/estimate/${encodeURIComponent(projectId)}/invoice?estimate_id=${encodeURIComponent(estimateId)}&milestone=${kind}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const dateFmt = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+let rows: readonly InvoiceLedgerRow[] = [];
+let ledgerError = '';
+if (draft.gate.allowed) {
+  try {
+    rows = await getInvoiceLedgerStore().listForBasis(tenant, draft.estimate_id);
+  } catch (err) {
+    ledgerError = err instanceof Error ? err.message : 'The invoice ledger is not available.';
+  }
+}
+
+const activeRows = rows.filter((row) => row.status === 'issued');
+const billedToDateCents = activeRows.reduce((sum, row) => sum + row.amount_cents, 0);
+
+function issuedRowsFor(milestoneId: string): readonly InvoiceLedgerRow[] {
+  return activeRows.filter((row) => row.milestone_id === milestoneId);
+}
+
+async function buildMilestone(kind: MilestoneKind): Promise<MilestoneView> {
+  if (!draft.gate.allowed) {
+    return {
+      kind,
+      label: kind === 'down_payment' ? 'Down payment' : 'Final invoice',
+      invoice: null,
+      billed_cents: 0,
+      remaining_cents: 0,
+      status: 'blocked',
+      issued_rows: [],
+      blocked_reason: `Approve rates before billing. ${operatorFacingBlockedReasons(draft.gate.blocked_reasons)}`,
+    };
+  }
+  if (ledgerError) {
+    return {
+      kind,
+      label: kind === 'down_payment' ? 'Down payment' : 'Final invoice',
+      invoice: null,
+      billed_cents: 0,
+      remaining_cents: 0,
+      status: 'blocked',
+      issued_rows: [],
+      blocked_reason: 'The billing ledger is unavailable. Nothing was issued.',
+    };
+  }
+  try {
+    const now = new Date();
+    const initial = buildInvoiceFromRightHandEstimate(draft, { now, milestone: kind }).invoice;
+    const issuedForMilestone = issuedRowsFor(initial.milestone.milestone_id);
+    const billedForMilestone = issuedForMilestone.reduce((sum, row) => sum + row.amount_cents, 0);
+    const invoice = buildInvoiceFromRightHandEstimate(draft, {
+      now,
+      milestone: kind,
+      alreadyBilledForMilestoneCents: billedForMilestone,
+      billedToDateCents,
+    }).invoice;
+    const totalForMilestone = billedForMilestone + invoice.amount_due_cents + invoice.retention_held_cents;
+    const remaining = Math.max(0, invoice.amount_due_cents);
+    return {
+      kind,
+      label: invoice.milestone.label,
+      invoice,
+      billed_cents: billedForMilestone,
+      remaining_cents: remaining,
+      status: remaining > 0 ? 'ready' : 'issued',
+      issued_rows: issuedForMilestone,
+      blocked_reason: totalForMilestone <= 0 ? 'This milestone has no billable amount.' : '',
+    };
+  } catch (err) {
+    return {
+      kind,
+      label: kind === 'down_payment' ? 'Down payment' : 'Final invoice',
+      invoice: null,
+      billed_cents: 0,
+      remaining_cents: 0,
+      status: 'blocked',
+      issued_rows: [],
+      blocked_reason: err instanceof InvoiceProjectionError
+        ? 'No billable basis yet — approve rates before billing.'
+        : 'The invoice could not be built. Nothing was issued.',
+    };
+  }
+}
+
+const milestones = await Promise.all([
+  buildMilestone('down_payment'),
+  buildMilestone('final'),
+]);
+const contractBaseCents = milestones.find((m) => m.invoice)?.invoice?.contract_base_cents ?? 0;
+const remainingCents = Math.max(0, contractBaseCents - billedToDateCents);
+const downPayment = milestones[0];
+const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amount_due_cents ?? 0);
+---
+
+<Layout title="Money" activeHref="/money">
+  <article class="mf-page" data-estimate-id={estimateId} data-project-id={projectId}>
+    <nav class="mf-nav" aria-label="Money flow">
+      <a href={estimateBack}>‹ Estimate</a>
+      <a href={proposalLink}>Proposal</a>
+    </nav>
+
+    <header class="mf-hero">
+      <div class="mf-crumb">Money · billing ledger</div>
+      <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
+      <p>Issue invoice milestones from the approved estimate. Drafts do not bill, send, post, or charge anything.</p>
+    </header>
+
+    <section class="mf-summary" aria-label="Billing summary">
+      <div>
+        <span>Contract</span>
+        <strong>{fmt(contractBaseCents)}</strong>
+      </div>
+      <div>
+        <span>Billed</span>
+        <strong>{fmt(billedToDateCents)}</strong>
+      </div>
+      <div>
+        <span>Remaining</span>
+        <strong>{fmt(remainingCents)}</strong>
+      </div>
+    </section>
+
+    {downPayment.invoice ? (
+      <Card eyebrow="California down payment" title={`${fmt(downPaymentCapCents)} cap check`}>
+        <p class="mf-note">CA §7159 is already applied by the invoice projection. The down payment cannot exceed the allowed cap, and the ledger records only after your explicit issue confirmation.</p>
+      </Card>
+    ) : null}
+
+    <section class="mf-milestones" aria-label="Invoice milestones">
+      {milestones.map((item) => (
+        <article class="mf-milestone" data-status={item.status}>
+          <div class="mf-milestone-head">
+            <div>
+              <span>{item.kind === 'down_payment' ? 'Due at signing' : 'Due at completion'}</span>
+              <h2>{item.label}</h2>
+            </div>
+            <strong>{item.status === 'issued' ? 'Billed' : item.status === 'ready' ? 'Ready' : 'Blocked'}</strong>
+          </div>
+
+          {item.invoice ? (
+            <dl class="mf-money-list">
+              <div><dt>Milestone amount</dt><dd>{fmt(item.billed_cents + item.invoice.amount_due_cents + item.invoice.retention_held_cents)}</dd></div>
+              <div><dt>Billed</dt><dd>{fmt(item.billed_cents)}</dd></div>
+              <div><dt>Remaining to issue</dt><dd>{fmt(item.remaining_cents)}</dd></div>
+              <div><dt>Paid</dt><dd>{fmt(0)}</dd></div>
+            </dl>
+          ) : (
+            <p class="mf-note">{item.blocked_reason}</p>
+          )}
+
+          <p class="mf-muted">Payment recording is not connected on this surface yet. This page records billing milestones only.</p>
+
+          {item.issued_rows.length > 0 ? (
+            <details class="mf-ledger">
+              <summary>Issued rows ({item.issued_rows.length})</summary>
+              <ul>
+                {item.issued_rows.map((row) => (
+                  <li>{fmt(row.amount_cents)} issued {dateFmt(row.issued_at)}</li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+
+          <div class="mf-actions">
+            <a class="mf-btn ghost" href={invoiceLink(item.kind)}>Open invoice draft</a>
+            {item.status === 'ready' && item.invoice ? (
+              <button class="mf-btn primary" type="button" data-issue-milestone={item.kind}>
+                Issue {item.kind === 'down_payment' ? 'down payment' : 'final'} invoice
+              </button>
+            ) : item.status === 'issued' ? (
+              <span class="mf-btn disabled" aria-disabled="true">Already issued</span>
+            ) : (
+              <span class="mf-btn disabled" aria-disabled="true">Approve rates first</span>
+            )}
+          </div>
+        </article>
+      ))}
+    </section>
+
+    <Card eyebrow="Guardrails" title="What this page will not do">
+      <p class="mf-note">Issuing records a billing row only after your confirmation. It does not email the client, post to accounting, charge a card, or mark anything paid.</p>
+    </Card>
+  </article>
+</Layout>
+
+<script>
+  const estimateId = document.querySelector<HTMLElement>('.mf-page')?.dataset['estimateId'] ?? '';
+  const issueConsequence = ['issue', 'invoice_milestone'].join('_');
+
+  document.querySelectorAll<HTMLButtonElement>('[data-issue-milestone]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const milestone = button.dataset['issueMilestone'] ?? '';
+      const label = milestone === 'final' ? 'final invoice' : 'down payment invoice';
+      const ok = window.confirm(`Record this ${label} in the billing ledger? Nothing will be sent, posted, charged, or marked paid.`);
+      if (!ok) return;
+      button.disabled = true;
+      const res = await fetch(`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/invoice/issue`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ confirmed: true, consequence: issueConsequence, milestone }),
+      });
+      const out = await res.json().catch(() => null) as { operator_message?: string; error?: string } | null;
+      if (!res.ok) {
+        alert(out?.operator_message ?? out?.error ?? `Issue failed (${res.status}). Nothing was recorded.`);
+        button.disabled = false;
+        return;
+      }
+      alert(out?.operator_message ?? 'Invoice milestone recorded. Nothing was sent automatically.');
+      window.location.reload();
+    });
+  });
+</script>
+
+<style>
+  .mf-page {
+    width: min(100%, 920px);
+    margin: 0 auto;
+    padding: 0.9rem 0.9rem 6rem;
+  }
+
+  .mf-nav {
+    display: flex;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.45rem;
+  }
+
+  .mf-nav a {
+    color: var(--text-muted, #6a7282);
+    text-decoration: none;
+    font-size: 0.86rem;
+  }
+
+  .mf-hero {
+    margin: 0.35rem 0 0.85rem;
+  }
+
+  .mf-hero h1 {
+    margin: 0.2rem 0 0;
+    font-size: clamp(1.65rem, 6vw, 2.25rem);
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+
+  .mf-hero p,
+  .mf-note,
+  .mf-muted {
+    color: var(--text-muted, #6a7282);
+    line-height: 1.42;
+  }
+
+  .mf-crumb {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted, #6a7282);
+  }
+
+  .mf-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin: 0.85rem 0;
+  }
+
+  .mf-summary > div,
+  .mf-milestone {
+    border: 1px solid var(--border, #d4d9e2);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  }
+
+  .mf-summary > div {
+    padding: 0.72rem;
+  }
+
+  .mf-summary span,
+  .mf-milestone-head span {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted, #6a7282);
+  }
+
+  .mf-summary strong {
+    display: block;
+    margin-top: 0.22rem;
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mf-milestones {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0.9rem 0;
+  }
+
+  .mf-milestone {
+    padding: 0.85rem;
+  }
+
+  .mf-milestone[data-status='ready'] {
+    border-color: color-mix(in srgb, var(--field-green, #2f8f5b) 48%, var(--border, #d4d9e2));
+  }
+
+  .mf-milestone[data-status='blocked'] {
+    border-color: color-mix(in srgb, var(--accent, #f5b544) 48%, var(--border, #d4d9e2));
+  }
+
+  .mf-milestone-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .mf-milestone-head h2 {
+    margin: 0.18rem 0 0;
+    font-size: 1.2rem;
+    letter-spacing: 0;
+  }
+
+  .mf-milestone-head > strong {
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface, #fff) 80%, var(--field-green, #2f8f5b));
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .mf-money-list {
+    display: grid;
+    gap: 0.42rem;
+    margin: 0.8rem 0 0;
+  }
+
+  .mf-money-list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border, #dce1e9);
+  }
+
+  .mf-money-list dt {
+    color: var(--text-muted, #6a7282);
+  }
+
+  .mf-money-list dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+
+  .mf-muted {
+    margin: 0.7rem 0 0;
+    font-size: 0.82rem;
+  }
+
+  .mf-ledger {
+    margin-top: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .mf-ledger ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+  }
+
+  .mf-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.85rem;
+  }
+
+  .mf-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.4rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    border: 1px solid var(--border, #d8dee6);
+    font: inherit;
+  }
+
+  .mf-btn.primary {
+    background: var(--right-hand, #c9a961);
+    color: #1a1300;
+    border-color: transparent;
+  }
+
+  .mf-btn.ghost {
+    background: var(--surface, #fff);
+    color: inherit;
+  }
+
+  .mf-btn.disabled {
+    color: var(--text-muted, #6a7282);
+    background: color-mix(in srgb, var(--surface, #fff) 80%, var(--bg, #f6f8fb));
+  }
+
+  @media (max-width: 640px) {
+    .mf-page {
+      padding-inline: 0.75rem;
+    }
+
+    .mf-summary {
+      grid-template-columns: 1fr;
+    }
+
+    .mf-milestone-head {
+      display: grid;
+    }
+
+    .mf-actions .mf-btn {
+      width: 100%;
+    }
+  }
+</style>
