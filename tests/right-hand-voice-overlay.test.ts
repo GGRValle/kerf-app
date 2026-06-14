@@ -253,6 +253,8 @@ test('deterministic intent classifier maps keywords honestly', () => {
   assert.equal(classifyTranscriptIntent('this is a new bathroom remodel project'), 'job_intake');
   assert.equal(classifyTranscriptIntent('check on money'), 'open_money');
   assert.equal(classifyTranscriptIntent('work on the change order for Wegrzyn'), 'change_order');
+  assert.equal(classifyTranscriptIntent('open projects'), 'status_question');
+  assert.equal(classifyTranscriptIntent('show me the job list'), 'status_question');
   assert.equal(classifyTranscriptIntent('what is the status on the kitchen'), 'status_question');
   // Note dictation is now DURABLE (turn-resolution brief §4): "take a job note"
   // must NOT live-route to /field-capture — it waits for commit + resolves the
