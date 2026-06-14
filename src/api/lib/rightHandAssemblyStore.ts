@@ -30,6 +30,7 @@ export interface RightHandEstimateLine {
   readonly source_type: RightHandEstimateSourceType;
   readonly source_label: string;
   readonly source_ref: string;
+  readonly source_refs?: readonly string[];
   readonly open_item: boolean;
   readonly flags: readonly string[];
   readonly tier: RightHandEstimateTier;
@@ -43,6 +44,31 @@ export interface RightHandEstimateLine {
   readonly matched_by?: 'line_id' | 'keyword';
   readonly suggested?: boolean;
   readonly proposal_line?: ProposalLineItem | null;
+}
+
+export interface TenantRateStandard {
+  readonly standard_id: string;
+  readonly tenant_id: PersistenceTenantId;
+  readonly estimate_id: string;
+  readonly line_id: string;
+  readonly actor_id: string;
+  readonly approved_at: string;
+  readonly label: string;
+  readonly cost_code?: string;
+  readonly division?: RightHandEstimateDivision | null;
+  readonly quantity?: number;
+  readonly uom?: string;
+  readonly unit_cents: number;
+  readonly extended_cents: number;
+  readonly source_ref: string;
+  readonly source_refs: readonly string[];
+  readonly prior_source_ref?: string;
+}
+
+export interface TenantRateStandardStore {
+  save(standard: TenantRateStandard): Promise<void>;
+  read(tenant: PersistenceTenantId, standardId: string): Promise<TenantRateStandard | null>;
+  search(tenant: PersistenceTenantId, query: string): Promise<readonly TenantRateStandard[]>;
 }
 
 export interface RightHandEstimateDraft {
@@ -177,6 +203,38 @@ function uniqueStrings(...lists: readonly (readonly string[] | undefined)[]): re
     }
   }
   return out;
+}
+
+function lineAmountCents(line: RightHandEstimateLine): number {
+  return line.extended_cents ?? line.price_cents ?? 0;
+}
+
+function isActivePricedLine(line: RightHandEstimateLine): boolean {
+  return !line.flags.includes('removed') && Number.isInteger(lineAmountCents(line)) && lineAmountCents(line) > 0;
+}
+
+function sourceBasisBlocked(line: RightHandEstimateLine): boolean {
+  return isActivePricedLine(line) && line.source_type !== 'company_data';
+}
+
+function recomputeEstimateGate(draft: RightHandEstimateDraft): RightHandEstimateDraft {
+  const remaining = draft.gate.blocked_reasons.filter((reason) => reason !== 'source_basis_required');
+  const blockedReasons = uniqueStrings(
+    remaining,
+    draft.lines.some(sourceBasisBlocked) ? ['source_basis_required'] : [],
+  );
+  const allowedWithoutSourceBlock = draft.gate.allowed || !draft.gate.blocked_reasons.some((reason) => reason !== 'source_basis_required');
+  return {
+    ...draft,
+    gate: {
+      fired: true,
+      allowed: allowedWithoutSourceBlock && blockedReasons.length === 0,
+      blocked_reasons: blockedReasons,
+    },
+    pricing_data_label: draft.lines.some(sourceBasisBlocked)
+      ? 'Mixed draft pricing - review non-company lines before file/send'
+      : 'Operator-approved estimate pricing - review before file/send',
+  };
 }
 
 function lineId(label: string, sourceType: RightHandEstimateSourceType): string {
@@ -630,6 +688,39 @@ export function createMemoryRightHandEstimateStore(): RightHandEstimateStore {
   };
 }
 
+export function createMemoryTenantRateStandardStore(): TenantRateStandardStore {
+  const byTenant = new Map<PersistenceTenantId, Map<string, TenantRateStandard>>();
+  function tenantMap(tenant: PersistenceTenantId): Map<string, TenantRateStandard> {
+    const existing = byTenant.get(tenant);
+    if (existing) return existing;
+    const next = new Map<string, TenantRateStandard>();
+    byTenant.set(tenant, next);
+    return next;
+  }
+  return {
+    async save(standard) {
+      tenantMap(standard.tenant_id).set(standard.standard_id, standard);
+    },
+    async read(tenant, standardId) {
+      return tenantMap(tenant).get(standardId) ?? null;
+    },
+    async search(tenant, query) {
+      const needle = normalized(query);
+      const standards = [...tenantMap(tenant).values()];
+      if (!needle) return standards;
+      return standards.filter((standard) => normalized([
+        standard.standard_id,
+        standard.estimate_id,
+        standard.line_id,
+        standard.label,
+        standard.cost_code ?? '',
+        standard.uom ?? '',
+        standard.source_ref,
+      ].join(' ')).includes(needle));
+    },
+  };
+}
+
 export function createPgRightHandEstimateStore(connectionString: string): RightHandEstimateStore {
   const pool = new Pool({ connectionString });
   let ready: Promise<void> | null = null;
@@ -723,7 +814,97 @@ export function createPgRightHandEstimateStore(connectionString: string): RightH
   };
 }
 
+export function createPgTenantRateStandardStore(connectionString: string): TenantRateStandardStore {
+  const pool = new Pool({ connectionString });
+  let ready: Promise<void> | null = null;
+  async function ensureReady(): Promise<void> {
+    ready ??= (async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS right_hand_rate_standards (
+          tenant_id text NOT NULL,
+          standard_id text NOT NULL,
+          estimate_id text NOT NULL,
+          line_id text NOT NULL,
+          label text NOT NULL,
+          search_text text NOT NULL,
+          created_at timestamptz NOT NULL,
+          standard jsonb NOT NULL,
+          PRIMARY KEY (tenant_id, standard_id)
+        )
+      `);
+      await pool.query('CREATE INDEX IF NOT EXISTS right_hand_rate_standards_search_idx ON right_hand_rate_standards (tenant_id, created_at DESC)');
+    })();
+    await ready;
+  }
+  return {
+    async save(standard) {
+      await ensureReady();
+      const searchText = normalized([
+        standard.standard_id,
+        standard.estimate_id,
+        standard.line_id,
+        standard.label,
+        standard.cost_code ?? '',
+        standard.uom ?? '',
+        standard.source_ref,
+      ].join(' '));
+      await pool.query(
+        `INSERT INTO right_hand_rate_standards
+          (tenant_id, standard_id, estimate_id, line_id, label, search_text, created_at, standard)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8::jsonb)
+         ON CONFLICT (tenant_id, standard_id) DO UPDATE SET
+          estimate_id = EXCLUDED.estimate_id,
+          line_id = EXCLUDED.line_id,
+          label = EXCLUDED.label,
+          search_text = EXCLUDED.search_text,
+          created_at = EXCLUDED.created_at,
+          standard = EXCLUDED.standard`,
+        [
+          standard.tenant_id,
+          standard.standard_id,
+          standard.estimate_id,
+          standard.line_id,
+          standard.label,
+          searchText,
+          standard.approved_at,
+          JSON.stringify(standard),
+        ],
+      );
+    },
+    async read(tenant, standardId) {
+      await ensureReady();
+      const res = await pool.query(
+        'SELECT standard FROM right_hand_rate_standards WHERE tenant_id = $1 AND standard_id = $2',
+        [tenant, standardId],
+      );
+      const standard = res.rows[0]?.standard as TenantRateStandard | undefined;
+      return standard?.tenant_id === tenant ? standard : null;
+    },
+    async search(tenant, query) {
+      await ensureReady();
+      const terms = normalized(query).split(' ').filter(Boolean);
+      const clauses = ['tenant_id = $1'];
+      const values: unknown[] = [tenant];
+      for (const term of terms) {
+        values.push(`%${term}%`);
+        clauses.push(`search_text LIKE $${values.length}`);
+      }
+      const res = await pool.query(
+        `SELECT standard FROM right_hand_rate_standards
+         WHERE ${clauses.join(' AND ')}
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        values,
+      );
+      return res.rows
+        .map((row) => row.standard as TenantRateStandard)
+        .filter((standard) => standard.tenant_id === tenant);
+    },
+  };
+}
+
 let cachedStore: RightHandEstimateStore | null = null;
+let cachedRateStandardStore: TenantRateStandardStore | null = null;
 
 export function getRightHandEstimateStore(): RightHandEstimateStore {
   if (cachedStore) return cachedStore;
@@ -735,14 +916,27 @@ export function getRightHandEstimateStore(): RightHandEstimateStore {
   return cachedStore;
 }
 
+export function getTenantRateStandardStore(): TenantRateStandardStore {
+  if (cachedRateStandardStore) return cachedRateStandardStore;
+  const connectionString = process.env['DATABASE_URL'] ?? process.env['POSTGRES_URL'];
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is required for shared Right Hand tenant rate standards');
+  }
+  cachedRateStandardStore = createPgTenantRateStandardStore(connectionString);
+  return cachedRateStandardStore;
+}
+
 export function resetRightHandEstimateStoreForTests(): void {
   cachedStore = null;
+  cachedRateStandardStore = null;
 }
 
 /** Rung-0 line edit (D-065): quantity / unit-rate override / remove-restore.
  * Tier, source label, matched_by are COPIED never recomputed - an edit can
- * never graduate a line. Shared by the PATCH endpoint (touch edits) and the
- * conversation apply-loop (voice/text edits, F-RH7 stage 6). */
+ * never graduate a line. The gate is recomputed from source basis, so an
+ * illustrative edited line remains blocked. Shared by the PATCH endpoint
+ * (touch edits) and the conversation apply-loop (voice/text edits, F-RH7
+ * stage 6). */
 export function applyRungZeroLineEdit(
   draft: RightHandEstimateDraft,
   lineId: string,
@@ -770,9 +964,105 @@ export function applyRungZeroLineEdit(
     price_cents: extended ?? line.price_cents ?? null,
     flags: [...flags],
   };
-  return {
+  return recomputeEstimateGate({
     ...draft,
-    lines: draft.lines.map((item, i) => (i === idx ? nextLine : item)),
+    lines: recomputeDivisionSubtotals(draft.lines.map((item, i) => (i === idx ? nextLine : item))),
     updated_at: new Date().toISOString(),
+  });
+}
+
+export interface GraduationResult {
+  readonly draft: RightHandEstimateDraft;
+  readonly graduated_line_ids: readonly string[];
+}
+
+export function applyUseHereGraduation(
+  draft: RightHandEstimateDraft,
+  params: {
+    readonly lineIds?: readonly string[];
+    readonly allPricedIllustrative?: boolean;
+    readonly actorId: string;
+    readonly now: Date;
+  },
+): GraduationResult | null {
+  const targetIds = params.allPricedIllustrative === true
+    ? draft.lines.filter((line) => isActivePricedLine(line) && line.source_type !== 'company_data').map((line) => line.id)
+    : [...new Set(params.lineIds ?? [])];
+  if (targetIds.length === 0) return null;
+  const targetSet = new Set(targetIds);
+  const missing = targetIds.filter((id) => !draft.lines.some((line) => line.id === id));
+  if (missing.length > 0) return null;
+  const approvedAt = params.now.toISOString();
+  const nextLines = draft.lines.map((line) => {
+    if (!targetSet.has(line.id)) return line;
+    if (!isActivePricedLine(line)) return null;
+    if (!Number.isInteger(line.unit_cents ?? null) || (line.unit_cents ?? 0) < 0) return null;
+    if (line.quantity !== undefined && !(Number.isFinite(line.quantity) && line.quantity > 0)) return null;
+    const priorSourceRef = line.source_ref;
+    const approvalRef = [
+      'operator-approval',
+      `estimate=${draft.estimate_id}`,
+      `line=${line.id}`,
+      `actor=${params.actorId}`,
+      `at=${approvedAt}`,
+      `prior=${encodeURIComponent(priorSourceRef)}`,
+    ].join(':');
+    const flags = new Set(line.flags);
+    flags.add('operator_graduated');
+    flags.add('approved_for_this_estimate');
+    return {
+      ...line,
+      source_type: 'company_data',
+      source_label: 'Company data',
+      source_ref: approvalRef,
+      source_refs: uniqueStrings(line.source_refs, [approvalRef, priorSourceRef]),
+      tier: 'company',
+      flags: [...flags],
+    } satisfies RightHandEstimateLine;
+  });
+  if (nextLines.some((line) => line === null)) return null;
+  const next = recomputeEstimateGate({
+    ...draft,
+    lines: recomputeDivisionSubtotals(nextLines as RightHandEstimateLine[]),
+    source_refs: uniqueStrings(draft.source_refs, [`right-hand-estimate-graduation:${draft.estimate_id}:${approvedAt}`]),
+    updated_at: approvedAt,
+  });
+  return { draft: next, graduated_line_ids: targetIds };
+}
+
+export function standardFromGraduatedLine(params: {
+  readonly draft: RightHandEstimateDraft;
+  readonly lineId: string;
+  readonly actorId: string;
+  readonly now: Date;
+}): TenantRateStandard | null {
+  const line = params.draft.lines.find((item) => item.id === params.lineId);
+  if (!line || !isActivePricedLine(line)) return null;
+  if (line.source_type !== 'company_data' || !line.flags.includes('operator_graduated')) return null;
+  const unitCents = line.unit_cents;
+  const extendedCents = lineAmountCents(line);
+  if (!Number.isInteger(unitCents) || (unitCents ?? 0) < 0) return null;
+  if (!Number.isInteger(extendedCents) || extendedCents <= 0) return null;
+  if (line.quantity !== undefined && !(Number.isFinite(line.quantity) && line.quantity > 0)) return null;
+  const approvedAt = params.now.toISOString();
+  const standardId = `std_${params.draft.estimate_id}_${line.id}`.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 160);
+  const prior = line.source_refs?.find((ref) => ref !== line.source_ref && !ref.startsWith('operator-approval:'));
+  return {
+    standard_id: standardId,
+    tenant_id: params.draft.tenant_id,
+    estimate_id: params.draft.estimate_id,
+    line_id: line.id,
+    actor_id: params.actorId,
+    approved_at: approvedAt,
+    label: line.label,
+    ...(line.cost_code ? { cost_code: line.cost_code } : {}),
+    ...(line.division ? { division: line.division } : {}),
+    ...(line.quantity !== undefined ? { quantity: line.quantity } : {}),
+    ...(line.uom ? { uom: line.uom } : {}),
+    unit_cents: unitCents ?? 0,
+    extended_cents: extendedCents,
+    source_ref: `tenant-rate-standard:${params.draft.estimate_id}:${line.id}:${approvedAt}`,
+    source_refs: uniqueStrings(line.source_refs, [line.source_ref]),
+    ...(prior ? { prior_source_ref: prior } : {}),
   };
 }

@@ -37,6 +37,7 @@ const rhActiveLines = rhPricedLines.filter((line) => !line.flags.includes('remov
 const rhPrimaryLines = rhActiveLines.filter((line) => !line.flags.includes('suggested'));
 const rhSuggestedLines = rhActiveLines.filter((line) => line.flags.includes('suggested'));
 const rhRemovedLines = rhPricedLines.filter((line) => line.flags.includes('removed'));
+const rhGraduableLines = rhActiveLines.filter((line) => line.source_type !== 'company_data');
 const rhLineGroups = Array.from(rhPrimaryLines.reduce((groups, line) => {
   const code = line.division?.code ?? 'ZZ';
   const label = line.division?.label ?? 'Unassigned';
@@ -107,6 +108,9 @@ const estimateTitle = rightHandDraft
           </a>
           <a class="es-btn" href={`/api/v1/right-hand/estimates/${encodeURIComponent(rightHandEstimateId)}/workbook`} download>Download workbook</a>
           <label class="es-btn es-wb-import">Import workbook<input id="wb-import" type="file" accept=".xlsx" hidden /></label>
+          {rhGraduableLines.length > 0 ? (
+            <button class="es-btn" type="button" id="rh-use-here-all">Use here for priced draft lines</button>
+          ) : null}
           {isLeadStageEstimate && dealId ? (
             <button class="es-btn" id="rh-convert" type="button" data-deal-id={dealId}>Convert to project…</button>
           ) : null}
@@ -181,12 +185,18 @@ const estimateTitle = rightHandDraft
                     <span>{qtyFor(line) || 'Needs quantity'}</span>
                     <span>{typeof line.unit_cents === 'number' ? `${fmt(line.unit_cents)}/${line.uom ?? 'unit'}` : 'Needs rate'}</span>
                     <button class="es-btn es-btn-mini" type="button" data-edit-line={line.id} data-qty={line.quantity ?? ''} data-unit={line.unit_cents ?? ''}>Edit</button>
+                    {line.source_type !== 'company_data' ? (
+                      <button class="es-btn es-btn-mini" type="button" data-use-here-line={line.id}>Use here</button>
+                    ) : (
+                      <button class="es-btn es-btn-mini" type="button" data-save-standard-line={line.id}>Save as standard</button>
+                    )}
                   </div>
                   <div class="es-line-meta">
                     <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
                     {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
                     {line.matched_by ? <span class="es-tag es-match">{line.matched_by === 'line_id' ? 'exact match' : 'matched'}</span> : null}
                     {line.flags.includes('operator_edited') ? <span class="es-tag es-edited">edited</span> : null}
+                    {line.flags.includes('approved_for_this_estimate') ? <span class="es-tag es-approved">approved here</span> : null}
                   </div>
                 </article>
               ))}
@@ -360,6 +370,21 @@ const estimateTitle = rightHandDraft
     return res.json();
   }
 
+  async function postJsonNoDefaultConfirm(url: string, body: Record<string, unknown>): Promise<{ ok?: boolean; operator_message?: string } | null> {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body),
+    });
+    const out = await res.json().catch(() => null) as { ok?: boolean; operator_message?: string; error?: string } | null;
+    if (!res.ok || !out?.ok) {
+      alert(out?.operator_message ?? out?.error ?? `Failed (${res.status}). Nothing was filed or sent.`);
+      return null;
+    }
+    return out;
+  }
+
   // Lead-first card Part 5: tap-edit qty / unit override / remove-restore.
   // D-065 rung-0: server copies tier/source/gate untouched; edits never graduate.
   const estimateIdParam = new URLSearchParams(window.location.search).get('estimate_id') ?? '';
@@ -405,6 +430,42 @@ const estimateTitle = rightHandDraft
     if (!res.ok || !out?.ok) { alert('Workbook rejected: ' + (out?.structural_error ?? res.status)); input.value = ''; return; }
     alert(`Imported — ${out.applied?.length ?? 0} edited, ${out.added?.length ?? 0} added, ${out.removed?.length ?? 0} removed` + ((out.rejected?.length ?? 0) > 0 ? `, ${out.rejected!.length} rejected` : ''));
     window.location.reload();
+  });
+
+  document.getElementById('rh-use-here-all')?.addEventListener('click', async () => {
+    const sure = window.confirm('Use these priced draft rates on this estimate only? This will not save company standards or affect future estimates.');
+    if (!sure) return;
+    const out = await postJsonNoDefaultConfirm(
+      `/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/use-here`,
+      { confirmed: true, target: 'all_priced_illustrative' },
+    );
+    if (out) window.location.reload();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-use-here-line]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const lineId = btn.getAttribute('data-use-here-line') ?? '';
+      const sure = window.confirm('Use this rate on this estimate only? This will not save a standard.');
+      if (!sure) return;
+      const out = await postJsonNoDefaultConfirm(
+        `/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/use-here`,
+        { confirmed: true, line_ids: [lineId] },
+      );
+      if (out) window.location.reload();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-save-standard-line]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const lineId = btn.getAttribute('data-save-standard-line') ?? '';
+      const sure = window.confirm('Save this as a tenant rate standard for future estimates? This is separate from Use here.');
+      if (!sure) return;
+      const out = await postJsonNoDefaultConfirm(
+        `/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/save-rate-standard`,
+        { confirmed: true, consequence: 'tenant_rate_standard', line_ids: [lineId] },
+      );
+      if (out) alert(out.operator_message ?? 'Standard saved.');
+    });
   });
 
   // D-066 conversion: explicit operator action, confirmed, one-way. The
@@ -840,6 +901,11 @@ const estimateTitle = rightHandDraft
   }
 
   .es-source.company_data {
+    color: var(--field-green, #2f8f5b);
+    border-color: color-mix(in srgb, var(--field-green, #2f8f5b) 45%, var(--border, #cfd6e2));
+  }
+
+  .es-approved {
     color: var(--field-green, #2f8f5b);
     border-color: color-mix(in srgb, var(--field-green, #2f8f5b) 45%, var(--border, #cfd6e2));
   }
