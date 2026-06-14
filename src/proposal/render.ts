@@ -269,6 +269,7 @@ export function renderProposalHtml(proposal: ProposalArtifact): string {
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Proposal ${esc(proposal.proposal_number)} — ${esc(proposal.project_name)}</title>
 <style>
 ${PROPOSAL_PRINT_STYLESHEET}

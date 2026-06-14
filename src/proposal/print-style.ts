@@ -359,4 +359,65 @@ body {
     padding: 0;
   }
 }
+
+/*
+ * Phone / narrow-frame reflow.
+ *
+ * The proposal is embedded in a ~360px overflow:hidden iframe on the
+ * money-flow page (estimate/[projectId]/proposal.astro). The letter
+ * layout above relies on fixed-inch column widths (2.5in meta, 1.1in
+ * amounts, 3.5in signature line) and 0.75in/0.5in padding that overflow
+ * a phone frame and get clipped at the right edge. This block reflows the
+ * paper to fit the frame: stacked client/meta, content-sized amounts,
+ * tighter padding, full-width signature underline.
+ *
+ * Scoped to screen-only so the @media print path above (the printable
+ * draft) stays letter-perfect and is intentionally NOT touched.
+ */
+@media screen and (max-width: 600px) {
+  body {
+    padding: 12px;
+  }
+  .kerf-proposal__page {
+    padding: 16px;
+    max-width: 100%;
+  }
+  .kerf-proposal__draft-watermark {
+    font-size: 48pt;
+  }
+  .kerf-proposal__title {
+    font-size: 18pt;
+  }
+  /* Stack the client block above the date/proposal/license meta */
+  .kerf-proposal__client-meta {
+    flex-direction: column;
+    gap: 0.15in;
+  }
+  .kerf-proposal__meta {
+    flex: 1 1 auto;
+    text-align: left;
+  }
+  /* Let amounts size to content and let long descriptions wrap */
+  .kerf-proposal__line,
+  .kerf-proposal__milestone {
+    gap: 0.12in;
+  }
+  .kerf-proposal__line-description,
+  .kerf-proposal__milestone-label {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .kerf-proposal__line-amount,
+  .kerf-proposal__milestone-amount {
+    flex: 0 0 auto;
+  }
+  .kerf-proposal__project-total {
+    font-size: 12pt;
+  }
+  /* Signature underline spans the frame instead of a fixed 3.5in */
+  .kerf-proposal__signature-line {
+    width: 100%;
+    max-width: 3.5in;
+  }
+}
 `.trim();
