@@ -365,6 +365,27 @@ const pulse = homeSections.pulse;
   .rh-tone-money { --tone: var(--kerf-amber); }
   .rh-tone-selection { --tone: var(--kerf-violet); }
   .rh-tone-client { --tone: #67D6E0; }
+  /*
+   * Red-is-chip-tier on Home (D-046): relay block/warn cards stay neutral;
+   * red appears only on the small state chip, never the rail or card surface.
+   */
+  .rh-home .aa-card[data-attention-state='risk_changed'] {
+    --aa-state: var(--kerf-border-soft);
+    border-color: var(--kerf-border-soft);
+    background: var(--kerf-surface);
+  }
+  .rh-home .aa-card--one[data-attention-state='risk_changed'] {
+    border-color: var(--kerf-border-soft);
+    background: var(--kerf-surface);
+  }
+  .rh-home .aa-card[data-attention-state='risk_changed'] .aa-card__rail {
+    background: var(--kerf-border-soft);
+  }
+  .rh-home .aa-card[data-attention-state='risk_changed'] .aa-card__state {
+    border-color: color-mix(in srgb, var(--kerf-red) 38%, var(--kerf-border));
+    background: color-mix(in srgb, var(--kerf-red) 12%, transparent);
+    color: var(--kerf-red);
+  }
   @media (min-width: 760px) {
     .rh-deck {
       grid-template-columns: 1fr 1fr;
