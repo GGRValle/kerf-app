@@ -13,6 +13,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { ShellRoleRoot } from '../contracts/lane1/domains.js';
 import type { PersistenceTenantId } from '../persistence/events.js';
 import { resolveAuthBinding, type AuthBinding } from '../app/lib/roleRootAuth.js';
+import { roleHomePath } from '../app/lib/roleSession.js';
 
 export const SHELL_SESSION_COOKIE = 'kerf_shell_session';
 const SESSION_VERSION = 1;
@@ -84,7 +85,12 @@ export function isAuthExemptPath(pathname: string): boolean {
     pathname === '/sw.js' ||
     pathname === '/icons/192.png' ||
     pathname === '/icons/512.png' ||
-    pathname === '/icons/maskable-512.png'
+    pathname === '/icons/maskable-512.png' ||
+    // The crew login surface itself must be reachable before a session exists
+    // (Goal B PR-2). Exact paths only — never a prefix — so /login/../home/owner
+    // and friends stay gated, same discipline as the PWA assets above.
+    pathname === '/login' ||
+    pathname === '/auth/login'
   );
 }
 
@@ -141,6 +147,18 @@ function verifySignedToken(token: string): ShellAuthSessionPayload | null {
   return payload;
 }
 
+/**
+ * Constant-time string compare for auth tokens/headers (closes the #350
+ * non-blocking note). Length is allowed to leak (standard); the byte content
+ * compare is constant-time. Returns false on any length mismatch.
+ */
+export function timingSafeStringEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a, 'utf8');
+  const bb = Buffer.from(b, 'utf8');
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
+
 export function decodeBasicAuthUsername(authorization: string | undefined): string | null {
   if (!authorization?.startsWith('Basic ')) return null;
   try {
@@ -152,7 +170,7 @@ export function decodeBasicAuthUsername(authorization: string | undefined): stri
     const expected = expectedBasicAuthHeader();
     if (expected === null) return null;
     const actual = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
-    if (actual !== expected) return null;
+    if (!timingSafeStringEqual(actual, expected)) return null;
     return username;
   } catch {
     return null;
@@ -162,7 +180,8 @@ export function decodeBasicAuthUsername(authorization: string | undefined): stri
 export function verifyDeployBasicAuth(authorization: string | undefined): boolean {
   if (!isBasicAuthEnabled()) return true;
   const expected = expectedBasicAuthHeader();
-  return expected !== null && authorization === expected;
+  if (expected === null || authorization === undefined) return false;
+  return timingSafeStringEqual(authorization, expected);
 }
 
 export function resolveBindingFromBasicAuth(authorization: string | undefined): AuthBinding | null {
@@ -221,4 +240,107 @@ export function platformSessionFromShellCookie(
     tenantId: binding.tenantId,
     roleRoot: binding.roleRoot,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Crew login (Goal B PR-2) — a real login surface replaces the browser Basic
+// dialog. The deploy password is the building key; the username is the badge
+// that selects a role WITHIN this deploy's tenant. The session it issues is the
+// same #350 signed cookie above — not a parallel mechanism.
+// ---------------------------------------------------------------------------
+
+/**
+ * The tenant this deploy belongs to, derived from BASIC_AUTH_USER's binding.
+ * Load-bearing for the cross-tenant fence: a deploy mints sessions only for its
+ * own tenant. Returns null when the deploy user is not a known binding (fail
+ * closed — crew login is then disabled and only the exact Basic pair works).
+ */
+export function deployTenantId(): PersistenceTenantId | null {
+  const binding = resolveAuthBinding(process.env['BASIC_AUTH_USER']);
+  return binding?.tenantId ?? null;
+}
+
+/**
+ * Verify a crew login. Returns the principal binding on success, null on any
+ * failure (fail closed).
+ *
+ * Order matters: the constant-time password compare runs first, so timing does
+ * not reveal which usernames exist (usernames are non-secret role names anyway).
+ * The cross-tenant fence is the auth-grade property — a GGR deploy refuses to
+ * authenticate `valle` even with the correct password, so it can never mint a
+ * Valle-bound session. Wall 1 holds on read too: platformSessionFromShellCookie
+ * resolves tenant from the principal, never the cookie payload.
+ */
+export function verifyCrewLogin(username: string, password: string): AuthBinding | null {
+  if (!isBasicAuthEnabled()) return null;
+  const expectedPass = process.env['BASIC_AUTH_PASS'];
+  if (typeof expectedPass !== 'string' || expectedPass.length === 0) return null;
+  if (!timingSafeStringEqual(password, expectedPass)) return null;
+  const binding = resolveAuthBinding(username);
+  if (binding === null) return null;
+  const deployTenant = deployTenantId();
+  if (deployTenant === null || binding.tenantId !== deployTenant) return null;
+  return binding;
+}
+
+/**
+ * Sanitize a post-login redirect target. Only same-origin absolute paths pass —
+ * anything that could leave the origin (protocol-relative //host, an embedded
+ * scheme, backslash tricks, control chars, traversal, or a non-`/` start) is
+ * refused and the caller falls back to the role home. Prevents open redirect.
+ */
+export function safeNextPath(next: string | null | undefined): string | null {
+  if (typeof next !== 'string' || next.length === 0 || next.length > 512) return null;
+  if (!next.startsWith('/')) return null;       // must be absolute-local
+  if (next.startsWith('//')) return null;       // protocol-relative → off-origin
+  if (next.includes('\\')) return null;         // backslash → browser may treat as /
+  if (next.includes('://')) return null;        // embedded scheme
+  if (next.includes('..')) return null;         // no traversal in redirects
+  if ([...next].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) === 0x7f)) return null; // control chars / CR-LF splitting
+  return next;
+}
+
+export interface CrewLoginInput {
+  readonly username: string;
+  readonly password: string;
+  readonly next?: string | null;
+  readonly requestSecure?: boolean;
+  /** Origin header — login-CSRF guard; when present it must match host. */
+  readonly origin?: string | null;
+  readonly host?: string | null;
+}
+
+export interface CrewLoginResult {
+  readonly status: number;
+  readonly location: string;
+  /** Signed session Set-Cookie on success; null on failure (no session minted). */
+  readonly setCookie: string | null;
+}
+
+/**
+ * Pure core of the crew-login POST: credential → redirect decision + Set-Cookie.
+ * Kept free of Request/Response so it is exhaustively unit-testable; the Astro
+ * endpoint is a thin wrapper that parses the form and emits the Response.
+ */
+export function buildCrewLoginResponse(input: CrewLoginInput): CrewLoginResult {
+  const fail: CrewLoginResult = { status: 303, location: '/login?error=1', setCookie: null };
+  // Login-CSRF guard: a cross-site form post carries an off-origin Origin header.
+  if (input.origin) {
+    let originHost: string | null = null;
+    try {
+      originHost = new URL(input.origin).host;
+    } catch {
+      originHost = null;
+    }
+    if (originHost === null || input.host === null || input.host === undefined || originHost !== input.host) {
+      return fail;
+    }
+  }
+  const binding = verifyCrewLogin(input.username, input.password);
+  if (binding === null) return fail;
+  const signed = issueShellSessionCookie(binding, binding.username);
+  if (signed === null) return fail; // no session secret → cannot mint; fail closed
+  const setCookie = shellSessionSetCookieHeader(signed, { requestSecure: input.requestSecure ?? false });
+  const dest = safeNextPath(input.next) ?? roleHomePath(binding.roleRoot);
+  return { status: 303, location: dest, setCookie };
 }
