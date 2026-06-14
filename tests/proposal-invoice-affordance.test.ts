@@ -188,6 +188,20 @@ test('M1: ready proposal affordance routes to the framed proposal PAGE, not the 
   assert.ok(!action.route.startsWith('/api/v1/'), 'must not be the raw API render');
 });
 
+test('M2: ready invoice affordance routes to the framed invoice PAGE, carrying milestone', () => {
+  const draft = estimateDraft({
+    gate: { fired: true, allowed: true, blocked_reasons: [] },
+    lines: [line({ source_type: 'company_data', source_label: 'Company data', tier: 'company', confidence: 'HIGH' })],
+  });
+  const action = evaluateEstimateArtifactAction({ draft, intent: 'down_payment_invoice', now: NOW });
+  assert.equal(action.status, 'ready_for_review');
+  if (action.status !== 'ready_for_review') return;
+  assert.ok(action.route.startsWith(`/estimate/${draft.project_id}/invoice`), `page route, got: ${action.route}`);
+  assert.match(action.route, /[?&]estimate_id=est_affordance/);
+  assert.match(action.route, /[?&]milestone=down_payment/);
+  assert.ok(!action.route.startsWith('/api/v1/'), 'must not be the raw API render');
+});
+
 test('parked estimate conversation returns honest blocked proposal and invoice states', async () => {
   const store = createMemoryRightHandEstimateStore();
   await store.save(estimateDraft());

@@ -135,7 +135,10 @@ export function evaluateEstimateArtifactAction(params: {
       status: 'ready_for_review',
       intent,
       artifact_state: 'draft',
-      route: `/api/v1/right-hand/estimates/${encodeURIComponent(draft.estimate_id)}/invoice?milestone=down_payment`,
+      // M2 — route to the framed invoice PAGE (money summary + embedded
+      // printable + back-links), not the raw API render. Same path-segment
+      // guard as the proposal page.
+      route: `/estimate/${encodeURIComponent(draft.project_id)}/invoice?estimate_id=${encodeURIComponent(draft.estimate_id)}&milestone=down_payment${draft.conversation_id ? `&rh_conversation=${encodeURIComponent(draft.conversation_id)}` : ''}`,
       operator_message: 'Down-payment invoice draft is ready for review. Nothing has been sent, posted, or charged.',
       next_action: 'Open invoice draft',
       blocked_reasons: [],
