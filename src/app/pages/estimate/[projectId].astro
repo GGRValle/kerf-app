@@ -149,18 +149,18 @@ const estimateTitle = rightHandDraft
     <form class="es-add" id="add-form" hidden>
       <input id="ln-label" placeholder="Label" />
       <select id="ln-type">
-        <option value="material">material</option>
-        <option value="labor">labor</option>
-        <option value="product">product</option>
-        <option value="allowance">allowance</option>
-        <option value="subcontract">subcontract</option>
-        <option value="equipment">equipment</option>
-        <option value="fee">fee</option>
-        <option value="markup">markup (internal)</option>
+        <option value="material">Material</option>
+        <option value="labor">Labor</option>
+        <option value="product">Product</option>
+        <option value="allowance">Allowance</option>
+        <option value="subcontract">Subcontractor</option>
+        <option value="equipment">Equipment</option>
+        <option value="fee">Fee</option>
+        <option value="markup">Markup (internal)</option>
       </select>
       <input id="ln-qty" type="number" step="0.01" min="0" value="1" placeholder="Qty" />
-      <input id="ln-cost" type="number" step="1" min="0" placeholder="Unit cost (cents)" />
-      <input id="ln-markup" type="number" step="1" min="0" value="3000" placeholder="Markup bps" />
+      <input id="ln-cost" type="number" step="0.01" min="0" placeholder="Unit cost ($)" />
+      <input id="ln-markup" type="number" step="0.1" min="0" value="30" placeholder="Markup %" />
       <button class="es-btn primary" id="add-go" type="button">Add</button>
     </form>
     </details>
@@ -170,7 +170,7 @@ const estimateTitle = rightHandDraft
       <div class="es-section-head">
         <div>
           <h2>Included lines</h2>
-          <p class="es-meta">Grouped by Kerf division. Tap Edit to adjust this draft only.</p>
+          <p class="es-meta">Grouped by trade division. Tap Edit to adjust this draft only.</p>
         </div>
         {rightHandDraft ? <span class="es-pill">{fmt(rhTotalCents)}</span> : null}
       </div>
@@ -534,9 +534,14 @@ const estimateTitle = rightHandDraft
     const label = (document.getElementById('ln-label') as HTMLInputElement).value.trim();
     const line_type = (document.getElementById('ln-type') as HTMLSelectElement).value;
     const quantity = parseFloat((document.getElementById('ln-qty') as HTMLInputElement).value || '1');
-    const unit_cost_cents = parseInt((document.getElementById('ln-cost') as HTMLInputElement).value || '', 10);
-    const markup_bps = parseInt((document.getElementById('ln-markup') as HTMLInputElement).value || '0', 10);
-    if (!label || !Number.isInteger(unit_cost_cents)) { alert('Label and integer cents cost required.'); return; }
+    // Operator enters dollars + percent (same convention as the Edit prompt
+    // above); convert to the stored integer cents / basis points before POST.
+    // The API contract (unit_cost_cents / markup_bps) is unchanged.
+    const unitDollars = parseFloat((document.getElementById('ln-cost') as HTMLInputElement).value || '');
+    const markupPct = parseFloat((document.getElementById('ln-markup') as HTMLInputElement).value || '0');
+    const unit_cost_cents = Math.round(unitDollars * 100);
+    const markup_bps = Math.round((Number.isNaN(markupPct) ? 0 : markupPct) * 100);
+    if (!label || Number.isNaN(unitDollars)) { alert('Label and a unit cost (in dollars) are required.'); return; }
     const client_visible = line_type !== 'markup';
     const out = await post(`/api/v1/estimate/${projectId}/lines`, { label, line_type, quantity, unit_cost_cents, markup_bps, client_visible }, `Add line "${label}"?`);
     if (out) window.location.reload();

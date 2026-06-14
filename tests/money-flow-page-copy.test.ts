@@ -97,6 +97,43 @@ test('M3: estimate page keeps the gate/blocked state visible and translated', ()
   assert.match(src, /operatorFacingBlockedReasons|approve rates first|Draft only/i);
 });
 
+// ── Operator-facing language: remove developer units / raw enums / internal
+// brand from the estimate builder (acceptance: "remove remaining technical/
+// internal language from user-facing UI"). The money fields on the wire are
+// unchanged — the operator just enters dollars + percent. ──
+
+test('M3: estimate add-line form speaks dollars + percent, not raw cents/bps', () => {
+  const src = pageText(PAGES.estimate);
+  // No developer units in the visible form.
+  assert.ok(!/Unit cost \(cents\)/.test(src), 'no raw "cents" unit in the add form');
+  assert.ok(!/Markup bps/.test(src), 'no raw "bps" jargon in the add form');
+  // Operator-facing units instead.
+  assert.match(src, /placeholder="Unit cost \(\$\)"/);
+  assert.match(src, /placeholder="Markup %"/);
+  // Conversion to the stored integer cents / basis points happens client-side
+  // before POST, so the API contract (and every money path) is unchanged.
+  assert.match(src, /Math\.round\(unitDollars \* 100\)/);
+  assert.match(src, /markup_bps = Math\.round/);
+  assert.match(src, /unit_cost_cents, markup_bps/);
+});
+
+test('M3: estimate line-type options are human-cased, not raw lowercase enums', () => {
+  const src = pageText(PAGES.estimate);
+  for (const label of ['Material', 'Labor', 'Subcontractor', 'Markup (internal)']) {
+    assert.ok(src.includes(`>${label}<`), `type option "${label}" should be human-cased`);
+  }
+  // Raw lowercase option labels are gone (the <option value> stays lowercase;
+  // only the visible text is cased).
+  assert.ok(!/>material<\/option>/.test(src), 'no raw lowercase "material" option label');
+  assert.ok(!/>markup \(internal\)<\/option>/.test(src), 'no raw lowercase "markup (internal)" label');
+});
+
+test('M3: estimate page drops the internal "Kerf division" brand from operator copy', () => {
+  const src = pageText(PAGES.estimate);
+  assert.ok(!/Kerf division/i.test(src), 'no internal "Kerf division" in visible copy');
+  assert.match(src, /Grouped by trade division/);
+});
+
 // ── Mobile-usability invariants (acceptance: no cramped tables, no overflow,
 // clear stacking actions). Pins the failure modes the layout audit checked. ──
 
