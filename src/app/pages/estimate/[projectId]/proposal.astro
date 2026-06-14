@@ -44,9 +44,9 @@ const blockedReason = outcome.status === 'blocked'
     {conversationBack ? <a class="pp-back pp-back-secondary" href={conversationBack}>‹ Back to conversation</a> : null}
 
     <header class="pp-hero">
-      <div class="pp-crumb">Proposal draft · not sent</div>
+      <div class="pp-crumb">Proposal preview · pre-contract</div>
       <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
-      <p class="pp-sub">Preview built from the estimate. Send is a separate confirmation.</p>
+      <p class="pp-sub">This is what your client sees before signing. Nothing is sent until you choose to — sending is a separate, confirmed step.</p>
     </header>
 
     {outcome.status === 'blocked' ? (

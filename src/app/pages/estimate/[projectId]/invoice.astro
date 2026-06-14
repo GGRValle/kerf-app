@@ -123,10 +123,15 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
   .iv-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
   .iv-sub, .iv-note { color: var(--text-muted, #6a7282); line-height: 1.45; }
   .iv-money { margin: 0.5rem 0 0; display: grid; gap: 0.35rem; }
-  .iv-money > div { display: flex; justify-content: space-between; gap: 1rem; }
+  .iv-money > div { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
   .iv-money dt { color: var(--text-muted, #6a7282); }
   .iv-money dd { margin: 0; font-variant-numeric: tabular-nums; }
-  .iv-money-due { border-top: 1px solid var(--border, #d8dee6); padding-top: 0.35rem; font-weight: 700; }
+  /* Amount due is the money anchor (wireframe total-emphasis pattern). */
+  .iv-money-due { margin-top: 0.5rem; padding: 0.6rem 0.75rem; border-radius: 9px;
+    background: color-mix(in srgb, var(--right-hand, #c9a961) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--right-hand, #c9a961) 40%, var(--border, #d8dee6)); }
+  .iv-money-due dt { color: var(--text, inherit); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; }
+  .iv-money-due dd { font-weight: 800; font-size: 1.25rem; color: var(--text, inherit); }
   .iv-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; overflow: hidden; }
   .iv-paper-html { width: 100%; min-height: 420px; border: 0; display: block; }
   .iv-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
