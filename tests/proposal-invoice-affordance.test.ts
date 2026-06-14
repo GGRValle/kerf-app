@@ -142,6 +142,14 @@ test('ready proposal and invoice routes render drafts only after the existing ga
   const store = createMemoryRightHandEstimateStore();
   await store.save(estimateDraft({
     gate: { fired: true, allowed: true, blocked_reasons: [] },
+    lines: [
+      line({
+        source_type: 'company_data',
+        source_label: 'Company data',
+        tier: 'company',
+        confidence: 'HIGH',
+      }),
+    ],
     pricing_data_label: 'Approved rates for this estimate',
   }));
   __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store });

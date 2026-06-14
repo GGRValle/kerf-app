@@ -62,7 +62,7 @@ import { createFixtureTenantStore } from '../../tenant/index.js';
 import { upsertEstimatingDeal, dealById, markDealConverted } from '../../sales/index.js';
 import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
-import { buildProposalFromRightHandEstimate, type ProposalProjectionResult } from '../lib/estimateProposalProjection.js';
+import { projectProposalFromEstimate } from '../lib/estimateProposalProjection.js';
 import { buildInvoiceFromRightHandEstimate, renderInvoiceHtml, type InvoiceProjectionResult } from '../lib/estimateInvoiceProjection.js';
 import {
   estimateArtifactIntentFromProposedAction,
@@ -1087,36 +1087,31 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) 
   const tenant = requireApiTenant(c);
   const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
-  const gate = evaluateEstimateArtifactAction({
-    draft,
-    intent: 'proposal_draft',
-    now: resolveDeps().now?.() ?? new Date(),
-  });
-  if (gate.status === 'blocked') {
+  const outcome = projectProposalFromEstimate(draft, { now: resolveDeps().now?.() ?? new Date() });
+  if (outcome.status === 'blocked') {
     return c.json({
       error: 'proposal_source_basis_blocked',
-      artifact_state: gate.artifact_state,
-      operator_message: gate.operator_message,
-      next_action: gate.next_action,
-      blocked_reasons: gate.blocked_reasons,
+      artifact_state: 'blocked',
+      operator_message: 'I can build that proposal after these rates are approved for this estimate. Use them here first?',
+      next_action: outcome.next_action,
+      blocked_reasons: outcome.operator_annex.blocked_reasons.length
+        ? outcome.operator_annex.blocked_reasons
+        : ['source_basis_required'],
+      operator_annex: outcome.operator_annex,
+      reason: outcome.reason,
     }, 409);
   }
-  let projection: ProposalProjectionResult;
-  try {
-    projection = buildProposalFromRightHandEstimate(draft, { now: resolveDeps().now?.() ?? new Date() });
-  } catch (err) {
-    return c.json({
-      error: 'proposal_projection_failed',
-      reason: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
-      operator_message: 'The proposal draft could not be built from this estimate. Nothing was filed or sent.',
-    }, 422);
-  }
+  const projection = outcome;
   if (c.req.query('format') === 'json') {
     return c.json({
       ok: true,
+      status: 'ready',
       proposal: projection.proposal,
       held_back: projection.held_back,
       rendered_line_ids: projection.rendered_line_ids,
+      operator_annex: projection.operator_annex,
+      estimate_id: draft.estimate_id,
+      route: draft.route,
     });
   }
   c.header('Content-Type', 'text/html; charset=utf-8');

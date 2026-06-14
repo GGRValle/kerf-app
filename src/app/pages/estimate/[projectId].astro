@@ -297,7 +297,7 @@ const estimateTitle = rightHandDraft
       <div class="es-section-head">
         <div>
           <h2>Client draft actions</h2>
-          <p class="es-meta">Drafts only. Sending, filing, charging, or posting is a separate confirmation.</p>
+          <p class="es-meta">Drafts only — send requires your review. Filing, charging, or posting is a separate confirmation.</p>
         </div>
         {rightHandDraft ? <span class="es-pill">{proposalAction?.status === 'ready_for_review' ? 'Ready' : 'Blocked'}</span> : null}
       </div>
@@ -461,15 +461,16 @@ const estimateTitle = rightHandDraft
     if (out) window.location.reload();
   });
 
-  document.getElementById('gen-proposal')?.addEventListener('click', async () => {
-    const out = await post(`/api/v1/estimate/${projectId}/generate-proposal`, {}, 'Generate a proposal draft from this estimate?');
-    if (out) {
-      const el = document.getElementById('draft-result') as HTMLElement;
-      el.hidden = false;
-      el.innerHTML = `<strong>Draft created.</strong> ${out.attention.headline}.
-        <br/>Total $${(out.draft.client_total_cents / 100).toFixed(2)} · send requires your review
-        <br/><a href="${out.draft.surface_route}">Open proposal draft ›</a>`;
+  document.getElementById('gen-proposal')?.addEventListener('click', () => {
+    const estimateIdParam = new URLSearchParams(window.location.search).get('estimate_id');
+    if (!estimateIdParam) {
+      alert('Open this estimate from Right Hand first.');
+      return;
     }
+    const rhConversation = new URLSearchParams(window.location.search).get('rh_conversation') ?? '';
+    const qs = new URLSearchParams({ estimate_id: estimateIdParam });
+    if (rhConversation) qs.set('rh_conversation', rhConversation);
+    window.location.href = `/estimate/${encodeURIComponent(projectId)}/proposal?${qs.toString()}`;
   });
 </script>
 

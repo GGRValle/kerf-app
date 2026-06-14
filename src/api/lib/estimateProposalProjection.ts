@@ -7,10 +7,9 @@
  *   1. RENDER FENCE: rank-7 content (MODEL_INFERENCE — unpriced, unmatched,
  *      placeholder) and unapproved KERF_SEED suggestions NEVER reach a
  *      client-facing artifact. Held-back lines return in an operator-only
- *      annex, never silently dropped. (Suggested lines carry no positive
- *      "kept" marker on the artifact today — keep is an event, not a line
- *      mutation — so ALL still-suggested lines are held back pending an
- *      operator edit/confirm. Conservative beats fabricated approval.)
+ *      annex, never silently dropped. Ungraduated illustrative/model-knowledge
+ *      priced lines (D-065) do NOT render as client-authoritative until the
+ *      operator graduates rates.
  *
  *   2. TIE-OUT TO THE PENNY: proposal subtotal === total === the sum of the
  *      rendered estimate lines === payment schedule sum. Any mismatch throws;
@@ -18,11 +17,6 @@
  *
  *   3. DRAFT, NEVER SENT: the projection produces a draft artifact. The send
  *      wall (sendGate) is a separate, untouched consequence edge.
- *
- * Division mapping: estimate lines carry Kerf divisions (KD-xx). The
- * client-facing proposal groups by broad 2-digit CSI-compatible divisions
- * (existing validator contract); each KD division becomes a labeled SECTION
- * inside its CSI group, so Kerf granularity survives the regrouping.
  */
 import type { RightHandEstimateDraft, RightHandEstimateLine } from './rightHandAssemblyStore.js';
 import { isTenantRateCardSourceRef } from '../../estimator/rateCard.js';
@@ -52,48 +46,234 @@ const KD_TO_CSI: Readonly<Record<string, string>> = {
   'KD-16': '23', 'KD-17': '26', 'KD-18': '31', 'KD-19': '01',
 };
 
+export type HeldBackReason =
+  | 'model_inference_unpriced'
+  | 'suggestion_pending_review'
+  | 'removed'
+  | 'rates_not_graduated'
+  | 'internal_vocabulary';
 
 export interface HeldBackLine {
+  readonly line_id?: string;
   readonly label: string;
   readonly amount_cents: number;
-  readonly reason: 'model_inference_unpriced' | 'suggestion_pending_review' | 'removed';
+  readonly reason: HeldBackReason;
+}
+
+export interface OperatorAnnex {
+  readonly held_back: readonly HeldBackLine[];
+  readonly open_questions: readonly string[];
+  readonly blocked_reasons: readonly string[];
+  readonly ungraduated_line_ids: readonly string[];
 }
 
 export interface ProposalProjectionResult {
   readonly proposal: ProposalArtifact;
-  /** Operator-only annex: everything the render fence held back, and why. */
   readonly held_back: readonly HeldBackLine[];
-  /** The estimate lines that rendered (audit: the tie-out base). */
   readonly rendered_line_ids: readonly string[];
+  readonly operator_annex: OperatorAnnex;
 }
+
+export interface ProposalProjectionBlocked {
+  readonly status: 'blocked';
+  readonly reason: string;
+  readonly next_action: string;
+  readonly operator_annex: OperatorAnnex;
+}
+
+export interface ProposalProjectionReady extends ProposalProjectionResult {
+  readonly status: 'ready';
+}
+
+export type ProposalProjectionOutcome = ProposalProjectionBlocked | ProposalProjectionReady;
+
+const INTERNAL_VOCABULARY = /MODEL_INFERENCE|KERF_SEED|source_basis_required|\brh_/i;
 
 const lineAmount = (line: RightHandEstimateLine): number =>
   line.extended_cents ?? line.price_cents ?? 0;
 
 const isPriced = (line: RightHandEstimateLine): boolean => lineAmount(line) > 0;
 
+const isSuggestedLine = (line: RightHandEstimateLine): boolean =>
+  line.flags.includes('suggested') || line.suggested === true;
+
+const isClientCandidate = (line: RightHandEstimateLine): boolean =>
+  !line.flags.includes('removed') && !isSuggestedLine(line) && isPriced(line);
+
+/** Internal vocabulary must never appear in a client-facing render body. */
+export function containsInternalVocabulary(text: string): boolean {
+  return INTERNAL_VOCABULARY.test(text) || /kerf:\/\//i.test(text);
+}
+
 /**
- * Rank-7 discriminator (live-drive finding, 2026-06-11): the artifact's
- * `source_type` is the legacy UI vocabulary — rung-0 seed-priced lines carry
- * 'model_knowledge' because the TENANT hasn't graduated the rates, which is
- * a D-065 statement, not a D-068 rank. The D-068 rank test is PRICE BASIS:
- * a price that traces to the seed library (kerf://kerf-seed/rate-card/…),
- * an allowance, or an operator action (edit/import) has a basis and renders
- * in the PRELIMINARY draft — the send wall stays the consequence gate. A
- * priced line with NO traceable basis is model-invented (rank 7) and never
- * renders client-facing.
+ * D-065 graduation fence: seed-priced illustrative lines are NOT
+ * client-authoritative until the operator graduates rates (company tier or
+ * explicit operator action). Allowances always render as named allowances.
+ */
+export function isGraduatedClientLine(line: RightHandEstimateLine): boolean {
+  if (!isPriced(line)) return true;
+  if (line.source_type === 'allowance') return true;
+  if (line.tier === 'company') return true;
+  if (
+    line.flags.includes('operator_edited')
+    || line.flags.includes('voice_edited')
+    || line.flags.includes('workbook_added')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Rank-7 discriminator: priced lines need a traceable price basis. Basis-less
+ * prices are model-invented and never render client-facing.
  */
 const hasPriceBasis = (line: RightHandEstimateLine): boolean =>
-  isTenantRateCardSourceRef(line.source_ref) ||
-  line.source_type === 'allowance' ||
-  line.flags.includes('operator_edited') ||
-  line.flags.includes('voice_edited') ||
-  line.flags.includes('workbook_added');
+  isTenantRateCardSourceRef(line.source_ref)
+  || line.source_type === 'allowance'
+  || line.flags.includes('operator_edited')
+  || line.flags.includes('voice_edited')
+  || line.flags.includes('workbook_added');
 
-/** CA §7159: down payment may not exceed $1,000 or 10% of contract price,
- * whichever is LESS. */
+function classifyLine(line: RightHandEstimateLine): { render: true } | { render: false; held: HeldBackLine } {
+  if (line.flags.includes('removed')) {
+    return {
+      render: false,
+      held: { line_id: line.id, label: line.label, amount_cents: lineAmount(line), reason: 'removed' },
+    };
+  }
+  if (!isPriced(line) || !hasPriceBasis(line)) {
+    return {
+      render: false,
+      held: { line_id: line.id, label: line.label, amount_cents: 0, reason: 'model_inference_unpriced' },
+    };
+  }
+  if (containsInternalVocabulary(line.label) || containsInternalVocabulary(line.description)) {
+    return {
+      render: false,
+      held: { line_id: line.id, label: line.label, amount_cents: lineAmount(line), reason: 'internal_vocabulary' },
+    };
+  }
+  if (isSuggestedLine(line)) {
+    return {
+      render: false,
+      held: { line_id: line.id, label: line.label, amount_cents: lineAmount(line), reason: 'suggestion_pending_review' },
+    };
+  }
+  if (!isGraduatedClientLine(line)) {
+    return {
+      render: false,
+      held: { line_id: line.id, label: line.label, amount_cents: lineAmount(line), reason: 'rates_not_graduated' },
+    };
+  }
+  return { render: true };
+}
+
+export function buildOperatorAnnex(
+  draft: RightHandEstimateDraft,
+  heldBack: readonly HeldBackLine[],
+): OperatorAnnex {
+  const ungraduated = draft.lines.filter((line) => isClientCandidate(line) && !isGraduatedClientLine(line));
+  return {
+    held_back: heldBack,
+    open_questions: draft.open_questions ?? draft.open_items,
+    blocked_reasons: draft.gate.blocked_reasons,
+    ungraduated_line_ids: ungraduated.map((line) => line.id),
+  };
+}
+
+export function assessProposalReadiness(draft: RightHandEstimateDraft): {
+  readonly ready: boolean;
+  readonly reason: string;
+  readonly next_action: string;
+  readonly ungraduated_line_ids: readonly string[];
+} {
+  const ungraduated = draft.lines.filter((line) => isClientCandidate(line) && !isGraduatedClientLine(line));
+  if (!draft.gate.allowed) {
+    return {
+      ready: false,
+      reason: `Estimate gate blocked: ${draft.gate.blocked_reasons.join(', ') || 'review required'}`,
+      next_action: 'Approve or use company rates on illustrative lines before generating a client-facing proposal.',
+      ungraduated_line_ids: ungraduated.map((line) => line.id),
+    };
+  }
+  if (ungraduated.length > 0) {
+    return {
+      ready: false,
+      reason: `${ungraduated.length} illustrative line(s) need rate graduation before a client proposal can render.`,
+      next_action: 'Approve or use company rates on illustrative lines before generating a client-facing proposal.',
+      ungraduated_line_ids: ungraduated.map((line) => line.id),
+    };
+  }
+  return {
+    ready: true,
+    reason: '',
+    next_action: '',
+    ungraduated_line_ids: [],
+  };
+}
+
+/** Scan a built artifact — throws if internal vocabulary leaked into client copy. */
+export function assertClientArtifactClean(proposal: ProposalArtifact): void {
+  const texts: string[] = [
+    proposal.scope_of_work_narrative,
+    ...proposal.allowances,
+    ...proposal.exclusions,
+    ...proposal.divisions.flatMap((division) => [
+      division.label,
+      ...division.sections.flatMap((section) => [
+        section.label ?? '',
+        ...section.lines.flatMap((line) => [line.description, line.notes ?? '']),
+      ]),
+    ]),
+  ];
+  for (const text of texts) {
+    if (containsInternalVocabulary(text)) {
+      throw new ProposalProjectionError(`client body contains internal vocabulary: ${text.slice(0, 80)}`);
+    }
+  }
+}
+
+/** CA §7159: down payment may not exceed $1,000 or 10% of contract price, whichever is LESS. */
 export function caDownPaymentCents(totalCents: number): number {
   return Math.min(100_000, Math.floor(totalCents * 0.10));
+}
+
+/**
+ * Entry point: blocked when the estimate is not graduated / gate-blocked;
+ * ready when a client-clean draft artifact can be built. Never mutates the
+ * estimate or library.
+ */
+export function projectProposalFromEstimate(
+  draft: RightHandEstimateDraft,
+  opts: { readonly now: Date; readonly proposalNumber?: string },
+): ProposalProjectionOutcome {
+  const heldBack: HeldBackLine[] = [];
+  for (const line of draft.lines) {
+    const verdict = classifyLine(line);
+    if (!verdict.render) heldBack.push(verdict.held);
+  }
+  const annex = buildOperatorAnnex(draft, heldBack);
+  const readiness = assessProposalReadiness(draft);
+  if (!readiness.ready) {
+    return {
+      status: 'blocked',
+      reason: readiness.reason,
+      next_action: readiness.next_action,
+      operator_annex: annex,
+    };
+  }
+  try {
+    const built = buildProposalFromRightHandEstimate(draft, opts);
+    return { status: 'ready', ...built };
+  } catch (err) {
+    return {
+      status: 'blocked',
+      reason: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+      next_action: 'Review held-back lines and estimate totals, then try again. Nothing was filed or sent.',
+      operator_annex: annex,
+    };
+  }
 }
 
 export function buildProposalFromRightHandEstimate(
@@ -104,22 +284,9 @@ export function buildProposalFromRightHandEstimate(
   const renderable: RightHandEstimateLine[] = [];
 
   for (const line of draft.lines) {
-    if (line.flags.includes('removed')) {
-      heldBack.push({ label: line.label, amount_cents: lineAmount(line), reason: 'removed' });
-      continue;
-    }
-    if (!isPriced(line) || !hasPriceBasis(line)) {
-      // Rank-7 / unpriced / basis-less content: zero presence on
-      // client-facing artifacts.
-      heldBack.push({ label: line.label, amount_cents: 0, reason: 'model_inference_unpriced' });
-      continue;
-    }
-    if (line.flags.includes('suggested') || line.suggested === true) {
-      heldBack.push({
-        label: line.label,
-        amount_cents: lineAmount(line),
-        reason: 'suggestion_pending_review',
-      });
+    const verdict = classifyLine(line);
+    if (!verdict.render) {
+      heldBack.push(verdict.held);
       continue;
     }
     renderable.push(line);
@@ -131,7 +298,6 @@ export function buildProposalFromRightHandEstimate(
     );
   }
 
-  // ── Group: KD sections inside broad CSI divisions ─────────────────────
   const byCsi = new Map<string, Map<string, RightHandEstimateLine[]>>();
   for (const line of renderable) {
     const kd = line.division?.code ?? 'KD-19';
@@ -158,8 +324,6 @@ export function buildProposalFromRightHandEstimate(
             unit_cents: line.unit_cents && line.unit_cents > 0 ? line.unit_cents : lineAmount(line),
             extended_cents: lineAmount(line),
             notes: '',
-            // Labor+materials blended seed lines: taxability is an operator
-            // call at proposal review, never auto-asserted by the projection.
             is_materials_taxable: false,
             scaffold_provenance: null,
             ...(line.cost_code ? { cost_code: line.cost_code } : {}),
@@ -180,16 +344,13 @@ export function buildProposalFromRightHandEstimate(
   const subtotal = divisions.reduce((s, d) => s + d.subtotal_cents, 0);
   const estimateIncludedTotal = renderable.reduce((s, l) => s + lineAmount(l), 0);
 
-  // ── Tie-out 1: projection === estimate included subset, to the penny ──
   if (subtotal !== estimateIncludedTotal) {
     throw new ProposalProjectionError(
       `tie-out failed: divisions sum ${subtotal} != estimate included sum ${estimateIncludedTotal}`,
     );
   }
 
-  const total = subtotal; // draft projection: no tax line until the operator sets treatment
-
-  // ── Payment skeleton: §7159 down payment + balance-at-completion ──────
+  const total = subtotal;
   const down = caDownPaymentCents(total);
   const paymentSchedule: PaymentMilestone[] = [
     { milestone_id: `pm_${draft.estimate_id}_down`, label: 'Down payment (due at signing)', amount_cents: down, kind: 'down_payment' },
@@ -215,7 +376,7 @@ export function buildProposalFromRightHandEstimate(
     decision_packet_id: null,
     proposal_number: opts.proposalNumber ?? `GGR-${opts.now.getUTCFullYear()}-DRAFT`,
     cslb_license_number: GGR_BRANDING.cslb_license_number,
-    status: 'draft',
+    status: 'draft' as const,
     project_name: clientName,
     project_address_lines: [],
     client: {
@@ -226,12 +387,12 @@ export function buildProposalFromRightHandEstimate(
       designer_of_record: null,
     },
     scope_of_work_narrative:
-      `PRELIMINARY — generated from the lead-stage estimate draft. ${clientName}: ` +
-      divisions.map((d) => d.label.toLowerCase()).join(', ') +
-      '. Line pricing reflects the working estimate; final scope and selections to be confirmed with the client before signing.',
+      `PRELIMINARY — generated from the lead-stage estimate draft. ${clientName}: `
+      + divisions.map((d) => d.label.toLowerCase()).join(', ')
+      + '. Line pricing reflects the working estimate; final scope and selections to be confirmed with the client before signing.',
     divisions,
     subtotal_cents: subtotal,
-    tax_treatment: 'none',
+    tax_treatment: 'none' as const,
     tax_cents: 0,
     total_cents: total,
     allowances: allowanceLabels,
@@ -242,28 +403,28 @@ export function buildProposalFromRightHandEstimate(
     issue_date: issueDate,
     valid_until_date: validUntil,
     source_refs: [
-      { kind: 'doc', uri: `kerf://estimate/${draft.estimate_id}`, excerpt: `projection of ${renderable.length} included lines` },
+      { kind: 'doc' as const, uri: `kerf://estimate/${draft.estimate_id}`, excerpt: `projection of ${renderable.length} included lines` },
     ],
     created_at: issueDate,
     updated_at: issueDate,
-    // Projection is system-rendered; the operator becomes the actor when
-    // they edit/accept. Lock fields stay null until the accepted transition.
     created_by: { id: 'right_hand_projection', role: 'owner' as const },
     signatory_name: GGR_BRANDING.default_signatory_name,
     locked_at: null,
     locked_by: null,
   };
 
-  // ── Final gate: the existing proposal validator (§7159 caps, division
-  // math, structure). A projection that fails validation never leaves. ───
+  assertClientArtifactClean(proposal);
+
   const verdict = validateProposal(proposal);
   if (!verdict.ok) {
     throw new ProposalProjectionError(`validateProposal rejected the projection: ${verdict.errors.slice(0, 3).join(' | ')}`);
   }
 
+  const operator_annex = buildOperatorAnnex(draft, heldBack);
   return {
     proposal: verdict.proposal,
     held_back: heldBack,
     rendered_line_ids: renderable.map((l) => l.id),
+    operator_annex,
   };
 }
