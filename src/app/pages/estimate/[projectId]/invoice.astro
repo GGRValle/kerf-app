@@ -1,0 +1,136 @@
+---
+// D-068 · Down-payment invoice projection from Right Hand estimate ·
+// /estimate/:projectId/invoice  (Goal M2 — invoice gets a real page)
+//
+// Parallel to proposal.astro: framed page (money summary + embedded
+// printable + back-links), guards the same draft.project_id===projectId,
+// and blocks honestly when the estimate is ungraduated. The projection
+// fences (§7159 cap, proposal-basis render fence) live in the projection
+// module — this page only renders what it returns.
+import Layout from '../../../layouts/Layout.astro';
+import Card from '../../../components/Card.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
+import {
+  buildInvoiceFromRightHandEstimate,
+  renderInvoiceHtml,
+  InvoiceProjectionError,
+  type EstimateInvoiceProjection,
+} from '../../../../api/lib/estimateInvoiceProjection.js';
+import { operatorFacingBlockedReasons } from '../../../lib/operatorFacingReasons.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const projectId = Astro.params.projectId ?? '';
+const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
+const conversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
+const milestone = Astro.url.searchParams.get('milestone') === 'final' ? 'final' : 'down_payment';
+const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
+
+if (draft === null || draft.project_id !== projectId) {
+  return Astro.redirect(`/estimate/${encodeURIComponent(projectId)}`);
+}
+
+const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+
+let invoice: EstimateInvoiceProjection | null = null;
+let blockedReason = '';
+if (!draft.gate.allowed) {
+  blockedReason = `This estimate is not ready to bill yet. ${operatorFacingBlockedReasons(draft.gate.blocked_reasons)}`;
+} else {
+  try {
+    invoice = buildInvoiceFromRightHandEstimate(draft, { now: new Date(), milestone }).invoice;
+  } catch (err) {
+    blockedReason = err instanceof InvoiceProjectionError
+      ? 'No billable basis yet — approve rates on the estimate before billing.'
+      : 'The invoice could not be built from this estimate. Nothing was billed or sent.';
+  }
+}
+const paperHtml = invoice ? renderInvoiceHtml(invoice) : null;
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+---
+
+<Layout title="Invoice draft" activeHref="/sales">
+  <article class="iv-page" data-estimate-id={estimateId} data-project-id={projectId}>
+    <a class="iv-back" href={estimateBack}>‹ Back to estimate</a>
+    <a class="iv-back iv-back-secondary" href={proposalLink}>‹ Back to proposal</a>
+
+    <header class="iv-hero">
+      <div class="iv-crumb">Down-payment invoice · draft · not sent</div>
+      <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
+      <p class="iv-sub">Built from the proposal. Issuing and sending are separate, confirmed steps.</p>
+    </header>
+
+    {invoice === null ? (
+      <Card eyebrow="Not ready" title="Invoice blocked">
+        <p>{blockedReason}</p>
+        <p class="iv-note">Nothing was billed, posted, or charged. The estimate and rate library were not changed.</p>
+        <div class="iv-actions">
+          <a class="iv-btn primary" href={proposalLink}>Open the proposal</a>
+          <a class="iv-btn ghost" href={estimateBack}>Back to estimate</a>
+        </div>
+      </Card>
+    ) : (
+      <>
+        <Card eyebrow="Money summary" title={`${invoice.milestone.label} · ${fmt(invoice.amount_due_cents)} due`}>
+          <dl class="iv-money">
+            <div><dt>Contract base</dt><dd>{fmt(invoice.contract_base_cents)}</dd></div>
+            {invoice.change_orders.length > 0 ? (
+              <div><dt>Adjusted contract (+ change orders)</dt><dd>{fmt(invoice.adjusted_contract_cents)}</dd></div>
+            ) : null}
+            <div><dt>Billed to date</dt><dd>{fmt(invoice.billed_to_date_cents)}</dd></div>
+            {invoice.retention_held_cents > 0 ? (
+              <div><dt>Retention held ({invoice.retention_pct}%)</dt><dd>{fmt(invoice.retention_held_cents)}</dd></div>
+            ) : null}
+            <div class="iv-money-due"><dt>Amount due now</dt><dd>{fmt(invoice.amount_due_cents)}</dd></div>
+            <div><dt>Remaining after this</dt><dd>{fmt(invoice.remaining_after_cents)}</dd></div>
+          </dl>
+          <p class="iv-note">DRAFT — nothing has been sent, posted, or charged. CA §7159 caps the down payment.</p>
+        </Card>
+        <Card eyebrow="Client body" title="Invoice preview">
+          <div class="iv-paper-wrap">
+            <iframe class="iv-paper-html" title="Invoice preview" sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
+          </div>
+        </Card>
+        <div class="iv-actions">
+          <a class="iv-btn ghost" href={proposalLink}>Back to proposal</a>
+          <a class="iv-btn primary" href={`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/invoice?milestone=${milestone}`} target="_blank" rel="noopener">Open printable draft</a>
+        </div>
+      </>
+    )}
+  </article>
+</Layout>
+
+<script>
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.iv-paper-html')) {
+    const fit = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (doc?.documentElement) frame.style.height = `${doc.documentElement.scrollHeight}px`;
+      } catch { /* defensive */ }
+    };
+    frame.addEventListener('load', fit);
+    fit();
+  }
+</script>
+
+<style>
+  .iv-page { width: min(100%, 920px); margin: 0 auto; padding: 0.9rem 0.9rem 6rem; }
+  .iv-back { display: inline-flex; margin-right: 1rem; color: var(--text-muted, #6a7282); text-decoration: none; font-size: 0.85rem; }
+  .iv-back-secondary { margin-top: 0.25rem; }
+  .iv-hero h1 { margin: 0.2rem 0; font-size: clamp(1.5rem, 5vw, 2rem); }
+  .iv-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
+  .iv-sub, .iv-note { color: var(--text-muted, #6a7282); line-height: 1.45; }
+  .iv-money { margin: 0.5rem 0 0; display: grid; gap: 0.35rem; }
+  .iv-money > div { display: flex; justify-content: space-between; gap: 1rem; }
+  .iv-money dt { color: var(--text-muted, #6a7282); }
+  .iv-money dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .iv-money-due { border-top: 1px solid var(--border, #d8dee6); padding-top: 0.35rem; font-weight: 700; }
+  .iv-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; overflow: hidden; }
+  .iv-paper-html { width: 100%; min-height: 420px; border: 0; display: block; }
+  .iv-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
+  .iv-btn { padding: 0.55rem 0.9rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--border, #d8dee6); }
+  .iv-btn.primary { background: var(--right-hand, #c9a961); color: #1a1300; border-color: transparent; }
+  .iv-btn.ghost { background: var(--surface, #fff); color: inherit; }
+</style>

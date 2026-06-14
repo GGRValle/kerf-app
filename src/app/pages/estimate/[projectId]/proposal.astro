@@ -87,7 +87,8 @@ const blockedReason = outcome.status === 'blocked'
         ) : null}
         <div class="pp-actions">
           <a class="pp-btn ghost" href={estimateBack}>Back to estimate</a>
-          <a class="pp-btn primary" href={`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/proposal`} target="_blank" rel="noopener">Open printable draft</a>
+          <a class="pp-btn ghost" href={`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/proposal`} target="_blank" rel="noopener">Open printable draft</a>
+          <a class="pp-btn primary" href={`/estimate/${encodeURIComponent(projectId)}/invoice?estimate_id=${encodeURIComponent(estimateId)}&milestone=down_payment${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`}>Create down-payment invoice ›</a>
         </div>
       </>
     )}

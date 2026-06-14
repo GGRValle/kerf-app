@@ -117,7 +117,13 @@ export function evaluateEstimateArtifactAction(params: {
         status: 'ready_for_review',
         intent,
         artifact_state: 'draft',
-        route: `/api/v1/right-hand/estimates/${encodeURIComponent(draft.estimate_id)}/proposal`,
+        // M1 — proposal becomes a phase: route to the framed proposal PAGE
+        // (embedded preview + operator annex + back-links), not the raw API
+        // render. The page's own "Open printable draft" still reaches the
+        // HTML. project_id is the path segment the estimate page uses (the
+        // deal compat key for lead-stage), so the page's
+        // draft.project_id===projectId guard passes.
+        route: `/estimate/${encodeURIComponent(draft.project_id)}/proposal?estimate_id=${encodeURIComponent(draft.estimate_id)}${draft.conversation_id ? `&rh_conversation=${encodeURIComponent(draft.conversation_id)}` : ''}`,
         operator_message: 'Proposal draft is ready for review. Nothing has been sent or filed.',
         next_action: 'Open proposal draft',
         blocked_reasons: [],
@@ -129,7 +135,10 @@ export function evaluateEstimateArtifactAction(params: {
       status: 'ready_for_review',
       intent,
       artifact_state: 'draft',
-      route: `/api/v1/right-hand/estimates/${encodeURIComponent(draft.estimate_id)}/invoice?milestone=down_payment`,
+      // M2 — route to the framed invoice PAGE (money summary + embedded
+      // printable + back-links), not the raw API render. Same path-segment
+      // guard as the proposal page.
+      route: `/estimate/${encodeURIComponent(draft.project_id)}/invoice?estimate_id=${encodeURIComponent(draft.estimate_id)}&milestone=down_payment${draft.conversation_id ? `&rh_conversation=${encodeURIComponent(draft.conversation_id)}` : ''}`,
       operator_message: 'Down-payment invoice draft is ready for review. Nothing has been sent, posted, or charged.',
       next_action: 'Open invoice draft',
       blocked_reasons: [],
