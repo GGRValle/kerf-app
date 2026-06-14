@@ -75,3 +75,39 @@ test('M3: estimate page keeps the gate/blocked state visible and translated', ()
   // operator-facing translator — never a raw reason code.
   assert.match(src, /operatorFacingBlockedReasons|approve rates first|Draft only/i);
 });
+
+// ── Mobile-usability invariants (acceptance: no cramped tables, no overflow,
+// clear stacking actions). Pins the failure modes the layout audit checked. ──
+
+test('M3: proposal + invoice use no <table> (no cramped technical tables on mobile)', () => {
+  for (const rel of [PAGES.proposal, PAGES.invoice]) {
+    assert.ok(!/<table[\s>]/i.test(pageText(rel)), `${rel} must not use a raw table`);
+  }
+});
+
+test('M3: proposal + invoice action rows flex-wrap so buttons stack on narrow screens', () => {
+  const proposal = pageText(PAGES.proposal);
+  const invoice = pageText(PAGES.invoice);
+  assert.match(proposal, /\.pp-actions\s*\{[^}]*flex-wrap:\s*wrap/);
+  assert.match(invoice, /\.iv-actions\s*\{[^}]*flex-wrap:\s*wrap/);
+});
+
+test('M3: invoice money summary is a flex/grid list (not a fixed-width table) + amount-due anchor', () => {
+  const src = pageText(PAGES.invoice);
+  assert.match(src, /\.iv-money\s*\{[^}]*display:\s*grid/);
+  // The amount-due is the visual anchor (distinct prominent treatment).
+  assert.match(src, /\.iv-money-due\s*\{/);
+  assert.match(src, /Amount due/i);
+});
+
+test('M3: new money-flow pages carry no fixed px widths beyond responsive breakpoints', () => {
+  for (const rel of [PAGES.proposal, PAGES.invoice]) {
+    const src = pageText(rel);
+    // width:Npx is only acceptable inside an @media query or as a 1px hairline.
+    const widthDecls = src.match(/(?<!max-|min-)width:\s*(\d+)px/g) ?? [];
+    for (const decl of widthDecls) {
+      const px = Number(decl.match(/(\d+)px/)?.[1] ?? '0');
+      assert.ok(px <= 2, `${rel} has a fixed width ${decl} that risks mobile overflow`);
+    }
+  }
+});
