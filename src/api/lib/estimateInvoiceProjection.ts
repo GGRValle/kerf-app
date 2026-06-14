@@ -167,17 +167,31 @@ export function renderInvoiceHtml(invoice: EstimateInvoiceProjection): string {
     ['Amount due this invoice', money(invoice.amount_due_cents)],
     ['Remaining after payment', money(invoice.remaining_after_cents)],
   ];
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Invoice — DRAFT</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Invoice — DRAFT</title>
 <style>
-  body { font: 15px/1.45 -apple-system, system-ui, sans-serif; color: #111827; margin: 2rem auto; max-width: 720px; padding: 0 1rem; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.45 -apple-system, system-ui, sans-serif; color: #111827; margin: 1.5rem auto; max-width: 720px; padding: 0 clamp(0.75rem, 4vw, 1rem); }
   .inv-watermark { text-transform: uppercase; letter-spacing: .12em; color: #b45309; font-weight: 800; font-size: .8rem; }
-  h1 { margin: .25rem 0 0; font-size: 1.5rem; }
+  h1 { margin: .25rem 0 0; font-size: 1.5rem; line-height: 1.2; }
   .inv-meta { color: #6a7282; font-size: .85rem; margin-top: .25rem; }
   table { width: 100%; border-collapse: collapse; margin-top: 1.25rem; }
   td { padding: .5rem .25rem; border-bottom: 1px solid #e0e4eb; }
-  td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  td:first-child { overflow-wrap: anywhere; }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   tr.inv-due td { font-weight: 800; border-top: 2px solid #111827; }
-  .inv-foot { margin-top: 1.5rem; color: #6a7282; font-size: .8rem; }
+  .inv-foot { margin-top: 1.5rem; color: #6a7282; font-size: .8rem; overflow-wrap: anywhere; }
+  /* Phone frame: the invoice is embedded in a ~360px overflow:hidden
+     iframe on estimate/[projectId]/invoice.astro. The body is already
+     max-width based; tighten the rhythm so it reads on a phone. */
+  @media screen and (max-width: 600px) {
+    body { margin: 1rem auto; font-size: 14px; }
+    h1 { font-size: 1.3rem; }
+  }
+  /* Printable draft — letter-clean. */
+  @media print {
+    @page { size: letter; margin: 0.6in; }
+    body { margin: 0 auto; max-width: 100%; padding: 0; color: #000; }
+  }
 </style></head><body>
 <div class="inv-watermark">Preliminary — draft for review, not a bill</div>
 <h1>Invoice — ${esc(invoice.milestone.label)}</h1>
