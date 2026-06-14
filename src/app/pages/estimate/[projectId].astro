@@ -10,6 +10,7 @@ import {
   selectionsForProject,
 } from '../../../sales/index.js';
 import { getRightHandEstimateStore } from '../../../api/lib/rightHandAssemblyStore.js';
+import { evaluateEstimateArtifactAction } from '../../../api/lib/estimateArtifactActions.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
@@ -53,6 +54,12 @@ const gateStatus = rightHandDraft?.gate.allowed
 const gateDetail = rightHandDraft?.gate.allowed
   ? 'Nothing has been filed or sent.'
   : `Blocked from proposal/send: ${rightHandDraft?.gate.blocked_reasons.join(', ') || 'review required'}`;
+const proposalAction = rightHandDraft
+  ? evaluateEstimateArtifactAction({ draft: rightHandDraft, intent: 'proposal_draft', now: new Date() })
+  : null;
+const invoiceAction = rightHandDraft
+  ? evaluateEstimateArtifactAction({ draft: rightHandDraft, intent: 'down_payment_invoice', now: new Date() })
+  : null;
 const estimateTitle = rightHandDraft
   ? rightHandDraft.title.replace(/\s*estimate draft$/i, '')
   : (isLeadStageEstimate && dealId ? dealId : projectId);
@@ -286,10 +293,48 @@ const estimateTitle = rightHandDraft
     </section>
     </details>
 
-    <section class="es-propose">
-      <button class="es-btn primary" id="gen-proposal" disabled={rightHandDraft ? rhActiveLines.length === 0 : breakdowns.length === 0}>Generate proposal draft ›</button>
-      <p class="es-meta">{rightHandDraft?.gate.allowed ? 'Drafts only — send requires your review before anything goes to the client.' : 'Proposal draft opens for review; send requires your review after rates graduate.'}</p>
-      <div id="draft-result" class="es-draft" hidden></div>
+    <section class="es-propose" aria-label="Proposal and invoice drafts">
+      <div class="es-section-head">
+        <div>
+          <h2>Client draft actions</h2>
+          <p class="es-meta">Drafts only — send requires your review. Filing, charging, or posting is a separate confirmation.</p>
+        </div>
+        {rightHandDraft ? <span class="es-pill">{proposalAction?.status === 'ready_for_review' ? 'Ready' : 'Blocked'}</span> : null}
+      </div>
+      {rightHandDraft ? (
+        <div class="es-artifact-actions">
+          <article class="es-artifact-action" data-state={proposalAction?.status ?? 'blocked'}>
+            <div>
+              <strong>Proposal draft</strong>
+              <span>{proposalAction?.operator_message}</span>
+              {proposalAction?.blocked_reasons.length ? <small>{proposalAction.blocked_reasons.join(', ')}</small> : null}
+            </div>
+            {proposalAction?.route ? (
+              <a class="es-btn primary" href={proposalAction.route}>Open</a>
+            ) : (
+              <span class="es-btn es-btn-disabled" aria-disabled="true">{proposalAction?.next_action ?? 'Use rates here first'}</span>
+            )}
+          </article>
+          <article class="es-artifact-action" data-state={invoiceAction?.status ?? 'blocked'}>
+            <div>
+              <strong>Down-payment invoice</strong>
+              <span>{invoiceAction?.operator_message}</span>
+              {invoiceAction?.blocked_reasons.length ? <small>{invoiceAction.blocked_reasons.join(', ')}</small> : null}
+            </div>
+            {invoiceAction?.route ? (
+              <a class="es-btn primary" href={invoiceAction.route}>Open</a>
+            ) : (
+              <span class="es-btn es-btn-disabled" aria-disabled="true">{invoiceAction?.next_action ?? 'Use rates here first'}</span>
+            )}
+          </article>
+        </div>
+      ) : (
+        <>
+          <button class="es-btn primary" id="gen-proposal" disabled={breakdowns.length === 0}>Generate proposal draft ›</button>
+          <p class="es-meta">Create estimate lines first; client draft actions appear once Right Hand has an active estimate artifact.</p>
+          <div id="draft-result" class="es-draft" hidden></div>
+        </>
+      )}
     </section>
   </article>
 </Layout>
@@ -631,6 +676,11 @@ const estimateTitle = rightHandDraft
     cursor: default;
   }
 
+  .es-btn-disabled {
+    opacity: 0.72;
+    cursor: default;
+  }
+
   .es-btn-mini {
     min-height: 1.9rem;
     padding: 0.25rem 0.55rem;
@@ -877,6 +927,48 @@ const estimateTitle = rightHandDraft
     padding: 0.8rem;
   }
 
+  .es-artifact-actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .es-artifact-action {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0.72rem;
+    border: 1px solid var(--border, #dce1e9);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface, #fff) 96%, var(--bg, #f6f8fb));
+  }
+
+  .es-artifact-action[data-state='blocked'] {
+    border-color: color-mix(in srgb, var(--accent, #f5b544) 45%, var(--border, #dce1e9));
+    background: color-mix(in srgb, var(--surface, #fff) 93%, var(--accent, #f5b544));
+  }
+
+  .es-artifact-action strong,
+  .es-artifact-action span,
+  .es-artifact-action small {
+    display: block;
+    min-width: 0;
+  }
+
+  .es-artifact-action span {
+    margin-top: 0.15rem;
+    color: var(--text-muted, #6a7282);
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+
+  .es-artifact-action small {
+    margin-top: 0.25rem;
+    color: #7c4a03;
+    font-size: 0.74rem;
+    line-height: 1.3;
+  }
+
   .es-draft {
     margin-top: 0.7rem;
     padding: 0.7rem;
@@ -906,6 +998,10 @@ const estimateTitle = rightHandDraft
     .es-propose .es-btn,
     .es-control-panel .es-btn {
       flex: 1 1 100%;
+    }
+
+    .es-artifact-action {
+      grid-template-columns: 1fr;
     }
 
     .es-line-main {

@@ -252,9 +252,13 @@ test('route: blocked estimate returns structured blocked payload, not client pro
     await estimateStore.save(fixtureDraft());
     const app = createAuthenticatedApiRouter();
     const res = await app.request('/right-hand/estimates/rhe_deal_test_conv/proposal?format=json');
-    assert.equal(res.status, 200);
-    const body = await res.json() as { status: string; next_action: string; operator_annex: { ungraduated_line_ids: string[] } };
-    assert.equal(body.status, 'blocked');
+    assert.equal(res.status, 409);
+    const body = await res.json() as {
+      artifact_state: string;
+      next_action: string;
+      operator_annex: { ungraduated_line_ids: string[] };
+    };
+    assert.equal(body.artifact_state, 'blocked');
     assert.match(body.next_action, /rates/i);
     assert.ok(body.operator_annex.ungraduated_line_ids.includes('l1'));
   } finally {

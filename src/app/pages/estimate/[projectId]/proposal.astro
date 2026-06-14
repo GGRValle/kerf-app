@@ -1,11 +1,11 @@
 ---
 // D-068 · Proposal projection from Right Hand estimate · /estimate/:projectId/proposal
-import Layout from '../../layouts/Layout.astro';
-import Card from '../../components/Card.astro';
-import { createLayoutContext } from '../../lib/createLayoutContext.js';
-import { getRightHandEstimateStore } from '../../../api/lib/rightHandAssemblyStore.js';
-import { projectProposalFromEstimate } from '../../../api/lib/estimateProposalProjection.js';
-import { renderProposalHtml } from '../../../proposal/render.js';
+import Layout from '../../../layouts/Layout.astro';
+import Card from '../../../components/Card.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
+import { projectProposalFromEstimate } from '../../../../api/lib/estimateProposalProjection.js';
+import { renderProposalHtml } from '../../../../proposal/render.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
