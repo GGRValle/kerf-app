@@ -17,6 +17,7 @@ import {
   InvoiceProjectionError,
   type EstimateInvoiceProjection,
 } from '../../../../api/lib/estimateInvoiceProjection.js';
+import { getInvoiceLedgerStore } from '../../../../api/lib/invoiceLedgerStore.js';
 import { operatorFacingBlockedReasons } from '../../../lib/operatorFacingReasons.js';
 
 const { context } = createLayoutContext();
@@ -40,7 +41,19 @@ if (!draft.gate.allowed) {
   blockedReason = `This estimate is not ready to bill yet. ${operatorFacingBlockedReasons(draft.gate.blocked_reasons)}`;
 } else {
   try {
-    invoice = buildInvoiceFromRightHandEstimate(draft, { now: new Date(), milestone }).invoice;
+    const now = new Date();
+    const initial = buildInvoiceFromRightHandEstimate(draft, { now, milestone }).invoice;
+    const ledger = getInvoiceLedgerStore();
+    const [alreadyBilledForMilestone, billedToDate] = await Promise.all([
+      ledger.sumIssuedForMilestone(tenant, draft.estimate_id, initial.milestone.milestone_id),
+      ledger.sumIssuedForBasis(tenant, draft.estimate_id),
+    ]);
+    invoice = buildInvoiceFromRightHandEstimate(draft, {
+      now,
+      milestone,
+      alreadyBilledForMilestoneCents: alreadyBilledForMilestone,
+      billedToDateCents: billedToDate,
+    }).invoice;
   } catch (err) {
     blockedReason = err instanceof InvoiceProjectionError
       ? 'No billable basis yet — approve rates on the estimate before billing.'

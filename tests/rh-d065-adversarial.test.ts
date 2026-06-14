@@ -35,6 +35,7 @@ import {
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
 import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM } from './helpers/authenticatedApiRouter.js';
+import { createMemoryInvoiceLedgerStore } from '../src/api/lib/invoiceLedgerStore.js';
 
 const NOW = new Date('2026-06-13T12:00:00.000Z');
 
@@ -106,6 +107,7 @@ async function withHarness<T>(
     now: () => NOW,
     estimateStore,
     rateStandardStore: rateStandards,
+    invoiceLedgerStore: createMemoryInvoiceLedgerStore(),
   });
   try {
     return await fn({ app: createAuthenticatedApiRouter(), rateStandards });

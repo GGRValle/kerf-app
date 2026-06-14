@@ -17,6 +17,7 @@ import {
   type RightHandEstimateDraft,
   type RightHandEstimateLine,
 } from '../src/api/lib/rightHandAssemblyStore.js';
+import { createMemoryInvoiceLedgerStore } from '../src/api/lib/invoiceLedgerStore.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
 import { createAuthenticatedApiRouter } from './helpers/authenticatedApiRouter.js';
@@ -142,6 +143,7 @@ test('invoice route rejects unknown milestone values instead of silently billing
     env: {},
     now: () => NOW,
     estimateStore,
+    invoiceLedgerStore: createMemoryInvoiceLedgerStore(),
   });
   try {
     const app = createAuthenticatedApiRouter();
@@ -169,6 +171,7 @@ test('invoice route still accepts explicit down_payment and final milestones', a
     env: {},
     now: () => NOW,
     estimateStore,
+    invoiceLedgerStore: createMemoryInvoiceLedgerStore(),
   });
   try {
     const app = createAuthenticatedApiRouter();

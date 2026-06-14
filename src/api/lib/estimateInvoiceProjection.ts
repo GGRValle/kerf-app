@@ -65,6 +65,7 @@ export function buildInvoiceFromRightHandEstimate(
   opts: {
     readonly now: Date;
     readonly milestone?: 'down_payment' | 'final';
+    readonly alreadyBilledForMilestoneCents?: number;
     readonly billedToDateCents?: number;
     readonly changeOrders?: readonly ChangeOrderRef[];
     readonly retentionPct?: number;
@@ -105,12 +106,23 @@ export function buildInvoiceFromRightHandEstimate(
     throw new InvoiceProjectionError(`billed_to_date ${billed} exceeds adjusted contract ${adjusted}`);
   }
 
+  const alreadyBilledForMilestone = opts.alreadyBilledForMilestoneCents ?? 0;
+  if (!Number.isInteger(alreadyBilledForMilestone) || alreadyBilledForMilestone < 0) {
+    throw new InvoiceProjectionError('already_billed_for_milestone must be a non-negative integer (cents)');
+  }
+  if (alreadyBilledForMilestone > milestone.amount_cents) {
+    throw new InvoiceProjectionError(
+      `already_billed_for_milestone ${alreadyBilledForMilestone} exceeds milestone ${milestone.amount_cents}`,
+    );
+  }
+
   const retentionPct = opts.retentionPct ?? 0;
   if (retentionPct < 0 || retentionPct > 10) {
     throw new InvoiceProjectionError('retention_pct out of the credible range (0-10)');
   }
-  const retentionHeld = Math.floor((milestone.amount_cents * retentionPct) / 100);
-  const due = milestone.amount_cents - retentionHeld;
+  const remainingForMilestone = Math.max(0, milestone.amount_cents - alreadyBilledForMilestone);
+  const retentionHeld = Math.floor((remainingForMilestone * retentionPct) / 100);
+  const due = Math.max(0, remainingForMilestone - retentionHeld);
 
   // ── Tie-outs (spec §5): every figure reconciles or nothing renders ────
   const scheduleSum = proposal.payment_schedule.reduce((s, m) => s + m.amount_cents, 0);
