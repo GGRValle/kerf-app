@@ -77,7 +77,12 @@ export function isAuthExemptPath(pathname: string): boolean {
     pathname === '/api/v1/health' ||
     pathname.startsWith('/_astro/') ||
     pathname === '/favicon.ico' ||
-    pathname === '/favicon.svg'
+    pathname === '/favicon.svg' ||
+    // PWA install assets must load before a crew member signs in (Goal B PR-1).
+    // Public static assets only — no tenant data, same class as favicon.
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/sw.js' ||
+    pathname.startsWith('/icons/')
   );
 }
 

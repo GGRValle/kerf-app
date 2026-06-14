@@ -71,6 +71,13 @@ const buildDirty = String(buildStamp.dirty);
     <meta name="kerf-build-commit" content={buildCommit} />
     <meta name="kerf-build-dirty" content={buildDirty} />
     <title>{pageTitle}</title>
+    {/* PWA install (Goal B PR-1): manifest + standalone chrome + home-screen icon. */}
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0A0D11" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Right Hand" />
+    <link rel="apple-touch-icon" href="/icons/192.png" />
   </head>
   <body>
     <div
@@ -144,6 +151,16 @@ const buildDirty = String(buildStamp.dirty);
         document.cookie = `${cookieName}=${encodeURIComponent(role)}; path=/; max-age=2592000; SameSite=Lax`;
         window.location.href = homePaths[role] ?? '/';
       });
+    </script>
+    <script is:inline>
+      // PWA service-worker registration (Goal B PR-1). Best-effort; install
+      // works once /sw.js + /manifest.webmanifest are reachable. The SW caches
+      // only hashed build assets — never money/API responses.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
     </script>
   </body>
 </html>
