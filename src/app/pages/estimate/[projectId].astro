@@ -66,6 +66,9 @@ const proposalAction = rightHandDraft
 const invoiceAction = rightHandDraft
   ? evaluateEstimateArtifactAction({ draft: rightHandDraft, intent: 'down_payment_invoice', now: new Date() })
   : null;
+const moneyRoute = rightHandDraft
+  ? `/estimate/${encodeURIComponent(rightHandDraft.project_id)}/money?estimate_id=${encodeURIComponent(rightHandDraft.estimate_id)}${rightHandDraft.conversation_id ? `&rh_conversation=${encodeURIComponent(rightHandDraft.conversation_id)}` : ''}`
+  : null;
 const estimateTitle = rightHandDraft
   ? rightHandDraft.title.replace(/\s*estimate draft$/i, '')
   : (isLeadStageEstimate && dealId ? dealId : projectId);
@@ -338,6 +341,18 @@ const estimateTitle = rightHandDraft
             </div>
             {invoiceAction?.route ? (
               <a class="es-btn primary" href={invoiceAction.route}>Open</a>
+            ) : (
+              <span class="es-btn es-btn-disabled" aria-disabled="true">{invoiceAction?.next_action ?? 'Use rates here first'}</span>
+            )}
+          </article>
+          <article class="es-artifact-action" data-state={invoiceAction?.status ?? 'blocked'}>
+            <div>
+              <strong>Money</strong>
+              <span>Review billing milestones, issued rows, and remaining balances. Issue stays behind your confirmation.</span>
+              {invoiceAction?.blocked_reasons.length ? <small>{operatorFacingBlockedReasons(invoiceAction.blocked_reasons)}</small> : null}
+            </div>
+            {invoiceAction?.status === 'ready_for_review' && moneyRoute ? (
+              <a class="es-btn primary" href={moneyRoute}>Open</a>
             ) : (
               <span class="es-btn es-btn-disabled" aria-disabled="true">{invoiceAction?.next_action ?? 'Use rates here first'}</span>
             )}

@@ -16,6 +16,7 @@ const PAGES = {
   estimate: 'src/app/pages/estimate/[projectId].astro',
   proposal: 'src/app/pages/estimate/[projectId]/proposal.astro',
   invoice: 'src/app/pages/estimate/[projectId]/invoice.astro',
+  money: 'src/app/pages/estimate/[projectId]/money.astro',
 } as const;
 
 function pageText(rel: string): string {
@@ -69,6 +70,26 @@ test('M3: invoice page stays clearly draft-only and never claims a money action'
   assert.ok(!/POST.*\/(issue|charge|post-payment)/i.test(src), 'no money-consequence call from the page');
 });
 
+test('Goal A: money surface is the only page that issues invoice milestones, and it confirms first', () => {
+  const src = pageText(PAGES.money);
+  assert.match(src, /billing ledger/i);
+  assert.match(src, /issued\/billed\/remaining|Billed|Remaining/i);
+  assert.match(src, /CA §7159|California down payment/i);
+  assert.match(src, /window\.confirm/);
+  assert.match(src, /\/invoice\/issue/);
+  assert.match(src, /Nothing will be sent, posted, charged, or marked paid/i);
+  assert.match(src, /Payment recording is not connected/i);
+  for (const rel of [PAGES.estimate, PAGES.proposal, PAGES.invoice]) {
+    assert.ok(!/\/invoice\/issue/.test(pageText(rel)), `${rel} must not issue invoice milestones`);
+  }
+});
+
+test('Goal A: estimate, proposal, and invoice pages all route forward to Money', () => {
+  assert.match(pageText(PAGES.estimate), /\/money\?estimate_id=/);
+  assert.match(pageText(PAGES.proposal), /Open Money/);
+  assert.match(pageText(PAGES.invoice), /Open Money/);
+});
+
 test('M3: estimate page keeps the gate/blocked state visible and translated', () => {
   const src = pageText(PAGES.estimate);
   // Blocked state communicated in plain English (not hidden), via the
@@ -79,17 +100,19 @@ test('M3: estimate page keeps the gate/blocked state visible and translated', ()
 // ── Mobile-usability invariants (acceptance: no cramped tables, no overflow,
 // clear stacking actions). Pins the failure modes the layout audit checked. ──
 
-test('M3: proposal + invoice use no <table> (no cramped technical tables on mobile)', () => {
-  for (const rel of [PAGES.proposal, PAGES.invoice]) {
+test('M3: proposal + invoice + money use no <table> (no cramped technical tables on mobile)', () => {
+  for (const rel of [PAGES.proposal, PAGES.invoice, PAGES.money]) {
     assert.ok(!/<table[\s>]/i.test(pageText(rel)), `${rel} must not use a raw table`);
   }
 });
 
-test('M3: proposal + invoice action rows flex-wrap so buttons stack on narrow screens', () => {
+test('M3: proposal + invoice + money action rows flex-wrap so buttons stack on narrow screens', () => {
   const proposal = pageText(PAGES.proposal);
   const invoice = pageText(PAGES.invoice);
+  const money = pageText(PAGES.money);
   assert.match(proposal, /\.pp-actions\s*\{[^}]*flex-wrap:\s*wrap/);
   assert.match(invoice, /\.iv-actions\s*\{[^}]*flex-wrap:\s*wrap/);
+  assert.match(money, /\.mf-actions\s*\{[^}]*flex-wrap:\s*wrap/);
 });
 
 test('M3: invoice money summary is a flex/grid list (not a fixed-width table) + amount-due anchor', () => {
@@ -101,7 +124,7 @@ test('M3: invoice money summary is a flex/grid list (not a fixed-width table) + 
 });
 
 test('M3: new money-flow pages carry no fixed px widths beyond responsive breakpoints', () => {
-  for (const rel of [PAGES.proposal, PAGES.invoice]) {
+  for (const rel of [PAGES.proposal, PAGES.invoice, PAGES.money]) {
     const src = pageText(rel);
     // width:Npx is only acceptable inside an @media query or as a 1px hairline.
     const widthDecls = src.match(/(?<!max-|min-)width:\s*(\d+)px/g) ?? [];

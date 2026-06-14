@@ -34,6 +34,8 @@ if (draft === null || draft.project_id !== projectId) {
 
 const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const moneyLink = `/estimate/${encodeURIComponent(projectId)}/money?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const milestoneLabel = milestone === 'final' ? 'Final invoice' : 'Down-payment invoice';
 
 let invoice: EstimateInvoiceProjection | null = null;
 let blockedReason = '';
@@ -70,7 +72,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
     <a class="iv-back iv-back-secondary" href={proposalLink}>‹ Back to proposal</a>
 
     <header class="iv-hero">
-      <div class="iv-crumb">Down-payment invoice · draft · not sent</div>
+      <div class="iv-crumb">{milestoneLabel} · draft · not sent</div>
       <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
       <p class="iv-sub">Built from the proposal. Issuing and sending are separate, confirmed steps.</p>
     </header>
@@ -81,6 +83,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
         <p class="iv-note">Nothing was billed, posted, or charged. The estimate and rate library were not changed.</p>
         <div class="iv-actions">
           <a class="iv-btn primary" href={proposalLink}>Open the proposal</a>
+          <a class="iv-btn ghost" href={moneyLink}>Open Money</a>
           <a class="iv-btn ghost" href={estimateBack}>Back to estimate</a>
         </div>
       </Card>
@@ -108,6 +111,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
         </Card>
         <div class="iv-actions">
           <a class="iv-btn ghost" href={proposalLink}>Back to proposal</a>
+          <a class="iv-btn ghost" href={moneyLink}>Open Money</a>
           <a class="iv-btn primary" href={`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/invoice?milestone=${milestone}`} target="_blank" rel="noopener">Open printable draft</a>
         </div>
       </>
