@@ -6,6 +6,10 @@ import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
 import { projectProposalFromEstimate } from '../../../../api/lib/estimateProposalProjection.js';
 import { renderProposalHtml } from '../../../../proposal/render.js';
+import {
+  operatorFacingHeldBackReason,
+  operatorFacingProposalBlockedReason,
+} from '../../../lib/operatorFacingReasons.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
@@ -25,6 +29,13 @@ const conversationBack = conversationId || draft.conversation_id
   : null;
 const paperHtml = outcome.status === 'ready' ? renderProposalHtml(outcome.proposal) : null;
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const blockedReason = outcome.status === 'blocked'
+  ? operatorFacingProposalBlockedReason({
+      reason: outcome.reason,
+      blockedReasons: outcome.operator_annex.blocked_reasons,
+      ungraduatedLineCount: outcome.operator_annex.ungraduated_line_ids.length,
+    })
+  : '';
 ---
 
 <Layout title="Proposal draft" activeHref="/sales">
@@ -33,25 +44,25 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
     {conversationBack ? <a class="pp-back pp-back-secondary" href={conversationBack}>‹ Back to conversation</a> : null}
 
     <header class="pp-hero">
-      <div class="pp-crumb">Proposal projection · draft only</div>
+      <div class="pp-crumb">Proposal draft · not sent</div>
       <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
-      <p class="pp-sub">Client-facing render from the estimate graph. Send is a separate confirm step.</p>
+      <p class="pp-sub">Preview built from the estimate. Send is a separate confirmation.</p>
     </header>
 
     {outcome.status === 'blocked' ? (
       <Card eyebrow="Not ready" title="Proposal blocked">
-        <p>{outcome.reason}</p>
+        <p>{blockedReason}</p>
         <p><strong>Next:</strong> {outcome.next_action}</p>
-        <p class="pp-note">No client-authoritative prices were rendered. The estimate and rate library were not changed.</p>
+        <p class="pp-note">No client-ready prices were shown. The estimate and rate library were not changed.</p>
         {outcome.operator_annex.ungraduated_line_ids.length > 0 ? (
-          <p class="pp-note">{outcome.operator_annex.ungraduated_line_ids.length} line(s) still need rate graduation.</p>
+          <p class="pp-note">{outcome.operator_annex.ungraduated_line_ids.length} priced line(s) still need you to approve the rate for this estimate.</p>
         ) : null}
         {outcome.operator_annex.held_back.length > 0 ? (
           <details class="pp-annex">
-            <summary>Operator annex ({outcome.operator_annex.held_back.length} held back)</summary>
+            <summary>Operator review list ({outcome.operator_annex.held_back.length})</summary>
             <ul>
               {outcome.operator_annex.held_back.map((row) => (
-                <li>{row.label} · {row.reason}{row.amount_cents > 0 ? ` · ${fmt(row.amount_cents)}` : ''}</li>
+                <li>{row.label} · {operatorFacingHeldBackReason(row.reason)}{row.amount_cents > 0 ? ` · ${fmt(row.amount_cents)}` : ''}</li>
               ))}
             </ul>
           </details>
@@ -66,10 +77,10 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
           </div>
         </Card>
         {outcome.operator_annex.held_back.length > 0 ? (
-          <Card eyebrow="Operator annex" title="Held back from client body">
+          <Card eyebrow="Operator review" title="Not shown to the client">
             <ul class="pp-annex-list">
               {outcome.operator_annex.held_back.map((row) => (
-                <li>{row.label} · {row.reason}{row.amount_cents > 0 ? ` · ${fmt(row.amount_cents)}` : ''}</li>
+                <li>{row.label} · {operatorFacingHeldBackReason(row.reason)}{row.amount_cents > 0 ? ` · ${fmt(row.amount_cents)}` : ''}</li>
               ))}
             </ul>
           </Card>

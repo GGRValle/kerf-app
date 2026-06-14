@@ -251,6 +251,42 @@ test('build stamp prefers baked file stamp over mutable runtime env', async () =
   }
 });
 
+test('build stamp checks app-root baked stamp before mutable runtime env', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'kerf-root-build-stamp-'));
+  const missingBundlePath = path.join(dir, 'dist', 'server', 'build-stamp.json');
+  const rootStampPath = path.join(dir, 'build-stamp.json');
+  const oldCommit = process.env['KERF_BUILD_COMMIT'];
+  const oldDirty = process.env['KERF_BUILD_DIRTY'];
+  const oldSource = process.env['KERF_BUILD_SOURCE'];
+  try {
+    await writeFile(
+      rootStampPath,
+      JSON.stringify({
+        commit: 'root-file-commit',
+        dirty: false,
+        built_at: '2026-06-14T01:44:50Z',
+      }),
+      'utf8',
+    );
+    process.env['KERF_BUILD_COMMIT'] = 'stale-env-commit';
+    process.env['KERF_BUILD_DIRTY'] = 'true';
+    process.env['KERF_BUILD_SOURCE'] = 'env';
+
+    const stamp = readBuildStamp({ imageStampPath: missingBundlePath, rootStampPath });
+    assert.equal(stamp.commit, 'root-file-commit');
+    assert.equal(stamp.dirty, false);
+    assert.equal(stamp.source, 'file');
+  } finally {
+    if (oldCommit === undefined) delete process.env['KERF_BUILD_COMMIT'];
+    else process.env['KERF_BUILD_COMMIT'] = oldCommit;
+    if (oldDirty === undefined) delete process.env['KERF_BUILD_DIRTY'];
+    else process.env['KERF_BUILD_DIRTY'] = oldDirty;
+    if (oldSource === undefined) delete process.env['KERF_BUILD_SOURCE'];
+    else process.env['KERF_BUILD_SOURCE'] = oldSource;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('build stamp preserves Fly image ref fallback when no baked file or stamp env exists', () => {
   const oldCommit = process.env['KERF_BUILD_COMMIT'];
   const oldDirty = process.env['KERF_BUILD_DIRTY'];
