@@ -16,6 +16,7 @@ import {
   type RightHandEstimateDraft,
   type RightHandEstimateLine,
 } from '../src/api/lib/rightHandAssemblyStore.js';
+import { createMemoryInvoiceLedgerStore } from '../src/api/lib/invoiceLedgerStore.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { buildTurnResolutionPacket } from '../src/voice/realtime/turnResolution.js';
 import type { GroqChatRequest } from '../src/altitude/modelAdapter/index.js';
@@ -116,7 +117,7 @@ test('reply proposed_action is a closed union and unknown values normalize to nu
 test('HTTP proposal and invoice routes block illustrative estimates without rendering artifacts', async () => {
   const store = createMemoryRightHandEstimateStore();
   await store.save(estimateDraft());
-  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store });
+  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store, invoiceLedgerStore: createMemoryInvoiceLedgerStore() });
   const app = createAuthenticatedApiRouter();
 
   const proposal = await app.request('/right-hand/estimates/est_affordance/proposal?format=json');
@@ -153,7 +154,7 @@ test('ready proposal and invoice routes render drafts only after the existing ga
     ],
     pricing_data_label: 'Approved rates for this estimate',
   }));
-  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store });
+  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store, invoiceLedgerStore: createMemoryInvoiceLedgerStore() });
   const app = createAuthenticatedApiRouter();
 
   const proposal = await app.request('/right-hand/estimates/est_affordance/proposal?format=json');
@@ -205,7 +206,7 @@ test('M2: ready invoice affordance routes to the framed invoice PAGE, carrying m
 test('parked estimate conversation returns honest blocked proposal and invoice states', async () => {
   const store = createMemoryRightHandEstimateStore();
   await store.save(estimateDraft());
-  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store });
+  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store, invoiceLedgerStore: createMemoryInvoiceLedgerStore() });
   const app = createAuthenticatedApiRouter();
   const trp = buildTurnResolutionPacket({ heardText: 'make the proposal', intent: 'estimate_update' });
 
@@ -307,7 +308,7 @@ test('model-owned proposed_action routes natural proposal confirmation through t
 test('no-model active artifact fallback answers rate-source questions from the current estimate', async () => {
   const store = createMemoryRightHandEstimateStore();
   await store.save(estimateDraft());
-  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store });
+  __setRightHandTurnDepsForTests({ env: {}, now: () => NOW, estimateStore: store, invoiceLedgerStore: createMemoryInvoiceLedgerStore() });
   const app = createAuthenticatedApiRouter();
   const trp = buildTurnResolutionPacket({ heardText: 'what rate is this using for cabinets?', intent: 'estimate_update' });
   const res = await app.request('/right-hand/resolve-reply', {

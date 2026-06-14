@@ -69,6 +69,13 @@ import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateW
 import { projectProposalFromEstimate } from '../lib/estimateProposalProjection.js';
 import { buildInvoiceFromRightHandEstimate, renderInvoiceHtml, type InvoiceProjectionResult } from '../lib/estimateInvoiceProjection.js';
 import {
+  getInvoiceLedgerStore,
+  invoiceLedgerIdFor,
+  InvoiceLedgerConflictError,
+  InvoiceLedgerValidationError,
+  type InvoiceLedgerStore,
+} from '../lib/invoiceLedgerStore.js';
+import {
   estimateArtifactIntentFromProposedAction,
   estimateArtifactIntentFromText,
   evaluateEstimateArtifactAction,
@@ -131,6 +138,7 @@ export interface RightHandTurnRouteDeps {
   readonly appendDailyLogEntryAndSurfaceFn?: typeof appendDailyLogEntryAndSurface;
   readonly estimateStore?: RightHandEstimateStore;
   readonly rateStandardStore?: TenantRateStandardStore;
+  readonly invoiceLedgerStore?: InvoiceLedgerStore;
   readonly estimateEventLog?: EventLog;
   readonly estimatorModelCaller?: ModelCaller;
   readonly scopeClassifier?: ScopeClassifier;
@@ -179,6 +187,10 @@ function estimateStoreFor(deps: RightHandTurnRouteDeps): RightHandEstimateStore 
 
 function rateStandardStoreFor(deps: RightHandTurnRouteDeps): TenantRateStandardStore {
   return deps.rateStandardStore ?? getTenantRateStandardStore();
+}
+
+function invoiceLedgerStoreFor(deps: RightHandTurnRouteDeps): InvoiceLedgerStore {
+  return deps.invoiceLedgerStore ?? getInvoiceLedgerStore();
 }
 
 function rightHandDraftVisibleTotalCents(draft: { readonly lines: readonly { readonly extended_cents?: number | null; readonly price_cents?: number | null }[] }): number {
@@ -1262,7 +1274,8 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) 
  */
 rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) => {
   const tenant = requireApiTenant(c);
-  const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
+  const deps = resolveDeps();
+  const draft = await estimateStoreFor(deps).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
   const milestoneQuery = c.req.query('milestone');
   if (
@@ -1280,7 +1293,7 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) =
   const gate = evaluateEstimateArtifactAction({
     draft,
     intent: 'down_payment_invoice',
-    now: resolveDeps().now?.() ?? new Date(),
+    now: deps.now?.() ?? new Date(),
   });
   if (gate.status === 'blocked') {
     return c.json({
@@ -1293,10 +1306,24 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) =
   }
   let projection: InvoiceProjectionResult;
   try {
+    const now = deps.now?.() ?? new Date();
+    const requestedMilestone = milestoneQuery === 'final' ? 'final' as const : 'down_payment' as const;
+    const initial = buildInvoiceFromRightHandEstimate(draft, {
+      now,
+      milestone: requestedMilestone,
+    });
+    const ledger = invoiceLedgerStoreFor(deps);
+    const basisId = draft.estimate_id;
+    const [alreadyBilledForMilestone, billedToDate] = await Promise.all([
+      ledger.sumIssuedForMilestone(tenant, basisId, initial.invoice.milestone.milestone_id),
+      ledger.sumIssuedForBasis(tenant, basisId),
+    ]);
     projection = buildInvoiceFromRightHandEstimate(draft, {
-      now: resolveDeps().now?.() ?? new Date(),
+      now,
       ...(milestoneQuery === 'final' ? { milestone: 'final' as const } : {}),
       ...(milestoneQuery === 'down_payment' ? { milestone: 'down_payment' as const } : {}),
+      alreadyBilledForMilestoneCents: alreadyBilledForMilestone,
+      billedToDateCents: billedToDate,
     });
   } catch (err) {
     return c.json({
@@ -1310,6 +1337,138 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) =
   }
   c.header('Content-Type', 'text/html; charset=utf-8');
   return c.body(renderInvoiceHtml(projection.invoice));
+});
+
+/**
+ * M4: explicit invoice issue consequence. Draft projection stays reversible;
+ * this is the first ledger write and requires the consequence tuple.
+ */
+rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/invoice/issue', async (c) => {
+  const tenant = requireApiTenant(c);
+  const session = requireApiSession(c);
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400);
+  }
+  if (body['confirmed'] !== true || body['consequence'] !== 'issue_invoice_milestone') {
+    return c.json({
+      error: 'invoice_issue_confirmation_required',
+      consequence: 'issue_invoice_milestone',
+      operator_message: 'Confirm issue invoice milestone before a billing ledger row is created.',
+    }, 409);
+  }
+  const milestoneRaw = body['milestone'];
+  if (
+    milestoneRaw !== undefined
+    && milestoneRaw !== ''
+    && milestoneRaw !== 'down_payment'
+    && milestoneRaw !== 'final'
+  ) {
+    return c.json({
+      error: 'invalid_invoice_milestone',
+      allowed: ['down_payment', 'final'],
+      operator_message: 'Choose down payment or final. Nothing was filed or sent.',
+    }, 400);
+  }
+
+  const deps = resolveDeps();
+  const draft = await estimateStoreFor(deps).read(tenant, c.req.param('estimateId'));
+  if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+
+  const gate = evaluateEstimateArtifactAction({
+    draft,
+    intent: 'down_payment_invoice',
+    now: deps.now?.() ?? new Date(),
+  });
+  if (gate.status === 'blocked') {
+    return c.json({
+      error: 'invoice_source_basis_blocked',
+      artifact_state: gate.artifact_state,
+      operator_message: gate.operator_message,
+      next_action: gate.next_action,
+      blocked_reasons: gate.blocked_reasons,
+    }, 409);
+  }
+
+  let projection: InvoiceProjectionResult;
+  try {
+    const now = deps.now?.() ?? new Date();
+    const requestedMilestone = milestoneRaw === 'final' ? 'final' as const : 'down_payment' as const;
+    const initial = buildInvoiceFromRightHandEstimate(draft, { now, milestone: requestedMilestone });
+    const ledger = invoiceLedgerStoreFor(deps);
+    const basisId = draft.estimate_id;
+    const [alreadyBilledForMilestone, billedToDate] = await Promise.all([
+      ledger.sumIssuedForMilestone(tenant, basisId, initial.invoice.milestone.milestone_id),
+      ledger.sumIssuedForBasis(tenant, basisId),
+    ]);
+    projection = buildInvoiceFromRightHandEstimate(draft, {
+      now,
+      milestone: requestedMilestone,
+      alreadyBilledForMilestoneCents: alreadyBilledForMilestone,
+      billedToDateCents: billedToDate,
+    });
+  } catch (err) {
+    return c.json({
+      error: 'invoice_projection_failed',
+      reason: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+      operator_message: 'The invoice could not be issued from this estimate. Nothing was filed or sent.',
+    }, 422);
+  }
+
+  if (projection.invoice.amount_due_cents <= 0) {
+    return c.json({
+      error: 'milestone_already_issued',
+      operator_message: 'That invoice milestone is already fully billed.',
+      invoice: projection.invoice,
+    }, 409);
+  }
+
+  const ledger = invoiceLedgerStoreFor(deps);
+  try {
+    const row = await ledger.issue({
+      tenant_id: tenant,
+      ledger_id: invoiceLedgerIdFor(draft.estimate_id, projection.invoice.milestone.kind),
+      basis_id: draft.estimate_id,
+      invoice_id: projection.invoice.invoice_id,
+      estimate_id: draft.estimate_id,
+      proposal_id: projection.invoice.proposal_id,
+      milestone_id: projection.invoice.milestone.milestone_id,
+      milestone_kind: projection.invoice.milestone.kind,
+      amount_cents: projection.invoice.amount_due_cents,
+      actor_id: conversationActorIdFromSessionToken(session.token),
+      issued_at: deps.now?.().toISOString() ?? new Date().toISOString(),
+      source_refs: [
+        `right-hand-estimate:${draft.estimate_id}`,
+        `right-hand-proposal:${projection.invoice.proposal_id}`,
+        `right-hand-invoice:${projection.invoice.invoice_id}`,
+        'operator-confirmation:issue_invoice_milestone',
+      ],
+    });
+    return c.json({
+      ok: true,
+      consequence: 'issue_invoice_milestone',
+      ledger: row,
+      invoice: projection.invoice,
+      operator_message: 'Invoice milestone recorded in the billing ledger. Nothing was sent automatically.',
+    }, 201);
+  } catch (err) {
+    if (err instanceof InvoiceLedgerConflictError) {
+      return c.json({
+        error: err.code,
+        operator_message: 'That invoice milestone already has an active ledger row.',
+      }, 409);
+    }
+    if (err instanceof InvoiceLedgerValidationError) {
+      return c.json({
+        error: err.code,
+        reason: err.message,
+        operator_message: 'The invoice ledger row failed validation. Nothing was recorded.',
+      }, 400);
+    }
+    throw err;
+  }
 });
 
 /**

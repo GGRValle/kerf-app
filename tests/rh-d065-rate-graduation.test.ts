@@ -11,6 +11,7 @@ import {
   type TenantRateStandardStore,
 } from '../src/api/lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook } from '../src/api/lib/estimateWorkbook.js';
+import { createMemoryInvoiceLedgerStore } from '../src/api/lib/invoiceLedgerStore.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
 import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM } from './helpers/authenticatedApiRouter.js';
@@ -85,6 +86,7 @@ async function withHarness<T>(
     now: () => NOW,
     estimateStore,
     rateStandardStore: rateStandards,
+    invoiceLedgerStore: createMemoryInvoiceLedgerStore(),
   });
   try {
     return await fn({ app: createAuthenticatedApiRouter(), rateStandards });
