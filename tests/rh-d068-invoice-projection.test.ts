@@ -147,7 +147,10 @@ test('invoice route rejects unknown milestone values instead of silently billing
 
 test('invoice route still accepts explicit down_payment and final milestones', async () => {
   const estimateStore = createMemoryRightHandEstimateStore();
-  await estimateStore.save(fixtureDraft());
+  await estimateStore.save({
+    ...fixtureDraft(),
+    gate: { fired: true, allowed: true, blocked_reasons: [] },
+  });
   __setRightHandTurnDepsForTests({
     env: {},
     now: () => NOW,

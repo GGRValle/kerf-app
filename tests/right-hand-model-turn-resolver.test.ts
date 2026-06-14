@@ -639,7 +639,7 @@ test('reply resolver calls model with peer-altitude doctrine and returns its nat
   assert.match(system, /Density never eats the honesty seam/);
   assert.match(system, /claims_durable_action=true only when your reply says an action already happened/);
   assert.match(system, /proposed_action is a closed go-now handoff signal/);
-  assert.match(system, /"proposed_action": "assemble_estimate\|null"/);
+  assert.match(system, /"proposed_action": "assemble_estimate\|open_proposal_draft\|bill_down_payment_invoice\|null"/);
 });
 
 test('reply resolver parses fenced JSON with trailing commentary', async () => {
@@ -762,6 +762,50 @@ test('reply resolver returns closed assemble_estimate action only when model emi
 
   assert.equal(result.authority, 'llm_inferred');
   assert.equal(result.proposed_action, 'assemble_estimate');
+});
+
+test('reply resolver returns closed proposal and invoice actions only when model emits known tokens', async () => {
+  const text = 'Client-facing draft please.';
+  const trp = buildTurnResolutionPacket({ heardText: text, intent: 'estimate_update' });
+  const actionResults = await Promise.all(['open_proposal_draft', 'bill_down_payment_invoice'].map((action) =>
+    resolveReplyWithModel(
+      {
+        latestText: text,
+        draftText: 'Kitchen estimate draft with cabinets and countertops.',
+        trp,
+        tenantId: 'tenant_ggr' as never,
+        conversationTurns: [{ speaker: 'operator', text }],
+        now: () => new Date('2026-06-09T12:00:00.000Z'),
+      },
+      {
+        tenantId: 'tenant_ggr',
+        groqChat: async (req) => ({
+          ok: true,
+          content: JSON.stringify({
+            mode: 'gate_ready',
+            claims_durable_action: false,
+            reply: 'Draft route is ready to check.',
+            proposed_action: action,
+          }),
+          model: req.model,
+          inputTokens: 50,
+          outputTokens: 12,
+          totalTokens: 62,
+          latencyMs: 20,
+          costNanoUsd: 1_000 as never,
+          finishReason: 'stop',
+          route: {} as never,
+          invocationId: req.invocationId,
+          completedAt: '2026-06-09T12:00:00.000Z',
+        }),
+      },
+    )
+  ));
+
+  assert.deepEqual(actionResults.map((result) => result.proposed_action), [
+    'open_proposal_draft',
+    'bill_down_payment_invoice',
+  ]);
 });
 
 test('reply resolver normalizes unrecognized proposed_action to null', async () => {

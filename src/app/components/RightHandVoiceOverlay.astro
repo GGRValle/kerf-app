@@ -1050,15 +1050,23 @@ const { t } = createLayoutContext();
       return classified;
     };
     const textRequestsEstimateAssembly = (text: string): boolean => (
-      /\b(?:put it together|take me there|take me to (?:the )?(?:estimate|proposal|quote|bid)|let'?s build it|build it|build (?:the )?(?:estimate|proposal|quote|bid)|assemble(?: it| the (?:estimate|proposal|quote|bid))|start (?:the )?(?:estimate|proposal|quote|bid)|make (?:the )?(?:estimate|proposal|quote|bid)|open (?:the )?(?:estimate|proposal|quote|bid)|price it out)\b/i.test(text)
+      /\b(?:put it together|take me there|take me to (?:the )?(?:estimate|quote|bid)|let'?s build it|build it|build (?:the )?(?:estimate|quote|bid)|assemble(?: it| the (?:estimate|quote|bid))|start (?:the )?(?:estimate|quote|bid)|make (?:the )?(?:estimate|quote|bid)|open (?:the )?(?:estimate|quote|bid)|price it out)\b/i.test(text)
     );
 
-    type RightHandProposedAction = 'assemble_estimate';
+    const textRequestsProposalOrInvoice = (text: string): boolean => (
+      /\b(?:(?:make|build|generate|create|draft|open|show|review)\s+(?:the\s+)?proposal(?:\s+draft)?|(?:send|take|route)\s+me\s+to\s+(?:the\s+)?proposal(?:\s+draft)?|(?:generate|make|build|create|draft|open|show|review)\s+(?:the\s+)?(?:down[- ]?payment\s+)?invoice(?:\s+draft)?|bill\s+(?:the\s+)?down[- ]?payment|down[- ]?payment\s+invoice)\b/i.test(text)
+    );
+
+    type RightHandProposedAction = 'assemble_estimate' | 'open_proposal_draft' | 'open_invoice_draft' | 'bill_down_payment_invoice';
 
     const normalizeProposedAction = (value: unknown): RightHandProposedAction | null => {
       if (typeof value !== 'string') return null;
       const clean = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-      return clean === 'assemble_estimate' ? 'assemble_estimate' : null;
+      if (clean === 'assemble_estimate') return 'assemble_estimate';
+      if (clean === 'open_proposal_draft') return 'open_proposal_draft';
+      if (clean === 'open_invoice_draft') return 'open_invoice_draft';
+      if (clean === 'bill_down_payment_invoice' || clean === 'bill_down_payment') return 'bill_down_payment_invoice';
+      return null;
     };
 
     const textLooksLikeEstimatePageUpdate = (text: string): boolean => (
@@ -1329,13 +1337,21 @@ const { t } = createLayoutContext();
       workingDraft?: unknown;
       working_draft?: unknown;
       proposed_action?: unknown;
+      artifact_action?: unknown;
       draft_fabrication_flags?: unknown;
+    };
+
+    type EstimateArtifactActionPayload = {
+      status?: string;
+      route?: string | null;
+      operator_message?: string;
     };
 
     type ResolvedReplyPayload = {
       readonly reply: string;
       readonly workingDraft: WorkingDraftFields;
       readonly proposedAction: RightHandProposedAction | null;
+      readonly artifactAction: EstimateArtifactActionPayload | null;
     };
 
     const resolveReplyServerSide = async (
@@ -1354,7 +1370,7 @@ const { t } = createLayoutContext();
             latestText,
             draftText,
             trp,
-            currentPath: window.location.pathname,
+            currentPath: `${window.location.pathname}${window.location.search}`,
             userRole: 'owner',
             userPreferenceSummary: rightHandVoiceProfileSummary(),
             knownEntities: collectKnownEntities(),
@@ -1375,6 +1391,9 @@ const { t } = createLayoutContext();
           reply,
           workingDraft: cleanStoredWorkingDraft(body.workingDraft ?? body.working_draft, draftText),
           proposedAction: normalizeProposedAction(body.proposed_action),
+          artifactAction: body.artifact_action && typeof body.artifact_action === 'object'
+            ? body.artifact_action as EstimateArtifactActionPayload
+            : null,
         };
       } catch {
         return null;
@@ -1590,8 +1609,13 @@ const { t } = createLayoutContext();
       }
       appendTurn('operator', clean);
       const turnsForModel = [...conversationTurns];
-      const wantsAssembly = textRequestsEstimateAssembly(clean) || textLooksLikeEstimatePageUpdate(clean);
-      const fallbackReply = wantsAssembly ? 'Assembling the estimate draft…' : pendingReplyText();
+      const wantsArtifactDraft = textRequestsProposalOrInvoice(clean);
+      const wantsAssembly = !wantsArtifactDraft && (textRequestsEstimateAssembly(clean) || textLooksLikeEstimatePageUpdate(clean));
+      const fallbackReply = wantsAssembly
+        ? 'Assembling the estimate draft…'
+        : wantsArtifactDraft
+          ? 'Checking the estimate gate…'
+          : pendingReplyText();
       const replyIndex = appendTurn('right_hand', fallbackReply);
       showActions('listening');
       persistConversation();
@@ -1602,6 +1626,12 @@ const { t } = createLayoutContext();
       void resolveReplyServerSide(clean, draftText, trp, turnsForModel).then((payload) => {
         if (!payload) return;
         canonicalWorkingDraft = payload.workingDraft;
+        if (payload.artifactAction?.route && payload.artifactAction.status === 'ready_for_review') {
+          replaceTurn(replyIndex, 'right_hand', payload.reply);
+          persistConversation();
+          navigate(payload.artifactAction.route, { resume: true });
+          return;
+        }
         if (payload.proposedAction === 'assemble_estimate') {
           replaceTurn(replyIndex, 'right_hand', 'Assembling the estimate draft…');
           persistConversation();

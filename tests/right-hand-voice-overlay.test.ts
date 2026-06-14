@@ -763,8 +763,9 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
   const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
   assert.match(enterReply, /const intent = conversationIntentForTurn\(clean, draftText\)/);
   assert.match(enterReply, /const turnsForModel = \[\.\.\.conversationTurns\]/);
-  assert.match(enterReply, /const wantsAssembly = textRequestsEstimateAssembly\(clean\) \|\| textLooksLikeEstimatePageUpdate\(clean\)/);
-  assert.match(enterReply, /const fallbackReply = wantsAssembly \? 'Assembling the estimate draft…' : pendingReplyText\(\)/);
+  assert.match(enterReply, /const wantsArtifactDraft = textRequestsProposalOrInvoice\(clean\)/);
+  assert.match(enterReply, /const wantsAssembly = !wantsArtifactDraft && \(textRequestsEstimateAssembly\(clean\) \|\| textLooksLikeEstimatePageUpdate\(clean\)\)/);
+  assert.match(enterReply, /const fallbackReply = wantsAssembly\s+\?\s+'Assembling the estimate draft…'\s+:\s+wantsArtifactDraft\s+\?\s+'Checking the estimate gate…'\s+:\s+pendingReplyText\(\)/);
   assert.match(enterReply, /const replyIndex = appendTurn\('right_hand', fallbackReply\)/);
   // Assembly routes through the shared presence path (thinking-state card):
   // one state machine owns working → ready/question/snag at BOTH call sites,
@@ -780,17 +781,15 @@ test('F-RH3 conversation surface: model-led reply brain replaces the humble fall
 test('F-RH3 estimate handoff: trigger phrases cover live-walk wording and proposed_action is closed', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   const trigger = sliceDecl(src, 'textRequestsEstimateAssembly', 'textLooksLikeEstimatePageUpdate');
-  const regexMatch = trigger.match(/\/(.+)\/i\.test\(text\)/s);
+  const regexMatch = trigger.match(/\/(.*?)\/i\.test\(text\)/s);
   assert.ok(regexMatch?.[1], 'textRequestsEstimateAssembly must use a testable regex literal');
   const triggerRegex = new RegExp(regexMatch[1], 'i');
   const expectedPhrases = [
     'put it together',
     'take me there',
     'take me to the estimate',
-    'take me to the proposal',
     'build it',
     'build the estimate',
-    'build the proposal',
     'assemble it',
     'assemble the estimate',
     'start the estimate',
@@ -808,15 +807,49 @@ test('F-RH3 estimate handoff: trigger phrases cover live-walk wording and propos
     'assemble the island',
     'assemble the crew',
     "let's assemble the materials",
+    'build the proposal',
+    'make the invoice',
+    'bill the down payment',
   ];
   for (const phrase of overFirePhrases) {
     assert.equal(triggerRegex.test(phrase), false, `over-fired on scope/additional work phrase: ${phrase}`);
   }
-  assert.match(src, /type RightHandProposedAction = 'assemble_estimate'/);
+  assert.match(src, /type RightHandProposedAction = 'assemble_estimate' \| 'open_proposal_draft' \| 'open_invoice_draft' \| 'bill_down_payment_invoice'/);
   assert.match(src, /const normalizeProposedAction = \(value: unknown\): RightHandProposedAction \| null/);
-  assert.match(src, /clean === 'assemble_estimate' \? 'assemble_estimate' : null/);
+  assert.match(src, /clean === 'assemble_estimate'/);
+  assert.match(src, /clean === 'open_proposal_draft'/);
+  assert.match(src, /bill_down_payment_invoice/);
   assert.match(src, /proposedAction: normalizeProposedAction\(body\.proposed_action\)/);
   assert.doesNotMatch(src, /proposedAction: body\.proposed_action/);
+});
+
+test('F-RH3 proposal/invoice draft triggers are separate from estimate assembly', () => {
+  const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
+  const trigger = sliceDecl(src, 'textRequestsProposalOrInvoice', 'normalizeProposedAction');
+  const regexMatch = trigger.match(/\/(.*?)\/i\.test\(text\)/s);
+  assert.ok(regexMatch?.[1], 'textRequestsProposalOrInvoice must use a testable regex literal');
+  const triggerRegex = new RegExp(regexMatch[1], 'i');
+  for (const phrase of [
+    'make the proposal',
+    'build the proposal',
+    'send me to the proposal',
+    'generate the invoice',
+    'make the invoice',
+    'bill the down payment',
+  ]) {
+    assert.equal(triggerRegex.test(phrase), true, `missing draft trigger phrase: ${phrase}`);
+  }
+  for (const phrase of [
+    'we need to propose moving the sink wall',
+    'assemble the cabinets',
+    'propose the cabinet layout later',
+  ]) {
+    assert.equal(triggerRegex.test(phrase), false, `over-fired on non-draft phrase: ${phrase}`);
+  }
+  const enterReply = sliceDecl(src, 'enterReply', 'SORTING_BEAT_MS');
+  assert.match(enterReply, /const wantsArtifactDraft = textRequestsProposalOrInvoice\(clean\)/);
+  assert.match(enterReply, /const wantsAssembly = !wantsArtifactDraft &&/);
+  assert.match(enterReply, /payload\.artifactAction\?\.route/);
 });
 
 test('Dispatch 3: assembly accept routes to server-owned estimate draft and keeps live conversation link', () => {

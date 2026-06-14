@@ -19,6 +19,10 @@ import {
 import { parseModelJsonObject } from './modelJson.js';
 import type { TurnResolutionPacket } from './turnResolution.js';
 import type { WorkingDraftFields } from './workingDraft.js';
+import {
+  normalizeRightHandProposedAction,
+  type RightHandReplyProposedAction,
+} from '../../api/lib/estimateArtifactActions.js';
 
 export type ReplyResolverAuthority = 'llm_inferred' | 'humble_fallback';
 export type ReplyMode =
@@ -27,7 +31,7 @@ export type ReplyMode =
   | 'clarify'
   | 'advisor_flag'
   | 'gate_ready';
-export type ReplyProposedAction = 'assemble_estimate';
+export type ReplyProposedAction = RightHandReplyProposedAction;
 
 /** Rung-0 voice/text edit the reply brain proposes against the ACTIVE
  * estimate artifact (F-RH7 stage 6 / F-VW1; D-065 rung-0: draft-layer only,
@@ -227,7 +231,7 @@ Density never eats the honesty seam.
 - No internal words: packet, TRP, work artifact, attention artifact, resolver, hypothesis, pipeline.
 - A safety/policy/health issue may be pushy. Ordinary progress should not be.
 - Before the operator converts, EVERYTHING is a LEAD (D-066): never propose creating a project; the path is lead -> estimate -> proposal. The operator alone decides when something becomes a project.
-- proposed_action is a closed go-now handoff signal. Emit "assemble_estimate" only when the operator clearly asks to move from conversation into an estimate/proposal/bid/quote view now (for example: build the estimate, take me to the estimate, open the proposal, put it together). Otherwise return null. Do not emit it merely because the working draft is an estimate_draft or the operator is still adding scope.
+- proposed_action is a closed go-now handoff signal. Emit "assemble_estimate" only when the operator clearly asks to move from conversation into an estimate/bid/quote view now (for example: build the estimate, take me to the estimate, put it together). Emit "open_proposal_draft" when the operator asks to make/build/open/send-me-to the proposal. Emit "bill_down_payment_invoice" when the operator asks to make/generate/open the invoice or bill the down payment. Otherwise return null. Do not emit it merely because the working draft is an estimate_draft or the operator is still adding scope.
 
 Active estimate artifact context:
 - If active_estimate_artifact is present, it is the visible estimate draft the operator is looking at. Use it to answer estimate questions about visible lines, quantities, LF/SF/unit prices, totals, tiers, source labels, provenance/source refs, open items, blocked/draft status, and what is editable.
@@ -253,7 +257,7 @@ Return STRICT JSON only:
   },
   "asked_questions_ack": ["questions from prior turns that the operator has now answered"],
   "next_question": null,
-  "proposed_action": "assemble_estimate|null",
+  "proposed_action": "assemble_estimate|open_proposal_draft|bill_down_payment_invoice|null",
   "proposed_edits": [{"line_id": "...", "field": "quantity|unit_cents|removed", "value": 0}]
 }`;
 
@@ -286,9 +290,7 @@ function cleanProposedEdits(value: unknown): ReplyProposedEdit[] {
 }
 
 function cleanProposedAction(value: unknown): ReplyProposedAction | null {
-  if (typeof value !== 'string') return null;
-  const clean = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return clean === 'assemble_estimate' ? 'assemble_estimate' : null;
+  return normalizeRightHandProposedAction(value);
 }
 
 const FALSE_COMPLETION_VERBS = [
@@ -364,6 +366,43 @@ function textLooksLikeProductFeedback(value: string): boolean {
   return /\b(button|screen|scroll|interface|mic|microphone|working correctly|improved|not working|doesn'?t work|response|conversation|composer)\b/i.test(value);
 }
 
+function textLooksLikeEstimateRateQuestion(value: string): boolean {
+  return /\b(?:what|which|where|how)\b.*\b(?:rate|price|pricing|source|using|basis)\b|\b(?:rate|price|pricing|source|basis)\b.*\b(?:using|for|from)\b/i.test(value);
+}
+
+function bestEstimateLineForQuestion(
+  text: string,
+  artifact: EstimateArtifactReplyContext,
+): EstimateArtifactReplyLineContext | null {
+  const source = normalized(text);
+  const candidates = artifact.lines
+    .map((line) => {
+      const tokens = normalized(line.label)
+        .split(' ')
+        .filter((token) => token.length >= 4);
+      return {
+        line,
+        score: tokens.reduce((score, token) => score + (source.includes(token) ? 1 : 0), 0),
+      };
+    })
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return candidates[0]?.line ?? (artifact.lines.length === 1 ? artifact.lines[0]! : null);
+}
+
+function estimateRateFallbackReply(input: ResolveReplyInput): string | null {
+  const artifact = input.estimateArtifactContext;
+  if (!artifact || !textLooksLikeEstimateRateQuestion(input.latestText)) return null;
+  const line = bestEstimateLineForQuestion(input.latestText, artifact);
+  if (!line) return 'Which estimate line do you want the rate source for?';
+  const unit = line.unit_cents === null || line.unit_cents === undefined
+    ? 'no unit rate set'
+    : centsPrompt(line.unit_cents);
+  const quantity = line.quantity !== undefined && line.uom ? ` for ${line.quantity} ${line.uom}` : '';
+  const blocked = artifact.gate.allowed ? '' : ' Gate is still blocked; this is not client-ready.';
+  return `${line.label}: ${unit}${quantity}, from ${line.source_label} (${line.tier}; ${line.source_ref}). ${artifact.pricing_data_label}.${blocked}`;
+}
+
 function textLooksCritical(value: string): boolean {
   return /\b(safety|unsafe|injury|injured|fall|gas leak|electrical hazard|mold|asbestos|lead paint|stop work|policy|violation|illegal|client threat|lawsuit)\b/i.test(value);
 }
@@ -390,8 +429,12 @@ export function humbleReplyFallback(input: ResolveReplyInput, fallbackReason?: s
   const isNote = trpLooksLikeNote(input.trp);
   let reply = 'Got it.';
   let mode: ReplyMode = 'minimal_ack';
+  const estimateRateReply = estimateRateFallbackReply(input);
 
-  if (textLooksCritical(latest)) {
+  if (estimateRateReply) {
+    reply = estimateRateReply;
+    mode = 'peer_update';
+  } else if (textLooksCritical(latest)) {
     reply = 'Flagging that. Do not let the crew work past the safety issue.';
     mode = 'advisor_flag';
   } else if (textLooksLikeDirectUnderstandingCheck(latest)) {

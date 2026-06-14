@@ -64,6 +64,13 @@ import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
 import { buildProposalFromRightHandEstimate, type ProposalProjectionResult } from '../lib/estimateProposalProjection.js';
 import { buildInvoiceFromRightHandEstimate, renderInvoiceHtml, type InvoiceProjectionResult } from '../lib/estimateInvoiceProjection.js';
+import {
+  estimateArtifactIntentFromProposedAction,
+  estimateArtifactIntentFromText,
+  evaluateEstimateArtifactAction,
+  proposedActionForEstimateArtifactIntent,
+  type EstimateArtifactActionState,
+} from '../lib/estimateArtifactActions.js';
 import { renderProposalHtml } from '../../proposal/render.js';
 import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropicModelCaller.js';
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
@@ -260,13 +267,30 @@ function buildEstimateArtifactReplyContext(draft: Awaited<ReturnType<RightHandEs
   };
 }
 
+function responseForEstimateArtifactAction(action: EstimateArtifactActionState): {
+  readonly reply: string;
+  readonly mode: ResolveReplyResult['mode'];
+} {
+  if (action.status === 'ready_for_review') {
+    return {
+      reply: action.operator_message,
+      mode: 'gate_ready',
+    };
+  }
+  return {
+    reply: action.operator_message,
+    mode: 'gate_ready',
+  };
+}
+
+
 async function activeEstimateArtifactContext(params: {
   readonly deps: RightHandTurnRouteDeps;
   readonly tenantId: PersistenceTenantId;
   readonly body: Record<string, unknown>;
   readonly currentPath?: string;
   readonly workingDraft: WorkingDraftFields;
-}): Promise<{ context: EstimateArtifactReplyContext; estimateId: string } | null> {
+}): Promise<{ context: EstimateArtifactReplyContext; estimateId: string; draft: NonNullable<Awaited<ReturnType<RightHandEstimateStore['read']>>> } | null> {
   const estimateId = cleanEstimateId(params.body['estimate_id'])
     ?? cleanEstimateId(params.body['estimateId'])
     ?? estimateIdFromPath(params.currentPath)
@@ -275,7 +299,7 @@ async function activeEstimateArtifactContext(params: {
   try {
     const draft = await estimateStoreFor(params.deps).read(params.tenantId, estimateId);
     const context = buildEstimateArtifactReplyContext(draft);
-    return context ? { context, estimateId } : null;
+    return context && draft ? { context, estimateId, draft } : null;
   } catch {
     return null;
   }
@@ -1063,6 +1087,20 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) 
   const tenant = requireApiTenant(c);
   const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
+  const gate = evaluateEstimateArtifactAction({
+    draft,
+    intent: 'proposal_draft',
+    now: resolveDeps().now?.() ?? new Date(),
+  });
+  if (gate.status === 'blocked') {
+    return c.json({
+      error: 'proposal_source_basis_blocked',
+      artifact_state: gate.artifact_state,
+      operator_message: gate.operator_message,
+      next_action: gate.next_action,
+      blocked_reasons: gate.blocked_reasons,
+    }, 409);
+  }
   let projection: ProposalProjectionResult;
   try {
     projection = buildProposalFromRightHandEstimate(draft, { now: resolveDeps().now?.() ?? new Date() });
@@ -1107,6 +1145,20 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) =
       allowed: ['down_payment', 'final'],
       operator_message: 'Choose down payment or final. Nothing was filed or sent.',
     }, 400);
+  }
+  const gate = evaluateEstimateArtifactAction({
+    draft,
+    intent: 'down_payment_invoice',
+    now: resolveDeps().now?.() ?? new Date(),
+  });
+  if (gate.status === 'blocked') {
+    return c.json({
+      error: 'invoice_source_basis_blocked',
+      artifact_state: gate.artifact_state,
+      operator_message: gate.operator_message,
+      next_action: gate.next_action,
+      blocked_reasons: gate.blocked_reasons,
+    }, 409);
   }
   let projection: InvoiceProjectionResult;
   try {
@@ -1426,6 +1478,28 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
       : retry;
   }
 
+  const artifactIntent =
+    estimateArtifactIntentFromProposedAction(result.proposed_action)
+    ?? estimateArtifactIntentFromText(latestText);
+  let artifactAction: EstimateArtifactActionState | null = null;
+  if (estimateArtifactLoaded && artifactIntent) {
+    artifactAction = evaluateEstimateArtifactAction({
+      draft: estimateArtifactLoaded.draft,
+      intent: artifactIntent,
+      now: deps.now?.() ?? new Date(),
+    });
+    const actionReply = responseForEstimateArtifactAction(artifactAction);
+    result = {
+      ...result,
+      reply: actionReply.reply,
+      mode: actionReply.mode,
+      authority: result.authority,
+      claims_durable_action: false,
+      proposed_action: proposedActionForEstimateArtifactIntent(artifactIntent),
+      proposed_edits: [],
+    };
+  }
+
   const draftUpdate: WorkingDraftUpdate = {
     ...(result.updated_working_draft ?? {}),
     ...(result.open_items ? { open_items: result.open_items } : {}),
@@ -1506,6 +1580,7 @@ rightHandTurnRoutes.post('/right-hand/resolve-reply', async (c) => {
     ...(result.asked_questions_ack ? { asked_questions_ack: result.asked_questions_ack } : {}),
     ...(result.next_question ? { next_question: result.next_question } : {}),
     ...(result.proposed_action ? { proposed_action: result.proposed_action } : {}),
+    ...(artifactAction ? { artifact_action: artifactAction } : {}),
     ...(result.draft_fabrication_flags ? { draft_fabrication_flags: result.draft_fabrication_flags } : {}),
     ...(result.fallback_reason ? { fallback_reason: result.fallback_reason } : {}),
   });
