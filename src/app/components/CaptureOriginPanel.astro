@@ -1,7 +1,7 @@
 ---
 import SectionLabel from './SectionLabel.astro';
 import { createTranslator } from '../../i18n/index.js';
-import type { ProposalCaptureOrigin } from '../../proposal/captureOrigin.js';
+import type { CaptureOriginSession, ProposalCaptureOrigin } from '../../proposal/captureOrigin.js';
 
 export interface Props {
   origin: ProposalCaptureOrigin;
@@ -20,17 +20,28 @@ function formatSummary(): string {
     .replace('{transcripts}', String(origin.transcript_count));
 }
 
-function formatSessionLink(sessionId: string, date: string): string {
-  return t('f_pv.capture_origin.session_link')
-    .replace('{id}', sessionId)
-    .replace('{date}', date);
-}
-
 function formatSessionCounts(voice: number, photos: number, transcripts: number): string {
   return t('f_pv.capture_origin.session_counts')
     .replace('{voice}', String(voice))
     .replace('{photos}', String(photos))
     .replace('{transcripts}', String(transcripts));
+}
+
+function formatCaptureDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.toLocaleDateString(locale === 'es' ? 'es-US' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function formatSessionLabel(session: CaptureOriginSession): string {
+  const date = formatCaptureDate(session.captured_at.slice(0, 10));
+  const counts = formatSessionCounts(session.voice_clips, session.photos, session.transcripts);
+  const prefix = locale === 'es' ? 'Captura de campo' : 'Field capture';
+  return `${prefix} · ${date} · ${counts}`;
 }
 ---
 
@@ -44,12 +55,13 @@ function formatSessionCounts(voice: number, photos: number, transcripts: number)
       <ul class="capture-origin-sessions">
         {origin.sessions.map((session) => (
           <li>
-            <a href={session.detail_href} class="capture-origin-link">
-              {formatSessionLink(session.session_id, session.captured_at.slice(0, 10))}
+            <a
+              href={session.detail_href}
+              class="capture-origin-link"
+              data-session-id={session.session_id}
+            >
+              {formatSessionLabel(session)}
             </a>
-            <span class="capture-origin-counts">
-              {formatSessionCounts(session.voice_clips, session.photos, session.transcripts)}
-            </span>
           </li>
         ))}
       </ul>
@@ -64,5 +76,4 @@ function formatSessionCounts(voice: number, photos: number, transcripts: number)
   .capture-origin-sessions li { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.35rem 0; font-size: 0.85rem; }
   .capture-origin-link { color: var(--accent, #0f766e); font-weight: 600; text-decoration: none; }
   .capture-origin-link:hover { text-decoration: underline; }
-  .capture-origin-counts { color: var(--text-muted, #5c6670); }
 </style>

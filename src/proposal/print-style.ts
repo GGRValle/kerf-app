@@ -377,6 +377,7 @@ body {
 @media screen and (max-width: 600px) {
   body {
     padding: 12px;
+    max-width: 100%;
   }
   .kerf-proposal__page {
     padding: 16px;
@@ -397,9 +398,32 @@ body {
     flex: 1 1 auto;
     text-align: left;
   }
+  /* Screen reflow: left-align narrative/terms — no justified mid-word gaps */
+  .kerf-proposal__scope-narrative,
+  .kerf-proposal__terms-list li {
+    text-align: left;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+  /* Stack division title above subtotal so dollars never splice the header */
+  .kerf-proposal__division-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.08in;
+  }
+  .kerf-proposal__division-header > span:first-child {
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .kerf-proposal__division-subtotal {
+    align-self: flex-end;
+    white-space: nowrap;
+  }
   /* Let amounts size to content and let long descriptions wrap */
   .kerf-proposal__line,
   .kerf-proposal__milestone {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 0.12in;
   }
   .kerf-proposal__line-description,
@@ -410,9 +434,16 @@ body {
   .kerf-proposal__line-amount,
   .kerf-proposal__milestone-amount {
     flex: 0 0 auto;
+    align-self: flex-end;
   }
   .kerf-proposal__project-total {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.06in;
     font-size: 12pt;
+  }
+  .kerf-proposal__project-total > span:last-child {
+    align-self: flex-end;
   }
   /* Signature underline spans the frame instead of a fixed 3.5in */
   .kerf-proposal__signature-line {
