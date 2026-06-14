@@ -13,6 +13,7 @@ export interface BuildStamp {
 
 export interface ReadBuildStampOptions {
   readonly imageStampPath?: string;
+  readonly rootStampPath?: string;
 }
 
 function parseDirtyEnv(raw: string | undefined): boolean | null {
@@ -25,6 +26,7 @@ const DEFAULT_IMAGE_STAMP_PATH = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../build-stamp.json',
 );
+const DEFAULT_ROOT_STAMP_PATH = path.resolve(process.cwd(), 'build-stamp.json');
 
 function parseImageBuildStamp(raw: string): BuildStamp | null {
   try {
@@ -44,14 +46,23 @@ function parseImageBuildStamp(raw: string): BuildStamp | null {
   }
 }
 
-function readImageBuildStamp(stampPath = DEFAULT_IMAGE_STAMP_PATH): BuildStamp | null {
+function readImageBuildStamp(stampPath: string): BuildStamp | null {
   if (!existsSync(stampPath)) return null;
   return parseImageBuildStamp(readFileSync(stampPath, 'utf8'));
 }
 
+function imageStampPaths(options: ReadBuildStampOptions): readonly string[] {
+  const paths = options.imageStampPath !== undefined
+    ? [options.imageStampPath, ...(options.rootStampPath !== undefined ? [options.rootStampPath] : [])]
+    : [DEFAULT_IMAGE_STAMP_PATH, options.rootStampPath ?? DEFAULT_ROOT_STAMP_PATH];
+  return Array.from(new Set(paths.map((stampPath) => path.resolve(stampPath))));
+}
+
 export function readBuildStamp(options: ReadBuildStampOptions = {}): BuildStamp {
-  const imageStamp = readImageBuildStamp(options.imageStampPath);
-  if (imageStamp) return imageStamp;
+  for (const stampPath of imageStampPaths(options)) {
+    const imageStamp = readImageBuildStamp(stampPath);
+    if (imageStamp) return imageStamp;
+  }
 
   const envCommit = process.env['KERF_BUILD_COMMIT']?.trim();
   const envDirty = parseDirtyEnv(process.env['KERF_BUILD_DIRTY']);

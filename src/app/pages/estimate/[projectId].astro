@@ -11,6 +11,10 @@ import {
 } from '../../../sales/index.js';
 import { getRightHandEstimateStore } from '../../../api/lib/rightHandAssemblyStore.js';
 import { evaluateEstimateArtifactAction } from '../../../api/lib/estimateArtifactActions.js';
+import {
+  operatorFacingBlockedReasons,
+  operatorFacingPricingLabel,
+} from '../../lib/operatorFacingReasons.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
@@ -51,10 +55,11 @@ const rhLineGroups = Array.from(rhPrimaryLines.reduce((groups, line) => {
   .sort((a, b) => a.code.localeCompare(b.code));
 const gateStatus = rightHandDraft?.gate.allowed
   ? 'Ready for review'
-  : 'Draft only - source review required';
+  : 'Draft only - approve rates first';
 const gateDetail = rightHandDraft?.gate.allowed
   ? 'Nothing has been filed or sent.'
-  : `Blocked from proposal/send: ${rightHandDraft?.gate.blocked_reasons.join(', ') || 'review required'}`;
+  : `Proposal and invoice stay blocked. ${operatorFacingBlockedReasons(rightHandDraft?.gate.blocked_reasons ?? [])}`;
+const pricingDataLabel = rightHandDraft ? operatorFacingPricingLabel(rightHandDraft.pricing_data_label) : '';
 const proposalAction = rightHandDraft
   ? evaluateEstimateArtifactAction({ draft: rightHandDraft, intent: 'proposal_draft', now: new Date() })
   : null;
@@ -95,11 +100,11 @@ const estimateTitle = rightHandDraft
 
         <div class="es-rh-status" data-allowed={rightHandDraft.gate.allowed ? 'true' : 'false'}>
           <div>
-            <span class="es-sr-only">Policy gate fired</span>
+            <span class="es-sr-only">Safety check ran</span>
             <strong>{gateStatus}</strong>
             <span>{gateDetail}</span>
           </div>
-          <span>{rightHandDraft.pricing_data_label}</span>
+          <span>{pricingDataLabel}</span>
         </div>
 
         <div class="es-rh-actions" aria-label="Estimate actions">
@@ -317,7 +322,7 @@ const estimateTitle = rightHandDraft
             <div>
               <strong>Proposal draft</strong>
               <span>{proposalAction?.operator_message}</span>
-              {proposalAction?.blocked_reasons.length ? <small>{proposalAction.blocked_reasons.join(', ')}</small> : null}
+              {proposalAction?.blocked_reasons.length ? <small>{operatorFacingBlockedReasons(proposalAction.blocked_reasons)}</small> : null}
             </div>
             {proposalAction?.route ? (
               <a class="es-btn primary" href={proposalAction.route}>Open</a>
@@ -329,7 +334,7 @@ const estimateTitle = rightHandDraft
             <div>
               <strong>Down-payment invoice</strong>
               <span>{invoiceAction?.operator_message}</span>
-              {invoiceAction?.blocked_reasons.length ? <small>{invoiceAction.blocked_reasons.join(', ')}</small> : null}
+              {invoiceAction?.blocked_reasons.length ? <small>{operatorFacingBlockedReasons(invoiceAction.blocked_reasons)}</small> : null}
             </div>
             {invoiceAction?.route ? (
               <a class="es-btn primary" href={invoiceAction.route}>Open</a>

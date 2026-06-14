@@ -865,7 +865,7 @@ test('Dispatch 3: assembly accept routes to server-owned estimate draft and keep
   assert.match(estimatePage, /getRightHandEstimateStore/);
   assert.doesNotMatch(estimatePage, /readRightHandEstimateDraft/);
   assert.match(estimatePage, /pricing_data_label/);
-  assert.match(estimatePage, /Policy gate fired/);
+  assert.match(estimatePage, /Safety check ran/);
   assert.match(estimatePage, /Back to conversation/);
   assert.match(estimatePage, /source_type/);
   assert.match(estimatePage, /data-rh-conversation/);
