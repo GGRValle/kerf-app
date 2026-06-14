@@ -22,6 +22,9 @@ test('PWA: install assets are auth-exempt (load before crew login); real paths s
   assert.equal(isAuthExemptPath('/home/field'), false);
   assert.equal(isAuthExemptPath('/api/v1/right-hand/estimates/x'), false);
   assert.equal(isAuthExemptPath('/manifest.webmanifest/../home/owner'), false);
+  assert.equal(isAuthExemptPath('/icons/../home/owner'), false);
+  assert.equal(isAuthExemptPath('/icons/%2e%2e/home/owner'), false);
+  assert.equal(isAuthExemptPath('/icons/not-an-install-asset.png'), false);
 });
 
 test('PWA: manifest is standalone with start_url, scope, and 3 icons incl. maskable', () => {
