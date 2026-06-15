@@ -41,10 +41,15 @@
     "deploy:fly": "sh scripts/fly-deploy-stamped.sh",
     "build:astro": "astro build",
     "dev:shell": "astro dev --port 8020",
-    "serve:shell": "npm run build:astro && node --import tsx scripts/serve-kerf-shell.ts"
+    "serve:shell": "npm run build:astro && node --import tsx scripts/serve-kerf-shell.ts",
+    "native:sync": "cap sync ios",
+    "native:open": "cap open ios",
+    "native:run:ios": "cap run ios"
   },
   "dependencies": {
     "@astrojs/node": "^9.0.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
     "@hono/node-server": "^1.14.0",
     "astro": "^5.0.0",
     "exceljs": "^4.4.0",
@@ -52,6 +57,7 @@
     "pg": "^8.21.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.0",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.20.0",
     "tsx": "^4.7.0",
