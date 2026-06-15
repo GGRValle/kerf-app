@@ -18,7 +18,7 @@ import {
   isAuthExemptPath,
   isBasicAuthEnabled,
   issueShellSessionCookie,
-  parseShellSessionCookie,
+  platformSessionFromShellCookie,
   resolveBindingFromBasicAuth,
   shellSessionSetCookieHeader,
   verifyDeployBasicAuth,
@@ -109,12 +109,21 @@ async function main(): Promise<void> {
     if (isBasicAuthEnabled() && !isAuthExemptPath(pathname)) {
       const authorized =
         verifyDeployBasicAuth(req.headers.authorization) ||
-        parseShellSessionCookie(req.headers.cookie) !== null;
+        platformSessionFromShellCookie(req.headers.cookie) !== null;
       if (!authorized) {
-        res.statusCode = 401;
-        res.setHeader('WWW-Authenticate', 'Basic realm="Kerf"');
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.end('Unauthorized');
+        // API callers get a clean 401 (no WWW-Authenticate → no browser dialog).
+        if (pathname.startsWith('/api/v1')) {
+          res.statusCode = 401;
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.end(JSON.stringify({ error: 'unauthorized' }));
+          return;
+        }
+        // HTML navigation → the crew login surface (Goal B PR-2), preserving the
+        // intended destination. /login + /auth/login are auth-exempt, so this
+        // never loops. No browser Basic dialog anywhere.
+        res.statusCode = 302;
+        res.setHeader('Location', `/login?next=${encodeURIComponent(req.url ?? '/')}`);
+        res.end();
         return;
       }
       if (verifyDeployBasicAuth(req.headers.authorization)) {
