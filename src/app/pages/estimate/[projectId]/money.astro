@@ -167,6 +167,10 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
         <span>Remaining</span>
         <strong>{fmt(remainingCents)}</strong>
       </div>
+      <div>
+        <span>Paid recorded</span>
+        <strong>Not tracked yet</strong>
+      </div>
     </section>
 
     {downPayment.invoice ? (
@@ -191,13 +195,13 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
               <div><dt>Milestone amount</dt><dd>{fmt(item.billed_cents + item.invoice.amount_due_cents + item.invoice.retention_held_cents)}</dd></div>
               <div><dt>Billed</dt><dd>{fmt(item.billed_cents)}</dd></div>
               <div><dt>Remaining to issue</dt><dd>{fmt(item.remaining_cents)}</dd></div>
-              <div><dt>Paid</dt><dd>{fmt(0)}</dd></div>
+              <div><dt>Paid</dt><dd>Not tracked in Kerf yet</dd></div>
             </dl>
           ) : (
             <p class="mf-note">{item.blocked_reason}</p>
           )}
 
-          <p class="mf-muted">Payment recording is not connected on this surface yet. This page records billing milestones only.</p>
+          <p class="mf-muted">Payment recording is not connected on this surface yet. This page records billing milestones only, then keeps the unpaid balance visible.</p>
 
           {item.issued_rows.length > 0 ? (
             <details class="mf-ledger">
@@ -308,7 +312,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
 
   .mf-summary {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.65rem;
     margin: 0.85rem 0;
   }

@@ -55,6 +55,10 @@ const blockedReason = outcome.status === 'blocked'
         <p>{blockedReason}</p>
         <p><strong>Next:</strong> {outcome.next_action}</p>
         <p class="pp-note">No client-ready prices were shown. The estimate and rate library were not changed.</p>
+        <div class="pp-actions">
+          <a class="pp-btn primary" href={estimateBack}>Approve rates on estimate</a>
+          {conversationBack ? <a class="pp-btn ghost" href={conversationBack}>Back to conversation</a> : null}
+        </div>
         {outcome.operator_annex.ungraduated_line_ids.length > 0 ? (
           <p class="pp-note">{outcome.operator_annex.ungraduated_line_ids.length} priced line(s) still need you to approve the rate for this estimate.</p>
         ) : null}
@@ -86,13 +90,17 @@ const blockedReason = outcome.status === 'blocked'
             </ul>
           </Card>
         ) : null}
-        <Card eyebrow="Before you send" title="Ready for owner review">
+        <Card eyebrow="Send gate" title="Ready for owner review">
           <div class="pp-send-gate">
             <span>Rates approved for this estimate</span>
             <span>Client total tied to the estimate</span>
             <span>Sending still needs your separate confirmation</span>
           </div>
-          <p class="pp-note">This proposal is a phase, not an automatic send. Use Money to create invoice milestones from this approved basis.</p>
+          <p class="pp-note">This proposal is a phase, not an automatic send. Review the client body here; then use Money to create invoice milestones from this approved basis.</p>
+          <div class="pp-send-wall" aria-label="Send wall">
+            <strong>Send stays locked.</strong>
+            <span>No email, text, portal post, or accounting handoff happens from this preview.</span>
+          </div>
         </Card>
         <div class="pp-actions">
           <a class="pp-btn ghost" href={estimateBack}>Back to estimate</a>
