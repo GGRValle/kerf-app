@@ -17,7 +17,7 @@ function requestIsSecure(request: Request): boolean {
   }
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export async function handleCrewLoginRequest(request: Request): Promise<Response> {
   let username = '';
   let password = '';
   let next: string | null = null;
@@ -45,4 +45,6 @@ export const POST: APIRoute = async ({ request }) => {
   const headers = new Headers({ Location: result.location });
   if (result.setCookie !== null) headers.append('Set-Cookie', result.setCookie);
   return new Response(null, { status: result.status, headers });
-};
+}
+
+export const POST: APIRoute = async ({ request }) => handleCrewLoginRequest(request);
