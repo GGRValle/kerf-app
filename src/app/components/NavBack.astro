@@ -1,0 +1,63 @@
+---
+export interface Props {
+  /** Fallback when there is no same-origin history to pop. */
+  href: string;
+  label?: string;
+}
+
+const { href, label = '‹ Back' } = Astro.props;
+---
+
+<nav class="kerf-nav-back-wrap" aria-label="Back navigation">
+  <a class="kerf-nav-back" href={href} data-nav-back data-nav-back-fallback={href}>{label}</a>
+</nav>
+
+<script>
+  function bindNavBack(root: ParentNode = document) {
+    root.querySelectorAll('a[data-nav-back]').forEach((el) => {
+      if (!(el instanceof HTMLAnchorElement)) return;
+      if (el.dataset.navBackBound === '1') return;
+      el.dataset.navBackBound = '1';
+      el.addEventListener('click', (ev) => {
+        const ref = document.referrer;
+        const hasHistory = window.history.length > 1;
+        const sameOriginReferrer =
+          ref.length > 0 && ref.startsWith(`${window.location.origin}/`);
+        if (hasHistory && sameOriginReferrer) {
+          ev.preventDefault();
+          window.history.back();
+        }
+      });
+    });
+  }
+
+  bindNavBack();
+  document.addEventListener('astro:page-load', () => bindNavBack());
+</script>
+
+<style>
+  .kerf-nav-back-wrap {
+    margin: 0 0 0.35rem;
+  }
+
+  .kerf-nav-back {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    color: var(--text-muted, var(--kerf-text-dim, #98a1b3));
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .kerf-nav-back:hover {
+    color: var(--kerf-text, inherit);
+    text-decoration: underline;
+  }
+
+  .kerf-nav-back:focus-visible {
+    outline: 2px solid var(--right-hand, #c9a961);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+</style>
