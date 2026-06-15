@@ -32,6 +32,16 @@ export interface ChangeOrderRef {
   readonly amount_cents: number;
 }
 
+export interface EstimateInvoiceActivityLine {
+  readonly line_id: string;
+  readonly description: string;
+  readonly quantity: number;
+  readonly uom: string;
+  readonly rate_cents: number;
+  readonly invoice_amount_cents: number;
+  readonly note: string;
+}
+
 export interface EstimateInvoiceProjection {
   readonly invoice_id: string;
   readonly status: 'draft';
@@ -51,6 +61,7 @@ export interface EstimateInvoiceProjection {
   readonly retention_held_cents: number;
   readonly amount_due_cents: number;
   readonly remaining_after_cents: number;
+  readonly activity_lines: readonly EstimateInvoiceActivityLine[];
   readonly issue_date: string;
 }
 
@@ -154,6 +165,7 @@ export function buildInvoiceFromRightHandEstimate(
       retention_held_cents: retentionHeld,
       amount_due_cents: due,
       remaining_after_cents: remainingAfter,
+      activity_lines: milestoneInvoiceActivityLines(proposal.proposal_id, milestone, due),
       issue_date: opts.now.toISOString(),
     },
     held_back_count: basis.held_back.length,
@@ -166,38 +178,88 @@ const money = (cents: number): string =>
 const esc = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+function milestoneInvoiceActivityLines(
+  proposalId: string,
+  milestone: { readonly milestone_id: string; readonly label: string; readonly kind: string },
+  dueCents: number,
+): readonly EstimateInvoiceActivityLine[] {
+  return [{
+    line_id: milestone.milestone_id,
+    description: milestone.label,
+    quantity: 1,
+    uom: 'milestone',
+    rate_cents: dueCents,
+    invoice_amount_cents: dueCents,
+    note: `Progress billing against proposal ${proposalId}. Draft only — nothing has been filed or sent.`,
+  }];
+}
+
 /** Client-clean DRAFT invoice render. No internal vocabulary, ever. */
 export function renderInvoiceHtml(invoice: EstimateInvoiceProjection): string {
-  const rows: ReadonlyArray<readonly [string, string]> = [
+  const invoiceDate = invoice.issue_date.slice(0, 10);
+  const dueText = invoice.milestone.kind === 'down_payment' ? 'Due at signing' : 'Due at substantial completion';
+  const adjustmentCents = invoice.adjusted_contract_cents - invoice.contract_base_cents;
+  const summaryRows: ReadonlyArray<readonly [string, string]> = [
     ['Contract amount', money(invoice.contract_base_cents)],
-    ['Approved change orders', money(invoice.adjusted_contract_cents - invoice.contract_base_cents)],
+    ...(adjustmentCents !== 0 ? [['Approved change orders', money(adjustmentCents)] as const] : []),
     ['Adjusted contract', money(invoice.adjusted_contract_cents)],
-    ['Billed to date', money(invoice.billed_to_date_cents)],
-    ...(invoice.retention_held_cents > 0
-      ? [['Retention held', money(invoice.retention_held_cents)] as const]
-      : []),
-    ['Amount due this invoice', money(invoice.amount_due_cents)],
+    ['Previously billed', money(invoice.billed_to_date_cents)],
+    ['This invoice', money(invoice.amount_due_cents)],
     ['Remaining after payment', money(invoice.remaining_after_cents)],
+  ];
+  const totalRows: ReadonlyArray<readonly [string, string, string?]> = [
+    ['Subtotal', money(invoice.amount_due_cents)],
+    ...(invoice.retention_held_cents > 0
+      ? [['Retention held', `-${money(invoice.retention_held_cents)}`, 'muted'] as const]
+      : []),
+    ['Total', money(invoice.amount_due_cents), 'strong'],
+    ['Balance due', money(invoice.amount_due_cents), 'due'],
   ];
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Invoice — DRAFT</title>
 <style>
   * { box-sizing: border-box; }
-  body { font: 15px/1.45 -apple-system, system-ui, sans-serif; color: #111827; margin: 1.5rem auto; max-width: 720px; padding: 0 clamp(0.75rem, 4vw, 1rem); }
-  .inv-watermark { text-transform: uppercase; letter-spacing: .12em; color: #b45309; font-weight: 800; font-size: .8rem; }
-  h1 { margin: .25rem 0 0; font-size: 1.5rem; line-height: 1.2; }
-  .inv-meta { color: #6a7282; font-size: .85rem; margin-top: .25rem; }
-  table { width: 100%; border-collapse: collapse; margin-top: 1.25rem; }
-  td { padding: .5rem .25rem; border-bottom: 1px solid #e0e4eb; }
-  td:first-child { overflow-wrap: anywhere; }
-  td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  tr.inv-due td { font-weight: 800; border-top: 2px solid #111827; }
-  .inv-foot { margin-top: 1.5rem; color: #6a7282; font-size: .8rem; overflow-wrap: anywhere; }
+  :root { --ink: #111827; --muted: #6b7280; --rule: #d9dee7; --soft: #e9f7f7; --accent: #02858f; }
+  body { font: 12px/1.45 Arial, -apple-system, system-ui, sans-serif; color: var(--ink); margin: 1.25rem auto; max-width: 760px; padding: 0 clamp(0.75rem, 4vw, 1rem); background: #fff; }
+  .inv-draft { text-transform: uppercase; letter-spacing: .12em; color: #b45309; font-weight: 800; font-size: .72rem; margin-bottom: 1rem; }
+  .inv-top { display: grid; grid-template-columns: 1fr 1.1fr; gap: 1.25rem; align-items: start; }
+  .inv-mark { width: 74px; height: 74px; border-radius: 10px; background: #66c8db; color: #fff; display: grid; place-items: center; font-weight: 900; font-size: 1.8rem; letter-spacing: -0.08em; }
+  .inv-brand { margin-top: .35rem; font-weight: 800; }
+  .inv-company { font-size: .78rem; line-height: 1.5; }
+  h1 { color: var(--accent); font-size: 1.05rem; font-weight: 500; letter-spacing: .02em; margin: 1.8rem 0 .75rem; text-transform: uppercase; }
+  .inv-meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1.1rem; margin-bottom: 1.35rem; }
+  .inv-block-title, .inv-kv dt { color: var(--muted); font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+  .inv-block-body { margin-top: .25rem; white-space: pre-line; }
+  .inv-kv { display: grid; grid-template-columns: max-content 1fr; column-gap: .65rem; row-gap: .22rem; margin: 0; }
+  .inv-kv dt, .inv-kv dd { margin: 0; }
+  .inv-kv dd { font-weight: 700; overflow-wrap: anywhere; }
+  table { width: 100%; border-collapse: collapse; }
+  .inv-activity thead th { background: var(--soft); color: var(--accent); text-transform: uppercase; font-size: .7rem; font-weight: 700; padding: .45rem .35rem; text-align: left; }
+  .inv-activity thead th:nth-child(n+2), .inv-activity tbody td:nth-child(n+2) { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .inv-activity tbody td { padding: .65rem .35rem; vertical-align: top; border-bottom: 1px dashed var(--rule); }
+  .inv-item-title { font-weight: 800; }
+  .inv-item-note { color: var(--muted); font-size: .78rem; margin-top: .15rem; }
+  .inv-lower { display: grid; grid-template-columns: 1fr minmax(260px, .95fr); gap: 1.25rem; margin-top: 1rem; align-items: start; }
+  .inv-thanks { color: var(--muted); border-top: 1px dashed var(--rule); padding-top: .8rem; font-size: .78rem; }
+  .inv-totals { width: 100%; }
+  .inv-totals td { padding: .35rem .25rem; border-bottom: 0; }
+  .inv-totals td:first-child { color: var(--muted); text-transform: uppercase; font-weight: 700; font-size: .72rem; }
+  .inv-totals td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+  .inv-totals tr.strong td { border-top: 1px solid var(--rule); color: var(--ink); }
+  .inv-totals tr.due td { border-top: 1px dashed var(--rule); color: var(--ink); font-size: .96rem; font-weight: 900; }
+  .inv-totals tr.muted td:last-child { color: var(--muted); }
+  .inv-summary-title { color: var(--accent); font-weight: 800; font-size: .78rem; margin: .75rem 0 .25rem; }
+  .inv-summary { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-top: .25rem; }
+  .inv-summary td { padding: .32rem .2rem; border: 0; }
+  .inv-summary td:last-child { text-align: right; font-weight: 700; white-space: nowrap; }
+  .inv-foot { margin-top: 3rem; text-align: center; color: var(--muted); font-size: .72rem; overflow-wrap: anywhere; }
   /* Phone frame: the invoice is embedded in a ~360px overflow:hidden
      iframe on estimate/[projectId]/invoice.astro. The body is already
      max-width based; tighten the rhythm so it reads on a phone. */
   @media screen and (max-width: 600px) {
-    body { margin: 1rem auto; font-size: 14px; }
-    h1 { font-size: 1.3rem; }
+    body { margin: 1rem auto; font-size: 12px; }
+    .inv-top, .inv-meta-grid, .inv-lower { grid-template-columns: 1fr; }
+    h1 { margin-top: 1.25rem; }
+    .inv-activity { font-size: .9rem; }
   }
   /* Printable draft — letter-clean. */
   @media print {
@@ -205,12 +267,62 @@ export function renderInvoiceHtml(invoice: EstimateInvoiceProjection): string {
     body { margin: 0 auto; max-width: 100%; padding: 0; color: #000; }
   }
 </style></head><body>
-<div class="inv-watermark">Preliminary — draft for review, not a bill</div>
-<h1>Invoice — ${esc(invoice.milestone.label)}</h1>
-<div class="inv-meta">${esc(invoice.client_name)} · ${esc(invoice.milestone.kind === 'down_payment' ? 'Due at signing' : 'Due at substantial completion')} · ${esc(invoice.issue_date.slice(0, 10))}</div>
-<table>
-${rows.map(([label, value]) => `<tr${label === 'Amount due this invoice' ? ' class="inv-due"' : ''}><td>${esc(label)}</td><td>${value}</td></tr>`).join('\n')}
+<div class="inv-draft">Preliminary — draft for review, not a bill</div>
+<div class="inv-top">
+  <div>
+    <div class="inv-mark">GGR</div>
+    <div class="inv-brand">design +<br>remodeling.</div>
+  </div>
+  <div class="inv-company">
+    <strong>${esc(GGR_BRANDING.brand_line)}</strong><br>
+    ${esc(GGR_BRANDING.legal_entity)}<br>
+    CA Lic #${esc(invoice.cslb_license_number)}
+  </div>
+</div>
+<h1>Invoice</h1>
+<section class="inv-meta-grid" aria-label="Invoice parties and details">
+  <div>
+    <div class="inv-block-title">Bill to</div>
+    <div class="inv-block-body">${esc(invoice.client_name)}</div>
+  </div>
+  <div>
+    <div class="inv-block-title">Project / proposal</div>
+    <div class="inv-block-body">Proposal ${esc(invoice.proposal_id)}<br>${esc(invoice.anchor_type)} ${esc(invoice.anchor_id)}</div>
+  </div>
+  <dl class="inv-kv">
+    <dt>Invoice</dt><dd>${esc(invoice.invoice_id)}</dd>
+    <dt>Date</dt><dd>${esc(invoiceDate)}</dd>
+    <dt>Terms</dt><dd>Draft only</dd>
+    <dt>Due</dt><dd>${esc(dueText)}</dd>
+  </dl>
+  <dl class="inv-kv">
+    <dt>Payment method</dt><dd>Not selected</dd>
+    <dt>Status</dt><dd>Not sent</dd>
+  </dl>
+</section>
+<table class="inv-activity" aria-label="Invoice activity">
+  <thead><tr><th>Activity</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+  <tbody>
+    ${invoice.activity_lines.map((line) => `<tr>
+      <td><div class="inv-item-title">${esc(line.description)}</div><div class="inv-item-note">${esc(line.note)}</div></td>
+      <td>${esc(line.quantity.toLocaleString('en-US'))}</td>
+      <td>${money(line.rate_cents)}</td>
+      <td>${money(line.invoice_amount_cents)}</td>
+    </tr>`).join('\n')}
+  </tbody>
 </table>
-<div class="inv-foot">${esc(GGR_BRANDING.legal_entity)} · Lic. #${esc(invoice.cslb_license_number)} · References proposal ${esc(invoice.proposal_id)} · Draft only — nothing has been filed or sent.</div>
+<section class="inv-lower">
+  <div class="inv-thanks">Thank you for trusting us with your project.</div>
+  <div>
+    <table class="inv-totals" aria-label="Invoice totals">
+      ${totalRows.map(([label, value, kind]) => `<tr${kind ? ` class="${kind}"` : ''}><td>${esc(label)}</td><td>${value}</td></tr>`).join('\n')}
+    </table>
+    <div class="inv-summary-title">Estimate summary</div>
+    <table class="inv-summary" aria-label="Estimate summary">
+      ${summaryRows.map(([label, value]) => `<tr><td>${esc(label)}</td><td>${value}</td></tr>`).join('\n')}
+    </table>
+  </div>
+</section>
+<div class="inv-foot">${esc(GGR_BRANDING.brand_line)} · ${esc(GGR_BRANDING.legal_entity)} · CA Lic #${esc(invoice.cslb_license_number)} · Page 1 of 1</div>
 </body></html>`;
 }

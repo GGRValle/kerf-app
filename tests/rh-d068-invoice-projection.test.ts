@@ -92,6 +92,17 @@ test('invoice bills the down-payment milestone against the FENCED proposal basis
   assert.equal(invoice.remaining_after_cents, 1_900_000);
   assert.equal(invoice.status, 'draft');
   assert.match(invoice.proposal_id, /^prop_/);
+  assert.equal(invoice.activity_lines.length, 1);
+  assert.equal(invoice.activity_lines[0]?.line_id, invoice.milestone.milestone_id);
+  assert.equal(invoice.activity_lines[0]?.description, invoice.milestone.label);
+  assert.equal(invoice.activity_lines[0]?.invoice_amount_cents, invoice.amount_due_cents);
+});
+
+test('invoice activity shows what is billed now; it does not auto-itemize every estimate line', () => {
+  const { invoice } = buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), { now: NOW });
+  assert.equal(invoice.activity_lines.length, 1);
+  assert.match(invoice.activity_lines[0]?.note ?? '', /Progress billing against proposal/);
+  assert.ok(!invoice.activity_lines.some((line) => /Base cabinets|Suggested dumpster/i.test(line.description)));
 });
 
 test('spec §5 formula: adjusted = base + ΣCOs; due never bills past the adjusted contract', () => {
@@ -130,8 +141,15 @@ test('rendered HTML is client-clean: DRAFT watermark, license, money rows, zero 
   const { invoice } = buildInvoiceFromRightHandEstimate(graduatedInvoiceDraft(), { now: NOW });
   const html = renderInvoiceHtml(invoice);
   assert.match(html, /Preliminary — draft for review, not a bill/);
+  assert.match(html, /Bill to/);
+  assert.match(html, /Activity/);
+  assert.match(html, /Qty/);
+  assert.match(html, /Rate/);
+  assert.match(html, /Amount/);
+  assert.match(html, /Balance due/);
+  assert.match(html, /Estimate summary/);
   assert.match(html, new RegExp(invoice.cslb_license_number));
-  assert.match(html, /Amount due this invoice/);
+  assert.match(html, /This invoice/);
   assert.match(html, /\$1,000\.00/);
   assert.ok(!/KERF_SEED|MODEL_INFERENCE|illustrative|suggested|rung/i.test(html));
 });
