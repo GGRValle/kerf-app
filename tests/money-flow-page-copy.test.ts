@@ -56,6 +56,8 @@ test('M3: proposal page keeps the pre-contract / not-sent safety framing', () =>
   const src = pageText(PAGES.proposal);
   assert.match(src, /pre-contract/i);
   assert.match(src, /before signing/i);
+  assert.match(src, /Send gate/i);
+  assert.match(src, /Send stays locked/i);
   assert.match(src, /Nothing is sent|not been sent|Nothing has been sent/i);
   // Operator annex must stay separated from the client body.
   assert.match(src, /Not shown to the client|not visible to client/i);
@@ -65,6 +67,10 @@ test('M3: invoice page stays clearly draft-only and never claims a money action'
   const src = pageText(PAGES.invoice);
   assert.match(src, /draft/i);
   assert.match(src, /not sent|nothing.*(billed|posted|charged)/i);
+  assert.match(src, /This invoice bills the current milestone/i);
+  assert.match(src, /estimate and proposal remain the basis/i);
+  assert.match(src, /detail defaults/i);
+  assert.match(src, /per invoice/i);
   // The page must not wire a real money consequence (hard fence: no
   // issue/post/charge verb as an action the page performs).
   assert.ok(!/POST.*\/(issue|charge|post-payment)/i.test(src), 'no money-consequence call from the page');
@@ -79,6 +85,8 @@ test('Goal A: money surface is the only page that issues invoice milestones, and
   assert.match(src, /\/invoice\/issue/);
   assert.match(src, /Nothing will be sent, posted, charged, or marked paid/i);
   assert.match(src, /Payment recording is not connected/i);
+  assert.match(src, /Paid recorded/);
+  assert.match(src, /Not tracked in Kerf yet/);
   for (const rel of [PAGES.estimate, PAGES.proposal, PAGES.invoice]) {
     assert.ok(!/\/invoice\/issue/.test(pageText(rel)), `${rel} must not issue invoice milestones`);
   }
@@ -88,6 +96,16 @@ test('Goal A: estimate, proposal, and invoice pages all route forward to Money',
   assert.match(pageText(PAGES.estimate), /\/money\?estimate_id=/);
   assert.match(pageText(PAGES.proposal), /Open Money/);
   assert.match(pageText(PAGES.invoice), /Open Money/);
+});
+
+test('Goal A: owner money-flow pages render the shared phase strip path', () => {
+  for (const rel of [PAGES.estimate, PAGES.proposal, PAGES.invoice, PAGES.money]) {
+    const src = pageText(rel);
+    assert.match(src, /PhaseStrip/);
+    for (const label of ['Estimate', 'Proposal', 'Invoice', 'Money']) {
+      assert.match(src, new RegExp(`label:\\s*['"]${label}['"]`), `${rel} should include ${label} in the phase strip`);
+    }
+  }
 });
 
 test('M3: estimate page keeps the gate/blocked state visible and translated', () => {
