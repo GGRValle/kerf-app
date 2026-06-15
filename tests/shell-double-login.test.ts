@@ -121,6 +121,38 @@ function httpGet(url: string, headers: Record<string, string> = {}): Promise<Htt
   });
 }
 
+function httpPostForm(
+  url: string,
+  body: URLSearchParams,
+  headers: Record<string, string> = {},
+): Promise<HttpResp> {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const payload = body.toString();
+    const req = http.request(
+      {
+        method: 'POST',
+        host: u.hostname,
+        port: u.port,
+        path: u.pathname + u.search,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': String(Buffer.byteLength(payload)),
+          ...headers,
+        },
+      },
+      (res) => {
+        let raw = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => (raw += c));
+        res.on('end', () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body: raw }));
+      },
+    );
+    req.on('error', reject);
+    req.end(payload);
+  });
+}
+
 function tailChildOutput(logs: readonly string[], maxLines = 40): string {
   return logs
     .join('')
@@ -208,6 +240,51 @@ test(
     const api = await httpGet(`http://127.0.0.1:${proc.port}/api/v1/projects`, { Cookie: cookiePair });
     assert.equal(api.status, 200, 'API must accept signed shell cookie without Authorization header');
     assert.equal(api.headers['www-authenticate'], undefined);
+  } finally {
+    await stopShellServer(proc);
+  }
+  },
+);
+
+test(
+  'shell server: Fly-proxied same-origin crew login mints while true cross-origin login is refused',
+  { timeout: 180_000 },
+  async () => {
+  const proc = await startShellServer({
+    BASIC_AUTH_USER: 'christian',
+    BASIC_AUTH_PASS: 'fleet-test-pass',
+  });
+  try {
+    const body = new URLSearchParams({
+      username: 'christian',
+      password: 'fleet-test-pass',
+    });
+    const proxiedHeaders = {
+      Origin: 'https://kerf-v17-internal.fly.dev',
+      'X-Forwarded-Host': 'kerf-v17-internal.fly.dev',
+      'X-Forwarded-Proto': 'https',
+    };
+
+    const sameOrigin = await httpPostForm(
+      `http://127.0.0.1:${proc.port}/auth/login`,
+      body,
+      proxiedHeaders,
+    );
+    assert.equal(sameOrigin.status, 303);
+    assert.notEqual(sameOrigin.headers.location, '/login?error=1');
+    assert.ok(sameOrigin.headers['set-cookie'], 'proxied same-origin login must mint a session cookie');
+
+    const crossOrigin = await httpPostForm(
+      `http://127.0.0.1:${proc.port}/auth/login`,
+      body,
+      {
+        ...proxiedHeaders,
+        Origin: 'https://evil.example',
+      },
+    );
+    assert.equal(crossOrigin.status, 303);
+    assert.equal(crossOrigin.headers.location, '/login?error=1');
+    assert.equal(crossOrigin.headers['set-cookie'], undefined);
   } finally {
     await stopShellServer(proc);
   }

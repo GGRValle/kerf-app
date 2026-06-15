@@ -12,6 +12,7 @@ import { getRequestListener } from '@hono/node-server';
 import { Hono } from 'hono';
 
 import { apiRouter } from '../src/api/router.ts';
+import { handleCrewLoginRequest } from '../src/app/pages/auth/login.ts';
 import { buildStampPayload, readBuildStamp } from '../src/shell/buildStamp.js';
 import {
   decodeBasicAuthUsername,
@@ -56,6 +57,11 @@ function setHtmlDocumentCacheHeaders(res: http.ServerResponse): void {
   res.setHeader('Pragma', 'no-cache');
 }
 
+function firstHeaderValue(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 type AstroMiddleware = (
   req: http.IncomingMessage,
   res: http.ServerResponse,
@@ -69,6 +75,55 @@ function requestIsSecure(req: http.IncomingMessage): boolean {
     return true;
   }
   return Boolean((req.socket as { encrypted?: boolean }).encrypted);
+}
+
+function externalRequestProtocol(req: http.IncomingMessage): 'http' | 'https' {
+  const xfProto = firstHeaderValue(req.headers['x-forwarded-proto']);
+  const firstProto = xfProto?.split(',')[0]?.trim().toLowerCase();
+  if (firstProto === 'https') return 'https';
+  if (firstProto === 'http') return 'http';
+  return Boolean((req.socket as { encrypted?: boolean }).encrypted) ? 'https' : 'http';
+}
+
+function externalRequestHost(req: http.IncomingMessage): string {
+  return (
+    firstHeaderValue(req.headers['x-forwarded-host']) ??
+    firstHeaderValue(req.headers.host) ??
+    `127.0.0.1:${PORT}`
+  );
+}
+
+function toWebRequest(req: http.IncomingMessage): Request {
+  const rawPath = req.url ?? '/';
+  const pathname = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  const url = `${externalRequestProtocol(req)}://${externalRequestHost(req)}${pathname}`;
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      for (const v of value) headers.append(key, v);
+    } else {
+      headers.set(key, value);
+    }
+  }
+  const init: RequestInit & { duplex?: 'half' } = {
+    method: req.method ?? 'GET',
+    headers,
+  };
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    init.body = req;
+    init.duplex = 'half';
+  }
+  return new Request(url, init);
+}
+
+async function writeWebResponse(response: Response, res: http.ServerResponse): Promise<void> {
+  res.statusCode = response.status;
+  response.headers.forEach((value, key) => {
+    res.setHeader(key, value);
+  });
+  const body = Buffer.from(await response.arrayBuffer());
+  res.end(body);
 }
 
 async function loadAstroHandler(): Promise<AstroMiddleware> {
@@ -149,6 +204,19 @@ async function main(): Promise<void> {
     if (pathname === '/health' || pathname.startsWith('/api/v1')) {
       finish();
       honoListener(req, res);
+      return;
+    }
+    if (pathname === '/auth/login' && req.method === 'POST') {
+      void handleCrewLoginRequest(toWebRequest(req))
+        .then((response) => writeWebResponse(response, res))
+        .catch((err: unknown) => {
+          console.error('[shell] crew login failed', err);
+          if (!res.headersSent) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          }
+          res.end('Login unavailable');
+        });
       return;
     }
     if (tryServeAstroClientAsset(pathname, res)) {
