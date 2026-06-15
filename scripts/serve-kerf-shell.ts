@@ -18,7 +18,7 @@ import {
   isAuthExemptPath,
   isBasicAuthEnabled,
   issueShellSessionCookie,
-  parseShellSessionCookie,
+  platformSessionFromShellCookie,
   resolveBindingFromBasicAuth,
   shellSessionSetCookieHeader,
   verifyDeployBasicAuth,
@@ -109,7 +109,7 @@ async function main(): Promise<void> {
     if (isBasicAuthEnabled() && !isAuthExemptPath(pathname)) {
       const authorized =
         verifyDeployBasicAuth(req.headers.authorization) ||
-        parseShellSessionCookie(req.headers.cookie) !== null;
+        platformSessionFromShellCookie(req.headers.cookie) !== null;
       if (!authorized) {
         // API callers get a clean 401 (no WWW-Authenticate → no browser dialog).
         if (pathname.startsWith('/api/v1')) {

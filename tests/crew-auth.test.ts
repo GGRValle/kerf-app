@@ -252,6 +252,12 @@ test('TAMPER: a validly-signed cookie with a tampered tenant CANNOT pivot tenant
   });
 });
 
+test('TAMPER: shell edge authorizes only binding-checked sessions, not raw parsed cookies', () => {
+  const src = readFileSync(path.join(process.cwd(), 'scripts/serve-kerf-shell.ts'), 'utf8');
+  assert.ok(src.includes('platformSessionFromShellCookie(req.headers.cookie) !== null'));
+  assert.ok(!src.includes('parseShellSessionCookie(req.headers.cookie) !== null'));
+});
+
 // --- exemptions: install + login pre-login; everything else (and traversal) gated
 
 test('exemptions: install + login load pre-session; real paths and every traversal trick stay gated', () => {
