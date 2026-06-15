@@ -25,10 +25,23 @@ const actions = [
     detail: 'Open the current draft review path when an estimate or proposal is ready.',
   },
 ] as const;
+
+// D-060 back-button rule + F-RH7 "travels, never parks": if we arrived here from
+// a surface (return_to, e.g. the estimate's "Back to conversation"), offer the
+// way back so this fallback is never a dead-end. Same-origin local paths only.
+const returnToRaw = Astro.url.searchParams.get('return_to') ?? '';
+const backHref =
+  returnToRaw.startsWith('/') &&
+  !returnToRaw.startsWith('//') &&
+  !returnToRaw.includes('\\') &&
+  !returnToRaw.includes('://')
+    ? returnToRaw
+    : '';
 ---
 
 <Layout title="Right Hand" activeHref="/right-hand">
   <section class="rh-fallback" aria-labelledby="rh-fallback-title">
+    {backHref ? <a class="rh-fallback__back" href={backHref}>‹ Back</a> : null}
     <RhSummary
       headline="Right Hand"
       detail="Use the bottom mic to talk. This page is the fallback if the voice overlay does not open."
@@ -56,6 +69,17 @@ const actions = [
   .rh-fallback {
     display: grid;
     gap: 0.85rem;
+  }
+
+  .rh-fallback__back {
+    justify-self: start;
+    color: var(--text-muted, #5c6670);
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+
+  .rh-fallback__back:hover {
+    color: var(--right-hand, #c9a961);
   }
 
   .rh-fallback__copy {
