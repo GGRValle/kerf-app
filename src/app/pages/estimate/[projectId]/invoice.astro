@@ -110,6 +110,10 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
             <div class="iv-money-due"><dt>Amount due now</dt><dd>{fmt(invoice.amount_due_cents)}</dd></div>
             <div><dt>Remaining after this</dt><dd>{fmt(invoice.remaining_after_cents)}</dd></div>
           </dl>
+          <p class="iv-note">
+            This invoice bills the current milestone. The estimate and proposal remain the basis; invoice detail defaults
+            from that basis and can later be adjusted per invoice when a job needs line-item, phase-level, or lump-sum billing.
+          </p>
           <p class="iv-note">DRAFT — nothing has been sent, posted, or charged. CA §7159 caps the down payment.</p>
         </Card>
         <Card eyebrow="Client body" title="Invoice preview">

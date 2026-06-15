@@ -67,6 +67,10 @@ test('M3: invoice page stays clearly draft-only and never claims a money action'
   const src = pageText(PAGES.invoice);
   assert.match(src, /draft/i);
   assert.match(src, /not sent|nothing.*(billed|posted|charged)/i);
+  assert.match(src, /This invoice bills the current milestone/i);
+  assert.match(src, /estimate and proposal remain the basis/i);
+  assert.match(src, /detail defaults/i);
+  assert.match(src, /per invoice/i);
   // The page must not wire a real money consequence (hard fence: no
   // issue/post/charge verb as an action the page performs).
   assert.ok(!/POST.*\/(issue|charge|post-payment)/i.test(src), 'no money-consequence call from the page');
