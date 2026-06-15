@@ -152,6 +152,13 @@ test('rendered HTML is client-clean: DRAFT watermark, license, money rows, zero 
   assert.match(html, /This invoice/);
   assert.match(html, /\$1,000\.00/);
   assert.ok(!/KERF_SEED|MODEL_INFERENCE|illustrative|suggested|rung/i.test(html));
+  // Render fence (#372 leak guard): NONE of the raw internal ids reach the
+  // client invoice — the human proposal number is the only reference shown.
+  for (const rawId of [invoice.invoice_id, invoice.proposal_id, invoice.estimate_id, invoice.anchor_id]) {
+    assert.ok(rawId.length > 0 && !html.includes(rawId), `client invoice leaks raw id ${rawId}`);
+  }
+  assert.ok(!/(deal_|proj_|prop_|rhe_|inv_[a-z])/.test(html), 'no internal id prefixes in client invoice HTML');
+  assert.match(html, new RegExp(invoice.proposal_number), 'human proposal number is the client-facing reference');
 });
 
 test('invoice route rejects unknown milestone values instead of silently billing the down payment', async () => {

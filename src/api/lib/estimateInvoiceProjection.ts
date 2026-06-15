@@ -46,6 +46,8 @@ export interface EstimateInvoiceProjection {
   readonly invoice_id: string;
   readonly status: 'draft';
   readonly proposal_id: string;
+  /** Client-facing human proposal reference (e.g. GGR-2026-DRAFT) — never the raw prop_ id. */
+  readonly proposal_number: string;
   readonly estimate_id: string;
   readonly anchor_type: 'deal' | 'project';
   readonly anchor_id: string;
@@ -151,6 +153,7 @@ export function buildInvoiceFromRightHandEstimate(
       invoice_id: `inv_${draft.estimate_id}_${targetKind}`,
       status: 'draft',
       proposal_id: proposal.proposal_id,
+      proposal_number: proposal.proposal_number,
       estimate_id: draft.estimate_id,
       anchor_type: draft.anchor_type ?? 'deal',
       anchor_id: draft.anchor_type === 'project' ? draft.project_id : (draft.deal_id ?? draft.project_id),
@@ -165,7 +168,7 @@ export function buildInvoiceFromRightHandEstimate(
       retention_held_cents: retentionHeld,
       amount_due_cents: due,
       remaining_after_cents: remainingAfter,
-      activity_lines: milestoneInvoiceActivityLines(proposal.proposal_id, milestone, due),
+      activity_lines: milestoneInvoiceActivityLines(proposal.proposal_number, milestone, due),
       issue_date: opts.now.toISOString(),
     },
     held_back_count: basis.held_back.length,
@@ -179,7 +182,7 @@ const esc = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 function milestoneInvoiceActivityLines(
-  proposalId: string,
+  proposalNumber: string,
   milestone: { readonly milestone_id: string; readonly label: string; readonly kind: string },
   dueCents: number,
 ): readonly EstimateInvoiceActivityLine[] {
@@ -190,7 +193,7 @@ function milestoneInvoiceActivityLines(
     uom: 'milestone',
     rate_cents: dueCents,
     invoice_amount_cents: dueCents,
-    note: `Progress billing against proposal ${proposalId}. Draft only — nothing has been filed or sent.`,
+    note: `Progress billing against proposal ${proposalNumber}. Draft only — nothing has been filed or sent.`,
   }];
 }
 
@@ -287,10 +290,10 @@ export function renderInvoiceHtml(invoice: EstimateInvoiceProjection): string {
   </div>
   <div>
     <div class="inv-block-title">Project / proposal</div>
-    <div class="inv-block-body">Proposal ${esc(invoice.proposal_id)}<br>${esc(invoice.anchor_type)} ${esc(invoice.anchor_id)}</div>
+    <div class="inv-block-body">Proposal ${esc(invoice.proposal_number)}</div>
   </div>
   <dl class="inv-kv">
-    <dt>Invoice</dt><dd>${esc(invoice.invoice_id)}</dd>
+    <dt>Invoice</dt><dd>Draft</dd>
     <dt>Date</dt><dd>${esc(invoiceDate)}</dd>
     <dt>Terms</dt><dd>Draft only</dd>
     <dt>Due</dt><dd>${esc(dueText)}</dd>
