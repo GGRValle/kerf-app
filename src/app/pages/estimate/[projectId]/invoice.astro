@@ -9,6 +9,7 @@
 // module — this page only renders what it returns.
 import Layout from '../../../layouts/Layout.astro';
 import Card from '../../../components/Card.astro';
+import PhaseStrip from '../../../components/PhaseStrip.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
 import {
@@ -36,6 +37,12 @@ const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${e
 const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const moneyLink = `/estimate/${encodeURIComponent(projectId)}/money?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const milestoneLabel = milestone === 'final' ? 'Final invoice' : 'Down-payment invoice';
+const phaseStrip = [
+  { id: 'estimate', label: 'Estimate', href: estimateBack },
+  { id: 'proposal', label: 'Proposal', href: proposalLink },
+  { id: 'invoice', label: 'Invoice', active: true },
+  { id: 'money', label: 'Money', href: moneyLink },
+];
 
 let invoice: EstimateInvoiceProjection | null = null;
 let blockedReason = '';
@@ -76,6 +83,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
       <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
       <p class="iv-sub">Built from the proposal. Issuing and sending are separate, confirmed steps.</p>
     </header>
+    <PhaseStrip phases={phaseStrip} />
 
     {invoice === null ? (
       <Card eyebrow="Not ready" title="Invoice blocked">

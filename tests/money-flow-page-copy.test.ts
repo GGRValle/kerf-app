@@ -94,6 +94,16 @@ test('Goal A: estimate, proposal, and invoice pages all route forward to Money',
   assert.match(pageText(PAGES.invoice), /Open Money/);
 });
 
+test('Goal A: owner money-flow pages render the shared phase strip path', () => {
+  for (const rel of [PAGES.estimate, PAGES.proposal, PAGES.invoice, PAGES.money]) {
+    const src = pageText(rel);
+    assert.match(src, /PhaseStrip/);
+    for (const label of ['Estimate', 'Proposal', 'Invoice', 'Money']) {
+      assert.match(src, new RegExp(`label:\\s*['"]${label}['"]`), `${rel} should include ${label} in the phase strip`);
+    }
+  }
+});
+
 test('M3: estimate page keeps the gate/blocked state visible and translated', () => {
   const src = pageText(PAGES.estimate);
   // Blocked state communicated in plain English (not hidden), via the

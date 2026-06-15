@@ -6,6 +6,7 @@
 // amounts, and uses the existing issue endpoint for the consequence write.
 import Layout from '../../../layouts/Layout.astro';
 import Card from '../../../components/Card.astro';
+import PhaseStrip from '../../../components/PhaseStrip.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
 import {
@@ -47,6 +48,12 @@ const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${e
 const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const invoiceLink = (kind: MilestoneKind) =>
   `/estimate/${encodeURIComponent(projectId)}/invoice?estimate_id=${encodeURIComponent(estimateId)}&milestone=${kind}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const phaseStrip = [
+  { id: 'estimate', label: 'Estimate', href: estimateBack },
+  { id: 'proposal', label: 'Proposal', href: proposalLink },
+  { id: 'invoice', label: 'Invoice', href: invoiceLink('down_payment') },
+  { id: 'money', label: 'Money', active: true },
+];
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const dateFmt = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
@@ -153,6 +160,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
       <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
       <p>Issue invoice milestones from the approved estimate. Drafts do not bill, send, post, or charge anything.</p>
     </header>
+    <PhaseStrip phases={phaseStrip} />
 
     <section class="mf-summary" aria-label="Billing summary">
       <div>

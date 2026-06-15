@@ -1,6 +1,7 @@
 ---
 // F-EST1 · Estimate builder · /estimate/:projectId (Lane 2)
 import Layout from '../../layouts/Layout.astro';
+import PhaseStrip from '../../components/PhaseStrip.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import {
   estimateLinesForProject,
@@ -72,6 +73,12 @@ const moneyRoute = rightHandDraft
 const estimateTitle = rightHandDraft
   ? rightHandDraft.title.replace(/\s*estimate draft$/i, '')
   : (isLeadStageEstimate && dealId ? dealId : projectId);
+const moneyFlowPhases = rightHandDraft ? [
+  { id: 'estimate', label: 'Estimate', active: true },
+  ...(proposalAction?.route ? [{ id: 'proposal', label: 'Proposal', href: proposalAction.route }] : [{ id: 'proposal', label: 'Proposal' }]),
+  ...(invoiceAction?.route ? [{ id: 'invoice', label: 'Invoice', href: invoiceAction.route }] : [{ id: 'invoice', label: 'Invoice' }]),
+  ...(moneyRoute && invoiceAction?.status === 'ready_for_review' ? [{ id: 'money', label: 'Money', href: moneyRoute }] : [{ id: 'money', label: 'Money' }]),
+] : null;
 ---
 
 <Layout title="Estimate builder" activeHref="/sales">
@@ -82,6 +89,7 @@ const estimateTitle = rightHandDraft
       <h1>{estimateTitle}</h1>
       <p class="es-sub">Review the draft, adjust quantities or rates, then decide what becomes official.</p>
     </header>
+    {moneyFlowPhases ? <PhaseStrip phases={moneyFlowPhases} /> : null}
 
     {rightHandDraft ? (
       <section class="es-rh-draft" aria-label="Right Hand assembly draft">
