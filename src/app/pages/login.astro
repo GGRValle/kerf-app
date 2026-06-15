@@ -4,6 +4,7 @@
 // session cookie — no browser Basic dialog. When the gate is off (local dev),
 // it falls back to the role-preview picker so dogfood DX is unchanged.
 import Layout from '../layouts/Layout.astro';
+import NavBack from '../components/NavBack.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { ROLE_ROOT_COOKIE, roleHomePath } from '../lib/roleSession.js';
 import {
@@ -42,6 +43,7 @@ const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
 ---
 
 <Layout titleKey="login.title" activeHref="/login">
+  <NavBack href="/" />
   <section class="login" data-wireframe="F-LND1" data-auth-enabled={authEnabled ? 'true' : 'false'}>
     <h1>{t('login.title')}</h1>
     <p>{authEnabled ? t('login.subtitle_auth') : t('login.subtitle')}</p>

@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import NavBack from '../../components/NavBack.astro';
 import RoleHomeSurface from '../../components/RoleHomeSurface.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 
@@ -7,5 +8,6 @@ const { context } = createLayoutContext({ roleRoot: 'field_hand' });
 ---
 
 <Layout context={context} titleKey="home.title" activeHref="/">
+  <NavBack href="/" />
   <RoleHomeSurface roleRoot="field_hand" wireframeOverride="F-SH2" />
 </Layout>

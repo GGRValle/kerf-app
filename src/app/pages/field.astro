@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import NavBack from '../components/NavBack.astro';
 import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
 import RhSummary from '../components/RhSummary.astro';
 import Card from '../components/Card.astro';
@@ -29,6 +30,7 @@ const fieldActions = [
 ---
 
 <Layout title="Field Hand" activeHref="/field">
+  <NavBack href="/" />
   <article class="field-home">
     <RhSummary
       headline="Field Hand"
