@@ -7,165 +7,158 @@ import {
   getChangeOrderByDecisionId,
 } from '../../lib/changeOrderFlow.js';
 import { renderDecisionCardViewHtml } from '../../../ui/components/DecisionCardView.js';
-import '../../../ui/styles/decision-card.css';
+import { formatCents } from '../../lib/builderEngine.js';
 
 const { id } = Astro.params;
 const decisionId = id ?? '';
 const record = decisionId.startsWith('co_dec_') ? getChangeOrderByDecisionId(decisionId) : null;
 const { t } = createLayoutContext();
 
-if (!record) {
-  return (
-    <Layout titleKey="decisions.detail.title" activeHref="/decisions">
-      <Card eyebrow={t('route_shell.card_eyebrow')} title={t('decisions.detail.title')}>
-        <p>{t('decisions.preview.detail_body')}</p>
-      </Card>
-    </Layout>
-  );
-}
-
-const viewModel = buildChangeOrderDecisionCardViewModel(record);
-const cardHtml = renderDecisionCardViewHtml(viewModel);
-const isPending = record.status === 'pending_review' || record.status === 'needs_review';
-const editHref = `/change-orders/new?project_id=${encodeURIComponent(record.project_id)}`;
+const isCoDecision = record !== null;
+const viewModel = isCoDecision ? buildChangeOrderDecisionCardViewModel(record) : null;
+const cardHtml = viewModel ? renderDecisionCardViewHtml(viewModel) : '';
+const isPending = isCoDecision
+  ? record.status === 'pending_review' || record.status === 'needs_review'
+  : false;
+const editHref = isCoDecision
+  ? `/change-orders/new?project_id=${encodeURIComponent(record.project_id)}`
+  : '';
+const statusChipClass = isCoDecision
+  ? record.status === 'approved'
+    ? 'kg-chip green'
+    : record.status === 'rejected'
+      ? 'kg-chip red'
+      : 'kg-chip amber'
+  : '';
+const statusLabel = isCoDecision
+  ? record.status === 'approved'
+    ? 'Approved · contract adjusted'
+    : record.status === 'rejected'
+      ? 'Rejected'
+      : 'Approval required'
+  : '';
 ---
 
-<Layout
-  title="Change Order · Decision"
-  activeHref="/decisions"
-  surfaceContext={{
-    surface: 'change_order',
-    project_id: record.project_id,
-    change_order_id: record.change_order_id,
-    contract_id: record.contract_id,
-    line_ids: record.line_ids,
-    phase: isPending ? 'approval_gate' : record.status,
-  }}
->
-  <article class="co-decision-page">
-    <header class="co-decision-header">
-      <div class="co-decision-crumb">
-        <a href={`/projects/${record.project_id}`}>{record.project_number}</a>
-        · Change Order · F-B1
-      </div>
-      <h1>{record.change_order_id} · {record.title}</h1>
-      <p class="co-decision-sub">
-        Right Hand assembled this change order. Approve to adjust the contract — no client send from this gate.
-      </p>
-    </header>
+{!isCoDecision ? (
+  <Layout titleKey="decisions.detail.title" activeHref="/decisions">
+    <Card eyebrow={t('route_shell.card_eyebrow')} title={t('decisions.detail.title')}>
+      <p>{t('decisions.preview.detail_body')}</p>
+    </Card>
+  </Layout>
+) : (
+  <Layout
+    title="Change Order · Decision"
+    activeHref="/decisions"
+    surfaceContext={{
+      surface: 'change_order',
+      project_id: record.project_id,
+      change_order_id: record.change_order_id,
+      contract_id: record.contract_id,
+      line_ids: record.line_ids,
+      phase: isPending ? 'approval_gate' : record.status,
+    }}
+  >
+    <div class="kg-grid" data-grammar="canon">
+      <article class="kg-span-12 co-decision-page">
+        <header class="kg-pagehead">
+          <div>
+            <a class="kg-routechip kg-chip" href={`/projects/${record.project_id}`}>
+              {record.project_number}
+            </a>
+            <h1 style="margin:0.5rem 0 0;font-size:1.15rem;color:var(--ink)">
+              {record.change_order_id} · {record.title}
+            </h1>
+            <p style="margin:0.35rem 0 0;color:var(--muted);font-size:0.85rem;line-height:1.45">
+              Right Hand assembled this change order. Approve to adjust the contract — no client send from this gate.
+            </p>
+          </div>
+          <span class={statusChipClass}>{statusLabel}</span>
+        </header>
 
-    <div class="kerf-decision-card-wrap" set:html={cardHtml} data-co-decision-root data-change-order-id={record.change_order_id} />
-
-    {record.status === 'approved' && record.contract_adjusted_at ? (
-      <section class="co-contract-adjusted" aria-live="polite">
-        <h2>Contract adjusted</h2>
-        <p>
-          {record.contract_id} updated by {record.contract_delta_cents ? `$${(record.contract_delta_cents / 100).toFixed(2)}` : 'approved amount'}
-          at {record.contract_adjusted_at.slice(0, 19).replace('T', ' ')} UTC.
-        </p>
-      </section>
-    ) : null}
-
-    {isPending ? (
-      <div class="co-decision-confirm-gate" hidden data-co-confirm-gate>
-        <p data-co-confirm-copy></p>
-        <div class="co-decision-confirm-actions">
-          <button type="button" class="kerf-btn kerf-btn-primary" data-co-confirm-yes>Yes — proceed</button>
-          <button type="button" class="kerf-btn" data-co-confirm-no>Cancel</button>
+        <div class="kg-card" style="margin-top:12px">
+          <div class="kerf-decision-card-wrap" set:html={cardHtml} data-co-decision-root data-change-order-id={record.change_order_id} />
         </div>
-      </div>
-    ) : null}
-  </article>
-</Layout>
 
-<style>
-  .co-decision-page {
-    max-width: 44rem;
-    margin: 0 auto;
-    padding: 1rem 1rem 5rem;
-  }
-  .co-decision-header h1 {
-    font-size: 1.25rem;
-    margin: 0.35rem 0;
-  }
-  .co-decision-sub {
-    color: var(--text-muted, #8b949e);
-    margin: 0 0 1rem;
-  }
-  .co-decision-crumb a {
-    color: inherit;
-  }
-  .co-contract-adjusted {
-    margin-top: 1.25rem;
-    padding: 0.85rem 1rem;
-    border: 1px solid var(--border, #343c4a);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--accent, #c9a876) 8%, transparent);
-  }
-  .co-decision-confirm-gate {
-    margin-top: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border, #343c4a);
-    border-radius: 8px;
-  }
-  .co-decision-confirm-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-</style>
+        {record.status === 'approved' && record.contract_adjusted_at ? (
+          <section class="kg-card" style="margin-top:12px" aria-live="polite">
+            <div class="kg-pagehead">
+              <h2 style="margin:0;font-size:0.95rem;color:var(--ink)">Contract adjusted</h2>
+              <span class="kg-passdot kg-chip green">Applied</span>
+            </div>
+            <p style="margin:0.65rem 0 0;color:var(--muted);font-size:0.85rem;line-height:1.45">
+              {record.contract_id} updated by {formatCents(record.contract_delta_cents ?? record.total_cents)} at{' '}
+              {record.contract_adjusted_at.slice(0, 19).replace('T', ' ')} UTC.
+            </p>
+          </section>
+        ) : null}
 
-<script define:vars={{ changeOrderId: record.change_order_id, editHref, isPending }}>
-  const root = document.querySelector('[data-co-decision-root]');
-  const gate = document.querySelector('[data-co-confirm-gate]');
-  const confirmCopy = document.querySelector('[data-co-confirm-copy]');
-  let pendingAction = null;
+        {isPending ? (
+          <div class="kg-card" style="margin-top:12px" hidden data-co-confirm-gate>
+            <p data-co-confirm-copy style="margin:0;color:var(--ink);line-height:1.45"></p>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <button type="button" class="kg-chip blue" data-co-confirm-yes>Yes — proceed</button>
+              <button type="button" class="kg-chip" data-co-confirm-no>Cancel</button>
+            </div>
+          </div>
+        ) : null}
+      </article>
+    </div>
+  </Layout>
+)}
 
-  function showGate(action, copy) {
-    pendingAction = action;
-    if (confirmCopy) confirmCopy.textContent = copy;
-    gate?.removeAttribute('hidden');
-  }
+{isCoDecision ? (
+  <script define:vars={{ changeOrderId: record.change_order_id, editHref, isPending }}>
+    const root = document.querySelector('[data-co-decision-root]');
+    const gate = document.querySelector('[data-co-confirm-gate]');
+    const confirmCopy = document.querySelector('[data-co-confirm-copy]');
+    let pendingAction = null;
 
-  function hideGate() {
-    pendingAction = null;
-    gate?.setAttribute('hidden', '');
-  }
-
-  root?.addEventListener('click', (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    const action = target.closest('[data-kerf-decision-action]')?.getAttribute('data-kerf-decision-action');
-    if (!action || !isPending) return;
-    event.preventDefault();
-
-    if (action === 'edit') {
-      window.location.href = editHref;
-      return;
+    function showGate(action, copy) {
+      pendingAction = action;
+      if (confirmCopy) confirmCopy.textContent = copy;
+      gate?.removeAttribute('hidden');
     }
-    if (action === 'approve') {
-      showGate('approve', 'Approve this change order and adjust the contract? Nothing sends to the client.');
-      return;
-    }
-    if (action === 'reject') {
-      showGate('reject', 'Reject this change order? The contract stays unchanged.');
-    }
-  });
 
-  document.querySelector('[data-co-confirm-no]')?.addEventListener('click', hideGate);
+    function hideGate() {
+      pendingAction = null;
+      gate?.setAttribute('hidden', '');
+    }
 
-  document.querySelector('[data-co-confirm-yes]')?.addEventListener('click', async () => {
-    if (!pendingAction) return;
-    const res = await fetch(`/api/v1/change-orders/${encodeURIComponent(changeOrderId)}/decide`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: pendingAction, operator_confirm: true }),
+    root?.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.closest('[data-kerf-decision-action]')?.getAttribute('data-kerf-decision-action');
+      if (!action || !isPending) return;
+      event.preventDefault();
+
+      if (action === 'edit') {
+        window.location.href = editHref;
+        return;
+      }
+      if (action === 'approve') {
+        showGate('approve', 'Approve this change order and adjust the contract? Nothing sends to the client.');
+        return;
+      }
+      if (action === 'reject') {
+        showGate('reject', 'Reject this change order? The contract stays unchanged.');
+      }
     });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      alert(body.message || body.error || 'Decision failed');
-      return;
-    }
-    window.location.reload();
-  });
-</script>
+
+    document.querySelector('[data-co-confirm-no]')?.addEventListener('click', hideGate);
+
+    document.querySelector('[data-co-confirm-yes]')?.addEventListener('click', async () => {
+      if (!pendingAction) return;
+      const res = await fetch(`/api/v1/change-orders/${encodeURIComponent(changeOrderId)}/decide`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: pendingAction, operator_confirm: true }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.message || body.error || 'Decision failed');
+        return;
+      }
+      window.location.reload();
+    });
+  </script>
+) : null}

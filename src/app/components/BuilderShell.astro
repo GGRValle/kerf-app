@@ -10,6 +10,7 @@
 import { COST_LIBRARY_CATEGORIES } from '../lib/costLibraryFixtures.js';
 import type { BuilderSettings, BuilderMode } from '../lib/builderEngine.js';
 import type { BuilderProjectPrefill } from '../lib/builderFixtures.js';
+import NavBack from './NavBack.astro';
 
 export interface Props {
   mode: BuilderMode;
@@ -44,11 +45,9 @@ const config = {
 };
 ---
 
-<section class="bld-page" data-builder-root>
-  <div class="bld-nav-top">
-    <a class="bld-back" href={backHref} aria-label="Back">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
-    </a>
+<section class="bld-page" data-grammar="canon" data-builder-root>
+  <div class="kg-pagehead bld-nav-top">
+    <NavBack href={backHref} label="‹" />
     <span class="bld-nav-ttl">
       {isChangeOrder ? 'Change Order' : <>Estimate · <b>new proposal</b></>}
     </span>
@@ -70,17 +69,17 @@ const config = {
       <div class="bld-fld" style="margin-top:0.5rem">
         <span class="lb">Title</span>
         <input class="vl" data-field="title" placeholder="Add a title…" />
-        <span class="bld-chip edit">Editable</span>
+        <span class="kg-chip blue">Editable</span>
       </div>
       <div class="bld-fld">
         <span class="lb">Customer</span>
         <span class="vl" data-field="customer">{prefill?.customer_name ?? '—'}</span>
-        <span class="bld-chip pre">From project</span>
+        <span class="kg-chip green">From project</span>
       </div>
       <div class="bld-fld">
         <span class="lb">Project</span>
         <span class="vl" data-field="project">{prefill ? `${prefill.project_number} · ${prefill.project_name}` : '—'}</span>
-        <span class="bld-chip pre">From project</span>
+        <span class="kg-chip green">From project</span>
       </div>
     </>
   ) : (
@@ -97,7 +96,7 @@ const config = {
         <div class="lrow">
           <span class="lb">Address</span>
           <input class="vl" data-field="lead_address" placeholder="Job site address…" />
-          <button type="button" class="bld-chip geo" data-geo>📍 Locate</button>
+          <button type="button" class="kg-chip amber" data-geo>📍 Locate</button>
         </div>
         <select data-find-select hidden>
           <option value="">— Existing client —</option>
@@ -107,12 +106,12 @@ const config = {
       <div class="bld-fld" style="margin-top:0.4rem">
         <span class="lb">Title</span>
         <input class="vl" data-field="title" placeholder="Add a title…" />
-        <span class="bld-chip edit">Editable</span>
+        <span class="kg-chip blue">Editable</span>
       </div>
       <div class="bld-fld">
         <span class="lb">Project</span>
         <span class="vl" style="color:var(--text-muted)">Assigned on save</span>
-        <span class="bld-chip save">New</span>
+        <span class="kg-chip">New</span>
       </div>
     </>
   )}
@@ -170,7 +169,9 @@ const config = {
   ) : (
     <div class="bld-gate">🔒 Send for signature — becomes a contract when signed</div>
   )}
-  <div class="bld-status" data-status hidden></div>
+  <div class="bld-status-wrap" data-status-wrap hidden>
+    <span class="kg-chip" data-status></span>
+  </div>
 
   <!-- Client preview overlay (markup folded; type-driven layout) -->
   <div class="bld-overlay" data-overlay="preview" role="dialog" aria-modal="true" aria-label="Client preview">
@@ -495,7 +496,15 @@ const config = {
     // --- Send (explicit operator gate · never autonomous) ---
     const confirmQ = $('[data-confirm-q]') as HTMLElement | null;
     const confirmGo = $('[data-confirm-go]') as HTMLButtonElement | null;
+    const statusWrap = $('[data-status-wrap]') as HTMLElement | null;
     const statusEl = $('[data-status]') as HTMLElement | null;
+
+    function showStatus(message: string, tone: 'error' | 'pending'): void {
+      if (!statusEl || !statusWrap) return;
+      statusEl.textContent = message;
+      statusEl.className = tone === 'error' ? 'kg-chip red' : 'kg-chip amber';
+      statusWrap.hidden = false;
+    }
 
     $('[data-send]')?.addEventListener('click', () => {
       const t = computeTotals(lines, settings);
@@ -516,19 +525,11 @@ const config = {
       closeOverlays();
       if (config.mode === 'change_order') {
         if (!config.project_id) {
-          if (statusEl) {
-            statusEl.hidden = false;
-            statusEl.dataset.tone = 'error';
-            statusEl.textContent = 'Missing project binding — open Change Order from a project.';
-          }
+          showStatus('Missing project binding — open Change Order from a project.', 'error');
           return;
         }
         if (lines.length === 0) {
-          if (statusEl) {
-            statusEl.hidden = false;
-            statusEl.dataset.tone = 'error';
-            statusEl.textContent = 'Add at least one line item before submitting.';
-          }
+          showStatus('Add at least one line item before submitting.', 'error');
           return;
         }
         const t = computeTotals(lines, settings);
@@ -551,20 +552,12 @@ const config = {
           const payload = (await res.json()) as { redirect?: string };
           window.location.href = payload.redirect || '/decisions';
         } catch (err) {
-          if (statusEl) {
-            statusEl.hidden = false;
-            statusEl.dataset.tone = 'error';
-            statusEl.textContent = err instanceof Error ? err.message : 'Submit failed';
-          }
+          showStatus(err instanceof Error ? err.message : 'Submit failed', 'error');
         }
         return;
       }
       // Estimate door: honest review state (out of CO lane scope).
-      if (statusEl) {
-        statusEl.hidden = false;
-        statusEl.dataset.tone = 'pending';
-        statusEl.textContent = '✓ Reviewed — ready for signature · becomes a contract when signed.';
-      }
+      showStatus('✓ Reviewed — ready for signature · becomes a contract when signed.', 'pending');
     });
 
     render();
