@@ -1,0 +1,583 @@
+---
+/**
+ * Lane C · BuilderShell — the one builder engine, two doors.
+ * Everything below the customer block is shared between F-EST1 (estimate,
+ * lead-capture) and F-CHG1 (change order, project-known). The two diverge only
+ * at the customer block, controlled by `mode`.
+ *
+ * Wireframes (vendored, D-057): docs/canon/wireframes/F-EST1_* · F-CHG1_*.
+ */
+import { COST_LIBRARY_CATEGORIES } from '../lib/costLibraryFixtures.js';
+import type { BuilderSettings, BuilderMode } from '../lib/builderEngine.js';
+import type { BuilderProjectPrefill } from '../lib/builderFixtures.js';
+
+export interface Props {
+  mode: BuilderMode;
+  settings: BuilderSettings;
+  prefill?: BuilderProjectPrefill | null;
+  clients?: readonly { client_id: string; display_name: string }[];
+  backHref: string;
+  projectId?: string;
+}
+
+const { mode, settings, prefill = null, clients = [], backHref, projectId = prefill?.project_id ?? null } = Astro.props as Props;
+const isChangeOrder = mode === 'change_order';
+
+// Config the bundled client script reads from the DOM (no define:vars, so the
+// script can keep importing the single-sourced engine + cost library).
+const config = {
+  mode,
+  project_id: projectId,
+  settings: {
+    markup_pct: settings.markup_pct,
+    tax_pct: settings.tax_pct,
+    discount_cents: settings.discount_cents,
+    can_view_markup: settings.can_view_markup,
+  },
+  prefill: prefill
+    ? {
+        customer_name: prefill.customer_name,
+        project_number: prefill.project_number,
+        project_name: prefill.project_name,
+      }
+    : null,
+};
+---
+
+<section class="bld-page" data-builder-root>
+  <div class="bld-nav-top">
+    <a class="bld-back" href={backHref} aria-label="Back">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <span class="bld-nav-ttl">
+      {isChangeOrder ? 'Change Order' : <>Estimate · <b>new proposal</b></>}
+    </span>
+  </div>
+
+  <a class="bld-rh" href="/right-hand" data-rh-speak aria-label="Right Hand assisted — tap to dictate">
+    <span class="bld-rh-av">RH</span>
+    <span>
+      <span class="bld-rh-t">Right Hand assisted</span>
+      <span class="bld-rh-s" style="display:block">
+        {isChangeOrder ? 'Tap to dictate — I’ll fill this in' : 'Tap to dictate — I’ll capture the lead + scope'}
+      </span>
+    </span>
+    <span class="bld-rh-mic" aria-hidden="true">🎙</span>
+  </a>
+
+  {isChangeOrder ? (
+    <>
+      <div class="bld-fld" style="margin-top:0.5rem">
+        <span class="lb">Title</span>
+        <input class="vl" data-field="title" placeholder="Add a title…" />
+        <span class="bld-chip edit">Editable</span>
+      </div>
+      <div class="bld-fld">
+        <span class="lb">Customer</span>
+        <span class="vl" data-field="customer">{prefill?.customer_name ?? '—'}</span>
+        <span class="bld-chip pre">From project</span>
+      </div>
+      <div class="bld-fld">
+        <span class="lb">Project</span>
+        <span class="vl" data-field="project">{prefill ? `${prefill.project_number} · ${prefill.project_name}` : '—'}</span>
+        <span class="bld-chip pre">From project</span>
+      </div>
+    </>
+  ) : (
+    <>
+      <div class="bld-lead">
+        <div class="bld-lead-h">Who’s this for?</div>
+        <button type="button" class="bld-find" data-find-client>
+          <span>🔍 Find an existing client…</span>
+          <span class="or">or add new ↓</span>
+        </button>
+        <div class="lrow"><span class="lb">Name</span><input class="vl" data-field="lead_name" placeholder="New lead name…" /></div>
+        <div class="lrow"><span class="lb">Phone</span><input class="vl" data-field="lead_phone" placeholder="(___) ___-____" inputmode="tel" /></div>
+        <div class="lrow"><span class="lb">Email</span><input class="vl" data-field="lead_email" placeholder="name@email…" inputmode="email" /></div>
+        <div class="lrow">
+          <span class="lb">Address</span>
+          <input class="vl" data-field="lead_address" placeholder="Job site address…" />
+          <button type="button" class="bld-chip geo" data-geo>📍 Locate</button>
+        </div>
+        <select data-find-select hidden>
+          <option value="">— Existing client —</option>
+          {clients.map((c) => <option value={c.client_id}>{c.display_name}</option>)}
+        </select>
+      </div>
+      <div class="bld-fld" style="margin-top:0.4rem">
+        <span class="lb">Title</span>
+        <input class="vl" data-field="title" placeholder="Add a title…" />
+        <span class="bld-chip edit">Editable</span>
+      </div>
+      <div class="bld-fld">
+        <span class="lb">Project</span>
+        <span class="vl" style="color:var(--text-muted)">Assigned on save</span>
+        <span class="bld-chip save">New</span>
+      </div>
+    </>
+  )}
+
+  <div class="bld-fld">
+    <span class="lb">Type</span>
+    <select class="bld-type-select" data-field="layout" aria-label="Document type / layout">
+      <option value="lump_sum">Lump sum</option>
+      <option value="sections">Sections</option>
+      <option value="itemized" selected>Itemized</option>
+    </select>
+  </div>
+
+  <div class="bld-scope">
+    <div class="lb">Scope of work</div>
+    <div class="area" data-scope>Dictate or add items below — Right Hand writes the scope from what you add.</div>
+  </div>
+
+  <ul class="bld-lines" data-lines></ul>
+
+  <button type="button" class="bld-additem" data-additem>+ Add item</button>
+
+  <div class="bld-picker" data-picker>
+    <button type="button" class="bld-picker-back" data-picker-back hidden>‹ Categories</button>
+    <div class="bld-srch"><span aria-hidden="true">🔍</span><input data-search placeholder="Search the cost library…" /></div>
+    <div data-picker-list>
+      {COST_LIBRARY_CATEGORIES.map((cat) => (
+        <button type="button" class="bld-cat" data-cat={cat.id}>
+          <span class={`bld-cat-dot tone-${cat.tone}`} aria-hidden="true">{cat.label.slice(0, 1)}</span>
+          <span>
+            <span class="cn" style="display:block">{cat.label}</span>
+            <span class="cs">{cat.blurb}</span>
+          </span>
+          <span class="cv" aria-hidden="true">›</span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="bld-totals">
+    <div class="bld-trow"><span class="k">Subtotal</span><span class="v" data-t-subtotal>$0.00</span></div>
+    <div class="bld-trow" data-markup-row><span class="k">Markup</span><span class="v" data-t-markup>$0.00</span></div>
+    <div class="bld-trow"><span class="k">Tax</span><span class="v" data-t-tax>$0.00</span></div>
+    <div class="bld-trow"><span class="k">Discount</span><span class="v" data-t-discount>$0.00</span></div>
+    <div class="bld-tnote">⚙ Auto-calculated by your permission + settings</div>
+  </div>
+  <div class="bld-total"><span class="k">Total</span><span class="v" data-t-total>$0.00</span></div>
+
+  <div class="bld-actions">
+    <button type="button" class="bld-btn prev" data-preview>Preview</button>
+    <button type="button" class="bld-btn send" data-send>{isChangeOrder ? 'Submit for approval' : 'Send'}</button>
+  </div>
+  {isChangeOrder ? (
+    <div class="bld-disc">Right Hand assisted · routes to Decision Card before contract changes</div>
+  ) : (
+    <div class="bld-gate">🔒 Send for signature — becomes a contract when signed</div>
+  )}
+  <div class="bld-status" data-status hidden></div>
+
+  <!-- Client preview overlay (markup folded; type-driven layout) -->
+  <div class="bld-overlay" data-overlay="preview" role="dialog" aria-modal="true" aria-label="Client preview">
+    <div class="bld-sheet">
+      <button type="button" class="close" data-overlay-close aria-label="Close">×</button>
+      <h2>Client preview</h2>
+      <p class="sub">This is what the client sees — margin is folded into the price.</p>
+      <div class="bld-paper" data-paper></div>
+      <p class="bld-margin-note">Markup is never shown on the client document.</p>
+    </div>
+  </div>
+
+  <!-- Consequence confirm overlay (F-RH3 stage-4: answers the real question) -->
+  <div class="bld-overlay bld-confirm" data-overlay="confirm" role="dialog" aria-modal="true" aria-label="Confirm send">
+    <div class="bld-sheet">
+      <button type="button" class="close" data-overlay-close aria-label="Close">×</button>
+      <h2 data-confirm-title>Before it goes out —</h2>
+      <p class="q" data-confirm-q></p>
+      <div class="bld-confirm-actions">
+        <button type="button" class="bld-btn send" data-confirm-go></button>
+        <button type="button" class="bld-btn" data-overlay-close>Keep editing</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="application/json" data-builder-config set:html={JSON.stringify(config)}></script>
+</section>
+
+<script>
+  import {
+    computeTotals,
+    toClientTotals,
+    clientLineCents,
+    lineExtendedCents,
+    formatCents,
+    type BuilderLine,
+    type BuilderLayout,
+    type BuilderSettings,
+    type BuilderMode,
+  } from '../lib/builderEngine.js';
+  import { COST_LIBRARY_CATEGORIES, type CostLibraryEntry } from '../lib/costLibraryFixtures.js';
+
+  interface BuilderConfig {
+    mode: BuilderMode;
+    project_id: string | null;
+    settings: BuilderSettings;
+    prefill: { customer_name: string; project_number: string; project_name: string } | null;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-builder-root]');
+  if (root) initBuilder(root);
+
+  function initBuilder(root: HTMLElement): void {
+    const cfgEl = root.querySelector<HTMLElement>('[data-builder-config]');
+    const config: BuilderConfig = cfgEl ? JSON.parse(cfgEl.textContent || '{}') : ({} as BuilderConfig);
+    const settings = config.settings;
+    let layout: BuilderLayout = 'itemized';
+    let lines: BuilderLine[] = [];
+    let seq = 0;
+
+    const $ = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel);
+    const linesEl = $('[data-lines]') as HTMLUListElement | null;
+    const scopeEl = $('[data-scope]');
+    const markupRow = $('[data-markup-row]') as HTMLElement | null;
+
+    // Markup row visible only when operator permission allows it.
+    if (markupRow && !settings.can_view_markup) markupRow.style.display = 'none';
+
+    function uid(): string {
+      seq += 1;
+      return `ln_${Date.now().toString(36)}_${seq}`;
+    }
+
+    function renderLines(): void {
+      if (!linesEl) return;
+      linesEl.innerHTML = '';
+      lines.forEach((l) => {
+        const li = document.createElement('li');
+        li.className = 'bld-line';
+        const main = document.createElement('div');
+        main.className = 'ln-main';
+        const desc = document.createElement('div');
+        desc.className = 'ln-desc';
+        desc.textContent = l.description;
+        const meta = document.createElement('div');
+        meta.className = 'ln-meta';
+        meta.textContent = `${l.quantity} ${l.unit} · `;
+        const typeSpan = document.createElement('span');
+        typeSpan.className = 'ln-type';
+        typeSpan.textContent = l.line_type;
+        meta.appendChild(typeSpan);
+        main.append(desc, meta);
+        const amt = document.createElement('div');
+        amt.className = 'ln-amt';
+        amt.textContent = formatCents(lineExtendedCents(l));
+        const rm = document.createElement('button');
+        rm.className = 'ln-rm';
+        rm.type = 'button';
+        rm.setAttribute('aria-label', `Remove ${l.description}`);
+        rm.textContent = '×';
+        rm.addEventListener('click', () => {
+          lines = lines.filter((x) => x.line_id !== l.line_id);
+          render();
+        });
+        li.append(main, amt, rm);
+        linesEl.appendChild(li);
+      });
+      if (scopeEl) {
+        scopeEl.textContent =
+          lines.length === 0
+            ? 'Dictate or add items below — Right Hand writes the scope from what you add.'
+            : lines.map((l) => `• ${l.description}`).join('\n');
+        (scopeEl as HTMLElement).style.whiteSpace = 'pre-line';
+      }
+    }
+
+    function renderTotals(): void {
+      const t = computeTotals(lines, settings);
+      const set = (sel: string, cents: number) => {
+        const el = $(sel);
+        if (el) el.textContent = formatCents(cents);
+      };
+      set('[data-t-subtotal]', t.subtotal_cents);
+      set('[data-t-markup]', t.markup_cents);
+      set('[data-t-tax]', t.tax_cents);
+      set('[data-t-discount]', t.discount_cents);
+      set('[data-t-total]', t.total_cents);
+    }
+
+    function render(): void {
+      renderLines();
+      renderTotals();
+    }
+
+    function addEntry(entry: CostLibraryEntry): void {
+      lines.push({
+        line_id: uid(),
+        description: entry.description,
+        line_type: entry.line_type,
+        quantity: entry.default_quantity,
+        unit: entry.default_unit,
+        unit_cost_cents: entry.unit_cost_cents,
+        source: 'cost_library',
+        cost_library_id: entry.entry_id,
+        taxable: entry.taxable,
+      });
+      closePicker();
+      render();
+    }
+
+    // --- Add-item picker (Frame 2) ---
+    const picker = $('[data-picker]') as HTMLElement | null;
+    const pickerList = $('[data-picker-list]') as HTMLElement | null;
+    const pickerBack = $('[data-picker-back]') as HTMLButtonElement | null;
+    const searchInput = $('[data-search]') as HTMLInputElement | null;
+
+    function openPicker(): void {
+      picker?.classList.add('open');
+      showCategories();
+      picker?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function closePicker(): void {
+      picker?.classList.remove('open');
+      if (searchInput) searchInput.value = '';
+    }
+    function showCategories(): void {
+      if (!pickerList) return;
+      pickerBack?.setAttribute('hidden', '');
+      // Rebuild the server categories list cleanly.
+      pickerList.innerHTML = '';
+      COST_LIBRARY_CATEGORIES.forEach((cat) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'bld-cat';
+        b.innerHTML = `<span class="bld-cat-dot tone-${cat.tone}" aria-hidden="true">${cat.label.slice(0, 1)}</span><span><span class="cn" style="display:block">${cat.label}</span><span class="cs">${cat.blurb}</span></span><span class="cv" aria-hidden="true">›</span>`;
+        b.addEventListener('click', () => showEntries(cat.id));
+        pickerList.appendChild(b);
+      });
+    }
+    function showEntries(categoryId: string): void {
+      if (!pickerList) return;
+      const cat = COST_LIBRARY_CATEGORIES.find((c) => c.id === categoryId);
+      if (!cat) return;
+      pickerBack?.removeAttribute('hidden');
+      pickerList.innerHTML = '';
+      cat.entries.forEach((entry) => renderEntryButton(entry));
+    }
+    function renderEntryButton(entry: CostLibraryEntry): void {
+      if (!pickerList) return;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'bld-entry';
+      b.innerHTML = `<span><span class="en-d" style="display:block">${entry.description}</span><span class="en-m">${entry.default_quantity} ${entry.default_unit} · ${entry.line_type}</span></span><span class="en-p">${formatCents(entry.unit_cost_cents)}</span>`;
+      b.addEventListener('click', () => addEntry(entry));
+      pickerList.appendChild(b);
+    }
+
+    $('[data-additem]')?.addEventListener('click', () => {
+      if (picker?.classList.contains('open')) closePicker();
+      else openPicker();
+    });
+    pickerBack?.addEventListener('click', () => showCategories());
+    searchInput?.addEventListener('input', () => {
+      const q = (searchInput.value || '').trim().toLowerCase();
+      if (!pickerList) return;
+      if (q.length === 0) {
+        showCategories();
+        return;
+      }
+      pickerBack?.removeAttribute('hidden');
+      pickerList.innerHTML = '';
+      COST_LIBRARY_CATEGORIES.flatMap((c) => c.entries)
+        .filter((e) => e.description.toLowerCase().includes(q))
+        .forEach((entry) => renderEntryButton(entry));
+    });
+    // --- Type / layout ---
+    const layoutSel = $('[data-field="layout"]') as HTMLSelectElement | null;
+    layoutSel?.addEventListener('change', () => {
+      layout = (layoutSel.value as BuilderLayout) || 'itemized';
+    });
+
+    // --- Estimate lead-capture toggle ---
+    const findSelect = $('[data-find-select]') as HTMLSelectElement | null;
+    $('[data-find-client]')?.addEventListener('click', () => {
+      if (!findSelect) return;
+      findSelect.hidden = false;
+      findSelect.focus();
+    });
+    findSelect?.addEventListener('change', () => {
+      const nameInput = $('[data-field="lead_name"]') as HTMLInputElement | null;
+      const opt = findSelect.options[findSelect.selectedIndex];
+      if (nameInput && opt && opt.value) nameInput.value = opt.textContent || '';
+    });
+    $('[data-geo]')?.addEventListener('click', () => {
+      const addr = $('[data-field="lead_address"]') as HTMLInputElement | null;
+      if (addr && !addr.value) addr.value = 'Located · pin dropped (demo)';
+    });
+
+    // --- Overlays ---
+    function openOverlay(name: string): void {
+      root.querySelector(`[data-overlay="${name}"]`)?.classList.add('open');
+    }
+    function closeOverlays(): void {
+      root.querySelectorAll('[data-overlay]').forEach((o) => o.classList.remove('open'));
+    }
+    root.querySelectorAll('[data-overlay-close]').forEach((b) =>
+      b.addEventListener('click', closeOverlays),
+    );
+    root.querySelectorAll('[data-overlay]').forEach((o) =>
+      o.addEventListener('click', (e) => {
+        if (e.target === o) closeOverlays();
+      }),
+    );
+
+    function customerName(): string {
+      if (config.mode === 'change_order') return config.prefill?.customer_name || 'the client';
+      const n = ($('[data-field="lead_name"]') as HTMLInputElement | null)?.value?.trim();
+      return n || 'the client';
+    }
+    function docTitle(): string {
+      const tv = ($('[data-field="title"]') as HTMLInputElement | null)?.value?.trim();
+      return tv || (config.mode === 'change_order' ? 'Change Order' : 'Estimate');
+    }
+
+    // --- Preview (client view: markup folded, type-driven layout) ---
+    function renderPreview(): void {
+      const paper = $('[data-paper]') as HTMLElement | null;
+      if (!paper) return;
+      const t = computeTotals(lines, settings);
+      const ct = toClientTotals(t);
+      const clientCents = clientLineCents(lines, settings);
+      const priced = lines.filter((l) => l.line_type !== 'markup');
+      const meta =
+        config.mode === 'change_order'
+          ? `${config.prefill?.project_number ?? ''} · ${config.prefill?.customer_name ?? ''}`
+          : `${customerName()} · project assigned on save`;
+
+      let body = '';
+      if (layout === 'lump_sum') {
+        body = `<div class="pp-lump">Complete scope as described — one fixed price.</div>`;
+      } else if (layout === 'sections') {
+        const bySec = new Map<string, number>();
+        priced.forEach((l) => {
+          const sec = l.section || titleCase(l.line_type);
+          bySec.set(sec, (bySec.get(sec) || 0) + (clientCents.get(l.line_id) || 0));
+        });
+        body = [...bySec.entries()]
+          .map(
+            ([sec, cents]) =>
+              `<div class="pp-line"><span class="d">${escapeHtml(sec)}</span><span class="a">${formatCents(cents)}</span></div>`,
+          )
+          .join('');
+      } else {
+        body = priced
+          .map(
+            (l) =>
+              `<div class="pp-line"><span class="d">${escapeHtml(l.description)}<span class="m" style="display:block">${l.quantity} ${escapeHtml(l.unit)}</span></span><span class="a">${formatCents(clientCents.get(l.line_id) || 0)}</span></div>`,
+          )
+          .join('');
+      }
+      if (priced.length === 0) body = `<div class="pp-lump">Add items to build the client document.</div>`;
+
+      paper.innerHTML = `
+        <div class="pp-h">${config.mode === 'change_order' ? 'Change Order' : 'Estimate'}</div>
+        <div class="pp-title">${escapeHtml(docTitle())}</div>
+        <div class="pp-meta">${escapeHtml(meta)}</div>
+        <div class="pp-scope">${priced.length ? priced.map((l) => escapeHtml(l.description)).join(' · ') : 'Scope to be detailed.'}</div>
+        ${layout !== 'lump_sum' ? `<div class="pp-sec-h">${layout === 'sections' ? 'By section' : 'Line items'}</div>` : ''}
+        ${body}
+        <div class="pp-tot"><span>Subtotal</span><span>${formatCents(ct.subtotal_cents)}</span></div>
+        <div class="pp-tot"><span>Tax</span><span>${formatCents(ct.tax_cents)}</span></div>
+        ${ct.discount_cents > 0 ? `<div class="pp-tot"><span>Discount</span><span>− ${formatCents(ct.discount_cents)}</span></div>` : ''}
+        <div class="pp-tot grand"><span>Total</span><span>${formatCents(ct.total_cents)}</span></div>
+      `;
+    }
+
+    $('[data-preview]')?.addEventListener('click', () => {
+      renderPreview();
+      openOverlay('preview');
+    });
+
+    // --- Send (explicit operator gate · never autonomous) ---
+    const confirmQ = $('[data-confirm-q]') as HTMLElement | null;
+    const confirmGo = $('[data-confirm-go]') as HTMLButtonElement | null;
+    const statusEl = $('[data-status]') as HTMLElement | null;
+
+    $('[data-send]')?.addEventListener('click', () => {
+      const t = computeTotals(lines, settings);
+      const cust = customerName();
+      if (config.mode === 'change_order') {
+        if (confirmQ)
+          confirmQ.innerHTML = `Route this change order to the <b>Decision Card</b> for approval — total <b>${formatCents(t.total_cents)}</b>? The contract adjusts only after you approve on F-B1. Nothing sends to ${escapeHtml(cust)} from here.`;
+        if (confirmGo) confirmGo.textContent = 'Route to Decision Card';
+      } else {
+        if (confirmQ)
+          confirmQ.innerHTML = `Send this estimate to <b>${escapeHtml(cust)}</b> for signature — total <b>${formatCents(t.total_cents)}</b>? A signed estimate <b>becomes a contract</b> and promotes the lead to a client + project.`;
+        if (confirmGo) confirmGo.textContent = 'Send for signature';
+      }
+      openOverlay('confirm');
+    });
+
+    confirmGo?.addEventListener('click', async () => {
+      closeOverlays();
+      if (config.mode === 'change_order') {
+        if (!config.project_id) {
+          if (statusEl) {
+            statusEl.hidden = false;
+            statusEl.dataset.tone = 'error';
+            statusEl.textContent = 'Missing project binding — open Change Order from a project.';
+          }
+          return;
+        }
+        if (lines.length === 0) {
+          if (statusEl) {
+            statusEl.hidden = false;
+            statusEl.dataset.tone = 'error';
+            statusEl.textContent = 'Add at least one line item before submitting.';
+          }
+          return;
+        }
+        const t = computeTotals(lines, settings);
+        try {
+          const res = await fetch('/api/v1/change-orders/submit-for-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              project_id: config.project_id,
+              title: docTitle(),
+              lines,
+              total_cents: t.total_cents,
+              operator_confirm: true,
+            }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.message || body.error || 'submit_failed');
+          }
+          const payload = (await res.json()) as { redirect?: string };
+          window.location.href = payload.redirect || '/decisions';
+        } catch (err) {
+          if (statusEl) {
+            statusEl.hidden = false;
+            statusEl.dataset.tone = 'error';
+            statusEl.textContent = err instanceof Error ? err.message : 'Submit failed';
+          }
+        }
+        return;
+      }
+      // Estimate door: honest review state (out of CO lane scope).
+      if (statusEl) {
+        statusEl.hidden = false;
+        statusEl.dataset.tone = 'pending';
+        statusEl.textContent = '✓ Reviewed — ready for signature · becomes a contract when signed.';
+      }
+    });
+
+    render();
+  }
+
+  function titleCase(s: string): string {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  function escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>

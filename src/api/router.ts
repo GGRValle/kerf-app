@@ -17,6 +17,7 @@ import { attentionRoutes } from './routes/attention.js';
 import { clientPortalRoutes } from './routes/clientPortal.js';
 import { salesDesignKbRoutes } from './routes/salesDesignKb.js';
 import { lane3WorkRoutes } from './routes/lane3Work.js';
+import { changeOrderRoutes } from './routes/changeOrders.js';
 
 export function createApiRouter(): Hono {
   const app = new Hono();
@@ -38,6 +39,7 @@ export function createApiRouter(): Hono {
   app.route('/', attentionRoutes);
   app.route('/', clientPortalRoutes);
   app.route('/', lane3WorkRoutes);
+  app.route('/', changeOrderRoutes);
   return app;
 }
 
