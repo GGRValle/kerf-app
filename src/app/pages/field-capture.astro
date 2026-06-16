@@ -49,16 +49,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   activeHref={Astro.url.pathname}
   surfaceContext={{
     surface: 'field_capture',
-    client_id: 'cli_wegrzyn',
-    project_id: assignment.project_id,
-    phase: 'capture',
+    phase: 'route_pending',
   }}
 >
   <main
     class="field-shell"
     data-view-state="pre"
     data-tenant-id={assignment.tenant_id}
-    data-project-id={assignment.project_id}
+    data-project-id=""
+    data-suggested-project-id={assignment.project_id}
   >
     <section class="phone-frame" aria-label="Mobile field capture">
       <div class="status-bar" aria-hidden="true">
@@ -71,69 +70,18 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
         <section class="capture-state state-pre" aria-label="Start field capture">
           <header class="top-chrome">
             <div class="tc-eyebrow">
-              <span class="tc-mode">Add to job</span>
+              <span class="tc-mode">Field capture</span>
               <a class="tc-back" href={captureReturnHref}>{captureReturnLabel}</a>
             </div>
-            <h1 class="tc-title">What should Right Hand keep?</h1>
+            <h1 class="tc-title">Capture first</h1>
             <p class="tc-meta">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-              <span>Wegrzyn site · 4287 Pacifica Way</span>
+              Photo, file, or typed note now — Right Hand suggests where it goes after capture.
             </p>
           </header>
 
-          <div class="dest-selector">
-            <label class="assign-eyebrow" for="f-e1-destination">Goes to</label>
-            <select
-              class="dest-select"
-              id="f-e1-destination"
-              data-active-project-id={assignment.project_id}
-              data-active-client={assignment.client}
-              data-active-project={assignment.project}
-              data-active-location={assignment.location}
-              data-matched-by={assignment.matched_by}
-            >
-              <option value="active" data-project-id={assignment.project_id} selected>
-                Active job · {assignment.client}
-              </option>
-              <option value="pick-project" data-project-id="">Pick a different project…</option>
-              <option value="pick-client" data-project-id="">Pick a different client…</option>
-              <option value="unassigned" data-project-id="">New client / unassigned note</option>
-            </select>
-            <p class="dest-hint" id="f-e1-dest-hint">
-              Matched to your active job by {assignment.matched_by}. Change it above if this
-              capture belongs elsewhere.
-            </p>
-          </div>
-
-          <div class="assign-card" id="f-e1-assign-card">
-            <div class="assign-row">
-              <span class="ar-key">Client</span>
-              <span class="ar-val" id="f-e1-dest-client">{assignment.client}</span>
-            </div>
-            <div class="assign-row">
-              <span class="ar-key">Project</span>
-              <span class="ar-val" id="f-e1-dest-project">{assignment.project}</span>
-            </div>
-            <div class="assign-row">
-              <span class="ar-key">Location</span>
-              <span class="ar-val ar-val-dim" id="f-e1-dest-location">{assignment.location}</span>
-            </div>
-          </div>
-
-          <aside class="dl-anchor" aria-label="Daily Log destination">
-            <strong id="f-e1-dl-anchor">Right Hand keeps this with {assignment.client} · today's job notes.</strong>
-            <span class="dl-detail">
-              Notes, photos, and files stay together so the office can review the job
-              without digging through separate places.
-            </span>
-          </aside>
-
-          <!-- Voice stays owned by the universal bottom-bar Right Hand mic.
-               This page is the quiet detail/media surface once the operator
-               chooses to come here. -->
           <div class="fc-context-note" role="note">
-            <strong>Right Hand brought you here with the job context.</strong>
-            <span>Add a photo, attach a file, or edit the note details. Use the bottom mic to keep talking.</span>
+            <strong>Use the bottom mic to keep talking with Right Hand.</strong>
+            <span>Add photos, files, or a typed summary here. You will confirm the job destination before filing.</span>
           </div>
 
           <div class="cap-secondary">
@@ -226,6 +174,52 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 
           <p class="preflight-status" id="f-e1-preflight-status" role="status"></p>
 
+          <div class="dest-selector" aria-label="Confirm capture destination">
+            <label class="assign-eyebrow" for="f-e1-destination">Goes to</label>
+            <select
+              class="dest-select"
+              id="f-e1-destination"
+              data-active-project-id={assignment.project_id}
+              data-active-client={assignment.client}
+              data-active-project={assignment.project}
+              data-active-location={assignment.location}
+              data-matched-by={assignment.matched_by}
+            >
+              <option value="active" data-project-id={assignment.project_id} selected>
+                Active job · {assignment.client}
+              </option>
+              <option value="pick-project" data-project-id="">Pick a different project…</option>
+              <option value="pick-client" data-project-id="">Pick a different client…</option>
+              <option value="unassigned" data-project-id="">New client / unassigned note</option>
+            </select>
+            <p class="dest-hint" id="f-e1-dest-hint">
+              Right Hand matched your active job by {assignment.matched_by}. Confirm or change before filing.
+            </p>
+          </div>
+
+          <div class="assign-card" id="f-e1-assign-card">
+            <div class="assign-row">
+              <span class="ar-key">Client</span>
+              <span class="ar-val" id="f-e1-dest-client">{assignment.client}</span>
+            </div>
+            <div class="assign-row">
+              <span class="ar-key">Project</span>
+              <span class="ar-val" id="f-e1-dest-project">{assignment.project}</span>
+            </div>
+            <div class="assign-row">
+              <span class="ar-key">Location</span>
+              <span class="ar-val ar-val-dim" id="f-e1-dest-location">{assignment.location}</span>
+            </div>
+          </div>
+
+          <aside class="dl-anchor" aria-label="Daily Log destination">
+            <strong id="f-e1-dl-anchor">Right Hand keeps this with {assignment.client} · today's job notes.</strong>
+            <span class="dl-detail">
+              Notes, photos, and files stay together so the office can review the job
+              without digging through separate places.
+            </span>
+          </aside>
+
           <div class="preflight-card">
             <p class="pf-eyebrow">Ready for job notes</p>
             <p class="pf-title">{assignment.location} update</p>
@@ -304,7 +298,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           </section>
 
           <aside class="ai-disclosure">
-            <strong>AI-assisted by Kerf Right Hand.</strong> Drafts are prepared from your capture; review before approval.
+            <strong>AI-assisted by Right Hand.</strong> Drafts are prepared from your capture; review before approval.
           </aside>
 
           <div class="action-ribbon">
@@ -317,7 +311,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
               class="ar-btn primary"
               id="f-e1-submit"
               data-tenant-id={assignment.tenant_id}
-              data-project-id={assignment.project_id}
+              data-project-id=""
             >
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span class="ar-label">Submit to Daily Log</span>
@@ -974,7 +968,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     const projectId = submitButton.dataset.projectId;
     const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
     if (!tenantId || !projectId) {
-      setStatus('Missing project assignment. Pick the project before submit.', 'error');
+      setStatus('Confirm where this capture goes before submit.', 'error');
       return;
     }
     if (transcript.length === 0 && photos.length === 0 && videos.length === 0 && audioUri === null) {
@@ -1045,6 +1039,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       return;
     }
     renderPreflight();
+    if (destSelect instanceof HTMLSelectElement) {
+      destSelect.dispatchEvent(new Event('change'));
+    }
     setState('preflight');
     if (preflightStatus instanceof HTMLElement) {
       preflightStatus.textContent =

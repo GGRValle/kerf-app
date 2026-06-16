@@ -8,53 +8,38 @@ const projects = listLane23Projects(context.tenantId);
 const safeProjectId = (raw: string | null) => raw && /^[A-Za-z0-9_-]+$/.test(raw) ? raw : '';
 const requestedProjectId = safeProjectId(Astro.url.searchParams.get('project_id'));
 const selectedProject = projects.find((project) => project.project_id === requestedProjectId) ?? null;
+const suggestedJob = selectedProject ?? projects[0] ?? null;
+const routePrefilled = selectedProject !== null;
 const rawReturnTo = Astro.url.searchParams.get('return_to') ?? '';
 const safeReturnTo = rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : '';
 const fallbackReturn = selectedProject ? `/projects/${selectedProject.project_id}?src=camera` : '/';
 const returnHref = safeReturnTo || fallbackReturn;
-const startsWithGate = selectedProject === null;
 const modeParam = Astro.url.searchParams.get('mode');
 const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam : 'photo';
 ---
 
-<Layout title="Camera" activeHref="/camera">
+<Layout
+  title="Camera"
+  activeHref="/camera"
+  surfaceContext={{
+    surface: 'field_capture',
+    phase: routePrefilled ? 'capture' : 'route_pending',
+    ...(routePrefilled && selectedProject ? { project_id: selectedProject.project_id } : {}),
+  }}
+>
   <section
-    class:list={['f-cam1', startsWithGate ? 'needs-job' : 'has-job']}
+    class="f-cam1"
     aria-labelledby="camera-title"
-    data-selected-project-id={selectedProject?.project_id ?? ''}
+    data-suggested-project-id={suggestedJob?.project_id ?? ''}
+    data-suggested-project-name={suggestedJob?.project_name ?? ''}
+    data-suggested-project-client={suggestedJob?.client_name ?? ''}
+    data-suggested-match="job-site GPS"
+    data-route-confirmed={routePrefilled ? 'true' : 'false'}
+    data-selected-project-id={routePrefilled ? (selectedProject?.project_id ?? '') : ''}
     data-return-href={returnHref}
     data-initial-mode={initialMode}
   >
-    <section class="cam-job-gate" aria-label="Choose job for capture">
-      <a class="cam-back" href={returnHref}>‹ Back</a>
-      <p class="cam-eyebrow">Camera</p>
-      <h1 id="camera-title">Where should this go?</h1>
-      <p class="cam-lede">
-        Pick the job first so photos, walkthroughs, and scans do not get orphaned.
-      </p>
-
-      <div class="cam-recents" role="list" aria-label="Recent jobs">
-        {projects.map((project, index) => (
-          <button
-            class="cam-job-option"
-            type="button"
-            data-project-id={project.project_id}
-            data-project-name={project.project_name}
-            data-project-client={project.client_name}
-            data-project-address={project.address_line}
-            data-preselected={index === 0 ? 'true' : 'false'}
-          >
-            <span>{project.project_name}</span>
-            <small>{project.client_name} · {project.address_line}</small>
-          </button>
-        ))}
-      </div>
-
-      <div class="cam-gate-actions">
-        <a class="cam-pill ghost" href="/projects/new?src=camera">New lead</a>
-        <a class="cam-pill ghost" href="/projects">Search jobs</a>
-      </div>
-    </section>
+    <h1 id="camera-title" class="cam-sr-only">Camera</h1>
 
     <section class="cam-stage" aria-label="Camera capture">
       <div class="cam-viewfinder" data-mode={initialMode}>
@@ -69,12 +54,12 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         <canvas id="cam-canvas" hidden></canvas>
         <div class="cam-topbar">
           <div class="cam-topbar__group">
-            <a class="cam-icon-link" href={returnHref} aria-label="Close camera">×</a>
+            <a class="cam-back" href={returnHref} aria-label="Close camera">×</a>
             <button type="button" class="cam-icon-btn" aria-label="Camera settings">⚙</button>
           </div>
           <div class="cam-job-chip" id="cam-job-chip">
-            <span class="cam-job-chip__label">Job</span>
-            <strong>{selectedProject?.project_name ?? 'Choose job'}</strong>
+            <span class="cam-job-chip__label">Capture</span>
+            <strong id="cam-job-chip-label">{routePrefilled ? (selectedProject?.project_name ?? 'Active job') : 'Photo · walkthru · scan'}</strong>
           </div>
           <div class="cam-topbar__group">
             <button type="button" class="cam-icon-btn" aria-label="Flash">⚡</button>
@@ -90,10 +75,10 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         <div class="cam-crosshair" aria-hidden="true"></div>
         <p class="cam-viewfinder__copy" id="cam-viewfinder-copy">
           {initialMode === 'walkthru'
-            ? 'Talk while you film. Right Hand will keep the walkthrough with this job.'
+            ? 'Talk while you film. Right Hand will route the walkthrough after you capture.'
             : initialMode === 'scan'
               ? 'Room scan needs native LiDAR. This web build keeps it separate for now.'
-              : 'Take a photo for this job.'}
+              : 'Capture first — Right Hand will suggest where it goes.'}
         </p>
       </div>
 
@@ -132,10 +117,41 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         </div>
       </section>
 
+      <section class="cam-route-panel" id="cam-route-panel" hidden aria-label="Confirm capture destination">
+        <p class="cam-route-eyebrow">Goes to</p>
+        <p class="cam-route-suggestion" id="cam-route-suggestion">
+          {suggestedJob
+            ? `Active job · ${suggestedJob.client_name.split(',')[0]?.trim() ?? suggestedJob.project_name}`
+            : 'Choose a destination'}
+        </p>
+        <label class="cam-route-label" for="cam-route-select">Change destination</label>
+        <select class="cam-route-select" id="cam-route-select">
+          {projects.map((project) => (
+            <option
+              value={project.project_id}
+              data-project-name={project.project_name}
+              data-project-client={project.client_name}
+              selected={project.project_id === (suggestedJob?.project_id ?? '')}
+            >
+              {project.project_name} · {project.client_name}
+            </option>
+          ))}
+        </select>
+        <p class="cam-route-hint" id="cam-route-hint">
+          {suggestedJob
+            ? `Right Hand matched your active job by job-site GPS. Confirm or change before filing.`
+            : 'Pick where this capture belongs before filing.'}
+        </p>
+        <div class="cam-route-actions">
+          <button type="button" class="cam-route-confirm" id="cam-route-confirm">Confirm destination</button>
+          <a class="cam-route-link" href="/projects?src=camera">Search jobs</a>
+        </div>
+      </section>
+
       <p class="cam-status" id="camera-status" role="status" aria-live="polite">
-        {selectedProject
+        {routePrefilled && selectedProject
           ? `Ready for ${selectedProject.project_name}.`
-          : 'Choose a job before you capture.'}
+          : 'Camera open — capture now, route after.'}
       </p>
 
       <input id="camera-photo-input" type="file" accept="image/*" capture="environment" hidden />
@@ -146,7 +162,11 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
   <script>
     const root = document.querySelector('.f-cam1');
     const status = document.querySelector('#camera-status');
-    const jobChip = document.querySelector('#cam-job-chip strong');
+    const jobChipLabel = document.querySelector('#cam-job-chip-label');
+    const routePanel = document.querySelector('#cam-route-panel');
+    const routeSuggestion = document.querySelector('#cam-route-suggestion');
+    const routeSelect = document.querySelector('#cam-route-select');
+    const routeConfirm = document.querySelector('#cam-route-confirm');
     const viewfinder = document.querySelector('.cam-viewfinder');
     const video = document.querySelector('#cam-video');
     const canvas = document.querySelector('#cam-canvas');
@@ -160,8 +180,12 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const capturedDetail = document.querySelector('#cam-captured-detail');
     const thumb = document.querySelector('#cam-thumb');
     let currentMode = root?.getAttribute('data-initial-mode') || 'photo';
+    let suggestedProjectId = root?.getAttribute('data-suggested-project-id') || '';
+    let suggestedProjectName = root?.getAttribute('data-suggested-project-name') || '';
+    let suggestedProjectClient = root?.getAttribute('data-suggested-project-client') || '';
     let selectedProjectId = root?.getAttribute('data-selected-project-id') || '';
-    let selectedProjectName = jobChip?.textContent?.trim() || '';
+    let selectedProjectName = selectedProjectId ? suggestedProjectName : '';
+    let routeConfirmed = root?.getAttribute('data-route-confirmed') === 'true';
     let lastCapture = null;
     let cameraStream = null;
     let cameraFailure = null;
@@ -170,12 +194,78 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     let recordingStartedAt = 0;
 
     const copyForMode = (mode) => {
-      if (mode === 'walkthru') return 'Talk while you film. Right Hand will keep the walkthrough with this job.';
+      if (mode === 'walkthru') return 'Talk while you film. Right Hand will route the walkthrough after you capture.';
       if (mode === 'scan') return 'Room scan needs native LiDAR. This web build keeps it separate for now.';
-      return 'Take a photo for this job.';
+      return 'Capture first — Right Hand will suggest where it goes.';
     };
     const setStatus = (message) => {
       if (status instanceof HTMLElement) status.textContent = message;
+    };
+    const syncRouteChip = () => {
+      if (!(jobChipLabel instanceof HTMLElement)) return;
+      if (routeConfirmed && selectedProjectName) {
+        jobChipLabel.textContent = selectedProjectName;
+      } else {
+        jobChipLabel.textContent = 'Photo · walkthru · scan';
+      }
+    };
+    const updateSurfaceContextProject = (projectId) => {
+      const ctx = window.__KERF_SURFACE_CONTEXT__;
+      if (!ctx || typeof ctx !== 'object') return;
+      ctx.project_id = projectId || undefined;
+      ctx.phase = projectId ? 'capture' : 'route_pending';
+      window.__KERF_SURFACE_CONTEXT__ = ctx;
+      const el = document.getElementById('kerf-surface-context');
+      if (el) el.textContent = JSON.stringify(ctx);
+    };
+    const syncRouteSuggestion = () => {
+      if (!(routeSuggestion instanceof HTMLElement)) return;
+      if (selectedProjectClient) {
+        const shortClient = selectedProjectClient.split(',')[0]?.trim() || selectedProjectName;
+        routeSuggestion.textContent = `Active job · ${shortClient}`;
+      } else if (selectedProjectName) {
+        routeSuggestion.textContent = selectedProjectName;
+      } else {
+        routeSuggestion.textContent = 'Choose a destination';
+      }
+    };
+    const showRoutePanel = () => {
+      if (!(routePanel instanceof HTMLElement)) return;
+      routePanel.hidden = false;
+      if (root instanceof HTMLElement) root.classList.add('route-pending');
+      syncRouteSuggestion();
+      setStatus('Confirm where this capture goes, then tap Done again.');
+    };
+    const hideRoutePanel = () => {
+      if (!(routePanel instanceof HTMLElement)) return;
+      routePanel.hidden = true;
+      if (root instanceof HTMLElement) root.classList.remove('route-pending');
+    };
+    const applySelectedRoute = () => {
+      if (routeSelect instanceof HTMLSelectElement) {
+        const option = routeSelect.selectedOptions[0];
+        selectedProjectId = option?.value || suggestedProjectId;
+        selectedProjectName = option?.dataset.projectName || suggestedProjectName;
+        selectedProjectClient = option?.dataset.projectClient || suggestedProjectClient;
+      } else {
+        selectedProjectId = suggestedProjectId;
+        selectedProjectName = suggestedProjectName;
+        selectedProjectClient = suggestedProjectClient;
+      }
+      routeConfirmed = selectedProjectId.length > 0;
+      if (root instanceof HTMLElement) {
+        root.dataset.selectedProjectId = selectedProjectId;
+        root.dataset.routeConfirmed = routeConfirmed ? 'true' : 'false';
+      }
+      updateSurfaceContextProject(selectedProjectId);
+      syncRouteChip();
+      hideRoutePanel();
+      if (lastCapture) {
+        if (capturedDetail instanceof HTMLElement) {
+          capturedDetail.textContent = `Ready to file to ${selectedProjectName} · Daily Log.`;
+        }
+        setStatus(`${friendlyForKind(lastCapture.kind)} ready — tap Done to file to ${selectedProjectName}.`);
+      }
     };
     const stopCamera = () => {
       if (cameraStream instanceof MediaStream) {
@@ -207,11 +297,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     });
     const startCamera = async () => {
       cameraFailure = null;
-      if (!selectedProjectId || currentMode === 'scan') {
+      if (currentMode === 'scan') {
         stopCamera();
-        if (currentMode === 'scan') {
-          setCameraState('Native scan is separate', 'LiDAR/room scan is not available in this web camera yet.');
-        }
+        setCameraState('Native scan is separate', 'LiDAR/room scan is not available in this web camera yet.');
         return false;
       }
       if (!window.isSecureContext) {
@@ -264,22 +352,23 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       if (mode === 'scan') {
         setStatus('');
       } else {
-        setStatus(selectedProjectId ? `Ready for ${selectedProjectName}.` : 'Choose a job first.');
+        setStatus(routeConfirmed && selectedProjectName
+          ? `Ready for ${selectedProjectName}.`
+          : 'Camera open — capture now, route after.');
       }
       await startCamera();
     };
-    const selectProject = (button) => {
-      selectedProjectId = button.dataset.projectId || '';
-      selectedProjectName = button.dataset.projectName || 'Selected job';
-      if (root instanceof HTMLElement) {
-        root.dataset.selectedProjectId = selectedProjectId;
-        root.classList.remove('needs-job');
-        root.classList.add('has-job');
-      }
-      if (jobChip instanceof HTMLElement) jobChip.textContent = selectedProjectName;
-      setStatus(`Ready for ${selectedProjectName}.`);
-      void startCamera();
-    };
+    routeSelect?.addEventListener('change', () => {
+      if (!(routeSelect instanceof HTMLSelectElement)) return;
+      const option = routeSelect.selectedOptions[0];
+      selectedProjectId = option?.value || '';
+      selectedProjectName = option?.dataset.projectName || '';
+      selectedProjectClient = option?.dataset.projectClient || '';
+      syncRouteSuggestion();
+    });
+    routeConfirm?.addEventListener('click', () => {
+      applySelectedRoute();
+    });
     const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
     const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
     const fallbackInputForMode = () => currentMode === 'walkthru' ? videoInput : photoInput;
@@ -298,21 +387,26 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.hidden = true;
       if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} ready`;
       if (capturedDetail instanceof HTMLElement) {
-        capturedDetail.textContent = `Ready to file to ${selectedProjectName} · Daily Log.`;
+        capturedDetail.textContent = routeConfirmed && selectedProjectName
+          ? `Ready to file to ${selectedProjectName} · Daily Log.`
+          : 'Captured — confirm destination before filing.';
       }
       if (thumb instanceof HTMLElement) {
         thumb.className = `cam-thumb ${kind === 'photo' ? 'is-photo' : kind === 'scan' ? 'is-scan' : 'is-video'}`;
         thumb.style.backgroundImage = previewUrl ? `url("${previewUrl}")` : '';
         thumb.textContent = previewUrl ? '' : kind === 'walkthrough' ? 'REC' : kind === 'scan' ? 'DOC' : 'IMG';
       }
-      setStatus(`${friendly} ready — tap Done to attach it to ${selectedProjectName}.`);
+      setStatus(routeConfirmed && selectedProjectName
+        ? `${friendly} ready — tap Done to file to ${selectedProjectName}.`
+        : `${friendly} captured — tap Done to choose where it goes.`);
+      if (!routeConfirmed) showRoutePanel();
     };
     const rememberCapture = (capture) => {
       lastCapture = {
-        project_id: selectedProjectId,
-        project_name: selectedProjectName,
+        project_id: routeConfirmed ? selectedProjectId : '',
+        project_name: routeConfirmed ? selectedProjectName : '',
         at: Date.now(),
-        status: 'ready_to_file',
+        status: routeConfirmed ? 'ready_to_file' : 'pending_route',
         ...capture,
       };
       try {
@@ -380,10 +474,6 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       return true;
     };
     const openCapture = async () => {
-      if (!selectedProjectId) {
-        setStatus('Choose a job before you capture.');
-        return;
-      }
       if (currentMode === 'scan') {
         setStatus('Scan needs native LiDAR. Use Room scan when the native capture path is ready.');
         setCameraState('Native scan is separate', 'Nothing was filed. LiDAR capture is deferred to the native track.');
@@ -416,16 +506,16 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       updateLastShot(kind, objectUrl);
     };
     const done = async () => {
-      if (!selectedProjectId) {
-        setStatus('Choose a job before you capture.');
-        return;
-      }
       if (recorder instanceof MediaRecorder && recorder.state === 'recording') {
         setStatus('Finishing walkthrough…');
         await finishWalkthruRecording();
       }
       if (!lastCapture) {
         setStatus('Nothing captured yet. Take a photo, scan a document, or record a walkthrough first.');
+        return;
+      }
+      if (!routeConfirmed || !selectedProjectId) {
+        showRoutePanel();
         return;
       }
       setStatus(`Filing ${friendlyForKind(lastCapture.kind).toLowerCase()} to ${selectedProjectName}…`);
@@ -473,11 +563,6 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       window.location.href = destination;
     };
 
-    document.querySelectorAll('.cam-job-option').forEach((button) => {
-      button.addEventListener('click', () => {
-        if (button instanceof HTMLButtonElement) selectProject(button);
-      });
-    });
     document.querySelectorAll('.cam-mode-strip [data-mode]').forEach((button) => {
       button.addEventListener('click', () => void setMode(button.getAttribute('data-mode') || 'photo'));
     });
@@ -487,6 +572,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     videoInput?.addEventListener('change', () => onSelectedFile(videoInput instanceof HTMLInputElement ? videoInput.files?.[0] : null, 'walkthrough'));
     window.addEventListener('pagehide', stopCamera);
 
+    if (routeConfirmed) {
+      syncRouteChip();
+    }
     void setMode(currentMode);
   </script>
 </Layout>
@@ -496,78 +584,20 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     min-height: calc(100dvh - 8rem);
     color: #111827;
   }
-  .cam-job-gate,
+  .cam-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .cam-stage {
     display: grid;
     gap: 0.9rem;
-  }
-  .f-cam1.has-job .cam-job-gate {
-    display: none;
-  }
-  .f-cam1.needs-job .cam-stage {
-    display: none;
-  }
-  .cam-back,
-  .cam-icon-link {
-    color: inherit;
-    text-decoration: none;
-    font-weight: 800;
-  }
-  .cam-eyebrow {
-    margin: 0;
-    color: var(--right-hand);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0;
-    text-transform: uppercase;
-  }
-  .cam-job-gate h1 {
-    margin: 0;
-    font-size: 2.2rem;
-    line-height: 1;
-  }
-  .cam-lede {
-    margin: 0;
-    color: var(--kerf-text-dim);
-    line-height: 1.45;
-  }
-  .cam-recents {
-    display: grid;
-    gap: 0.65rem;
-  }
-  .cam-job-option,
-  .cam-pill {
-    border: 1px solid var(--kerf-border);
-    border-radius: 16px;
-    background: var(--kerf-surface);
-    color: inherit;
-    text-align: left;
-    text-decoration: none;
-    font: inherit;
-  }
-  .cam-job-option {
-    display: grid;
-    gap: 0.25rem;
-    padding: 0.95rem;
-    cursor: pointer;
-  }
-  .cam-job-option span {
-    font-weight: 850;
-    font-size: 1rem;
-  }
-  .cam-job-option small {
-    color: var(--kerf-text-dim);
-    line-height: 1.35;
-  }
-  .cam-gate-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.6rem;
-  }
-  .cam-pill {
-    padding: 0.78rem;
-    text-align: center;
-    font-weight: 800;
   }
   .cam-stage {
     position: relative;
@@ -595,7 +625,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     align-items: center;
     gap: 0.34rem;
   }
-  .cam-icon-link,
+  .cam-back,
   .cam-icon-btn {
     width: 1.78rem;
     height: 1.78rem;
@@ -609,6 +639,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     font: inherit;
     font-size: 0.88rem;
     font-weight: 900;
+    text-decoration: none;
   }
   .cam-job-chip {
     justify-self: center;
@@ -967,9 +998,85 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       padding: 0.48rem;
     }
   }
+  .cam-route-panel {
+    position: absolute;
+    z-index: 7;
+    left: 0.82rem;
+    right: 0.82rem;
+    bottom: 11.5rem;
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 16px;
+    background: rgba(5,7,11,0.92);
+    color: #f8fafc;
+    backdrop-filter: blur(16px);
+  }
+  .cam-route-panel[hidden] {
+    display: none;
+  }
+  .cam-route-eyebrow {
+    margin: 0;
+    color: var(--right-hand);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .cam-route-suggestion {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 850;
+    line-height: 1.2;
+  }
+  .cam-route-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: rgba(248,250,252,0.62);
+  }
+  .cam-route-select {
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    color: inherit;
+    font: inherit;
+    padding: 0.55rem 0.65rem;
+  }
+  .cam-route-hint {
+    margin: 0;
+    color: rgba(248,250,252,0.68);
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+  .cam-route-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .cam-route-confirm {
+    border: none;
+    border-radius: 999px;
+    background: var(--right-hand);
+    color: #171100;
+    font: inherit;
+    font-weight: 800;
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+  }
+  .cam-route-link {
+    color: rgba(248,250,252,0.78);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .f-cam1.route-pending .cam-status {
+    bottom: 18.5rem;
+  }
   @media (min-width: 760px) {
-    .cam-stage,
-    .cam-job-gate {
+    .cam-stage {
       max-width: 440px;
       margin-inline: auto;
     }
