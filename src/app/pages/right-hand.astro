@@ -39,8 +39,8 @@ const backHref =
     : '';
 ---
 
-<Layout title="Right Hand" activeHref="/right-hand">
-  <section class="rh-fallback" aria-labelledby="rh-fallback-title">
+<Layout title="Right Hand" activeHref="/right-hand" voiceSurface="bubble">
+  <section class="rh-fallback" aria-labelledby="rh-fallback-title" data-grammar="canon">
     {backHref ? <a class="rh-fallback__back" href={backHref}>‹ Back</a> : null}
     <RhSummary
       headline="Right Hand"
@@ -79,7 +79,7 @@ const backHref =
   }
 
   .rh-fallback__back:hover {
-    color: var(--right-hand, #c9a961);
+    color: var(--gold);
   }
 
   .rh-fallback__copy {
@@ -105,7 +105,7 @@ const backHref =
   }
 
   .rh-fallback__action:hover {
-    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
+    border-color: color-mix(in srgb, var(--gold) 45%, var(--border, #d8dee6));
   }
 
   .rh-fallback__action span {

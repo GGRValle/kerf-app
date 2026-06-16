@@ -9,6 +9,7 @@ import '../../shell/surfaceCatalog.js';
 import SpeakFAB from '../components/SpeakFAB.astro';
 import MobileBottomNav from '../components/MobileBottomNav.astro';
 import RightHandVoiceOverlay from '../components/RightHandVoiceOverlay.astro';
+import RightHandBubble from '../components/RightHandBubble.astro';
 import RightHandConversationDock from '../components/RightHandConversationDock.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { navForContext } from '../lib/nav.js';
@@ -23,6 +24,12 @@ export interface Props extends Partial<LayoutProps> {
   titleKey?: I18nKey;
   activeHref?: string;
   surfaceContext?: SurfaceContextInput;
+  /**
+   * Voice surface (Goal 2 / F-RH7). Default 'overlay' keeps the current SpeakFAB +
+   * RightHandVoiceOverlay on every existing surface (zero blast radius). A surface
+   * opts into the canon F-RH7 bubble with voiceSurface="bubble".
+   */
+  voiceSurface?: 'overlay' | 'bubble';
 }
 
 const {
@@ -32,6 +39,7 @@ const {
   titleKey,
   activeHref = '/',
   surfaceContext,
+  voiceSurface = 'overlay',
 } = Astro.props as Props;
 
 const { t } = createLayoutContext({ username, locale: context.locale, roleRoot: context.roleRoot });
@@ -145,8 +153,14 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
         <RightHandConversationDock />
       </div>
       <MobileBottomNav activeHref={activeHref} roleRoot={context.roleRoot} />
-      <SpeakFAB />
-      <RightHandVoiceOverlay />
+      {voiceSurface === 'bubble' ? (
+        <RightHandBubble />
+      ) : (
+        <>
+          <SpeakFAB />
+          <RightHandVoiceOverlay />
+        </>
+      )}
     </div>
     <script define:vars={{ emittedSurfaceContext }}>
       const SURFACE_PREVIOUS_KEY = 'kerf.surfaceContext.previous.v1';

@@ -141,10 +141,10 @@ const micLabel = state === 'idle' ? 'Speak' : listening ? 'Stop' : 'Keep going';
 </script>
 
 <style>
-  /* Tokens: --right-hand = RH gold (frame/bubbles); --kerf-amber = the live/
-     thinking glow; --field-green = the consequence tone. bg/surface/text flip
+  /* Tokens: --gold = RH gold (frame/bubbles); --gold = the live/
+     thinking glow; --green = the consequence tone. bg/surface/text flip
      with the app theme automatically. */
-  .rhb { --rhb-gold: var(--right-hand, #c9a961); --rhb-live: var(--kerf-amber, #f5b544); --rhb-go: var(--field-green, #38c977); }
+  .rhb { --rhb-gold: var(--gold, #c9a961); --rhb-live: var(--gold, #f5b544); --rhb-go: var(--green, #38c977); }
 
   /* THE BLOOM — one continuous gold-framed surface; the mic heart is seated in
      the base. Grows up (s1→s2→smax) then holds. */
@@ -152,8 +152,8 @@ const micLabel = state === 'idle' ? 'Speak' : listening ? 'Stop' : 'Keep going';
     display: flex; flex-direction: column; gap: 0.5rem;
     border: 1.5px solid color-mix(in srgb, var(--rhb-gold) 55%, transparent);
     border-radius: 22px; padding: 0.8rem 0.75rem 0.7rem;
-    background: color-mix(in srgb, var(--kerf-bg-2, #14181f) 90%, transparent);
-    box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.28); color: var(--kerf-text, #e8ecf1);
+    background: color-mix(in srgb, var(--bg, #14181f) 90%, transparent);
+    box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.28); color: var(--ink, #e8ecf1);
     transition: min-height 0.28s ease;
   }
   .rhb-bloom--s1 { min-height: 33vh; }
@@ -171,8 +171,8 @@ const micLabel = state === 'idle' ? 'Speak' : listening ? 'Stop' : 'Keep going';
   .rhb-turn { border-radius: 12px; padding: 0.45rem 0.6rem; font-size: 0.8rem; line-height: 1.4; max-width: 90%; }
   .rhb-turn-who { display: block; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 800; margin-bottom: 2px; }
   /* You — gray, right. RH — gold, left. (F-RH3 rule 4) */
-  .rhb-turn--you { align-self: flex-end; background: var(--kerf-surface-2, #232936); border-bottom-right-radius: 4px; }
-  .rhb-turn--you .rhb-turn-who { color: var(--kerf-text-mute, #6a7282); }
+  .rhb-turn--you { align-self: flex-end; background: var(--panel, #232936); border-bottom-right-radius: 4px; }
+  .rhb-turn--you .rhb-turn-who { color: var(--muted, #6a7282); }
   .rhb-turn--rh { align-self: flex-start; border-bottom-left-radius: 4px;
     background: color-mix(in srgb, var(--rhb-gold) 14%, transparent);
     border: 1px solid color-mix(in srgb, var(--rhb-gold) 30%, transparent); }
@@ -184,16 +184,16 @@ const micLabel = state === 'idle' ? 'Speak' : listening ? 'Stop' : 'Keep going';
 
   .rhb-confirm { display: flex; gap: 0.5rem; padding: 0.35rem 0; }
   .rhb-confirm-go { flex: 1; padding: 0.55rem; border: none; border-radius: 12px; font-weight: 800; background: var(--rhb-go); color: #04210f; cursor: pointer; }
-  .rhb-confirm-cancel { padding: 0.55rem 0.8rem; border-radius: 12px; border: 1px solid var(--kerf-border, #2a3140); background: transparent; color: var(--kerf-text-dim, #98a1b3); cursor: pointer; }
+  .rhb-confirm-cancel { padding: 0.55rem 0.8rem; border-radius: 12px; border: 1px solid var(--line, #2a3140); background: transparent; color: var(--muted, #98a1b3); cursor: pointer; }
 
-  .rhb-composer { display: flex; align-items: center; gap: 0.45rem; padding-top: 0.45rem; border-top: 1px solid color-mix(in srgb, var(--kerf-text, #fff) 7%, transparent); }
-  .rhb-plus { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--kerf-border, #2a3140); background: var(--kerf-bg-2, #14181f); color: var(--rhb-gold); font-size: 1rem; line-height: 1; flex: none; cursor: pointer; }
-  .rhb-field { flex: 1; border: 1px solid var(--kerf-border-soft, #1f2530); border-radius: 13px; padding: 0.4rem 0.6rem; font-size: 0.72rem; color: var(--kerf-text-mute, #6a7282); }
+  .rhb-composer { display: flex; align-items: center; gap: 0.45rem; padding-top: 0.45rem; border-top: 1px solid color-mix(in srgb, var(--ink, #fff) 7%, transparent); }
+  .rhb-plus { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line, #2a3140); background: var(--bg, #14181f); color: var(--rhb-gold); font-size: 1rem; line-height: 1; flex: none; cursor: pointer; }
+  .rhb-field { flex: 1; border: 1px solid var(--line, #1f2530); border-radius: 13px; padding: 0.4rem 0.6rem; font-size: 0.72rem; color: var(--muted, #6a7282); }
 
   /* The dock = the framed base bar; mic heart center-seated, never floating. */
   .rhb-dock { display: flex; align-items: center; justify-content: space-between; padding-top: 0.35rem; }
   .rhb-dock-grp { display: flex; gap: 0.85rem; opacity: 0.45; }
-  .rhb-dock-item { font-size: 0.55rem; color: var(--kerf-text-dim, #98a1b3); font-weight: 600; }
+  .rhb-dock-item { font-size: 0.55rem; color: var(--muted, #98a1b3); font-weight: 600; }
   .rhb-dock-mic { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
 
   .rhb-mic { width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
@@ -202,10 +202,10 @@ const micLabel = state === 'idle' ? 'Speak' : listening ? 'Stop' : 'Keep going';
   .rhb-mic svg { width: 21px; height: 21px; }
   /* The gold thinking-state presence — the live glow. */
   .rhb-mic--live { background: var(--rhb-live); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rhb-live) 28%, transparent), 0 0 16px color-mix(in srgb, var(--rhb-live) 45%, transparent); }
-  .rhb-mic--idle { background: var(--kerf-surface-2, #232936); color: var(--rhb-gold); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rhb-gold) 40%, transparent); }
+  .rhb-mic--idle { background: var(--panel, #232936); color: var(--rhb-gold); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rhb-gold) 40%, transparent); }
   .rhb-mic--pill { width: 40px; height: 40px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--rhb-live) 24%, transparent); }
   .rhb-mic-label { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rhb-gold); }
-  .rhb-mic-label--off { color: var(--kerf-text-mute, #6a7282); }
+  .rhb-mic-label--off { color: var(--muted, #6a7282); }
 
   /* F-RH7 ④ — the minimized pill, docked to the handedness side, travels with you. */
   .rhb-pill { position: fixed; bottom: 1rem; display: inline-flex; align-items: center; gap: 0.45rem;
