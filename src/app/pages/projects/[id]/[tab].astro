@@ -22,6 +22,10 @@ if (tab === 'scope' && project !== null) {
   return Astro.redirect(`/projects/${project.project_id}`);
 }
 
+if (tab === 'daily_log' && project !== null) {
+  return Astro.redirect(`/projects/${project.project_id}/daily-log`);
+}
+
 const brain = project ? getProjectBrain(project.project_id) : null;
 ---
 

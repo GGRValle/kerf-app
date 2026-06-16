@@ -105,6 +105,11 @@ test('spine surfaces emit SurfaceContext through Layout props', () => {
 
   const fieldCapture = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
   assert.match(fieldCapture, /surface: 'field_capture'/);
+
+  const dailyLog = readFileSync(path.join(ROOT, 'src/app/pages/projects/[id]/daily-log.astro'), 'utf8');
+  assert.match(dailyLog, /surface: 'daily_log'/);
+  assert.match(dailyLog, /log_date: logDate/);
+  assert.match(dailyLog, /data-grammar="canon"/);
 });
 
 test('proposal preview denies forged cross-tenant proposal ids under the server principal', () => {
