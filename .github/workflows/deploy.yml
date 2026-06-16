@@ -16,6 +16,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only --app kerf-v17-internal
+      # Stamp the MERGED sha into the image. The Dockerfile bakes build-stamp.json
+      # from the GIT_COMMIT build-arg (ARG GIT_COMMIT → /app/build-stamp.json), and
+      # /health reads that file (source:"file"). Passing GITHUB_SHA here is what makes
+      # /health.commit == the merged sha — the fix for the off-main "159910b" build.
+      - name: Deploy main (stamp merged sha)
+        run: |
+          flyctl deploy --remote-only --app kerf-v17-internal \
+            --build-arg GIT_COMMIT="${GITHUB_SHA}" \
+            --build-arg GIT_DIRTY=false \
+            --build-arg BUILD_TIMESTAMP="$(date -u +%FT%TZ)"
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # Provenance gate: fail the job if the running app doesn't echo the merged sha.
+      # Drift stops being possible — a bad deploy is a red check, not a surprise on the phone.
+      - name: Verify /health.commit == merged sha
+        run: |
+          sleep 15
+          live=$(curl -fsS https://kerf-v17-internal.fly.dev/health | jq -r .commit)
+          echo "live=$live expected=$GITHUB_SHA"
+          [ "$live" = "$GITHUB_SHA" ] || {
+            echo "::error::deploy provenance mismatch — /health is off-main ($live != $GITHUB_SHA)"; exit 1;
+          }
