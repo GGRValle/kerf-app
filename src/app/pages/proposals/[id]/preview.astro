@@ -4,7 +4,8 @@ import Layout from '../../../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../../../components/SurfaceIrreversibilityWrap.astro';
 import Card from '../../../components/Card.astro';
 import { createTranslator } from '../../../../i18n/index.js';
-import { getLane6Proposal } from '../../../lib/lane6Fixtures.js';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getLane6ProposalForTenant } from '../../../lib/lane6Fixtures.js';
 import { loadProposalCaptureOrigin } from '../../../lib/loadProposalCaptureOrigin.js';
 import CaptureOriginPanel from '../../../components/CaptureOriginPanel.astro';
 import ExportActions from '../../../components/ExportActions.astro';
@@ -12,7 +13,8 @@ import { renderProposalHtml } from '../../../../proposal/render.js';
 import '../../../styles/lane6.css';
 
 const { id } = Astro.params;
-const proposal = id ? getLane6Proposal(id) : null;
+const { context } = createLayoutContext();
+const proposal = id ? getLane6ProposalForTenant(id, context.tenantId) : null;
 const { t } = createTranslator('en');
 
 if (proposal === null) {

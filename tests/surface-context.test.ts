@@ -9,6 +9,9 @@ import {
   leaveBehindForSurface,
 } from '../src/app/lib/surfaceContext.js';
 import type { RoleRootContext } from '../src/app/lib/layout-props.js';
+import { getLane23ProjectForTenant, LANE23_DRAFT_REVIEW } from '../src/app/lib/lane23Fixtures.js';
+import { getLane6ProposalForTenant } from '../src/app/lib/lane6Fixtures.js';
+import { moneyTenant } from '../src/app/lib/moneyFixtures.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -102,4 +105,41 @@ test('spine surfaces emit SurfaceContext through Layout props', () => {
 
   const fieldCapture = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
   assert.match(fieldCapture, /surface: 'field_capture'/);
+});
+
+test('proposal preview denies forged cross-tenant proposal ids under the server principal', () => {
+  assert.equal(getLane6ProposalForTenant('prop_lane6_pass', 'tenant_ggr')?.tenant_id, 'tenant_ggr');
+  assert.equal(getLane6ProposalForTenant('prop_lane6_override_valle', 'tenant_ggr'), null);
+  assert.equal(getLane6ProposalForTenant('prop_lane6_override_hpg', 'tenant_ggr'), null);
+
+  const proposalPreview = readFileSync(path.join(ROOT, 'src/app/pages/proposals/[id]/preview.astro'), 'utf8');
+  assert.match(proposalPreview, /createLayoutContext/);
+  assert.match(proposalPreview, /getLane6ProposalForTenant\(id, context\.tenantId\)/);
+  assert.doesNotMatch(proposalPreview, /getLane6Proposal\(id\)/);
+  assert.match(proposalPreview, /proposal === null[\s\S]*Astro\.redirect\('\/'\)/);
+});
+
+test('draft review and field capture fixture reads are tenant-scoped', () => {
+  assert.equal(LANE23_DRAFT_REVIEW.tenant_id, 'tenant_ggr');
+  assert.equal(getLane23ProjectForTenant('proj_wegrzyn_kitchen', 'tenant_ggr')?.tenant_id, 'tenant_ggr');
+  assert.equal(getLane23ProjectForTenant('proj_wegrzyn_kitchen', 'tenant_valle'), null);
+  assert.equal(getLane23ProjectForTenant('proj_moore_cabs', 'tenant_ggr'), null);
+
+  const draftReview = readFileSync(path.join(ROOT, 'src/app/pages/draft-review/[draft_id].astro'), 'utf8');
+  assert.match(draftReview, /getLane23ProjectForTenant\(eventDraftEvent\.correlation_id, context\.tenantId\)/);
+  assert.match(draftReview, /LANE23_DRAFT_REVIEW\.tenant_id === context\.tenantId/);
+
+  const fieldCapture = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
+  assert.match(fieldCapture, /getLane23ProjectForTenant\('proj_wegrzyn_kitchen', context\.tenantId\)/);
+  assert.match(fieldCapture, /assignedProject === null[\s\S]*Astro\.redirect\('\/'\)/);
+});
+
+test('money fixture surfaces fence GGR-only queues by server tenant', () => {
+  assert.equal(moneyTenant(), 'tenant_ggr');
+
+  const moneyHome = readFileSync(path.join(ROOT, 'src/app/pages/money/index.astro'), 'utf8');
+  assert.match(moneyHome, /moneyTenant\(\) !== context\.tenantId[\s\S]*Astro\.redirect\('\/'\)/);
+
+  const ar = readFileSync(path.join(ROOT, 'src/app/pages/money/ar.astro'), 'utf8');
+  assert.match(ar, /moneyTenant\(\) !== context\.tenantId[\s\S]*Astro\.redirect\('\/'\)/);
 });

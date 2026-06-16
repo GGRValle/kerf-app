@@ -10,7 +10,7 @@ import {
   formatCentsDisplay,
   LANE23_DRAFT_REVIEW,
   LANE23_FIXTURE_DRAFT_ID,
-  getLane23Project,
+  getLane23ProjectForTenant,
   type Lane23DraftReview,
 } from '../../lib/lane23Fixtures.js';
 import { getApiDeps } from '../../../api/lib/deps.js';
@@ -30,7 +30,9 @@ if (!isFixtureDraft && draftId) {
       event.type === 'proposal.drafted' && event.proposal_id === draftId,
     ) ?? null;
 }
-const eventProject = eventDraftEvent ? getLane23Project(eventDraftEvent.correlation_id) : null;
+const eventProject = eventDraftEvent
+  ? getLane23ProjectForTenant(eventDraftEvent.correlation_id, context.tenantId)
+  : null;
 const eventDraft: Lane23DraftReview | null = eventDraftEvent
   ? {
     proposal_id: eventDraftEvent.proposal_id,
@@ -45,7 +47,11 @@ const eventDraft: Lane23DraftReview | null = eventDraftEvent
     lines: [],
   }
   : null;
-const draft = isFixtureDraft ? LANE23_DRAFT_REVIEW : eventDraft;
+const fixtureDraft =
+  isFixtureDraft && LANE23_DRAFT_REVIEW.tenant_id === context.tenantId
+    ? LANE23_DRAFT_REVIEW
+    : null;
+const draft = isFixtureDraft ? fixtureDraft : eventDraft;
 const canReviewDraft = !!draft && draft.lines.length > 0;
 const draftReviewHref = `/draft-review/${encodeURIComponent(draftId)}`;
 const loopPhases = [

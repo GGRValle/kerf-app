@@ -13,12 +13,16 @@ import {
   MONEY_AR_ROWS,
   MONEY_AP_ROWS,
   MONEY_ALLOWANCE_ROWS,
+  moneyTenant,
 } from '../../lib/moneyFixtures.js';
 import '../../styles/money.css';
 
 const { t, context } = createLayoutContext();
 const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
 if (!projected.capabilities.moneyRead) {
+  return Astro.redirect('/');
+}
+if (moneyTenant() !== context.tenantId) {
   return Astro.redirect('/');
 }
 const summary = MONEY_HOME_SUMMARY;

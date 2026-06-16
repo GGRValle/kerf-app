@@ -7,12 +7,15 @@ import ExportActions from '../../components/ExportActions.astro';
 import MoneyQueueList from '../../components/MoneyQueueList.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import { projectForRole, DEFAULT_BUSINESS_GRAPH_SLICE } from '../../lib/roleRootProjection.js';
-import { MONEY_AR_ROWS } from '../../lib/moneyFixtures.js';
+import { MONEY_AR_ROWS, moneyTenant } from '../../lib/moneyFixtures.js';
 import '../../styles/money.css';
 
 const { t, context } = createLayoutContext();
 const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
 if (!projected.capabilities.moneyRead) {
+  return Astro.redirect('/');
+}
+if (moneyTenant() !== context.tenantId) {
   return Astro.redirect('/');
 }
 ---
