@@ -1,5 +1,10 @@
 ---
 import '../styles/shell.css';
+// Goal 0 — the canonical surface grammar (tokens + layout primitives extracted
+// from the operable canon prototype). Loaded once here; scoped to
+// [data-grammar="canon"] so it's inert until a surface opts in. See
+// docs/SURFACE_GRAMMAR.md.
+import '../styles/surface-grammar.css';
 import '../../shell/surfaceCatalog.js';
 import SpeakFAB from '../components/SpeakFAB.astro';
 import MobileBottomNav from '../components/MobileBottomNav.astro';
