@@ -3,6 +3,11 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 import {
   LINE_TYPES,
@@ -121,4 +126,21 @@ test('surface context emits change_order with ids', () => {
 test('builder engine line types remain closed vocabulary', () => {
   assert.ok(LINE_TYPES.includes('labor'));
   assert.ok(LINE_TYPES.includes('material'));
+});
+
+test('CO surfaces opt into Goal 0 canon grammar (kg-* · no parallel palette)', () => {
+  const builderShell = readFileSync(path.join(ROOT, 'src/app/components/BuilderShell.astro'), 'utf8');
+  const builderPage = readFileSync(path.join(ROOT, 'src/app/pages/change-orders/new.astro'), 'utf8');
+  const decisionPage = readFileSync(path.join(ROOT, 'src/app/pages/decisions/[id].astro'), 'utf8');
+  const builderCss = readFileSync(path.join(ROOT, 'src/app/styles/builder.css'), 'utf8');
+
+  assert.match(builderShell, /data-grammar="canon"/);
+  assert.match(builderShell, /kg-chip/);
+  assert.match(decisionPage, /data-grammar="canon"/);
+  assert.match(decisionPage, /kg-pagehead/);
+  assert.match(decisionPage, /kg-chip red/);
+  assert.doesNotMatch(decisionPage, /decision-card\.css/);
+  assert.match(builderCss, /\[data-grammar="canon"\]/);
+  assert.doesNotMatch(builderCss, /--right-hand|--kerf-red|bld-chip/);
+  assert.match(builderPage, /builder\.css/);
 });
