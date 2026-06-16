@@ -49,16 +49,16 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   activeHref={Astro.url.pathname}
   surfaceContext={{
     surface: 'field_capture',
-    client_id: 'cli_wegrzyn',
-    project_id: assignment.project_id,
-    phase: 'capture',
+    phase: 'route_pending',
   }}
 >
   <main
     class="field-shell"
+    data-grammar="canon"
     data-view-state="pre"
     data-tenant-id={assignment.tenant_id}
-    data-project-id={assignment.project_id}
+    data-project-id=""
+    data-suggested-project-id={assignment.project_id}
   >
     <section class="phone-frame" aria-label="Mobile field capture">
       <div class="status-bar" aria-hidden="true">
@@ -69,71 +69,20 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={2}>
         <!-- ===================== STATE 1 · PRE-CAPTURE ===================== -->
         <section class="capture-state state-pre" aria-label="Start field capture">
-          <header class="top-chrome">
+          <header class="top-chrome kg-pagehead">
             <div class="tc-eyebrow">
-              <span class="tc-mode">Add to job</span>
+              <span class="tc-mode kg-chip green">Field capture</span>
               <a class="tc-back" href={captureReturnHref}>{captureReturnLabel}</a>
             </div>
-            <h1 class="tc-title">What should Right Hand keep?</h1>
+            <h1 class="tc-title">Capture first</h1>
             <p class="tc-meta">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-              <span>Wegrzyn site · 4287 Pacifica Way</span>
+              Photo, file, or typed note now — Right Hand suggests where it goes after capture.
             </p>
           </header>
 
-          <div class="dest-selector">
-            <label class="assign-eyebrow" for="f-e1-destination">Goes to</label>
-            <select
-              class="dest-select"
-              id="f-e1-destination"
-              data-active-project-id={assignment.project_id}
-              data-active-client={assignment.client}
-              data-active-project={assignment.project}
-              data-active-location={assignment.location}
-              data-matched-by={assignment.matched_by}
-            >
-              <option value="active" data-project-id={assignment.project_id} selected>
-                Active job · {assignment.client}
-              </option>
-              <option value="pick-project" data-project-id="">Pick a different project…</option>
-              <option value="pick-client" data-project-id="">Pick a different client…</option>
-              <option value="unassigned" data-project-id="">New client / unassigned note</option>
-            </select>
-            <p class="dest-hint" id="f-e1-dest-hint">
-              Matched to your active job by {assignment.matched_by}. Change it above if this
-              capture belongs elsewhere.
-            </p>
-          </div>
-
-          <div class="assign-card" id="f-e1-assign-card">
-            <div class="assign-row">
-              <span class="ar-key">Client</span>
-              <span class="ar-val" id="f-e1-dest-client">{assignment.client}</span>
-            </div>
-            <div class="assign-row">
-              <span class="ar-key">Project</span>
-              <span class="ar-val" id="f-e1-dest-project">{assignment.project}</span>
-            </div>
-            <div class="assign-row">
-              <span class="ar-key">Location</span>
-              <span class="ar-val ar-val-dim" id="f-e1-dest-location">{assignment.location}</span>
-            </div>
-          </div>
-
-          <aside class="dl-anchor" aria-label="Daily Log destination">
-            <strong id="f-e1-dl-anchor">Right Hand keeps this with {assignment.client} · today's job notes.</strong>
-            <span class="dl-detail">
-              Notes, photos, and files stay together so the office can review the job
-              without digging through separate places.
-            </span>
-          </aside>
-
-          <!-- Voice stays owned by the universal bottom-bar Right Hand mic.
-               This page is the quiet detail/media surface once the operator
-               chooses to come here. -->
-          <div class="fc-context-note" role="note">
-            <strong>Right Hand brought you here with the job context.</strong>
-            <span>Add a photo, attach a file, or edit the note details. Use the bottom mic to keep talking.</span>
+          <div class="fc-context-note kg-card" role="note">
+            <strong>Use the bottom mic to keep talking with Right Hand.</strong>
+            <span>Add photos, files, or a typed summary here. You will confirm the job destination before filing.</span>
           </div>
 
           <div class="cap-secondary">
@@ -155,7 +104,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           </div>
 
           <div class="action-ribbon">
-            <a class="ar-btn cancel" href={captureReturnHref}>
+            <a class="ar-btn cancel kg-chip red" href={captureReturnHref}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
               {captureReturnLabel}
             </a>
@@ -164,15 +113,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 
         <!-- ===================== STATE 2 · ADD DETAILS ===================== -->
         <section class="capture-state state-active" aria-label="Add details">
-          <header class="top-chrome">
+          <header class="top-chrome kg-pagehead">
             <div class="tc-eyebrow">
-              <span class="tc-mode" id="f-e1-active-mode">Adding · {assignment.client} / {assignment.location}</span>
+              <span class="tc-mode kg-chip green" id="f-e1-active-mode">Adding · {assignment.client} / {assignment.location}</span>
               <span class="tc-user" id="f-e1-active-count">0 items</span>
             </div>
             <h1 class="tc-title tc-title-sm">Add details</h1>
           </header>
 
-          <label class="note-card" for="f-e1-note">
+          <label class="note-card kg-card" for="f-e1-note">
             <span class="card-eyebrow">Typed summary</span>
             <p class="note-helper">
               Use the bottom mic to keep talking with Right Hand, or type a short summary before filing.
@@ -216,9 +165,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       >
         <!-- ===================== STATE 3 · PRE-FLIGHT + SUBMIT ===================== -->
         <section class="capture-state state-preflight" aria-label="Review and submit field capture">
-          <header class="top-chrome">
+          <header class="top-chrome kg-pagehead">
             <div class="tc-eyebrow">
-              <span class="tc-mode">Review before filing</span>
+              <span class="tc-mode kg-chip amber">Review before filing</span>
               <button type="button" class="tc-back tc-back-btn" id="f-e1-back-active">‹ Back</button>
             </div>
             <h1 class="tc-title tc-title-sm">Ready to file?</h1>
@@ -226,19 +175,65 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 
           <p class="preflight-status" id="f-e1-preflight-status" role="status"></p>
 
-          <div class="preflight-card">
+          <div class="dest-selector kg-card" aria-label="Confirm capture destination">
+            <label class="assign-eyebrow" for="f-e1-destination">Goes to</label>
+            <select
+              class="dest-select"
+              id="f-e1-destination"
+              data-active-project-id={assignment.project_id}
+              data-active-client={assignment.client}
+              data-active-project={assignment.project}
+              data-active-location={assignment.location}
+              data-matched-by={assignment.matched_by}
+            >
+              <option value="active" data-project-id={assignment.project_id} selected>
+                Active job · {assignment.client}
+              </option>
+              <option value="pick-project" data-project-id="">Pick a different project…</option>
+              <option value="pick-client" data-project-id="">Pick a different client…</option>
+              <option value="unassigned" data-project-id="">New client / unassigned note</option>
+            </select>
+            <p class="dest-hint" id="f-e1-dest-hint">
+              Right Hand matched your active job by {assignment.matched_by}. Confirm or change before filing.
+            </p>
+          </div>
+
+          <div class="assign-card kg-card" id="f-e1-assign-card">
+            <div class="assign-row">
+              <span class="ar-key">Client</span>
+              <span class="ar-val" id="f-e1-dest-client">{assignment.client}</span>
+            </div>
+            <div class="assign-row">
+              <span class="ar-key">Project</span>
+              <span class="ar-val" id="f-e1-dest-project">{assignment.project}</span>
+            </div>
+            <div class="assign-row">
+              <span class="ar-key">Location</span>
+              <span class="ar-val ar-val-dim" id="f-e1-dest-location">{assignment.location}</span>
+            </div>
+          </div>
+
+          <aside class="dl-anchor kg-card" aria-label="Daily Log destination">
+            <strong id="f-e1-dl-anchor">Right Hand keeps this with {assignment.client} · today's job notes.</strong>
+            <span class="dl-detail">
+              Notes, photos, and files stay together so the office can review the job
+              without digging through separate places.
+            </span>
+          </aside>
+
+          <div class="preflight-card kg-card">
             <p class="pf-eyebrow">Ready for job notes</p>
             <p class="pf-title">{assignment.location} update</p>
             <p class="pf-meta" id="f-e1-preflight-meta">Daily Log · review what Right Hand has below</p>
           </div>
 
-          <section class="capture-readout" id="f-e1-capture-readout" aria-label="Captured items readout">
+          <section class="capture-readout kg-card" id="f-e1-capture-readout" aria-label="Captured items readout">
             <p class="card-eyebrow">What Right Hand has</p>
             <ul class="readout-list" id="f-e1-readout-list"></ul>
-            <p class="readout-warning" id="f-e1-transcript-warning" hidden></p>
+            <p class="readout-warning kg-chip red" id="f-e1-transcript-warning" hidden></p>
           </section>
 
-          <fieldset class="draft-intent-card">
+          <fieldset class="draft-intent-card kg-card">
             <legend class="di-eyebrow">What should Right Hand do with this?</legend>
             <label class="di-option">
               <input type="radio" name="entry_kind" value="change_signal" checked />
@@ -266,7 +261,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </label>
           </fieldset>
 
-          <section class="final-transcript">
+          <section class="final-transcript kg-card">
             <div class="ft-eyebrow">
               <span>Typed summary</span>
               <button type="button" class="ft-edit" id="f-e1-edit-note">
@@ -280,7 +275,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </p>
           </section>
 
-          <section class="media-card">
+          <section class="media-card kg-card">
             <div class="ft-eyebrow">
               <span>Media</span>
               <span class="ce-count" id="f-e1-photo-count">0</span>
@@ -288,7 +283,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             <div class="photo-grid-mini" id="f-e1-photo-grid"></div>
           </section>
 
-          <section class="continue-capture" aria-label="Add more capture before submit">
+          <section class="continue-capture kg-card" aria-label="Add more capture before submit">
             <p class="record-label">Add more before submit</p>
             <p class="record-sublabel">Use the bottom Right Hand mic for voice, or add photo/video and edits here.</p>
             <div class="cap-secondary">
@@ -303,8 +298,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </div>
           </section>
 
-          <aside class="ai-disclosure">
-            <strong>AI-assisted by Kerf Right Hand.</strong> Drafts are prepared from your capture; review before approval.
+          <aside class="ai-disclosure kg-card">
+            <strong class="kg-chip amber">AI-assisted by Right Hand.</strong> Drafts are prepared from your capture; review before approval.
           </aside>
 
           <div class="action-ribbon">
@@ -317,7 +312,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
               class="ar-btn primary"
               id="f-e1-submit"
               data-tenant-id={assignment.tenant_id}
-              data-project-id={assignment.project_id}
+              data-project-id=""
             >
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span class="ar-label">Submit to Daily Log</span>
@@ -974,7 +969,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     const projectId = submitButton.dataset.projectId;
     const transcript = note instanceof HTMLTextAreaElement ? note.value.trim() : '';
     if (!tenantId || !projectId) {
-      setStatus('Missing project assignment. Pick the project before submit.', 'error');
+      setStatus('Confirm where this capture goes before submit.', 'error');
       return;
     }
     if (transcript.length === 0 && photos.length === 0 && videos.length === 0 && audioUri === null) {
@@ -1045,6 +1040,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       return;
     }
     renderPreflight();
+    if (destSelect instanceof HTMLSelectElement) {
+      destSelect.dispatchEvent(new Event('change'));
+    }
     setState('preflight');
     if (preflightStatus instanceof HTMLElement) {
       preflightStatus.textContent =
@@ -1117,17 +1115,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 </script>
 
 <style>
-  /* Canon --kerf-* tokens live in the shared skin (styles/shell.css).
-     Phase 1J Agent B ports the F-E1 canon visual treatment here; no local
-     :root is reintroduced — the page consumes the shared canon tokens. */
+  /* Goal 0 · canon tokens only in local styles (parity harness). */
   .field-shell {
     min-height: 100vh;
     margin: -2rem;
     padding: 18px 12px 34px;
     background:
       radial-gradient(circle at 12% 0%, rgba(56, 201, 119, 0.16), transparent 34%),
-      linear-gradient(180deg, var(--kerf-bg-2) 0%, var(--kerf-bg) 55%, var(--kerf-bg) 100%);
-    color: var(--kerf-text);
+      linear-gradient(180deg, var(--bg) 0%, var(--bg) 55%, var(--bg) 100%);
+    color: var(--ink);
     display: flex;
     justify-content: center;
   }
@@ -1135,8 +1131,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   .phone-frame {
     width: min(100%, 392px);
     min-height: calc(100vh - 36px);
-    background: var(--kerf-bg);
-    border: 1.5px solid var(--kerf-border);
+    background: var(--bg);
+    border: 1.5px solid var(--line);
     border-radius: 30px;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
     overflow: hidden;
@@ -1150,17 +1146,17 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     padding: 6px 10px 8px;
     font-size: 0.72rem;
     font-weight: 600;
-    color: var(--kerf-text);
+    color: var(--ink);
   }
   .status-bar .right {
-    color: var(--kerf-text-dim);
+    color: var(--muted);
     letter-spacing: 0.04em;
   }
 
   /* ===== Top chrome (per state) ===== */
   .top-chrome {
     padding: 6px 6px 12px;
-    border-bottom: 1px solid var(--kerf-border-soft);
+    border-bottom: 1px solid var(--line);
     margin-bottom: 12px;
   }
   .tc-eyebrow {
@@ -1170,19 +1166,24 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     margin-bottom: 4px;
     font-size: 0.62rem;
   }
+  .tc-mode.kg-chip {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+  }
   .tc-mode {
-    color: var(--field-green);
+    color: var(--green);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-weight: 800;
   }
   .tc-user {
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .tc-back,
   .tc-back-btn {
-    color: var(--field-green);
+    color: var(--green);
     text-decoration: none;
     font-weight: 700;
     background: none;
@@ -1197,7 +1198,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-weight: 800;
     letter-spacing: -0.01em;
     line-height: 1.2;
-    color: var(--kerf-text);
+    color: var(--ink);
   }
   .tc-title-sm {
     font-size: 0.95rem;
@@ -1208,7 +1209,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     align-items: center;
     margin: 5px 0 0;
     font-size: 0.66rem;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
   }
   .tc-meta svg {
     width: 12px;
@@ -1235,9 +1236,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     width: 100%;
     appearance: none;
     -webkit-appearance: none;
-    background: var(--kerf-surface);
-    color: var(--kerf-text);
-    border: 1px solid var(--kerf-border);
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--line);
     border-radius: 12px;
     padding: 11px 13px;
     font: inherit;
@@ -1245,18 +1246,18 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-weight: 600;
   }
   .dest-select:focus-visible {
-    outline: 2px solid var(--field-green);
+    outline: 2px solid var(--green);
     outline-offset: 1px;
   }
   .dest-hint {
     margin: 6px 2px 0;
     font-size: 0.72rem;
     line-height: 1.4;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
   }
   .assign-card {
-    background: var(--kerf-surface);
-    border: 1px solid var(--kerf-border-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 12px;
     padding: 11px 13px;
     margin-bottom: 10px;
@@ -1266,7 +1267,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.58rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--field-green);
+    color: var(--green);
     font-weight: 800;
     margin: 0 0 7px;
   }
@@ -1275,7 +1276,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     justify-content: space-between;
     align-items: center;
     padding: 5px 0;
-    border-bottom: 1px solid var(--kerf-border-soft);
+    border-bottom: 1px solid var(--line);
     font-size: 0.78rem;
   }
   .assign-row:last-child {
@@ -1284,40 +1285,36 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .ar-key {
     font-size: 0.6rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     font-weight: 700;
   }
   .ar-val {
-    color: var(--kerf-text);
+    color: var(--ink);
     font-weight: 600;
     text-align: right;
   }
   .ar-val-dim {
     font-weight: 500;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
   }
 
   /* ===== Daily Log anchor ===== */
-  .dl-anchor {
+  .dl-anchor.kg-card {
     margin: 0 0 12px;
-    background: rgba(56, 201, 119, 0.04);
-    border: 1px solid rgba(56, 201, 119, 0.25);
-    border-left: 3px solid var(--field-green);
-    border-radius: 8px;
-    padding: 9px 12px;
     font-size: 0.7rem;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
     line-height: 1.45;
+    border-left: none;
   }
   .dl-anchor strong {
-    color: var(--field-green);
+    color: var(--green);
     display: block;
     margin-bottom: 3px;
   }
   .dl-anchor .dl-detail {
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     display: block;
   }
 
@@ -1325,35 +1322,35 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   .fc-context-note {
     margin: 16px 0;
     padding: 14px;
-    border: 1px solid var(--kerf-border, #d8dee6);
+    border: 1px solid var(--line);
     border-radius: 14px;
-    background: var(--kerf-bg-2, #f6f8fa);
+    background: var(--bg);
   }
   .fc-context-note strong {
     display: block;
     font-size: 0.92rem;
     line-height: 1.35;
-    color: var(--kerf-text);
+    color: var(--ink);
   }
   .fc-context-note span {
     display: block;
     margin-top: 3px;
     font-size: 0.8rem;
     line-height: 1.4;
-    color: var(--kerf-text-mute, #5c6670);
+    color: var(--muted);
   }
 
   /* ===== Capture guidance ===== */
   .record-label {
     margin: 6px 0 0;
     font-size: 0.82rem;
-    color: var(--kerf-text);
+    color: var(--ink);
     font-weight: 700;
   }
   .record-sublabel {
     margin: 0;
     font-size: 0.7rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     line-height: 1.4;
     padding: 0 14px;
   }
@@ -1361,27 +1358,30 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   /* ===== Secondary capture ===== */
   .cap-secondary {
     margin: 12px 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
     gap: 8px;
   }
+  .cap-secondary .cap-button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
   .cap-button {
-    background: var(--kerf-surface);
-    border: 1px solid var(--kerf-border-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 10px;
     padding: 10px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 3px;
-    color: var(--kerf-text);
+    color: var(--ink);
     cursor: pointer;
     font: inherit;
   }
   .cap-button svg {
     width: 18px;
     height: 18px;
-    fill: var(--field-green);
+    fill: var(--green);
   }
   .cb-label {
     font-size: 0.76rem;
@@ -1389,7 +1389,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .cb-sub {
     font-size: 0.62rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
   }
   .cap-button-row {
     flex-direction: row;
@@ -1413,7 +1413,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     width: 11px;
     height: 11px;
     border-radius: 50%;
-    background: var(--field-green);
+    background: var(--green);
     flex-shrink: 0;
     box-shadow: 0 0 0 4px rgba(56, 201, 119, 0.2);
   }
@@ -1425,17 +1425,17 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.58rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--field-green);
+    color: var(--green);
     font-weight: 800;
   }
   .live-rec-time {
     font-size: 0.86rem;
-    color: var(--kerf-text);
+    color: var(--ink);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
   }
   .live-rec-stop {
-    background: var(--field-green);
+    background: var(--green);
     color: #0a1a0f;
     font-weight: 800;
     padding: 6px 12px;
@@ -1462,8 +1462,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   .media-card,
   .draft-intent-card,
   .continue-capture {
-    background: var(--kerf-surface);
-    border: 1px solid var(--kerf-border-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 12px;
     padding: 12px 13px;
     margin-bottom: 10px;
@@ -1476,29 +1476,29 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.58rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--field-green);
+    color: var(--green);
     font-weight: 800;
   }
   .note-helper {
     margin: 0 0 8px;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-size: 0.74rem;
     line-height: 1.4;
   }
   textarea {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid var(--kerf-border-soft);
+    border: 1px solid var(--line);
     border-radius: 10px;
-    background: var(--kerf-bg-2);
-    color: var(--kerf-text);
+    background: var(--bg);
+    color: var(--ink);
     padding: 11px;
     resize: vertical;
     font-size: 16px;
     font-family: inherit;
   }
   textarea:focus-visible {
-    outline: 2px solid var(--field-green);
+    outline: 2px solid var(--green);
     outline-offset: 1px;
   }
 
@@ -1510,7 +1510,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.6rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
     font-weight: 800;
     margin-bottom: 6px;
     display: flex;
@@ -1518,7 +1518,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     align-items: center;
   }
   .captured-eyebrow .ce-count {
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-weight: 500;
   }
   .cap-list {
@@ -1530,16 +1530,16 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     gap: 5px;
   }
   .cap-empty {
-    border: 1px dashed var(--kerf-border-soft);
+    border: 1px dashed var(--line);
     border-radius: 8px;
     padding: 12px 10px;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-size: 0.76rem;
     text-align: center;
   }
   .cap-item {
-    background: var(--kerf-surface);
-    border: 1px solid var(--kerf-border-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 8px 10px;
     display: grid;
@@ -1562,15 +1562,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .cap-item-icon.voice {
     background: rgba(56, 201, 119, 0.14);
-    color: var(--field-green);
+    color: var(--green);
   }
   .cap-item-icon.photo {
     background: rgba(123, 168, 255, 0.14);
-    color: var(--kerf-blue);
+    color: var(--blue);
   }
   .cap-item-icon.note {
     background: rgba(245, 181, 68, 0.14);
-    color: var(--kerf-amber);
+    color: var(--amber);
   }
   .cap-item-body {
     display: flex;
@@ -1580,12 +1580,12 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .cap-item-title {
     font-size: 0.76rem;
-    color: var(--kerf-text);
+    color: var(--ink);
     font-weight: 700;
   }
   .cap-item-sub {
     font-size: 0.66rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     line-height: 1.4;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1593,7 +1593,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .cap-item-meta {
     font-size: 0.62rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .cap-item-action {
@@ -1601,8 +1601,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     height: 22px;
     border-radius: 5px;
     background: transparent;
-    border: 1px solid var(--kerf-border-soft);
-    color: var(--kerf-text-mute);
+    border: 1px solid var(--line);
+    color: var(--muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1627,8 +1627,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     gap: 5px;
   }
   :global(.field-shell .cap-item) {
-    background: var(--kerf-surface);
-    border: 1px solid var(--kerf-border-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 8px 10px;
     display: grid;
@@ -1662,27 +1662,27 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   :global(.field-shell .cap-item-icon.voice) {
     background: rgba(56, 201, 119, 0.14);
-    color: var(--field-green);
+    color: var(--green);
   }
   :global(.field-shell .cap-item-icon.photo) {
     background: rgba(123, 168, 255, 0.14);
-    color: var(--kerf-blue);
+    color: var(--blue);
   }
   :global(.field-shell .cap-item-icon.note) {
     background: rgba(245, 181, 68, 0.14);
-    color: var(--kerf-amber);
+    color: var(--amber);
   }
   :global(.field-shell .cap-item-body) {
     min-width: 0;
   }
   :global(.field-shell .cap-item-title) {
     font-size: 0.76rem;
-    color: var(--kerf-text);
+    color: var(--ink);
     font-weight: 700;
   }
   :global(.field-shell .cap-item-sub) {
     font-size: 0.66rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     line-height: 1.4;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1690,7 +1690,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   :global(.field-shell .cap-item-meta) {
     font-size: 0.62rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   :global(.field-shell .cap-item-action) {
@@ -1698,8 +1698,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     height: 22px;
     border-radius: 5px;
     background: transparent;
-    border: 1px solid var(--kerf-border-soft);
-    color: var(--kerf-text-mute);
+    border: 1px solid var(--line);
+    color: var(--muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1713,7 +1713,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   /* ===== Pre-flight summary ===== */
   .preflight-status {
     margin: 0 0 10px;
-    color: var(--field-green);
+    color: var(--green);
     font-size: 0.8rem;
     line-height: 1.4;
   }
@@ -1726,20 +1726,20 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.58rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--field-green);
+    color: var(--green);
     font-weight: 800;
   }
   .pf-title {
     margin: 0 0 4px;
     font-size: 0.95rem;
     font-weight: 800;
-    color: var(--kerf-text);
+    color: var(--ink);
     line-height: 1.3;
   }
   .pf-meta {
     margin: 0;
     font-size: 0.7rem;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
     line-height: 1.4;
   }
 
@@ -1752,10 +1752,10 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     gap: 6px;
   }
   .readout-list li {
-    border: 1px solid var(--kerf-border-soft);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 9px 10px;
-    background: var(--kerf-bg-2);
+    background: var(--bg);
   }
   .readout-list strong,
   .readout-list span {
@@ -1765,28 +1765,26 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.76rem;
   }
   .readout-list span {
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-size: 0.68rem;
     margin-top: 2px;
   }
-  .readout-warning {
+  .readout-warning.kg-chip.red {
+    display: block;
     margin: 10px 0 0;
-    padding: 9px 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(245, 181, 68, 0.45);
-    background: rgba(245, 181, 68, 0.12);
-    color: #f8e6b5;
+    border-radius: var(--radius);
     font-size: 0.72rem;
     line-height: 1.42;
+    font-weight: 700;
   }
   .readout-warning[hidden] {
     display: none;
   }
   :global(.field-shell .readout-list li) {
-    border: 1px solid var(--kerf-border-soft);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 9px 10px;
-    background: var(--kerf-bg-2);
+    background: var(--bg);
   }
   :global(.field-shell .readout-list strong),
   :global(.field-shell .readout-list span) {
@@ -1796,14 +1794,14 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.76rem;
   }
   :global(.field-shell .readout-list span) {
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-size: 0.68rem;
     margin-top: 2px;
   }
 
   /* ===== Draft-intent picker (canon radio cards) ===== */
   .draft-intent-card {
-    border: 1px solid var(--kerf-border-soft);
+    border: 1px solid var(--line);
     margin: 0 0 10px;
     padding: 11px 13px;
   }
@@ -1812,7 +1810,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.6rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--field-green);
+    color: var(--green);
     font-weight: 800;
     margin-bottom: 8px;
   }
@@ -1821,8 +1819,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     grid-template-columns: 16px 1fr;
     gap: 9px;
     align-items: flex-start;
-    background: var(--kerf-bg-2);
-    border: 1px solid var(--kerf-border-soft);
+    background: var(--bg);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 9px 10px;
     margin-bottom: 6px;
@@ -1841,7 +1839,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 2px solid var(--kerf-border);
+    border: 2px solid var(--line);
     margin-top: 2px;
     grid-column: 1;
   }
@@ -1853,11 +1851,11 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
   .di-option:has(input:checked) {
     background: rgba(56, 201, 119, 0.06);
-    border-color: var(--field-green);
+    border-color: var(--green);
   }
   .di-option:has(input:checked) .di-radio {
-    border-color: var(--field-green);
-    background: var(--field-green);
+    border-color: var(--green);
+    background: var(--green);
     position: relative;
   }
   .di-option:has(input:checked) .di-radio::after {
@@ -1866,21 +1864,21 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: var(--kerf-bg);
+    background: var(--bg);
     margin: 2.5px auto;
   }
   .di-option:has(input:focus-visible) {
-    outline: 2px solid var(--field-green);
+    outline: 2px solid var(--green);
     outline-offset: 1px;
   }
   .di-option-title {
     font-size: 0.76rem;
-    color: var(--kerf-text);
+    color: var(--ink);
     font-weight: 700;
   }
   .di-option-detail {
     font-size: 0.66rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     line-height: 1.4;
   }
 
@@ -1889,7 +1887,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.6rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
     font-weight: 800;
     margin-bottom: 7px;
     display: flex;
@@ -1897,7 +1895,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     align-items: center;
   }
   .ft-edit {
-    color: var(--kerf-blue);
+    color: var(--blue);
     font-size: 0.64rem;
     font-weight: 700;
     display: flex;
@@ -1920,34 +1918,37 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     margin: 0;
     white-space: pre-wrap;
     font-size: 0.78rem;
-    color: var(--kerf-text);
+    color: var(--ink);
     line-height: 1.5;
   }
   .transcript-canon-hint {
     margin: 8px 0 0;
     padding: 7px 9px;
     background: rgba(123, 168, 255, 0.05);
-    border-left: 2px solid var(--kerf-blue);
+    border-left: 2px solid var(--blue);
     border-radius: 3px;
     font-size: 0.66rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     line-height: 1.42;
   }
   .transcript-canon-hint strong {
-    color: var(--kerf-blue);
+    color: var(--blue);
   }
 
   /* ===== Media / photo grid mini ===== */
   .media-card .ce-count {
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     font-weight: 600;
     text-transform: none;
     letter-spacing: 0;
   }
   .photo-grid-mini {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 4px;
+  }
+  .photo-grid-mini .photo-tile-mini {
+    flex: 0 0 calc(25% - 3px);
   }
   .photo-tile-mini {
     aspect-ratio: 1;
@@ -1960,7 +1961,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     overflow: hidden;
     position: relative;
     padding: 0;
-    color: var(--field-green);
+    color: var(--green);
   }
   .photo-tile-mini img {
     width: 100%;
@@ -1970,7 +1971,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   .photo-tile-mini svg {
     width: 14px;
     height: 14px;
-    fill: var(--field-green);
+    fill: var(--green);
   }
   .photo-tile-mini .tile-cap {
     position: absolute;
@@ -1979,7 +1980,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     bottom: 0;
     font-size: 0.52rem;
     line-height: 1.2;
-    color: var(--kerf-text);
+    color: var(--ink);
     background: rgba(10, 13, 17, 0.7);
     padding: 2px 3px;
     overflow: hidden;
@@ -2005,7 +2006,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     overflow: hidden;
     position: relative;
     padding: 0;
-    color: var(--field-green);
+    color: var(--green);
   }
   :global(.field-shell .photo-tile-mini img) {
     width: 100%;
@@ -2016,7 +2017,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   :global(.field-shell .photo-tile-mini svg) {
     width: 14px !important;
     height: 14px !important;
-    fill: var(--field-green);
+    fill: var(--green);
   }
   :global(.field-shell .photo-tile-mini.add svg) {
     width: 18px !important;
@@ -2032,24 +2033,23 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
 
   /* ===== AI disclosure ===== */
-  .ai-disclosure {
+  .ai-disclosure.kg-card {
     margin: 0 0 10px;
-    padding: 8px 11px;
-    background: rgba(201, 169, 97, 0.05);
-    border-left: 2px solid var(--right-hand);
-    border-radius: 3px;
     font-size: 0.66rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     line-height: 1.42;
+    border-left: none;
   }
-  .ai-disclosure strong {
-    color: var(--right-hand);
+  .ai-disclosure strong.kg-chip {
+    display: inline-flex;
+    margin-right: 6px;
+    vertical-align: middle;
   }
 
   /* ===== Action ribbon ===== */
   .action-ribbon {
-    background: var(--kerf-bg-2);
-    border: 1px solid var(--kerf-border);
+    background: var(--bg);
+    border: 1px solid var(--line);
     border-radius: 12px;
     padding: 8px;
     display: flex;
@@ -2061,11 +2061,11 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     flex: 1;
     padding: 10px 8px;
     text-align: center;
-    background: var(--kerf-surface);
-    border: 1px solid var(--kerf-border-soft);
+    background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: 10px;
     font-size: 0.72rem;
-    color: var(--kerf-text);
+    color: var(--ink);
     font-weight: 700;
     display: flex;
     flex-direction: column;
@@ -2081,12 +2081,21 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     fill: currentColor;
   }
   .ar-btn.primary {
-    background: var(--field-green);
+    background: var(--green);
     color: #0a1a0f;
-    border-color: var(--field-green);
+    border-color: var(--green);
   }
-  .ar-btn.cancel {
-    color: var(--kerf-red);
+  .ar-btn.cancel.kg-chip.red {
+    flex-direction: row;
+    justify-content: center;
+    padding: 10px 8px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--red);
+    background: var(--red-soft);
+    border-color: transparent;
   }
   .ar-btn[aria-busy='true'] {
     opacity: 0.6;
@@ -2097,9 +2106,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     max-width: min(100%, 392px);
     margin: 14px auto 0;
     padding: 12px;
-    border: 1px solid var(--kerf-border-soft);
+    border: 1px solid var(--line);
     border-radius: 12px;
-    background: var(--kerf-surface);
+    background: var(--panel);
   }
   .submit-outcome[hidden] {
     display: none;
@@ -2107,16 +2116,16 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   .submit-status {
     min-height: 1.25rem;
     margin: 0;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
     line-height: 1.45;
     text-align: center;
     font-size: 0.82rem;
   }
   .submit-status[data-tone='success'] {
-    color: var(--field-green);
+    color: var(--green);
   }
   .submit-status[data-tone='error'] {
-    color: var(--kerf-red);
+    color: var(--red);
   }
   .submit-play-error {
     margin: 10px 0 0;
@@ -2135,7 +2144,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     display: block;
     margin-top: 12px;
     text-align: center;
-    color: var(--field-green);
+    color: var(--green);
     text-decoration: none;
     font-weight: 800;
   }
@@ -2151,7 +2160,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   .loop-link {
     display: block;
     text-align: center;
-    color: var(--field-green);
+    color: var(--green);
     text-decoration: none;
     font-weight: 700;
     font-size: 0.82rem;

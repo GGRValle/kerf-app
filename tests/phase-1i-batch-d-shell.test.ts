@@ -82,34 +82,31 @@ test('preview pages exist for schedule, reports, settings, more, create, camera'
     assert.ok(existsSync(path.join(ROOT, 'src/app/pages', page)), page);
   }
 });
-test('F-CAM1 V1 camera shell gates on job and keeps modes inline', () => {
+test('F-CAM1 V1 camera opens capture-first and routes after capture', () => {
   const src = read('src/app/pages/camera.astro');
-  assert.match(src, /Where should this go\?/);
-  assert.match(src, /class:list=\{\['f-cam1'/);
-  assert.match(src, /data-selected-project-id/);
-  assert.match(src, /data-project-id=\{project\.project_id\}/);
+  assert.doesNotMatch(src, /Where should this go\?/);
+  assert.doesNotMatch(src, /Pick the job first/);
+  assert.doesNotMatch(src, /needs-job/);
+  assert.doesNotMatch(src, /cam-job-gate/);
+  assert.match(src, /surface: 'field_capture'/);
+  assert.match(src, /id="cam-route-panel"/);
+  assert.match(src, /Active job ·/);
+  assert.match(src, /Confirm destination/);
+  assert.match(src, /Capture first — Right Hand will suggest/);
+  assert.match(src, /route_pending/);
+  assert.match(src, /pending_route/);
+  assert.match(src, /showRoutePanel/);
+  assert.match(src, /data-route-confirmed/);
   assert.match(src, /Walkthru/);
   assert.match(src, /Photo/);
   assert.match(src, /Scan/);
   assert.match(src, /Right Hand listening · REC/);
   assert.match(src, /id="cam-video"/);
-  assert.match(src, /id="cam-canvas"/);
   assert.match(src, /navigator\.mediaDevices\?\.getUserMedia/);
-  assert.match(src, /facingMode: \{ ideal: 'environment' \}/);
   assert.match(src, /video\.srcObject = cameraStream/);
-  assert.match(src, /canvas\.toDataURL\('image\/jpeg'/);
-  assert.match(src, /new MediaRecorder\(cameraStream\)/);
-  assert.match(src, /id="camera-photo-input"/);
-  assert.match(src, /id="camera-video-input"/);
-  assert.doesNotMatch(src, /id="camera-scan-input"/);
-  assert.match(src, /source: 'file_input_fallback'/);
-  assert.match(src, /Scan needs native LiDAR/);
   assert.match(src, /sessionStorage\.setItem\('kerf\.cameraCapture'/);
-  assert.match(src, /Captured this session/);
   assert.match(src, /\/api\/v1\/projects\/\$\{selectedProjectId\}\/camera-capture/);
   assert.match(src, /filed_to_daily_log/);
-  assert.match(src, /Attached to \$\{selectedProjectName\} · Daily Log/);
-  assert.match(src, /Nothing captured yet/);
   assert.match(src, /href="\/room-capture\?src=camera&mode=start"/);
   assert.doesNotMatch(src, /href="\/field-capture"/);
 });
