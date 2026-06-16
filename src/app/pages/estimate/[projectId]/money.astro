@@ -203,7 +203,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
               <div><dt>Milestone amount</dt><dd>{fmt(item.billed_cents + item.invoice.amount_due_cents + item.invoice.retention_held_cents)}</dd></div>
               <div><dt>Billed</dt><dd>{fmt(item.billed_cents)}</dd></div>
               <div><dt>Remaining to issue</dt><dd>{fmt(item.remaining_cents)}</dd></div>
-              <div><dt>Paid</dt><dd>Not tracked in Kerf yet</dd></div>
+              <div><dt>Paid</dt><dd>Not tracked in Right Hand yet</dd></div>
             </dl>
           ) : (
             <p class="mf-note">{item.blocked_reason}</p>

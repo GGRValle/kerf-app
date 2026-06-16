@@ -744,7 +744,7 @@ test('F-RH3 bloom-from-heart: composer is one dock with the mic seated dead cent
   assert.match(src, /class="rhvo__composer-row"/);
   assert.match(src, /class="rhvo__dock"/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Home<\/span>/);
-  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Create<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Start<\/span>/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Camera<\/span>/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">More<\/span>/);
   assert.match(src, /\.rhvo__dock\s*\{[\s\S]*?grid-template-columns: 1fr 1fr 72px 1fr 1fr;/);
@@ -768,12 +768,12 @@ test('F-RH3 bloom-from-heart: surface grows upward then holds and scrolls', () =
   assert.doesNotMatch(src, /align-content: end/);
 });
 
-test('F-RH3 bloom-from-heart: copy is mic-first and stateful, not tap-to-talk', () => {
+test('F-RH7 bloom-from-heart: active copy is mic-first and parked pill is tap-to-talk', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /content: "KEEP GOING"/);
   assert.match(src, /content: "TALK AGAIN"/);
   assert.match(src, /content: "STOP"/);
-  assert.doesNotMatch(src, /Tap to talk/i);
+  assert.match(src, />Tap to talk</);
 });
 
 test('F-RH3 conversation surface: plus button opens a source picker in the same thread', () => {
@@ -935,7 +935,7 @@ test('F-RH3 conversation surface: no raw action placeholder can render in Right 
   assert.doesNotMatch(en, /Got it\s+—\s+\{action\}/);
 });
 
-test('F-RH3 conversation surface: active mic reads as recording and stop', () => {
+test('F-RH7 conversation surface: active mic reads as blue listening and stop', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /const setMicActive = \(active: boolean\)/);
   assert.match(src, /overlay\.dataset\.micActive = active \? 'true' : 'false'/);
@@ -945,7 +945,8 @@ test('F-RH3 conversation surface: active mic reads as recording and stop', () =>
   assert.match(src, /content: "TYPE"/);
   assert.match(src, /@keyframes rhvo-hot-pulse/);
   assert.match(src, /@keyframes rhvo-hot-mic/);
-  assert.match(src, /box-shadow:[\s\S]*rgba\(245, 181, 68, 0\.7\)/);
+  assert.match(src, /background:\s*var\(--kerf-blue, #7ba8ff\)/);
+  assert.match(src, /box-shadow:[\s\S]*var\(--kerf-blue, #7ba8ff\)/);
 });
 
 test('F-RH3 conversation surface: correction turns stay visible without becoming contradictory note body', () => {
@@ -1163,7 +1164,7 @@ test('Right Hand action labels distinguish discard from adding more recording', 
   assert.match(es, /'rh_voice\.action_continue': 'Seguir grabando'/);
 });
 
-test('F-RH1 visual: elapsed timer + field-green VU bars + typing cursor + per-state headings', () => {
+test('F-RH1 visual: elapsed timer + blue VU bars + typing cursor + per-state headings', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
 
   // Elapsed timer: element renders, starts on open, ticks every second, clears
@@ -1176,10 +1177,10 @@ test('F-RH1 visual: elapsed timer + field-green VU bars + typing cursor + per-st
   const teardown = sliceDecl(src, 'teardown', 'closeOverlay');
   assert.match(teardown, /stopTimer\(\)/);
 
-  // Discrete field-green VU bars (not a single fill), driven by the real rms.
+  // Discrete blue VU bars (not a single fill), driven by the real rms.
   const barCount = (src.match(/class="rhvo__bar"/g) ?? []).length;
   assert.ok(barCount >= 5, `expected discrete VU bars, found ${barCount}`);
-  assert.match(src, /\.rhvo__bar\s*\{[\s\S]*?background:\s*var\(--field-green\)/);
+  assert.match(src, /\.rhvo__bar\s*\{[\s\S]*?background:\s*var\(--kerf-blue\)/);
   assert.match(src, /meterBars\[b\]!\.style\.transform = `scaleY\(/);
   assert.doesNotMatch(src, /rhvo__meter-fill/); // old single fill removed
 

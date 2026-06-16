@@ -17,9 +17,9 @@ import {
   formatTranscriptPreview,
 } from '../src/examples/v15-vertical-slice/pages/field-daily-capture.js';
 
-test('buildFieldDailyCaptureHtml includes KERF · FIELD brand header', () => {
+test('buildFieldDailyCaptureHtml includes Right Hand · Field brand header', () => {
   const html = buildFieldDailyCaptureHtml('en');
-  assert.match(html, /KERF · FIELD/);
+  assert.match(html, /Right Hand · Field/);
   assert.match(html, /kerf-field-daily/);
   assert.match(html, new RegExp(`id="${FIELD_DAILY_DOM.projectSelect}"`));
 });

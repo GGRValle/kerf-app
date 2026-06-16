@@ -2,14 +2,10 @@
 // F-PV1 · Mobile/desktop proposal preview · /proposals/:id/preview
 import Layout from '../../../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../../../components/SurfaceIrreversibilityWrap.astro';
-import Card from '../../../components/Card.astro';
 import { createTranslator } from '../../../../i18n/index.js';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getLane6ProposalForTenant } from '../../../lib/lane6Fixtures.js';
-import { loadProposalCaptureOrigin } from '../../../lib/loadProposalCaptureOrigin.js';
-import CaptureOriginPanel from '../../../components/CaptureOriginPanel.astro';
-import ExportActions from '../../../components/ExportActions.astro';
-import { renderProposalHtml } from '../../../../proposal/render.js';
+import { formatDollars, renderProposalHtml } from '../../../../proposal/render.js';
 import '../../../styles/lane6.css';
 
 const { id } = Astro.params;
@@ -22,7 +18,14 @@ if (proposal === null) {
 }
 
 const paperHtml = renderProposalHtml(proposal);
-const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, proposal.project_id);
+const lineItems = proposal.divisions.flatMap((division) =>
+  division.sections.flatMap((section) => section.lines),
+);
+const previewLines = lineItems.slice(0, 4);
+const reviewLabel =
+  proposal.status === 'sent' || proposal.status === 'accepted'
+    ? 'Client-facing'
+    : 'Draft preview';
 ---
 
 <Layout
@@ -40,45 +43,68 @@ const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, propos
   }}
 >
   <article class="lane6-page f-pv1">
-    <header>
-      <div class="lane6-crumb">{t('f_pv1.crumb')}</div>
-      <h1 class="lane6-title">{t('f_pv1.title')}</h1>
-      <p class="lane6-subtitle">{t('f_pv1.subtitle')} · {proposal.proposal_number}</p>
+    <header class="lane6-pagehead">
+      <div>
+        <div class="lane6-crumb">Sales / Proposal preview</div>
+        <h1 class="lane6-title">{proposal.project_name}</h1>
+        <p class="lane6-subtitle">{proposal.proposal_number} · Valid until {new Date(proposal.valid_until_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</p>
+      </div>
+      <div class="lane6-head-actions">
+        <a class="lane6-btn" href="/draft-review">Back to draft</a>
+        <a class="lane6-btn primary" href={`/proposals/${proposal.proposal_id}/send`}>
+          {t('f_pv1.continue_send_gate')}
+        </a>
+      </div>
     </header>
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-      <ExportActions
-        surface="proposal.preview"
-        scopeDescriptor={`Proposal ${proposal.proposal_number}`}
-        itemCount={proposal.divisions.length}
-        actions={[
-          { label: t('action.print'), format: 'print' },
-          { label: t('f_mn.export.pdf'), format: 'pdf' },
-        ]}
-      />
-      <div class="lane6-operator-bar">
-        <div class="eyebrow">{t('f_pv1.operator_eyebrow')}</div>
-        <div class="lane6-seg" role="group" aria-label={t('f_pv1.operator_eyebrow')}>
-          <span class="active" title={t('f_pv1.view_preview_note')}>{t('f_pv1.view_mobile')}</span>
-          <span title={t('f_pv1.view_preview_note')}>{t('f_pv1.view_desktop')}</span>
-          <span class="lane6-preview-chip">{t('route_shell.card_eyebrow')}</span>
-        </div>
-        <p class="lane6-subtitle">{t('f_pv1.view_preview_note')}</p>
-      </div>
+      <div class="lane6-preview-grid">
+        <section class="lane6-client-paper" aria-label="Client proposal preview">
+          <div class="lane6-paper-wrap">
+            <iframe class="lane6-paper-html" title={proposal.project_name} sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
+          </div>
+        </section>
 
-      <Card eyebrow={t('f_pv1.preview_label')} title={proposal.project_name}>
-        <p class="lane6-subtitle">{t('f_pv1.read_only_note')}</p>
-        <CaptureOriginPanel origin={captureOrigin} />
-        <div class="lane6-paper-wrap">
-          <iframe class="lane6-paper-html" title={proposal.project_name} sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
-        </div>
-        <div slot="footer" class="lane6-actions">
-          <a class="lane6-btn ghost" href="/draft-review">{t('f_pv1.back_draft')}</a>
-          <a class="lane6-btn primary" href={`/proposals/${proposal.proposal_id}/send`}>
-            {t('f_pv1.continue_send_gate')}
-          </a>
-        </div>
-      </Card>
+        <aside class="lane6-control-panel" aria-label="Operator controls">
+          <div class="lane6-panel-kicker">{reviewLabel}</div>
+          <h2>{formatDollars(proposal.total_cents)}</h2>
+          <div class="lane6-control-row">
+            <strong>Margin</strong>
+            <span class="lane6-chip green">Hidden</span>
+          </div>
+          <div class="lane6-control-row">
+            <strong>Send status</strong>
+            <span class="lane6-chip amber">Gate required</span>
+          </div>
+          <div class="lane6-control-row">
+            <strong>Contractor review</strong>
+            <span class="lane6-chip">Required</span>
+          </div>
+
+          <div class="lane6-mini-lines" aria-label="Proposal line summary">
+            {previewLines.map((line) => (
+              <div class="lane6-mini-line">
+                <span>{line.description}</span>
+                <b>{formatDollars(line.extended_cents)}</b>
+              </div>
+            ))}
+            <div class="lane6-mini-line total">
+              <span>Total proposal</span>
+              <b>{formatDollars(proposal.total_cents)}</b>
+            </div>
+          </div>
+
+          <div class="lane6-actions lane6-actions--stacked">
+            <a class="lane6-btn" href="/draft-review">Back to draft</a>
+            <a class="lane6-btn primary" href={`/proposals/${proposal.proposal_id}/send`}>
+              {t('f_pv1.continue_send_gate')}
+            </a>
+          </div>
+          <p class="lane6-panel-note">
+            Client artifact stays clean. Right Hand can draft and route; external send stays behind the visible gate.
+          </p>
+        </aside>
+      </div>
     </SurfaceIrreversibilityWrap>
   </article>
 </Layout>

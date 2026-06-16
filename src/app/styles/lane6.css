@@ -26,6 +26,124 @@
   line-height: 1.55;
 }
 
+.lane6-pagehead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lane6-head-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.lane6-preview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+.lane6-client-paper,
+.lane6-control-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+
+.lane6-client-paper {
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.lane6-control-panel {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+}
+
+.lane6-panel-kicker {
+  margin: 0 0 0.35rem;
+  color: var(--right-hand);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lane6-control-panel h2 {
+  margin: 0 0 1rem;
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.lane6-control-row,
+.lane6-mini-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--border-soft);
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.lane6-mini-lines {
+  margin-top: 0.75rem;
+}
+
+.lane6-mini-line {
+  align-items: flex-start;
+  color: var(--text-muted);
+}
+
+.lane6-mini-line.total {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.lane6-mini-line b {
+  color: var(--text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.lane6-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.lane6-chip.green {
+  border-color: color-mix(in srgb, var(--field-green) 38%, var(--border));
+  color: var(--field-green);
+}
+
+.lane6-chip.amber {
+  border-color: color-mix(in srgb, var(--kerf-amber) 44%, var(--border));
+  color: var(--kerf-amber);
+}
+
+.lane6-panel-note {
+  margin: 1rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .lane6-operator-bar {
   display: flex;
   flex-wrap: wrap;
@@ -78,10 +196,10 @@
 }
 
 .lane6-paper-wrap {
-  background: linear-gradient(180deg, var(--kerf-surface) 0%, var(--kerf-bg) 100%);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem;
+  background: var(--kerf-bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.75rem;
 }
 
 /* The paper preview is a rendered document — it stays light on both themes. */
@@ -101,6 +219,10 @@
   gap: 0.5rem;
   flex-wrap: wrap;
   margin-top: 1rem;
+}
+
+.lane6-actions--stacked {
+  display: grid;
 }
 
 .lane6-btn {
@@ -265,6 +387,32 @@
 }
 
 @media (max-width: 899px) {
+  .lane6-page {
+    padding-inline: 0.75rem;
+  }
+
+  .lane6-pagehead {
+    display: block;
+  }
+
+  .lane6-head-actions {
+    justify-content: flex-start;
+    margin-top: 0.85rem;
+  }
+
+  .lane6-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lane6-control-panel {
+    position: static;
+    order: -1;
+  }
+
+  .lane6-paper-wrap {
+    padding: 0.45rem;
+  }
+
   [data-role-root='owner'] .lane6-desktop-only,
   [data-role-root='pm'] .lane6-desktop-only,
   [data-role-root='admin_ops'] .lane6-desktop-only {

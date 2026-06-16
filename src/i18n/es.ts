@@ -74,7 +74,7 @@ export const ES: TranslationMap = {
   'rh.relay.facts.materials_needed': 'Materiales necesarios',
   'rh.relay.facts.inspection_notes': 'Notas de inspección',
   'rh.relay.facts.safety_notes': 'Notas de seguridad',
-  'field.brand.title': 'KERF · CAMPO',
+  'field.brand.title': 'Mano Derecha · Campo',
   'field.project.label': 'Proyecto',
   'field.project.loading': 'Cargando proyectos…',
   'field.project.empty': 'Aún no hay proyectos — créelo primero desde la oficina.',
