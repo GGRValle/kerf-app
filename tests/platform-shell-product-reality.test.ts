@@ -51,7 +51,8 @@ test('camera Done files through Lane 3 daily-log endpoint before claiming attach
   assert.match(src, /Camera unavailable here — using fallback file picker/);
   assert.match(src, /\/api\/v1\/projects\/\$\{selectedProjectId\}\/camera-capture/);
   assert.match(src, /status: 'filed_to_daily_log'/);
-  assert.match(src, /Attached to \$\{selectedProjectName\} · Daily Log/);
+  assert.match(src, /Confirm and file/);
+  assert.match(src, /id="cam-last-shot"/);
   assert.match(src, /Could not file that yet\. Nothing was attached/);
   assert.match(src, /\.f-cam1\.has-capture \.cam-viewfinder__copy/);
 });

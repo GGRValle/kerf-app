@@ -99,7 +99,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         </div>
 
         <div class="cam-controls">
-          <div class="cam-last-shot" aria-hidden="true">
+          <div class="cam-last-shot" id="cam-last-shot" aria-hidden="true">
             <span>Last</span>
           </div>
           <button type="button" class="cam-shutter" id="cam-shutter" aria-label="Capture media"></button>
@@ -147,7 +147,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
             : 'Pick where this capture belongs before filing.'}
         </p>
         <div class="cam-route-actions">
-          <button type="button" class="cam-route-confirm" id="cam-route-confirm">Confirm destination</button>
+          <button type="button" class="cam-route-confirm" id="cam-route-confirm">Confirm and file</button>
           <a class="cam-route-link" href="/projects?src=camera">Search jobs</a>
         </div>
       </section>
@@ -184,6 +184,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const capturedTitle = document.querySelector('#cam-captured-title');
     const capturedDetail = document.querySelector('#cam-captured-detail');
     const thumb = document.querySelector('#cam-thumb');
+    const lastShot = document.querySelector('#cam-last-shot');
+    const shutter = document.querySelector('#cam-shutter');
+    const doneButton = document.querySelector('#cam-done');
     let currentMode = root?.getAttribute('data-initial-mode') || 'photo';
     let suggestedProjectId = root?.getAttribute('data-suggested-project-id') || '';
     let suggestedProjectName = root?.getAttribute('data-suggested-project-name') || '';
@@ -197,6 +200,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     let recorder = null;
     let recorderChunks = [];
     let recordingStartedAt = 0;
+    let isFiling = false;
 
     const copyForMode = (mode) => {
       if (mode === 'walkthru') return 'Talk while you film. Right Hand will route the walkthrough after you capture.';
@@ -277,6 +281,53 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         setStatus(`${friendlyForKind(lastCapture.kind)} ready — tap Done to file to ${selectedProjectName}.`);
       }
     };
+    const fileCapture = async () => {
+      if (!lastCapture || !routeConfirmed || !selectedProjectId) return false;
+      if (isFiling) return true;
+      isFiling = true;
+      setStatus(`Filing ${friendlyForKind(lastCapture.kind).toLowerCase()} to ${selectedProjectName}…`);
+      if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
+      if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = true;
+      try {
+        const response = await fetch(`/api/v1/projects/${selectedProjectId}/camera-capture`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            capture_kind: lastCapture.kind,
+            file_name: lastCapture.name,
+            confirmed: true,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error(`file_failed_${response.status}`);
+        }
+        const result = await response.json();
+        const filedCapture = {
+          ...lastCapture,
+          status: 'filed_to_daily_log',
+          daily_log_route: result.daily_log_route,
+          work_artifact_ref: result.artifacts?.work?.id,
+          attention_artifact_ref: result.artifacts?.attention?.id,
+          returned_at: Date.now(),
+        };
+        try {
+          sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(filedCapture));
+        } catch {
+          // Status below remains the visible fallback.
+        }
+        setStatus(`${friendlyForKind(lastCapture.kind)} attached to ${selectedProjectName}.`);
+      } catch {
+        isFiling = false;
+        if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
+        if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = false;
+        setStatus('Could not file that yet. Nothing was attached — try again or choose another job.');
+        return false;
+      }
+      const base = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}`;
+      const destination = base.includes('?') ? `${base}&src=camera` : `${base}?src=camera`;
+      window.location.href = destination;
+      return true;
+    };
     const stopCamera = () => {
       if (typeof MediaStream !== 'undefined' && cameraStream instanceof MediaStream) {
         cameraStream.getTracks().forEach((track) => track.stop());
@@ -338,7 +389,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
           cameraFailure = err instanceof Error ? err.name : 'camera_denied';
         }
       }
-      if (!(cameraStream instanceof MediaStream)) {
+      if (typeof MediaStream === 'undefined' || !(cameraStream instanceof MediaStream)) {
         stopCamera();
         setCameraState('Camera access blocked', 'Enable camera access or use the fallback file picker.');
         return false;
@@ -382,6 +433,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     });
     routeConfirm?.addEventListener('click', () => {
       applySelectedRoute();
+      void fileCapture();
     });
     routeClose?.addEventListener('click', () => {
       hideRoutePanel();
@@ -395,6 +447,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       event.stopImmediatePropagation?.();
       if (action.id === 'cam-route-confirm') {
         applySelectedRoute();
+        void fileCapture();
       } else {
         hideRoutePanel();
       }
@@ -415,7 +468,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const updateLastShot = (kind, previewUrl = '') => {
       const friendly = friendlyForKind(kind);
       if (root instanceof HTMLElement) root.classList.add('has-capture');
-      if (captured instanceof HTMLElement) captured.hidden = false;
+      if (captured instanceof HTMLElement) captured.hidden = true;
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.hidden = true;
       if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} ready`;
       if (capturedDetail instanceof HTMLElement) {
@@ -427,6 +480,13 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         thumb.className = `cam-thumb ${kind === 'photo' ? 'is-photo' : kind === 'scan' ? 'is-scan' : 'is-video'}`;
         thumb.style.backgroundImage = previewUrl ? `url("${previewUrl}")` : '';
         thumb.textContent = previewUrl ? '' : kind === 'walkthrough' ? 'REC' : kind === 'scan' ? 'DOC' : 'IMG';
+      }
+      if (lastShot instanceof HTMLElement) {
+        lastShot.classList.add('has-last-shot');
+        lastShot.dataset.kind = kind;
+        lastShot.style.setProperty('--last-shot-image', previewUrl ? `url("${previewUrl}")` : 'none');
+        const label = lastShot.querySelector('span');
+        if (label instanceof HTMLElement) label.textContent = friendly;
       }
       setStatus(routeConfirmed && selectedProjectName
         ? `${friendly} ready — tap Done to file to ${selectedProjectName}.`
@@ -465,7 +525,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       return true;
     };
     const finishWalkthruRecording = () => new Promise((resolve) => {
-      if (!(recorder instanceof MediaRecorder) || recorder.state === 'inactive') {
+      if (typeof MediaRecorder === 'undefined' || !(recorder instanceof MediaRecorder) || recorder.state === 'inactive') {
         resolve(false);
         return;
       }
@@ -482,12 +542,14 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         });
         updateLastShot('walkthrough', objectUrl);
         if (recPill instanceof HTMLElement) recPill.hidden = true;
+        if (root instanceof HTMLElement) root.classList.remove('is-recording');
+        if (shutter instanceof HTMLElement) shutter.classList.remove('is-recording');
         resolve(true);
       }, { once: true });
       recorder.stop();
     });
     const startWalkthruRecording = () => {
-      if (!(cameraStream instanceof MediaStream) || typeof MediaRecorder === 'undefined') {
+      if (typeof MediaStream === 'undefined' || !(cameraStream instanceof MediaStream) || typeof MediaRecorder === 'undefined') {
         return captureStillFromVideo('walkthrough');
       }
       if (recorder instanceof MediaRecorder && recorder.state === 'recording') {
@@ -502,6 +564,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       });
       recorder.start();
       if (recPill instanceof HTMLElement) recPill.hidden = false;
+      if (root instanceof HTMLElement) root.classList.add('is-recording');
+      if (shutter instanceof HTMLElement) shutter.classList.add('is-recording');
       setStatus('Recording walkthrough — tap shutter or Done to finish.');
       return true;
     };
@@ -511,7 +575,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         setCameraState('Native scan is separate', 'Nothing was filed. LiDAR capture is deferred to the native track.');
         return;
       }
-      if (!(cameraStream instanceof MediaStream)) {
+      if (typeof MediaStream === 'undefined' || !(cameraStream instanceof MediaStream)) {
         const started = await startCamera();
         if (!started) {
           setStatus('Camera unavailable here — using fallback file picker.');
@@ -550,49 +614,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         showRoutePanel();
         return;
       }
-      setStatus(`Filing ${friendlyForKind(lastCapture.kind).toLowerCase()} to ${selectedProjectName}…`);
-      const doneButton = document.querySelector('#cam-done');
-      if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
-      try {
-        const response = await fetch(`/api/v1/projects/${selectedProjectId}/camera-capture`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            capture_kind: lastCapture.kind,
-            file_name: lastCapture.name,
-            confirmed: true,
-          }),
-        });
-        if (!response.ok) {
-          throw new Error(`file_failed_${response.status}`);
-        }
-        const result = await response.json();
-        const filedCapture = {
-          ...lastCapture,
-          status: 'filed_to_daily_log',
-          daily_log_route: result.daily_log_route,
-          work_artifact_ref: result.artifacts?.work?.id,
-          attention_artifact_ref: result.artifacts?.attention?.id,
-          returned_at: Date.now(),
-        };
-        try {
-          sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(filedCapture));
-        } catch {
-          // Status below remains the visible fallback.
-        }
-        if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendlyForKind(lastCapture.kind)} attached`;
-        if (capturedDetail instanceof HTMLElement) {
-          capturedDetail.textContent = `Attached to ${selectedProjectName} · Daily Log.`;
-        }
-        setStatus(`${friendlyForKind(lastCapture.kind)} attached to ${selectedProjectName}.`);
-      } catch {
-        if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
-        setStatus('Could not file that yet. Nothing was attached — try again or choose another job.');
-        return;
-      }
-      const base = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}`;
-      const destination = base.includes('?') ? `${base}&src=camera` : `${base}?src=camera`;
-      window.location.href = destination;
+      await fileCapture();
     };
 
     document.querySelectorAll('.cam-mode-strip [data-mode]').forEach((button) => {
@@ -906,6 +928,20 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     background:
       linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)),
       rgba(255,255,255,0.07);
+    background-image:
+      var(--last-shot-image),
+      linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03));
+    background-size: cover;
+    background-position: center;
+  }
+  .cam-last-shot.has-last-shot {
+    color: #f8fafc;
+  }
+  .cam-last-shot[data-kind='walkthrough']::before {
+    border-color: rgba(248,97,90,0.72);
+    background:
+      radial-gradient(circle at center, rgba(248,97,90,0.46), rgba(248,97,90,0.08)),
+      rgba(255,255,255,0.07);
   }
   .cam-shutter {
     width: 4.3rem;
@@ -914,6 +950,54 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     border: 3px solid #f8fafc;
     background: var(--gold);
     box-shadow: inset 0 0 0 4px rgba(11,14,19,0.9);
+  }
+  .cam-shutter.is-recording {
+    background: #f8615a;
+    border-color: rgba(255,255,255,0.72);
+    box-shadow:
+      inset 0 0 0 4px rgba(11,14,19,0.9),
+      0 0 0 8px rgba(248,97,90,0.24);
+    animation: cam-record-pulse 1s ease-in-out infinite;
+  }
+  .f-cam1.is-recording .cam-viewfinder::after {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    bottom: 11.25rem;
+    width: 5.8rem;
+    height: 1.25rem;
+    transform: translateX(-50%);
+    background:
+      linear-gradient(90deg,
+        transparent 0 8%,
+        rgba(248,97,90,0.9) 8% 13%,
+        transparent 13% 20%,
+        rgba(248,97,90,0.72) 20% 27%,
+        transparent 27% 35%,
+        rgba(248,97,90,0.95) 35% 43%,
+        transparent 43% 52%,
+        rgba(248,97,90,0.64) 52% 59%,
+        transparent 59% 67%,
+        rgba(248,97,90,0.86) 67% 74%,
+        transparent 74% 100%);
+    border-radius: 999px;
+    opacity: 0.9;
+    animation: cam-wave 820ms ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  [data-grammar="canon"].f-cam1.is-recording .cam-rec-pill.kg-chip.green {
+    background: rgba(248,97,90,0.92);
+    border-color: rgba(248,97,90,0.85);
+    color: #fff;
+  }
+  @keyframes cam-record-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.94); }
+  }
+  @keyframes cam-wave {
+    from { transform: translateX(-50%) scaleY(0.7); }
+    to { transform: translateX(-50%) scaleY(1.1); }
   }
   .cam-done {
     justify-self: end;
