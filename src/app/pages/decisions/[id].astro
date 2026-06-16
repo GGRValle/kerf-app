@@ -1,104 +1,171 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Card from '../../components/Card.astro';
-import Chip from '../../components/Chip.astro';
+import { createLayoutContext } from '../../lib/createLayoutContext.js';
+import {
+  buildChangeOrderDecisionCardViewModel,
+  getChangeOrderByDecisionId,
+} from '../../lib/changeOrderFlow.js';
+import { renderDecisionCardViewHtml } from '../../../ui/components/DecisionCardView.js';
+import '../../../ui/styles/decision-card.css';
 
 const { id } = Astro.params;
-const packetId = id ?? 'sample-decision-packet';
+const decisionId = id ?? '';
+const record = decisionId.startsWith('co_dec_') ? getChangeOrderByDecisionId(decisionId) : null;
+const { t } = createLayoutContext();
+
+if (!record) {
+  return (
+    <Layout titleKey="decisions.detail.title" activeHref="/decisions">
+      <Card eyebrow={t('route_shell.card_eyebrow')} title={t('decisions.detail.title')}>
+        <p>{t('decisions.preview.detail_body')}</p>
+      </Card>
+    </Layout>
+  );
+}
+
+const viewModel = buildChangeOrderDecisionCardViewModel(record);
+const cardHtml = renderDecisionCardViewHtml(viewModel);
+const isPending = record.status === 'pending_review' || record.status === 'needs_review';
+const editHref = `/change-orders/new?project_id=${encodeURIComponent(record.project_id)}`;
 ---
 
-<Layout titleKey="decisions.detail.title" activeHref="/decisions">
-  <section class="decision-detail" aria-labelledby="decision-detail-title">
-    <p class="decision-detail__crumb"><a href="/decisions">Back to decisions</a></p>
-
-    <Card eyebrow="Decision packet" title={packetId}>
-      <div class="decision-detail__status">
-        <Chip label="Preview" tone="amber" />
-        <span>Review shape only. No approval is recorded from this page.</span>
+<Layout
+  title="Change Order · Decision"
+  activeHref="/decisions"
+  surfaceContext={{
+    surface: 'change_order',
+    project_id: record.project_id,
+    change_order_id: record.change_order_id,
+    contract_id: record.contract_id,
+    line_ids: record.line_ids,
+    phase: isPending ? 'approval_gate' : record.status,
+  }}
+>
+  <article class="co-decision-page">
+    <header class="co-decision-header">
+      <div class="co-decision-crumb">
+        <a href={`/projects/${record.project_id}`}>{record.project_number}</a>
+        · Change Order · F-B1
       </div>
-      <dl class="decision-detail__facts">
-        <div>
-          <dt>What this represents</dt>
-          <dd>A future queue item that needs a human before the system acts.</dd>
-        </div>
-        <div>
-          <dt>Where to inspect the live gates</dt>
-          <dd>Proposal send, office review cards, and project audit are wired now.</dd>
-        </div>
-      </dl>
-    </Card>
+      <h1>{record.change_order_id} · {record.title}</h1>
+      <p class="co-decision-sub">
+        Right Hand assembled this change order. Approve to adjust the contract — no client send from this gate.
+      </p>
+    </header>
 
-    <Card eyebrow="Next move" title="Open a wired review path">
-      <div class="decision-detail__actions">
-        <a href="/proposals/prop_lane6_pass/send">Proposal send gate</a>
-        <a href="/relay">Office review cards</a>
-        <a href="/projects/proj_wegrzyn_kitchen/audit">Project audit</a>
+    <div class="kerf-decision-card-wrap" set:html={cardHtml} data-co-decision-root data-change-order-id={record.change_order_id} />
+
+    {record.status === 'approved' && record.contract_adjusted_at ? (
+      <section class="co-contract-adjusted" aria-live="polite">
+        <h2>Contract adjusted</h2>
+        <p>
+          {record.contract_id} updated by {record.contract_delta_cents ? `$${(record.contract_delta_cents / 100).toFixed(2)}` : 'approved amount'}
+          at {record.contract_adjusted_at.slice(0, 19).replace('T', ' ')} UTC.
+        </p>
+      </section>
+    ) : null}
+
+    {isPending ? (
+      <div class="co-decision-confirm-gate" hidden data-co-confirm-gate>
+        <p data-co-confirm-copy></p>
+        <div class="co-decision-confirm-actions">
+          <button type="button" class="kerf-btn kerf-btn-primary" data-co-confirm-yes>Yes — proceed</button>
+          <button type="button" class="kerf-btn" data-co-confirm-no>Cancel</button>
+        </div>
       </div>
-    </Card>
-  </section>
+    ) : null}
+  </article>
 </Layout>
 
 <style>
-  .decision-detail {
-    display: grid;
-    gap: 0.85rem;
+  .co-decision-page {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 1rem 1rem 5rem;
   }
-
-  .decision-detail__crumb {
-    margin: 0;
-    font-size: 0.85rem;
+  .co-decision-header h1 {
+    font-size: 1.25rem;
+    margin: 0.35rem 0;
   }
-
-  .decision-detail__crumb a,
-  .decision-detail__actions a {
-    color: var(--accent, #0f766e);
-    text-decoration: none;
-    font-weight: 700;
+  .co-decision-sub {
+    color: var(--text-muted, #8b949e);
+    margin: 0 0 1rem;
   }
-
-  .decision-detail__status {
+  .co-decision-crumb a {
+    color: inherit;
+  }
+  .co-contract-adjusted {
+    margin-top: 1.25rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border, #343c4a);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent, #c9a876) 8%, transparent);
+  }
+  .co-decision-confirm-gate {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border, #343c4a);
+    border-radius: 8px;
+  }
+  .co-decision-confirm-actions {
     display: flex;
     gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.85rem;
-    color: var(--text-muted, #5c6670);
-  }
-
-  .decision-detail__facts {
-    display: grid;
-    gap: 0.75rem;
-    margin: 0;
-  }
-
-  .decision-detail__facts div {
-    display: grid;
-    gap: 0.2rem;
-  }
-
-  .decision-detail__facts dt {
-    font-size: 0.68rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: var(--text-muted, #5c6670);
-  }
-
-  .decision-detail__facts dd {
-    margin: 0;
-    line-height: 1.4;
-  }
-
-  .decision-detail__actions {
-    display: grid;
-    gap: 0.65rem;
-  }
-
-  .decision-detail__actions a {
-    display: block;
-    padding: 0.75rem 0.85rem;
-    border: 1px solid var(--border, #d8dee6);
-    border-radius: 10px;
-    color: inherit;
-    background: var(--surface, #fff);
+    margin-top: 0.75rem;
   }
 </style>
+
+<script define:vars={{ changeOrderId: record.change_order_id, editHref, isPending }}>
+  const root = document.querySelector('[data-co-decision-root]');
+  const gate = document.querySelector('[data-co-confirm-gate]');
+  const confirmCopy = document.querySelector('[data-co-confirm-copy]');
+  let pendingAction = null;
+
+  function showGate(action, copy) {
+    pendingAction = action;
+    if (confirmCopy) confirmCopy.textContent = copy;
+    gate?.removeAttribute('hidden');
+  }
+
+  function hideGate() {
+    pendingAction = null;
+    gate?.setAttribute('hidden', '');
+  }
+
+  root?.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const action = target.closest('[data-kerf-decision-action]')?.getAttribute('data-kerf-decision-action');
+    if (!action || !isPending) return;
+    event.preventDefault();
+
+    if (action === 'edit') {
+      window.location.href = editHref;
+      return;
+    }
+    if (action === 'approve') {
+      showGate('approve', 'Approve this change order and adjust the contract? Nothing sends to the client.');
+      return;
+    }
+    if (action === 'reject') {
+      showGate('reject', 'Reject this change order? The contract stays unchanged.');
+    }
+  });
+
+  document.querySelector('[data-co-confirm-no]')?.addEventListener('click', hideGate);
+
+  document.querySelector('[data-co-confirm-yes]')?.addEventListener('click', async () => {
+    if (!pendingAction) return;
+    const res = await fetch(`/api/v1/change-orders/${encodeURIComponent(changeOrderId)}/decide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: pendingAction, operator_confirm: true }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      alert(body.message || body.error || 'Decision failed');
+      return;
+    }
+    window.location.reload();
+  });
+</script>

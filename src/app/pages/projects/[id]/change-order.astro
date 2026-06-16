@@ -1,0 +1,13 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { projectForRole, DEFAULT_BUSINESS_GRAPH_SLICE } from '../../../lib/roleRootProjection.js';
+
+const { context } = createLayoutContext();
+const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
+if (!projected.capabilities.moneyRead) {
+  return Astro.redirect('/');
+}
+const projectId = Astro.params.id ?? 'unknown';
+return Astro.redirect(`/change-orders/new?project_id=${encodeURIComponent(projectId)}`);
+---
