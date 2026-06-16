@@ -583,7 +583,7 @@ const html = `<!doctype html>
 :root{--bg:#0c1117;--panel:#151b23;--panel2:#1c2430;--ink:#eef2f7;--muted:#9aa6b2;--line:#28313b;--gold:#e7aa3b;--blue:#2f6df0;--green:#22784a;--red:#b73838;--amber:#aa6719;--soft-red:rgba(183,56,56,.16);--soft-gold:rgba(231,170,59,.14);--soft-blue:rgba(47,109,240,.16);--r:8px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;letter-spacing:0}
 button,input,select{font:inherit}button{cursor:pointer}
-.app{display:grid;grid-template-columns:320px minmax(480px,1fr) 390px;min-height:100vh}
+.app{display:grid;grid-template-columns:290px minmax(0,1fr) 330px;min-height:100vh}
 .rail{border-right:1px solid var(--line);background:#0a0f15;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
 .brand{padding:16px;border-bottom:1px solid var(--line);display:grid;gap:8px}.brand h1{font-size:16px;margin:0}.brand p{margin:0;color:var(--muted);font-size:12px}.brand strong{color:var(--gold)}
 .tools{display:grid;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}.tools input,.tools select{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:var(--r);padding:9px}
@@ -592,13 +592,14 @@ button,input,select{font:inherit}button{cursor:pointer}
 .main{min-width:0;display:grid;grid-template-rows:auto auto minmax(0,1fr)}
 .topbar{display:flex;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:rgba(12,17,23,.92);position:sticky;top:0;z-index:4;backdrop-filter:blur(10px)}.topbar button,.topbar a{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:var(--r);padding:8px 10px;text-decoration:none}.topbar .primary{background:var(--gold);color:#1b1302;border-color:var(--gold);font-weight:800}.trail{margin-left:auto;color:var(--muted);font-size:12px;max-width:50%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hero{padding:16px;border-bottom:1px solid var(--line);display:grid;gap:10px}.hero h2{font-size:24px;margin:0}.hero p{margin:0;color:var(--muted)}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{border-radius:999px;border:1px solid var(--line);background:var(--panel);padding:4px 8px;font-size:11px;color:var(--muted)}.chip.gold{border-color:rgba(231,170,59,.45);background:var(--soft-gold);color:var(--gold)}.chip.blue{border-color:rgba(47,109,240,.45);background:var(--soft-blue);color:#8fb0ff}.chip.red{border-color:rgba(183,56,56,.5);background:var(--soft-red);color:#ffb4b4}
-.content{overflow:auto;padding:16px;display:grid;grid-template-columns:minmax(320px,500px) minmax(360px,1fr);gap:16px;align-items:start}.card{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:14px}.card h3{font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;color:var(--muted)}.card p{margin:0 0 10px;color:var(--muted)}
+.content{overflow:auto;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}.card{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:14px}.card h3{font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;color:var(--muted)}.card p{margin:0 0 10px;color:var(--muted)}
 .transitions{display:grid;gap:8px}.tbtn{width:100%;border:1px solid var(--line);border-radius:var(--r);background:var(--panel2);color:var(--ink);padding:10px;text-align:left;display:grid;gap:5px}.tbtn:hover{border-color:var(--gold)}.tbtn .row{display:flex;gap:8px;align-items:center}.tbtn .arrow{margin-left:auto;color:var(--muted)}.tbtn small{color:var(--muted)}.tbtn.missing{border-color:rgba(183,56,56,.5);background:var(--soft-red)}.tbtn.state{border-color:rgba(47,109,240,.35);background:var(--soft-blue)}
 .controls{display:grid;gap:6px}.raw{display:flex;gap:6px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r);padding:7px;background:#101720}.raw code{color:var(--gold);font-size:11px}.raw span{color:var(--muted)}
-.preview{height:70vh;min-height:520px;border:1px solid var(--line);border-radius:var(--r);background:#fff;overflow:hidden}.preview iframe{width:100%;height:100%;border:0;background:#fff}
+.previewShell{height:calc(100vh - 176px);min-height:620px;border:1px solid var(--line);border-radius:var(--r);background:#090d12;overflow:auto;display:grid;place-items:start center;padding:14px}.previewShell iframe{height:100%;min-height:590px;border:0;background:#fff;border-radius:6px;box-shadow:0 18px 42px rgba(0,0,0,.32)}.previewShell[data-device="mobile"] iframe{width:min(430px,100%)}.previewShell[data-device="desktop"] iframe,.previewShell[data-device="matrix"] iframe{width:100%}.previewShell[data-mode="gap"]{background:linear-gradient(145deg,rgba(183,56,56,.20),#090d12 42%)}.previewShell[data-mode="gap"] iframe{width:min(680px,100%);background:#131923}
 .side{border-left:1px solid var(--line);background:#0a0f15;position:sticky;top:0;height:100vh;overflow:auto;padding:14px;display:grid;gap:12px;align-content:start}.gap{border:1px solid rgba(183,56,56,.45);background:var(--soft-red);border-radius:var(--r);padding:10px}.gap b{display:block;color:#ffb4b4}.gap span{color:var(--muted)}
+.gapbtn{width:100%;border:1px solid rgba(183,56,56,.45);background:var(--soft-red);color:var(--ink);border-radius:var(--r);padding:10px;text-align:left;display:grid;gap:4px}.gapbtn b{color:#ffb4b4}.gapbtn span{color:var(--muted)}
 .mini{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:10px}.mini h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}.mini ul{margin:0;padding-left:18px;color:var(--muted)}.mini li{margin:0 0 6px}.hidden{display:none!important}
-@media(max-width:1050px){.app{grid-template-columns:1fr}.rail,.side{position:relative;height:auto}.content{grid-template-columns:1fr}.trail{display:none}}
+@media(max-width:1050px){.app{grid-template-columns:1fr}.rail,.side{position:relative;height:auto}.content{grid-template-columns:1fr}.previewShell{height:72vh}.trail{display:none}}
 </style>
 </head>
 <body>
@@ -632,7 +633,8 @@ button,input,select{font:inherit}button{cursor:pointer}
       <p id="faceMeta"></p>
     </section>
     <section class="content">
-      <div class="leftcol">
+      <div class="previewShell" id="previewShell" data-mode="face" data-device="mobile"><iframe id="preview" title="Original wireframe preview"></iframe></div>
+      <div class="flowPanel">
         <div class="card">
           <h3>Expected Click Paths</h3>
           <div class="transitions" id="transitions"></div>
@@ -643,21 +645,20 @@ button,input,select{font:inherit}button{cursor:pointer}
           <div class="controls" id="controls"></div>
         </div>
       </div>
-      <div class="preview"><iframe id="preview" title="Original wireframe preview"></iframe></div>
     </section>
   </main>
   <aside class="side">
     <div class="mini">
-      <h3>Missing Faces To Build</h3>
+      <h3>Gap Index</h3>
       <div id="missingList"></div>
     </div>
     <div class="mini">
       <h3>How To Use</h3>
       <ul>
-        <li>Pick a face on the left.</li>
-        <li>Use Expected Click Paths as the contract.</li>
-        <li>Red paths mean the target face does not exist yet.</li>
-        <li>The iframe is the original wireframe, not app UI.</li>
+        <li>Pick a face or start at Home.</li>
+        <li>The large frame is the actual wireframe screen.</li>
+        <li>Click Expected Click Paths to play the flow.</li>
+        <li>Red paths route to a gap screen instead of going dead.</li>
       </ul>
     </div>
   </aside>
@@ -668,6 +669,7 @@ const DATA = JSON.parse(document.getElementById('flow-data').textContent);
 const faces = DATA.faces;
 const byId = new Map(faces.map(f => [f.id, f]));
 let current = byId.get('F-A1') || faces[0];
+let currentGap = null;
 let trail = [];
 const els = {
   search: document.getElementById('search'),
@@ -682,6 +684,7 @@ const els = {
   transitions: document.getElementById('transitions'),
   controls: document.getElementById('controls'),
   preview: document.getElementById('preview'),
+  previewShell: document.getElementById('previewShell'),
   original: document.getElementById('openOriginal'),
   missingList: document.getElementById('missingList'),
   trail: document.getElementById('trail'),
@@ -706,17 +709,52 @@ function selectFace(id, trigger){
   if (!next) return;
   if (trigger) trail.push(trigger + ' → ' + id);
   current = next;
+  currentGap = null;
   render();
 }
+function showGap(transition, sourceFace){
+  const source = sourceFace || current;
+  currentGap = {
+    sourceId: source?.id || '',
+    sourceTitle: source?.h1 || source?.title || '',
+    trigger: transition?.trigger || 'Missing transition',
+    missing: transition?.missing || 'Transition needs conductor decision',
+    note: transition?.note || '',
+    target: transition?.target || '',
+  };
+  trail.push((currentGap.sourceId || 'Gap index') + ' · ' + currentGap.trigger + ' → GAP: ' + currentGap.missing);
+  render();
+}
+function gapHtml(gap){
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gap · '+esc(gap.missing)+'</title><style>body{margin:0;background:#111821;color:#f4f7fb;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{min-height:100vh;display:grid;place-items:center;padding:28px}.card{width:min(560px,100%);border:1px solid rgba(255,180,180,.45);background:rgba(183,56,56,.16);border-radius:10px;padding:22px;box-shadow:0 22px 60px rgba(0,0,0,.3)}.eyebrow{color:#ffb4b4;text-transform:uppercase;letter-spacing:.1em;font-size:12px;font-weight:800}h1{font-size:30px;line-height:1.1;margin:8px 0 16px}dl{display:grid;gap:10px;margin:0}dt{color:#a8b3bf;font-size:12px;text-transform:uppercase;letter-spacing:.08em}dd{margin:0 0 8px}.pill{display:inline-block;border:1px solid rgba(231,170,59,.45);background:rgba(231,170,59,.14);color:#e7aa3b;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800}</style></head><body><main class="wrap"><section class="card"><div class="eyebrow">Gap to fill</div><h1>This click has no Canon face yet.</h1><dl><dt>Missing face</dt><dd><span class="pill">'+esc(gap.missing)+'</span></dd><dt>Source click</dt><dd>'+esc(gap.sourceId || 'Gap index')+' · '+esc(gap.trigger)+'</dd><dt>Source screen</dt><dd>'+esc(gap.sourceTitle || 'No source screen selected')+'</dd><dt>What needs to be built</dt><dd>'+esc(gap.note || 'Create or import the missing wireframe face, then map this click to it.')+'</dd></dl></section></main></body></html>';
+}
 function renderFace(){
-  els.chips.innerHTML = '<span class="chip gold">'+esc(current.id)+'</span><span class="chip blue">'+esc(current.domain)+'</span><span class="chip">'+esc(current.device)+'</span>';
-  els.title.textContent = current.h1 || current.title;
-  els.meta.textContent = current.file + ' · ' + current.title;
-  els.preview.src = 'canon/' + current.file;
-  els.original.href = 'canon/' + current.file;
+  if (currentGap) {
+    els.previewShell.dataset.mode = 'gap';
+    els.previewShell.dataset.device = 'gap';
+    els.chips.innerHTML = '<span class="chip red">Gap</span><span class="chip gold">'+esc(currentGap.sourceId || 'No source')+'</span>';
+    els.title.textContent = 'Gap: ' + currentGap.missing;
+    els.meta.textContent = 'Clicked "' + currentGap.trigger + '" from ' + (currentGap.sourceTitle || currentGap.sourceId || 'the gap index') + '.';
+    els.preview.removeAttribute('src');
+    els.preview.srcdoc = gapHtml(currentGap);
+    els.original.href = currentGap.sourceId && byId.get(currentGap.sourceId) ? 'canon/' + byId.get(currentGap.sourceId).file : '#';
+  } else {
+    els.previewShell.dataset.mode = 'face';
+    els.previewShell.dataset.device = current.device;
+    els.chips.innerHTML = '<span class="chip gold">'+esc(current.id)+'</span><span class="chip blue">'+esc(current.domain)+'</span><span class="chip">'+esc(current.device)+'</span>';
+    els.title.textContent = current.h1 || current.title;
+    els.meta.textContent = current.file + ' · ' + current.title;
+    els.preview.removeAttribute('srcdoc');
+    els.preview.src = 'canon/' + current.file;
+    els.original.href = 'canon/' + current.file;
+  }
   els.trail.textContent = trail.length ? 'Trail: ' + trail.slice(-5).join(' / ') : 'Trail: none';
 }
 function renderTransitions(){
+  if (currentGap) {
+    els.transitions.innerHTML = '<button class="tbtn" data-gap-back="true"><span class="row"><b>Back to source screen</b><span class="arrow">→ '+esc(currentGap.sourceId || 'Home')+'</span></span><small>Return to the face that exposed this missing path.</small></button><button class="tbtn" data-home="true"><span class="row"><b>Start over at Home</b><span class="arrow">→ F-A1</span></span></button>';
+    return;
+  }
   els.transitions.innerHTML = current.transitions.map((t, i) => {
     const cls = t.missing ? 'missing' : t.state ? 'state' : '';
     const to = t.target || t.missing || 'same face';
@@ -724,6 +762,10 @@ function renderTransitions(){
   }).join('');
 }
 function renderControls(){
+  if (currentGap) {
+    els.controls.innerHTML = '<div class="raw"><code>gap</code><span>'+esc(currentGap.missing)+'</span></div><div class="raw"><code>source</code><span>'+esc(currentGap.sourceId || 'No source')+' · '+esc(currentGap.trigger)+'</span></div>';
+    return;
+  }
   if (!current.controls.length) {
     els.controls.innerHTML = '<div class="raw"><span>No buttons/links were extractable from this static face.</span></div>';
     return;
@@ -731,7 +773,7 @@ function renderControls(){
   els.controls.innerHTML = current.controls.map(c => '<div class="raw"><code>'+esc(c.kind)+'</code><span>'+esc(c.label)+'</span>'+(c.href?'<span>href='+esc(c.href)+'</span>':'')+(c.dataGo?'<span>state='+esc(c.dataGo)+'</span>':'')+'</div>').join('');
 }
 function renderMissing(){
-  els.missingList.innerHTML = DATA.missingFaces.map(g => '<div class="gap"><b>'+esc(g.label)+'</b><span>'+esc(g.neededFor)+' — '+esc(g.why)+'</span></div>').join('');
+  els.missingList.innerHTML = DATA.missingFaces.map((g, i) => '<button class="gapbtn" data-gap-index="'+i+'"><b>'+esc(g.label)+'</b><span>'+esc(g.neededFor)+' — '+esc(g.why)+'</span></button>').join('');
 }
 function render(){
   renderList();
@@ -745,10 +787,28 @@ els.list.addEventListener('click', e => {
   if (btn) selectFace(btn.dataset.face);
 });
 els.transitions.addEventListener('click', e => {
+  const back = e.target.closest('[data-gap-back]');
+  if (back) {
+    selectFace(currentGap?.sourceId || 'F-A1');
+    return;
+  }
+  const home = e.target.closest('[data-home]');
+  if (home) {
+    trail = [];
+    selectFace('F-A1');
+    return;
+  }
   const btn = e.target.closest('[data-i]');
   if (!btn) return;
   const t = current.transitions[Number(btn.dataset.i)];
   if (t?.target) selectFace(t.target, current.id + ' · ' + t.trigger);
+  else if (t?.missing) showGap(t, current);
+});
+els.missingList.addEventListener('click', e => {
+  const btn = e.target.closest('[data-gap-index]');
+  if (!btn) return;
+  const g = DATA.missingFaces[Number(btn.dataset.gapIndex)];
+  if (g) showGap({ trigger: 'Gap index', missing: g.label, note: g.neededFor + ' — ' + g.why }, null);
 });
 els.search.addEventListener('input', renderList);
 els.domain.addEventListener('change', renderList);
@@ -757,7 +817,10 @@ document.getElementById('showGaps').addEventListener('click', () => {
   els.search.value = '';
   els.domain.value = 'All domains';
   const firstGap = faces.find(f => f.transitions.some(t => t.missing));
-  if (firstGap) selectFace(firstGap.id);
+  if (firstGap) {
+    current = firstGap;
+    showGap(firstGap.transitions.find(t => t.missing), firstGap);
+  }
 });
 renderDomainOptions();
 render();

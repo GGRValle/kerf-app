@@ -17,5 +17,7 @@ test('interactive wireframe flow map carries parseable data for every canon face
     data.missingFaces.some((gap: { label: string }) => gap.label === 'F-EST1_mobile_estimate_builder.html'),
     'missing estimate-builder face must stay visible',
   );
+  assert.match(html, /function showGap\(/, 'missing transitions must route to a visible gap screen');
+  assert.match(html, /This click has no Canon face yet/, 'gap screen must explain that the target face is missing');
+  assert.match(html, /id="previewShell"/, 'wireframe preview must be the primary playable surface');
 });
-
