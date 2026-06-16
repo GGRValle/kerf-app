@@ -161,11 +161,11 @@ const roleLabel = t(ROLE_LABEL_KEYS[context.roleRoot]);
         <SectionLabel label="4 · Add media" total="optional" />
       </div>
       <div class="kg-span-12 kg-media-row">
-        <a class="kg-card kg-media-tile" href={`/camera?project_id=${project.project_id}&return_to=${cameraReturn}`}>
+        <a class="kg-card kg-media-tile kg-media-tile--link" href={`/camera?project_id=${project.project_id}&return_to=${cameraReturn}`}>
           <span aria-hidden="true">📷</span>
           Photos
         </a>
-        <a class="kg-card kg-media-tile" href={`/camera?project_id=${project.project_id}&mode=walkthru&return_to=${cameraReturn}`}>
+        <a class="kg-card kg-media-tile kg-media-tile--link" href={`/camera?project_id=${project.project_id}&mode=walkthru&return_to=${cameraReturn}`}>
           <span aria-hidden="true">🎬</span>
           Video
         </a>
@@ -537,12 +537,13 @@ const roleLabel = t(ROLE_LABEL_KEYS[context.roleRoot]);
   }
 
   [data-grammar='canon'] .kg-media-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
     gap: 0.5rem;
   }
 
   [data-grammar='canon'] .kg-media-tile {
+    flex: 1;
+    min-width: 0;
     display: grid;
     gap: 0.35rem;
     justify-items: center;
@@ -552,6 +553,10 @@ const roleLabel = t(ROLE_LABEL_KEYS[context.roleRoot]);
     color: var(--muted);
     cursor: pointer;
     text-decoration: none;
+  }
+
+  [data-grammar='canon'] .kg-media-tile--link {
+    color: inherit;
   }
 
   [data-grammar='canon'] .kg-media-tile span {
