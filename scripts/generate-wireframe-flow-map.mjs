@@ -132,6 +132,13 @@ function state(note = '') {
   return { target: '', state: true, missing: '', note };
 }
 
+function deviceFromGapLabel(label, fallback = 'unassigned') {
+  if (/_mobile_|mobile/i.test(label)) return 'mobile';
+  if (/_desktop_|desktop/i.test(label)) return 'desktop';
+  if (/matrix/i.test(label)) return 'matrix';
+  return fallback;
+}
+
 function add(ids, transitions) {
   for (const id of ids) {
     const face = faceById.get(id);
@@ -559,13 +566,29 @@ const missingFaces = [
     neededFor: 'Settings integrations and knowledge-ingestion holding routes',
     why: 'Live app routes exist; no dedicated Canon faces.',
   },
-];
+].map((gap) => ({
+  ...gap,
+  device: deviceFromGapLabel(gap.label),
+}));
+
+const deviceBreakdown = ['mobile', 'desktop', 'matrix'].map((device) => ({
+  device,
+  faces: faces.filter((face) => face.device === device).length,
+  edges: faces
+    .filter((face) => face.device === device)
+    .reduce((count, face) => count + face.transitions.length, 0),
+  transitionGaps: faces
+    .filter((face) => face.device === device)
+    .reduce((count, face) => count + face.transitions.filter((transition) => transition.missing).length, 0),
+  missingFaces: missingFaces.filter((gap) => gap.device === device).length,
+}));
 
 const data = {
   generatedAt: new Date().toISOString(),
   source: 'docs/wireframes/canon/*.html',
   faces,
   missingFaces,
+  deviceBreakdown,
 };
 
 const dataJson = JSON.stringify(data)
@@ -587,6 +610,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .rail{border-right:1px solid var(--line);background:#0a0f15;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
 .brand{padding:16px;border-bottom:1px solid var(--line);display:grid;gap:8px}.brand h1{font-size:16px;margin:0}.brand p{margin:0;color:var(--muted);font-size:12px}.brand strong{color:var(--gold)}
 .tools{display:grid;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}.tools input,.tools select{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:var(--r);padding:9px}
+.deviceTabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.deviceTabs button{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:var(--r);padding:7px 5px;font-size:11px}.deviceTabs button[aria-pressed=true]{border-color:var(--gold);background:var(--soft-gold);color:var(--gold);font-weight:800}
 .counts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.count{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:7px;text-align:center}.count b{display:block;color:var(--gold);font-size:15px}.count span{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 .list{overflow:auto;padding:10px;display:grid;gap:6px}.facebtn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:var(--r);padding:9px;text-align:left;display:grid;gap:3px}.facebtn[aria-current=true]{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}.facebtn .top{display:flex;gap:8px;align-items:center}.id{color:var(--gold);font-weight:800}.device{margin-left:auto;color:var(--muted);font-size:10px;text-transform:uppercase}.file{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .main{min-width:0;display:grid;grid-template-rows:auto auto minmax(0,1fr)}
@@ -598,6 +622,7 @@ button,input,select{font:inherit}button{cursor:pointer}
 .previewShell{height:calc(100vh - 176px);min-height:620px;border:1px solid var(--line);border-radius:var(--r);background:#090d12;overflow:auto;display:grid;place-items:start center;padding:14px}.previewShell iframe{height:100%;min-height:590px;border:0;background:#fff;border-radius:6px;box-shadow:0 18px 42px rgba(0,0,0,.32)}.previewShell[data-device="mobile"] iframe{width:min(430px,100%)}.previewShell[data-device="desktop"] iframe,.previewShell[data-device="matrix"] iframe{width:100%}.previewShell[data-mode="gap"]{background:linear-gradient(145deg,rgba(183,56,56,.20),#090d12 42%)}.previewShell[data-mode="gap"] iframe{width:min(680px,100%);background:#131923}
 .side{border-left:1px solid var(--line);background:#0a0f15;position:sticky;top:0;height:100vh;overflow:auto;padding:14px;display:grid;gap:12px;align-content:start}.gap{border:1px solid rgba(183,56,56,.45);background:var(--soft-red);border-radius:var(--r);padding:10px}.gap b{display:block;color:#ffb4b4}.gap span{color:var(--muted)}
 .gapbtn{width:100%;border:1px solid rgba(183,56,56,.45);background:var(--soft-red);color:var(--ink);border-radius:var(--r);padding:10px;text-align:left;display:grid;gap:4px}.gapbtn b{color:#ffb4b4}.gapbtn span{color:var(--muted)}
+.deviceStats{display:grid;gap:7px}.deviceStat{border:1px solid var(--line);background:#101720;border-radius:var(--r);padding:9px;display:grid;gap:4px}.deviceStat b{color:var(--ink);text-transform:capitalize}.deviceStat span{color:var(--muted);font-size:12px}.deviceTag{justify-self:start;border:1px solid rgba(47,109,240,.45);background:var(--soft-blue);color:#8fb0ff;border-radius:999px;padding:2px 7px;font-size:10px;text-transform:uppercase}
 .mini{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:10px}.mini h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}.mini ul{margin:0;padding-left:18px;color:var(--muted)}.mini li{margin:0 0 6px}.hidden{display:none!important}
 @media(max-width:1050px){.app{grid-template-columns:1fr}.rail,.side{position:relative;height:auto}.content{grid-template-columns:1fr}.previewShell{height:72vh}.trail{display:none}}
 </style>
@@ -612,6 +637,12 @@ button,input,select{font:inherit}button{cursor:pointer}
     <div class="tools">
       <input id="search" placeholder="Search face, title, domain...">
       <select id="domain"></select>
+      <div class="deviceTabs" id="deviceTabs" aria-label="Device filter">
+        <button type="button" data-device-filter="all" aria-pressed="true">All</button>
+        <button type="button" data-device-filter="mobile" aria-pressed="false">Mobile</button>
+        <button type="button" data-device-filter="desktop" aria-pressed="false">Desktop</button>
+        <button type="button" data-device-filter="matrix" aria-pressed="false">Matrix</button>
+      </div>
       <div class="counts">
         <div class="count"><b id="faceCount">0</b><span>faces</span></div>
         <div class="count"><b id="gapCount">0</b><span>gaps</span></div>
@@ -649,6 +680,10 @@ button,input,select{font:inherit}button{cursor:pointer}
   </main>
   <aside class="side">
     <div class="mini">
+      <h3>Device Breakdown</h3>
+      <div class="deviceStats" id="deviceBreakdown"></div>
+    </div>
+    <div class="mini">
       <h3>Gap Index</h3>
       <div id="missingList"></div>
     </div>
@@ -670,10 +705,12 @@ const faces = DATA.faces;
 const byId = new Map(faces.map(f => [f.id, f]));
 let current = byId.get('F-A1') || faces[0];
 let currentGap = null;
+let activeDevice = 'all';
 let trail = [];
 const els = {
   search: document.getElementById('search'),
   domain: document.getElementById('domain'),
+  deviceTabs: document.getElementById('deviceTabs'),
   list: document.getElementById('faceList'),
   faceCount: document.getElementById('faceCount'),
   gapCount: document.getElementById('gapCount'),
@@ -686,23 +723,39 @@ const els = {
   preview: document.getElementById('preview'),
   previewShell: document.getElementById('previewShell'),
   original: document.getElementById('openOriginal'),
+  deviceBreakdown: document.getElementById('deviceBreakdown'),
   missingList: document.getElementById('missingList'),
   trail: document.getElementById('trail'),
 };
 function esc(s){return String(s ?? '').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function deviceFromGapLabel(label, fallback = 'unassigned'){
+  if (/_mobile_|mobile/i.test(label || '')) return 'mobile';
+  if (/_desktop_|desktop/i.test(label || '')) return 'desktop';
+  if (/matrix/i.test(label || '')) return 'matrix';
+  return fallback;
+}
+function deviceMatches(device){return activeDevice === 'all' || device === activeDevice;}
 function domains(){return ['All domains', ...Array.from(new Set(faces.map(f=>f.domain))).sort()];}
 function renderDomainOptions(){els.domain.innerHTML = domains().map(d => '<option>'+esc(d)+'</option>').join('');}
 function filteredFaces(){
   const q = els.search.value.trim().toLowerCase();
   const d = els.domain.value;
-  return faces.filter(f => (d === 'All domains' || f.domain === d) && (!q || [f.id,f.file,f.title,f.h1,f.domain].join(' ').toLowerCase().includes(q)));
+  return faces.filter(f => deviceMatches(f.device) && (d === 'All domains' || f.domain === d) && (!q || [f.id,f.file,f.title,f.h1,f.domain].join(' ').toLowerCase().includes(q)));
+}
+function filteredMissingFaces(){
+  return DATA.missingFaces
+    .map((gap, index) => ({ ...gap, index }))
+    .filter(gap => activeDevice === 'all' || gap.device === activeDevice || (activeDevice === 'matrix' && gap.device === 'unassigned'));
 }
 function renderList(){
   const list = filteredFaces();
   els.list.innerHTML = list.map(f => '<button class="facebtn" data-face="'+esc(f.id)+'" aria-current="'+(f.id===current.id)+'"><span class="top"><span class="id">'+esc(f.id)+'</span><span class="device">'+esc(f.device)+'</span></span><span>'+esc(f.h1 || f.title)+'</span><span class="file">'+esc(f.file)+'</span></button>').join('');
-  els.faceCount.textContent = faces.length;
-  els.edgeCount.textContent = faces.reduce((n,f)=>n+f.transitions.length,0);
-  els.gapCount.textContent = DATA.missingFaces.length + faces.reduce((n,f)=>n+f.transitions.filter(t=>t.missing).length,0);
+  els.faceCount.textContent = list.length;
+  els.edgeCount.textContent = list.reduce((n,f)=>n+f.transitions.length,0);
+  els.gapCount.textContent = filteredMissingFaces().length + list.reduce((n,f)=>n+f.transitions.filter(t=>t.missing).length,0);
+  els.deviceTabs.querySelectorAll('[data-device-filter]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.deviceFilter === activeDevice));
+  });
 }
 function selectFace(id, trigger){
   const next = byId.get(id);
@@ -721,18 +774,19 @@ function showGap(transition, sourceFace){
     missing: transition?.missing || 'Transition needs conductor decision',
     note: transition?.note || '',
     target: transition?.target || '',
+    device: deviceFromGapLabel(transition?.missing || '', source?.device || 'unassigned'),
   };
   trail.push((currentGap.sourceId || 'Gap index') + ' · ' + currentGap.trigger + ' → GAP: ' + currentGap.missing);
   render();
 }
 function gapHtml(gap){
-  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gap · '+esc(gap.missing)+'</title><style>body{margin:0;background:#111821;color:#f4f7fb;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{min-height:100vh;display:grid;place-items:center;padding:28px}.card{width:min(560px,100%);border:1px solid rgba(255,180,180,.45);background:rgba(183,56,56,.16);border-radius:10px;padding:22px;box-shadow:0 22px 60px rgba(0,0,0,.3)}.eyebrow{color:#ffb4b4;text-transform:uppercase;letter-spacing:.1em;font-size:12px;font-weight:800}h1{font-size:30px;line-height:1.1;margin:8px 0 16px}dl{display:grid;gap:10px;margin:0}dt{color:#a8b3bf;font-size:12px;text-transform:uppercase;letter-spacing:.08em}dd{margin:0 0 8px}.pill{display:inline-block;border:1px solid rgba(231,170,59,.45);background:rgba(231,170,59,.14);color:#e7aa3b;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800}</style></head><body><main class="wrap"><section class="card"><div class="eyebrow">Gap to fill</div><h1>This click has no Canon face yet.</h1><dl><dt>Missing face</dt><dd><span class="pill">'+esc(gap.missing)+'</span></dd><dt>Source click</dt><dd>'+esc(gap.sourceId || 'Gap index')+' · '+esc(gap.trigger)+'</dd><dt>Source screen</dt><dd>'+esc(gap.sourceTitle || 'No source screen selected')+'</dd><dt>What needs to be built</dt><dd>'+esc(gap.note || 'Create or import the missing wireframe face, then map this click to it.')+'</dd></dl></section></main></body></html>';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gap · '+esc(gap.missing)+'</title><style>body{margin:0;background:#111821;color:#f4f7fb;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{min-height:100vh;display:grid;place-items:center;padding:28px}.card{width:min(560px,100%);border:1px solid rgba(255,180,180,.45);background:rgba(183,56,56,.16);border-radius:10px;padding:22px;box-shadow:0 22px 60px rgba(0,0,0,.3)}.eyebrow{color:#ffb4b4;text-transform:uppercase;letter-spacing:.1em;font-size:12px;font-weight:800}h1{font-size:30px;line-height:1.1;margin:8px 0 16px}dl{display:grid;gap:10px;margin:0}dt{color:#a8b3bf;font-size:12px;text-transform:uppercase;letter-spacing:.08em}dd{margin:0 0 8px}.pill{display:inline-block;border:1px solid rgba(231,170,59,.45);background:rgba(231,170,59,.14);color:#e7aa3b;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800;text-transform:uppercase}</style></head><body><main class="wrap"><section class="card"><div class="eyebrow">Gap to fill</div><h1>This click has no Canon face yet.</h1><dl><dt>Device lane</dt><dd><span class="pill">'+esc(gap.device || 'unassigned')+'</span></dd><dt>Missing face</dt><dd><span class="pill">'+esc(gap.missing)+'</span></dd><dt>Source click</dt><dd>'+esc(gap.sourceId || 'Gap index')+' · '+esc(gap.trigger)+'</dd><dt>Source screen</dt><dd>'+esc(gap.sourceTitle || 'No source screen selected')+'</dd><dt>What needs to be built</dt><dd>'+esc(gap.note || 'Create or import the missing wireframe face, then map this click to it.')+'</dd></dl></section></main></body></html>';
 }
 function renderFace(){
   if (currentGap) {
     els.previewShell.dataset.mode = 'gap';
     els.previewShell.dataset.device = 'gap';
-    els.chips.innerHTML = '<span class="chip red">Gap</span><span class="chip gold">'+esc(currentGap.sourceId || 'No source')+'</span>';
+    els.chips.innerHTML = '<span class="chip red">Gap</span><span class="chip blue">'+esc(currentGap.device || 'unassigned')+'</span><span class="chip gold">'+esc(currentGap.sourceId || 'No source')+'</span>';
     els.title.textContent = 'Gap: ' + currentGap.missing;
     els.meta.textContent = 'Clicked "' + currentGap.trigger + '" from ' + (currentGap.sourceTitle || currentGap.sourceId || 'the gap index') + '.';
     els.preview.removeAttribute('src');
@@ -773,7 +827,13 @@ function renderControls(){
   els.controls.innerHTML = current.controls.map(c => '<div class="raw"><code>'+esc(c.kind)+'</code><span>'+esc(c.label)+'</span>'+(c.href?'<span>href='+esc(c.href)+'</span>':'')+(c.dataGo?'<span>state='+esc(c.dataGo)+'</span>':'')+'</div>').join('');
 }
 function renderMissing(){
-  els.missingList.innerHTML = DATA.missingFaces.map((g, i) => '<button class="gapbtn" data-gap-index="'+i+'"><b>'+esc(g.label)+'</b><span>'+esc(g.neededFor)+' — '+esc(g.why)+'</span></button>').join('');
+  const gaps = filteredMissingFaces();
+  els.missingList.innerHTML = gaps.length
+    ? gaps.map((g) => '<button class="gapbtn" data-gap-index="'+g.index+'"><span class="deviceTag">'+esc(g.device)+'</span><b>'+esc(g.label)+'</b><span>'+esc(g.neededFor)+' — '+esc(g.why)+'</span></button>').join('')
+    : '<div class="raw"><span>No missing faces for this device filter.</span></div>';
+}
+function renderDeviceBreakdown(){
+  els.deviceBreakdown.innerHTML = DATA.deviceBreakdown.map((row) => '<button class="deviceStat" data-device-filter-side="'+esc(row.device)+'"><b>'+esc(row.device)+'</b><span>'+row.faces+' faces · '+row.edges+' edges</span><span>'+row.transitionGaps+' mapped transition gaps · '+row.missingFaces+' missing faces</span></button>').join('') + '<div class="deviceStat"><b>Unassigned gaps</b><span>'+DATA.missingFaces.filter((gap) => gap.device === 'unassigned').length+' missing faces need a mobile/desktop decision.</span></div>';
 }
 function render(){
   renderList();
@@ -781,6 +841,7 @@ function render(){
   renderTransitions();
   renderControls();
   renderMissing();
+  renderDeviceBreakdown();
 }
 els.list.addEventListener('click', e => {
   const btn = e.target.closest('[data-face]');
@@ -810,17 +871,32 @@ els.missingList.addEventListener('click', e => {
   const g = DATA.missingFaces[Number(btn.dataset.gapIndex)];
   if (g) showGap({ trigger: 'Gap index', missing: g.label, note: g.neededFor + ' — ' + g.why }, null);
 });
+els.deviceTabs.addEventListener('click', e => {
+  const btn = e.target.closest('[data-device-filter]');
+  if (!btn) return;
+  activeDevice = btn.dataset.deviceFilter;
+  render();
+});
+els.deviceBreakdown.addEventListener('click', e => {
+  const btn = e.target.closest('[data-device-filter-side]');
+  if (!btn) return;
+  activeDevice = btn.dataset.deviceFilterSide;
+  render();
+});
 els.search.addEventListener('input', renderList);
 els.domain.addEventListener('change', renderList);
 document.getElementById('startHome').addEventListener('click', () => { trail = []; selectFace('F-A1'); });
 document.getElementById('showGaps').addEventListener('click', () => {
   els.search.value = '';
   els.domain.value = 'All domains';
-  const firstGap = faces.find(f => f.transitions.some(t => t.missing));
+  const firstGap = faces.find(f => deviceMatches(f.device) && f.transitions.some(t => t.missing));
   if (firstGap) {
     current = firstGap;
     showGap(firstGap.transitions.find(t => t.missing), firstGap);
+    return;
   }
+  const firstMissing = filteredMissingFaces()[0];
+  if (firstMissing) showGap({ trigger: 'Gap index', missing: firstMissing.label, note: firstMissing.neededFor + ' — ' + firstMissing.why }, null);
 });
 renderDomainOptions();
 render();
