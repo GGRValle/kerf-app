@@ -43,6 +43,18 @@ test('field capture removes pre-capture destination picker and routes at preflig
   assert.match(field, /Confirm where this capture goes before submit/);
 });
 
+test('capture surfaces opt into Goal 0 canon grammar', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  const field = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
+  assert.match(camera, /data-grammar="canon"/);
+  assert.match(field, /data-grammar="canon"/);
+  assert.match(camera, /kg-routechip/);
+  assert.match(camera, /kg-card/);
+  assert.match(field, /kg-card/);
+  assert.match(field, /kg-pagehead/);
+  assert.doesNotMatch(camera, /var\(--right-hand\)/);
+});
+
 test('capture surfaces emit field_capture SurfaceContext without default project trust', () => {
   const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
   const field = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');

@@ -54,6 +54,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 >
   <main
     class="field-shell"
+    data-grammar="canon"
     data-view-state="pre"
     data-tenant-id={assignment.tenant_id}
     data-project-id=""
@@ -68,9 +69,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={2}>
         <!-- ===================== STATE 1 · PRE-CAPTURE ===================== -->
         <section class="capture-state state-pre" aria-label="Start field capture">
-          <header class="top-chrome">
+          <header class="top-chrome kg-pagehead">
             <div class="tc-eyebrow">
-              <span class="tc-mode">Field capture</span>
+              <span class="tc-mode kg-chip green">Field capture</span>
               <a class="tc-back" href={captureReturnHref}>{captureReturnLabel}</a>
             </div>
             <h1 class="tc-title">Capture first</h1>
@@ -79,7 +80,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </p>
           </header>
 
-          <div class="fc-context-note" role="note">
+          <div class="fc-context-note kg-card" role="note">
             <strong>Use the bottom mic to keep talking with Right Hand.</strong>
             <span>Add photos, files, or a typed summary here. You will confirm the job destination before filing.</span>
           </div>
@@ -103,7 +104,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
           </div>
 
           <div class="action-ribbon">
-            <a class="ar-btn cancel" href={captureReturnHref}>
+            <a class="ar-btn cancel kg-chip red" href={captureReturnHref}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
               {captureReturnLabel}
             </a>
@@ -112,15 +113,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 
         <!-- ===================== STATE 2 · ADD DETAILS ===================== -->
         <section class="capture-state state-active" aria-label="Add details">
-          <header class="top-chrome">
+          <header class="top-chrome kg-pagehead">
             <div class="tc-eyebrow">
-              <span class="tc-mode" id="f-e1-active-mode">Adding · {assignment.client} / {assignment.location}</span>
+              <span class="tc-mode kg-chip green" id="f-e1-active-mode">Adding · {assignment.client} / {assignment.location}</span>
               <span class="tc-user" id="f-e1-active-count">0 items</span>
             </div>
             <h1 class="tc-title tc-title-sm">Add details</h1>
           </header>
 
-          <label class="note-card" for="f-e1-note">
+          <label class="note-card kg-card" for="f-e1-note">
             <span class="card-eyebrow">Typed summary</span>
             <p class="note-helper">
               Use the bottom mic to keep talking with Right Hand, or type a short summary before filing.
@@ -164,9 +165,9 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
       >
         <!-- ===================== STATE 3 · PRE-FLIGHT + SUBMIT ===================== -->
         <section class="capture-state state-preflight" aria-label="Review and submit field capture">
-          <header class="top-chrome">
+          <header class="top-chrome kg-pagehead">
             <div class="tc-eyebrow">
-              <span class="tc-mode">Review before filing</span>
+              <span class="tc-mode kg-chip amber">Review before filing</span>
               <button type="button" class="tc-back tc-back-btn" id="f-e1-back-active">‹ Back</button>
             </div>
             <h1 class="tc-title tc-title-sm">Ready to file?</h1>
@@ -174,7 +175,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 
           <p class="preflight-status" id="f-e1-preflight-status" role="status"></p>
 
-          <div class="dest-selector" aria-label="Confirm capture destination">
+          <div class="dest-selector kg-card" aria-label="Confirm capture destination">
             <label class="assign-eyebrow" for="f-e1-destination">Goes to</label>
             <select
               class="dest-select"
@@ -197,7 +198,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </p>
           </div>
 
-          <div class="assign-card" id="f-e1-assign-card">
+          <div class="assign-card kg-card" id="f-e1-assign-card">
             <div class="assign-row">
               <span class="ar-key">Client</span>
               <span class="ar-val" id="f-e1-dest-client">{assignment.client}</span>
@@ -212,7 +213,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </div>
           </div>
 
-          <aside class="dl-anchor" aria-label="Daily Log destination">
+          <aside class="dl-anchor kg-card" aria-label="Daily Log destination">
             <strong id="f-e1-dl-anchor">Right Hand keeps this with {assignment.client} · today's job notes.</strong>
             <span class="dl-detail">
               Notes, photos, and files stay together so the office can review the job
@@ -220,19 +221,19 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </span>
           </aside>
 
-          <div class="preflight-card">
+          <div class="preflight-card kg-card">
             <p class="pf-eyebrow">Ready for job notes</p>
             <p class="pf-title">{assignment.location} update</p>
             <p class="pf-meta" id="f-e1-preflight-meta">Daily Log · review what Right Hand has below</p>
           </div>
 
-          <section class="capture-readout" id="f-e1-capture-readout" aria-label="Captured items readout">
+          <section class="capture-readout kg-card" id="f-e1-capture-readout" aria-label="Captured items readout">
             <p class="card-eyebrow">What Right Hand has</p>
             <ul class="readout-list" id="f-e1-readout-list"></ul>
-            <p class="readout-warning" id="f-e1-transcript-warning" hidden></p>
+            <p class="readout-warning kg-chip red" id="f-e1-transcript-warning" hidden></p>
           </section>
 
-          <fieldset class="draft-intent-card">
+          <fieldset class="draft-intent-card kg-card">
             <legend class="di-eyebrow">What should Right Hand do with this?</legend>
             <label class="di-option">
               <input type="radio" name="entry_kind" value="change_signal" checked />
@@ -260,7 +261,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </label>
           </fieldset>
 
-          <section class="final-transcript">
+          <section class="final-transcript kg-card">
             <div class="ft-eyebrow">
               <span>Typed summary</span>
               <button type="button" class="ft-edit" id="f-e1-edit-note">
@@ -274,7 +275,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </p>
           </section>
 
-          <section class="media-card">
+          <section class="media-card kg-card">
             <div class="ft-eyebrow">
               <span>Media</span>
               <span class="ce-count" id="f-e1-photo-count">0</span>
@@ -282,7 +283,7 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             <div class="photo-grid-mini" id="f-e1-photo-grid"></div>
           </section>
 
-          <section class="continue-capture" aria-label="Add more capture before submit">
+          <section class="continue-capture kg-card" aria-label="Add more capture before submit">
             <p class="record-label">Add more before submit</p>
             <p class="record-sublabel">Use the bottom Right Hand mic for voice, or add photo/video and edits here.</p>
             <div class="cap-secondary">
@@ -297,8 +298,8 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
             </div>
           </section>
 
-          <aside class="ai-disclosure">
-            <strong>AI-assisted by Right Hand.</strong> Drafts are prepared from your capture; review before approval.
+          <aside class="ai-disclosure kg-card">
+            <strong class="kg-chip amber">AI-assisted by Right Hand.</strong> Drafts are prepared from your capture; review before approval.
           </aside>
 
           <div class="action-ribbon">
@@ -1114,6 +1115,23 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 </script>
 
 <style>
+  /* Goal 0 · map legacy page tokens to canon grammar tokens on opt-in surfaces. */
+  [data-grammar="canon"].field-shell {
+    --kerf-bg: var(--bg);
+    --kerf-bg-2: var(--bg);
+    --kerf-surface: var(--panel);
+    --kerf-text: var(--ink);
+    --kerf-text-mute: var(--muted);
+    --kerf-text-dim: var(--muted);
+    --kerf-border: var(--line);
+    --kerf-border-soft: var(--line);
+    --field-green: var(--green);
+    --right-hand: var(--gold);
+    --kerf-red: var(--red);
+    --kerf-blue: var(--blue);
+    --kerf-amber: var(--amber);
+  }
+
   /* Canon --kerf-* tokens live in the shared skin (styles/shell.css).
      Phase 1J Agent B ports the F-E1 canon visual treatment here; no local
      :root is reintroduced — the page consumes the shared canon tokens. */
@@ -1167,8 +1185,13 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     margin-bottom: 4px;
     font-size: 0.62rem;
   }
+  .tc-mode.kg-chip {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+  }
   .tc-mode {
-    color: var(--field-green);
+    color: var(--green);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-weight: 800;
@@ -1297,19 +1320,15 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
 
   /* ===== Daily Log anchor ===== */
-  .dl-anchor {
+  .dl-anchor.kg-card {
     margin: 0 0 12px;
-    background: rgba(56, 201, 119, 0.04);
-    border: 1px solid rgba(56, 201, 119, 0.25);
-    border-left: 3px solid var(--field-green);
-    border-radius: 8px;
-    padding: 9px 12px;
     font-size: 0.7rem;
-    color: var(--kerf-text-dim);
+    color: var(--muted);
     line-height: 1.45;
+    border-left: none;
   }
   .dl-anchor strong {
-    color: var(--field-green);
+    color: var(--green);
     display: block;
     margin-bottom: 3px;
   }
@@ -1766,15 +1785,13 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     font-size: 0.68rem;
     margin-top: 2px;
   }
-  .readout-warning {
+  .readout-warning.kg-chip.red {
+    display: block;
     margin: 10px 0 0;
-    padding: 9px 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(245, 181, 68, 0.45);
-    background: rgba(245, 181, 68, 0.12);
-    color: #f8e6b5;
+    border-radius: var(--radius);
     font-size: 0.72rem;
     line-height: 1.42;
+    font-weight: 700;
   }
   .readout-warning[hidden] {
     display: none;
@@ -2029,18 +2046,17 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
   }
 
   /* ===== AI disclosure ===== */
-  .ai-disclosure {
+  .ai-disclosure.kg-card {
     margin: 0 0 10px;
-    padding: 8px 11px;
-    background: rgba(201, 169, 97, 0.05);
-    border-left: 2px solid var(--right-hand);
-    border-radius: 3px;
     font-size: 0.66rem;
-    color: var(--kerf-text-mute);
+    color: var(--muted);
     line-height: 1.42;
+    border-left: none;
   }
-  .ai-disclosure strong {
-    color: var(--right-hand);
+  .ai-disclosure strong.kg-chip {
+    display: inline-flex;
+    margin-right: 6px;
+    vertical-align: middle;
   }
 
   /* ===== Action ribbon ===== */
@@ -2082,8 +2098,17 @@ const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
     color: #0a1a0f;
     border-color: var(--field-green);
   }
-  .ar-btn.cancel {
-    color: var(--kerf-red);
+  .ar-btn.cancel.kg-chip.red {
+    flex-direction: row;
+    justify-content: center;
+    padding: 10px 8px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--red);
+    background: var(--red-soft);
+    border-color: transparent;
   }
   .ar-btn[aria-busy='true'] {
     opacity: 0.6;

@@ -29,6 +29,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
 >
   <section
     class="f-cam1"
+    data-grammar="canon"
     aria-labelledby="camera-title"
     data-suggested-project-id={suggestedJob?.project_id ?? ''}
     data-suggested-project-name={suggestedJob?.project_name ?? ''}
@@ -57,7 +58,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
             <a class="cam-back" href={returnHref} aria-label="Close camera">×</a>
             <button type="button" class="cam-icon-btn" aria-label="Camera settings">⚙</button>
           </div>
-          <div class="cam-job-chip" id="cam-job-chip">
+          <div class="cam-job-chip kg-routechip" id="cam-job-chip">
             <span class="cam-job-chip__label">Capture</span>
             <strong id="cam-job-chip-label">{routePrefilled ? (selectedProject?.project_name ?? 'Active job') : 'Photo · walkthru · scan'}</strong>
           </div>
@@ -67,7 +68,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
           </div>
         </div>
 
-        <div class="cam-rec-pill" id="cam-rec-pill" hidden>Right Hand listening · REC</div>
+        <div class="cam-rec-pill kg-chip green" id="cam-rec-pill" hidden>Right Hand listening · REC</div>
         <div class="cam-camera-state" id="cam-camera-state" hidden>
           <strong>Camera access needed</strong>
           <span>Use the fallback only if the browser cannot open the camera here.</span>
@@ -106,7 +107,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         </div>
       </div>
 
-      <section class="cam-captured" id="cam-captured" aria-label="Captured media" hidden>
+      <section class="cam-captured kg-card" id="cam-captured" aria-label="Captured media" hidden>
         <p class="cam-captured__eyebrow">Captured this session</p>
         <div class="cam-captured__item" id="cam-captured-item">
           <div class="cam-thumb" id="cam-thumb" aria-hidden="true"></div>
@@ -117,7 +118,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         </div>
       </section>
 
-      <section class="cam-route-panel" id="cam-route-panel" hidden aria-label="Confirm capture destination">
+      <section class="cam-route-panel kg-card" id="cam-route-panel" hidden aria-label="Confirm capture destination">
         <p class="cam-route-eyebrow">Goes to</p>
         <p class="cam-route-suggestion" id="cam-route-suggestion">
           {suggestedJob
@@ -641,16 +642,17 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     font-weight: 900;
     text-decoration: none;
   }
-  .cam-job-chip {
+  [data-grammar="canon"].f-cam1 .cam-job-chip.kg-routechip {
     justify-self: center;
     display: inline-flex;
     align-items: center;
     gap: 0.42rem;
     max-width: min(46vw, 12rem);
     padding: 0.34rem 0.54rem;
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 999px;
-    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(12px);
+    color: #f8fafc;
+    border-color: rgba(231, 170, 59, 0.45);
+    background: rgba(44, 36, 21, 0.72);
   }
   .cam-job-chip__label {
     color: rgba(248,250,252,0.62);
@@ -721,18 +723,13 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)),
       #10151d;
   }
-  .cam-rec-pill {
+  [data-grammar="canon"].f-cam1 .cam-rec-pill.kg-chip.green {
     position: absolute;
     z-index: 4;
     top: 3.45rem;
     left: 50%;
     transform: translateX(-50%);
-    padding: 0.28rem 0.5rem;
-    border-radius: 999px;
-    background: rgba(56,201,119,0.18);
-    color: #86efac;
     font-size: 0.68rem;
-    font-weight: 800;
   }
   .cam-camera-state {
     position: absolute;
@@ -877,7 +874,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     height: 4.3rem;
     border-radius: 999px;
     border: 3px solid #f8fafc;
-    background: var(--right-hand);
+    background: var(--gold);
     box-shadow: inset 0 0 0 4px rgba(11,14,19,0.9);
   }
   .cam-done {
@@ -887,8 +884,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     font-size: 0.78rem;
   }
   .cam-done {
-    background: var(--right-hand);
-    border-color: var(--right-hand);
+    background: var(--gold);
+    border-color: var(--gold);
     color: #171100;
   }
   .cam-status {
@@ -910,7 +907,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
   .cam-captured[hidden] {
     display: none;
   }
-  .cam-captured {
+  [data-grammar="canon"].f-cam1 .cam-captured.kg-card {
     position: absolute;
     z-index: 6;
     left: 0.82rem;
@@ -919,9 +916,10 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     display: grid;
     gap: 0.42rem;
     padding: 0.55rem;
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 14px;
-    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.14);
+    background: rgba(21, 27, 35, 0.88);
+    color: #f8fafc;
+    backdrop-filter: blur(16px);
   }
   .cam-captured__eyebrow {
     margin: 0;
@@ -998,7 +996,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       padding: 0.48rem;
     }
   }
-  .cam-route-panel {
+  [data-grammar="canon"].f-cam1 .cam-route-panel.kg-card {
     position: absolute;
     z-index: 7;
     left: 0.82rem;
@@ -1007,9 +1005,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     display: grid;
     gap: 0.45rem;
     padding: 0.75rem;
-    border: 1px solid rgba(255,255,255,0.16);
-    border-radius: 16px;
-    background: rgba(5,7,11,0.92);
+    border-color: rgba(255,255,255,0.16);
+    background: rgba(21, 27, 35, 0.92);
     color: #f8fafc;
     backdrop-filter: blur(16px);
   }
@@ -1018,7 +1015,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
   }
   .cam-route-eyebrow {
     margin: 0;
-    color: var(--right-hand);
+    color: var(--gold);
     font-size: 0.62rem;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -1059,7 +1056,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
   .cam-route-confirm {
     border: none;
     border-radius: 999px;
-    background: var(--right-hand);
+    background: var(--gold);
     color: #171100;
     font: inherit;
     font-weight: 800;

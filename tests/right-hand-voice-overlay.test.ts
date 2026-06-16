@@ -1270,7 +1270,7 @@ test('Field Capture: no second primary mic; task buttons + quiet context note', 
   assert.doesNotMatch(src, /id="f-e1-record-active"/);
   assert.doesNotMatch(src, /compact-record/);
   // Replaced by a quiet context note; the bottom mic owns voice.
-  assert.match(src, /class="fc-context-note"/);
+  assert.match(src, /class="fc-context-note kg-card"/);
   assert.match(src, /confirm the job destination before filing/i);
   assert.doesNotMatch(src, /class="fc-mic-hint"/);
   // A capture reached from a known job has a visible way back to that job.
