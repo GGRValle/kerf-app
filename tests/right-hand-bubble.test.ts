@@ -177,12 +177,15 @@ test('component carries the F-RH3/F-RH7 markers: bloom, pill, gold thinking-stat
   assert.match(component, /data-mic-side/);
 });
 
-test('component is light+dark by tokens (accents constant, bg/text flip with the app theme)', () => {
-  assert.match(component, /--right-hand/);
-  assert.match(component, /--kerf-amber/);
-  assert.match(component, /--field-green/);
-  assert.match(component, /--kerf-(bg|surface|text|border)/);
-  // No hardcoded full-screen dark background that would break light mode.
+test('component is canon-tokenized + light+dark by tokens (Goal 0 grammar)', () => {
+  // Canon palette (SURFACE_GRAMMAR.md): --gold supersedes --right-hand/--kerf-amber,
+  // --green supersedes --field-green, and bg/panel/ink/muted/line flip with theme.
+  assert.match(component, /--gold/);
+  assert.match(component, /--green/);
+  assert.match(component, /--(bg|panel|ink|muted|line)/);
+  // The superseded app palette must be gone (this is what the parity gate enforces).
+  assert.ok(!/--right-hand|--kerf-amber|--field-green|--kerf-(bg|surface|text|border)/.test(component),
+    'no superseded app tokens — the bubble speaks canon grammar');
   assert.ok(!/#0A0D11|#0a0d11/.test(component), 'no hardcoded dark bg — use tokens');
 });
 
