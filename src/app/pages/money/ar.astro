@@ -17,7 +17,15 @@ if (!projected.capabilities.moneyRead) {
 }
 ---
 
-<Layout titleKey="f_mn.ar.title" activeHref="/money">
+<Layout
+  titleKey="f_mn.ar.title"
+  activeHref="/money"
+  surfaceContext={{
+    surface: 'invoice',
+    invoice_id: MONEY_AR_ROWS[0]?.entity_id,
+    phase: 'ar_aging',
+  }}
+>
   <article class="money-page">
     <header>
       <div class="money-crumb"><a href="/money">{t('f_mn.crumb')}</a> · {t('f_mn.ar.title')}</div>

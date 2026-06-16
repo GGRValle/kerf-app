@@ -24,7 +24,14 @@ if (!projected.capabilities.moneyRead) {
 const summary = MONEY_HOME_SUMMARY;
 ---
 
-<Layout titleKey="f_mn.home.title" activeHref="/money">
+<Layout
+  titleKey="f_mn.home.title"
+  activeHref="/money"
+  surfaceContext={{
+    surface: 'money',
+    phase: 'operating_queue',
+  }}
+>
   <article class="money-page">
     <header>
       <div class="money-crumb">{t('f_mn.crumb')}</div>

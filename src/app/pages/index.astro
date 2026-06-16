@@ -9,7 +9,7 @@ const cookieRole = parseRoleRootCookie(Astro.cookies.get(ROLE_ROOT_COOKIE)?.valu
 const { context } = createLayoutContext({ roleRoot: cookieRole ?? undefined });
 ---
 
-<Layout context={context} titleKey="home.title" activeHref="/">
+<Layout context={context} titleKey="home.title" activeHref="/" surfaceContext={{ surface: 'home', phase: 'today' }}>
   <NavBack href="/login" />
   <RoleHomeSurface roleRoot={context.roleRoot} />
 </Layout>

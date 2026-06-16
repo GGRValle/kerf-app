@@ -39,7 +39,16 @@ const captureReturnHref = safeReturnProjectId
 const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 ---
 
-<Layout title="Field Capture" activeHref={Astro.url.pathname}>
+<Layout
+  title="Field Capture"
+  activeHref={Astro.url.pathname}
+  surfaceContext={{
+    surface: 'field_capture',
+    client_id: 'cli_wegrzyn',
+    project_id: assignment.project_id,
+    phase: 'capture',
+  }}
+>
   <main
     class="field-shell"
     data-view-state="pre"

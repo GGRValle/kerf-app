@@ -13,6 +13,7 @@
     "build": "tsc",
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
+    "pretest": "npm run demo:v15-vertical-slice:esbuild",
     "test": "node --import tsx --test tests/*.test.ts",
     "smoke": "tsx src/examples/smoke.ts",
     "smoke:proposal-ff": "tsx src/examples/proposal-ff-smoke.ts",

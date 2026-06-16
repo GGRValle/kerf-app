@@ -23,7 +23,20 @@ const paperHtml = renderProposalHtml(proposal);
 const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, proposal.project_id);
 ---
 
-<Layout titleKey="f_pv1.title" activeHref="/draft-review">
+<Layout
+  titleKey="f_pv1.title"
+  activeHref="/draft-review"
+  surfaceContext={{
+    surface: 'proposal',
+    project_id: proposal.project_id,
+    estimate_id: proposal.proposal_id,
+    proposal_id: proposal.proposal_id,
+    line_ids: proposal.divisions.flatMap((division) =>
+      division.sections.flatMap((section) => section.lines.map((line) => line.line_id)),
+    ),
+    phase: proposal.status,
+  }}
+>
   <article class="lane6-page f-pv1">
     <header>
       <div class="lane6-crumb">{t('f_pv1.crumb')}</div>

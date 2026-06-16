@@ -51,6 +51,7 @@ import {
   assertCommittedForDurable,
   InterimPersistBlockedError,
 } from '../src/voice/realtime/voiceActionGate.js';
+import { resolveProposalProjectionFromContext } from '../src/voice/realtime/rightHandContextResolver.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -226,7 +227,7 @@ test('action gate · LIVE intents are reversible navigations · routable from in
 });
 
 test('action gate · durable intents require the committed transcript', () => {
-  for (const intent of ['job_intake', 'job_note', 'change_order', 'estimate_update', 'job_log', 'memory_write'] as const) {
+  for (const intent of ['job_intake', 'job_note', 'change_order', 'estimate_update', 'proposal_projection', 'job_log', 'memory_write'] as const) {
     assert.equal(classifyVoiceActionLane(intent), 'commit');
     assert.equal(requiresCommittedTranscript(intent), true);
     assert.equal(canRouteFromInterim(intent), false);
@@ -253,6 +254,7 @@ test('deterministic intent classifier maps keywords honestly', () => {
   assert.equal(classifyTranscriptIntent('this is a new bathroom remodel project'), 'job_intake');
   assert.equal(classifyTranscriptIntent('check on money'), 'open_money');
   assert.equal(classifyTranscriptIntent('work on the change order for Wegrzyn'), 'change_order');
+  assert.equal(classifyTranscriptIntent('now give me the proposal'), 'proposal_projection');
   assert.equal(classifyTranscriptIntent('what is the status on the kitchen'), 'status_question');
   // Note dictation is now DURABLE (turn-resolution brief §4): "take a job note"
   // must NOT live-route to /field-capture — it waits for commit + resolves the
@@ -341,6 +343,59 @@ test('overlay sends tenant-scoped known entities to the model resolver', () => {
   assert.match(src, /const trp = withKnownEntity\(buildTurnResolutionPacket/);
   assert.doesNotMatch(src, /x-kerf-tenant/);
   assert.match(src, /knownEntities: collectKnownEntities\(\)/);
+});
+
+test('overlay consumes the SurfaceContext tag for proposal projection', () => {
+  const src = readFileSync(path.join(ROOT, 'src/app/components/RightHandVoiceOverlay.astro'), 'utf8');
+  assert.match(src, /resolveProposalProjectionFromContext/);
+  assert.match(src, /__KERF_SURFACE_CONTEXT__/);
+  assert.match(src, /kerf-surface-context/);
+  assert.match(src, /proposal_projection/);
+  assert.match(src, /renderProposalProjectionConfirm/);
+  assert.match(src, /navigate\(resolution\.href, \{ resume: true \}\)/);
+});
+
+test('Right Hand proposal resolver carries estimate line_ids and asks only a narrow gap', () => {
+  const resolution = resolveProposalProjectionFromContext({
+    surface: 'estimate',
+    tenant: 'tenant_ggr',
+    role: 'owner',
+    project_id: 'proj_wegrzyn_kitchen',
+    estimate_id: 'prop_lane23_wegrzyn',
+    line_ids: ['line_demo_cabinets', 'line_demo_appliance_allowance'],
+    phase: 'draft',
+    previous: null,
+  });
+
+  assert.equal(resolution.status, 'ready_with_gap');
+  assert.equal(resolution.href, '/proposals/prop_lane23_wegrzyn/preview?src=voice&from=estimate-context');
+  assert.deepEqual(resolution.carried_line_ids, ['line_demo_cabinets', 'line_demo_appliance_allowance']);
+  assert.deepEqual(resolution.working_set, ['current_surface_tag', 'active_line_ids', 'recent_operator_turns']);
+  assert.deepEqual(resolution.searched_subfiles, [
+    'pricing_library',
+    'past_similar_jobs',
+    'durable_project_graph',
+    'source_artifacts',
+  ]);
+  assert.equal(resolution.confidence_policy, 'go_deep_then_ask_specific_gap');
+  assert.match(resolution.needs, /appliance allowance price/i);
+  assert.doesNotMatch(resolution.needs, /which job/i);
+});
+
+test('Right Hand proposal resolver escalates honestly on thin context', () => {
+  const resolution = resolveProposalProjectionFromContext({
+    surface: 'home',
+    tenant: 'tenant_ggr',
+    role: 'owner',
+    phase: 'today',
+    previous: null,
+  });
+
+  assert.equal(resolution.status, 'needs_specific_context');
+  assert.equal(resolution.href, null);
+  assert.deepEqual(resolution.carried_line_ids, []);
+  assert.match(resolution.needs, /open the estimate or name the estimate id/i);
+  assert.match(resolution.needs, /I will not guess/i);
 });
 
 // Slice a top-level arrow/async declaration body: from `const <name>` up to the

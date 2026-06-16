@@ -200,6 +200,7 @@ const { t } = createLayoutContext();
     liveRouteFor,
     type VoiceIntent,
   } from '../../voice/realtime/voiceActionGate.js';
+  import { resolveProposalProjectionFromContext } from '../../voice/realtime/rightHandContextResolver.js';
   import {
     buildTurnResolutionPacket,
     parseTurnResolution,
@@ -225,6 +226,7 @@ const { t } = createLayoutContext();
     WORKING_PHASE_STALE_MS,
   } from '../../voice/realtime/overlayResume.js';
   import { checkTranscript } from '../../voice/realtime/transcriptGuard.js';
+  import type { SurfaceContext } from '../lib/surfaceContext.js';
 
   type OverlayState = 'idle' | 'listening' | 'sorting' | 'reply' | 'confirm' | 'resolved' | 'fallback' | 'capped';
 
@@ -284,7 +286,9 @@ const { t } = createLayoutContext();
     let elapsedSec = 0;
     let awaitingConfirm = false; // durable confirm open — pause STT processing
     let parkedTranscript = ''; // committed durable transcript awaiting Save
+    let parkedIntent: VoiceIntent = 'unclassified';
     let parkedTurnResolution: TurnResolutionPacket | null = null;
+    let activeSurfaceContext: SurfaceContext | null = null;
     let currentMoves: readonly NextMove[] = []; // resolved-state next moves
     let resolvedSurface = '/'; // default landing after a resolved turn
     let confirmSaveNeedsMoreContext = false;
@@ -1080,6 +1084,26 @@ const { t } = createLayoutContext();
       return variants[index] ?? 'Working…';
     };
 
+    const renderProposalProjectionConfirm = () => {
+      activeSurfaceContext = readSurfaceContext() ?? activeSurfaceContext;
+      const resolution = resolveProposalProjectionFromContext(activeSurfaceContext);
+      confirmSaveNeedsMoreContext = resolution.href === null;
+      if (confirmSpeakerEl) confirmSpeakerEl.textContent = operatorName();
+      if (confirmReplyEl) {
+        confirmReplyEl.textContent = `${resolution.creating}. ${resolution.routed}.`;
+      }
+      if (confirmPromptEl) {
+        confirmPromptEl.innerHTML = `<span class="rhvo__confirm-kicker">Context check</span><span>${escapeHtml(resolution.needs)}</span>`;
+      }
+      if (saveBtn) {
+        saveBtn.textContent = resolution.href ? 'Open proposal' : (overlay.dataset.actionKeepTalking ?? 'Keep talking');
+        saveBtn.hidden = confirmSaveNeedsMoreContext;
+        saveBtn.disabled = false;
+      }
+      if (changeJobBtn) changeJobBtn.hidden = true;
+      if (notThatBtn) notThatBtn.textContent = overlay.dataset.actionKeepTalking ?? 'Keep talking';
+    };
+
     const renderConfirmTurn = (trp: TurnResolutionPacket) => {
       confirmSaveNeedsMoreContext = turnNeedsProjectBeforeSave(trp);
       const entity = conversationDestinationFor(trp);
@@ -1118,6 +1142,28 @@ const { t } = createLayoutContext();
     const currentTenantId = (): string | undefined => (
       document.querySelector<HTMLElement>('.kerf-shell')?.dataset.tenant?.trim() || undefined
     );
+
+    const parseSurfaceContext = (value: unknown): SurfaceContext | null => {
+      if (typeof value !== 'object' || value === null) return null;
+      const record = value as Record<string, unknown>;
+      if (typeof record.surface !== 'string') return null;
+      if (typeof record.tenant !== 'string') return null;
+      if (typeof record.role !== 'string') return null;
+      return value as SurfaceContext;
+    };
+
+    const readSurfaceContext = (): SurfaceContext | null => {
+      const globalContext = (window as Window & { __KERF_SURFACE_CONTEXT__?: unknown }).__KERF_SURFACE_CONTEXT__;
+      const parsedGlobal = parseSurfaceContext(globalContext);
+      if (parsedGlobal) return parsedGlobal;
+      const raw = document.getElementById('kerf-surface-context')?.textContent ?? '';
+      if (!raw.trim()) return null;
+      try {
+        return parseSurfaceContext(JSON.parse(raw));
+      } catch {
+        return null;
+      }
+    };
 
     const operatorName = (): string => (
       document.querySelector<HTMLElement>('.kerf-shell')?.dataset.operatorName?.trim() ||
@@ -1554,6 +1600,7 @@ const { t } = createLayoutContext();
       awaitingConfirm = true;
       parkedTranscript = text;
       const intent = classifyTranscriptIntent(text);
+      parkedIntent = intent;
       const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: text, intent }));
       parkedTurnResolution = trp;
       // Mic off while the operator decides (privacy / bounded window §4). Change
@@ -1569,6 +1616,10 @@ const { t } = createLayoutContext();
       // renderConfirmTurn runs AFTER showActions so its entity-gated Change-job
       // visibility (and "Save to <job>" label) win over the default confirm row.
       renderConfirmTurn(trp);
+      if (intent === 'proposal_projection') {
+        renderProposalProjectionConfirm();
+        return;
+      }
       void resolveTurnServerSide(text, trp).then((serverTrp) => {
         // Only update if the operator is still deciding on the same turn.
         if (!awaitingConfirm || parkedTranscript !== text || state !== 'confirm') return;
@@ -1590,6 +1641,7 @@ const { t } = createLayoutContext();
       const intent = conversationIntentForTurn(clean, draftText);
       const trp = withKnownEntity(buildTurnResolutionPacket({ heardText: draftText, intent }));
       parkedTranscript = workingDraftText();
+      parkedIntent = intent;
       parkedTurnResolution = trp;
       teardown();
       setState('reply');
@@ -1677,6 +1729,12 @@ const { t } = createLayoutContext();
         return;
       }
       const conversationIntent = conversationIntentForTurn(cleanText, draftText || cleanText);
+      if (conversationIntent === 'proposal_projection') {
+        appendTurn('operator', cleanText);
+        persistConversation();
+        enterSorting(cleanText);
+        return;
+      }
       if (requiresCommittedTranscript(conversationIntent)) {
         // Durable-capable speech starts as conversation, not a button gate. A
         // consequence bubble appears only when the operator asks to file/send or
@@ -1708,6 +1766,7 @@ const { t } = createLayoutContext();
       awaitingConfirm = false;
       confirmSaveNeedsMoreContext = false;
       parkedTranscript = '';
+      parkedIntent = 'unclassified';
       parkedTurnResolution = null;
       routedLive = false;
       lastInterim = '';
@@ -1831,6 +1890,23 @@ const { t } = createLayoutContext();
       const baseTrp = parkedTurnResolution?.heard_text === clean
         ? parkedTurnResolution
         : buildTurnResolutionPacket({ heardText: clean, intent });
+      if (parkedIntent === 'proposal_projection' || baseTrp.intent === 'proposal_projection') {
+        activeSurfaceContext = readSurfaceContext() ?? activeSurfaceContext;
+        const resolution = resolveProposalProjectionFromContext(activeSurfaceContext);
+        if (!resolution.href) {
+          confirmSaveNeedsMoreContext = true;
+          if (confirmReplyEl) confirmReplyEl.textContent = resolution.creating;
+          if (confirmPromptEl) confirmPromptEl.textContent = resolution.needs;
+          if (saveBtn) saveBtn.hidden = true;
+          if (notThatBtn) notThatBtn.disabled = false;
+          setStatus(resolution.needs);
+          return;
+        }
+        stashCommitted(clean);
+        persistConversation();
+        navigate(resolution.href, { resume: true });
+        return;
+      }
       if (turnNeedsProjectBeforeSave(baseTrp)) {
         returnToListening();
         return;
@@ -1871,6 +1947,7 @@ const { t } = createLayoutContext();
       releaseListeningResources();
       awaitingConfirm = false;
       parkedTranscript = '';
+      parkedIntent = 'unclassified';
       parkedTurnResolution = null;
       if (saveBtn) saveBtn.disabled = false;
       if (notThatBtn) notThatBtn.disabled = false;
@@ -1984,6 +2061,7 @@ const { t } = createLayoutContext();
     const recoverVoiceTurn = (message?: string) => {
       awaitingConfirm = false;
       parkedTranscript = '';
+      parkedIntent = 'unclassified';
       const partial = cleanCommittedTranscript(currentCaptionText());
       if (partial && workingDraftTurns.at(-1) !== partial) {
         pushWorkingDraftTurn(partial);
@@ -2276,7 +2354,9 @@ const { t } = createLayoutContext();
       lastInterim = '';
       awaitingConfirm = false;
       parkedTranscript = '';
+      parkedIntent = 'unclassified';
       parkedTurnResolution = null;
+      activeSurfaceContext = readSurfaceContext();
       setCaption('');
       clearComposer();
       const restored = options.restoreConversation ? restoreConversation() : false;
@@ -2326,6 +2406,7 @@ const { t } = createLayoutContext();
       if (state === 'capped') {
         awaitingConfirm = false;
         parkedTranscript = '';
+        parkedIntent = 'unclassified';
         lastInterim = '';
         setHeading(overlay.dataset.title ?? 'Right Hand is listening');
         setState('listening');
@@ -2338,6 +2419,7 @@ const { t } = createLayoutContext();
     continueBtn?.addEventListener('click', () => {
       awaitingConfirm = false;
       parkedTranscript = '';
+      parkedIntent = 'unclassified';
       lastInterim = '';
       setHeading(overlay.dataset.title ?? 'Right Hand is listening');
       setState('listening');

@@ -65,7 +65,17 @@ const copy = {
 };
 ---
 
-<Layout titleKey="review.draft.title" activeHref="/draft-review">
+<Layout
+  titleKey="review.draft.title"
+  activeHref="/draft-review"
+  surfaceContext={{
+    surface: 'estimate',
+    project_id: draft?.project_id,
+    estimate_id: draft?.proposal_id ?? draftId,
+    line_ids: draft?.lines.map((line) => line.line_id) ?? [],
+    phase: draft?.status ?? 'draft',
+  }}
+>
   <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
     <div class="lane23-page" data-tenant={context.tenantId}>
       <PhaseStrip phases={loopPhases} />
