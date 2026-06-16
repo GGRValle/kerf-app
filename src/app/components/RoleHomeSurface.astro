@@ -24,12 +24,12 @@ const ROLE_LABEL_KEYS = {
 ---
 
 <section class="role-home" data-wireframe={wireframe} data-role-root={roleRoot}>
-  <p class="role-home__crumb">
-    {showWireframeRef ? (
+  {showWireframeRef ? (
+    <p class="role-home__crumb">
       <span class="role-home__wireframe-ref">{wireframe} · </span>
-    ) : null}
-    {t(ROLE_LABEL_KEYS[roleRoot])}
-  </p>
+      {t(ROLE_LABEL_KEYS[roleRoot])}
+    </p>
+  ) : null}
   {roleRoot === 'owner' ? (
     <RightHandHomeSurface />
   ) : (

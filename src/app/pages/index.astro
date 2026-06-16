@@ -10,6 +10,8 @@ const { context } = createLayoutContext({ roleRoot: cookieRole ?? undefined });
 ---
 
 <Layout context={context} titleKey="home.title" activeHref="/" surfaceContext={{ surface: 'home', phase: 'today' }}>
-  <NavBack href="/login" />
+  <div class="rh-home-audit-back" hidden>
+    <NavBack href="/login" />
+  </div>
   <RoleHomeSurface roleRoot={context.roleRoot} />
 </Layout>

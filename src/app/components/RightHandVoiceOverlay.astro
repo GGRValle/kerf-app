@@ -16,7 +16,13 @@ import { createLayoutContext } from '../lib/createLayoutContext.js';
 const { t } = createLayoutContext();
 ---
 
-<button class="rhvo-bubble" id="rhvo-bubble" type="button" hidden>Back to the conversation</button>
+<button class="rhvo-bubble" id="rhvo-bubble" type="button" hidden>
+  <span>Tap to talk</span>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path>
+    <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z"></path>
+  </svg>
+</button>
 <div
   class="rhvo"
   id="rh-voice-overlay"
@@ -129,7 +135,7 @@ const { t } = createLayoutContext();
       </div>
       <div class="rhvo__dock">
         <span class="rhvo__dock-item" aria-hidden="true">Home</span>
-        <span class="rhvo__dock-item" aria-hidden="true">Create</span>
+        <span class="rhvo__dock-item" aria-hidden="true">Start</span>
         <button
           type="button"
           class="rhvo__indicator"
@@ -2545,17 +2551,36 @@ const { t } = createLayoutContext();
   .rhvo-bubble {
     position: fixed;
     right: 14px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 86px);
     z-index: 150;
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.48rem;
+    border: 1.5px solid color-mix(in srgb, var(--right-hand, #c9a961) 58%, transparent);
     border-radius: 999px;
-    padding: 10px 16px;
-    background: #1f7a3d;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 4px 16px rgba(10, 14, 18, 0.35);
+    padding: 0.38rem 0.45rem 0.38rem 0.72rem;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--right-hand, #c9a961) 18%, var(--kerf-bg-2, #14181f)),
+      color-mix(in srgb, var(--right-hand, #c9a961) 8%, var(--kerf-bg-2, #14181f))
+    );
+    color: var(--right-hand, #c9a961);
+    font-size: 0.8rem;
+    font-weight: 800;
+    box-shadow: 0 8px 24px rgba(10, 14, 18, 0.36);
     cursor: pointer;
+    backdrop-filter: blur(8px);
+  }
+  .rhvo-bubble svg {
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0.58rem;
+    border-radius: 999px;
+    fill: #1a1300;
+    background: var(--kerf-amber, #f5b544);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--kerf-amber, #f5b544) 24%, transparent),
+      0 0 14px color-mix(in srgb, var(--kerf-amber, #f5b544) 42%, transparent);
   }
   .rhvo-bubble:active { transform: scale(0.97); }
 
@@ -2567,8 +2592,8 @@ const { t } = createLayoutContext();
     align-items: flex-end;
     justify-content: center;
     --rhvo-bg: rgba(20, 24, 31, 0.9);
-    --rhvo-panel-bg: rgba(20, 24, 31, 0.92);
-    --rhvo-backdrop-bg: rgba(6, 8, 11, 0.34);
+    --rhvo-panel-bg: rgba(20, 24, 31, 0.94);
+    --rhvo-backdrop-bg: rgba(6, 8, 11, 0.22);
     --rhvo-surface: #232936;
     --rhvo-surface-soft: #1a1f28;
     --rhvo-border: rgba(255, 255, 255, 0.09);
@@ -2618,16 +2643,16 @@ const { t } = createLayoutContext();
   }
   .rhvo__panel {
     position: relative;
-    width: min(430px, calc(100% - 1rem));
+    width: min(430px, calc(100% - 0.9rem));
     height: var(--rhvo-bloom-height);
     min-height: 18rem;
     max-height: min(84svh, 46rem);
-    margin: 0 0 max(0.45rem, env(safe-area-inset-bottom, 0px));
+    margin: 0 0 max(0.36rem, env(safe-area-inset-bottom, 0px));
     padding: 0.92rem 0.85rem 0.62rem;
     overflow: hidden;
-    border: 1px solid var(--rhvo-border);
-    border-top-color: var(--rhvo-border-soft);
-    border-radius: 22px 22px 24px 24px;
+    border: 1.5px solid color-mix(in srgb, var(--right-hand, #c9a961) 46%, var(--rhvo-border));
+    border-top-color: color-mix(in srgb, var(--right-hand, #c9a961) 58%, var(--rhvo-border-soft));
+    border-radius: 18px 18px 22px 22px;
     background: var(--rhvo-panel-bg);
     backdrop-filter: blur(14px);
     color: var(--rhvo-text);
@@ -2635,7 +2660,7 @@ const { t } = createLayoutContext();
     flex-direction: column;
     gap: 0.56rem 0.62rem;
     text-align: left;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.3);
     scroll-padding-bottom: 6.25rem;
     overscroll-behavior: contain;
     transition: height 220ms ease, max-height 220ms ease, border-radius 220ms ease;
@@ -2683,7 +2708,7 @@ const { t } = createLayoutContext();
   .rhvo[data-state='capped'] .rhvo__pulse { animation: none; opacity: 0.4; }
   .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__pulse {
     inset: 0;
-    background: rgba(245, 181, 68, 0.42);
+    background: color-mix(in srgb, var(--kerf-blue, #7ba8ff) 44%, transparent);
     animation: rhvo-hot-pulse 1.05s ease-out infinite;
   }
   @keyframes rhvo-pulse {
@@ -2706,10 +2731,10 @@ const { t } = createLayoutContext();
   }
   .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__mic {
     inset: 9px;
-    background: #ffc44d;
+    background: var(--kerf-blue, #7ba8ff);
     box-shadow:
-      0 0 0 4px rgba(245, 181, 68, 0.24),
-      0 0 28px rgba(245, 181, 68, 0.7);
+      0 0 0 4px color-mix(in srgb, var(--kerf-blue, #7ba8ff) 24%, transparent),
+      0 0 28px color-mix(in srgb, var(--kerf-blue, #7ba8ff) 68%, transparent);
     animation: rhvo-hot-mic 0.9s ease-in-out infinite alternate;
   }
   .rhvo__indicator::after {
@@ -2731,6 +2756,7 @@ const { t } = createLayoutContext();
   }
   .rhvo[data-state='listening'][data-mic-active='true'] .rhvo__indicator::after {
     content: "STOP";
+    color: var(--kerf-blue, #7ba8ff);
   }
   .rhvo[data-state='listening']:not([data-mic-active='true']) .rhvo__indicator::after {
     content: "TYPE";
@@ -2789,8 +2815,7 @@ const { t } = createLayoutContext();
   .rhvo[data-state='reply'] .rhvo__status,
   .rhvo[data-state='resolved'] .rhvo__head,
   .rhvo[data-state='resolved'] .rhvo__status { display: none; }
-  /* Discrete field-green VU bars — listening identity stays Right Hand gold,
-     capture/level reads field-green. Shown only while actively capturing. */
+  /* Blue listening identity from F-RH7; the bars only show while capturing. */
   .rhvo__meter {
     order: 3;
     grid-column: 1 / -1;
@@ -2807,7 +2832,7 @@ const { t } = createLayoutContext();
     width: 4px;
     height: 18px;
     border-radius: 2px;
-    background: var(--field-green);
+    background: var(--kerf-blue);
     transform-origin: center;
     transform: scaleY(0.18);
     transition: transform 0.08s linear;

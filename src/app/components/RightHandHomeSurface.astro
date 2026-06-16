@@ -8,6 +8,13 @@ const homeSections = composeHomeAttentionSections();
 const oneThing = homeSections.oneThing;
 const onDeck = homeSections.onDeck;
 const pulse = homeSections.pulse;
+const brainQuestions = [
+  { label: 'Needs me', text: 'What needs my decision today?', href: '/on-me' },
+  { label: 'Changed', text: 'What changed on a job?', href: '/relay' },
+  { label: 'Money', text: 'What needs a money check?', href: '/money' },
+  { label: 'Blocked', text: 'What is blocking work?', href: '/projects' },
+  { label: 'Start', text: 'What should I start next?', href: '/create' },
+] as const;
 ---
 
 <section class="rh-home" aria-label="Right Hand home">
@@ -42,6 +49,21 @@ const pulse = homeSections.pulse;
       <span>New captures, decisions, and changes will land here.</span>
     </div>
   )}
+
+  <section class="rh-home__section rh-brain" aria-labelledby="rh-brain-title">
+    <div class="rh-home__section-head">
+      <h2 id="rh-brain-title">Brain questions</h2>
+      <span>5</span>
+    </div>
+    <div class="rh-brain__grid">
+      {brainQuestions.map((question) => (
+        <a class="rh-brain__item" href={question.href}>
+          <span>{question.label}</span>
+          <strong>{question.text}</strong>
+        </a>
+      ))}
+    </div>
+  </section>
 
   <section class="rh-home__section" aria-labelledby="rh-on-deck-title">
     <div class="rh-home__section-head">
@@ -208,7 +230,7 @@ const pulse = homeSections.pulse;
 <style>
   .rh-home {
     display: grid;
-    gap: 1rem;
+    gap: 1.05rem;
   }
   .rh-home__hello {
     display: grid;
@@ -229,11 +251,11 @@ const pulse = homeSections.pulse;
     letter-spacing: 0;
   }
   .rh-home h1 {
-    font-size: 2.2rem;
-    line-height: 0.98;
+    font-size: 1.92rem;
+    line-height: 1.02;
   }
   .rh-home h2 {
-    font-size: 1.35rem;
+    font-size: 1.05rem;
     line-height: 1.05;
   }
   .rh-empty {
@@ -296,6 +318,35 @@ const pulse = homeSections.pulse;
     color: var(--kerf-text-mute);
     font-size: 0.78rem;
     font-weight: 700;
+  }
+  .rh-brain__grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+  .rh-brain__item {
+    display: grid;
+    align-content: start;
+    min-height: 5.1rem;
+    gap: 0.35rem;
+    padding: 0.72rem 0.62rem;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid var(--kerf-border-soft);
+    border-radius: 10px;
+    background: var(--kerf-bg-2);
+  }
+  .rh-brain__item span {
+    color: var(--right-hand);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .rh-brain__item strong {
+    color: var(--kerf-text);
+    font-size: 0.78rem;
+    line-height: 1.24;
   }
   .rh-deck,
   .rh-pulse {
@@ -386,12 +437,53 @@ const pulse = homeSections.pulse;
     background: color-mix(in srgb, var(--kerf-red) 12%, transparent);
     color: var(--kerf-red);
   }
+  .rh-home .aa-card {
+    grid-template-columns: 12px 1fr;
+    align-items: center;
+    gap: 0.7rem;
+    border-radius: 10px;
+  }
+  .rh-home .aa-card__rail {
+    width: 12px;
+    height: 12px;
+    min-height: 12px;
+    border-radius: 999px;
+  }
+  .rh-home .aa-card--one {
+    grid-template-columns: 1fr;
+    align-items: start;
+    border-left: 4px solid var(--kerf-amber);
+    border-color: var(--kerf-border-soft);
+    background: var(--kerf-surface);
+  }
+  .rh-home .aa-card--one .aa-card__rail {
+    display: none;
+  }
+  .rh-home .aa-card--deck,
+  .rh-home .aa-card--pulse {
+    padding: 0.74rem 0.82rem;
+    background: var(--kerf-surface);
+  }
+  .rh-home .aa-card__top {
+    gap: 0.35rem;
+  }
+  .rh-home .aa-card__state {
+    margin-left: auto;
+  }
   @media (min-width: 760px) {
     .rh-deck {
       grid-template-columns: 1fr 1fr;
     }
     .rh-one {
       padding: 1.15rem 1.25rem;
+    }
+  }
+  @media (max-width: 430px) {
+    .rh-brain__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .rh-brain__item:first-child {
+      grid-column: span 2;
     }
   }
 </style>
