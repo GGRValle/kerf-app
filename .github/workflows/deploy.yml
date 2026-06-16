@@ -32,9 +32,13 @@ jobs:
       # Drift stops being possible — a bad deploy is a red check, not a surprise on the phone.
       - name: Verify /health.commit == merged sha
         run: |
-          sleep 15
-          live=$(curl -fsS https://kerf-v17-internal.fly.dev/health | jq -r .commit)
-          echo "live=$live expected=$GITHUB_SHA"
-          [ "$live" = "$GITHUB_SHA" ] || {
-            echo "::error::deploy provenance mismatch — /health is off-main ($live != $GITHUB_SHA)"; exit 1;
-          }
+          # Retry, don't one-shot: flyctl usually returns after the release is healthy,
+          # but propagation can lag — a single curl can false-fail a good deploy.
+          for i in $(seq 1 18); do
+            live=$(curl -fsS https://kerf-v17-internal.fly.dev/health | jq -r .commit || true)
+            [ "$live" = "$GITHUB_SHA" ] && { echo "✓ /health.commit == $GITHUB_SHA"; exit 0; }
+            echo "waiting for deploy stamp ($i/18): live=$live expected=$GITHUB_SHA"
+            sleep 10
+          done
+          echo "::error::deploy provenance mismatch — /health never reached $GITHUB_SHA"
+          exit 1
