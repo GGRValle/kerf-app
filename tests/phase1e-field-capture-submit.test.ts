@@ -89,7 +89,8 @@ test('Phase 1E F-E1 page contains submit wiring to the shell API', async () => {
   const source = await readFile(path.join(process.cwd(), 'src/app/pages/field-capture.astro'), 'utf8');
   assert.match(source, /id="f-e1-submit"/);
   assert.match(source, /data-project-id=\{assignment\.project_id\}/);
-  assert.match(source, /project_id: 'proj_wegrzyn_kitchen'/);
+  assert.match(source, /getLane23ProjectForTenant\('proj_wegrzyn_kitchen', context\.tenantId\)/);
+  assert.match(source, /project_id: assignedProject\.project_id/);
   assert.doesNotMatch(source, /proj_wegrzyn_kitchen_bath/);
   assert.match(source, /\/api\/v1\/projects\/\$\{encodeURIComponent\(projectId\)\}\/daily-log\/entries/);
   assert.match(source, /id="f-e1-submit-status"/);

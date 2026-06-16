@@ -31,6 +31,7 @@ export const VOICE_INTENTS = [
   'job_note', // persist a job note
   'change_order', // draft → execution change order
   'estimate_update', // estimate line additions/edits
+  'proposal_projection', // draft proposal projection from active estimate context
   'job_log', // job log write
   'memory_write', // tenant memory write
   // ── neither — keep overlay open, ask one clarifying question ──────────────
@@ -63,6 +64,7 @@ const COMMIT_LANE_INTENTS: ReadonlySet<VoiceIntent> = new Set<VoiceIntent>([
   'job_note',
   'change_order',
   'estimate_update',
+  'proposal_projection',
   'job_log',
   'memory_write',
 ]);
@@ -161,6 +163,7 @@ const INTENT_RULES: readonly IntentRule[] = [
   { intent: 'open_money', pattern: /\b(money|budget|margin|allowance|allowances|invoice|invoices|accounts payable|accounts receivable|\bap\b|\bar\b|costs?|financials?|finance)\b/i },
   { intent: 'job_intake', pattern: /\b(job input|job intake|input (a |the |new )?job|new estimate|new (bathroom|bath|kitchen|remodel|addition|adu|project)|estimate walk|job walk|site walk|walk this (kitchen|bath|room|site)|walked into this (kitchen|bath|room|site)|start (a |the )?(job|project|estimate)|create (a |the )?(job|project|estimate)|set up (a |the )?(job|project|estimate))\b/i },
   { intent: 'change_order', pattern: /\b(change order|change-order|\bc\.?o\.?\b|work on the change)\b/i },
+  { intent: 'proposal_projection', pattern: /\b(now )?(give me|build|draft|make|create|show me|open) (the |a )?proposal\b/i },
   { intent: 'estimate_update', pattern: /\b(estimate|the bid|quote|add a line)\b/i },
   { intent: 'status_question', pattern: /\b(status|how('?s| is) .* (going|coming)|where (are|is)|on track)\b/i },
   { intent: 'job_log', pattern: /\b(log this for|log it under|add to the (daily )?log)\b/i },

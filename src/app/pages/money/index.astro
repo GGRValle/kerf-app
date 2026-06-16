@@ -13,6 +13,7 @@ import {
   MONEY_AR_ROWS,
   MONEY_AP_ROWS,
   MONEY_ALLOWANCE_ROWS,
+  moneyTenant,
 } from '../../lib/moneyFixtures.js';
 import '../../styles/money.css';
 
@@ -21,10 +22,20 @@ const projected = projectForRole(DEFAULT_BUSINESS_GRAPH_SLICE, context, null);
 if (!projected.capabilities.moneyRead) {
   return Astro.redirect('/');
 }
+if (moneyTenant() !== context.tenantId) {
+  return Astro.redirect('/');
+}
 const summary = MONEY_HOME_SUMMARY;
 ---
 
-<Layout titleKey="f_mn.home.title" activeHref="/money">
+<Layout
+  titleKey="f_mn.home.title"
+  activeHref="/money"
+  surfaceContext={{
+    surface: 'money',
+    phase: 'operating_queue',
+  }}
+>
   <article class="money-page">
     <header>
       <div class="money-crumb">{t('f_mn.crumb')}</div>

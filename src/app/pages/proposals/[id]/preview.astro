@@ -4,7 +4,8 @@ import Layout from '../../../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../../../components/SurfaceIrreversibilityWrap.astro';
 import Card from '../../../components/Card.astro';
 import { createTranslator } from '../../../../i18n/index.js';
-import { getLane6Proposal } from '../../../lib/lane6Fixtures.js';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getLane6ProposalForTenant } from '../../../lib/lane6Fixtures.js';
 import { loadProposalCaptureOrigin } from '../../../lib/loadProposalCaptureOrigin.js';
 import CaptureOriginPanel from '../../../components/CaptureOriginPanel.astro';
 import ExportActions from '../../../components/ExportActions.astro';
@@ -12,7 +13,8 @@ import { renderProposalHtml } from '../../../../proposal/render.js';
 import '../../../styles/lane6.css';
 
 const { id } = Astro.params;
-const proposal = id ? getLane6Proposal(id) : null;
+const { context } = createLayoutContext();
+const proposal = id ? getLane6ProposalForTenant(id, context.tenantId) : null;
 const { t } = createTranslator('en');
 
 if (proposal === null) {
@@ -23,7 +25,20 @@ const paperHtml = renderProposalHtml(proposal);
 const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, proposal.project_id);
 ---
 
-<Layout titleKey="f_pv1.title" activeHref="/draft-review">
+<Layout
+  titleKey="f_pv1.title"
+  activeHref="/draft-review"
+  surfaceContext={{
+    surface: 'proposal',
+    project_id: proposal.project_id,
+    estimate_id: proposal.proposal_id,
+    proposal_id: proposal.proposal_id,
+    line_ids: proposal.divisions.flatMap((division) =>
+      division.sections.flatMap((section) => section.lines.map((line) => line.line_id)),
+    ),
+    phase: proposal.status,
+  }}
+>
   <article class="lane6-page f-pv1">
     <header>
       <div class="lane6-crumb">{t('f_pv1.crumb')}</div>

@@ -16,17 +16,22 @@
 import Layout from '../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../components/SurfaceIrreversibilityWrap.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-import { LANE23_FIXTURE_DRAFT_ID } from '../lib/lane23Fixtures.js';
+import { getLane23ProjectForTenant, LANE23_FIXTURE_DRAFT_ID } from '../lib/lane23Fixtures.js';
 
-const { t } = createLayoutContext();
+const { t, context } = createLayoutContext();
 const fixtureDraftHref = `/draft-review/${LANE23_FIXTURE_DRAFT_ID}`;
+const assignedProject = getLane23ProjectForTenant('proj_wegrzyn_kitchen', context.tenantId);
+
+if (assignedProject === null) {
+  return Astro.redirect('/');
+}
 
 const assignment = {
-  client: 'Wegrzyn, Mark & Grace',
-  project: 'Kitchen + Primary bath',
+  client: assignedProject.client_name,
+  project: assignedProject.project_name,
   location: 'Kitchen',
-  tenant_id: 'tenant_ggr',
-  project_id: 'proj_wegrzyn_kitchen',
+  tenant_id: assignedProject.tenant_id,
+  project_id: assignedProject.project_id,
   matched_by: 'job-site GPS',
 };
 
@@ -39,7 +44,16 @@ const captureReturnHref = safeReturnProjectId
 const captureReturnLabel = safeReturnProjectId ? 'Back to job' : 'Back home';
 ---
 
-<Layout title="Field Capture" activeHref={Astro.url.pathname}>
+<Layout
+  title="Field Capture"
+  activeHref={Astro.url.pathname}
+  surfaceContext={{
+    surface: 'field_capture',
+    client_id: 'cli_wegrzyn',
+    project_id: assignment.project_id,
+    phase: 'capture',
+  }}
+>
   <main
     class="field-shell"
     data-view-state="pre"
