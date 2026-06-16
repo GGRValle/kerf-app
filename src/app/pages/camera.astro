@@ -237,6 +237,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const showRoutePanel = () => {
       if (!(routePanel instanceof HTMLElement)) return;
       routePanel.hidden = false;
+      routePanel.style.display = 'grid';
       if (root instanceof HTMLElement) root.classList.add('route-pending');
       syncRouteSuggestion();
       setStatus('Confirm where this capture goes, then tap Done again.');
@@ -244,6 +245,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const hideRoutePanel = () => {
       if (!(routePanel instanceof HTMLElement)) return;
       routePanel.hidden = true;
+      routePanel.style.display = 'none';
       if (root instanceof HTMLElement) root.classList.remove('route-pending');
       if (lastCapture) {
         setStatus(`${friendlyForKind(lastCapture.kind)} captured — tap Done to choose where it goes.`);
@@ -276,7 +278,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       }
     };
     const stopCamera = () => {
-      if (cameraStream instanceof MediaStream) {
+      if (typeof MediaStream !== 'undefined' && cameraStream instanceof MediaStream) {
         cameraStream.getTracks().forEach((track) => track.stop());
       }
       cameraStream = null;
@@ -353,7 +355,11 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       currentMode = mode;
       if (viewfinder instanceof HTMLElement) viewfinder.dataset.mode = mode;
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.textContent = copyForMode(mode);
-      if (recPill instanceof HTMLElement) recPill.hidden = mode !== 'walkthru' || !(recorder instanceof MediaRecorder && recorder.state === 'recording');
+      if (recPill instanceof HTMLElement) {
+        recPill.hidden = mode !== 'walkthru'
+          || typeof MediaRecorder === 'undefined'
+          || !(recorder instanceof MediaRecorder && recorder.state === 'recording');
+      }
       document.querySelectorAll('[data-mode]').forEach((button) => {
         if (button instanceof HTMLButtonElement) button.setAttribute('aria-selected', button.dataset.mode === mode ? 'true' : 'false');
       });
@@ -380,6 +386,21 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     routeClose?.addEventListener('click', () => {
       hideRoutePanel();
     });
+    const handleRouteAction = (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const action = target?.closest('#cam-route-close, #cam-route-confirm');
+      if (!action) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      if (action.id === 'cam-route-confirm') {
+        applySelectedRoute();
+      } else {
+        hideRoutePanel();
+      }
+    };
+    document.addEventListener('pointerdown', handleRouteAction, true);
+    document.addEventListener('click', handleRouteAction, true);
     const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
     const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
     const fallbackInputForMode = () => currentMode === 'walkthru' ? videoInput : photoInput;
@@ -1026,6 +1047,12 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     background: rgba(21, 27, 35, 0.92);
     color: #f8fafc;
     backdrop-filter: blur(16px);
+    pointer-events: auto;
+    touch-action: manipulation;
+  }
+  .cam-route-panel,
+  .cam-route-panel * {
+    pointer-events: auto;
   }
   .cam-route-head {
     display: flex;
@@ -1047,6 +1074,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     font-size: 1.15rem;
     font-weight: 900;
     line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
   }
   .cam-route-panel[hidden] {
     display: none;
@@ -1100,6 +1129,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     font-weight: 800;
     padding: 0.55rem 0.9rem;
     cursor: pointer;
+    touch-action: manipulation;
   }
   .cam-route-link {
     color: rgba(248,250,252,0.78);
