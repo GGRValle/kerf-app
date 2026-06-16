@@ -113,13 +113,16 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
           <div class="cam-thumb" id="cam-thumb" aria-hidden="true"></div>
           <div class="cam-captured__copy">
             <strong id="cam-captured-title">Media ready</strong>
-            <span id="cam-captured-detail">Capture media, then Done files it to this job.</span>
+            <span id="cam-captured-detail">Capture first. Choose where it goes before filing.</span>
           </div>
         </div>
       </section>
 
       <section class="cam-route-panel kg-card" id="cam-route-panel" hidden aria-label="Confirm capture destination">
-        <p class="cam-route-eyebrow">Goes to</p>
+        <div class="cam-route-head">
+          <p class="cam-route-eyebrow">Goes to</p>
+          <button type="button" class="cam-route-close" id="cam-route-close" aria-label="Close destination panel">×</button>
+        </div>
         <p class="cam-route-suggestion" id="cam-route-suggestion">
           {suggestedJob
             ? `Active job · ${suggestedJob.client_name.split(',')[0]?.trim() ?? suggestedJob.project_name}`
@@ -168,6 +171,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const routeSuggestion = document.querySelector('#cam-route-suggestion');
     const routeSelect = document.querySelector('#cam-route-select');
     const routeConfirm = document.querySelector('#cam-route-confirm');
+    const routeClose = document.querySelector('#cam-route-close');
     const viewfinder = document.querySelector('.cam-viewfinder');
     const video = document.querySelector('#cam-video');
     const canvas = document.querySelector('#cam-canvas');
@@ -241,6 +245,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       if (!(routePanel instanceof HTMLElement)) return;
       routePanel.hidden = true;
       if (root instanceof HTMLElement) root.classList.remove('route-pending');
+      if (lastCapture) {
+        setStatus(`${friendlyForKind(lastCapture.kind)} captured — tap Done to choose where it goes.`);
+      }
     };
     const applySelectedRoute = () => {
       if (routeSelect instanceof HTMLSelectElement) {
@@ -369,6 +376,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     });
     routeConfirm?.addEventListener('click', () => {
       applySelectedRoute();
+    });
+    routeClose?.addEventListener('click', () => {
+      hideRoutePanel();
     });
     const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
     const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
@@ -582,7 +592,13 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
 
 <style>
   .f-cam1 {
-    min-height: calc(100dvh - 8rem);
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    width: 100vw;
+    min-height: 100dvh;
+    overflow: hidden;
+    background: #05070b;
     color: #111827;
   }
   .cam-sr-only {
@@ -602,8 +618,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
   }
   .cam-stage {
     position: relative;
-    min-height: calc(100dvh - 8.15rem);
-    margin: -1rem;
+    min-height: 100dvh;
+    height: 100dvh;
+    margin: 0;
     padding: 0;
     overflow: hidden;
     border-radius: 0;
@@ -982,7 +999,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
   }
   @media (max-height: 760px) {
     .cam-stage {
-      min-height: calc(100dvh - 8.65rem);
+      min-height: 100dvh;
     }
     .cam-bottom-overlay {
       gap: 0.42rem;
@@ -999,9 +1016,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
   [data-grammar="canon"].f-cam1 .cam-route-panel.kg-card {
     position: absolute;
     z-index: 7;
-    left: 0.82rem;
-    right: 0.82rem;
-    bottom: 11.5rem;
+    left: max(0.82rem, env(safe-area-inset-left));
+    right: max(0.82rem, env(safe-area-inset-right));
+    bottom: calc(7.65rem + env(safe-area-inset-bottom));
     display: grid;
     gap: 0.45rem;
     padding: 0.75rem;
@@ -1009,6 +1026,27 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     background: rgba(21, 27, 35, 0.92);
     color: #f8fafc;
     backdrop-filter: blur(16px);
+  }
+  .cam-route-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .cam-route-close {
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.08);
+    color: #f8fafc;
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 900;
+    line-height: 1;
   }
   .cam-route-panel[hidden] {
     display: none;
@@ -1070,15 +1108,22 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     text-decoration: none;
   }
   .f-cam1.route-pending .cam-status {
-    bottom: 18.5rem;
+    bottom: calc(15.4rem + env(safe-area-inset-bottom));
   }
   @media (min-width: 760px) {
     .cam-stage {
-      max-width: 440px;
-      margin-inline: auto;
+      max-width: none;
+      margin-inline: 0;
     }
     .cam-stage {
-      border-radius: 24px;
+      border-radius: 0;
+    }
+    [data-grammar="canon"].f-cam1 .cam-route-panel.kg-card,
+    [data-grammar="canon"].f-cam1 .cam-captured.kg-card {
+      left: 50%;
+      right: auto;
+      width: min(28rem, calc(100vw - 2rem));
+      transform: translateX(-50%);
     }
   }
 </style>
