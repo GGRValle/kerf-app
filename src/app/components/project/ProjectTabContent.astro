@@ -66,19 +66,6 @@ const assignments = listAssignmentsForProject(
       ))
     )}
   </Card>
-) : activeTab === 'daily_log' ? (
-  <Card title={t('project.tab.daily_log')}>
-    <p>{t('project.panel.daily_log')}</p>
-    <ul class="lane3w-daily-log-list" id="project-daily-log-list" data-project-id={project.project_id} data-tenant-id={tenantId}>
-      <li class="lane23-notice">{t('project.daily_log.loading')}</li>
-    </ul>
-    <div class="lane23-action-links">
-      <a class="lane23-btn-link" href={`/camera?project_id=${project.project_id}&return_to=/projects/${project.project_id}/daily_log`}>
-        {t('project.daily_log.link_camera')}
-      </a>
-      <a class="lane23-btn-link" href="/field-capture">{t('project.daily_log.link_voice')}</a>
-    </div>
-  </Card>
 ) : activeTab === 'notes' ? (
   <Card title={t('project.tab.notes')}>
     <p>{t('project.panel.notes')}</p>
@@ -100,38 +87,6 @@ const assignments = listAssignmentsForProject(
   <Card title={t(`project.tab.${activeTab}`)}>
     <p>{t(`project.panel.${activeTab}`)}</p>
   </Card>
-)}
-
-{activeTab === 'daily_log' && (
-  <script>
-    const list = document.getElementById('project-daily-log-list');
-    const projectId = list?.getAttribute('data-project-id');
-    const tenantId = list?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
-    if (list && projectId) {
-      fetch(`/api/v1/projects/${projectId}/audit-events?tenant_id=${tenantId}`)
-        .then((r) => r.json())
-        .then((data) => {
-          const entries = (data.entries ?? []).filter(
-            (e) => e.kind === 'daily_log.entry_captured',
-          );
-          if (entries.length === 0) {
-            list.innerHTML = '<li class="lane23-notice">No daily log entries yet — use Camera or Field capture.</li>';
-            return;
-          }
-          list.innerHTML = entries
-            .slice(-8)
-            .reverse()
-            .map(
-              (e) =>
-                `<li><strong>${e.headline ?? 'Field capture'}</strong><br/><span class="lane23-notice">${e.at ?? ''} · evidence — review suggested</span></li>`,
-            )
-            .join('');
-        })
-        .catch(() => {
-          list.innerHTML = '<li class="lane23-notice">Could not load daily log.</li>';
-        });
-    }
-  </script>
 )}
 
 <style>

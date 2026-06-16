@@ -157,7 +157,7 @@ lane3WorkRoutes.post('/projects/:id/camera-capture', async (c) => {
       ok: true,
       daily_log: result,
       artifacts: pair,
-      daily_log_route: `/projects/${projectId}/daily_log`,
+      daily_log_route: `/projects/${projectId}/daily-log`,
       ...tenantOverrideFlags(c),
     },
     201,
