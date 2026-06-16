@@ -22,7 +22,7 @@ test('camera shows post-capture route suggestion with confirm/change', () => {
   const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
   assert.match(camera, /id="cam-route-panel"/);
   assert.match(camera, /cam-route-suggestion/);
-  assert.match(camera, /Confirm destination/);
+  assert.match(camera, /Confirm and file/);
   assert.match(camera, /id="cam-route-select"/);
   assert.match(camera, /applySelectedRoute/);
   assert.match(camera, /pending_route/);

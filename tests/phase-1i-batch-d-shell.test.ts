@@ -91,7 +91,7 @@ test('F-CAM1 V1 camera opens capture-first and routes after capture', () => {
   assert.match(src, /surface: 'field_capture'/);
   assert.match(src, /id="cam-route-panel"/);
   assert.match(src, /Active job ·/);
-  assert.match(src, /Confirm destination/);
+  assert.match(src, /Confirm and file/);
   assert.match(src, /Capture first — Right Hand will suggest/);
   assert.match(src, /route_pending/);
   assert.match(src, /pending_route/);
