@@ -1,93 +1,232 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import Card from '../../components/Card.astro';
-import RhSummary from '../../components/RhSummary.astro';
 
 const kbLinks = [
   {
     href: '/kb-ingestion/cost-kb-preview',
     title: 'Sample ingestion batch',
     detail: 'Inspect the validation shape without promoting costs.',
+    chip: 'Review detail',
   },
   {
     href: '/projects',
     title: 'Projects using cost context',
     detail: 'Open the project graph where estimate context is reviewed.',
+    chip: 'Project graph',
   },
   {
     href: '/proposals/prop_lane6_pass/preview',
     title: 'Proposal preview',
     detail: 'See the proposal surface that would consume approved cost knowledge.',
+    chip: 'Artifact owner',
   },
 ] as const;
 ---
 
-<Layout titleKey="kb.ingestion.title" activeHref="/kb-ingestion">
-  <section class="kb-page" aria-labelledby="kb-title">
-    <RhSummary
-      headline="Cost knowledge review"
-      detail="This is the review surface for future cost-knowledge ingestion. It is read-only in the phone pass."
-      tone="green"
-    />
+<Layout
+  titleKey="kb.ingestion.title"
+  activeHref="/kb-ingestion"
+  surfaceContext={{ surface: 'kb_ingestion', phase: 'review_queue' }}
+>
+  <section class="utility-page kg-grid" data-grammar="canon" aria-labelledby="kb-title">
+    <header class="utility-head kg-pagehead kg-span-12">
+      <div>
+        <p class="utility-crumb">Settings / Knowledge</p>
+        <h1 id="kb-title">Cost knowledge ingestion</h1>
+        <p class="utility-lede">
+          Review source batches before they can influence estimate pricing or library records.
+        </p>
+      </div>
+      <span class="kg-chip green">Review gate</span>
+    </header>
 
-    <Card eyebrow="Review queue" title="What can be inspected now">
-      <div class="kb-page__actions">
+    <section class="kg-card kg-span-12 utility-summary" aria-labelledby="kb-summary-title">
+      <h2 id="kb-summary-title">Review only, no price write</h2>
+      <p>
+        Right Hand can route you here and summarize a source batch. This page does
+        not add pricing data, train a model, or change estimate costs.
+      </p>
+    </section>
+
+    <a class="kg-card kg-span-4 utility-tile" href="/connections">
+      <h2>Connections</h2>
+      <p>OAuth and integration status. Connect/manage is admin-gated.</p>
+      <div class="utility-chips">
+        <span class="kg-chip kg-routechip">Admin gate</span>
+        <span class="kg-chip">OAuth when wired</span>
+      </div>
+    </a>
+
+    <a class="kg-card kg-span-4 utility-tile is-active" href="/kb-ingestion" aria-current="page">
+      <h2>Cost knowledge review</h2>
+      <p>Inspect incoming CSV/PDF/source batches before cost data is eligible for estimates.</p>
+      <div class="utility-chips">
+        <span class="kg-chip green">Review only</span>
+        <span class="kg-chip">No price write</span>
+      </div>
+    </a>
+
+    <a class="kg-card kg-span-4 utility-tile" href="/blackboard">
+      <h2>Blackboard preview</h2>
+      <p>Read-only memory inspection for evidence, decisions, corrections, and dry-run writes.</p>
+      <div class="utility-chips">
+        <span class="kg-chip">Preview</span>
+        <span class="kg-chip red">No train/write</span>
+      </div>
+    </a>
+
+    <section class="kg-card kg-span-8 utility-panel" aria-labelledby="kb-queue-title">
+      <div class="utility-panel-head">
+        <div>
+          <p class="utility-eyebrow">Review queue</p>
+          <h2 id="kb-queue-title">Inspectable sources</h2>
+        </div>
+        <span class="kg-chip green">No promotion here</span>
+      </div>
+
+      <div class="utility-list">
         {kbLinks.map((link) => (
-          <a class="kb-page__action" href={link.href}>
-            <span>{link.title}</span>
-            <small>{link.detail}</small>
+          <a class="utility-row utility-row-link" href={link.href}>
+            <div>
+              <h3>{link.title}</h3>
+              <p>{link.detail}</p>
+            </div>
+            <span class="kg-chip">{link.chip}</span>
           </a>
         ))}
       </div>
-    </Card>
+    </section>
 
-    <Card eyebrow="Boundary" title="No cost promotion from this page">
-      <p class="kb-page__copy">
-        This page does not add pricing data, train a model, or change estimate
-        costs. It only points to the review surfaces already wired.
+    <aside class="kg-card kg-span-4 utility-rail" aria-labelledby="kb-boundary-title">
+      <h2 id="kb-boundary-title">Right Hand boundary</h2>
+      <p>
+        Right Hand may draft review notes. It may not promote cost knowledge or
+        let a source batch affect estimates without the review gate.
       </p>
-    </Card>
+      <div class="utility-chips">
+        <span class="kg-chip kg-routechip">Owning route /kb-ingestion</span>
+        <span class="kg-chip red">No hidden price write</span>
+      </div>
+    </aside>
   </section>
 </Layout>
 
 <style>
-  .kb-page {
-    display: grid;
-    gap: 0.85rem;
+  .utility-page {
+    gap: 12px;
+    color: var(--ink);
   }
 
-  .kb-page__copy {
+  .utility-head h1,
+  .utility-summary h2,
+  .utility-tile h2,
+  .utility-panel h2,
+  .utility-rail h2,
+  .utility-row h3 {
     margin: 0;
-    color: var(--text-muted, #5c6670);
+  }
+
+  .utility-head h1 {
+    font-size: 24px;
+    line-height: 1.1;
+  }
+
+  .utility-crumb,
+  .utility-eyebrow {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .utility-lede,
+  .utility-summary p,
+  .utility-tile p,
+  .utility-rail p,
+  .utility-row p {
+    margin: 0;
+    color: var(--muted);
     line-height: 1.45;
   }
 
-  .kb-page__actions {
-    display: grid;
-    gap: 0.65rem;
+  .utility-summary h2 {
+    margin-bottom: 6px;
+    font-size: 18px;
   }
 
-  .kb-page__action {
-    display: grid;
-    gap: 0.15rem;
-    padding: 0.85rem;
-    border: 1px solid var(--border, #d8dee6);
-    border-radius: 10px;
+  .utility-tile,
+  .utility-row-link {
     color: inherit;
     text-decoration: none;
-    background: var(--surface, #fff);
   }
 
-  .kb-page__action:hover {
-    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
+  .utility-tile {
+    display: grid;
+    gap: 8px;
   }
 
-  .kb-page__action span {
-    font-weight: 700;
+  .utility-tile.is-active {
+    border-color: var(--green);
   }
 
-  .kb-page__action small {
-    color: var(--text-muted, #5c6670);
-    line-height: 1.35;
+  .utility-tile h2,
+  .utility-panel h2,
+  .utility-rail h2 {
+    font-size: 15px;
+  }
+
+  .utility-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .utility-panel,
+  .utility-rail {
+    display: grid;
+    gap: 12px;
+    align-self: start;
+  }
+
+  .utility-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .utility-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .utility-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .utility-row h3 {
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+
+  .utility-tile:hover,
+  .utility-row-link:hover {
+    border-color: var(--green);
+  }
+
+  @media screen and (max-width: 760px) {
+    .utility-panel-head,
+    .utility-row {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
   }
 </style>

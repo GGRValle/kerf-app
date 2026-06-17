@@ -1,37 +1,90 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Card from '../components/Card.astro';
-import RhSummary from '../components/RhSummary.astro';
 
 const blackboardLinks = [
   {
     href: '/decisions',
     title: 'Decision queue',
     detail: 'See what needs review before action.',
+    chip: 'Attention queue',
   },
   {
     href: '/relay',
     title: 'Office review cards',
     detail: 'Open field findings that Right Hand surfaced to the office.',
+    chip: 'Review surface',
   },
   {
     href: '/transcript-review',
     title: 'Transcript review',
-    detail: 'Inspect the captured source text before it becomes a draft.',
+    detail: 'Inspect captured source text before it becomes a draft.',
+    chip: 'Source check',
   },
 ] as const;
 ---
 
-<Layout titleKey="blackboard.title" activeHref="/blackboard">
-  <section class="blackboard-page" aria-labelledby="blackboard-title">
-    <RhSummary
-      headline="Blackboard"
-      detail="This is the memory inspection surface for the phone pass. It shows where evidence, decisions, and corrections are visible today."
-      tone="green"
-    />
+<Layout
+  titleKey="blackboard.title"
+  activeHref="/blackboard"
+  surfaceContext={{ surface: 'blackboard', phase: 'read_only_preview' }}
+>
+  <section class="utility-page kg-grid" data-grammar="canon" aria-labelledby="blackboard-title">
+    <header class="utility-head kg-pagehead kg-span-12">
+      <div>
+        <p class="utility-crumb">Settings / Memory</p>
+        <h1 id="blackboard-title">Blackboard preview</h1>
+        <p class="utility-lede">
+          Inspect evidence, decisions, corrections, dry-run writes, and audit links without granting write authority.
+        </p>
+      </div>
+      <span class="kg-chip">Read only</span>
+    </header>
 
-    <Card eyebrow="Memory posture" title="What is visible now">
-      <dl class="blackboard-page__facts">
+    <section class="kg-card kg-span-12 utility-summary" aria-labelledby="blackboard-summary-title">
+      <h2 id="blackboard-summary-title">Visible memory, no hidden write</h2>
+      <p>
+        Right Hand may route here and summarize what is visible. This surface does
+        not train, persist, or promote memory by itself.
+      </p>
+    </section>
+
+    <a class="kg-card kg-span-4 utility-tile" href="/connections">
+      <h2>Connections</h2>
+      <p>OAuth and integration status. Connect/manage is admin-gated.</p>
+      <div class="utility-chips">
+        <span class="kg-chip kg-routechip">Admin gate</span>
+        <span class="kg-chip">OAuth when wired</span>
+      </div>
+    </a>
+
+    <a class="kg-card kg-span-4 utility-tile" href="/kb-ingestion">
+      <h2>Cost knowledge review</h2>
+      <p>Inspect source batches before they can influence estimate pricing or library records.</p>
+      <div class="utility-chips">
+        <span class="kg-chip green">Review gate</span>
+        <span class="kg-chip">No price write</span>
+      </div>
+    </a>
+
+    <a class="kg-card kg-span-4 utility-tile is-active" href="/blackboard" aria-current="page">
+      <h2>Blackboard preview</h2>
+      <p>Read-only memory inspection for evidence, decisions, corrections, and dry-run writes.</p>
+      <div class="utility-chips">
+        <span class="kg-chip">Preview</span>
+        <span class="kg-chip red">No hidden write</span>
+      </div>
+    </a>
+
+    <section class="kg-card kg-span-8 utility-panel" aria-labelledby="blackboard-posture-title">
+      <div class="utility-panel-head">
+        <div>
+          <p class="utility-eyebrow">Memory posture</p>
+          <h2 id="blackboard-posture-title">What is visible now</h2>
+        </div>
+        <span class="kg-chip red">No train/write</span>
+      </div>
+
+      <dl class="utility-facts">
         <div>
           <dt>Evidence</dt>
           <dd>Field captures, transcripts, office review cards, and project audit trails.</dd>
@@ -42,80 +95,173 @@ const blackboardLinks = [
         </div>
         <div>
           <dt>Status</dt>
-          <dd>Read-only preview. This page does not promote memory or train anything.</dd>
+          <dd>Read-only preview. This route does not promote memory or train anything.</dd>
         </div>
       </dl>
-    </Card>
+    </section>
 
-    <Card eyebrow="Open related surfaces" title="Where to inspect">
-      <div class="blackboard-page__actions">
-        {blackboardLinks.map((link) => (
-          <a class="blackboard-page__action" href={link.href}>
-            <span>{link.title}</span>
-            <small>{link.detail}</small>
-          </a>
-        ))}
+    <aside class="kg-card kg-span-4 utility-rail" aria-labelledby="blackboard-boundary-title">
+      <h2 id="blackboard-boundary-title">Right Hand boundary</h2>
+      <p>
+        Right Hand can summarize memory state and draft review notes. It may not
+        write durable memory without the matching visible gate.
+      </p>
+      <div class="utility-chips">
+        <span class="kg-chip kg-routechip">Owning route /blackboard</span>
+        <span class="kg-chip red">No hidden memory write</span>
       </div>
-    </Card>
+    </aside>
+
+    <nav class="kg-card kg-span-12 utility-actions" aria-label="Blackboard inspection links">
+      {blackboardLinks.map((link) => (
+        <a class="utility-action" href={link.href}>
+          <span>{link.title}</span>
+          <small>{link.detail}</small>
+          <em class="kg-chip">{link.chip}</em>
+        </a>
+      ))}
+    </nav>
   </section>
 </Layout>
 
 <style>
-  .blackboard-page {
-    display: grid;
-    gap: 0.85rem;
+  .utility-page {
+    gap: 12px;
+    color: var(--ink);
   }
 
-  .blackboard-page__facts {
-    display: grid;
-    gap: 0.75rem;
+  .utility-head h1,
+  .utility-summary h2,
+  .utility-tile h2,
+  .utility-panel h2,
+  .utility-rail h2 {
     margin: 0;
   }
 
-  .blackboard-page__facts div {
-    display: grid;
-    gap: 0.2rem;
+  .utility-head h1 {
+    font-size: 24px;
+    line-height: 1.1;
   }
 
-  .blackboard-page__facts dt {
-    font-size: 0.68rem;
-    letter-spacing: 0.1em;
+  .utility-crumb,
+  .utility-eyebrow {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
     text-transform: uppercase;
-    font-weight: 700;
-    color: var(--text-muted, #5c6670);
   }
 
-  .blackboard-page__facts dd {
+  .utility-lede,
+  .utility-summary p,
+  .utility-tile p,
+  .utility-rail p,
+  .utility-facts dd,
+  .utility-action small {
     margin: 0;
-    line-height: 1.4;
+    color: var(--muted);
+    line-height: 1.45;
   }
 
-  .blackboard-page__actions {
-    display: grid;
-    gap: 0.65rem;
+  .utility-summary h2 {
+    margin-bottom: 6px;
+    font-size: 18px;
   }
 
-  .blackboard-page__action {
-    display: grid;
-    gap: 0.15rem;
-    padding: 0.85rem;
-    border: 1px solid var(--border, #d8dee6);
-    border-radius: 10px;
+  .utility-tile,
+  .utility-action {
     color: inherit;
     text-decoration: none;
-    background: var(--surface, #fff);
   }
 
-  .blackboard-page__action:hover {
-    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
+  .utility-tile {
+    display: grid;
+    gap: 8px;
   }
 
-  .blackboard-page__action span {
-    font-weight: 700;
+  .utility-tile.is-active {
+    border-color: var(--red);
   }
 
-  .blackboard-page__action small {
-    color: var(--text-muted, #5c6670);
-    line-height: 1.35;
+  .utility-tile h2,
+  .utility-panel h2,
+  .utility-rail h2 {
+    font-size: 15px;
+  }
+
+  .utility-chips,
+  .utility-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .utility-panel,
+  .utility-rail {
+    display: grid;
+    gap: 12px;
+    align-self: start;
+  }
+
+  .utility-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .utility-facts {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .utility-facts div {
+    display: grid;
+    gap: 3px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .utility-facts dt {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .utility-action {
+    display: grid;
+    gap: 5px;
+    min-width: 190px;
+    flex: 1 1 0;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+
+  .utility-action span {
+    font-weight: 800;
+  }
+
+  .utility-action em {
+    width: fit-content;
+    font-style: normal;
+  }
+
+  .utility-tile:hover,
+  .utility-action:hover {
+    border-color: var(--red);
+  }
+
+  @media screen and (max-width: 760px) {
+    .utility-panel-head,
+    .utility-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
   }
 </style>

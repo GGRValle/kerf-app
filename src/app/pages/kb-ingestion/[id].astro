@@ -1,23 +1,37 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import Card from '../../components/Card.astro';
-import Chip from '../../components/Chip.astro';
 
 const { id } = Astro.params;
 const batchId = id ?? 'cost-kb-preview';
 ---
 
-<Layout titleKey="kb.ingestion.detail.title" activeHref="/kb-ingestion">
-  <section class="kb-detail" aria-labelledby="kb-detail-title">
-    <p class="kb-detail__crumb"><a href="/kb-ingestion">Back to cost knowledge review</a></p>
+<Layout
+  titleKey="kb.ingestion.detail.title"
+  activeHref="/kb-ingestion"
+  surfaceContext={{ surface: 'kb_ingestion', phase: 'review_detail' }}
+>
+  <section class="utility-page kg-grid" data-grammar="canon" aria-labelledby="kb-detail-title">
+    <header class="utility-head kg-pagehead kg-span-12">
+      <div>
+        <p class="utility-crumb"><a href="/kb-ingestion">Cost knowledge review</a> / Batch</p>
+        <h1 id="kb-detail-title">{batchId}</h1>
+        <p class="utility-lede">
+          Review the source shape before any cost data is eligible for estimates.
+        </p>
+      </div>
+      <span class="kg-chip green">Review gate</span>
+    </header>
 
-    <Card eyebrow="Ingestion batch" title={batchId}>
-      <div class="kb-detail__status">
-        <Chip label="Preview" tone="amber" />
-        <span>Read-only inspection. No pricing data is imported from this page.</span>
+    <section class="kg-card kg-span-8 utility-panel" aria-labelledby="kb-detail-batch-title">
+      <div class="utility-panel-head">
+        <div>
+          <p class="utility-eyebrow">Ingestion batch</p>
+          <h2 id="kb-detail-batch-title">Preview only</h2>
+        </div>
+        <span class="kg-chip">No import performed</span>
       </div>
 
-      <dl class="kb-detail__facts">
+      <dl class="utility-facts">
         <div>
           <dt>What this represents</dt>
           <dd>A future batch of cost data that must pass validation before promotion.</dd>
@@ -26,80 +40,155 @@ const batchId = id ?? 'cost-kb-preview';
           <dt>Current state</dt>
           <dd>Preview only. No data has been imported, trained, or promoted.</dd>
         </div>
+        <div>
+          <dt>Gate</dt>
+          <dd>Review approval is required before a source batch can influence estimate pricing.</dd>
+        </div>
       </dl>
-    </Card>
+    </section>
 
-    <Card eyebrow="Next move" title="Open a wired surface">
-      <div class="kb-detail__actions">
-        <a href="/kb-ingestion">Cost knowledge review</a>
-        <a href="/projects">Projects</a>
-        <a href="/proposals/prop_lane6_pass/preview">Proposal preview</a>
+    <aside class="kg-card kg-span-4 utility-rail" aria-labelledby="kb-detail-boundary-title">
+      <h2 id="kb-detail-boundary-title">Right Hand boundary</h2>
+      <p>
+        Right Hand can summarize the batch and draft review notes. It cannot
+        promote these costs, update the library, or change an estimate here.
+      </p>
+      <div class="utility-chips">
+        <span class="kg-chip green">Review only</span>
+        <span class="kg-chip red">No price write</span>
       </div>
-    </Card>
+    </aside>
+
+    <nav class="kg-card kg-span-12 utility-actions" aria-label="Knowledge review links">
+      <a class="utility-action" href="/kb-ingestion">
+        <span>Cost knowledge review</span>
+        <small>Return to the utility queue.</small>
+      </a>
+      <a class="utility-action" href="/projects">
+        <span>Projects</span>
+        <small>Open the project graph that consumes approved context.</small>
+      </a>
+      <a class="utility-action" href="/proposals/prop_lane6_pass/preview">
+        <span>Proposal preview</span>
+        <small>Inspect the artifact surface that would use approved pricing context.</small>
+      </a>
+    </nav>
   </section>
 </Layout>
 
 <style>
-  .kb-detail {
-    display: grid;
-    gap: 0.85rem;
+  .utility-page {
+    gap: 12px;
+    color: var(--ink);
   }
 
-  .kb-detail__crumb {
-    margin: 0;
-    font-size: 0.85rem;
-  }
-
-  .kb-detail__crumb a,
-  .kb-detail__actions a {
-    color: var(--accent, #0f766e);
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-  .kb-detail__status {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.85rem;
-    color: var(--text-muted, #5c6670);
-  }
-
-  .kb-detail__facts {
-    display: grid;
-    gap: 0.75rem;
+  .utility-head h1,
+  .utility-panel h2,
+  .utility-rail h2 {
     margin: 0;
   }
 
-  .kb-detail__facts div {
-    display: grid;
-    gap: 0.2rem;
+  .utility-head h1 {
+    font-size: 24px;
+    line-height: 1.1;
   }
 
-  .kb-detail__facts dt {
-    font-size: 0.68rem;
-    letter-spacing: 0.1em;
+  .utility-crumb,
+  .utility-eyebrow {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
     text-transform: uppercase;
-    font-weight: 700;
-    color: var(--text-muted, #5c6670);
   }
 
-  .kb-detail__facts dd {
-    margin: 0;
-    line-height: 1.4;
-  }
-
-  .kb-detail__actions {
-    display: grid;
-    gap: 0.65rem;
-  }
-
-  .kb-detail__actions a {
-    display: block;
-    padding: 0.75rem 0.85rem;
-    border: 1px solid var(--border, #d8dee6);
-    border-radius: 10px;
+  .utility-crumb a,
+  .utility-action {
     color: inherit;
-    background: var(--surface, #fff);
+    text-decoration: none;
+  }
+
+  .utility-lede,
+  .utility-rail p,
+  .utility-facts dd,
+  .utility-action small {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .utility-panel,
+  .utility-rail {
+    display: grid;
+    gap: 12px;
+    align-self: start;
+  }
+
+  .utility-panel h2,
+  .utility-rail h2 {
+    font-size: 15px;
+  }
+
+  .utility-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .utility-facts {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .utility-facts div {
+    display: grid;
+    gap: 3px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .utility-facts dt {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .utility-chips,
+  .utility-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .utility-action {
+    display: grid;
+    gap: 3px;
+    min-width: 180px;
+    flex: 1 1 0;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+
+  .utility-action span {
+    font-weight: 800;
+  }
+
+  .utility-action:hover {
+    border-color: var(--green);
+  }
+
+  @media screen and (max-width: 760px) {
+    .utility-panel-head,
+    .utility-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
   }
 </style>

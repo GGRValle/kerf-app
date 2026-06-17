@@ -120,6 +120,10 @@ const REGISTRY: ReadonlyArray<{ surface: string; file: string; contract: CanonCo
   { surface: 'Client Create', file: 'src/app/pages/clients/new.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
   { surface: 'Project Setup', file: 'src/app/pages/projects/new.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
   { surface: 'Design Workspace', file: 'src/app/pages/design/[projectId].astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
+  { surface: 'Connections', file: 'src/app/pages/connections.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
+  { surface: 'Cost Knowledge Ingestion', file: 'src/app/pages/kb-ingestion/index.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
+  { surface: 'Cost Knowledge Detail', file: 'src/app/pages/kb-ingestion/[id].astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
+  { surface: 'Blackboard', file: 'src/app/pages/blackboard.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
 ];
 
 test('canon coverage registry: tracked surfaces enforce-on-adoption', () => {

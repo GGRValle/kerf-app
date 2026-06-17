@@ -105,6 +105,15 @@ test('spine surfaces emit SurfaceContext through Layout props', () => {
 
   const fieldCapture = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
   assert.match(fieldCapture, /surface: 'field_capture'/);
+
+  const connections = readFileSync(path.join(ROOT, 'src/app/pages/connections.astro'), 'utf8');
+  assert.match(connections, /surface: 'connections'/);
+
+  const kbIngestion = readFileSync(path.join(ROOT, 'src/app/pages/kb-ingestion/index.astro'), 'utf8');
+  assert.match(kbIngestion, /surface: 'kb_ingestion'/);
+
+  const blackboard = readFileSync(path.join(ROOT, 'src/app/pages/blackboard.astro'), 'utf8');
+  assert.match(blackboard, /surface: 'blackboard'/);
 });
 
 test('proposal preview denies forged cross-tenant proposal ids under the server principal', () => {

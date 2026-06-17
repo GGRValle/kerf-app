@@ -1,92 +1,286 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Card from '../components/Card.astro';
-import RhSummary from '../components/RhSummary.astro';
 import { CONNECTIONS, connectionStatusLabel } from '../lib/connectionsRegistry.js';
 
 const connected = CONNECTIONS.filter((c) => c.status === 'connected').length;
+const total = CONNECTIONS.length;
 ---
 
-<Layout title="Connections" activeHref="/settings">
-  <section class="connections-page" aria-labelledby="connections-title">
-    <div class="connections-crumb"><a href="/settings">Settings</a> · Connections</div>
-    <h1 id="connections-title" class="connections-title">Connections</h1>
+<Layout
+  title="Connections"
+  activeHref="/connections"
+  surfaceContext={{ surface: 'connections', phase: 'admin_review' }}
+>
+  <section class="utility-page kg-grid" data-grammar="canon" aria-labelledby="connections-title">
+    <header class="utility-head kg-pagehead kg-span-12">
+      <div>
+        <p class="utility-crumb">Settings / Utilities</p>
+        <h1 id="connections-title">Connections, KB, Blackboard</h1>
+        <p class="utility-lede">
+          Configure integrations, review cost knowledge, and inspect memory state with visible gates.
+        </p>
+      </div>
+      <span class="kg-chip kg-routechip">Admin / review utilities</span>
+    </header>
 
-    <RhSummary
-      headline="One card per integration"
-      detail={`${connected} of ${CONNECTIONS.length} connected. Connecting opens a real OAuth flow when wired; nothing here is a dead toggle. Outbound (email / SMS / e-sign) always confirms with you first.`}
-      tone="green"
-    />
+    <section class="kg-card kg-span-12 utility-summary" aria-labelledby="utility-summary-title">
+      <h2 id="utility-summary-title">Useful, but never silent</h2>
+      <p>
+        Right Hand can route here and summarize status. Every integration, KB promotion,
+        or memory consequence stays behind the visible admin or review gate.
+      </p>
+    </section>
 
-    <div class="connections-grid">
-      {CONNECTIONS.map((conn) => (
-        <Card eyebrow={conn.category} title={conn.name}>
-          <p class="connections-purpose">{conn.purpose}</p>
-          <div class="connections-row">
-            <span class:list={['connections-chip', `is-${conn.status}`]}>
-              {connectionStatusLabel(conn.status)}
-            </span>
-            <button
-              type="button"
-              class="connections-connect"
-              data-connection={conn.id}
-              data-status={conn.status}
-              data-mechanism={conn.mechanism}
-            >
-              {conn.status === 'connected' ? 'Manage' : 'Connect'}
-            </button>
-          </div>
-          <p class="connections-status" data-status-for={conn.id} role="status" aria-live="polite"></p>
-        </Card>
-      ))}
-    </div>
+    <a class="kg-card kg-span-4 utility-tile is-active" href="/connections" aria-current="page">
+      <h2>Connections</h2>
+      <p>OAuth and integration status. Connect/manage is admin-gated and never stores credentials from a fake toggle.</p>
+      <div class="utility-chips">
+        <span class="kg-chip kg-routechip">Admin gate</span>
+        <span class="kg-chip">{connected} connected</span>
+      </div>
+    </a>
+
+    <a class="kg-card kg-span-4 utility-tile" href="/kb-ingestion">
+      <h2>Cost knowledge review</h2>
+      <p>Inspect incoming CSV/PDF/source batches before cost data is eligible for estimates.</p>
+      <div class="utility-chips">
+        <span class="kg-chip green">Review only</span>
+        <span class="kg-chip">No price write</span>
+      </div>
+    </a>
+
+    <a class="kg-card kg-span-4 utility-tile" href="/blackboard">
+      <h2>Blackboard preview</h2>
+      <p>Read-only view of evidence, decisions, corrections, and dry-run memory candidates.</p>
+      <div class="utility-chips">
+        <span class="kg-chip">Preview</span>
+        <span class="kg-chip red">No train/write</span>
+      </div>
+    </a>
+
+    <section class="kg-card kg-span-8 utility-panel" aria-labelledby="connections-list-title">
+      <div class="utility-panel-head">
+        <div>
+          <p class="utility-eyebrow">Connection status</p>
+          <h2 id="connections-list-title">Admin-gated integrations</h2>
+        </div>
+        <span class="kg-chip">{connected} of {total} connected</span>
+      </div>
+
+      <div class="utility-list">
+        {CONNECTIONS.map((conn) => (
+          <article class="utility-row">
+            <div>
+              <h3>{conn.name}</h3>
+              <p>{conn.purpose}</p>
+            </div>
+            <div class="utility-row-actions">
+              <span class:list={['kg-chip', `is-${conn.status}`]}>
+                {connectionStatusLabel(conn.status)}
+              </span>
+              <button
+                type="button"
+                class="utility-button"
+                data-connection={conn.id}
+                data-status={conn.status}
+                data-mechanism={conn.mechanism}
+              >
+                {conn.status === 'connected' ? 'Manage' : 'Connect'}
+              </button>
+            </div>
+            <p class="utility-status" data-status-for={conn.id} role="status" aria-live="polite"></p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <aside class="kg-card kg-span-4 utility-rail" aria-labelledby="connection-boundary-title">
+      <h2 id="connection-boundary-title">Right Hand boundary</h2>
+      <p>
+        Right Hand may route here, summarize connection status, and draft setup notes.
+        It may not connect apps or store credentials without a visible admin gate.
+      </p>
+      <div class="utility-chips">
+        <span class="kg-chip kg-routechip">Owning route /connections</span>
+        <span class="kg-chip red">No hidden OAuth</span>
+      </div>
+    </aside>
   </section>
 </Layout>
 
 <script>
-  document.querySelectorAll<HTMLButtonElement>('.connections-connect').forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>('.utility-button').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.connection ?? '';
       const status = btn.dataset.status ?? 'not_wired';
       const msgEl = document.querySelector(`[data-status-for="${id}"]`);
       if (!(msgEl instanceof HTMLElement)) return;
-      // Honest: no real OAuth flow is wired yet, so we say so instead of
-      // flipping a fake toggle. When the flow lands this opens the popup.
       if (status === 'connected') {
-        msgEl.textContent = 'Already connected. The manage flow is not wired yet.';
+        msgEl.textContent = 'Already connected. Manage opens the admin-gated OAuth path when that flow is wired.';
       } else {
-        msgEl.textContent = 'The connect flow for this integration is not wired yet — coming in a later pass. No credentials are stored here.';
+        msgEl.textContent = 'Admin gate required. No credentials are stored from this preview state.';
       }
     });
   });
 </script>
 
 <style>
-  .connections-page { display: grid; gap: 0.85rem; }
-  .connections-crumb { font-size: 0.78rem; color: var(--text-muted, #5c6670); }
-  .connections-crumb a { color: inherit; }
-  .connections-title { margin: 0; font-size: 1.4rem; }
-  .connections-grid { display: grid; gap: 0.75rem; }
-  .connections-purpose { margin: 0 0 0.6rem; line-height: 1.4; color: var(--text-muted, #5c6670); }
-  .connections-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-  .connections-chip {
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    border: 1px solid var(--border, #d8dee6);
+  .utility-page {
+    gap: 12px;
+    color: var(--ink);
   }
-  .connections-chip.is-connected { color: #1b7f4b; border-color: #1b7f4b; }
-  .connections-chip.is-not_connected { color: #8a6d00; border-color: #c9a961; }
-  .connections-chip.is-not_wired { color: var(--text-muted, #5c6670); border-style: dashed; }
-  .connections-connect {
-    border: 1px solid var(--border, #2a3140);
-    background: var(--surface, #1a1f26);
-    color: var(--text, #e8ecf1);
-    border-radius: 8px;
-    padding: 0.35rem 0.8rem;
-    font-size: 0.84rem;
+
+  .utility-head h1,
+  .utility-summary h2,
+  .utility-tile h2,
+  .utility-panel h2,
+  .utility-rail h2,
+  .utility-row h3 {
+    margin: 0;
+  }
+
+  .utility-head h1 {
+    font-size: 24px;
+    line-height: 1.1;
+  }
+
+  .utility-crumb,
+  .utility-eyebrow {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .utility-lede,
+  .utility-summary p,
+  .utility-tile p,
+  .utility-rail p,
+  .utility-row p,
+  .utility-status {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .utility-summary h2 {
+    margin-bottom: 6px;
+    font-size: 18px;
+  }
+
+  .utility-tile {
+    display: grid;
+    gap: 8px;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .utility-tile.is-active {
+    border-color: var(--gold);
+  }
+
+  .utility-tile h2,
+  .utility-panel h2,
+  .utility-rail h2 {
+    font-size: 15px;
+  }
+
+  .utility-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .utility-panel {
+    display: grid;
+    gap: 12px;
+  }
+
+  .utility-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .utility-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .utility-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .utility-row h3 {
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+
+  .utility-row-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .utility-status {
+    grid-column: 1 / -1;
+    font-size: 12px;
+  }
+
+  .utility-button {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--ink);
+    padding: 6px 10px;
+    font: inherit;
+    font-weight: 800;
     cursor: pointer;
   }
-  .connections-status { margin: 0.45rem 0 0; font-size: 0.78rem; color: var(--text-muted, #98a1b3); }
+
+  .utility-button:hover,
+  .utility-tile:hover {
+    border-color: var(--gold);
+  }
+
+  .utility-rail {
+    align-self: start;
+    display: grid;
+    gap: 10px;
+  }
+
+  .kg-chip.is-connected {
+    color: var(--green);
+    background: var(--green-soft);
+    border-color: transparent;
+  }
+
+  .kg-chip.is-not_connected {
+    color: var(--amber);
+    background: var(--amber-soft);
+    border-color: transparent;
+  }
+
+  .kg-chip.is-not_wired {
+    color: var(--muted);
+    background: var(--panel);
+    border-color: var(--line);
+  }
+
+  @media screen and (max-width: 760px) {
+    .utility-panel-head,
+    .utility-row,
+    .utility-row-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
