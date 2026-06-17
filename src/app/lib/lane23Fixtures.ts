@@ -293,5 +293,8 @@ export function projectTabHref(projectId: string, tab: ProjectTabId): string {
   if (tab === 'overview') {
     return `/projects/${projectId}`;
   }
+  if (tab === 'daily_log') {
+    return `/projects/${projectId}/daily-log`;
+  }
   return `/projects/${projectId}/${tab}`;
 }

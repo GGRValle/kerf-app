@@ -42,7 +42,7 @@ const brain = project ? getProjectBrain(project.project_id) : null;
       <section class="lane23-camera-landed" id="camera-landed-banner" hidden>
         <p><strong id="camera-landed-title">Capture filed</strong></p>
         <p class="lane23-notice" id="camera-landed-detail"></p>
-        <a class="lane23-btn-link" href={`/projects/${project.project_id}/daily_log`}>{t('project.daily_log.view')}</a>
+        <a class="lane23-btn-link" href={`/projects/${project.project_id}/daily-log`}>{t('project.daily_log.view')}</a>
       </section>
 
       {brain !== null && (

@@ -1,0 +1,678 @@
+---
+// F-DL1 · Mobile Daily Log · flat canon surface (Goal 0 grammar)
+import Layout from '../../../layouts/Layout.astro';
+import NavBack from '../../../components/NavBack.astro';
+import SectionLabel from '../../../components/SectionLabel.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getProjectRecordForTenant } from '../../../lib/projectRecords.js';
+import { loadProjectAuditTrail } from '../../../../project/projectAuditProjection.js';
+import {
+  attentionCount,
+  deriveJobNotes,
+  formatLogTimeLabel,
+  todayHeaderLabel,
+  todayLogDateIso,
+} from '../../../lib/projectDailyLog.js';
+import type { I18nKey } from '../../../../i18n/keys.js';
+import type { RoleRoot } from '../../../lib/layout-props.js';
+
+const { t, context } = createLayoutContext();
+const { id } = Astro.params;
+const { tenantReader } = getApiDeps();
+const project = id ? await getProjectRecordForTenant(tenantReader, context.tenantId, id) : null;
+
+if (project === null) {
+  return Astro.redirect('/projects');
+}
+
+const auditEntries = await loadProjectAuditTrail(tenantReader, context.tenantId, project.project_id);
+const notes = deriveJobNotes(auditEntries);
+const attentionNotes = attentionCount(notes);
+const logDate = todayLogDateIso();
+const dateHeader = todayHeaderLabel();
+const justFiled = Astro.url.searchParams.get('filed');
+const fromCamera = Astro.url.searchParams.get('src') === 'camera';
+const dailyLogHref = `/projects/${project.project_id}/daily-log`;
+const cameraReturn = encodeURIComponent(dailyLogHref);
+
+const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
+  owner: 'roleRoot.owner',
+  pm: 'roleRoot.pm',
+  admin_ops: 'roleRoot.admin_ops',
+  field_hand: 'roleRoot.field_hand',
+  sub: 'roleRoot.sub',
+};
+
+const rawOperatorName =
+  context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian Asdal' : context.roleRoot;
+const operatorName = rawOperatorName.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const operatorInitials =
+  context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner'
+    ? 'CA'
+    : operatorName
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((p) => p[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'OP';
+const roleLabel = t(ROLE_LABEL_KEYS[context.roleRoot]);
+---
+
+<Layout
+  title="Daily Log"
+  activeHref={dailyLogHref}
+  surfaceContext={{
+    surface: 'daily_log',
+    project_id: project.project_id,
+    log_date: logDate,
+    phase: 'draft',
+  }}
+>
+  <main
+    id="daily-log-surface"
+    class="kg-daily-log"
+    data-grammar="canon"
+    data-surface="daily_log"
+    data-project-id={project.project_id}
+    data-log-date={logDate}
+    data-tenant={context.tenantId}
+    data-role-root={context.roleRoot}
+  >
+    <div class="kg-grid">
+      <div class="kg-span-12 kg-pagehead">
+        <div>
+          <NavBack href={`/projects/${project.project_id}`} label="‹ Back to job" />
+          <span class="kg-chip kg-routechip">Daily Log</span>
+        </div>
+        <span class="kg-chip">{dateHeader}</span>
+      </div>
+
+      {fromCamera && (
+        <aside class="kg-span-12 kg-card" role="status">
+          <span class="kg-chip green">Capture filed</span>
+          <p class="kg-lede"><strong>Filed to today&apos;s Daily Log.</strong> Right Hand reviewed it and will flag anything that needs the office.</p>
+        </aside>
+      )}
+
+      <div class="kg-span-12">
+        <SectionLabel label="1 · Who" />
+      </div>
+      <section class="kg-span-12 kg-card kg-identity" aria-label="Who">
+        <span class="kg-avatar kg-passdot">{operatorInitials}</span>
+        <div class="kg-identity-copy">
+          <strong>{operatorName}</strong>
+          <span>{roleLabel}</span>
+        </div>
+        <span class="kg-chip green">You · auto</span>
+      </section>
+
+      <div class="kg-span-12">
+        <SectionLabel label="2 · Where" />
+      </div>
+      <section class="kg-span-12 kg-card kg-identity" aria-label="Where">
+        <span class="kg-avatar kg-warndot" aria-hidden="true">📍</span>
+        <div class="kg-identity-copy">
+          <strong>{project.project_name}</strong>
+          <span>{project.address_line}</span>
+        </div>
+        <span class="kg-chip blue">On job</span>
+      </section>
+      <p class="kg-span-12 kg-muted-line">
+        Clocked into this job · <a href={`/projects/${project.project_id}`}>Wrong job? Change</a>
+      </p>
+
+      <div class="kg-span-12">
+        <SectionLabel label="3 · Today's note" />
+      </div>
+      <a class="kg-span-12 kg-rh-intake" href="/right-hand" data-rh-speak aria-label="Tap and talk — Right Hand opens">
+        <span class="kg-rh-intake-mic" aria-hidden="true">🎙</span>
+        <div>
+          <strong>Tap &amp; talk</strong>
+          <span>Right Hand opens — say what happened today</span>
+        </div>
+      </a>
+
+      <section class="kg-span-12 kg-fields" aria-label="Daily log details">
+        <label class="kg-field">
+          <span>Labor / crew</span>
+          <input type="text" id="dl-log-labor" name="labor" autocomplete="off" placeholder="Who was on site" />
+        </label>
+        <label class="kg-field">
+          <span>Work performed</span>
+          <textarea id="dl-log-work" name="work" rows="2" placeholder="What got done today"></textarea>
+        </label>
+        <label class="kg-field">
+          <span>Weather / conditions</span>
+          <input type="text" id="dl-log-weather" name="weather" autocomplete="off" placeholder="Rain, heat, access limits…" />
+        </label>
+        <label class="kg-field">
+          <span>Blockers / issues</span>
+          <textarea id="dl-log-blockers" name="blockers" rows="2" placeholder="What is holding progress"></textarea>
+        </label>
+        <label class="kg-field">
+          <span>Notes</span>
+          <textarea id="dl-log-notes" name="notes" rows="3" placeholder="Anything else for the log"></textarea>
+        </label>
+      </section>
+
+      <div class="kg-span-12">
+        <SectionLabel label="4 · Add media" total="optional" />
+      </div>
+      <div class="kg-span-12 kg-media-row">
+        <a class="kg-card kg-media-tile kg-media-tile--link" href={`/camera?project_id=${project.project_id}&return_to=${cameraReturn}`}>
+          <span aria-hidden="true">📷</span>
+          Photos
+        </a>
+        <a class="kg-card kg-media-tile kg-media-tile--link" href={`/camera?project_id=${project.project_id}&mode=walkthru&return_to=${cameraReturn}`}>
+          <span aria-hidden="true">🎬</span>
+          Video
+        </a>
+        <button class="kg-card kg-media-tile" type="button" id="dl-log-other-media">
+          <span aria-hidden="true">📎</span>
+          Other
+        </button>
+      </div>
+      <input type="file" id="dl-log-file-input" hidden accept="image/*,video/*,application/pdf" multiple />
+      <ul class="kg-span-12 kg-pending-media" id="dl-log-pending-media" hidden aria-live="polite"></ul>
+
+      <section class="kg-span-12 kg-card kg-file-gate" id="dl-log-file-gate" hidden aria-label="Confirm filing">
+        <span class="kg-chip amber">Confirm before filing</span>
+        <p class="kg-lede">Review before filing — nothing saves until you confirm.</p>
+        <pre class="kg-file-preview" id="dl-log-file-preview"></pre>
+        <div class="kg-file-gate-actions">
+          <button type="button" class="kg-btn kg-btn-ghost" id="dl-log-file-cancel">Cancel</button>
+          <button type="button" class="kg-btn kg-btn-primary" id="dl-log-file-confirm">Confirm · file to Daily Log</button>
+        </div>
+      </section>
+
+      <div class="kg-span-12">
+        <button type="button" class="kg-btn kg-btn-primary kg-btn-block" id="dl-log-file-start" disabled>
+          File to Daily Log
+        </button>
+        <p class="kg-muted-line kg-center" id="dl-log-file-sub">Saves to {project.project_name} · today</p>
+        <p class="kg-status" id="dl-log-status" role="status" hidden></p>
+      </div>
+
+      {notes.length > 0 && (
+        <>
+          <div class="kg-span-12">
+            <SectionLabel label="Filed today" count={notes.length} />
+          </div>
+          <ul class="kg-span-12 kg-note-list">
+            {notes.map((note) => (
+              <li class="kg-card kg-note-row">
+                <span class="kg-chip kg-routechip" aria-hidden="true">🎙</span>
+                <div class="kg-note-body">
+                  <p>{note.detail}</p>
+                  <div class="kg-note-meta">
+                    <span class="kg-chip">{note.headline}</span>
+                    <span class="kg-chip green">Filed · {formatLogTimeLabel(note.at)}</span>
+                    {note.media_count > 0 && (
+                      <span class="kg-chip">{note.media_count} photo{note.media_count === 1 ? '' : 's'}</span>
+                    )}
+                    {note.has_audio && <span class="kg-chip kg-routechip">via voice</span>}
+                    {note.needs_attention && <span class="kg-chip amber kg-warndot">Needs office</span>}
+                    {justFiled === note.entry_id && <span class="kg-chip green">Just filed</span>}
+                  </div>
+                  {note.needs_attention && note.attention_reason && (
+                    <a class="kg-attention-link" href="/relay">{note.attention_reason} · Open office review →</a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {notes.length === 0 && (
+        <p class="kg-span-12 kg-muted-line kg-center">No job notes filed yet — talk, add details, or snap a photo, then file.</p>
+      )}
+
+      {attentionNotes > 0 && (
+        <p class="kg-span-12 kg-center">
+          <span class="kg-chip amber">{attentionNotes} note{attentionNotes === 1 ? '' : 's'} need the office</span>
+        </p>
+      )}
+    </div>
+  </main>
+
+  <script define:vars={{ projectId: project.project_id, tenantId: context.tenantId, projectName: project.project_name }}>
+    const main = document.getElementById('daily-log-surface');
+    const fileStart = document.getElementById('dl-log-file-start');
+    const fileSub = document.getElementById('dl-log-file-sub');
+    const fileGate = document.getElementById('dl-log-file-gate');
+    const filePreview = document.getElementById('dl-log-file-preview');
+    const fileConfirm = document.getElementById('dl-log-file-confirm');
+    const fileCancel = document.getElementById('dl-log-file-cancel');
+    const statusEl = document.getElementById('dl-log-status');
+    const pendingMedia = document.getElementById('dl-log-pending-media');
+    const fileInput = document.getElementById('dl-log-file-input');
+    const otherBtn = document.getElementById('dl-log-other-media');
+    const fields = {
+      labor: document.getElementById('dl-log-labor'),
+      work: document.getElementById('dl-log-work'),
+      weather: document.getElementById('dl-log-weather'),
+      blockers: document.getElementById('dl-log-blockers'),
+      notes: document.getElementById('dl-log-notes'),
+    };
+
+    /** @type {string[]} */
+    let attachmentLabels = [];
+
+    function fieldValue(el) {
+      return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value.trim() : '';
+    }
+
+    function buildTranscript() {
+      const parts = [];
+      const work = fieldValue(fields.work);
+      const labor = fieldValue(fields.labor);
+      const weather = fieldValue(fields.weather);
+      const blockers = fieldValue(fields.blockers);
+      const notes = fieldValue(fields.notes);
+      if (work) parts.push(`Work performed: ${work}`);
+      if (labor) parts.push(`Labor/crew: ${labor}`);
+      if (weather) parts.push(`Weather: ${weather}`);
+      if (blockers) parts.push(`Blockers: ${blockers}`);
+      if (notes) parts.push(`Notes: ${notes}`);
+      return parts.join('\n');
+    }
+
+    function hasDraftContent() {
+      return buildTranscript().length > 0 || attachmentLabels.length > 0;
+    }
+
+    function refreshFileButton() {
+      if (!(fileStart instanceof HTMLButtonElement)) return;
+      fileStart.disabled = !hasDraftContent() || fileStart.dataset.filed === 'true';
+    }
+
+    function setStatus(message, kind) {
+      if (!(statusEl instanceof HTMLElement)) return;
+      statusEl.hidden = message.length === 0;
+      statusEl.textContent = message;
+      statusEl.dataset.kind = kind;
+    }
+
+    function hydrateFromRightHand() {
+      try {
+        const raw = sessionStorage.getItem('kerf.turnResolution');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.heard_text !== 'string' || parsed.heard_text.trim().length === 0) return;
+        if (fields.notes instanceof HTMLTextAreaElement && fieldValue(fields.notes).length === 0) {
+          fields.notes.value = parsed.heard_text.trim();
+        }
+        refreshFileButton();
+      } catch {
+        /* ignore */
+      }
+    }
+
+    Object.values(fields).forEach((el) => {
+      el?.addEventListener('input', refreshFileButton);
+    });
+
+    otherBtn?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', () => {
+      attachmentLabels = [];
+      if (!(pendingMedia instanceof HTMLElement) || !(fileInput instanceof HTMLInputElement)) return;
+      const names = [...(fileInput.files ?? [])].map((f) => f.name);
+      attachmentLabels = names;
+      if (names.length === 0) {
+        pendingMedia.hidden = true;
+        pendingMedia.innerHTML = '';
+      } else {
+        pendingMedia.hidden = false;
+        pendingMedia.innerHTML = names.map((n) => `<li>${n}</li>`).join('');
+      }
+      refreshFileButton();
+    });
+
+    fileStart?.addEventListener('click', () => {
+      if (!(fileGate instanceof HTMLElement) || !(filePreview instanceof HTMLElement)) return;
+      const transcript = buildTranscript();
+      const attachmentLine =
+        attachmentLabels.length > 0 ? `\n\nAttachments: ${attachmentLabels.join(', ')}` : '';
+      filePreview.textContent = transcript + attachmentLine || '(empty — add details before filing)';
+      fileGate.hidden = false;
+      fileStart.setAttribute('aria-expanded', 'true');
+    });
+
+    fileCancel?.addEventListener('click', () => {
+      if (!(fileGate instanceof HTMLElement) || !(fileStart instanceof HTMLButtonElement)) return;
+      fileGate.hidden = true;
+      fileStart.setAttribute('aria-expanded', 'false');
+    });
+
+    fileConfirm?.addEventListener('click', async () => {
+      if (!(fileConfirm instanceof HTMLButtonElement)) return;
+      const transcript = buildTranscript();
+      const blockers = fieldValue(fields.blockers);
+      const entryKind = blockers.length > 0 ? 'blocker' : 'progress_update';
+      const photoUris = attachmentLabels.map((_, i) => `kerf://daily-log/${projectId}/${Date.now()}-${i + 1}`);
+      fileConfirm.disabled = true;
+      fileConfirm.setAttribute('aria-busy', 'true');
+      setStatus('Filing…', 'pending');
+      try {
+        const res = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}/daily-log/entries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenantId,
+            entry_kind: entryKind,
+            transcript_text: transcript,
+            photo_uris: photoUris,
+            actor: { id: 'browser_operator', role: 'field_super' },
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail =
+            typeof body.error === 'string'
+              ? body.error
+              : Array.isArray(body.errors)
+                ? body.errors.join('; ')
+                : `submit_failed_${res.status}`;
+          throw new Error(detail);
+        }
+        const entryId = body?.event?.entry_id ?? body?.event?.event_id ?? '';
+        if (main instanceof HTMLElement && entryId) {
+          main.dataset.logId = entryId;
+        }
+        if (fileStart instanceof HTMLButtonElement) {
+          fileStart.dataset.filed = 'true';
+          fileStart.textContent = 'Done · close out';
+        }
+        if (fileSub instanceof HTMLElement) {
+          fileSub.textContent = `Note + media filed to ${projectName} · today`;
+        }
+        if (fileGate instanceof HTMLElement) fileGate.hidden = true;
+        setStatus('Filed — reload to see the job note in the list.', 'ok');
+        const url = new URL(window.location.href);
+        if (entryId) url.searchParams.set('filed', entryId);
+        url.searchParams.delete('src');
+        window.history.replaceState({}, '', url.pathname + url.search);
+      } catch (err) {
+        setStatus(`Could not file: ${err instanceof Error ? err.message : String(err)}`, 'error');
+      } finally {
+        fileConfirm.disabled = false;
+        fileConfirm.removeAttribute('aria-busy');
+        refreshFileButton();
+      }
+    });
+
+    hydrateFromRightHand();
+    refreshFileButton();
+  </script>
+</Layout>
+
+<style>
+  /* F-DL1 layout helpers — canon tokens only; scoped under data-grammar="canon". */
+  [data-grammar='canon'].kg-daily-log {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 6rem;
+    color: var(--ink);
+  }
+
+  [data-grammar='canon'] .kg-lede {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  [data-grammar='canon'] .kg-muted-line {
+    margin: 0.25rem 0 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  [data-grammar='canon'] .kg-muted-line a {
+    color: var(--blue);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  [data-grammar='canon'] .kg-center {
+    text-align: center;
+  }
+
+  [data-grammar='canon'] .kg-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  [data-grammar='canon'] .kg-identity-copy {
+    display: grid;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  [data-grammar='canon'] .kg-identity-copy strong {
+    font-size: 0.92rem;
+  }
+
+  [data-grammar='canon'] .kg-identity-copy span {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  [data-grammar='canon'] .kg-avatar {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+    flex: none;
+  }
+
+  [data-grammar='canon'] .kg-rh-intake {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.9rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line));
+    background: linear-gradient(120deg, var(--gold-soft), transparent);
+    color: var(--ink);
+  }
+
+  [data-grammar='canon'] .kg-rh-intake strong {
+    display: block;
+    color: var(--gold);
+    font-size: 0.92rem;
+  }
+
+  [data-grammar='canon'] .kg-rh-intake span {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+
+  [data-grammar='canon'] .kg-rh-intake-mic {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 999px;
+    background: var(--gold);
+    color: #241b07;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    font-size: 1.1rem;
+  }
+
+  [data-grammar='canon'] .kg-fields {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  [data-grammar='canon'] .kg-field {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  [data-grammar='canon'] .kg-field input,
+  [data-grammar='canon'] .kg-field textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--ink);
+    padding: 0.55rem 0.65rem;
+    font: inherit;
+  }
+
+  [data-grammar='canon'] .kg-media-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  [data-grammar='canon'] .kg-media-tile {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.35rem;
+    justify-items: center;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  [data-grammar='canon'] .kg-media-tile--link {
+    color: inherit;
+  }
+
+  [data-grammar='canon'] .kg-media-tile span {
+    font-size: 1.1rem;
+    color: var(--green);
+  }
+
+  [data-grammar='canon'] .kg-pending-media {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  [data-grammar='canon'] .kg-file-preview {
+    margin: 0.5rem 0;
+    padding: 0.55rem;
+    border-radius: var(--radius);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    max-height: 8rem;
+    overflow: auto;
+    color: var(--ink);
+  }
+
+  [data-grammar='canon'] .kg-file-gate-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  [data-grammar='canon'] .kg-btn {
+    border-radius: var(--radius);
+    padding: 0.6rem 0.85rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border: 1px solid var(--line);
+    cursor: pointer;
+  }
+
+  [data-grammar='canon'] .kg-btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  [data-grammar='canon'] .kg-btn-primary {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  [data-grammar='canon'] .kg-btn-block {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  [data-grammar='canon'] .kg-btn-block:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  [data-grammar='canon'] .kg-status {
+    font-size: 0.78rem;
+    margin-top: 0.45rem;
+    text-align: center;
+  }
+
+  [data-grammar='canon'] .kg-status[data-kind='error'] {
+    color: var(--red);
+  }
+
+  [data-grammar='canon'] .kg-status[data-kind='ok'] {
+    color: var(--green);
+  }
+
+  [data-grammar='canon'] .kg-note-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  [data-grammar='canon'] .kg-note-row {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+  }
+
+  [data-grammar='canon'] .kg-note-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  [data-grammar='canon'] .kg-note-body p {
+    margin: 0;
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  [data-grammar='canon'] .kg-note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+  }
+
+  [data-grammar='canon'] .kg-attention-link {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--amber);
+    text-decoration: none;
+  }
+</style>
