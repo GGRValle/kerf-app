@@ -193,6 +193,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
       { trigger: 'Close X', route: 'return_to or /', face: 'previous face' },
       { trigger: 'Room scan', route: '/room-capture?src=camera&mode=start', face: 'F-RC1_mobile_room_capture.html' },
       { trigger: 'Search jobs', route: '/projects?src=camera', face: 'F-PR1_mobile_projects_list.html' },
+      { trigger: 'New client / lead', route: '/clients/new?src=camera', face: 'F-CL0a_mobile_client_create.html', note: 'Capture-first route when the evidence belongs to a new lead/client.' },
+      { trigger: 'New project', route: '/projects/new?src=camera', face: 'F-PR0a_mobile_project_setup.html', note: 'Capture-first route when the job does not exist yet.' },
+      { trigger: 'Save to review', route: '/relay?src=camera', face: 'F-FU1_mobile_field_updates_review.html', note: 'Holding path when destination is not known yet.' },
       { trigger: 'Confirm and file', route: '/projects/:id?src=camera', face: 'F-PR2_mobile_project_detail.html', note: 'Filed capture should surface Daily Log handoff.' },
     ],
   },
@@ -303,7 +306,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     notes: 'Project archive/list entry.',
     next: [
       { trigger: 'Project row', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
-      { trigger: 'New project', route: '/projects/new', face: 'F-PR1_mobile_projects_list.html', note: 'No dedicated project-create face in repo.' },
+      { trigger: 'New project', route: '/projects/new', face: 'F-PR0a_mobile_project_setup.html' },
     ],
   },
   {
@@ -311,9 +314,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/projects/new.astro',
     domain: 'projects',
     surface: 'New project / project setup',
-    wireframes: ['F-PR1_mobile_projects_list.html', 'F-PR3_desktop_projects_list.html'],
-    status: 'missing_canon_face',
-    notes: 'Live form exists, but no dedicated new-project wireframe file is in docs/wireframes/canon.',
+    wireframes: ['F-PR0a_mobile_project_setup.html', 'F-PR0b_desktop_project_setup.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Dedicated mobile/desktop project setup faces are now present. Live form should match them and support new project creation from client, sales, and capture routing.',
     next: [
       { trigger: 'Cancel', route: '/projects or /clients/:id', face: 'F-PR1_mobile_projects_list.html' },
       { trigger: 'Submit', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
@@ -419,9 +422,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/design/[projectId].astro',
     domain: 'sales',
     surface: 'Design workspace',
-    wireframes: ['F-SL3_mobile_deal_detail.html', 'F-SL4_desktop_deal_detail.html', 'F-DS1_desktop_design_workspace.html'],
+    wireframes: ['F-SL3_mobile_deal_detail.html', 'F-SL4_desktop_deal_detail.html', 'F-DES1a_mobile_design_workspace.html', 'F-DS1_desktop_design_workspace.html'],
     status: 'mapped_pending_rebuild',
-    notes: 'Desktop Canon face is imported; mobile design workspace face is still missing. The live route sits between deal detail and estimate and needs a rebuild to match F-DS1 on desktop.',
+    notes: 'Mobile and desktop Canon faces are now present. The live route sits between deal detail and estimate and needs a rebuild to match F-DES1a/F-DS1.',
     next: [
       { trigger: 'Deal back', route: '/sales/:id', face: 'F-SL3_mobile_deal_detail.html' },
       { trigger: 'Open KB', route: '/library', face: 'cost knowledge face missing from repo' },
@@ -551,7 +554,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     notes: 'Lead/deal surface leading to design and estimate.',
     next: [
       { trigger: 'Pipeline back', route: '/sales', face: 'F-SL1_mobile_sales_pipeline.html' },
-      { trigger: 'Open Design workspace', route: '/design/:projectId', face: 'F-SL3_mobile_deal_detail.html' },
+      { trigger: 'Open Design workspace', route: '/design/:projectId', face: 'F-DES1a_mobile_design_workspace.html' },
       { trigger: 'Estimate builder', route: '/estimate/:projectId', face: 'F-EST1_mobile_estimate_builder.html' },
     ],
   },
@@ -707,7 +710,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Client index.',
     next: [
-      { trigger: 'New client', route: '/clients/new', face: 'F-CL1_mobile_clients_list.html' },
+      { trigger: 'New client', route: '/clients/new', face: 'F-CL0a_mobile_client_create.html' },
       { trigger: 'Client row', route: '/clients/:id', face: 'F-CL5_mobile_client_record.html' },
     ],
   },
@@ -716,9 +719,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/clients/new.astro',
     domain: 'clients',
     surface: 'New client',
-    wireframes: ['F-CL1_mobile_clients_list.html', 'F-CL3_desktop_clients_list.html'],
-    status: 'missing_canon_face',
-    notes: 'No dedicated new-client face in repo canon.',
+    wireframes: ['F-CL0a_mobile_client_create.html', 'F-CL0b_desktop_client_create.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Dedicated mobile/desktop client-create faces are now present. Live form should match them and remain an operator-confirmed client graph write.',
     next: [
       { trigger: 'Cancel', route: '/clients', face: 'F-CL1_mobile_clients_list.html' },
       { trigger: 'Submit', route: '/clients/:id', face: 'F-CL5_mobile_client_record.html' },
@@ -734,7 +737,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     notes: 'Client canonical home. Projects and warranty drill from here.',
     next: [
       { trigger: 'Back clients', route: '/clients', face: 'F-CL1_mobile_clients_list.html' },
-      { trigger: 'New project', route: '/projects/new?client_id=:id', face: 'F-PR1_mobile_projects_list.html' },
+      { trigger: 'New project', route: '/projects/new?client_id=:id', face: 'F-PR0a_mobile_project_setup.html' },
       { trigger: 'Client success', route: '/client-success/:clientId', face: 'F-CS1_mobile_client_success.html' },
       { trigger: 'Warranty', route: '/clients/:id/warranty', face: 'F-WW1a_mobile_warranty.html' },
       { trigger: 'Project row', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },

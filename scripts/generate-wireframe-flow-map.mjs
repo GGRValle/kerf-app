@@ -102,7 +102,7 @@ function domainFromId(id) {
   if (/^F-(A|P|AO|TO|SH|ES|C|FL|SU)\d/.test(id)) return 'Role homes';
   if (/^F-(S1|D1|RH|CAM|RC)/.test(id)) return 'Global phone chrome';
   if (/^F-(PR|PS|ML|CO|W1|PA|DL|PN)/.test(id)) return 'Projects';
-  if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG|DS|LIB|SA|RT)/.test(id)) return 'Sales / decisions';
+  if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG|DS|DES|LIB|SA|RT)/.test(id)) return 'Sales / decisions';
   if (/^F-(MN|BK|PU|VC|INV)/.test(id)) return 'Money';
   if (/^F-(CL|CA|CS|WW|CP|CPS|WAR)/.test(id)) return 'Clients';
   if (/^F-(E1|FD|FU|F1|FH)/.test(id)) return 'Field capture';
@@ -160,6 +160,8 @@ function systemContractForFace(id) {
     'F-F1': ['/transcript-review', 'mapped_pending_rebuild', 'review_gate', 'Transcript review -> draft/review/audit spine'],
     'F-PR1': ['/projects', 'mapped_pending_rebuild', 'navigation_only', 'Project graph index'],
     'F-PR3': ['/projects', 'mapped_pending_rebuild', 'navigation_only', 'Project graph index'],
+    'F-PR0a': ['/projects/new', 'mapped_pending_rebuild', 'operator_confirm', 'Client/project graph creation spine'],
+    'F-PR0b': ['/projects/new', 'mapped_pending_rebuild', 'operator_confirm', 'Client/project graph creation spine'],
     'F-PR2': ['/projects/:id', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project canonical home and lenses'],
     'F-PR4': ['/projects/:id', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project canonical home and lenses'],
     'F-PS1': ['/projects/:id/status', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project status lens'],
@@ -176,6 +178,7 @@ function systemContractForFace(id) {
     'F-SL3': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
     'F-SL4': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
     'F-SA1': ['/sales', 'mapped_pending_rebuild', 'navigation_only', 'Sales command home'],
+    'F-DES1a': ['/design/:projectId', 'mapped_pending_rebuild', 'review_gate', 'Deal -> design -> estimate spine'],
     'F-DS1': ['/design/:projectId', 'mapped_pending_rebuild', 'review_gate', 'Design workspace -> estimate spine'],
     'F-LIB1': ['/library', 'mapped_pending_rebuild', 'review_gate', 'Libraries / selections / cost knowledge'],
     'F-LD1a': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
@@ -195,6 +198,8 @@ function systemContractForFace(id) {
     'F-B2': ['/decisions/:id', 'mapped_pending_rebuild', 'operator_confirm', 'Decision card consequence gate'],
     'F-CL1': ['/clients', 'mapped_pending_rebuild', 'navigation_only', 'Client graph index'],
     'F-CL3': ['/clients', 'mapped_pending_rebuild', 'navigation_only', 'Client graph index'],
+    'F-CL0a': ['/clients/new', 'mapped_pending_rebuild', 'operator_confirm', 'Client graph creation spine'],
+    'F-CL0b': ['/clients/new', 'mapped_pending_rebuild', 'operator_confirm', 'Client graph creation spine'],
     'F-CL2': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client canonical home'],
     'F-CL4': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client canonical home'],
     'F-CL5': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client record'],
@@ -262,7 +267,7 @@ function transitionGate(transition, face) {
   const text = `${transition.trigger} ${transition.target || ''} ${transition.missing || ''} ${transition.note || ''}`.toLowerCase();
   if (transition.missing) return 'gap_build_required';
   if (transition.state) return 'in_face_state';
-  if (/\b(send|sign|approve|reject|confirm|file|save|submit|export|issue|record payment|create invoice|bill|pay|payment)\b/.test(text)) {
+  if (/\b(send|sign|approve|reject|confirm|file|save|submit|export|issue|record payment|create invoice|create project|create client|bill|pay|payment)\b/.test(text)) {
     if (/\b(money|invoice|ar|ap|qb|export|issue|record payment|bill|pay|payment)\b/.test(text) || /^F-(MN|BK|PU|VC|INV)/.test(transition.target || '')) return 'money_or_egress_guard';
     return 'operator_confirm';
   }
@@ -495,6 +500,9 @@ add(['F-CAM1'], [
   { trigger: 'Photo mode', ...target('F-CAM1', 'Internal camera mode') },
   { trigger: 'Scan mode', ...target('F-CAM1', 'Internal camera mode; document source for estimate/CO') },
   { trigger: 'Done / confirm destination', ...target('F-DL1', 'Route after capture; filed capture should land in Daily Log or project media') },
+  { trigger: 'Route to new client', ...target('F-CL0a', 'Capture-first route for new lead/intake') },
+  { trigger: 'Route to new project', ...target('F-PR0a', 'Capture-first route when the job does not exist yet') },
+  { trigger: 'Save to review', ...target('F-FU1', 'Hold captured evidence for office review when destination is unclear') },
   { trigger: 'Room scan', ...target('F-RC1') },
 ]);
 add(['F-ORCH1'], [
@@ -615,6 +623,12 @@ add(['F-SL3', 'F-SL4'], [
   { trigger: 'Design workspace', ...missing('Design workspace face', 'Route to the design workspace surface') },
   { trigger: 'Estimate builder', ...missing('F-EST1_mobile_estimate_builder.html') },
   { trigger: 'Proposal preview', ...target('F-PV1') },
+]);
+add(['F-DES1a'], [
+  { trigger: 'Back deal', ...target('F-SL3') },
+  { trigger: 'Build estimate', ...target('F-EST1') },
+  { trigger: 'Ask Right Hand', ...target('F-RH1', 'Right Hand can organize selections but does not price or publish') },
+  { trigger: 'Library', ...target('F-LIB1', 'Selections/cost library reference') },
 ]);
 add(['F-EST1'], [
   { trigger: 'Back project / deal', ...target('F-PR2', 'Estimate remains tied to the project graph') },
@@ -748,12 +762,36 @@ add(['F-CL1', 'F-CL3'], [
   { trigger: 'New client', ...missing('New client face', 'No dedicated Canon file') },
   { trigger: 'Archive', ...target('F-CA1a') },
 ]);
+add(['F-CL0a'], [
+  { trigger: 'Cancel', ...target('F-CL1') },
+  { trigger: 'Save client', ...target('F-CL5', 'Operator-confirmed client graph write') },
+  { trigger: 'Add project', ...target('F-PR0a') },
+  { trigger: 'Save to intake', ...target('F-FU1', 'Hold capture/intake evidence for review') },
+]);
+add(['F-CL0b'], [
+  { trigger: 'Cancel', ...target('F-CL3') },
+  { trigger: 'Save client', ...target('F-CL6', 'Operator-confirmed client graph write') },
+  { trigger: 'Add project', ...target('F-PR0b') },
+  { trigger: 'Save to intake', ...target('F-FU1', 'Hold capture/intake evidence for review') },
+]);
 add(['F-CL2', 'F-CL4', 'F-CL5', 'F-CL6'], [
   { trigger: 'Back clients', ...target('F-CL1') },
   { trigger: 'Project row', ...target('F-PR2') },
   { trigger: 'New project', ...missing('Project setup / new project face') },
   { trigger: 'Warranty', ...target('F-WW1a') },
   { trigger: 'Client success', ...target('F-CS1') },
+]);
+add(['F-PR0a'], [
+  { trigger: 'Cancel', ...target('F-PR1') },
+  { trigger: 'Create project', ...target('F-PR2', 'Operator-confirmed project graph write') },
+  { trigger: 'File capture here', ...target('F-DL1', 'Waiting capture files only after project confirmation') },
+  { trigger: 'Build estimate', ...target('F-EST1') },
+]);
+add(['F-PR0b'], [
+  { trigger: 'Cancel', ...target('F-PR3') },
+  { trigger: 'Create project', ...target('F-PR4', 'Operator-confirmed project graph write') },
+  { trigger: 'File capture here', ...target('F-DL1', 'Waiting capture files only after project confirmation') },
+  { trigger: 'Build estimate', ...target('F-EST1') },
 ]);
 add(['F-CA1a', 'F-CA1b'], [
   { trigger: 'Client record', ...target('F-CL5') },
