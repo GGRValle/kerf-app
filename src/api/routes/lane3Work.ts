@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 import type { PersistenceTenantId } from '../../persistence/events.js';
 import { appendDailyLogEntryAndSurface } from '../lib/dailyLogCommit.js';
+import { appendValidatedEvent, generateEventId } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import {
   requireApiTenant,
@@ -158,6 +159,62 @@ lane3WorkRoutes.post('/projects/:id/camera-capture', async (c) => {
       daily_log: result,
       artifacts: pair,
       daily_log_route: `/projects/${projectId}/daily_log`,
+      ...tenantOverrideFlags(c),
+    },
+    201,
+  );
+});
+
+lane3WorkRoutes.post('/camera-captures/review', async (c) => {
+  type CameraReviewBody = {
+    capture_kind?: 'photo' | 'walkthrough' | 'scan';
+    file_name?: string;
+    confirmed?: boolean;
+  };
+  const body: CameraReviewBody = await c.req.json<CameraReviewBody>().catch(() => ({}));
+  const tenant = requireApiTenant(c);
+  if (body.confirmed !== true) {
+    return c.json({ error: 'confirmation_required', message: 'Set confirmed:true to queue capture for review' }, 400);
+  }
+  const kind = body.capture_kind ?? 'photo';
+  if (kind !== 'photo' && kind !== 'walkthrough' && kind !== 'scan') {
+    return c.json({ error: 'invalid_capture_kind' }, 400);
+  }
+  const captureId = generateEventId('cap');
+  const friendly = friendlyCaptureTitle(kind);
+  const name = typeof body.file_name === 'string' && body.file_name.trim().length > 0
+    ? body.file_name.trim()
+    : `${kind}-capture`;
+  const sourceKind = kind === 'walkthrough' ? 'external' : 'photo';
+  const uriKind = kind === 'walkthrough' ? 'walkthrough' : kind;
+  const { eventStore } = getApiDeps();
+  const event = await appendValidatedEvent(
+    {
+      store: eventStore,
+      tenant_id: tenant,
+      correlation_id: captureId,
+      actor: { id: 'field_capture', role: 'field_super' },
+      source_refs: [{
+        kind: sourceKind,
+        uri: `kerf://camera-review/${captureId}/${uriKind}`,
+        excerpt: name,
+      }],
+    },
+    {
+      type: 'capture.recorded',
+      capture_id: captureId,
+      transcript_text: `${friendly} capture queued for office review · ${name}`,
+      audio_uri: null,
+      duration_ms: 0,
+      language: null,
+    },
+  );
+  return c.json(
+    {
+      ok: true,
+      capture_id: captureId,
+      event_id: event.event_id,
+      review_route: `/relay?src=camera&capture_id=${encodeURIComponent(captureId)}`,
       ...tenantOverrideFlags(c),
     },
     201,

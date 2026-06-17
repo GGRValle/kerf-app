@@ -28,6 +28,18 @@ test('camera shows post-capture route suggestion with confirm/change', () => {
   assert.match(camera, /pending_route/);
 });
 
+test('camera route sheet is not job-only: it exposes job, lead, and review destinations', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  assert.match(camera, /data-route-kind="job"/);
+  assert.match(camera, /Existing job/);
+  assert.match(camera, /data-route-kind="lead"/);
+  assert.match(camera, /New lead/);
+  assert.match(camera, /data-route-kind="review"/);
+  assert.match(camera, /Review later/);
+  assert.match(camera, /\/api\/v1\/sales\/deals/);
+  assert.match(camera, /\/api\/v1\/camera-captures\/review/);
+});
+
 test('field capture removes pre-capture destination picker and routes at preflight', () => {
   const field = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
   const preStart = field.indexOf('state-pre');

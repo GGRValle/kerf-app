@@ -100,3 +100,47 @@ test('camera capture cannot write a GGR project through a Valle session', async 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('camera review destination persists a tenant-scoped capture without requiring a project', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'p0e-camera-review-'));
+  process.env['PERSISTENCE_DIR'] = dir;
+  resetApiDepsForTests();
+  const app = createMountedApiRouter();
+  try {
+    const res = await app.request('/api/v1/camera-captures/review', {
+      method: 'POST',
+      headers: {
+        Authorization: PLATFORM_SESSION_GGR_OWNER,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        capture_kind: 'photo',
+        file_name: 'new-lead-site-photo.jpg',
+        confirmed: true,
+      }),
+    });
+    assert.equal(res.status, 201);
+    const body = await res.json() as { ok: boolean; capture_id: string; review_route: string };
+    assert.equal(body.ok, true);
+    assert.match(body.capture_id, /^cap_/);
+    assert.match(body.review_route, /\/relay\?src=camera&capture_id=/);
+
+    const events = await readEvents(dir);
+    assert.equal(events.length, 1);
+    assert.equal(events[0]!['type'], 'capture.recorded');
+    assert.equal(events[0]!['tenant_id'], 'tenant_ggr');
+    assert.equal(events[0]!['correlation_id'], body.capture_id);
+
+    const feed = await app.request('/api/v1/field-daily/relay-feed', {
+      headers: { Authorization: PLATFORM_SESSION_GGR_OWNER },
+    });
+    assert.equal(feed.status, 200);
+    const feedBody = await feed.json() as { items: readonly { entry_id: string; summary: string }[] };
+    assert.equal(feedBody.items[0]?.entry_id, body.capture_id);
+    assert.equal(feedBody.items[0]?.summary, 'Camera capture awaiting review');
+  } finally {
+    resetApiDepsForTests();
+    delete process.env['PERSISTENCE_DIR'];
+    await rm(dir, { recursive: true, force: true });
+  }
+});

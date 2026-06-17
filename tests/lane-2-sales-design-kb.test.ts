@@ -215,6 +215,33 @@ test('GET /sales/deals returns pipeline columns for the tenant', async () => {
   assert.ok(body.deals.length > 0);
 });
 
+test('POST /sales/deals creates a lead-stage deal without minting a project', async () => {
+  resetSalesStore('tenant_ggr');
+  const gated = await apiRouter.request('/sales/deals', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'Camera lead', client_name: 'Client TBD' }),
+  });
+  assert.equal(gated.status, 409);
+
+  const res = await apiRouter.request('/sales/deals', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      confirmed: true,
+      deal_id: 'deal_camera_test',
+      name: 'Camera capture lead',
+      client_name: 'Client TBD',
+      source: 'Camera',
+    }),
+  });
+  assert.equal(res.status, 201);
+  const body = await res.json() as { deal: { id: string; stage: string; project_id?: string } };
+  assert.equal(body.deal.id, 'deal_camera_test');
+  assert.equal(body.deal.stage, 'estimating');
+  assert.equal(body.deal.project_id, undefined);
+});
+
 test('Right Hand estimating creates a lead-stage deal without minting a project', () => {
   const deal = upsertEstimatingDeal({
     tenant: 'tenant_ggr',
