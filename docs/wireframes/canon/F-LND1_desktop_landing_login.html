@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right Hand · F-LND1 · Desktop Landing / Login + role routing</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--accent:#C9A961;--rh:#C9A961;--gold:#F5B544;--green:#38C977;--blue:#7BA8FF;--violet:#A78BFA;--red:#F87171;--coral:#F0997B}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--accent:#8A6D29;--rh:#8A6D29;--gold:#9A6B12;--green:#1E8E50;--blue:#185FA5;--violet:#6B4FBF}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--accent);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:28px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 340px;gap:28px;margin-bottom:40px}.frame-label{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin-bottom:10px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:22px;display:flex;justify-content:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}.frame-spec h4.warn{color:var(--red)}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.win{width:100%;max-width:920px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.win-dots{display:flex;align-items:center;gap:6px;padding:7px 12px;background:#000;border-bottom:1px solid var(--bds)}.win-dots .d{width:9px;height:9px;border-radius:50%;background:#333}.win-dots .u{margin-left:12px;font-size:10px;color:var(--mute);font-family:monospace}
+/* login split */
+.login{display:flex;min-height:520px}
+.brandcol{width:46%;flex:none;background:linear-gradient(160deg,#1B130A 0%,#0A0D11 60%);padding:40px 34px;display:flex;flex-direction:column;border-right:1px solid var(--bds)}
+.brandcol .wm{font-size:22px;font-weight:800;color:var(--rh);display:flex;align-items:center;gap:11px}.brandcol .wm .mk{width:34px;height:34px;border-radius:50%;background:var(--rh);display:flex;align-items:center;justify-content:center;color:#241B07}.brandcol .wm .mk svg{width:19px;height:19px}
+.brandcol .tag{font-size:27px;font-weight:800;line-height:1.2;margin-top:auto;letter-spacing:-.01em}
+.brandcol .sub{font-size:13px;color:var(--dim);margin-top:14px;line-height:1.6;max-width:300px}
+.brandcol .ft{margin-top:34px;font-size:11px;color:var(--mute);display:flex;align-items:center;gap:8px}.brandcol .ft svg{width:13px;height:13px;color:var(--green)}
+.formcol{flex:1;padding:44px 40px;display:flex;flex-direction:column;justify-content:center}
+.formcol h2{font-size:18px;font-weight:700;margin:0 0 4px}.formcol .lead{font-size:12.5px;color:var(--dim);margin:0 0 22px}
+.fld{margin-bottom:13px}.fld label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:700;display:block;margin-bottom:5px}
+.fld .inp{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--t);display:flex;align-items:center;justify-content:space-between}.fld .inp.ph{color:var(--mute)}
+.fld .inp .eye{color:var(--mute);font-size:11px}
+.signin{width:100%;background:var(--rh);color:#241B07;border:none;border-radius:9px;padding:12px;font-size:13.5px;font-weight:700;margin-top:6px;text-align:center}
+.alt-divider{display:flex;align-items:center;gap:10px;margin:20px 0;color:var(--mute);font-size:10.5px}.alt-divider:before,.alt-divider:after{content:"";flex:1;height:1px;background:var(--bds)}
+.sso{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--bd);border-radius:9px;padding:11px;font-size:12.5px;font-weight:600;color:var(--t);margin-bottom:9px;background:var(--s)}
+.sso .g{width:16px;height:16px;border-radius:50%;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0 100%);flex:none}
+.sso .m{width:15px;height:15px;background:linear-gradient(90deg,#F25022 50%,#7FBA00 50%);flex:none}
+.ws{margin-top:18px;background:rgba(201,169,97,.08);border:1px solid rgba(201,169,97,.28);border-radius:10px;padding:11px 13px;font-size:11px;color:var(--dim);display:flex;align-items:center;gap:9px}.ws .ic{width:24px;height:24px;border-radius:7px;background:rgba(201,169,97,.18);color:var(--rh);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex:none}.ws b{color:var(--t)}
+.smol{font-size:10.5px;color:var(--mute);margin-top:16px;line-height:1.5}.smol a{color:var(--rh)}
+/* routing map */
+.route{padding:30px 34px}
+.route h2{font-size:16px;font-weight:700;margin:0 0 4px}.route .lead{font-size:12px;color:var(--dim);margin:0 0 20px;max-width:560px}
+.flow{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.node{background:var(--s);border:1px solid var(--bd);border-radius:10px;padding:11px 14px;font-size:12px;font-weight:600}
+.node.rh{border-color:rgba(201,169,97,.4);color:var(--rh);background:rgba(201,169,97,.08)}
+.arr{color:var(--mute);font-size:16px}
+.rtbl{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.rrow{display:flex;align-items:center;gap:11px;background:var(--s);border:1px solid var(--bds);border-radius:10px;padding:10px 13px}
+.rrow .rdot{width:9px;height:9px;border-radius:50%;flex:none}
+.rrow .who{font-size:12.5px;font-weight:600}.rrow .what{font-size:10.5px;color:var(--mute);margin-top:1px}
+.rrow .dest{margin-left:auto;font-family:monospace;font-size:11px;color:var(--rh);flex:none}
+.rrow .plat{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);border:1px solid var(--bd);border-radius:20px;padding:1px 6px;flex:none}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}.callout{background:var(--bg2);border:1px solid var(--bd);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--dim);grid-column:1/-1}.callout .ct{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;display:block;margin-bottom:5px}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#EEE;--s2:#E4E8ED;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#8A6D29;--rh:#8A6D29;--gold:#9A6B12}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.win{box-shadow:none!important}.win-dots{background:#ddd!important}@page{size:letter landscape;margin:.3in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · the front door + where every login lands · icons inline</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Right Hand · Entry</span><span class="sep">›</span><span class="step current">F-LND1 · Desktop Landing / Login</span></div>
+<h1>F-LND1 · Desktop Landing / Login — the front door, and where every login lands</h1>
+<p>The entry surface before any role home. Sign in with email + password or SSO, against a <strong>workspace</strong> (the tenant — GGR, Valle, or a customer shop). Right Hand reads your role and drops you on <strong>your</strong> home — the same shell, projected to your seat. Frame 2 is the routing map so we can start mapping the whole app from one root.</p></div>
+
+<div class="frame"><div class="frame-label">Frame 1 · Sign in</div>
+<div class="frame-render"><div class="win">
+<div class="win-dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">app.righthand · /login</span></div>
+<div class="login">
+<div class="brandcol">
+<div class="wm"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></span>Right Hand</div>
+<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--rh);font-weight:700;margin-bottom:14px">Decisions, not dashboards</div>
+<div class="tag">Every contractor<br>needs a Right Hand.</div>
+<div class="sub">Turn your experience into results. Stop doing office work at night, keep your field and office in sync, and always know what needs you next — just by talking.</div>
+<div class="ft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Your data stays in your workspace.</div>
+</div>
+<div class="formcol">
+<h2>Sign in</h2>
+<p class="lead">Welcome back. Pick up where your crew left off.</p>
+<div class="fld"><label>Work email</label><div class="inp ph">you@yourcompany.com</div></div>
+<div class="fld"><label>Password</label><div class="inp ph">••••••••<span class="eye">Show</span></div></div>
+<div class="signin">Sign in</div>
+<div class="alt-divider">or continue with</div>
+<div class="sso"><span class="g"></span>Continue with Google</div>
+<div class="sso"><span class="m"></span>Continue with Microsoft</div>
+<div class="ws"><span class="ic">GG</span><div>Signing in to <b>GGR Design + Remodeling</b> · switch workspace</div></div>
+<div class="smol">Forgot password? · New crew member? Ask your admin for an invite. <br>Personal settings (email, password, language) live under your name once you're in — see <a>F-US1</a>.</div>
+</div>
+</div>
+</div></div>
+<div class="frame-spec"><h3>F-LND1 · Spec</h3>
+<h4>What the login does</h4><ul>
+<li><b>Email + password</b> or <b>SSO</b> (Google / Microsoft 365) — real auth, not mocked in this wireframe.</li>
+<li>Sign-in is always <b>to a workspace</b> (the tenant). Switching workspace is explicit — no cross-tenant blur.</li>
+<li>After auth, Right Hand routes you to <b>your role home</b> (Frame 2).</li>
+</ul>
+<h4 class="warn">Safety (locked rules)</h4><ul>
+<li>Right Hand <b>never enters or stores your password</b> — credential handling is the auth layer's job, not the agent's.</li>
+<li>SSO consent is a real OAuth grant the <b>user</b> approves; the agent doesn't auto-accept it.</li>
+<li>Workspace = tenant boundary. A login resolves to exactly one tenant; isolation starts here.</li>
+</ul>
+<h4>Personal vs. admin</h4><ul>
+<li>Personal settings (your email, password, language, theme) → <code>F-US1</code>, reached from your name top-right.</li>
+<li>Tenant / admin settings (users, permissions, connections) → Settings in the sidebar, higher permission.</li>
+</ul>
+</div></div>
+
+<div class="frame"><div class="frame-label">Frame 2 · Where each login lands — the routing map (and the seed of the sitemap)</div>
+<div class="frame-render"><div class="win">
+<div class="win-dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">app.righthand · /login → /</span></div>
+<div class="route">
+<h2>One front door, nine seats</h2>
+<p class="lead">Everyone signs in here. Right Hand reads the role on your account and lands you on the home built for your seat — the same shell, a different projection of the same business graph.</p>
+<div class="flow">
+<span class="node">Sign in</span><span class="arr">→</span>
+<span class="node rh">Right Hand reads your role</span><span class="arr">→</span>
+<span class="node">Your home (<code style="font-family:monospace">/</code>)</span>
+</div>
+<div class="rtbl">
+<div class="rrow"><span class="rdot" style="background:var(--gold)"></span><div><div class="who">Owner</div><div class="what">Whole business · all 9 domains</div></div><span class="plat">desktop</span><span class="dest">F-A2</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--blue)"></span><div><div class="who">PM</div><div class="what">Projects · schedule · crew</div></div><span class="plat">desktop</span><span class="dest">F-P2</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--green)"></span><div><div class="who">Admin / Ops</div><div class="what">Money · clients · compliance</div></div><span class="plat">desktop</span><span class="dest">F-AO2</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--violet)"></span><div><div class="who">Team & Ops</div><div class="what">Crew · certs · staffing</div></div><span class="plat">desktop</span><span class="dest">F-TO2</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--coral)"></span><div><div class="who">Superintendent</div><div class="what">The field, today</div></div><span class="plat">desktop</span><span class="dest">F-SU2</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--gold)"></span><div><div class="who">Estimator</div><div class="what">Price it · send it</div></div><span class="plat">desktop</span><span class="dest">F-ES2</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--green)"></span><div><div class="who">Field Hand</div><div class="what">Capture · clock · do</div></div><span class="plat">mobile</span><span class="dest">F-FH1</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--red)"></span><div><div class="who">Sub</div><div class="what">Only their work orders</div></div><span class="plat">both</span><span class="dest">F-SH2</span></div>
+<div class="rrow"><span class="rdot" style="background:var(--coral)"></span><div><div class="who">Client</div><div class="what">Their project only · approvals</div></div><span class="plat">portal</span><span class="dest">F-CP1</span></div>
+</div>
+<div class="callout-row"><div class="callout"><span class="ct">Why this is the map root</span>Every home is a projection of one business graph, so the login is the single root the whole sitemap hangs off: <b>login → role home → the 9 domains → records → actions</b>. Field Hand lands on the phone (F-FH1); everyone else on a desktop home; Sub is the same tiny projection on either device. Mobile equivalents of each role home follow the same routing.</div></div>
+</div>
+</div></div>
+<div class="frame-spec"><h3>Routing · Spec</h3>
+<h4>Role → home</h4><ul>
+<li>Role lives on the user account (set by the workspace admin), not chosen at login.</li>
+<li>One person can hold more than one seat; Right Hand lands them on their primary and lets them switch.</li>
+<li>All homes resolve to the same path <code>/</code> — the projection is server-side by role, not a different URL.</li>
+</ul>
+<h4>Platform</h4><ul>
+<li>Desktop homes: F-A2 · F-P2 · F-AO2 · F-TO2 · F-SU2 · F-ES2.</li>
+<li>Field Hand is phone-first (F-FH1); Sub (F-SH2) is the same tiny projection on either device.</li>
+<li>Mobile versions of the office homes are the next mapping pass.</li>
+</ul>
+<h4>Open</h4><ul>
+<li>Role consolidation (PM/Super/Estimator/Admin-Ops own home vs. fold) feeds straight into this table.</li>
+</ul>
+</div></div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-NAV2 · Bottom bar — center vs right mic</title>
+<style>
+:root{
+  --bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--paper:#0F1318;
+  --t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--green:#38C977;--rh:#C9A961;--gold:#F5B544;--accent:#C9A961;--topbg:rgba(10,13,17,.92);
+}
+body.light{
+  --bg:#EEF0F3;--bg2:#FFFFFF;--s:#F0F1F4;--s2:#E8EAEE;--bd:#D4D8E0;--bds:#E6E8EC;--paper:#FFFFFF;
+  --t:#1C2128;--dim:#4A5264;--mute:#7A828F;--green:#1E9E58;--rh:#A0823F;--gold:#C28A1E;--accent:#A0823F;--topbg:rgba(238,240,243,.92);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5;transition:background .25s,color .25s}
+.page{max-width:1000px;margin:0 auto;padding:30px 22px 80px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbg);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:10px 22px;margin:-30px -22px 22px;display:flex;align-items:center;gap:13px}
+.topbar .lbl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.topbar .hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+.themebtn{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--bd);background:var(--s);color:var(--dim);cursor:pointer}
+h1{font-size:20px;font-weight:600;margin:0 0 5px}
+.lede{color:var(--dim);max-width:860px;margin:0 0 8px;line-height:1.6}
+.rule{background:linear-gradient(120deg,rgba(201,169,97,.13),transparent);border:1px solid rgba(201,169,97,.4);border-radius:11px;padding:12px 16px;margin:14px 0 24px;font-size:12.5px;color:var(--dim)}
+.rule b{color:var(--t)}
+.opt{margin-bottom:26px}
+.cap{font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;margin-bottom:4px}
+.cap.a{color:var(--green)}.cap.b{color:var(--gold)}
+.frame{background:var(--bg2);border:1px solid var(--bd);border-radius:18px;padding:12px;max-width:380px}
+.mini{background:var(--paper);border:1px solid var(--bds);border-radius:14px;overflow:hidden}
+.minicontent{height:90px;padding:11px 13px;color:var(--mute);font-size:10px;border-bottom:1px solid var(--bds)}
+.minicontent .h{font-size:12px;font-weight:700;color:var(--t)}
+.navbar{display:flex;align-items:flex-end;justify-content:space-between;padding:11px 18px 14px}
+.nav{display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav .ic{font-size:18px;color:var(--mute);line-height:1}
+.nav .nl{font-size:8px;color:var(--mute);font-weight:600}
+.circle{width:50px;height:50px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(245,181,68,.22),0 0 18px rgba(245,181,68,.42)}
+.circle svg{width:21px;height:21px}
+.mic .nl{color:var(--gold);font-weight:700}
+.mic.center .circle{margin-top:-14px}
+.reach{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:10.5px;color:var(--dim)}
+.thumb{font-size:13px}
+.good{color:var(--green);font-weight:700}.warn{color:var(--gold);font-weight:700}
+.pro{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.55}
+.pro b{color:var(--t)}
+.verdict{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:15px 18px;margin-top:8px;font-size:12px;color:var(--dim);line-height:1.7}
+.verdict b{color:var(--t)}
+</style></head>
+<body>
+<div class="page">
+<div class="topbar"><span class="lbl">Right Hand</span><span class="lbl" style="color:var(--rh)">Bottom bar — center vs right · F-NAV2</span><span class="hint">decision aid</span><button class="themebtn" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'◐ Dark':'◑ Light'">◑ Light</button></div>
+<h1>Mic: center or right — pick one, use it everywhere</h1>
+<p class="lede">Both show the updated bar: <b>Start</b> (not Create) · <b>≡</b> More (3 lines). Only the mic moves. Whatever you pick goes in BOTH normal and bubble views — so the mic never drifts between modes.</p>
+<div class="rule"><b>The governing rule (your own):</b> "the mic should never move/drift." A mic that's center in the main interface and right in editing violates that <i>between modes</i>. So this isn't really center-vs-right per screen — it's one universal position. Decide once.</div>
+
+<!-- OPTION A: CENTER -->
+<div class="opt">
+  <div class="cap a">Option A · Center (current canon)</div>
+  <div class="frame"><div class="mini">
+    <div class="minicontent"><div class="h">Right Hand</div>Tap the mic and talk.</div>
+    <div class="navbar">
+      <div class="nav"><div class="ic">⌂</div><div class="nl">Home</div></div>
+      <div class="nav"><div class="ic">+</div><div class="nl">Start</div></div>
+      <div class="nav mic center"><div class="circle"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="#0A0D11" stroke-width="2" fill="none"/></svg></div><div class="nl">Speak</div></div>
+      <div class="nav"><div class="ic">▣</div><div class="nl">Camera</div></div>
+      <div class="nav"><div class="ic">≡</div><div class="nl">More</div></div>
+    </div>
+  </div></div>
+  <div class="reach"><span class="thumb">👍</span> right thumb <span class="good">good</span> · <span class="thumb">🤚</span> left thumb <span class="good">good</span> — <b style="color:var(--green)">ambidextrous</b></div>
+  <div class="pro"><b>For:</b> works for left- AND right-handed users (your field crew + other tenants include lefties); it's the bloom "heart"; balanced hero-center. <b>Against:</b> a hair slower for a right thumb than the far corner.</div>
+</div>
+
+<!-- OPTION B: RIGHT -->
+<div class="opt">
+  <div class="cap b">Option B · Right (your sketch's bubble)</div>
+  <div class="frame"><div class="mini">
+    <div class="minicontent"><div class="h">Right Hand</div>Tap the mic and talk.</div>
+    <div class="navbar">
+      <div class="nav"><div class="ic">⌂</div><div class="nl">Home</div></div>
+      <div class="nav"><div class="ic">+</div><div class="nl">Start</div></div>
+      <div class="nav"><div class="ic">▣</div><div class="nl">Camera</div></div>
+      <div class="nav"><div class="ic">≡</div><div class="nl">More</div></div>
+      <div class="nav mic"><div class="circle"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="#0A0D11" stroke-width="2" fill="none"/></svg></div><div class="nl">Speak</div></div>
+    </div>
+  </div></div>
+  <div class="reach"><span class="thumb">👍</span> right thumb <span class="good">best</span> · <span class="thumb">🤚</span> left thumb <span class="warn">reach across</span> — <b style="color:var(--gold)">right-biased</b></div>
+  <div class="pro"><b>For:</b> fastest for the right-handed majority; matches your bubble sketch; one mental model. <b>Against:</b> worse for left-handed users; the pronounced gold circle hanging off the right edge is less balanced than a hero-center.</div>
+</div>
+
+<div class="verdict"><b>My read:</b> the decision that matters most is "one position, everywhere" — and on that, I'd hold <b>center</b>: it's the only spot that isn't worse for <i>someone</i>, and it's your own heart metaphor. If center wins, I re-center the bubble's mic too (kills the drift, stays ambidextrous). If you decide speed-for-the-majority wins, <b>right is fine — but then the main interface goes right too</b>, matching the bubble, so it never jumps. Your call; I'll lock whichever and apply it to both F-RH3 and F-VW1.</div>
+</div>
+</body></html>

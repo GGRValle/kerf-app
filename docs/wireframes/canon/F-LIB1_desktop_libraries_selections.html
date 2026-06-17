@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right Hand · F-LIB1 · Libraries + Selections (catalog ↔ project instances)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--accent:#C9A961;--rh:#C9A961;--gold:#F5B544;--green:#38C977;--blue:#7BA8FF;--violet:#A78BFA;--red:#F87171;--coral:#F0997B}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--accent:#8A6D29;--rh:#8A6D29;--gold:#9A6B12;--green:#1E8E50;--blue:#185FA5;--violet:#6B4FBF}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--accent);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:28px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 340px;gap:28px;margin-bottom:40px}.frame-label{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin-bottom:10px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:22px;display:flex;justify-content:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.win{width:100%;max-width:960px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.win-dots{display:flex;align-items:center;gap:6px;padding:7px 12px;background:#000;border-bottom:1px solid var(--bds)}.win-dots .d{width:9px;height:9px;border-radius:50%;background:#333}.win-dots .u{margin-left:12px;font-size:10px;color:var(--mute);font-family:monospace}
+.topbar{display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid var(--bds);background:var(--bg)}
+.topbar .wm{font-size:14px;font-weight:800;color:var(--rh)}
+.cmdk{margin-left:18px;flex:1;max-width:320px;display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--bds);border-radius:9px;padding:7px 11px;color:var(--mute);font-size:11.5px}.cmdk svg{width:13px;height:13px}.cmdk .kbd{margin-left:auto;font-size:9px;font-weight:700;background:var(--s2);border:1px solid var(--bd);border-radius:5px;padding:1px 6px;color:var(--dim)}
+.tb-mic{margin-left:auto;width:34px;height:34px;border-radius:50%;background:var(--rh);display:flex;align-items:center;justify-content:center;color:#241B07;flex:none}.tb-mic svg{width:18px;height:18px}
+.tb-av{width:32px;height:32px;border-radius:50%;background:rgba(201,169,97,.22);color:var(--rh);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border:2px solid var(--rh);flex:none}
+.layout{display:flex;height:600px}
+.side{width:188px;flex:none;border-right:1px solid var(--bds);background:var(--bg2);padding:12px 8px;overflow-y:auto}
+.nav{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--dim);margin-bottom:2px}.nav.on{background:rgba(201,169,97,.14);color:var(--t);font-weight:600}.nav svg{width:15px;height:15px;flex:none}
+.nav-div{height:1px;background:var(--bds);margin:9px 6px}
+.col{flex:1;overflow-y:auto;padding:14px 20px;min-width:0}
+.back{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);font-weight:600;border:1px solid var(--bd);border-radius:7px;padding:4px 10px;margin-bottom:12px}
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:4px}.hdr h2{font-size:20px;font-weight:800;margin:0}.hdr .act{margin-left:auto;font-size:11px;font-weight:700;color:#241B07;background:var(--rh);border-radius:8px;padding:7px 13px}
+.hdr .sub{font-size:11px;color:var(--mute)}
+.librow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 22px}
+.lib{background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:13px 14px}.lib.on{border-color:rgba(201,169,97,.45);background:rgba(201,169,97,.07)}
+.lib .lt{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}.lib .lt svg{width:15px;height:15px;color:var(--rh)}.lib .lc{font-size:10.5px;color:var(--mute);margin-top:5px}.lib .ln{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--rh);margin-top:8px}
+.sectitle{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:6px 1px 10px;display:flex;align-items:center}.sectitle .srch{margin-left:auto;font-size:10px;color:var(--dim);font-weight:600;background:var(--bg2);border:1px solid var(--bd);border-radius:7px;padding:4px 9px;text-transform:none;letter-spacing:0}
+.catgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cat{background:var(--s);border:1px solid var(--bds);border-radius:11px;overflow:hidden}
+.cat .thumb{height:74px;background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:flex-end;padding:7px 9px}.cat .thumb .ld{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:rgba(0,0,0,.4);color:#fff;border-radius:20px;padding:2px 7px}
+.cat .cb{padding:9px 11px}.cat .cn{font-size:12px;font-weight:600}.cat .cs{font-size:10px;color:var(--mute);margin-top:2px}
+.cat .cf{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:9.5px;color:var(--dim)}.cat .cf .pr{font-weight:700;color:var(--t)}.cat .cf .used{margin-left:auto;color:var(--mute)}
+/* project selections (frame 2) */
+.psrow{display:flex;align-items:center;gap:12px;background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:11px 13px;margin-bottom:7px}
+.psrow .sw{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--c1),var(--c2));flex:none}
+.psrow .pn{font-size:12.5px;font-weight:600}.psrow .pm{font-size:10px;color:var(--mute);margin-top:2px}
+.psrow .right{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none}
+.lc{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:20px}
+.lc.proposed{background:rgba(167,139,250,.16);color:var(--violet)}.lc.approved{background:rgba(56,201,119,.16);color:var(--green)}.lc.ordered{background:rgba(123,168,255,.16);color:var(--blue)}.lc.installed{background:rgba(106,114,130,.18);color:var(--dim)}
+.psrow .alw{font-size:10px;color:var(--dim);text-align:right}.psrow .alw b{color:var(--t);display:block;font-size:11.5px}
+.flowstrip{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:10px 13px;margin:14px 0 4px;font-size:11px;color:var(--dim);flex-wrap:wrap}.flowstrip b{color:var(--rh)}.flowstrip .ar{color:var(--mute)}
+.note{grid-column:1/-1;color:var(--dim);font-size:12px;line-height:1.6;margin:16px 0 0;max-width:1100px}.note b{color:var(--rh)}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#EEE;--s2:#E4E8ED;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#8A6D29;--rh:#8A6D29;--gold:#9A6B12}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.win{box-shadow:none!important}.win-dots{background:#ddd!important}@page{size:letter landscape;margin:.3in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · D-060 §3 · Library (catalog) ↔ Project Selections (instances) · back button</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Right Hand</span><span class="sep">›</span><span class="step current">F-LIB1 · Libraries + Selections</span></div>
+<h1>F-LIB1 · Libraries + Selections — the catalog, and the job-specific instances</h1>
+<p>The catalog/instance split (D-060 §3). <strong>Frame 1</strong>: the Libraries area — Cost · Selections · Vendors — with the <strong>Selections Library</strong> open: tenant-level reusable reference data. <strong>Frame 2</strong>: <strong>Project Selections</strong> — the customer-/job-specific instances that live on the project, each referencing a Library item and carrying its own lifecycle. Library is the menu; Project Selections are the order.</p></div>
+
+<div class="frame"><div class="frame-label">Frame 1 · Libraries → Selections Library (the reusable catalog)</div>
+<div class="frame-render"><div class="win">
+<div class="win-dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">app.kerf · /libraries/selections</span></div>
+<div class="topbar"><span class="wm">Right Hand</span>
+<div class="cmdk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Search the libraries…<span class="kbd">⌘K</span></div>
+<span class="tb-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></span>
+<span class="tb-av">CA</span></div>
+<div class="layout">
+<div class="side">
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Sales</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/></svg>Projects</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4M12 17h.01"/></svg>Money</div>
+<div class="nav on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13M4 12h13M4 19h13M20 5h.01M20 12h.01M20 19h.01"/></svg>Libraries</div>
+<div class="nav-div"></div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-2.94.66 1.65 1.65 0 01-3.32 0 1.65 1.65 0 00-2.94-.66l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9z"/></svg>Settings</div>
+</div>
+<div class="col">
+<span class="back"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Home</span>
+<div class="hdr"><h2>Knowledge Base</h2><span class="sub" style="margin-left:6px">· your reusable building blocks</span><span class="act" style="background:var(--bg2);color:var(--rh);border:1px solid var(--bd);margin-right:8px">⤓ Import</span><span class="act">+ New item</span></div>
+<div class="flowstrip" style="margin:4px 0 14px"><b>Item</b><span class="ar">→</span><b>Assembly</b> (bundle of items)<span class="ar">→</span><b>Template</b> (whole estimate / project)<span style="margin-left:auto;color:var(--mute)">import yours on migration</span></div>
+<div class="librow">
+<div class="lib"><div class="lt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Cost Library</div><div class="lc">Labor &amp; material cost items that feed the estimate builder.</div><div class="ln">412 items</div></div>
+<div class="lib on"><div class="lt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Selections Library</div><div class="lc">Reusable products, finishes &amp; fixtures with specs, price &amp; vendor.</div><div class="ln">186 items · open</div></div>
+<div class="lib"><div class="lt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg>Vendors</div><div class="lc">Suppliers &amp; subs — contacts, terms, lead times, COIs.</div><div class="ln">63 vendors</div></div>
+<div class="lib"><div class="lt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="8" y="13" width="8" height="8" rx="1"/></svg>Assemblies</div><div class="lc">Bundles of items — kits like "bathroom demo" or "vanity install."</div><div class="ln">38 assemblies</div></div>
+<div class="lib"><div class="lt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l4 4v14H5z"/><path d="M15 3v5h5M9 13h6M9 17h4"/></svg>Templates</div><div class="lc">Reusable estimate, proposal &amp; project structures. Import yours on day one.</div><div class="ln">12 templates · ⤓ import</div></div>
+</div>
+<div class="sectitle">Selections Library · all categories<span class="srch">⌕ tile, paint, fixtures…</span></div>
+<div class="catgrid">
+<div class="cat"><div class="thumb" style="--c1:#3A4A6B;--c2:#1B2335"><span class="ld">Cabinet paint</span></div><div class="cb"><div class="cn">Smokey Blue</div><div class="cs">Benjamin Moore · 2058-40</div><div class="cf"><span class="pr">$72/gal</span><span class="used">used in 9 jobs</span></div></div></div>
+<div class="cat"><div class="thumb" style="--c1:#6B5B3A;--c2:#2E2616"><span class="ld">Floor tile</span></div><div class="cb"><div class="cn">Calacatta 12×24</div><div class="cs">Daltile · porcelain</div><div class="cf"><span class="pr">$6.80/sf</span><span class="used">used in 14 jobs</span></div></div></div>
+<div class="cat"><div class="thumb" style="--c1:#4A4A52;--c2:#222228"><span class="ld">Faucet</span></div><div class="cb"><div class="cn">Purist single-hole</div><div class="cs">Kohler · matte black</div><div class="cf"><span class="pr">$398</span><span class="used">used in 6 jobs</span></div></div></div>
+<div class="cat"><div class="thumb" style="--c1:#5B3A3A;--c2:#2E1616"><span class="ld">Countertop</span></div><div class="cb"><div class="cn">Taj Mahal quartzite</div><div class="cs">slab · 3cm</div><div class="cf"><span class="pr">$92/sf</span><span class="used">used in 11 jobs</span></div></div></div>
+<div class="cat"><div class="thumb" style="--c1:#3A5B4A;--c2:#162E20"><span class="ld">Cabinet line</span></div><div class="cb"><div class="cn">Valle Shaker · inset</div><div class="cs">in-house · paint-grade</div><div class="cf"><span class="pr">est. by job</span><span class="used">used in 22 jobs</span></div></div></div>
+<div class="cat"><div class="thumb" style="--c1:#4A4256;--c2:#221E2A"><span class="ld">Hardware</span></div><div class="cb"><div class="cn">Bar pull 5"</div><div class="cs">Emtek · flat black</div><div class="cf"><span class="pr">$14/ea</span><span class="used">used in 18 jobs</span></div></div></div>
+</div>
+</div>
+</div>
+</div></div>
+<div class="frame-spec"><h3>Frame 1 · Selections Library</h3>
+<h4>What it is (D-060 §3)</h4><ul>
+<li><b>Tenant-level reusable catalog</b> — products, finishes, fixtures, materials.</li>
+<li>Each item carries spec, image, typical price, vendor, lead time, "used in N jobs."</li>
+<li><b>Tenant-private</b> — your shop's catalog, grows over time. Sibling object to the Cost Library.</li>
+</ul>
+<h4>Libraries area</h4><ul>
+<li>Groups reusable reference data: <b>Cost · Selections · Vendors</b>.</li>
+<li>Accessed from Design + the estimate builder; managed here as libraries (one place, like the Connections registry).</li>
+</ul>
+<h4>It is not a domain</h4><ul>
+<li>Reference layer. The job-specific record is the Project Selection (Frame 2).</li>
+</ul>
+</div></div>
+
+<div class="frame"><div class="frame-label">Frame 2 · Project Selections (the job-specific instances)</div>
+<div class="frame-render"><div class="win">
+<div class="win-dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">app.kerf · /projects/moore/selections</span></div>
+<div class="topbar"><span class="wm">Right Hand</span>
+<div class="cmdk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Search Moore…<span class="kbd">⌘K</span></div>
+<span class="tb-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></span>
+<span class="tb-av">CA</span></div>
+<div class="layout">
+<div class="side">
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+<div class="nav on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/></svg>Projects</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Sales</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4M12 17h.01"/></svg>Money</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13M4 12h13M4 19h13M20 5h.01M20 12h.01M20 19h.01"/></svg>Libraries</div>
+<div class="nav-div"></div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-2.94.66 1.65 1.65 0 01-3.32 0 1.65 1.65 0 00-2.94-.66l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9z"/></svg>Settings</div>
+</div>
+<div class="col">
+<span class="back"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Moore · Kitchen remodel</span>
+<div class="hdr"><h2>Selections</h2><span class="sub" style="margin-left:6px">· Moore · 7 items</span><span class="act">+ Add from Library</span></div>
+<div class="flowstrip"><b>proposed</b><span class="ar">→</span><b>approved</b><span class="ar">→</span><b>ordered</b> (PO to vendor)<span class="ar">→</span><b>installed</b><span style="margin-left:auto;color:var(--mute)">each instance references a Library item</span></div>
+<div style="margin-top:12px">
+<div class="psrow"><span class="sw" style="--c1:#3A4A6B;--c2:#1B2335"></span><div><div class="pn">Smokey Blue — cabinet paint</div><div class="pm">Benjamin Moore 2058-40 · from Library</div></div><div class="right"><div class="alw">allowance<b>$1,400</b></div><span class="lc approved">Approved</span></div></div>
+<div class="psrow"><span class="sw" style="--c1:#6B5B3A;--c2:#2E2616"></span><div><div class="pn">Calacatta 12×24 — floor tile</div><div class="pm">Daltile porcelain · 240 sf · PO #1042</div></div><div class="right"><div class="alw">allowance<b>$1,632</b></div><span class="lc ordered">Ordered</span></div></div>
+<div class="psrow"><span class="sw" style="--c1:#4A4A52;--c2:#222228"></span><div><div class="pn">Purist faucet — matte black</div><div class="pm">Kohler · qty 1 · installed 5/29</div></div><div class="right"><div class="alw">actual<b>$398</b></div><span class="lc installed">Installed</span></div></div>
+<div class="psrow"><span class="sw" style="--c1:#5B3A3A;--c2:#2E1616"></span><div><div class="pn">Taj Mahal — countertop</div><div class="pm">quartzite 3cm · 52 sf · client reviewing</div></div><div class="right"><div class="alw">allowance<b>$4,784</b></div><span class="lc proposed">Proposed</span></div></div>
+</div>
+</div>
+</div>
+</div></div>
+<p class="note"><b>Instances, not catalog:</b> each row lives on Moore and points back at a Selections Library item ("from Library"), but carries its own lifecycle — <b>proposed → approved → ordered → installed</b> — plus its allowance, its PO, and (once installed) its actual. Approving one writes a PO to the vendor, reconciles the allowance in Money, and drops an install line on the Schedule. "Add from Library" pulls the catalog; anything spec'd here that's new can be saved back to the Library.</p>
+<div class="frame-spec"><h3>Frame 2 · Project Selections</h3>
+<h4>Instance record (D-060 §3)</h4><ul>
+<li>Lives on the <b>Project</b>; references a Library item (<code>library_ref</code>).</li>
+<li>Lifecycle: <code>proposed → approved → ordered → installed</code>.</li>
+<li>Carries its own <b>allowance · PO · schedule tie · actual</b>.</li>
+</ul>
+<h4>Propagation</h4><ul>
+<li>Approve → PO to vendor · allowance reconciliation in Money · install line on Schedule.</li>
+<li>Estimate line types (material/product/equipment/subcontract) <b>promote to</b> a Project Selection.</li>
+<li>New item spec'd here can be saved <b>back to the Library</b>.</li>
+</ul>
+<h4>Rules carried</h4><ul>
+<li>Back control (non-home, D-060 §1). Money writes stay confirm-gated.</li>
+</ul>
+</div></div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

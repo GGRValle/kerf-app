@@ -97,14 +97,16 @@ function extractControls(source) {
 }
 
 function domainFromId(id) {
+  if (/^F-(AA|NAV|MEM|ORCH|VW)/.test(id)) return 'System / shared grammar';
   if (/^F-(A|P|AO|TO|SH|ES|C|FL|SU)\d/.test(id)) return 'Role homes';
   if (/^F-(S1|D1|RH|CAM|RC)/.test(id)) return 'Global phone chrome';
-  if (/^F-(PR|PS|ML|CO|W1|PA|DL)/.test(id)) return 'Projects';
-  if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG|DS)/.test(id)) return 'Sales / decisions';
+  if (/^F-(PR|PS|ML|CO|W1|PA|DL|PN)/.test(id)) return 'Projects';
+  if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG|DS|LIB|SA|RT)/.test(id)) return 'Sales / decisions';
   if (/^F-(MN|BK|PU|VC)/.test(id)) return 'Money';
-  if (/^F-(CL|CA|CS|WW)/.test(id)) return 'Clients';
-  if (/^F-(E1|FD|FU|F1)/.test(id)) return 'Field capture';
-  if (/^F-(SC|SB|CR|HR|SP|RR|AD|BC)/.test(id)) return 'Ops / admin';
+  if (/^F-(CL|CA|CS|WW|CP|CPS|WAR)/.test(id)) return 'Clients';
+  if (/^F-(E1|FD|FU|F1|FH)/.test(id)) return 'Field capture';
+  if (/^F-(SC|SB|CR|HR|SP|RR|AD|BC|SUB|SUBM|US)/.test(id)) return 'Ops / admin';
+  if (/^F-(LND|ON)/.test(id)) return 'Role homes';
   if (/^F-(MK)/.test(id)) return 'Marketing';
   if (/^F-(RP|AV|H1|TD)/.test(id)) return 'Reports / queues';
   return 'Other';
@@ -115,12 +117,15 @@ function systemContractForFace(id) {
     'F-A1': ['/', 'mapped_pending_rebuild', 'attention_queue', 'Home attention queue: One Thing, On Deck, Pulse'],
     'F-A1b': ['/', 'mapped_pending_rebuild', 'attention_queue', 'Home attention queue: One Thing, On Deck, Pulse'],
     'F-A2': ['/home/owner', 'mapped_pending_rebuild', 'attention_queue', 'Owner role-root projection'],
+    'F-AA1': ['shared AttentionArtifact component', 'mapped_pending_rebuild', 'attention_queue', 'Shared attention artifact mounts on Home, On Me, and review queues'],
     'F-P1': ['/home/pm', 'mapped_pending_rebuild', 'attention_queue', 'PM role-root projection'],
     'F-P2': ['/home/pm', 'mapped_pending_rebuild', 'attention_queue', 'PM role-root projection'],
     'F-AO1': ['/home/admin-ops', 'mapped_pending_rebuild', 'attention_queue', 'Admin/Ops role-root projection'],
     'F-AO2': ['/home/admin-ops', 'mapped_pending_rebuild', 'attention_queue', 'Admin/Ops role-root projection'],
+    'F-AD3': ['/home/admin-ops', 'mapped_pending_rebuild', 'attention_queue', 'Admin command home'],
     'F-TO1': ['/home/team-ops', 'mapped_pending_rebuild', 'attention_queue', 'Team/Ops role-root projection'],
     'F-TO2': ['/home/team-ops', 'mapped_pending_rebuild', 'attention_queue', 'Team/Ops role-root projection'],
+    'F-FH1': ['/home/field', 'mapped_pending_rebuild', 'capture_gate', 'Field hand execution home'],
     'F-SH1': ['/home/sub or /sub/portal/s/:token', 'client_surface', 'portal_session', 'Subcontractor portal and assignment spine'],
     'F-SH2': ['/home/sub or /sub/portal/s/:token', 'client_surface', 'portal_session', 'Subcontractor portal and assignment spine'],
     'F-ES1': ['/home/estimator', 'mapped_pending_rebuild', 'attention_queue', 'Estimator role-root projection'],
@@ -131,13 +136,23 @@ function systemContractForFace(id) {
     'F-SU2': ['/home/field', 'mapped_pending_rebuild', 'capture_gate', 'Superintendent role-root projection'],
     'F-S1': ['/create', 'mapped_pending_rebuild', 'navigation_only', 'Start sheet routes to canonical artifact owners'],
     'F-D1': ['/more', 'mapped_pending_rebuild', 'navigation_only', 'Secondary domain drawer'],
+    'F-NAV1': ['global shell chrome', 'mapped_pending_rebuild', 'navigation_only', 'Normal view + bubble view chrome'],
+    'F-NAV2': ['global bottom bar', 'mapped_pending_rebuild', 'navigation_only', 'Bottom bar center mic doctrine'],
     'F-RH1': ['global overlay + /right-hand fallback', 'canon_wired', 'durable_write_gate', 'SurfaceContext + working draft + conversation spine'],
     'F-RH3': ['global overlay + /right-hand fallback', 'canon_wired', 'durable_write_gate', 'Right Hand conversation lifecycle spine'],
+    'F-RH4': ['global overlay + /right-hand fallback', 'mapped_pending_rebuild', 'durable_write_gate', 'Desktop Right Hand compose surface'],
+    'F-RH6': ['global overlay + /right-hand fallback', 'mapped_pending_rebuild', 'right_hand_route_only', 'Talk-to-Right-Hand interaction doctrine'],
     'F-RH7': ['global overlay', 'mapped_pending_rebuild', 'right_hand_route_only', 'Right Hand bottom-bloom / travels-never-parks spine'],
+    'F-MEM-RH': ['Right Hand memory model', 'mapped_pending_rebuild', 'right_hand_route_only', 'Right Hand working set / memory stack'],
+    'F-ORCH1': ['background orchestration', 'future_or_unrouted', 'review_gate', 'Background orchestration flow'],
+    'F-VW1': ['global overlay viewing window', 'mapped_pending_rebuild', 'right_hand_route_only', 'Viewing window voice editing doctrine'],
     'F-CAM1': ['/camera', 'canon_wired', 'capture_route_confirm', 'Capture-first camera; route after capture'],
     'F-RC1': ['/room-capture', 'mapped_pending_rebuild', 'capture_route_confirm', 'Room scan capture spine'],
+    'F-RT1': ['/room-capture', 'mapped_pending_rebuild', 'review_gate', 'Room takeoff / scan review'],
     'F-E1': ['/field-capture', 'canon_wired', 'capture_route_confirm', 'Field capture -> Daily Log / review spine'],
     'F-DL1': ['/projects/:id/daily-log', 'future_or_unrouted', 'capture_route_confirm', 'Capture -> Daily Log -> Project graph spine'],
+    'F-DL2': ['/projects/:id/daily-log', 'future_or_unrouted', 'capture_route_confirm', 'Field hand daily log + clock-out'],
+    'F-DL3': ['/settings or /home/field', 'future_or_unrouted', 'admin_gate', 'Field guidance level settings'],
     'F-FD1': ['/field-detail', 'mapped_pending_rebuild', 'review_gate', 'Field item drilldown'],
     'F-FD2': ['/field-detail', 'mapped_pending_rebuild', 'review_gate', 'Field item drilldown'],
     'F-FU1': ['/relay', 'mapped_pending_rebuild', 'review_gate', 'Office review queue for field updates'],
@@ -147,6 +162,7 @@ function systemContractForFace(id) {
     'F-PR2': ['/projects/:id', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project canonical home and lenses'],
     'F-PR4': ['/projects/:id', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project canonical home and lenses'],
     'F-PS1': ['/projects/:id/status', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project status lens'],
+    'F-PN1': ['/projects/:id/notes', 'future_or_unrouted', 'project_artifact_owner', 'Project notes lens'],
     'F-ML1': ['/projects/:id/media', 'future_or_unrouted', 'capture_route_confirm', 'Project media lens is not a distinct live route yet'],
     'F-ML2': ['/projects/:id/media', 'future_or_unrouted', 'capture_route_confirm', 'Project media lens is not a distinct live route yet'],
     'F-CO1a': ['/projects/:id/closeout', 'mapped_pending_rebuild', 'operator_confirm', 'Project closeout spine'],
@@ -158,7 +174,9 @@ function systemContractForFace(id) {
     'F-SL2': ['/sales', 'mapped_pending_rebuild', 'navigation_only', 'Sales pipeline spine'],
     'F-SL3': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
     'F-SL4': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
+    'F-SA1': ['/sales', 'mapped_pending_rebuild', 'navigation_only', 'Sales command home'],
     'F-DS1': ['/design/:projectId', 'mapped_pending_rebuild', 'review_gate', 'Design workspace -> estimate spine'],
+    'F-LIB1': ['/library', 'mapped_pending_rebuild', 'review_gate', 'Libraries / selections / cost knowledge'],
     'F-LD1a': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
     'F-LD1b': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
     'F-PV1': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
@@ -176,16 +194,21 @@ function systemContractForFace(id) {
     'F-CL4': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client canonical home'],
     'F-CL5': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client record'],
     'F-CL6': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client record'],
+    'F-CP1': ['/portal/s/:token', 'client_surface', 'portal_session', 'Client portal projection'],
+    'F-CPS1': ['/portal/s/:token or /projects/:id/status', 'client_surface', 'portal_session', 'Client-facing project status projection'],
     'F-CA1a': ['/clients?archive=1', 'future_or_unrouted', 'navigation_only', 'Client archive state'],
     'F-CA1b': ['/clients?archive=1', 'future_or_unrouted', 'navigation_only', 'Client archive state'],
     'F-CS1': ['/client-success/:clientId or /projects/:id/portal-preview', 'mapped_pending_rebuild', 'client_review_gate', 'Client success / portal preview spine'],
     'F-CS2': ['/client-success/:clientId or /projects/:id/portal-preview', 'mapped_pending_rebuild', 'client_review_gate', 'Client success / portal preview spine'],
     'F-WW1a': ['/clients/:id/warranty', 'mapped_pending_rebuild', 'client_artifact_owner', 'Warranty lane'],
     'F-WW1b': ['/clients/:id/warranty', 'mapped_pending_rebuild', 'client_artifact_owner', 'Warranty lane'],
+    'F-WAR1': ['/clients/:id/warranty', 'mapped_pending_rebuild', 'client_artifact_owner', 'Warranty client-success/admin tracking'],
     'F-SC1': ['/schedule', 'mapped_pending_rebuild', 'navigation_only', 'Schedule domain'],
     'F-SC2': ['/schedule', 'mapped_pending_rebuild', 'navigation_only', 'Schedule domain'],
     'F-SB1': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Subs/team ops spine'],
     'F-SB2': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Subs/team ops spine'],
+    'F-SUBM1': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Subs management'],
+    'F-SUB1': ['/sub/portal/s/:token', 'client_surface', 'portal_session', 'Sub portal'],
     'F-CR1': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Crew folded into team ops'],
     'F-CR2': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Crew folded into team ops'],
     'F-HR1a': ['/team-ops/time', 'future_or_unrouted', 'time_gate', 'Time tracking route missing'],
@@ -193,6 +216,7 @@ function systemContractForFace(id) {
     'F-HR2': ['/team-ops/docs', 'future_or_unrouted', 'document_gate', 'Employee docs route missing'],
     'F-SP1': ['/settings', 'mapped_pending_rebuild', 'admin_gate', 'Settings hub'],
     'F-SP1a': ['/settings/me', 'mapped_pending_rebuild', 'admin_gate', 'Account editor'],
+    'F-US1': ['/settings/me', 'mapped_pending_rebuild', 'admin_gate', 'User settings'],
     'F-RR1': ['/role-routing', 'mapped_pending_rebuild', 'admin_gate', 'Role routing matrix'],
     'F-BC1': ['/settings or /more', 'future_or_unrouted', 'admin_gate', 'Bottom bar customization route missing'],
     'F-AD1': ['/settings or /home/admin-ops', 'future_or_unrouted', 'admin_gate', 'Admin landing not distinct yet'],
@@ -204,6 +228,8 @@ function systemContractForFace(id) {
     'F-H1': ['/audit/:packetId', 'mapped_pending_rebuild', 'audit_read_only', 'Audit detail spine'],
     'F-TD1': ['/on-me', 'mapped_pending_rebuild', 'task_gate', 'Global to-do / On Me queue'],
     'F-TD2': ['/on-me', 'mapped_pending_rebuild', 'task_gate', 'Global to-do / On Me queue'],
+    'F-ON1': ['/on-me', 'mapped_pending_rebuild', 'task_gate', 'On Me / Today two-stream queue'],
+    'F-LND1': ['/login', 'mapped_pending_rebuild', 'navigation_only', 'Landing / login role routing'],
     'F-MK1': ['/marketing', 'future_or_unrouted', 'navigation_only', 'Marketing domain missing live route'],
     'F-MK2': ['/marketing', 'future_or_unrouted', 'navigation_only', 'Marketing domain missing live route'],
     'F-MK3': ['/marketing/reviews', 'future_or_unrouted', 'navigation_only', 'Marketing reviews route missing'],
@@ -354,6 +380,11 @@ add(['F-A1', 'F-A1b', 'F-A2'], [
   { trigger: 'Project pulse tile', ...target('F-PR2', 'Project detail / project lens') },
   { trigger: 'Money pulse', ...target('F-MN1', 'Money domain') },
 ]);
+add(['F-AA1'], [
+  { trigger: 'Mount on Home', ...target('F-A1b') },
+  { trigger: 'Mount on On Me', ...target('F-ON1') },
+  { trigger: 'Open artifact owner', ...target('F-B1', 'Attention artifact routes to the owning artifact, not a detached task') },
+]);
 add(['F-P1', 'F-P2'], [
   ...bottomNav,
   { trigger: 'Project needing PM', ...target('F-PR2') },
@@ -365,6 +396,13 @@ add(['F-AO1', 'F-AO2'], [
   { trigger: 'Bookkeeping / QB sync', ...target('F-BK1a') },
   { trigger: 'AP / vendor issue', ...target('F-MN7a') },
   { trigger: 'Settings / company ops', ...target('F-SP1') },
+]);
+add(['F-AD3'], [
+  ...bottomNav,
+  { trigger: 'Money issue', ...target('F-MN1') },
+  { trigger: 'Team/Ops', ...target('F-SB1') },
+  { trigger: 'Settings', ...target('F-SP1') },
+  { trigger: 'On Me', ...target('F-ON1') },
 ]);
 add(['F-TO1', 'F-TO2'], [
   ...bottomNav,
@@ -390,6 +428,13 @@ add(['F-C1', 'F-FL1', 'F-SU1', 'F-SU2'], [
   { trigger: 'Project detail', ...target('F-PR2') },
   { trigger: 'Work order', ...target('F-W1') },
 ]);
+add(['F-FH1'], [
+  ...bottomNav,
+  { trigger: 'Capture now', ...target('F-E1') },
+  { trigger: 'Daily Log', ...target('F-DL1') },
+  { trigger: 'Work order', ...target('F-W1') },
+  { trigger: 'Project', ...target('F-PR2') },
+]);
 
 add(['F-S1'], [
   { trigger: 'New estimate', ...missing('F-EST1_mobile_estimate_builder.html', 'Missing face; should land on estimate builder, not project setup first') },
@@ -408,6 +453,11 @@ add(['F-D1'], [
   { trigger: 'Clients', ...target('F-CL1') },
   { trigger: 'Marketing', ...target('F-MK1') },
 ]);
+add(['F-NAV1', 'F-NAV2'], [
+  ...bottomNav,
+  { trigger: 'Tap to talk pill', ...target('F-RH7') },
+  { trigger: 'Bubble view', ...target('F-RH7') },
+]);
 add(['F-RH1'], [
   { trigger: 'Stop listening', ...state('Internal overlay state: listening -> sorting') },
   { trigger: 'Save to job', ...target('F-PR2', 'Files to job/project after confirmation') },
@@ -420,6 +470,12 @@ add(['F-RH3'], [
   { trigger: 'Save/confirm', ...target('F-PR2', 'Durable write returns to canonical artifact') },
   { trigger: 'Keep talking', ...target('F-RH1') },
   { trigger: 'Bubble transition', ...target('F-RH7', 'Imported Canon bubble/bloom behavior') },
+]);
+add(['F-RH4', 'F-RH6', 'F-MEM-RH', 'F-VW1'], [
+  { trigger: 'Speak / compose', ...target('F-RH1') },
+  { trigger: 'Bubble behavior', ...target('F-RH7') },
+  { trigger: 'Attach source', ...target('F-CAM1') },
+  { trigger: 'Return to artifact', ...state('Right Hand travels with context; artifact stays on its owning route') },
 ]);
 add(['F-RH7'], [
   { trigger: 'Tap to talk pill', ...target('F-RH1', 'Side pill opens the same Right Hand conversation surface') },
@@ -435,17 +491,27 @@ add(['F-CAM1'], [
   { trigger: 'Done / confirm destination', ...target('F-DL1', 'Route after capture; filed capture should land in Daily Log or project media') },
   { trigger: 'Room scan', ...target('F-RC1') },
 ]);
+add(['F-ORCH1'], [
+  { trigger: 'Surface context read', ...target('F-RH1') },
+  { trigger: 'Review gate', ...target('F-G1') },
+  { trigger: 'Audit detail', ...target('F-H1') },
+]);
 add(['F-RC1'], [
   { trigger: 'Back to camera/start', ...target('F-CAM1') },
   { trigger: 'Add to project', ...target('F-PR2') },
   { trigger: 'Release preview', ...target('F-B1', 'Consequence gate if source becomes durable artifact') },
+]);
+add(['F-RT1'], [
+  { trigger: 'Back to room capture', ...target('F-RC1') },
+  { trigger: 'Design workspace', ...target('F-DS1') },
+  { trigger: 'Build estimate', ...target('F-EST1') },
 ]);
 
 add(['F-E1'], [
   { trigger: 'Take photo', ...target('F-CAM1') },
   { trigger: 'Attach file', ...state('File picker / preflight state') },
   { trigger: 'Type note', ...state('Typed note state') },
-  { trigger: 'Done / submit', ...missing('F-DL1_mobile_daily_log.html', 'Canon Daily Log face missing') },
+  { trigger: 'Done / submit', ...target('F-DL1', 'Filed capture lands on Daily Log / Project after route confirmation') },
   { trigger: 'Office review', ...target('F-FU1') },
   { trigger: 'Transcript review', ...target('F-F1') },
   { trigger: 'Field detail', ...target('F-FD1') },
@@ -456,6 +522,15 @@ add(['F-DL1'], [
   { trigger: 'Project', ...target('F-PR2') },
   { trigger: 'Office review', ...target('F-FU1') },
   { trigger: 'Work order', ...target('F-W1') },
+]);
+add(['F-DL2'], [
+  { trigger: 'File Daily Log', ...target('F-DL1') },
+  { trigger: 'Clock out', ...target('F-FH1') },
+  { trigger: 'Project', ...target('F-PR2') },
+]);
+add(['F-DL3'], [
+  { trigger: 'Back settings', ...target('F-US1') },
+  { trigger: 'Field home preview', ...target('F-FH1') },
 ]);
 add(['F-FD1', 'F-FD2'], [
   { trigger: 'View transcript review', ...target('F-F1') },
@@ -483,11 +558,16 @@ add(['F-PR1', 'F-PR3'], [
 add(['F-PR2', 'F-PR4'], [
   { trigger: 'Status', ...target('F-PS1') },
   { trigger: 'Media', ...target('F-ML1') },
-  { trigger: 'Daily Log', ...missing('F-DL1_mobile_daily_log.html', 'Missing Canon file') },
+  { trigger: 'Daily Log', ...target('F-DL1') },
   { trigger: 'Work order', ...target('F-W1') },
   { trigger: 'Closeout', ...target('F-CO1a') },
   { trigger: 'Money lens', ...target('F-MN1') },
   { trigger: 'Proposal', ...target('F-PV1') },
+]);
+add(['F-PN1'], [
+  { trigger: 'Back project', ...target('F-PR2') },
+  { trigger: 'Ask Right Hand', ...target('F-RH1') },
+  { trigger: 'File to Daily Log', ...target('F-DL1') },
 ]);
 add(['F-PS1'], [
   { trigger: 'Scope / project detail', ...target('F-PR2') },
@@ -517,6 +597,13 @@ add(['F-SL1', 'F-SL2'], [
   { trigger: 'Lost deals', ...target('F-LD1a') },
   { trigger: 'Marketing leads', ...target('F-MK9') },
 ]);
+add(['F-SA1'], [
+  ...bottomNav,
+  { trigger: 'Pipeline', ...target('F-SL1') },
+  { trigger: 'Deal detail', ...target('F-SL3') },
+  { trigger: 'Design workspace', ...target('F-DS1') },
+  { trigger: 'Estimate builder', ...target('F-EST1') },
+]);
 add(['F-SL3', 'F-SL4'], [
   { trigger: 'Pipeline', ...target('F-SL1') },
   { trigger: 'Design workspace', ...missing('Design workspace face', 'Live app route exists; Canon file missing') },
@@ -534,7 +621,12 @@ add(['F-DS1'], [
   { trigger: 'Back deal', ...target('F-SL4') },
   { trigger: 'Build estimate', ...target('F-EST1') },
   { trigger: 'Ask Right Hand', ...target('F-RH1', 'Right Hand can draft and retrieve; artifact remains design/estimate-owned') },
-  { trigger: 'Open selections library', ...missing('F-LIB1_desktop_libraries_selections.html', 'Design selections library exists in Canon but is not imported into repo yet') },
+  { trigger: 'Open selections library', ...missing('F-LIB1_desktop_libraries_selections.html', 'Design selections library is imported; route still needs the live UI rebuild') },
+]);
+add(['F-LIB1'], [
+  { trigger: 'Back design', ...target('F-DS1') },
+  { trigger: 'Project instance', ...target('F-PR2') },
+  { trigger: 'Build estimate', ...target('F-EST1') },
 ]);
 add(['F-CHG1'], [
   { trigger: 'Back project', ...target('F-PR2') },
@@ -641,9 +733,19 @@ add(['F-CS1', 'F-CS2'], [
   { trigger: 'Warranty', ...target('F-WW1a') },
   { trigger: 'Project', ...target('F-PR2') },
 ]);
+add(['F-CP1', 'F-CPS1'], [
+  { trigger: 'Project status', ...target('F-CPS1') },
+  { trigger: 'Client success', ...target('F-CS1') },
+  { trigger: 'Project', ...target('F-PR2') },
+]);
 add(['F-WW1a', 'F-WW1b'], [
   { trigger: 'Client record', ...target('F-CL5') },
   { trigger: 'Project', ...target('F-PR2') },
+]);
+add(['F-WAR1'], [
+  { trigger: 'Client record', ...target('F-CL5') },
+  { trigger: 'Project', ...target('F-PR2') },
+  { trigger: 'Decision / approval', ...target('F-B1') },
 ]);
 
 add(['F-SC1', 'F-SC2'], [
@@ -655,6 +757,15 @@ add(['F-SB1', 'F-SB2'], [
   { trigger: 'Work order', ...target('F-W1') },
   { trigger: 'Crew', ...target('F-CR1') },
   { trigger: 'Message / relay', ...target('F-FU1') },
+]);
+add(['F-SUBM1'], [
+  { trigger: 'Work order', ...target('F-W1') },
+  { trigger: 'Subs list', ...target('F-SB1') },
+  { trigger: 'Message / relay', ...target('F-FU1') },
+]);
+add(['F-SUB1'], [
+  { trigger: 'Assignment', ...target('F-W1') },
+  { trigger: 'Sub home', ...target('F-SH1') },
 ]);
 add(['F-CR1', 'F-CR2'], [
   { trigger: 'Time tracking', ...target('F-HR1a') },
@@ -677,6 +788,10 @@ add(['F-SP1'], [
 ]);
 add(['F-SP1a'], [
   { trigger: 'Back settings', ...target('F-SP1') },
+]);
+add(['F-US1'], [
+  { trigger: 'Back settings', ...target('F-SP1') },
+  { trigger: 'Field guidance level', ...target('F-DL3') },
 ]);
 add(['F-RR1'], [
   { trigger: 'Settings', ...target('F-SP1') },
@@ -707,6 +822,16 @@ add(['F-H1'], [
 add(['F-TD1', 'F-TD2'], [
   { trigger: 'Task item', ...target('F-B1', 'Task selects owning decision/artifact') },
   { trigger: 'Project task', ...target('F-PR2') },
+]);
+add(['F-ON1'], [
+  { trigger: 'Attention item', ...target('F-AA1') },
+  { trigger: 'Task item', ...target('F-B1') },
+  { trigger: 'Project task', ...target('F-PR2') },
+]);
+add(['F-LND1'], [
+  { trigger: 'Sign in as owner', ...target('F-A1') },
+  { trigger: 'Sign in as field', ...target('F-FH1') },
+  { trigger: 'Sign in as sales', ...target('F-SA1') },
 ]);
 
 add(['F-MK1', 'F-MK2'], [

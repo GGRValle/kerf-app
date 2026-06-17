@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-FH1 · Mobile Field Hand Home (execution grammar)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--accent:#38C977;--amber:#F5B544;--red:#F87171;--blue:#7BA8FF;--rh:#C9A961}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--accent:#1F8F57;--amber:#9A6B12}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}body.light-mode .phone-notch{background:#1a1a1d!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}
+.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--amber);color:#1A1300}
+.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:32px}
+.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px}
+.frame-label{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin-bottom:4px}
+.frame-narr{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin:0 0 14px;max-width:1080px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;justify-items:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.state-cap{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;text-align:center;margin-bottom:8px}
+.phone{width:296px;border:1.5px solid var(--bd);border-radius:38px;padding:11px;background:var(--bg);box-shadow:0 16px 50px rgba(0,0,0,.5);position:relative}
+.phone-notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:104px;height:22px;background:var(--bg);border-radius:0 0 14px 14px}
+.scr{border-radius:27px;overflow:hidden;height:606px;display:flex;flex-direction:column;background:var(--bg)}
+.status-bar{display:flex;justify-content:space-between;padding:11px 18px 4px;font-size:11px;font-weight:600}
+.apphdr{display:flex;align-items:center;padding:5px 16px 8px}.apphdr .wm{font-size:14px;font-weight:700;color:var(--accent)}
+.apphdr .pill{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:20px}
+.pill.out{background:var(--s2);color:var(--mute)}.pill.in{background:rgba(56,201,119,.15);color:var(--accent)}.pill.wrap{background:rgba(245,181,68,.15);color:var(--amber)}
+.body{flex:1;overflow-y:auto;padding:8px 14px 14px}
+.big-clock{background:var(--accent);color:#06231A;border-radius:14px;padding:16px;text-align:center;margin-bottom:12px}
+.big-clock .ico{width:30px;height:30px;margin:0 auto 6px;display:block}
+.big-clock .lab{font-size:16px;font-weight:700}.big-clock .sub{font-size:11px;opacity:.8;margin-top:3px}
+.sec{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:13px 2px 7px}
+.card{background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:12px;margin-bottom:10px}
+.card.wo{border-left:4px solid var(--accent)}
+.card .h{font-size:14px;font-weight:600}.card .m{font-size:11px;color:var(--mute);margin-top:4px}
+.task{font-size:11.5px;color:var(--dim);padding:4px 0;display:flex;gap:8px;align-items:flex-start}
+.ck{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--mute);flex:none;margin-top:1px}.ck.done{background:var(--accent);border-color:var(--accent)}
+.warn{background:rgba(245,181,68,.1);border:1px solid rgba(245,181,68,.4);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--amber);margin-top:8px;display:flex;gap:7px}
+.capgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+.capbtn{background:var(--s);border:1px solid var(--bds);border-radius:10px;padding:11px;text-align:center;font-size:11px;color:var(--dim)}
+.capbtn .ico{width:22px;height:22px;display:block;margin:0 auto 5px;color:var(--accent)}
+.gate{background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:12px}
+.gline{display:flex;align-items:center;gap:9px;font-size:11.5px;padding:5px 0}
+.gdot{width:14px;height:14px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.gdot.ok{background:var(--accent);color:#06231A}.gdot.todo{background:var(--s2);border:1px solid var(--mute)}
+.gmeta{margin-left:auto;font-size:10px;color:var(--mute)}
+.wrapbtn{background:var(--accent);color:#06231A;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:14px;margin-top:11px}
+.esc{text-align:center;font-size:10.5px;color:var(--mute);margin-top:9px;text-decoration:underline}
+.hint{text-align:center;font-size:10px;color:var(--mute);margin-top:7px}
+.botbar{display:flex;justify-content:space-around;align-items:flex-end;padding:7px 4px 11px;border-top:1px solid var(--bds);background:var(--bg)}
+.nav{font-size:9px;color:var(--mute);text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}.nav.on{color:var(--accent)}
+.bi{width:24px;height:24px;display:block}
+.micwrap{flex:1;display:flex;flex-direction:column;align-items:center}
+.mic{width:50px;height:50px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 0 0 5px var(--bg),0 0 16px rgba(56,201,119,.5);color:#06231A}.mic .bi{width:26px;height:26px}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+.callout{background:var(--bg2);border:1px solid var(--bd);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--dim)}
+.callout .ct{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;display:block;margin-bottom:5px}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#1F8F57}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.phone{background:#FFF!important;border-color:#999!important;box-shadow:none!important}@page{size:letter;margin:.5in}.page{max-width:none!important;padding:0!important}}
+</style></head>
+<body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · execution grammar · icons inline</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Field Hand · Mano de Campo</span><span class="sep">›</span><span class="step current">F-FH1 · Field Hand home (mobile)</span></div>
+<h1>F-FH1 · Mobile Field Hand Home · the jobsite limb of Right Hand</h1>
+<p>Not "Right Hand but green" — a different grammar. No One Thing / On Deck / Pulse (that's managerial). Field is a <strong>shift flow</strong>: <code>Clock in → Work Order → Checklist / Capture → Daily → Clock out</code>. The home is a state machine — it reconfigures by clock state. The daily log is the clock-out <em>gate</em> (warm, with a graceful escape). Spanish-native. Bottom bar is the standard fixed five (D-059), bilingual: Inicio · Crear · Habla · Cámara · Más. The crew's primary action — <strong>Clock in</strong> — is the big button on the home itself, not a bar slot; Speak and Camera stay prominent because they capture by talking and shooting.</p></div>
+<div class="frame">
+<div class="frame-label">Frame · F-FH1 · Clocked out → clocked in → wrap up</div>
+<p class="frame-narr">Left: clocked out — one big "clock into today's job" with the context. Middle: clocked in — today's work order, the do/check/capture, and the warnings ("don't release shelving for fab"). Right: wrap up — the daily gate before clock-out, required photos + note + blockers + hours, framed as "wrap up today," with an escape if a guy genuinely can't finish.</p>
+<div class="frame-render">
+
+<div><div class="state-cap">1 · Clocked out</div><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>6:48</span><span>●●● 92%</span></div>
+<div class="apphdr"><span class="wm">Field Hand</span><span class="pill out">Clocked out</span></div>
+<div class="body">
+<div class="big-clock"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div class="lab">Clock into Wegrzyn</div><div class="sub">Entrar · 7:00–3:30</div></div>
+<div class="sec">Today · hoy</div>
+<div class="card"><div class="h">Wegrzyn kitchen</div><div class="m">1423 Oak St, Poway · 7:00–3:30<br>Super: Ana · with Carlos<br>72°F clear · hard hats required</div></div>
+<div class="hint">Speak or tap the mic anytime — Right Hand listens</div>
+</div>
+<div class="botbar"><div class="nav on"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Inicio</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Crear</div><div class="micwrap"><div class="mic"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div></div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Cámara</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Más</div></div>
+</div></div></div>
+
+<div><div class="state-cap">2 · Clocked in · the work</div><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>9:14</span><span>●●● 90%</span></div>
+<div class="apphdr"><span class="wm">Field Hand</span><span class="pill in">On the clock · 2:14</span></div>
+<div class="body">
+<div class="sec">Today's work order</div>
+<div class="card wo"><div class="h">Rough plumbing prep</div><div class="m">Wegrzyn kitchen · from Ana</div>
+<div class="task"><span class="ck done"></span>Locate + mark sink relocation</div>
+<div class="task"><span class="ck done"></span>Set valve boxes — north wall</div>
+<div class="task"><span class="ck"></span>Pressure test before backfill</div>
+<div class="task"><span class="ck"></span>Photo each rough-in line</div>
+<div class="warn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 3l9 16H3z"/><path d="M12 9v5M12 17h.01"/></svg>Don't release shelving for fab — measure on site first</div></div>
+<div class="sec">Capture · capturar</div>
+<div class="capgrid">
+<div class="capbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Photo / video</div>
+<div class="capbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg>Voice note</div>
+<div class="capbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 9v5M12 17h.01"/></svg>Flag an issue</div>
+<div class="capbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v12H4z"/><path d="M4 11h16"/></svg>Material used</div>
+</div>
+</div>
+<div class="botbar"><div class="nav on"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Inicio</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Crear</div><div class="micwrap"><div class="mic"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div></div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Cámara</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Más</div></div>
+</div></div></div>
+
+<div><div class="state-cap">3 · Wrap up · the daily gate</div><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>3:22</span><span>●●● 84%</span></div>
+<div class="apphdr"><span class="wm">Field Hand</span><span class="pill wrap">Wrap up</span></div>
+<div class="body">
+<div class="sec">Wrap up today · before you clock out</div>
+<div class="gate">
+<div class="gline"><span class="gdot ok">✓</span>Photos — rough-in lines<span class="gmeta">6 added</span></div>
+<div class="gline"><span class="gdot ok">✓</span>Hours<span class="gmeta">7.5</span></div>
+<div class="gline"><span class="gdot ok">✓</span>Checklist<span class="gmeta">3 of 4</span></div>
+<div class="gline"><span class="gdot todo"></span>Progress note<span class="gmeta">tap to speak</span></div>
+<div class="gline"><span class="gdot todo"></span>Anything blocking tomorrow?<span class="gmeta">optional</span></div>
+<div class="wrapbtn">Finish + clock out</div>
+<div class="esc">Can't finish? Clock out — Ana will pick up what's missing</div>
+</div>
+<div class="hint">Right Hand fills most of this from what you captured today</div>
+</div>
+<div class="botbar"><div class="nav on"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Inicio</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Crear</div><div class="micwrap"><div class="mic"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div></div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Cámara</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Más</div></div>
+</div></div></div>
+
+</div>
+<div class="frame-spec"><h3>F-FH1 · Spec</h3>
+<h4>Execution grammar (not command)</h4><ul>
+<li><code>Clock in → Work Order → Checklist/Capture → Daily → Clock out</code>. No One Thing / On Deck / Pulse.</li>
+<li>Home is a <strong>state machine</strong> — reconfigures by clock state (out / in / wrap-up).</li>
+<li>Main object = today's assigned job (directive, not a decision).</li>
+</ul>
+<h4>The daily gate</h4><ul>
+<li>Daily must be complete before clock-out — guarantees the log is filed (closes the crew-compliance loop, D-052).</li>
+<li><strong>Warm, not punitive</strong>: "wrap up today," not "you're blocked."</li>
+<li><strong>Graceful escape</strong>: clock out with "missing → super picks it up" — never a dead-end trap.</li>
+<li>Right Hand pre-fills from the day's capture.</li>
+</ul>
+<h4>Scoped OUT (permission lattice)</h4><ul>
+<li>No pricing · no margin · no CO state · no client comms · no other crews. Carlos's lane is his lane.</li>
+</ul>
+<h4>Bar + identity</h4><ul>
+<li><code>Home · Create · Speak · Camera · More</code> — the fixed five (D-059), bilingual (Inicio · Crear · Habla · Cámara · Más). Speak + Camera stay prominent (voice is the field hand's superpower); <strong>Clock in</strong> is the home's primary button, not a bar slot.</li>
+<li>Spanish-native (Mano de Campo). Capture = the shared conversational overlay (F-RH3); SMS ingest (D-052) is the zero-install twin.</li>
+</ul></div>
+</div>
+<div class="callout-row">
+<div class="callout"><span class="ct">A shift flow, not an inbox</span>The home follows the day: clock into the job → do the work order → capture as you go → wrap up the daily → clock out. It reconfigures by clock state instead of standing still.</div>
+<div class="callout"><span class="ct">The daily is the gate</span>Filing the daily is the natural end of the day, not a chore. Warm framing + a graceful escape if a guy genuinely can't finish — gate, not wall.</div>
+</div>
+</div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

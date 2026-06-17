@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-US1 · User Settings (per-login · personal · not admin)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--accent:#C9A961;--rh:#C9A961;--green:#38C977;--blue:#7BA8FF;--red:#F87171;--magenta:#E879A8}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--accent:#8A6D29;--rh:#8A6D29;--green:#1E8E50;--magenta:#993556}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}body.light-mode .phone-notch{background:#1a1a1d!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--accent);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec,body.presentation-mode .specrow{display:none}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:26px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1120px;line-height:1.6}
+.three{display:grid;grid-template-columns:0.85fr 1fr 1.35fr;gap:18px;align-items:start}
+.three-head{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin:4px 0 0}
+.cap{text-align:center;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:9px}.cap .n{display:inline-flex;width:17px;height:17px;border-radius:50%;background:var(--accent);color:#1A1300;font-size:9px;align-items:center;justify-content:center;margin-right:5px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:18px 12px;display:flex;justify-content:center;min-height:200px;align-items:flex-start}
+/* phone */
+.phone{width:248px;border:1.5px solid var(--bd);border-radius:34px;padding:9px;background:var(--bg);box-shadow:0 12px 36px rgba(0,0,0,.5);position:relative}
+.phone-notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:90px;height:18px;background:var(--bg);border-radius:0 0 12px 12px;z-index:6}
+.scr{border-radius:26px;overflow:hidden;height:540px;display:flex;flex-direction:column;background:var(--bg)}
+.status-bar{display:flex;justify-content:space-between;padding:9px 15px 3px;font-size:9.5px;font-weight:600}
+.nav-top{display:flex;align-items:center;gap:9px;padding:3px 13px 8px;border-bottom:1px solid var(--bds)}.nav-top .bk{width:24px;height:24px;border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--dim)}.nav-top .bk svg{width:13px;height:13px}.nav-top .ttl{font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.body{flex:1;overflow-y:auto;padding:11px 13px}
+/* desktop window */
+.win{width:100%;max-width:560px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 12px 36px rgba(0,0,0,.4)}
+.win-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--bds)}.win-bar .d{width:9px;height:9px;border-radius:50%;background:var(--bd)}.win-bar .u{margin-left:12px;font-size:10px;color:var(--mute);font-family:monospace}
+.win-body{padding:16px 18px;max-height:560px;overflow-y:auto}
+/* shared settings UI */
+.id{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+.id .av{width:42px;height:42px;border-radius:50%;background:rgba(201,169,97,.2);color:var(--rh);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex:none}
+.id .nm{font-size:15px;font-weight:700}.id .rl{font-size:10.5px;color:var(--mute);margin-top:1px}
+.you{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--rh);background:rgba(201,169,97,.15);border-radius:20px;padding:2px 8px;margin-left:auto;flex:none}
+.grp{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:15px 1px 7px}
+.fld{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--s);border:1px solid var(--bds);border-radius:10px;margin-bottom:6px}
+.fld .k{font-size:11px;color:var(--mute);width:84px;flex:none}.fld .v{font-size:12px;color:var(--t);font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.fld .v.ro{color:var(--mute);font-weight:400}
+.fld .act{font-size:10px;font-weight:700;color:var(--accent);flex:none}
+.seg{display:flex;gap:3px;background:var(--bg2);border:1px solid var(--bds);border-radius:8px;padding:2px;flex:none}.seg span{font-size:10px;padding:3px 9px;border-radius:6px;color:var(--mute);font-weight:600}.seg span.on{background:var(--accent);color:#1A1300}
+.tog{width:34px;height:19px;border-radius:20px;background:var(--bd);position:relative;flex:none}.tog.on{background:var(--green)}.tog::after{content:"";position:absolute;top:2px;width:15px;height:15px;border-radius:50%;background:#fff;left:2px}.tog.on::after{left:17px}
+.boundary{margin-top:14px;background:rgba(232,121,168,.08);border:1px solid rgba(232,121,168,.3);border-radius:10px;padding:11px 12px;font-size:10.5px;color:var(--dim);line-height:1.5}.boundary b{color:var(--magenta)}.boundary a{color:var(--magenta);font-weight:600}
+.signout{margin-top:12px;width:100%;text-align:center;border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:12px;font-weight:700;color:var(--red)}
+/* entry point */
+.entry-top{width:100%;max-width:300px;border:1px solid var(--bd);border-radius:10px;background:var(--bg2);padding:9px 11px;display:flex;align-items:center;gap:8px}
+.entry-top .wm{font-size:12px;font-weight:700;color:var(--rh)}.entry-top .av{margin-left:auto;width:28px;height:28px;border-radius:50%;background:rgba(201,169,97,.25);color:var(--rh);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid var(--rh)}
+.menu{margin:8px 0 0 auto;width:190px;background:var(--s);border:1px solid var(--bd);border-radius:11px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.menu .mh{padding:7px 9px;border-bottom:1px solid var(--bds);margin-bottom:4px}.menu .mh .mn{font-size:12px;font-weight:700}.menu .mh .me{font-size:9.5px;color:var(--mute)}
+.menu .mi{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;font-size:11.5px;color:var(--dim)}.menu .mi.on{background:rgba(201,169,97,.12);color:var(--t);font-weight:600}.menu .mi svg{width:14px;height:14px}.menu .mi.dim{opacity:.5}.menu .mi.so{color:var(--red)}
+.specrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin:24px 0 36px}
+.spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:16px 15px;font-size:12px;color:var(--dim)}.spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 9px}.spec h3.p{color:var(--rh)}.spec h3.a{color:var(--magenta)}
+.spec ul{padding-left:16px;margin:0}.spec li{margin-bottom:6px}.spec b{color:var(--t)}.spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#EEE;--s2:#E4E8ED;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#8A6D29;--rh:#8A6D29}.view-toggle-bar{display:none!important}.three,.specrow{grid-template-columns:repeat(3,1fr)!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.phone,.win{box-shadow:none!important}@page{size:letter landscape;margin:.3in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · per-login personal settings · NOT admin · supersedes F-SP1a</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Settings</span><span class="sep">›</span><span class="step current">F-US1 · User settings (personal)</span></div>
+<h1>F-US1 · User settings — your login, not the company's</h1>
+<p>The settings <strong>any</strong> logged-in user reaches by pressing their name/avatar (upper-right on desktop, header on mobile). It's <strong>just them</strong> — profile, login &amp; security, personal preferences. It is deliberately <strong>separate from Admin settings</strong> (team · permissions · billing · integrations · audit), which is a higher-permission surface. A field hand has F-US1; only an owner/admin also has Admin. Supersedes the old F-SP1a account editor (and adds the theme toggle it was missing).</p></div>
+
+<div class="three">
+<!-- 1 ENTRY -->
+<div><div class="cap"><span class="n">1</span>Entry — press your name</div>
+<div class="frame-render" style="flex-direction:column;align-items:flex-end"><div class="entry-top"><span class="wm">Right Hand</span><span class="av">JS</span></div>
+<div class="menu"><div class="mh"><div class="mn">Joe Suárez</div><div class="me">joe@ggrremodel.com</div></div>
+<div class="mi on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 21c0-4 3.5-6 7-6s7 2 7 6"/></svg>Your account</div>
+<div class="mi dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>Admin settings <span style="margin-left:auto;font-size:8px">PM: hidden</span></div>
+<div class="mi so"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Sign out</div>
+</div></div>
+<div style="font-size:10.5px;color:var(--dim);line-height:1.6;margin-top:10px;padding:0 4px">The avatar (upper-right desktop · header mobile) opens this menu. <b>Your account</b> → F-US1. <b>Admin settings</b> only appears for permitted roles (hidden for a PM/field hand).</div>
+</div>
+
+<!-- 2 MOBILE -->
+<div><div class="cap"><span class="n">2</span>Mobile</div>
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>9:41</span><span>●●●</span></div>
+<div class="nav-top"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span class="ttl">Your account</span></div>
+<div class="body">
+<div class="id"><span class="av">JS</span><div><div class="nm">Joe Suárez</div><div class="rl">Project Manager · GGR</div></div><span class="you">You</span></div>
+<div class="grp">Profile</div>
+<div class="fld"><span class="k">Photo</span><span class="v">JS</span><span class="act">Change</span></div>
+<div class="fld"><span class="k">Name</span><span class="v">Joe Suárez</span><span class="act">Edit</span></div>
+<div class="fld"><span class="k">Phone</span><span class="v">(619) 555-0147</span><span class="act">Edit</span></div>
+<div class="fld"><span class="k">Title</span><span class="v ro">Project Manager · set by admin</span></div>
+<div class="grp">Login &amp; security</div>
+<div class="fld"><span class="k">Login email</span><span class="v">joe@ggrremodel.com</span><span class="act">Change</span></div>
+<div class="fld"><span class="k">Password</span><span class="v">••••••••</span><span class="act">Change</span></div>
+<div class="fld"><span class="k">Two-factor</span><span class="v ro">Off</span><span class="act">Set up</span></div>
+<div class="grp">Preferences</div>
+<div class="fld"><span class="k">Language</span><div class="seg"><span class="on">EN</span><span>ES</span></div></div>
+<div class="fld"><span class="k">Appearance</span><div class="seg"><span class="on">System</span><span>Light</span><span>Dark</span></div></div>
+<div class="fld"><span class="k" style="width:auto;flex:1">Approvals you owe</span><div class="tog on"></div></div>
+<div class="fld"><span class="k" style="width:auto;flex:1">Daily digest</span><div class="tog"></div></div>
+<div class="boundary"><b>Just you.</b> Team, permissions, billing &amp; integrations live in <b>Admin</b> — you don't have access (PM role).</div>
+<div class="signout">Sign out</div>
+</div>
+</div></div></div></div>
+
+<!-- 3 DESKTOP -->
+<div><div class="cap"><span class="n">3</span>Desktop</div>
+<div class="frame-render"><div class="win">
+<div class="win-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">app.kerf · settings/account</span></div>
+<div class="win-body">
+<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);font-weight:600;border:1px solid var(--bd);border-radius:7px;padding:4px 10px;margin-bottom:14px"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</span>
+<div class="id"><span class="av">JS</span><div><div class="nm">Joe Suárez</div><div class="rl">Project Manager · GGR Design + Remodeling</div></div><span class="you">Your account</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 22px">
+<div>
+<div class="grp">Profile</div>
+<div class="fld"><span class="k">Name</span><span class="v">Joe Suárez</span><span class="act">Edit</span></div>
+<div class="fld"><span class="k">Phone</span><span class="v">(619) 555-0147</span><span class="act">Edit</span></div>
+<div class="fld"><span class="k">Title</span><span class="v ro">PM · set by admin</span></div>
+<div class="grp">Login &amp; security</div>
+<div class="fld"><span class="k">Login email</span><span class="v">joe@ggrremodel.com</span><span class="act">Change</span></div>
+<div class="fld"><span class="k">Password</span><span class="v">••••••••</span><span class="act">Change</span></div>
+<div class="fld"><span class="k">Two-factor</span><span class="v ro">Off</span><span class="act">Set up</span></div>
+<div class="fld"><span class="k">Sessions</span><span class="v">This device + 2</span><span class="act">Sign out all</span></div>
+</div>
+<div>
+<div class="grp">Preferences</div>
+<div class="fld"><span class="k">Language</span><div class="seg"><span class="on">EN</span><span>ES</span></div></div>
+<div class="fld"><span class="k">Appearance</span><div class="seg"><span class="on">System</span><span>Light</span><span>Dark</span></div></div>
+<div class="fld"><span class="k" style="width:auto;flex:1">Mentions</span><div class="tog on"></div></div>
+<div class="fld"><span class="k" style="width:auto;flex:1">Approvals you owe</span><div class="tog on"></div></div>
+<div class="fld"><span class="k" style="width:auto;flex:1">Daily digest</span><div class="tog"></div></div>
+<div class="boundary"><b>This is just you.</b> Company-wide settings — team, permissions, billing, integrations, audit — live in <a>Admin settings →</a> (owner/admin only).</div>
+</div>
+</div>
+</div>
+</div></div></div>
+</div>
+
+<div class="specrow">
+<div class="spec p"><h3 class="p">Personal · F-US1 (this surface)</h3><ul>
+<li><b>Every</b> logged-in user has it — owner, PM, admin, field hand, sub.</li>
+<li>Scope: <b>their own</b> profile · login email · password · 2FA · sessions · language · theme · notifications.</li>
+<li><b>No permission needed</b> — it's yours. No tenant/company data, no other users.</li>
+<li>Reached by the avatar/name menu → "Your account." Same content mobile + desktop.</li>
+</ul></div>
+<div class="spec a"><h3 class="a">Admin · F-SP1 (separate, higher-permission)</h3><ul>
+<li>Only owner/admin roles. Hidden from the menu for everyone else.</li>
+<li>Scope: <b>team &amp; users · permissions/roles · integrations · billing · Plays · navigation · audit</b> — tenant-wide consequence.</li>
+<li>Changing <em>your</em> password = personal. Changing <em>someone else's</em> access = admin. That's the line.</li>
+<li>Tenant/company config (brand, defaults, F-DL3 guidance level) sits inside Admin (owner-level subset).</li>
+</ul></div>
+<div class="spec"><h3>Notes</h3><ul>
+<li><b>Supersedes F-SP1a</b> (old account editor) — and adds the theme toggle it was missing.</li>
+<li>Right Hand gold = personal/identity accent.</li>
+<li><b>Security:</b> password/2FA/email changes are real auth actions — the surface shows the control; the actual change runs through the auth flow with re-verification, never stored inline. (Wireframe note for the build lane.)</li>
+<li>Title/role is <b>read-only here</b> (set by admin) — a user can't promote themselves.</li>
+</ul></div>
+</div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

@@ -86,7 +86,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/home/admin-ops.astro',
     domain: 'home',
     surface: 'Admin/Ops home',
-    wireframes: ['F-AO1_mobile_admin_ops_home.html', 'F-AO2_desktop_admin_ops_home.html'],
+    wireframes: ['F-AO1_mobile_admin_ops_home.html', 'F-AO2_desktop_admin_ops_home.html', 'F-AD3_mobile_admin_home.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Current role home is a stub projection. F-AD admin landing remains a separate future/admin entry.',
     next: [
@@ -139,7 +139,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/home/field.astro',
     domain: 'home',
     surface: 'Field hand home',
-    wireframes: ['F-C1_mobile_field_hand_home.html', 'F-FL1_mobile_foreman_home.html', 'F-SU1_mobile_superintendent_home.html', 'F-SU2_desktop_superintendent_home.html'],
+    wireframes: ['F-C1_mobile_field_hand_home.html', 'F-FH1_mobile_field_hand_home.html', 'F-FL1_mobile_foreman_home.html', 'F-SU1_mobile_superintendent_home.html', 'F-SU2_desktop_superintendent_home.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Role-specific field, foreman, and superintendent projections need explicit routing by role.',
     next: [
@@ -170,7 +170,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/right-hand.astro',
     domain: 'home',
     surface: 'Right Hand conversation / fallback',
-    wireframes: ['F-RH1_mobile_right_hand_voice_overlay.html', 'F-RH3_mobile_right_hand_conversation_lifecycle.html', 'F-RH7_bubble_transitions.html'],
+    wireframes: ['F-RH1_mobile_right_hand_voice_overlay.html', 'F-RH3_mobile_right_hand_conversation_lifecycle.html', 'F-RH4_desktop_conversation_compose.html', 'F-RH6_talk_to_right_hand.html', 'F-RH7_bubble_transitions.html'],
     status: 'canon_wired',
     notes: 'F-RH7 is now present in repo canon as the bubble/bloom behavior. This route remains the fallback page when overlay travel cannot keep the operator on artifact.',
     next: [
@@ -284,7 +284,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/room-capture.astro',
     domain: 'field',
     surface: 'Room capture / LiDAR',
-    wireframes: ['F-RC1_mobile_room_capture.html'],
+    wireframes: ['F-RC1_mobile_room_capture.html', 'F-RT1_desktop_room_takeoff.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Room capture face entered from Camera or Start.',
     next: [
@@ -340,7 +340,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     route: '/projects/:id/daily-log',
     domain: 'projects',
     surface: 'Daily Log',
-    wireframes: ['F-DL1_mobile_daily_log.html'],
+    wireframes: ['F-DL1_mobile_daily_log.html', 'F-DL2_mobile_field_hand_daily_log_clockout.html'],
     status: 'future_or_unrouted',
     notes: 'F-DL1 is now present in repo canon. The flat Daily Log route is still pending merge from the Daily Log implementation branch.',
     next: [
@@ -366,7 +366,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/projects/[id]/status.astro',
     domain: 'projects',
     surface: 'Project status',
-    wireframes: ['F-PS1_mobile_project_status.html'],
+    wireframes: ['F-PS1_mobile_project_status.html', 'F-CPS1_mobile_client_project_status.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Project status should be a project lens, not an orphan dashboard.',
     next: [
@@ -393,7 +393,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/projects/[id]/portal-preview.astro',
     domain: 'clients',
     surface: 'Client portal preview',
-    wireframes: ['F-CS1_mobile_client_success.html', 'F-CS2_desktop_client_success.html'],
+    wireframes: ['F-CS1_mobile_client_success.html', 'F-CS2_desktop_client_success.html', 'F-CP1_desktop_client_portal.html', 'F-CPS1_mobile_client_project_status.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Operator preview of client-facing portal. There is no specific portal-preview canon file in this repo.',
     next: [
@@ -533,7 +533,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/sales/index.astro',
     domain: 'sales',
     surface: 'Sales pipeline',
-    wireframes: ['F-SL1_mobile_sales_pipeline.html', 'F-SL2_desktop_sales_pipeline.html'],
+    wireframes: ['F-SL1_mobile_sales_pipeline.html', 'F-SL2_desktop_sales_pipeline.html', 'F-SA1_mobile_sales_home.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Pipeline/home for win-the-work.',
     next: [
@@ -745,7 +745,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/clients/[id]/warranty.astro',
     domain: 'clients',
     surface: 'Warranty',
-    wireframes: ['F-WW1a_mobile_warranty.html', 'F-WW1b_desktop_warranty.html'],
+    wireframes: ['F-WW1a_mobile_warranty.html', 'F-WW1b_desktop_warranty.html', 'F-WAR1_desktop_warranty.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Client-owned warranty lane.',
     next: [
@@ -794,7 +794,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/team-ops/subs.astro',
     domain: 'people_admin_ops',
     surface: 'Subs / crew',
-    wireframes: ['F-SB1_mobile_subs_list.html', 'F-SB2_desktop_subs_list.html', 'F-CR1_mobile_crew.html', 'F-CR2_desktop_crew.html'],
+    wireframes: ['F-SB1_mobile_subs_list.html', 'F-SB2_desktop_subs_list.html', 'F-CR1_mobile_crew.html', 'F-CR2_desktop_crew.html', 'F-SUBM1_desktop_subs_management.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Subcontractor and crew operations. Crew faces are currently folded into this route.',
     next: [
@@ -845,7 +845,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/settings/me.astro',
     domain: 'people_admin_ops',
     surface: 'Account editor',
-    wireframes: ['F-SP1a_desktop_account_editor.html'],
+    wireframes: ['F-SP1a_desktop_account_editor.html', 'F-US1_user_settings.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Personal account settings.',
     next: [
@@ -900,7 +900,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/on-me.astro',
     domain: 'home',
     surface: 'Global to-do / On me',
-    wireframes: ['F-TD1_mobile_global_todo.html', 'F-TD2_desktop_global_todo.html'],
+    wireframes: ['F-TD1_mobile_global_todo.html', 'F-TD2_desktop_global_todo.html', 'F-ON1_desktop_on_me_today.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Global personal queue.',
     next: [
@@ -912,9 +912,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/library.astro',
     domain: 'sales',
     surface: 'Cost knowledge library',
-    wireframes: [],
-    status: 'missing_canon_face',
-    notes: 'Live KB/library route has no F-* face in repo.',
+    wireframes: ['F-LIB1_desktop_libraries_selections.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Live KB/library route now has the F-LIB1 desktop libraries + selections Canon face.',
     next: [
       { trigger: 'Back design', route: '/design/:projectId', face: 'F-SL3_mobile_deal_detail.html' },
     ],
@@ -974,9 +974,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/login.astro',
     domain: 'home',
     surface: 'Login',
-    wireframes: [],
-    status: 'missing_canon_face',
-    notes: 'surfaceCatalog references LoginF-LND1, but no F-LND1 file exists in docs/wireframes/canon.',
+    wireframes: ['F-LND1_desktop_landing_login.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'F-LND1 is imported as the landing/login role-routing face.',
     next: [
       { trigger: 'Sign in', route: 'role home', face: 'role-specific home face' },
       { trigger: 'Role demo continue', route: 'role home', face: 'role-specific home face' },
@@ -987,7 +987,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/portal/index.astro',
     domain: 'client_portal',
     surface: 'Client portal login',
-    wireframes: [],
+    wireframes: ['F-CP1_desktop_client_portal.html'],
     status: 'client_surface',
     notes: 'Client-facing portal door, intentionally outside operator shell registry. Needs separate client-facing canon face.',
     next: [
@@ -999,7 +999,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/portal/s/[token].astro',
     domain: 'client_portal',
     surface: 'Client portal session',
-    wireframes: [],
+    wireframes: ['F-CP1_desktop_client_portal.html', 'F-CPS1_mobile_client_project_status.html'],
     status: 'client_surface',
     notes: 'Client-facing session, outside operator shell.',
     next: [
@@ -1011,7 +1011,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/sub/portal/index.astro',
     domain: 'people_admin_ops',
     surface: 'Sub portal login',
-    wireframes: ['F-SH1_mobile_sub_home.html'],
+    wireframes: ['F-SH1_mobile_sub_home.html', 'F-SUB1_mobile_sub_portal.html'],
     status: 'client_surface',
     notes: 'Subcontractor-facing portal door. Registered separately from operator shell.',
     next: [
@@ -1023,7 +1023,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/sub/portal/s/[token].astro',
     domain: 'people_admin_ops',
     surface: 'Sub portal session',
-    wireframes: ['F-SH1_mobile_sub_home.html'],
+    wireframes: ['F-SH1_mobile_sub_home.html', 'F-SUB1_mobile_sub_portal.html'],
     status: 'client_surface',
     notes: 'Sub assignment list.',
     next: [
@@ -1045,6 +1045,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
 ];
 
 export const WIREFRAME_REFERENCE_MAP: readonly WireframeReferenceEntry[] = [
+  { wireframe: 'F-AA1_attention_artifact.html', intendedSurface: 'Shared attention artifact', intendedRoute: 'shared Home / On Me / review queue component', status: 'mapped_pending_rebuild', notes: 'Shared card grammar, not a standalone route.' },
   { wireframe: 'F-AD1_mobile_admin_landing.html', intendedSurface: 'Admin landing', intendedRoute: '/settings or /home/admin-ops', status: 'future_or_unrouted', notes: 'Admin landing is not a distinct live route yet.' },
   { wireframe: 'F-AD2_desktop_admin_landing.html', intendedSurface: 'Admin landing desktop', intendedRoute: '/settings or /home/admin-ops', status: 'future_or_unrouted', notes: 'Admin landing is not a distinct live route yet.' },
   { wireframe: 'F-BC1_mobile_bar_customization.html', intendedSurface: 'Bottom bar customization', intendedRoute: '/settings or /more', status: 'future_or_unrouted', notes: 'No live customization route.' },
@@ -1053,8 +1054,10 @@ export const WIREFRAME_REFERENCE_MAP: readonly WireframeReferenceEntry[] = [
   { wireframe: 'F-HR1a_mobile_time_tracking.html', intendedSurface: 'Time tracking', intendedRoute: '/team-ops/time', status: 'future_or_unrouted', notes: 'No live time route.' },
   { wireframe: 'F-HR1b_desktop_time_tracking.html', intendedSurface: 'Time tracking desktop', intendedRoute: '/team-ops/time', status: 'future_or_unrouted', notes: 'No live time route.' },
   { wireframe: 'F-HR2_desktop_employee_docs.html', intendedSurface: 'Employee docs', intendedRoute: '/team-ops/docs', status: 'future_or_unrouted', notes: 'No live employee docs route.' },
+  { wireframe: 'F-DL3_mobile_field_guidance_level.html', intendedSurface: 'Field guidance level', intendedRoute: '/settings or /home/field', status: 'future_or_unrouted', notes: 'Guidance level setting affects field-home/Daily Log behavior; no distinct live route yet.' },
   { wireframe: 'F-LD1a_mobile_lost_deals.html', intendedSurface: 'Lost deals', intendedRoute: '/sales?state=lost', status: 'future_or_unrouted', notes: 'Lost-deal state should live in Sales.' },
   { wireframe: 'F-LD1b_desktop_lost_deals.html', intendedSurface: 'Lost deals desktop', intendedRoute: '/sales?state=lost', status: 'future_or_unrouted', notes: 'Lost-deal state should live in Sales.' },
+  { wireframe: 'F-MEM-RH_memory_system.html', intendedSurface: 'Right Hand memory model', intendedRoute: 'Right Hand working set / context resolver', status: 'mapped_pending_rebuild', notes: 'System model/reference face, not a page route.' },
   { wireframe: 'F-MK1_mobile_marketing_home.html', intendedSurface: 'Marketing home', intendedRoute: '/marketing', status: 'future_or_unrouted', notes: 'Marketing domain is not live-routed.' },
   { wireframe: 'F-MK2_desktop_marketing_home.html', intendedSurface: 'Marketing home desktop', intendedRoute: '/marketing', status: 'future_or_unrouted', notes: 'Marketing domain is not live-routed.' },
   { wireframe: 'F-MK3_mobile_reviews_referrals.html', intendedSurface: 'Reviews/referrals', intendedRoute: '/marketing/reviews', status: 'future_or_unrouted', notes: 'Marketing domain is not live-routed.' },
@@ -1067,14 +1070,21 @@ export const WIREFRAME_REFERENCE_MAP: readonly WireframeReferenceEntry[] = [
   { wireframe: 'F-MK10_desktop_leads.html', intendedSurface: 'Leads desktop', intendedRoute: '/marketing/leads or /sales', status: 'future_or_unrouted', notes: 'Lead intake currently folds into Sales.' },
   { wireframe: 'F-ML1_mobile_project_media.html', intendedSurface: 'Project media', intendedRoute: '/projects/:id/media', status: 'future_or_unrouted', notes: 'Project media is currently a project lens/camera handoff, not a distinct route.' },
   { wireframe: 'F-ML2_desktop_project_media.html', intendedSurface: 'Project media desktop', intendedRoute: '/projects/:id/media', status: 'future_or_unrouted', notes: 'Project media is currently a project lens/camera handoff, not a distinct route.' },
+  { wireframe: 'F-NAV1_normal_and_bubble_views.html', intendedSurface: 'Global shell / bubble view', intendedRoute: 'global shell chrome', status: 'mapped_pending_rebuild', notes: 'Global navigation reference, not a standalone route.' },
+  { wireframe: 'F-NAV2_bottombar_center_vs_right.html', intendedSurface: 'Bottom bar center mic', intendedRoute: 'global bottom bar', status: 'mapped_pending_rebuild', notes: 'Bottom bar doctrine reference, not a standalone route.' },
+  { wireframe: 'F-ORCH1_background_orchestration_flow.html', intendedSurface: 'Background orchestration', intendedRoute: 'background system flow', status: 'future_or_unrouted', notes: 'System orchestration reference, not an operator route.' },
   { wireframe: 'F-PA1a_mobile_project_archive.html', intendedSurface: 'Project archive', intendedRoute: '/projects?archive=1', status: 'future_or_unrouted', notes: 'Archive state is not a distinct live route.' },
   { wireframe: 'F-PA1b_desktop_project_archive.html', intendedSurface: 'Project archive desktop', intendedRoute: '/projects?archive=1', status: 'future_or_unrouted', notes: 'Archive state is not a distinct live route.' },
+  { wireframe: 'F-PN1_desktop_project_notes.html', intendedSurface: 'Project notes', intendedRoute: '/projects/:id/notes', status: 'future_or_unrouted', notes: 'Project notes likely lives as a project lens; no distinct live route yet.' },
   { wireframe: 'F-PU1a_mobile_purchasing.html', intendedSurface: 'Purchasing', intendedRoute: '/money/purchasing or /projects/:id/purchasing', status: 'future_or_unrouted', notes: 'No live purchasing route.' },
   { wireframe: 'F-PU1b_desktop_purchasing.html', intendedSurface: 'Purchasing desktop', intendedRoute: '/money/purchasing or /projects/:id/purchasing', status: 'future_or_unrouted', notes: 'No live purchasing route.' },
   { wireframe: 'F-PU2_desktop_vendor_detail.html', intendedSurface: 'Vendor detail', intendedRoute: '/money/vendors/:id', status: 'future_or_unrouted', notes: 'No live vendor route.' },
   { wireframe: 'F-VC1_desktop_spend_card_framing.html', intendedSurface: 'Spend card framing', intendedRoute: '/money/spend-card', status: 'future_or_unrouted', notes: 'No live spend-card route.' },
+  { wireframe: 'F-VW1_viewing_window_voice_editing.html', intendedSurface: 'Viewing window voice editing', intendedRoute: 'global Right Hand overlay', status: 'mapped_pending_rebuild', notes: 'Right Hand viewing-window interaction reference, not a standalone route.' },
 ];
 
 export const EXTERNAL_OR_MISSING_CANON_FACES: readonly WireframeReferenceEntry[] = [
   { wireframe: 'RightHand_Fix_Review_2026-06-14.html', intendedSurface: 'Fix review integrated reference', intendedRoute: 'multiple spine surfaces', status: 'future_or_unrouted', notes: 'User-provided reference outside docs/wireframes/canon.' },
+  { wireframe: 'F-PS1_mobile_pm_super_home.html', intendedSurface: 'PM / Super home conflict', intendedRoute: '/home/pm or /home/field', status: 'future_or_unrouted', notes: 'External Canon file reuses F-PS1, which already maps to project status in repo canon. Hold outside canon until the duplicate ID is resolved.' },
+  { wireframe: 'F-SU2_desktop_super_home.html', intendedSurface: 'Superintendent home conflict', intendedRoute: '/home/field', status: 'future_or_unrouted', notes: 'External Canon file reuses F-SU2 with a different filename/title. Hold outside canon until the duplicate ID is resolved.' },
 ];
