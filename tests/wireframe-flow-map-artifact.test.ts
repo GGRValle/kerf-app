@@ -52,4 +52,42 @@ test('interactive wireframe flow map carries parseable data for every canon face
   assert.match(html, /data-device-filter="mobile"/, 'map must expose a mobile wireframe lane');
   assert.match(html, /data-device-filter="desktop"/, 'map must expose a desktop wireframe lane');
   assert.match(html, /Device Breakdown/, 'map must summarize mobile vs desktop canon coverage');
+
+  const ownerHome = data.faces.find((face: { id: string }) => face.id === 'F-A1');
+  assert.ok(ownerHome, 'owner home face must exist');
+  for (const trigger of ['Home', 'Start', 'More']) {
+    const transition = ownerHome.transitions.find((item: { trigger: string }) => item.trigger === trigger);
+    assert.equal(transition?.spine, 'global_navigation', `bottom nav ${trigger} must stay global navigation, not a domain spine`);
+  }
+
+  const decisionCard = data.faces.find((face: { id: string }) => face.id === 'F-B1');
+  assert.ok(decisionCard, 'decision card face must exist');
+  const approve = decisionCard.transitions.find((item: { trigger: string }) => item.trigger === 'Approve');
+  assert.equal(approve?.gate, 'operator_confirm', 'decision approve must be an operator-confirmed consequence, not a false money guard');
+  assert.equal(approve?.spine, 'project_graph_spine', 'decision approve returns to the project graph spine');
+});
+
+test('wireframe build backlog is generated from the interactive gap map', () => {
+  const html = readFileSync('docs/wireframes/wireframe-flow-map.html', 'utf8');
+  const json = html.match(/<script id="flow-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(json, 'flow-data JSON script must be present');
+  const data = JSON.parse(json);
+  const backlog = readFileSync('docs/wireframes/wireframe-system-build-backlog.md', 'utf8');
+
+  assert.match(backlog, /^# Right Hand Wireframe System Build Backlog/m);
+  assert.match(backlog, /## Missing Face Implementation Cards/);
+  assert.match(backlog, /## Implementation Rules/);
+  assert.match(backlog, /Cursor C money/);
+  assert.match(backlog, /F-DL1_mobile_daily_log\.html/);
+  assert.match(backlog, /F-INV1a_mobile_per_job_invoice_list\.html/);
+  assert.match(backlog, /money_guard/);
+  assert.match(backlog, /capture_route_confirm/);
+
+  for (const gap of data.missingFaces as { label: string; device: string; intendedRoute: string; gate: string; spineDependency: string }[]) {
+    assert.notEqual(gap.device, 'unassigned', `${gap.label} must carry a device lane`);
+    assert.match(backlog, new RegExp(gap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} must be listed in backlog`);
+    assert.ok(gap.intendedRoute, `${gap.label} must name the owning route to build`);
+    assert.ok(gap.gate, `${gap.label} must name the gate`);
+    assert.ok(gap.spineDependency, `${gap.label} must name the system spine dependency`);
+  }
 });
