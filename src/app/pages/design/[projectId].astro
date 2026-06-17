@@ -1,5 +1,5 @@
 ---
-// F-DS1 · Design workspace · /design/:projectId (Lane 2)
+// F-DES1a / F-DS1 · Design workspace · /design/:projectId
 import Layout from '../../layouts/Layout.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import {
@@ -9,113 +9,210 @@ import {
   toSelectionView,
   catalogUnitCents,
 } from '../../../sales/index.js';
+import '../../styles/intake-sales-wireframes.css';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
+const dealId = projectId.replace(/^proj_/, '');
 const store = getSalesStore(tenant);
 const libraryItems = store.items.filter((i) => i.collection === 'selections');
 const selections = selectionsForProject(tenant, projectId).map((s) =>
   toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_ref)?.label ?? s.library_ref }),
 );
+const approvedSelections = selections.filter((s) => s.lifecycle === 'approved');
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
-// Design's five tabs. Selections is wired; the rest are honest stubs (not built yet).
 const TABS = [
-  { id: 'mood', label: 'Mood', status: 'stub' },
-  { id: 'threed', label: '3D', status: 'stub' },
-  { id: 'selections', label: 'Selections', status: 'functional' },
-  { id: 'tools', label: 'Design tools', status: 'stub' },
-  { id: 'integrations', label: 'Integrations', status: 'stub' },
+  { id: 'scope', label: 'Scope' },
+  { id: 'selections', label: 'Selections' },
+  { id: 'questions', label: 'Questions' },
+  { id: 'model', label: '3D model' },
+  { id: 'integrations', label: 'Integrations' },
 ] as const;
 ---
 
-<Layout title="Design workspace" activeHref="/sales">
-  <article class="ds-page" data-project={projectId}>
-    <a class="ds-back" href={`/sales/${projectId.replace(/^proj_/, '')}`}>‹ Deal</a>
-    <header>
-      <div class="ds-crumb">Design · {projectId}</div>
-      <h1>Design workspace</h1>
-      <p class="ds-sub">Pull Selections from the Knowledge Base, approve them into the job, then build the estimate.</p>
+<Layout
+  title="Design workspace"
+  activeHref="/sales"
+  surfaceContext={{
+    surface: 'design',
+    project_id: projectId,
+    phase: 'review_gate',
+  }}
+>
+  <article class="rh-design kg-grid" data-grammar="canon" data-project={projectId}>
+    <header class="kg-pagehead kg-span-12">
+      <div>
+        <a class="ds-back" href={`/sales/${dealId}`}>‹ Deal</a>
+        <p class="rh-eyebrow">F-DES1 / F-DS1 · Deal to estimate bridge</p>
+        <h1 class="rh-title">Design workspace</h1>
+        <p class="rh-subtitle">
+          Collect selections, scope assumptions, and open questions before the estimate.
+          Right Hand can organize the work, but estimate lines are created only when the operator builds the estimate.
+        </p>
+      </div>
+      <div class="rh-chiprow" aria-label="Design state">
+        <span class="kg-chip kg-routechip">Review gate</span>
+        <span class="kg-chip">No money write</span>
+        <span class="kg-chip green">{approvedSelections.length} approved</span>
+      </div>
     </header>
 
-    <nav class="ds-tabs" role="tablist">
-      {TABS.map((tab) => (
-        <button class="ds-tab" data-tab={tab.id} aria-selected={tab.id === 'selections' ? 'true' : 'false'}>
-          {tab.label}{tab.status === 'stub' ? <span class="ds-soon">soon</span> : null}
-        </button>
-      ))}
-    </nav>
-
-    <!-- Selections tab (functional) -->
-    <section class="ds-panel" data-panel="selections">
-      <div class="ds-two">
-        <div class="ds-lib">
-          <h2>Pull from Library <a class="ds-link" href="/library">Open KB ›</a></h2>
-          {libraryItems.length === 0 ? <p class="ds-empty">No catalog selections.</p> : null}
-          {libraryItems.map((item) => (
-            <div class="ds-libitem">
-              <div>
-                <strong>{item.label}</strong>
-                <span class="ds-meta">{item.line_type} · {fmt(catalogUnitCents(item))}/{item.uom}</span>
-              </div>
-              <button class="ds-btn pull" data-item={item.id}>Pull</button>
-            </div>
+    <section class="kg-span-8 rh-stack">
+      <section class="kg-card">
+        <p class="rh-eyebrow">Selections before price</p>
+        <h2>Project direction</h2>
+        <p class="rh-note">
+          Pull library items onto the board, approve the choices that belong to the job, then build the estimate from the same project context.
+        </p>
+        <div class="rh-design-tabs" role="tablist">
+          {TABS.map((tab) => (
+            <button class="rh-tab" type="button" data-tab={tab.id} aria-selected={tab.id === 'selections' ? 'true' : 'false'}>
+              {tab.label}
+            </button>
           ))}
-        </div>
-        <div class="ds-sel">
-          <h2>Project Selections</h2>
-          {selections.length === 0 ? <p class="ds-empty">Nothing pulled yet. Pull a Selection from the Library.</p> : null}
-          {selections.map((sel) => (
-            <div class="ds-selitem">
-              <div>
-                <strong>{sel.label}</strong>
-                <span class="ds-meta">{sel.line_type} · {fmt(sel.amount_cents)} · {sel.lifecycle}</span>
-              </div>
-              {sel.lifecycle === 'proposed' ? (
-                <button class="ds-btn approve" data-sel={sel.id}>Approve</button>
-              ) : (
-                <span class="ds-ok">✓ {sel.lifecycle}</span>
-              )}
-            </div>
-          ))}
-          {selections.some((s) => s.lifecycle === 'approved') ? (
-            <a class="ds-btn primary go-estimate" href={`/estimate/${projectId}`}>Build estimate ›</a>
-          ) : null}
-        </div>
-      </div>
-    </section>
-
-    <!-- Honest stubs for the other four tabs -->
-    {TABS.filter((t) => t.status === 'stub').map((tab) => (
-      <section class="ds-panel ds-stub" data-panel={tab.id} hidden>
-        <div class="ds-stub-card">
-          <h2>{tab.label}</h2>
-          <p>Not built yet. This Design tab is a placeholder — no fake controls.</p>
-          <p class="ds-meta">Lane 2 fix queue: wire {tab.label} after the price-it/propose-it spine lands.</p>
         </div>
       </section>
-    ))}
+
+      <section class="rh-panel" data-panel="selections">
+        <div class="rh-design-board">
+          <div class="rh-stack">
+            <div>
+              <div class="kg-pagehead">
+                <div>
+                  <p class="rh-label">Pull from library</p>
+                  <p class="rh-note">Library items become proposed project selections. Approval is a visible review gate.</p>
+                </div>
+                <a class="rh-btn" href="/library">Open KB</a>
+              </div>
+            </div>
+            <div class="rh-list">
+              {libraryItems.length === 0 ? (
+                <p class="rh-note">No catalog selections are available.</p>
+              ) : null}
+              {libraryItems.map((item) => (
+                <div class="rh-list-row">
+                  <span class="rh-swatch" aria-hidden="true"></span>
+                  <div>
+                    <strong>{item.label}</strong>
+                    <small>{item.line_type} · {fmt(catalogUnitCents(item))}/{item.uom}</small>
+                  </div>
+                  <button class="rh-btn pull" type="button" data-item={item.id}>Pull</button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside class="kg-card">
+            <p class="rh-eyebrow">On this job</p>
+            <div class="rh-list">
+              {selections.length === 0 ? (
+                <p class="rh-note">Nothing pulled yet. Pull a selection from the library before pricing.</p>
+              ) : null}
+              {selections.map((sel) => (
+                <div class="rh-list-row">
+                  <div>
+                    <strong>{sel.label}</strong>
+                    <small>{sel.line_type} · {fmt(sel.amount_cents)} · {sel.lifecycle}</small>
+                  </div>
+                  {sel.lifecycle === 'proposed' ? (
+                    <button class="rh-btn approve" type="button" data-sel={sel.id}>Approve</button>
+                  ) : (
+                    <span class="rh-status">Approved</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="rh-panel" data-panel="scope" hidden>
+        <div class="rh-stack">
+          <section class="kg-card">
+            <h2>Scope assumptions</h2>
+            <p class="rh-note">Use this space for design assumptions that can seed estimate lines after review.</p>
+            <div class="rh-chiprow rh-rule">
+              <span class="kg-chip green">Client liked</span>
+              <span class="kg-chip amber">Needs allowance</span>
+            </div>
+          </section>
+          <section class="kg-card">
+            <h2>Kitchenette direction</h2>
+            <p class="rh-note">Warm white slab door, quartz top, compact appliance wall.</p>
+          </section>
+        </div>
+      </section>
+
+      <section class="rh-panel" data-panel="questions" hidden>
+        <section class="kg-card">
+          <h2>Open question</h2>
+          <p class="rh-note">Appliance allowance is not priced. Ask only for the missing number before proposal.</p>
+          <div class="rh-chiprow rh-rule">
+            <span class="kg-chip red">Gap</span>
+            <span class="kg-chip">Honest escalation</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="rh-panel" data-panel="model" hidden>
+        <section class="kg-card">
+          <h2>3D model</h2>
+          <p class="rh-note">Room capture and LiDAR context attach here when present. No model is fabricated.</p>
+        </section>
+      </section>
+
+      <section class="rh-panel" data-panel="integrations" hidden>
+        <section class="kg-card">
+          <h2>Integrations</h2>
+          <p class="rh-note">Bluebeam, RoomPlan, and library connections route through the connections registry.</p>
+        </section>
+      </section>
+    </section>
+
+    <aside class="kg-card kg-span-4">
+      <p class="rh-eyebrow">Allowed next</p>
+      <dl class="rh-route-list">
+        <div>
+          <dt>Build estimate</dt>
+          <dd>Opens F-EST1 with this project context. Estimate publication still needs operator confirmation.</dd>
+        </div>
+        <div>
+          <dt>Back deal</dt>
+          <dd>Returns to the sales/deal face that owns the opportunity.</dd>
+        </div>
+        <div>
+          <dt>Library</dt>
+          <dd>Source items come from the knowledge/library surface, then approve into this project.</dd>
+        </div>
+      </dl>
+      <div class="rh-actions">
+        <a class="rh-btn primary" href={`/estimate/${projectId}`}>Build estimate</a>
+        <a class="rh-btn" href="/right-hand">Ask Right Hand</a>
+      </div>
+    </aside>
   </article>
 </Layout>
 
 <script>
-  const root = document.querySelector('.ds-page');
-  const projectId = root?.getAttribute('data-project') ?? '';
+  const root = document.querySelector('.rh-design');
+  const projectId = root?.getAttribute('data-project') || '';
 
-  function showTab(id: string) {
-    document.querySelectorAll('.ds-tab').forEach((b) =>
-      b.setAttribute('aria-selected', b.getAttribute('data-tab') === id ? 'true' : 'false'),
-    );
-    document.querySelectorAll('.ds-panel').forEach((p) => {
-      (p as HTMLElement).hidden = p.getAttribute('data-panel') !== id;
+  function showTab(id) {
+    document.querySelectorAll('.rh-tab').forEach((button) => {
+      button.setAttribute('aria-selected', button.getAttribute('data-tab') === id ? 'true' : 'false');
+    });
+    document.querySelectorAll('.rh-panel').forEach((panel) => {
+      panel.hidden = panel.getAttribute('data-panel') !== id;
     });
   }
-  document.querySelectorAll('.ds-tab').forEach((b) =>
-    b.addEventListener('click', () => showTab(b.getAttribute('data-tab') ?? 'selections')),
-  );
 
-  async function durableWrite(url: string, confirmMsg: string) {
+  document.querySelectorAll('.rh-tab').forEach((button) => {
+    button.addEventListener('click', () => showTab(button.getAttribute('data-tab') || 'selections'));
+  });
+
+  async function durableWrite(url, confirmMsg) {
     if (!confirm(confirmMsg)) return false;
     const res = await fetch(url, {
       method: 'POST',
@@ -131,10 +228,9 @@ const TABS = [
     return true;
   }
 
-  document.querySelectorAll('.ds-btn.pull').forEach((btn) =>
+  document.querySelectorAll('.rh-btn.pull').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const itemId = btn.getAttribute('data-item');
-      // Consequence gate: confirm, then a single durable write carrying item_id.
       if (!confirm('Pull this Selection onto the job?')) return;
       const res = await fetch(`/api/v1/design/${projectId}/pull`, {
         method: 'POST',
@@ -144,10 +240,10 @@ const TABS = [
       });
       if (res.ok) window.location.reload();
       else alert('Pull failed (' + res.status + ').');
-    }),
-  );
+    });
+  });
 
-  document.querySelectorAll('.ds-btn.approve').forEach((btn) =>
+  document.querySelectorAll('.rh-btn.approve').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const selId = btn.getAttribute('data-sel');
       const ok = await durableWrite(
@@ -155,29 +251,6 @@ const TABS = [
         'Approve this Selection into the job?',
       );
       if (ok) window.location.reload();
-    }),
-  );
+    });
+  });
 </script>
-
-<style>
-  .ds-page { padding: 1rem; }
-  .ds-back { color: var(--text-muted, #98a1b3); text-decoration: none; font-size: 0.85rem; }
-  .ds-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); margin-top: 0.6rem; }
-  .ds-sub { color: var(--text-muted, #98a1b3); }
-  .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.8rem 0; border-bottom: 1px solid var(--border, #2a3140); padding-bottom: 0.5rem; }
-  .ds-tab { padding: 0.4rem 0.7rem; border: 1px solid var(--border, #2a3140); border-radius: 999px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; font-size: 0.85rem; }
-  .ds-tab[aria-selected='true'] { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
-  .ds-soon { font-size: 0.62rem; margin-left: 0.3rem; opacity: 0.6; }
-  .ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  @media (max-width: 720px) { .ds-two { grid-template-columns: 1fr; } }
-  .ds-lib, .ds-sel { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.7rem; background: var(--surface, #11151c); }
-  .ds-lib h2, .ds-sel h2 { font-size: 0.95rem; margin: 0 0 0.6rem; display: flex; justify-content: space-between; align-items: baseline; }
-  .ds-link { font-size: 0.78rem; }
-  .ds-libitem, .ds-selitem { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border, #222a36); }
-  .ds-meta { display: block; font-size: 0.75rem; color: var(--text-muted, #98a1b3); }
-  .ds-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; text-decoration: none; }
-  .ds-btn.primary { display: inline-block; margin-top: 0.7rem; background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
-  .ds-ok { color: var(--field-green, #38c977); font-size: 0.82rem; }
-  .ds-empty { color: var(--text-muted, #6a7282); font-size: 0.9rem; }
-  .ds-stub-card { border: 1px dashed var(--border, #2a3140); border-radius: 12px; padding: 1.2rem; color: var(--text-muted, #98a1b3); background: var(--surface, #11151c); }
-</style>

@@ -117,6 +117,9 @@ const REGISTRY: ReadonlyArray<{ surface: string; file: string; contract: CanonCo
   { surface: 'Proposal', file: 'src/app/pages/estimate/[projectId]/proposal.astro', contract: { requireSurfaceContext: true } },
   { surface: 'Invoice', file: 'src/app/pages/estimate/[projectId]/invoice.astro', contract: { requireSurfaceContext: true } },
   { surface: 'Money', file: 'src/app/pages/money/index.astro', contract: {} },
+  { surface: 'Client Create', file: 'src/app/pages/clients/new.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
+  { surface: 'Project Setup', file: 'src/app/pages/projects/new.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
+  { surface: 'Design Workspace', file: 'src/app/pages/design/[projectId].astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'], requireSurfaceContext: true } },
 ];
 
 test('canon coverage registry: tracked surfaces enforce-on-adoption', () => {
