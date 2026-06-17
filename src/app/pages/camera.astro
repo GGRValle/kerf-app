@@ -213,6 +213,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     let suggestedProjectClient = root?.getAttribute('data-suggested-project-client') || '';
     let selectedProjectId = root?.getAttribute('data-selected-project-id') || '';
     let selectedProjectName = selectedProjectId ? suggestedProjectName : '';
+    let selectedProjectClient = selectedProjectId ? suggestedProjectClient : '';
     let selectedRouteKind = 'job';
     let routeConfirmed = root?.getAttribute('data-route-confirmed') === 'true';
     let lastCapture = null;
