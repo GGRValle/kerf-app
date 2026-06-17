@@ -113,6 +113,10 @@ const faces = files.map((file) => {
     h1,
     device: deviceFromFile(file),
     domain: domainFromId(id),
+    canonCorrection:
+      id === 'F-CAM1'
+        ? 'Founder correction 2026-06-14: camera is capture-first. Destination routing happens after capture; the source file title is superseded.'
+        : '',
     controls: extractControls(source),
     transitions: [],
   };
@@ -229,11 +233,11 @@ add(['F-RH3'], [
   { trigger: 'Bubble transition', ...missing('F-RH7_bubble_transitions.html', 'Referenced by current canon, not present in repo canon') },
 ]);
 add(['F-CAM1'], [
-  { trigger: 'Open camera here / choose job', ...target('F-CAM1', 'Internal state: job picked -> camera') },
+  { trigger: 'Open camera', ...target('F-CAM1', 'Capture starts immediately; no pre-capture job gate') },
   { trigger: 'Walkthru mode', ...target('F-CAM1', 'Internal camera mode') },
   { trigger: 'Photo mode', ...target('F-CAM1', 'Internal camera mode') },
   { trigger: 'Scan mode', ...target('F-CAM1', 'Internal camera mode; document source for estimate/CO') },
-  { trigger: 'Done', ...missing('F-DL1_mobile_daily_log.html', 'Capture should file to Daily Log or project media; Daily Log face missing from repo canon') },
+  { trigger: 'Done / confirm destination', ...missing('F-DL1_mobile_daily_log.html', 'Route after capture; filed capture should land in Daily Log or project media. Daily Log face missing from repo canon') },
   { trigger: 'Room scan', ...target('F-RC1') },
 ]);
 add(['F-RC1'], [
@@ -797,7 +801,7 @@ function renderFace(){
     els.previewShell.dataset.device = current.device;
     els.chips.innerHTML = '<span class="chip gold">'+esc(current.id)+'</span><span class="chip blue">'+esc(current.domain)+'</span><span class="chip">'+esc(current.device)+'</span>';
     els.title.textContent = current.h1 || current.title;
-    els.meta.textContent = current.file + ' · ' + current.title;
+    els.meta.textContent = current.file + ' · ' + current.title + (current.canonCorrection ? ' · ' + current.canonCorrection : '');
     els.preview.removeAttribute('srcdoc');
     els.preview.src = 'canon/' + current.file;
     els.original.href = 'canon/' + current.file;

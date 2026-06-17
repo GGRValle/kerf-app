@@ -69,14 +69,18 @@ These routes now have a face contract, but the live UI is not guaranteed to matc
 These are referenced by the conductor/user flow, but they are not currently present
 under `docs/wireframes/canon`:
 
-| Missing/external face | Intended route |
-|---|---|
-| `F-A1b_mobile_owner_home_v5_pulse.html` | `/` |
-| `F-RH7_bubble_transitions.html` | global Right Hand overlay |
-| `F-EST1_mobile_estimate_builder.html` | `/estimate/:projectId` |
-| `F-CHG1_mobile_change_order_builder.html` | `/change-orders/new` |
-| `F-DL1_mobile_daily_log.html` | `/projects/:id/daily-log` |
-| `RightHand_Fix_Review_2026-06-14.html` | integrated reference across spine surfaces |
+| Missing/external face | Device lane | Intended route |
+|---|---|---|
+| `F-A1b_mobile_owner_home_v5_pulse.html` | mobile | `/` |
+| `F-RH7_bubble_transitions.html` | unassigned | global Right Hand overlay |
+| `F-EST1_mobile_estimate_builder.html` | mobile | `/estimate/:projectId` |
+| `F-CHG1_mobile_change_order_builder.html` | mobile | `/change-orders/new` |
+| `F-DL1_mobile_daily_log.html` | mobile | `/projects/:id/daily-log` |
+| Per-job invoice list face | unassigned | per-job invoice list |
+| Project setup / new project face | unassigned | `/projects/new` |
+| Design workspace face | unassigned | `/design/:projectId` |
+| Connections / KB / Blackboard faces | unassigned | settings and knowledge-ingestion routes |
+| `RightHand_Fix_Review_2026-06-14.html` | integrated reference | across spine surfaces |
 
 These should be imported into the canon folder or replaced by the new superseding
 wireframes when the next full face pack lands.
@@ -123,6 +127,10 @@ leakage, not Canon home behavior.
 | Ask Right Hand | `/right-hand` | `F-RH1/F-RH3/F-RH7` |
 
 ### Camera
+
+Important correction: the source file `F-CAM1_mobile_camera.html` still carries
+older pick-job-first language. Founder canon from 2026-06-14 supersedes that:
+capture opens first, then the operator confirms or changes the destination.
 
 | Trigger | Route | Next face |
 |---|---|---|
@@ -244,4 +252,3 @@ For any surface rebuild:
 8. Phone-gate the deployed build for tap/viewport behavior.
 
 No new surface should merge with only "looks closer" as the proof.
-
