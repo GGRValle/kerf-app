@@ -52,14 +52,25 @@ test('interactive wireframe flow map carries parseable data for every canon face
     data.buildCards.some((card: { label: string; canonStatus: string }) => card.label === 'F-DS1_desktop_design_workspace.html' && card.canonStatus === 'canon_present'),
     'desktop Design Workspace implementation card must stay visible after import',
   );
-  assert.ok(
-    data.missingFaces.some((gap: { label: string }) => gap.label === 'F-INV1a_mobile_per_job_invoice_list.html'),
-    'missing mobile per-job invoice list face must stay visible',
-  );
-  assert.ok(
-    data.missingFaces.some((gap: { label: string }) => gap.label === 'F-INV1b_desktop_per_job_invoice_list.html'),
-    'missing desktop per-job invoice list face must stay visible',
-  );
+  for (const invoiceFace of [
+    'F-INV1a_mobile_per_job_invoice_list.html',
+    'F-INV1b_desktop_per_job_invoice_list.html',
+    'F-INV2a_mobile_per_job_invoice_detail.html',
+    'F-INV2b_desktop_per_job_invoice_detail.html',
+  ]) {
+    assert.ok(
+      data.faces.some((face: { file: string }) => face.file === invoiceFace),
+      `${invoiceFace} must be part of the playable map`,
+    );
+    assert.ok(
+      data.buildCards.some((card: { label: string; canonStatus: string }) => card.label === invoiceFace && card.canonStatus === 'canon_present'),
+      `${invoiceFace} implementation card must flip to canon_present`,
+    );
+    assert.ok(
+      !data.missingFaces.some((gap: { label: string }) => gap.label === invoiceFace),
+      `${invoiceFace} must no longer be listed as a missing Canon face`,
+    );
+  }
   assert.deepEqual(
     data.missingFaces.filter((gap: { device: string }) => gap.device === 'unassigned'),
     [],

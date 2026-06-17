@@ -103,7 +103,7 @@ function domainFromId(id) {
   if (/^F-(S1|D1|RH|CAM|RC)/.test(id)) return 'Global phone chrome';
   if (/^F-(PR|PS|ML|CO|W1|PA|DL|PN)/.test(id)) return 'Projects';
   if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG|DS|LIB|SA|RT)/.test(id)) return 'Sales / decisions';
-  if (/^F-(MN|BK|PU|VC)/.test(id)) return 'Money';
+  if (/^F-(MN|BK|PU|VC|INV)/.test(id)) return 'Money';
   if (/^F-(CL|CA|CS|WW|CP|CPS|WAR)/.test(id)) return 'Clients';
   if (/^F-(E1|FD|FU|F1|FH)/.test(id)) return 'Field capture';
   if (/^F-(SC|SB|CR|HR|SP|RR|AD|BC|SUB|SUBM|US)/.test(id)) return 'Ops / admin';
@@ -182,6 +182,10 @@ function systemContractForFace(id) {
     'F-LD1b': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
     'F-PV1': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
     'F-PV2': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
+    'F-INV1a': ['/estimate/:projectId/invoice or /projects/:id/money/invoices', 'mapped_pending_rebuild', 'money_guard', 'Estimate line_id -> contract milestone -> invoice spine'],
+    'F-INV1b': ['/estimate/:projectId/invoice or /projects/:id/money/invoices', 'mapped_pending_rebuild', 'money_guard', 'Estimate line_id -> contract milestone -> invoice spine'],
+    'F-INV2a': ['/estimate/:projectId/invoice/:invoiceId or /money/invoices/:id', 'mapped_pending_rebuild', 'money_guard', 'Contract milestone -> invoice detail -> payment spine'],
+    'F-INV2b': ['/estimate/:projectId/invoice/:invoiceId or /money/invoices/:id', 'mapped_pending_rebuild', 'money_guard', 'Contract milestone -> invoice detail -> payment spine'],
     'F-EST1': ['/estimate/:projectId', 'mapped_pending_rebuild', 'operator_confirm', 'Estimate -> proposal -> invoice line_id spine'],
     'F-CHG1': ['/change-orders/new', 'future_or_unrouted', 'operator_confirm', 'Change order -> decision card -> contract adjustment spine'],
     'F-G1': ['/draft-review/:draft_id', 'mapped_pending_rebuild', 'review_gate', 'Draft review gate'],
@@ -247,6 +251,7 @@ function systemContractForFace(id) {
     return { owningRoute: route, routeStatus: status, gate, spineDependency };
   }
   if (/^F-MN/.test(id)) return { owningRoute: '/money', routeStatus: 'mapped_pending_rebuild', gate: 'money_guard', spineDependency: 'Money ledger / AR / AP spine' };
+  if (/^F-INV/.test(id)) return { owningRoute: '/estimate/:projectId/invoice or /money/invoices/:id', routeStatus: 'mapped_pending_rebuild', gate: 'money_guard', spineDependency: 'Estimate line_id -> contract milestone -> invoice spine' };
   if (/^F-BK/.test(id)) return { owningRoute: '/money/bookkeeping', routeStatus: 'mapped_pending_rebuild', gate: 'money_guard', spineDependency: 'Bookkeeping / QB export spine' };
   if (/^F-PU/.test(id)) return { owningRoute: '/money/purchasing', routeStatus: 'future_or_unrouted', gate: 'money_guard', spineDependency: 'Purchasing/vendor spine missing route' };
   if (/^F-VC/.test(id)) return { owningRoute: '/money/spend-card', routeStatus: 'future_or_unrouted', gate: 'money_guard', spineDependency: 'Spend card route missing' };
@@ -257,8 +262,8 @@ function transitionGate(transition, face) {
   const text = `${transition.trigger} ${transition.target || ''} ${transition.missing || ''} ${transition.note || ''}`.toLowerCase();
   if (transition.missing) return 'gap_build_required';
   if (transition.state) return 'in_face_state';
-  if (/\b(send|sign|approve|reject|confirm|file|save|submit|export|create invoice|bill|pay)\b/.test(text)) {
-    if (/\b(money|invoice|ar|ap|qb|export|bill|pay)\b/.test(text) || /^F-(MN|BK|PU|VC)/.test(transition.target || '')) return 'money_or_egress_guard';
+  if (/\b(send|sign|approve|reject|confirm|file|save|submit|export|issue|record payment|create invoice|bill|pay|payment)\b/.test(text)) {
+    if (/\b(money|invoice|ar|ap|qb|export|issue|record payment|bill|pay|payment)\b/.test(text) || /^F-(MN|BK|PU|VC|INV)/.test(transition.target || '')) return 'money_or_egress_guard';
     return 'operator_confirm';
   }
   if (/right hand|speak|mic|ask/.test(text) || /^F-RH/.test(transition.target || '')) return 'right_hand_route_only';
@@ -687,6 +692,31 @@ add(['F-MN6a', 'F-MN6b'], [
   { trigger: 'Back Money', ...target('F-MN1') },
   { trigger: 'Invoice detail', ...missing('Per-job invoice detail face') },
   { trigger: 'Project', ...target('F-PR2') },
+]);
+add(['F-INV1a'], [
+  { trigger: 'Back estimate / proposal', ...target('F-EST1', 'Return to the source estimate/proposal context') },
+  { trigger: 'Open detail', ...target('F-INV2a', 'Drill into one deposit/progress/final invoice') },
+  { trigger: 'Open Money', ...target('F-MN1', 'Global Money can find the same invoice set') },
+  { trigger: 'Issue selected', ...target('F-INV2a', 'Money consequence stays behind the invoice detail gate') },
+]);
+add(['F-INV1b'], [
+  { trigger: 'Back estimate / proposal', ...target('F-PV2', 'Return to desktop proposal/estimate context') },
+  { trigger: 'Detail', ...target('F-INV2b', 'Drill into one deposit/progress/final invoice') },
+  { trigger: 'Issue selected', ...target('F-INV2b', 'Money consequence stays behind the invoice detail gate') },
+  { trigger: 'Global Money', ...target('F-MN2', 'Desktop Money can find the same invoice set') },
+]);
+add(['F-INV2a'], [
+  { trigger: 'Back to list', ...target('F-INV1a') },
+  { trigger: 'Issue invoice', ...target('F-INV2a', 'In-face money_guard confirmation') },
+  { trigger: 'Preview client copy', ...target('F-B1c', 'Egress preview gate before external send') },
+  { trigger: 'Open Money', ...target('F-MN1') },
+]);
+add(['F-INV2b'], [
+  { trigger: 'Back to list', ...target('F-INV1b') },
+  { trigger: 'Issue invoice', ...target('F-INV2b', 'In-face money_guard confirmation') },
+  { trigger: 'Record payment', ...target('F-INV2b', 'In-face money_guard confirmation') },
+  { trigger: 'Preview client copy', ...target('F-B1c', 'Egress preview gate before external send') },
+  { trigger: 'Open Money', ...target('F-MN2') },
 ]);
 add(['F-MN7a', 'F-MN7b'], [
   { trigger: 'Back Money', ...target('F-MN1') },

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right Hand · F-INV2a · Mobile per-job invoice detail</title>
+<style>
+:root{--bg:#0a0d11;--panel:#14181f;--card:#1a1f28;--line:#2a3140;--muted:#98a1b3;--dim:#6a7282;--ink:#e8ecf1;--gold:#f5b544;--green:#38c977;--red:#f87171;--blue:#7ba8ff;--paper:#fcfcfa;--paper-ink:#1a1a1a;--paper-muted:#666;--paper-line:#d8d0bd}
+body.light-mode{--bg:#fff;--panel:#f4f6f9;--card:#fff;--line:#c9d0d8;--muted:#4a5462;--dim:#7b8492;--ink:#0a0d11}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.45}.page{max-width:980px;margin:0 auto;padding:28px 18px 64px}.view{position:sticky;top:0;z-index:5;margin:-28px -18px 24px;padding:8px 18px;border-bottom:1px solid var(--line);background:rgba(10,13,17,.92);display:flex;gap:8px}.view span{border:1px solid var(--line);border-radius:7px;padding:5px 10px;color:var(--muted)}.view .active{background:var(--gold);border-color:var(--gold);color:#1a1300}.page-header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}.crumb{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin-bottom:7px}.crumb strong{color:var(--gold)}h1{font-size:20px;margin:0 0 6px}.page-header p{margin:0;color:var(--muted);max-width:760px}.frame{display:grid;grid-template-columns:1fr 300px;gap:20px}.render{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel),var(--bg));padding:22px;display:flex;justify-content:center}.spec{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;color:var(--muted);height:max-content}.spec h3,.spec h4{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink);margin:0 0 8px}.spec h4{margin-top:16px;color:var(--gold)}.spec ul{margin:0;padding-left:17px}.spec li{margin-bottom:5px}.phone{width:375px;border:1.5px solid var(--line);border-radius:38px;padding:12px;background:var(--bg);box-shadow:0 16px 48px rgba(0,0,0,.42)}.screen{height:740px;border-radius:28px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}.status{display:flex;justify-content:space-between;padding:12px 22px 6px;font-weight:700}.top{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line)}.back{color:var(--gold);font-weight:800;text-decoration:none}.title{flex:1;text-align:center}.title b{display:block}.title span{display:block;color:var(--dim);font-size:10px}.body{flex:1;overflow:auto;padding:14px}.guard{background:rgba(245,181,68,.08);border:1px solid rgba(245,181,68,.36);border-radius:12px;padding:11px;margin-bottom:12px}.guard b{display:block;margin-bottom:3px}.guard p{margin:0;color:var(--muted)}.paper{background:var(--paper);color:var(--paper-ink);border-radius:5px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.24)}.paper-head{border-bottom:2px solid #8b6f1e;padding-bottom:10px;margin-bottom:12px;display:flex;justify-content:space-between;gap:12px}.paper h2{font-family:Georgia,serif;margin:0;font-size:20px}.paper small{color:var(--paper-muted)}.paper-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted var(--paper-line);padding:7px 0;font-size:12px}.paper-row.total{border-top:2px solid #8b6f1e;border-bottom:0;margin-top:8px;padding-top:10px;font-weight:900;font-size:14px}.chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.chip{display:inline-flex;gap:5px;align-items:center;border-radius:6px;padding:3px 7px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;background:var(--panel);color:var(--muted)}.chip:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}.green{background:rgba(56,201,119,.12);color:var(--green)}.gold{background:rgba(245,181,68,.14);color:var(--gold)}.red{background:rgba(248,113,113,.12);color:var(--red)}.thread{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:11px;margin-top:12px}.thread h3{font-size:12px;margin:0 0 7px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em}.thread p{margin:0;color:var(--muted);font-size:12px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.btn{text-align:center;text-decoration:none;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink);font-weight:900;padding:9px 8px}.btn.primary{background:var(--gold);border-color:var(--gold);color:#1a1300}.bar{display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:8px 0 20px;border-top:1px solid var(--line);background:var(--panel)}.tab{text-align:center;color:var(--dim);font-size:10px;font-weight:800}.mic{width:54px;height:54px;border-radius:50%;margin:-20px auto 2px;background:var(--gold);color:#1a1300;display:grid;place-items:center;font-size:25px;border:5px solid var(--bg)}@media(max-width:760px){.frame{grid-template-columns:1fr}.render{padding:8px;border:0}.phone{width:100%;max-width:390px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="view"><span class="active">Annotated</span><span>Mobile</span></div>
+  <header class="page-header">
+    <div class="crumb">F-INV1a <strong>to</strong> F-INV2a</div>
+    <h1>F-INV2a · Mobile per-job invoice detail</h1>
+    <p>Drill into one invoice from the per-job list. Draft issue, send, record payment, and export are gated money consequences. The invoice carries estimate line_ids and contract milestone context.</p>
+  </header>
+  <section class="frame">
+    <div class="render">
+      <div class="phone"><div class="screen">
+        <div class="status"><span>9:41</span><span>86%</span></div>
+        <div class="top"><a class="back" href="#">‹</a><div class="title"><b>Progress invoice</b><span>INV-WEG-02 · draft</span></div><span>2 of 4</span></div>
+        <main class="body">
+          <section class="guard"><b>Money guard</b><p>Right Hand drafted this from the signed contract. Nothing is issued, sent, posted, or recorded until you confirm.</p></section>
+          <article class="paper">
+            <div class="paper-head"><div><h2>Invoice</h2><small>Wegrzyn kitchen + primary bath</small></div><div><b>$42,750</b><br><small>Due on issue</small></div></div>
+            <div class="paper-row"><span>Cabinet install labor</span><b>$14,500</b></div>
+            <div class="paper-row"><span>Tile phase labor</span><b>$11,800</b></div>
+            <div class="paper-row"><span>Primary bath rough materials</span><b>$9,950</b></div>
+            <div class="paper-row"><span>Appliance allowance draw</span><b>$6,500</b></div>
+            <div class="paper-row total"><span>Total progress draw</span><b>$42,750</b></div>
+          </article>
+          <div class="chips"><span class="chip gold">Draft ready</span><span class="chip">line_id carried</span><span class="chip">Contract milestone</span></div>
+          <section class="thread"><h3>Line_id carry</h3><p>line_kit_cabinets, line_tile_floor, line_primary_bath_labor, line_appliance_allowance. These lines came from estimate est_wegrzyn_041 and contract con_wegrzyn_041.</p></section>
+          <div class="actions"><a class="btn primary" href="#">Issue invoice</a><a class="btn" href="#">Preview client copy</a><a class="btn" href="#">Back to list</a><a class="btn" href="#">Open Money</a></div>
+        </main>
+        <nav class="bar"><div class="tab">Home</div><div class="tab">Start</div><div class="tab"><div class="mic">⌾</div>Speak</div><div class="tab">Camera</div><div class="tab">More</div></nav>
+      </div></div>
+    </div>
+    <aside class="spec">
+      <h3>Contract</h3>
+      <ul><li>Owning route: <code>/estimate/:projectId/invoice/:invoiceId</code> or <code>/money/invoices/:id</code>.</li><li>Artifact state: draft until issue gate.</li><li>Tenant and role are server-derived in implementation.</li></ul>
+      <h4>Click paths</h4>
+      <ul><li>Issue invoice is a money_guard consequence.</li><li>Preview client copy is egress-gated.</li><li>Back to list returns to F-INV1a.</li></ul>
+    </aside>
+  </section>
+</div>
+</body>
+</html>
