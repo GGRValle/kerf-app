@@ -1,60 +1,124 @@
 ---
-// F-CL5/F-CL6 · New client form · /clients/new
+// F-CL0a / F-CL0b · client graph setup · /clients/new
 import Layout from '../../layouts/Layout.astro';
-import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
-import Card from '../../components/Card.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
-import '../../styles/lane6.css';
+import '../../styles/intake-sales-wireframes.css';
 
-const { t, context } = createLayoutContext();
+const { context } = createLayoutContext();
+const source = Astro.url.searchParams.get('src') ?? 'clients';
+const fromCamera = source === 'camera';
+const fromStart = source === 'start' || source === 'create';
+const siteHint = Astro.url.searchParams.get('site_hint') ?? '';
+const captureId = Astro.url.searchParams.get('capture_id') ?? '';
+const initialName = Astro.url.searchParams.get('name') ?? '';
+const sourceLabel = fromCamera ? 'Camera intake' : fromStart ? 'Start sheet' : 'Clients';
 ---
 
-<Layout titleKey="f_cl.form.title" activeHref="/clients">
-  <article class="lane6-page f-cl-new">
-    <header>
-      <div class="lane6-crumb"><a href="/clients">{t('f_cl.crumb')}</a> · {t('f_cl.form.title')}</div>
-      <h1 class="lane6-title">{t('f_cl.form.title')}</h1>
-      <p class="lane6-subtitle">{t('f_cl.form.subtitle_active')}</p>
+<Layout
+  title="New client"
+  activeHref="/clients"
+  surfaceContext={{
+    surface: 'client',
+    phase: 'create',
+  }}
+>
+  <article class="rh-intake kg-grid" data-grammar="canon">
+    <header class="kg-pagehead kg-span-12">
+      <div>
+        <p class="rh-eyebrow">F-CL0 · Client graph setup</p>
+        <h1 class="rh-title">Create the client first</h1>
+        <p class="rh-subtitle">
+          Use this when capture, intake, or a sales conversation is not tied to an existing job.
+          Right Hand can prefill, but the client graph write waits for operator confirmation.
+        </p>
+      </div>
+      <div class="rh-chiprow" aria-label="Client setup state">
+        <span class="kg-chip kg-routechip">Client graph</span>
+        <span class="kg-chip amber">Draft</span>
+        <span class="kg-chip">No project yet</span>
+      </div>
     </header>
 
-    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-      <Card title={t('f_cl.form.title')}>
-        <form class="lane6-form" id="new-client-form">
-          <label>
-            {t('f_cl.form.name')}
-            <input name="display_name" required />
+    <section class="kg-card kg-span-8">
+      <form class="rh-form" id="new-client-form">
+        <div class="rh-fields">
+          <label class="rh-field">
+            <span>Client name</span>
+            <input name="display_name" value={initialName} required autocomplete="name" />
           </label>
-          <label>
-            {t('f_cl.form.email')}
-            <input name="contact_email" type="email" />
+          <label class="rh-field">
+            <span>Phone</span>
+            <input name="contact_phone" type="tel" autocomplete="tel" />
           </label>
-          <label>
-            {t('f_cl.form.phone')}
-            <input name="contact_phone" type="tel" />
+          <label class="rh-field">
+            <span>Email</span>
+            <input name="contact_email" type="email" autocomplete="email" />
           </label>
-          <label>
-            {t('f_cl.form.address')}
-            <input name="address_line" />
+          <label class="rh-field">
+            <span>Source</span>
+            <input name="source_label" value={sourceLabel} readonly />
           </label>
-          <div class="lane6-actions">
-            <a class="lane6-btn ghost" href="/clients">{t('f_cl.form.cancel')}</a>
-            <button type="submit" class="lane6-btn primary">{t('f_cl.form.submit')}</button>
-          </div>
-        </form>
-      </Card>
-    </SurfaceIrreversibilityWrap>
+          <label class="rh-field full">
+            <span>Address or site hint</span>
+            <input name="address_line" value={siteHint} autocomplete="street-address" />
+          </label>
+          <label class="rh-field full">
+            <span>Intake note</span>
+            <textarea name="intake_note" placeholder="What did we learn before a project exists?"></textarea>
+          </label>
+        </div>
+
+        <input type="hidden" name="capture_id" value={captureId} />
+        <div class="rh-actions">
+          <button type="submit" class="rh-btn primary" data-next="client">Save client</button>
+          <button type="submit" class="rh-btn" data-next="project">Save + add project</button>
+          <button type="submit" class="rh-btn" data-next="intake">Save to intake</button>
+          <a class="rh-btn" href="/clients">Cancel</a>
+        </div>
+      </form>
+      <p class="rh-note rh-rule" id="new-client-status" role="status"></p>
+    </section>
+
+    <aside class="kg-card kg-span-4">
+      <p class="rh-eyebrow">What happens next</p>
+      <dl class="rh-route-list">
+        <div>
+          <dt>Save client</dt>
+          <dd>Creates the client record and opens the client’s canonical home.</dd>
+        </div>
+        <div>
+          <dt>Add project</dt>
+          <dd>Opens F-PR0 project setup after the client exists. This is the “new job” route from capture.</dd>
+        </div>
+        <div>
+          <dt>Save to intake</dt>
+          <dd>Keeps evidence in review until someone decides whether it becomes a project.</dd>
+        </div>
+      </dl>
+      <p class="rh-note rh-rule">
+        No proposal, invoice, send, or money action happens here.
+      </p>
+    </aside>
   </article>
 
   <script define:vars={{ tenantId: context.tenantId, errorMsg: 'Could not create client.' }}>
     document.getElementById('new-client-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const form = ev.target;
+      const submitter = ev.submitter;
+      const next = submitter?.getAttribute('data-next') || 'client';
       const fd = new FormData(form);
+      const clientName = String(fd.get('display_name') || '').trim();
+      if (!clientName) return;
+      if (!confirm(`Create client record for ${clientName}?`)) return;
+
+      const status = document.getElementById('new-client-status');
+      if (status) status.textContent = 'Creating client…';
       const res = await fetch(`/api/v1/clients?tenant_id=${tenantId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          display_name: fd.get('display_name'),
+          display_name: clientName,
           contact_email: fd.get('contact_email') || null,
           contact_phone: fd.get('contact_phone') || null,
           address_lines: [String(fd.get('address_line') ?? '')].filter(Boolean),
@@ -62,10 +126,20 @@ const { t, context } = createLayoutContext();
       });
       if (res.ok) {
         const data = await res.json();
+        const capture = String(fd.get('capture_id') || '');
+        if (next === 'project') {
+          window.location.href = `/projects/new?client_id=${encodeURIComponent(data.client_id)}${capture ? `&capture_id=${encodeURIComponent(capture)}` : ''}`;
+          return;
+        }
+        if (next === 'intake') {
+          window.location.href = `/relay?src=client_intake&client_id=${encodeURIComponent(data.client_id)}`;
+          return;
+        }
         window.location.href = `/clients/${data.client_id}`;
         return;
       }
-      alert(errorMsg);
+      if (status) status.textContent = errorMsg;
+      else alert(errorMsg);
     });
   </script>
 </Layout>

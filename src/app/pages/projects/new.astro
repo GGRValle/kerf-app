@@ -1,82 +1,147 @@
 ---
+// F-PR0a / F-PR0b · project graph setup · /projects/new
 import Layout from '../../layouts/Layout.astro';
-import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
-import Card from '../../components/Card.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
-import { getLane6Client } from '../../lib/lane6Fixtures.js';
-import '../../styles/money.css';
+import { getLane6ClientForTenant } from '../../lib/lane6Fixtures.js';
+import '../../styles/intake-sales-wireframes.css';
 
-const { t, context } = createLayoutContext();
+const { context } = createLayoutContext();
 const clientId = Astro.url.searchParams.get('client_id');
-const presetClient = clientId ? getLane6Client(clientId) : null;
+const presetClient = clientId
+  ? getLane6ClientForTenant(
+      clientId,
+      context.tenantId as Parameters<typeof getLane6ClientForTenant>[1],
+    )
+  : null;
+const source = Astro.url.searchParams.get('src') ?? 'projects';
+const captureId = Astro.url.searchParams.get('capture_id') ?? '';
+const fromCamera = source === 'camera' || Boolean(captureId);
+const sourceLabel = fromCamera ? 'Camera route' : source === 'voice' ? 'Right Hand voice' : presetClient ? 'Client record' : 'Projects';
 ---
 
-<Layout titleKey="f_pr.new.title" activeHref="/projects">
-  <article class="money-page f-pr-new">
-    <header>
-      <div class="money-crumb">
-        <a href="/projects">{t('project.list.title')}</a>
-        {presetClient ? <> · {presetClient.display_name}</> : null}
+<Layout
+  title="New project"
+  activeHref="/projects"
+  surfaceContext={{
+    surface: 'project',
+    client_id: presetClient?.client_id ?? clientId ?? undefined,
+    phase: fromCamera ? 'capture_route' : 'create',
+  }}
+>
+  <article class="rh-intake kg-grid" data-grammar="canon">
+    <header class="kg-pagehead kg-span-12">
+      <div>
+        <p class="rh-eyebrow">F-PR0 · Project graph setup</p>
+        <h1 class="rh-title">Where does this work live?</h1>
+        <p class="rh-subtitle">
+          Create the project graph from a client, sales conversation, voice handoff, or capture route.
+          Captured media can file here after confirmation, but no proposal, invoice, or send happens on this face.
+        </p>
       </div>
-      <h1 class="money-title">{t('f_pr.new.title')}</h1>
-      <p class="money-subtitle">{t('f_pr.new.subtitle')}</p>
+      <div class="rh-chiprow" aria-label="Project setup state">
+        <span class="kg-chip kg-routechip">Project graph</span>
+        <span class="kg-chip amber">Operator confirm</span>
+        {fromCamera ? <span class="kg-chip green">Can file capture</span> : null}
+      </div>
     </header>
 
-    <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-      <section
-        class="money-card rh-project-handoff"
-        id="rh-project-handoff"
-        aria-label={t('f_pr.new.handoff_title')}
-        hidden
-      >
-        <p class="rh-project-handoff__eyebrow">{t('f_pr.new.handoff_title')}</p>
-        <p class="rh-project-handoff__body">{t('f_pr.new.handoff_body')}</p>
-        <dl class="rh-project-handoff__facts">
-          <div>
-            <dt>{t('f_pr.new.handoff_heard')}</dt>
-            <dd id="rh-project-handoff-heard"></dd>
-          </div>
-          <div>
-            <dt>{t('f_pr.new.handoff_context')}</dt>
-            <dd id="rh-project-handoff-context"></dd>
-          </div>
-        </dl>
-      </section>
+    <section
+      class="kg-card kg-span-12 rh-handoff"
+      id="rh-project-handoff"
+      aria-label="Right Hand handoff"
+      hidden
+    >
+      <p class="rh-eyebrow">Right Hand handoff</p>
+      <p class="rh-note">Right Hand carried the working draft here. Confirm the project before anything becomes part of the project record.</p>
+      <dl class="rh-route-list rh-rule">
+        <div>
+          <dt>Heard</dt>
+          <dd id="rh-project-handoff-heard"></dd>
+        </div>
+        <div>
+          <dt>Context</dt>
+          <dd id="rh-project-handoff-context"></dd>
+        </div>
+      </dl>
+    </section>
 
-      <Card title={t('f_pr.new.title')}>
-        <form class="money-form" id="new-project-form">
-          <label>
-            {t('f_pr.new.project_name')}
-            <input name="project_name" required />
-          </label>
-          <label>
-            {t('f_pr.new.client_name')}
+    <section class="kg-card kg-span-8">
+      <form class="rh-form" id="new-project-form">
+        <div class="rh-fields">
+          <label class="rh-field">
+            <span>Client</span>
             <input
               name="client_name"
               required
               value={presetClient?.display_name ?? ''}
+              autocomplete="name"
             />
           </label>
-          <input type="hidden" name="client_id" value={clientId ?? ''} />
-          <label>
-            {t('f_pr.new.archetype')}
+          <label class="rh-field">
+            <span>Project name</span>
+            <input name="project_name" required />
+          </label>
+          <label class="rh-field">
+            <span>Stage</span>
+            <select name="project_stage">
+              <option value="lead">Lead / intake</option>
+              <option value="design">Design</option>
+              <option value="estimate">Estimate</option>
+              <option value="active">Active job</option>
+            </select>
+          </label>
+          <label class="rh-field">
+            <span>Source</span>
+            <input name="source_label" value={sourceLabel} readonly />
+          </label>
+          <label class="rh-field">
+            <span>Archetype</span>
             <select name="archetype_hint">
-              <option value="">{t('f_pr.new.archetype_none')}</option>
+              <option value="">Not sure yet</option>
               <option value="kitchen_remodel">Kitchen remodel</option>
               <option value="adu">ADU addition</option>
               <option value="bath_refresh">Bath refresh</option>
             </select>
           </label>
-          <div class="money-actions">
-            <a class="money-btn ghost" href={presetClient ? `/clients/${presetClient.client_id}` : '/projects'}>
-              {t('f_cl.form.cancel')}
-            </a>
-            <button type="submit" class="money-btn primary">{t('f_pr.new.submit')}</button>
-          </div>
-        </form>
-        <p class="money-notice" id="new-project-status" role="status"></p>
-      </Card>
-    </SurfaceIrreversibilityWrap>
+          <label class="rh-field">
+            <span>Capture waiting</span>
+            <input name="capture_id_display" value={captureId || 'None'} readonly />
+          </label>
+          <label class="rh-field full">
+            <span>Site</span>
+            <input name="site_hint" placeholder="Address, GPS hint, or site note" />
+          </label>
+        </div>
+
+        <input type="hidden" name="client_id" value={presetClient?.client_id ?? clientId ?? ''} />
+        <input type="hidden" name="capture_id" value={captureId} />
+        <div class="rh-actions">
+          <button type="submit" class="rh-btn primary" data-next="project">Create project</button>
+          <button type="submit" class="rh-btn" data-next="estimate">Create + build estimate</button>
+          <button type="submit" class="rh-btn" data-next="daily_log">Create + file capture</button>
+          <a class="rh-btn" href={presetClient ? `/clients/${presetClient.client_id}` : '/projects'}>Cancel</a>
+        </div>
+      </form>
+      <p class="rh-note rh-rule" id="new-project-status" role="status"></p>
+    </section>
+
+    <aside class="kg-card kg-span-4">
+      <p class="rh-eyebrow">Allowed next</p>
+      <dl class="rh-route-list">
+        <div>
+          <dt>Open project</dt>
+          <dd>The project becomes the canonical home for this work.</dd>
+        </div>
+        <div>
+          <dt>Build estimate</dt>
+          <dd>Moves to F-EST1 with project context. This is not a proposal or money write.</dd>
+        </div>
+        <div>
+          <dt>File capture</dt>
+          <dd>When a capture launched this route, it files to the project Daily Log after the project exists.</dd>
+        </div>
+      </dl>
+    </aside>
   </article>
 
   <script define:vars={{ tenantId: context.tenantId, successMsg: 'Project created — opens in Projects.', errorMsg: 'Could not create project.' }}>
@@ -197,68 +262,41 @@ const presetClient = clientId ? getLane6Client(clientId) : null;
     document.getElementById('new-project-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const form = ev.target;
+      const submitter = ev.submitter;
+      const next = submitter?.getAttribute('data-next') || 'project';
       const fd = new FormData(form);
+      const projectName = String(fd.get('project_name') || '').trim();
+      const clientName = String(fd.get('client_name') || '').trim();
+      if (!projectName || !clientName) return;
+      if (!confirm(`Create project "${projectName}" for ${clientName}?`)) return;
+
       const status = document.getElementById('new-project-status');
+      if (status) status.textContent = 'Creating project…';
       const res = await fetch(`/api/v1/projects?tenant_id=${tenantId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          project_name: fd.get('project_name'),
-          client_name: fd.get('client_name'),
+          project_name: projectName,
+          client_name: clientName,
           client_id: String(fd.get('client_id') || '') || null,
           archetype_hint: fd.get('archetype_hint') || null,
         }),
       });
       if (res.ok) {
         const data = await res.json();
-        status.textContent = successMsg;
+        if (status) status.textContent = successMsg;
+        if (next === 'estimate') {
+          window.location.href = `/estimate/${data.project_id}?src=project_setup`;
+          return;
+        }
+        if (next === 'daily_log') {
+          window.location.href = `/projects/${data.project_id}/daily-log?src=project_setup`;
+          return;
+        }
         window.location.href = `/projects/${data.project_id}`;
         return;
       }
-      status.textContent = errorMsg;
+      if (status) status.textContent = errorMsg;
     });
   </script>
-
-  <style>
-    .rh-project-handoff[hidden] { display: none; }
-    .rh-project-handoff {
-      margin-bottom: 0.85rem;
-      border-color: color-mix(in srgb, var(--field-green, #38c977) 34%, var(--border, #d8dee6));
-      background: color-mix(in srgb, var(--field-green, #38c977) 7%, var(--surface, #fff));
-    }
-    .rh-project-handoff__eyebrow {
-      margin: 0 0 0.35rem;
-      font-size: 0.72rem;
-      letter-spacing: 0.11em;
-      text-transform: uppercase;
-      font-weight: 800;
-      color: var(--field-green, #38c977);
-    }
-    .rh-project-handoff__body {
-      margin: 0 0 0.7rem;
-      color: var(--text-muted, #6a7282);
-      line-height: 1.45;
-    }
-    .rh-project-handoff__facts {
-      display: grid;
-      gap: 0.55rem;
-      margin: 0;
-    }
-    .rh-project-handoff__facts div {
-      display: grid;
-      gap: 0.12rem;
-    }
-    .rh-project-handoff__facts dt {
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      font-weight: 800;
-      color: var(--text-muted, #6a7282);
-    }
-    .rh-project-handoff__facts dd {
-      margin: 0;
-      color: var(--text, #1a1f24);
-      line-height: 1.4;
-    }
-  </style>
 </Layout>
