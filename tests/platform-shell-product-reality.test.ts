@@ -53,7 +53,10 @@ test('camera Done files through Lane 3 daily-log endpoint before claiming attach
   assert.match(src, /status: 'filed_to_daily_log'/);
   assert.match(src, /Confirm and file/);
   assert.match(src, /id="cam-last-shot"/);
-  assert.match(src, /Could not file that yet\. Nothing was attached/);
+  // Failure is always surfaced (never a silent no-op), now with the exact class
+  // in operator-safe copy rather than one generic line.
+  assert.match(src, /Nothing was attached/);
+  assert.match(src, /session expired|could not record that|isn't available|could not reach the server/i);
   assert.match(src, /\.f-cam1\.has-capture \.cam-viewfinder__copy/);
 });
 

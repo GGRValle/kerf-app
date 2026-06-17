@@ -282,7 +282,16 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       }
     };
     const fileCapture = async () => {
-      if (!lastCapture || !routeConfirmed || !selectedProjectId) return false;
+      // Founder spec: Confirm-and-file is NEVER a silent no-op — every refusal says why.
+      if (!lastCapture) {
+        setStatus('Capture a photo or video first, then choose where it goes.');
+        return false;
+      }
+      if (!routeConfirmed || !selectedProjectId) {
+        setStatus('Choose where this capture goes, then tap Confirm and file.');
+        showRoutePanel();
+        return false;
+      }
       if (isFiling) return true;
       isFiling = true;
       setStatus(`Filing ${friendlyForKind(lastCapture.kind).toLowerCase()} to ${selectedProjectName}…`);
@@ -291,6 +300,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       try {
         const response = await fetch(`/api/v1/projects/${selectedProjectId}/camera-capture`, {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             capture_kind: lastCapture.kind,
@@ -316,11 +326,26 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
           // Status below remains the visible fallback.
         }
         setStatus(`${friendlyForKind(lastCapture.kind)} attached to ${selectedProjectName}.`);
-      } catch {
+      } catch (err) {
         isFiling = false;
         if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
         if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = false;
-        setStatus('Could not file that yet. Nothing was attached — try again or choose another job.');
+        // Surface the exact failure class in operator-safe copy (founder spec) —
+        // never generic "nothing happened."
+        const code = err instanceof Error ? err.message : '';
+        setStatus(
+          code === 'file_failed_401'
+            ? 'Your session expired — sign in again, then re-file. Nothing was attached.'
+            : code === 'file_failed_403'
+              ? 'You do not have access to that job. Nothing was attached.'
+              : code === 'file_failed_404'
+                ? "That job isn't available — pick another. Nothing was attached."
+                : /^file_failed_5\d\d$/.test(code)
+                  ? 'The server could not record that. Nothing was attached.'
+                  : code.startsWith('file_failed_')
+                    ? 'That capture was not accepted. Nothing was attached.'
+                    : 'Could not reach the server — check your connection. Nothing was attached.',
+        );
         return false;
       }
       const base = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}`;
@@ -438,22 +463,11 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     routeClose?.addEventListener('click', () => {
       hideRoutePanel();
     });
-    const handleRouteAction = (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      const action = target?.closest('#cam-route-close, #cam-route-confirm');
-      if (!action) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation?.();
-      if (action.id === 'cam-route-confirm') {
-        applySelectedRoute();
-        void fileCapture();
-      } else {
-        hideRoutePanel();
-      }
-    };
-    document.addEventListener('pointerdown', handleRouteAction, true);
-    document.addEventListener('click', handleRouteAction, true);
+    // One confirm handler (founder spec): the direct routeConfirm/routeClose click
+    // listeners above own the taps. The prior document-level capture-phase
+    // interceptor (pointerdown + click with preventDefault + stopImmediatePropagation)
+    // was removed — competing handlers and preventDefault-on-pointerdown made the
+    // iOS tap path unreliable (a likely cause of "Confirm and file did nothing").
     const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
     const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
     const fallbackInputForMode = () => currentMode === 'walkthru' ? videoInput : photoInput;
