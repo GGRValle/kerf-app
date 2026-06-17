@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFileSync } from 'node:fs';
+
+test('interactive wireframe flow map carries parseable data for every canon face', () => {
+  const html = readFileSync('docs/wireframes/wireframe-flow-map.html', 'utf8');
+  const json = html.match(/<script id="flow-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(json, 'flow-data JSON script must be present');
+
+  const data = JSON.parse(json);
+  assert.equal(data.source, 'docs/wireframes/canon/*.html');
+  assert.equal(data.faces.length, 113);
+  assert.ok(data.deviceBreakdown.some((row: { device: string; faces: number }) => row.device === 'mobile' && row.faces > 0));
+  assert.ok(data.deviceBreakdown.some((row: { device: string; faces: number }) => row.device === 'desktop' && row.faces > 0));
+  assert.ok(data.faces.some((face: { id: string }) => face.id === 'F-A1'));
+  assert.ok(data.faces.some((face: { id: string }) => face.id === 'F-S1'));
+  assert.ok(data.faces.some((face: { id: string }) => face.id === 'F-CAM1'));
+  assert.ok(
+    data.missingFaces.some((gap: { label: string }) => gap.label === 'F-EST1_mobile_estimate_builder.html'),
+    'missing estimate-builder face must stay visible',
+  );
+  assert.match(html, /function showGap\(/, 'missing transitions must route to a visible gap screen');
+  assert.match(html, /This click has no Canon face yet/, 'gap screen must explain that the target face is missing');
+  assert.match(html, /id="previewShell"/, 'wireframe preview must be the primary playable surface');
+  assert.match(html, /data-device-filter="mobile"/, 'map must expose a mobile wireframe lane');
+  assert.match(html, /data-device-filter="desktop"/, 'map must expose a desktop wireframe lane');
+  assert.match(html, /Device Breakdown/, 'map must summarize mobile vs desktop canon coverage');
+});
