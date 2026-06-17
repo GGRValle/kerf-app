@@ -128,27 +128,43 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
             ? `Active job · ${suggestedJob.client_name.split(',')[0]?.trim() ?? suggestedJob.project_name}`
             : 'Choose a destination'}
         </p>
-        <label class="cam-route-label" for="cam-route-select">Change destination</label>
-        <select class="cam-route-select" id="cam-route-select">
-          {projects.map((project) => (
-            <option
-              value={project.project_id}
-              data-project-name={project.project_name}
-              data-project-client={project.client_name}
-              selected={project.project_id === (suggestedJob?.project_id ?? '')}
-            >
-              {project.project_name} · {project.client_name}
-            </option>
-          ))}
-        </select>
+        <div class="cam-route-kinds" role="radiogroup" aria-label="Capture destination type">
+          <button type="button" class="cam-route-kind is-active" data-route-kind="job" aria-pressed="true">
+            <strong>Existing job</strong>
+            <span>File to Daily Log</span>
+          </button>
+          <button type="button" class="cam-route-kind" data-route-kind="lead" aria-pressed="false">
+            <strong>New lead</strong>
+            <span>Start intake</span>
+          </button>
+          <button type="button" class="cam-route-kind" data-route-kind="review" aria-pressed="false">
+            <strong>Review later</strong>
+            <span>Office queue</span>
+          </button>
+        </div>
+        <div class="cam-route-job-fields" id="cam-route-job-fields">
+          <label class="cam-route-label" for="cam-route-select">Change job</label>
+          <select class="cam-route-select" id="cam-route-select">
+            {projects.map((project) => (
+              <option
+                value={project.project_id}
+                data-project-name={project.project_name}
+                data-project-client={project.client_name}
+                selected={project.project_id === (suggestedJob?.project_id ?? '')}
+              >
+                {project.project_name} · {project.client_name}
+              </option>
+            ))}
+          </select>
+        </div>
         <p class="cam-route-hint" id="cam-route-hint">
           {suggestedJob
-            ? `Right Hand matched your active job by job-site GPS. Confirm or change before filing.`
-            : 'Pick where this capture belongs before filing.'}
+            ? `Right Hand matched your active job by job-site GPS. Pick a destination, then confirm.`
+            : 'Pick where this capture belongs, then confirm.'}
         </p>
         <div class="cam-route-actions">
-          <button type="button" class="cam-route-confirm" id="cam-route-confirm">Confirm and file</button>
-          <a class="cam-route-link" href="/projects?src=camera">Search jobs</a>
+          <button type="button" class="cam-route-confirm" id="cam-route-confirm">Confirm destination</button>
+          <a class="cam-route-link" id="cam-route-search-jobs" href="/projects?src=camera">Search jobs</a>
         </div>
       </section>
 
@@ -169,9 +185,13 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const jobChipLabel = document.querySelector('#cam-job-chip-label');
     const routePanel = document.querySelector('#cam-route-panel');
     const routeSuggestion = document.querySelector('#cam-route-suggestion');
+    const routeHint = document.querySelector('#cam-route-hint');
     const routeSelect = document.querySelector('#cam-route-select');
+    const routeJobFields = document.querySelector('#cam-route-job-fields');
     const routeConfirm = document.querySelector('#cam-route-confirm');
     const routeClose = document.querySelector('#cam-route-close');
+    const routeSearchJobs = document.querySelector('#cam-route-search-jobs');
+    const routeKindButtons = [...document.querySelectorAll('[data-route-kind]')];
     const viewfinder = document.querySelector('.cam-viewfinder');
     const video = document.querySelector('#cam-video');
     const canvas = document.querySelector('#cam-canvas');
@@ -193,6 +213,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     let suggestedProjectClient = root?.getAttribute('data-suggested-project-client') || '';
     let selectedProjectId = root?.getAttribute('data-selected-project-id') || '';
     let selectedProjectName = selectedProjectId ? suggestedProjectName : '';
+    let selectedRouteKind = 'job';
     let routeConfirmed = root?.getAttribute('data-route-confirmed') === 'true';
     let lastCapture = null;
     let cameraStream = null;
@@ -218,6 +239,26 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         jobChipLabel.textContent = 'Photo · walkthru · scan';
       }
     };
+    const setRouteKind = (kind) => {
+      selectedRouteKind = kind === 'lead' || kind === 'review' ? kind : 'job';
+      routeKindButtons.forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) return;
+        const active = button.dataset.routeKind === selectedRouteKind;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      if (routeJobFields instanceof HTMLElement) routeJobFields.hidden = selectedRouteKind !== 'job';
+      if (routeSearchJobs instanceof HTMLElement) routeSearchJobs.hidden = selectedRouteKind !== 'job';
+      if (routeConfirm instanceof HTMLButtonElement) {
+        routeConfirm.textContent = selectedRouteKind === 'job'
+          ? 'Confirm and file'
+          : selectedRouteKind === 'lead'
+            ? 'Create lead'
+            : 'Save for review';
+      }
+      if (root instanceof HTMLElement) root.dataset.routeKind = selectedRouteKind;
+      syncRouteSuggestion();
+    };
     const updateSurfaceContextProject = (projectId) => {
       const ctx = window.__KERF_SURFACE_CONTEXT__;
       if (!ctx || typeof ctx !== 'object') return;
@@ -229,6 +270,20 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     };
     const syncRouteSuggestion = () => {
       if (!(routeSuggestion instanceof HTMLElement)) return;
+      if (selectedRouteKind === 'lead') {
+        routeSuggestion.textContent = 'New lead · Sales intake';
+        if (routeHint instanceof HTMLElement) {
+          routeHint.textContent = 'Creates a lead-stage deal. It does not create a project until you convert it later.';
+        }
+        return;
+      }
+      if (selectedRouteKind === 'review') {
+        routeSuggestion.textContent = 'Review later · Office queue';
+        if (routeHint instanceof HTMLElement) {
+          routeHint.textContent = 'Saves the capture for review when it is not tied to a job or lead yet.';
+        }
+        return;
+      }
       if (selectedProjectClient) {
         const shortClient = selectedProjectClient.split(',')[0]?.trim() || selectedProjectName;
         routeSuggestion.textContent = `Active job · ${shortClient}`;
@@ -236,6 +291,11 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         routeSuggestion.textContent = selectedProjectName;
       } else {
         routeSuggestion.textContent = 'Choose a destination';
+      }
+      if (routeHint instanceof HTMLElement) {
+        routeHint.textContent = selectedProjectName
+          ? 'Files this capture to the selected job Daily Log.'
+          : 'Choose an existing job, a new lead, or review later.';
       }
     };
     const showRoutePanel = () => {
@@ -256,6 +316,25 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       }
     };
     const applySelectedRoute = () => {
+      if (selectedRouteKind !== 'job') {
+        routeConfirmed = false;
+        selectedProjectId = '';
+        selectedProjectName = '';
+        selectedProjectClient = '';
+        if (root instanceof HTMLElement) {
+          root.dataset.selectedProjectId = '';
+          root.dataset.routeConfirmed = 'false';
+        }
+        updateSurfaceContextProject('');
+        syncRouteChip();
+        hideRoutePanel();
+        if (lastCapture && capturedDetail instanceof HTMLElement) {
+          capturedDetail.textContent = selectedRouteKind === 'lead'
+            ? 'Ready to create a lead-stage intake.'
+            : 'Ready to save for office review.';
+        }
+        return;
+      }
       if (routeSelect instanceof HTMLSelectElement) {
         const option = routeSelect.selectedOptions[0];
         selectedProjectId = option?.value || suggestedProjectId;
@@ -281,12 +360,122 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         setStatus(`${friendlyForKind(lastCapture.kind)} ready — tap Done to file to ${selectedProjectName}.`);
       }
     };
+    const routeCaptureToLead = async () => {
+      if (!lastCapture) {
+        setStatus('Capture a photo or video first, then create the lead.');
+        return false;
+      }
+      if (isFiling) return true;
+      isFiling = true;
+      if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
+      if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = true;
+      setStatus(`Creating lead from ${friendlyForKind(lastCapture.kind).toLowerCase()}…`);
+      try {
+        const response = await fetch('/api/v1/sales/deals', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            confirmed: true,
+            name: `${friendlyForKind(lastCapture.kind)} capture lead`,
+            client_name: 'Client TBD',
+            source: `Camera · ${lastCapture.name || friendlyForKind(lastCapture.kind)}`,
+          }),
+        });
+        if (!response.ok) throw new Error(`lead_failed_${response.status}`);
+        const result = await response.json();
+        const dealId = result.deal?.id;
+        if (!dealId) throw new Error('lead_failed_empty');
+        try {
+          sessionStorage.setItem('kerf.cameraCapture', JSON.stringify({
+            ...lastCapture,
+            status: 'attached_to_lead',
+            route_kind: 'lead',
+            deal_id: dealId,
+            returned_at: Date.now(),
+          }));
+        } catch {
+          // Visible navigation is still the fallback.
+        }
+        setStatus('Lead created. Opening intake.');
+        window.location.href = `/sales/${encodeURIComponent(dealId)}?src=camera`;
+        return true;
+      } catch (err) {
+        isFiling = false;
+        if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
+        if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = false;
+        const code = err instanceof Error ? err.message : '';
+        setStatus(
+          code === 'lead_failed_401'
+            ? 'Your session expired — sign in again, then create the lead.'
+            : code === 'lead_failed_403'
+              ? 'You do not have access to create that lead.'
+              : 'Could not create the lead. Nothing was filed.',
+        );
+        return false;
+      }
+    };
+    const routeCaptureToReview = async () => {
+      if (!lastCapture) {
+        setStatus('Capture a photo or video first, then save it for review.');
+        return false;
+      }
+      if (isFiling) return true;
+      isFiling = true;
+      if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
+      if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = true;
+      setStatus(`Saving ${friendlyForKind(lastCapture.kind).toLowerCase()} for review…`);
+      try {
+        const response = await fetch('/api/v1/camera-captures/review', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            capture_kind: lastCapture.kind,
+            file_name: lastCapture.name,
+            confirmed: true,
+          }),
+        });
+        if (!response.ok) throw new Error(`review_failed_${response.status}`);
+        const result = await response.json();
+        const reviewRoute = result.review_route || '/relay?src=camera';
+        try {
+          sessionStorage.setItem('kerf.cameraCapture', JSON.stringify({
+            ...lastCapture,
+            status: 'queued_for_review',
+            route_kind: 'review',
+            capture_id: result.capture_id,
+            returned_at: Date.now(),
+          }));
+        } catch {
+          // Visible navigation is still the fallback.
+        }
+        setStatus('Saved for review. Opening office queue.');
+        window.location.href = reviewRoute;
+        return true;
+      } catch (err) {
+        isFiling = false;
+        if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
+        if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = false;
+        const code = err instanceof Error ? err.message : '';
+        setStatus(
+          code === 'review_failed_401'
+            ? 'Your session expired — sign in again, then save for review.'
+            : code === 'review_failed_403'
+              ? 'You do not have access to save that review item.'
+              : 'Could not save for review. Nothing was filed.',
+        );
+        return false;
+      }
+    };
     const fileCapture = async () => {
       // Founder spec: Confirm-and-file is NEVER a silent no-op — every refusal says why.
       if (!lastCapture) {
         setStatus('Capture a photo or video first, then choose where it goes.');
         return false;
       }
+      if (selectedRouteKind === 'lead') return routeCaptureToLead();
+      if (selectedRouteKind === 'review') return routeCaptureToReview();
       if (!routeConfirmed || !selectedProjectId) {
         setStatus('Choose where this capture goes, then tap Confirm and file.');
         showRoutePanel();
@@ -455,6 +644,12 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       selectedProjectName = option?.dataset.projectName || '';
       selectedProjectClient = option?.dataset.projectClient || '';
       syncRouteSuggestion();
+    });
+    routeKindButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!(button instanceof HTMLButtonElement)) return;
+        setRouteKind(button.dataset.routeKind || 'job');
+      });
     });
     routeConfirm?.addEventListener('click', () => {
       applySelectedRoute();
@@ -643,6 +838,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     if (routeConfirmed) {
       syncRouteChip();
     }
+    setRouteKind('job');
     void setMode(currentMode);
   </script>
 </Layout>
@@ -1191,6 +1387,47 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     font-size: 1rem;
     font-weight: 850;
     line-height: 1.2;
+  }
+  .cam-route-kinds {
+    display: flex;
+    gap: 0.42rem;
+  }
+  .cam-route-kind {
+    flex: 1 1 0;
+    display: grid;
+    gap: 0.16rem;
+    min-width: 0;
+    min-height: 4.1rem;
+    padding: 0.48rem 0.42rem;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    color: #f8fafc;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .cam-route-kind.is-active {
+    border-color: rgba(231, 170, 59, 0.74);
+    background: rgba(231, 170, 59, 0.16);
+  }
+  .cam-route-kind strong {
+    overflow-wrap: anywhere;
+    font-size: 0.72rem;
+    line-height: 1.12;
+  }
+  .cam-route-kind span {
+    color: rgba(248,250,252,0.62);
+    font-size: 0.62rem;
+    line-height: 1.2;
+  }
+  .cam-route-job-fields {
+    display: grid;
+    gap: 0.32rem;
+  }
+  .cam-route-job-fields[hidden],
+  .cam-route-link[hidden] {
+    display: none;
   }
   .cam-route-label {
     font-size: 0.68rem;

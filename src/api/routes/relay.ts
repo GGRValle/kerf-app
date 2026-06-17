@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 import { getLane23ProjectForTenant } from '../../app/lib/lane23Fixtures.js';
 import type {
+  CaptureRecordedEvent,
   DailyLogDriftDetectedEvent,
   DailyLogEntryCapturedEvent,
   DailyLogFactsExtractedEvent,
@@ -49,7 +50,7 @@ relayRoutes.get('/field-daily/relay-feed', async (c) => {
     return event.type === 'relay_card.surfaced';
   });
 
-  const items = surfaced
+  const relayItems = surfaced
     .map((card) => {
       const factEvent = facts.get(card.entry_id);
       const driftEvent = drift.get(card.entry_id);
@@ -68,10 +69,35 @@ relayRoutes.get('/field-daily/relay-feed', async (c) => {
         description: driftEvent?.description ?? null,
         summary: factEvent ? summaryFromFacts(factEvent.facts) : 'Field update needs review',
         transcript_text: entry?.transcript_text ?? null,
+        source_refs: card.source_refs,
         reviewed: reviewed !== undefined,
         reviewed_outcome: reviewed?.outcome ?? null,
       };
-    })
+    });
+  const cameraReviewItems = events
+    .filter((event): event is CaptureRecordedEvent =>
+      event.type === 'capture.recorded'
+      && event.correlation_id.startsWith('cap_')
+      && event.source_refs.some((ref) => typeof ref.uri === 'string' && ref.uri.startsWith('kerf://camera-review/')),
+    )
+    .map((event) => ({
+      relay_card_id: `camera_review_${event.capture_id}`,
+      surfaced_event_id: event.event_id,
+      entry_id: event.capture_id,
+      project_id: null,
+      project_name: 'Camera review',
+      surfaced_at: event.at,
+      surfaced_to: 'office',
+      severity: 'review',
+      description: 'Camera capture needs a destination decision.',
+      summary: 'Camera capture awaiting review',
+      transcript_text: event.transcript_text,
+      source_refs: event.source_refs,
+      reviewed: false,
+      reviewed_outcome: null,
+    }));
+
+  const items = [...relayItems, ...cameraReviewItems]
     .sort((a, b) => b.surfaced_at.localeCompare(a.surfaced_at));
 
   return c.json({ ok: true, tenant_id: tenant, items, ...tenantOverrideFlags(c) });

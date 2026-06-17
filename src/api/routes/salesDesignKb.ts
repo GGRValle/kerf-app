@@ -24,6 +24,7 @@ import {
   lineBreakdown,
   clientVisibleLines,
   generateProposalDraft,
+  upsertEstimatingDeal,
   templateAssemblies,
   assemblyItems,
   catalogUnitCents,
@@ -51,6 +52,34 @@ salesDesignKbRoutes.get('/sales/deals', (c) => {
   const tenant = requireApiTenant(c);
   const store = getSalesStore(tenant);
   return c.json({ tenant, columns: pipelineColumns(store.deals), deals: store.deals });
+});
+
+salesDesignKbRoutes.post('/sales/deals', async (c) => {
+  const tenant = requireApiTenant(c);
+  const { confirmed, body } = await readConfirmed(c);
+  if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
+  const clean = (value: unknown, fallback: string) => {
+    if (typeof value !== 'string') return fallback;
+    const trimmed = value.replace(/\s+/g, ' ').trim();
+    return trimmed.length > 0 ? trimmed.slice(0, 120) : fallback;
+  };
+  const dealId = clean(body['deal_id'], `deal_camera_${Date.now().toString(36)}`)
+    .replace(/[^A-Za-z0-9_-]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    || `deal_camera_${Date.now().toString(36)}`;
+  const valueCents = Number.isInteger(body['value_cents']) && (body['value_cents'] as number) >= 0
+    ? body['value_cents'] as number
+    : 0;
+  const deal = upsertEstimatingDeal({
+    tenant,
+    dealId,
+    name: clean(body['name'], 'Camera capture lead'),
+    clientName: clean(body['client_name'], 'Client TBD'),
+    valueCents,
+    source: clean(body['source'], 'Camera capture'),
+    createdAt: new Date().toISOString(),
+  });
+  return c.json({ ok: true, deal, ...tenantOverrideFlags(c) }, 201);
 });
 
 salesDesignKbRoutes.get('/sales/deals/:id', (c) => {
