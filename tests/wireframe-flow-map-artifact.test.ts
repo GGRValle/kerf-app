@@ -148,3 +148,38 @@ test('wireframe lane dispatches are generated for every implementation lane', ()
     assert.match(dispatches, new RegExp(card.spineDependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${card.label} spine dependency must be named in lane dispatches`);
   }
 });
+
+test('wireframe gap register lists missing faces, transition gaps, and import conflicts', () => {
+  const html = readFileSync('docs/wireframes/wireframe-flow-map.html', 'utf8');
+  const json = html.match(/<script id="flow-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(json, 'flow-data JSON script must be present');
+  const data = JSON.parse(json);
+  const register = readFileSync('docs/wireframes/wireframe-system-gap-register.md', 'utf8');
+
+  assert.match(register, /^# Right Hand Wireframe Gap Register/m);
+  assert.match(register, /## Missing Canon Face Records/);
+  assert.match(register, /## Transition Gaps/);
+  assert.match(register, /## External Canon Duplicate-ID Conflicts/);
+  assert.match(register, /## Closure Rules/);
+  assert.match(register, /Transition gaps that still open a gap screen/);
+  assert.match(register, /F-PS1_mobile_pm_super_home\.html/);
+  assert.match(register, /F-SU2_desktop_super_home\.html/);
+  assert.match(register, /duplicate-ID conflict closes only when/);
+
+  for (const gap of data.missingFaces as { label: string; device: string }[]) {
+    assert.match(register, new RegExp(gap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} must be listed in the gap register`);
+    assert.match(register, new RegExp(gap.device.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} device lane must be listed in the gap register`);
+  }
+
+  const transitionGaps = (data.faces as { file: string; transitions: { missing?: string; trigger: string; gate?: string; spine?: string }[] }[])
+    .flatMap((face) => face.transitions
+      .filter((transition) => transition.missing)
+      .map((transition) => ({ face: face.file, ...transition })));
+  assert.ok(transitionGaps.length > 0, 'fixture data should contain transition gaps while the map is incomplete');
+  for (const gap of transitionGaps) {
+    assert.match(register, new RegExp(gap.face.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.face} transition gap source must be listed`);
+    assert.match(register, new RegExp(String(gap.missing).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.face} transition gap target must be listed`);
+    assert.match(register, new RegExp(String(gap.gate).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.face} transition gap gate must be listed`);
+    assert.match(register, new RegExp(String(gap.spine).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.face} transition gap spine must be listed`);
+  }
+});
