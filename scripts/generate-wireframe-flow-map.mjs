@@ -106,7 +106,7 @@ function domainFromId(id) {
   if (/^F-(MN|BK|PU|VC|INV)/.test(id)) return 'Money';
   if (/^F-(CL|CA|CS|WW|CP|CPS|WAR)/.test(id)) return 'Clients';
   if (/^F-(E1|FD|FU|F1|FH)/.test(id)) return 'Field capture';
-  if (/^F-(SC|SB|CR|HR|SP|RR|AD|BC|SUB|SUBM|US)/.test(id)) return 'Ops / admin';
+  if (/^F-(SC|SB|CR|HR|SP|RR|AD|BC|SUB|SUBM|US|UTIL)/.test(id)) return 'Ops / admin';
   if (/^F-(LND|ON)/.test(id)) return 'Role homes';
   if (/^F-(MK)/.test(id)) return 'Marketing';
   if (/^F-(RP|AV|H1|TD)/.test(id)) return 'Reports / queues';
@@ -227,6 +227,8 @@ function systemContractForFace(id) {
     'F-SP1': ['/settings', 'mapped_pending_rebuild', 'admin_gate', 'Settings hub'],
     'F-SP1a': ['/settings/me', 'mapped_pending_rebuild', 'admin_gate', 'Account editor'],
     'F-US1': ['/settings/me', 'mapped_pending_rebuild', 'admin_gate', 'User settings'],
+    'F-UTIL1a': ['/connections + /kb-ingestion + /blackboard', 'mapped_pending_rebuild', 'admin_gate / review_gate', 'Settings / knowledge / Blackboard utility spine'],
+    'F-UTIL1b': ['/connections + /kb-ingestion + /blackboard', 'mapped_pending_rebuild', 'admin_gate / review_gate', 'Settings / knowledge / Blackboard utility spine'],
     'F-RR1': ['/role-routing', 'mapped_pending_rebuild', 'admin_gate', 'Role routing matrix'],
     'F-BC1': ['/settings or /more', 'future_or_unrouted', 'admin_gate', 'Bottom bar customization route missing'],
     'F-AD1': ['/settings or /home/admin-ops', 'future_or_unrouted', 'admin_gate', 'Admin landing not distinct yet'],
@@ -273,6 +275,8 @@ function transitionGate(transition, face) {
   }
   if (/right hand|speak|mic|ask/.test(text) || /^F-RH/.test(transition.target || '')) return 'right_hand_route_only';
   if (face?.system?.gate === 'client_review_gate') return 'client_review_gate';
+  if (face?.system?.gate?.includes('admin_gate') && /connect|oauth|integration|manage/.test(text)) return 'admin_gate';
+  if (face?.system?.gate?.includes('review_gate') && /knowledge|kb|blackboard|memory|review|preview/.test(text)) return 'review_gate';
   return 'navigation';
 }
 
@@ -283,6 +287,7 @@ function transitionSpine(transition, face) {
   if (/daily log|capture|camera|field|transcript/.test(text) || /^F-(CAM|E1|FD|FU|F1|RC)/.test(transition.target || '')) return 'capture_to_daily_log_review';
   if (/proposal|estimate|decision|draft/.test(text) || /^F-(PV|B1|B2|G1|SL|ES)/.test(transition.target || '')) return 'estimate_proposal_decision_spine';
   if (/\b(money|invoice|ar|ap|qb|vendor|margin|allowance)\b/.test(text) || /^F-(MN|BK|PU|VC)/.test(transition.target || '')) return 'money_spine';
+  if (/connections|integration|knowledge|kb|blackboard|memory/.test(text) || /^F-UTIL/.test(transition.target || '')) return 'settings_knowledge_utility_spine';
   if (/client|warranty|portal/.test(text) || /^F-(CL|CS|CA|WW|SH|W1)/.test(transition.target || '')) return 'client_portal_spine';
   if (/project|work order|closeout|status|media/.test(text) || /^F-(PR|PS|ML|CO|PA)/.test(transition.target || '')) return 'project_graph_spine';
   if (/right hand|speak|mic/.test(text) || /^F-RH/.test(transition.target || '')) return 'right_hand_surface_context';
@@ -461,6 +466,8 @@ add(['F-D1'], [
   { trigger: 'Settings', ...target('F-SP1') },
   { trigger: 'Transcript review', ...target('F-F1') },
   { trigger: 'Decisions', ...target('F-B1') },
+  { trigger: 'Blackboard', ...target('F-UTIL1a', 'Mobile utility face state for read-only Blackboard preview') },
+  { trigger: 'Cost KB', ...target('F-UTIL1a', 'Mobile utility face state for cost knowledge review') },
   { trigger: 'Clients', ...target('F-CL1') },
   { trigger: 'Marketing', ...target('F-MK1') },
 ]);
@@ -853,7 +860,7 @@ add(['F-SP1'], [
   { trigger: 'Account editor', ...target('F-SP1a') },
   { trigger: 'Role routing', ...target('F-RR1') },
   { trigger: 'Bar customization', ...target('F-BC1') },
-  { trigger: 'Connections', ...missing('Connections face', 'Live route exists; Canon file missing') },
+  { trigger: 'Connections', ...missing('Connections face', 'Settings utility face for connections, KB, and Blackboard') },
 ]);
 add(['F-SP1a'], [
   { trigger: 'Back settings', ...target('F-SP1') },
@@ -872,6 +879,22 @@ add(['F-BC1'], [
 add(['F-AD1', 'F-AD2'], [
   { trigger: 'Admin/Ops home', ...target('F-AO1') },
   { trigger: 'Settings', ...target('F-SP1') },
+]);
+add(['F-UTIL1a'], [
+  { trigger: 'Back More', ...target('F-D1') },
+  { trigger: 'Connections', ...target('F-UTIL1a', 'In-face admin-gated connections state') },
+  { trigger: 'Cost knowledge review', ...target('F-UTIL1a', 'In-face KB review state') },
+  { trigger: 'Blackboard preview', ...target('F-UTIL1a', 'In-face read-only memory preview state') },
+  { trigger: 'Review queue', ...target('F-FU1') },
+  { trigger: 'Audit detail', ...target('F-H1') },
+]);
+add(['F-UTIL1b'], [
+  { trigger: 'Back settings', ...target('F-SP1') },
+  { trigger: 'Open Connections', ...target('F-UTIL1b', 'In-face admin-gated connections state') },
+  { trigger: 'Open KB queue', ...target('F-UTIL1b', 'In-face KB review state') },
+  { trigger: 'Open Blackboard', ...target('F-UTIL1b', 'In-face read-only memory preview state') },
+  { trigger: 'Review queue', ...target('F-FU1') },
+  { trigger: 'Audit detail', ...target('F-H1') },
 ]);
 
 add(['F-RP1', 'F-RP2'], [

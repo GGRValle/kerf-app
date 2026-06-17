@@ -100,6 +100,8 @@ test('imported conductor/user canon references are no longer classified as exter
     'F-CHG1_mobile_change_order_builder.html',
     'F-DL1_mobile_daily_log.html',
     'F-DS1_desktop_design_workspace.html',
+    'F-UTIL1a_mobile_connections_kb_blackboard.html',
+    'F-UTIL1b_desktop_connections_kb_blackboard.html',
   ]) {
     assert.ok(
       !EXTERNAL_OR_MISSING_CANON_FACES.some((entry) => entry.wireframe === imported),

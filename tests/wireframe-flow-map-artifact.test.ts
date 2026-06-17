@@ -62,6 +62,8 @@ test('interactive wireframe flow map carries parseable data for every canon face
     'F-PR0a_mobile_project_setup.html',
     'F-PR0b_desktop_project_setup.html',
     'F-DES1a_mobile_design_workspace.html',
+    'F-UTIL1a_mobile_connections_kb_blackboard.html',
+    'F-UTIL1b_desktop_connections_kb_blackboard.html',
   ]) {
     assert.ok(
       data.faces.some((face: { file: string }) => face.file === attachedFace),
@@ -116,7 +118,9 @@ test('wireframe build backlog is generated from the interactive gap map', () => 
   assert.match(backlog, /## Implementation Rules/);
   assert.match(backlog, /Cursor C money/);
   assert.match(backlog, /canon_present/);
-  assert.match(backlog, /canon_missing/);
+  if ((data.buildCards as { canonStatus: string }[]).some((card) => card.canonStatus === 'canon_missing')) {
+    assert.match(backlog, /canon_missing/);
+  }
   assert.match(backlog, /F-DL1_mobile_daily_log\.html/);
   assert.match(backlog, /F-INV1a_mobile_per_job_invoice_list\.html/);
   assert.match(backlog, /money_guard/);
@@ -191,7 +195,11 @@ test('wireframe gap register lists missing faces, transition gaps, and import co
     .flatMap((face) => face.transitions
       .filter((transition) => transition.missing)
       .map((transition) => ({ face: face.file, ...transition })));
-  assert.ok(transitionGaps.length > 0, 'fixture data should contain transition gaps while the map is incomplete');
+  assert.match(
+    register,
+    new RegExp(`Transition gaps that still open a gap screen: ${transitionGaps.length}`),
+    'gap register summary must match the generated transition gap count',
+  );
   for (const gap of transitionGaps) {
     assert.match(register, new RegExp(gap.face.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.face} transition gap source must be listed`);
     assert.match(register, new RegExp(String(gap.missing).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.face} transition gap target must be listed`);
