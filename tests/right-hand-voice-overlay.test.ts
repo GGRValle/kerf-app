@@ -1300,10 +1300,14 @@ test('Home folds the resolved turn into the shared Attention Artifact queue', ()
   const card = readFileSync(path.join(ROOT, 'src/app/lib/attentionArtifactCard.ts'), 'utf8');
   // Mounted on the Right Hand home surface.
   assert.match(home, /RoleHomeSurface/);
+  assert.match(home, /voiceSurface="bubble"/);
+  assert.match(home, /voiceState="minimized"/);
   assert.doesNotMatch(surface, /RightHandResultCard/);
   assert.match(surface, /The one thing/);
   assert.match(surface, /On deck/);
   assert.match(surface, /The pulse/);
+  assert.match(surface, /Right Hand working set/);
+  assert.match(surface, /Needs me/);
   // Reads the stashed TRP and projects it through the same card used by review.
   assert.match(surface, /TURN_RESOLUTION_SESSION_KEY/);
   assert.match(surface, /parseTurnResolution\(/);

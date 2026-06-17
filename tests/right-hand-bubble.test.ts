@@ -172,9 +172,18 @@ test('component renders from the importable module (not inline in the monolith)'
 test('component carries the F-RH3/F-RH7 markers: bloom, pill, gold thinking-state, micSide', () => {
   assert.match(component, /rhb-bloom/); // F-RH3 bloom
   assert.match(component, /rhb-pill/); // F-RH7 minimized pill
+  assert.match(component, /position: fixed/); // travels above the surface chrome, never page-flow
   assert.match(component, /rhb-mic--live/); // the gold thinking-state presence
   assert.match(component, /micSide/); // handedness prop (F-RH7 rule 2)
   assert.match(component, /data-mic-side/);
+});
+
+test('component renders pill and bloom together so client state can open in place', () => {
+  assert.match(component, /data-rhb-action="tap_pill"/);
+  assert.match(component, /\.rhb\[data-state='minimized'\] \.rhb-pill/);
+  assert.match(component, /\.rhb\[data-state='minimized'\] \.rhb-bloom/);
+  assert.match(component, /display: inline-flex/);
+  assert.match(component, /display: none/);
 });
 
 test('component is canon-tokenized + light+dark by tokens (Goal 0 grammar)', () => {

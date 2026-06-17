@@ -11,6 +11,7 @@ import MobileBottomNav from '../components/MobileBottomNav.astro';
 import RightHandVoiceOverlay from '../components/RightHandVoiceOverlay.astro';
 import RightHandBubble from '../components/RightHandBubble.astro';
 import RightHandConversationDock from '../components/RightHandConversationDock.astro';
+import type { BubbleState } from '../lib/rightHandBubble.js';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { navForContext } from '../lib/nav.js';
 import { DEFAULT_ROLE_ROOT_CONTEXT, type LayoutProps, type RoleRoot } from '../lib/layout-props.js';
@@ -30,6 +31,7 @@ export interface Props extends Partial<LayoutProps> {
    * opts into the canon F-RH7 bubble with voiceSurface="bubble".
    */
   voiceSurface?: 'overlay' | 'bubble';
+  voiceState?: BubbleState;
 }
 
 const {
@@ -40,6 +42,7 @@ const {
   activeHref = '/',
   surfaceContext,
   voiceSurface = 'overlay',
+  voiceState,
 } = Astro.props as Props;
 
 const { t } = createLayoutContext({ username, locale: context.locale, roleRoot: context.roleRoot });
@@ -154,7 +157,7 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
       </div>
       <MobileBottomNav activeHref={activeHref} roleRoot={context.roleRoot} />
       {voiceSurface === 'bubble' ? (
-        <RightHandBubble />
+        <RightHandBubble state={voiceState} />
       ) : (
         <>
           <SpeakFAB />

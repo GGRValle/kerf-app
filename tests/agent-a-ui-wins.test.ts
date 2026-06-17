@@ -29,12 +29,17 @@ test('Proposal print styles · mobile reflow avoids justify gaps and stacked div
   assert.match(source, /\.kerf-proposal__division-subtotal[\s\S]*white-space: nowrap/);
 });
 
-test('Home · red-is-chip-tier overrides keep rails neutral on risk_changed cards', async () => {
+test('Home · F-A1b canon grammar uses question band and red chip, not red row rail', async () => {
   const source = await readFile(
     path.join(ROOT, 'src/app/components/RightHandHomeSurface.astro'),
     'utf8',
   );
+  assert.match(source, /data-grammar="canon"/);
+  assert.match(source, /rh-brain/);
+  assert.match(source, /kg-chip/);
   assert.match(source, /\.rh-home \.aa-card\[data-attention-state='risk_changed'\]/);
-  assert.match(source, /\.aa-card__rail[\s\S]*background: var\(--kerf-border-soft\)/);
-  assert.match(source, /\.aa-card__state[\s\S]*color: var\(--kerf-red\)/);
+  assert.match(source, /\.aa-card__rail[\s\S]*background: var\(--aa-dot\)/);
+  assert.match(source, /\.aa-card__state[\s\S]*background: var\(--red-soft\)/);
+  assert.match(source, /\.aa-card__state[\s\S]*color: var\(--red\)/);
+  assert.doesNotMatch(source, /border-left[^;{]*(?:--red|#b73838|#f87171|\bred\b)/);
 });

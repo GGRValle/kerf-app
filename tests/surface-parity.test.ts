@@ -110,7 +110,7 @@ test('parity gate: every [data-grammar="canon"] page conforms (auto-gates Cursor
 // Pending until rebuilt; the assert HARD-fails the moment one opts in and drifts.
 
 const REGISTRY: ReadonlyArray<{ surface: string; file: string; contract: CanonContract }> = [
-  { surface: 'Home', file: 'src/app/pages/home/owner.astro', contract: { requiredPrimitives: ['kg-grid'] } },
+  { surface: 'Home', file: 'src/app/components/RightHandHomeSurface.astro', contract: { requiredPrimitives: ['kg-grid', 'kg-card', 'kg-chip'] } },
   { surface: 'Camera', file: 'src/app/pages/camera.astro', contract: {} },
   { surface: 'Change Order · Decision Card', file: 'src/app/pages/decisions/[id].astro', contract: {} },
   { surface: 'Estimate', file: 'src/app/pages/estimate/[projectId].astro', contract: { requireSurfaceContext: true } },
