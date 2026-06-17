@@ -604,8 +604,15 @@ test('turn resolution: new estimate turns start intake instead of filing to a gu
   const withKnownEntity = sliceDecl(src, 'withKnownEntity', 'resolveTurnServerSide');
   assert.match(withKnownEntity, /likely\?\.type === 'project' && likely\.id/);
   assert.match(withKnownEntity, /projectEntityHasContextSupport\(likely\.id, likely\.label, trp\.heard_text\)/);
+  assert.match(withKnownEntity, /singleProject\?\.id === likely\.id && textReferencesOnlyKnownProject\(trp\.heard_text\)/);
   assert.match(withKnownEntity, /likely_entity: null/);
   assert.match(withKnownEntity, /New project → estimate/);
+  assert.match(src, /const singleKnownProjectWithId/);
+  assert.match(src, /const textReferencesOnlyKnownProject/);
+  assert.match(src, /one\\s\+you\\s\+have\\s\+on\\s\+file/);
+  assert.match(src, /const projectForTurn/);
+  assert.match(withKnownEntity, /const inferred = projectForTurn\(trp\)/);
+  assert.match(withKnownEntity, /confidence,/);
 
   const renderConfirmTurn = sliceDecl(src, 'renderConfirmTurn', 'currentTenantId');
   assert.match(renderConfirmTurn, /startNewIntakeTurn\(trp\)/);
@@ -744,7 +751,7 @@ test('F-RH3 bloom-from-heart: composer is one dock with the mic seated dead cent
   assert.match(src, /class="rhvo__composer-row"/);
   assert.match(src, /class="rhvo__dock"/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Home<\/span>/);
-  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Create<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Start<\/span>/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Camera<\/span>/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">More<\/span>/);
   assert.match(src, /\.rhvo__dock\s*\{[\s\S]*?grid-template-columns: 1fr 1fr 72px 1fr 1fr;/);
@@ -763,7 +770,7 @@ test('F-RH3 bloom-from-heart: surface grows upward then holds and scrolls', () =
   assert.match(src, /overlay\.dataset\.hasThread = conversationTurns\.length > 0 \? 'true' : 'false'/);
   assert.match(src, /\.rhvo__panel\s*\{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;/);
   assert.match(src, /\.rhvo__thread\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;[\s\S]*?display: flex;[\s\S]*?flex-direction: column;/);
-  assert.match(src, /\.rhvo__thread::before\s*\{[\s\S]*?margin-top: auto;/);
+  assert.doesNotMatch(src, /\.rhvo__thread::before\s*\{[\s\S]*?margin-top:\s*auto/);
   assert.match(src, /\.rhvo__composer\s*\{[\s\S]*?flex: 0 0 auto;[\s\S]*?margin-top: auto;/);
   assert.doesNotMatch(src, /align-content: end/);
 });

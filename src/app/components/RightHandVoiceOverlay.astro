@@ -129,7 +129,7 @@ const { t } = createLayoutContext();
       </div>
       <div class="rhvo__dock">
         <span class="rhvo__dock-item" aria-hidden="true">Home</span>
-        <span class="rhvo__dock-item" aria-hidden="true">Create</span>
+        <span class="rhvo__dock-item" aria-hidden="true">Start</span>
         <button
           type="button"
           class="rhvo__indicator"
@@ -1248,6 +1248,17 @@ const { t } = createLayoutContext();
       return collectKnownEntities().find((entity) => entity.type === 'project' && entity.id === id) ?? null;
     };
 
+    const knownProjectsWithIds = (): (KnownEntityPayload & { id: string })[] => (
+      collectKnownEntities().filter((entity): entity is KnownEntityPayload & { id: string } => (
+        entity.type === 'project' && typeof entity.id === 'string' && entity.id.trim().length > 0
+      ))
+    );
+
+    const singleKnownProjectWithId = (): (KnownEntityPayload & { id: string }) | null => {
+      const projects = knownProjectsWithIds();
+      return projects.length === 1 ? projects[0]! : null;
+    };
+
     const likelyProjectIdFor = (trp: TurnResolutionPacket | null): string | null => {
       const likely = trp?.context_hypothesis?.likely_entity;
       if (likely?.type !== 'project' || !likely.id) return null;
@@ -1259,6 +1270,26 @@ const { t } = createLayoutContext();
       const knownProject = knownProjectById(id);
       if (knownProject) return textMentionsEntity(text, knownProject.label);
       return Boolean(label && textMentionsEntity(text, label));
+    };
+
+    const textRejectsCurrentJobReference = (text: string): boolean => (
+      /\b(?:different|another|new|wrong|not(?:\s+the)?\s+same|not\s+that)\s+(?:job|project|site|one)\b/i.test(text)
+      || /\b(?:that'?s|this is|it'?s)\s+(?:a\s+)?(?:different|new|another)\s+(?:job|project|site)\b/i.test(text)
+    );
+
+    const textReferencesOnlyKnownProject = (text: string): boolean => (
+      !textRejectsCurrentJobReference(text)
+      && /\b(?:the\s+one(?:\s+you\s+have)?(?:\s+on\s+file)?|one\s+you\s+have\s+on\s+file|one\s+on\s+file|same\s+one|that\s+one|active\s+(?:job|project)|current\s+(?:job|project)|existing\s+(?:job|project)|job\s+you\s+have\s+on\s+file|project\s+you\s+have\s+on\s+file|in\s+scope)\b/i.test(text)
+    );
+
+    const projectForTurn = (trp: TurnResolutionPacket): { project: KnownEntityPayload & { id: string }; confidence: 'high' | 'medium' } | null => {
+      const explicitProject = knownProjectsWithIds().find((entity) => textMentionsEntity(trp.heard_text, entity.label));
+      if (explicitProject) return { project: explicitProject, confidence: 'high' };
+      const singleProject = singleKnownProjectWithId();
+      if (singleProject && textReferencesOnlyKnownProject(trp.heard_text)) {
+        return { project: singleProject, confidence: 'medium' };
+      }
+      return null;
     };
 
     const startNewIntakeTurn = (trp: TurnResolutionPacket | null): boolean => {
@@ -1276,7 +1307,7 @@ const { t } = createLayoutContext();
       if (turnNeedsProjectBeforeSave(trp)) {
         const destination = conversationDestinationFor(trp);
         return destination
-          ? `I will keep this with ${destination}. I still need to match it to a job before I file it.`
+          ? `I heard ${destination}, but I need the exact job record before I file it. Say the job name or tap Change job.`
           : overlay.dataset.correctionNeeds ?? 'Which job should I attach this to?';
       }
       const entity = likelyEntityLabel(trp);
@@ -1298,6 +1329,8 @@ const { t } = createLayoutContext();
       const likely = trp.context_hypothesis.likely_entity;
       if (likely?.type === 'project' && likely.id) {
         if (projectEntityHasContextSupport(likely.id, likely.label, trp.heard_text)) return trp;
+        const singleProject = singleKnownProjectWithId();
+        if (singleProject?.id === likely.id && textReferencesOnlyKnownProject(trp.heard_text)) return trp;
         return buildTurnResolutionPacket({
           heardText: trp.heard_text,
           intent: trp.intent,
@@ -1318,14 +1351,15 @@ const { t } = createLayoutContext();
         });
       }
       if (likely?.id) return trp;
-      const project = collectKnownEntities().find((entity) => entity.type === 'project' && textMentionsEntity(trp.heard_text, entity.label));
-      if (!project) return trp;
+      const inferred = projectForTurn(trp);
+      if (!inferred) return trp;
+      const { project, confidence } = inferred;
       const frame = trp.context_hypothesis.frame;
       const entity = {
         type: 'project' as const,
-        id: project.id ?? null,
+        id: project.id,
         label: project.label,
-        confidence: 'high' as const,
+        confidence,
       };
       const contextHypothesis = {
         ...trp.context_hypothesis,
@@ -2855,10 +2889,6 @@ const { t } = createLayoutContext();
     scroll-behavior: smooth;
     overscroll-behavior: contain;
   }
-  .rhvo__thread::before {
-    content: "";
-    margin-top: auto;
-  }
   .rhvo__thread[hidden] { display: none; }
   .rhvo__thread-turn {
     display: grid;
@@ -3024,9 +3054,9 @@ const { t } = createLayoutContext();
   .rhvo__composer-input {
     display: block;
     width: 100%;
-    min-height: 40px;
+    min-height: 44px;
     max-height: 8.25rem;
-    padding: 0.55rem 0.7rem;
+    padding: 0.56rem 0.72rem;
     border: 1px solid var(--rhvo-border-soft);
     border-radius: 18px;
     outline: 0;
@@ -3034,7 +3064,7 @@ const { t } = createLayoutContext();
     background: rgba(255, 255, 255, 0.055);
     color: var(--rhvo-text);
     font: inherit;
-    font-size: 0.96rem;
+    font-size: 0.9rem;
     line-height: 1.42;
     overflow: auto;
   }
