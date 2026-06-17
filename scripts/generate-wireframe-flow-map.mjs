@@ -101,6 +101,141 @@ function domainFromId(id) {
   return 'Other';
 }
 
+function systemContractForFace(id) {
+  const exact = {
+    'F-A1': ['/', 'mapped_pending_rebuild', 'attention_queue', 'Home attention queue: One Thing, On Deck, Pulse'],
+    'F-A2': ['/home/owner', 'mapped_pending_rebuild', 'attention_queue', 'Owner role-root projection'],
+    'F-P1': ['/home/pm', 'mapped_pending_rebuild', 'attention_queue', 'PM role-root projection'],
+    'F-P2': ['/home/pm', 'mapped_pending_rebuild', 'attention_queue', 'PM role-root projection'],
+    'F-AO1': ['/home/admin-ops', 'mapped_pending_rebuild', 'attention_queue', 'Admin/Ops role-root projection'],
+    'F-AO2': ['/home/admin-ops', 'mapped_pending_rebuild', 'attention_queue', 'Admin/Ops role-root projection'],
+    'F-TO1': ['/home/team-ops', 'mapped_pending_rebuild', 'attention_queue', 'Team/Ops role-root projection'],
+    'F-TO2': ['/home/team-ops', 'mapped_pending_rebuild', 'attention_queue', 'Team/Ops role-root projection'],
+    'F-SH1': ['/home/sub or /sub/portal/s/:token', 'client_surface', 'portal_session', 'Subcontractor portal and assignment spine'],
+    'F-SH2': ['/home/sub or /sub/portal/s/:token', 'client_surface', 'portal_session', 'Subcontractor portal and assignment spine'],
+    'F-ES1': ['/home/estimator', 'mapped_pending_rebuild', 'attention_queue', 'Estimator role-root projection'],
+    'F-ES2': ['/home/estimator', 'mapped_pending_rebuild', 'attention_queue', 'Estimator role-root projection'],
+    'F-C1': ['/home/field or /field', 'mapped_pending_rebuild', 'capture_gate', 'Field role-root projection'],
+    'F-FL1': ['/home/field', 'mapped_pending_rebuild', 'capture_gate', 'Foreman role-root projection'],
+    'F-SU1': ['/home/field', 'mapped_pending_rebuild', 'capture_gate', 'Superintendent role-root projection'],
+    'F-SU2': ['/home/field', 'mapped_pending_rebuild', 'capture_gate', 'Superintendent role-root projection'],
+    'F-S1': ['/create', 'mapped_pending_rebuild', 'navigation_only', 'Start sheet routes to canonical artifact owners'],
+    'F-D1': ['/more', 'mapped_pending_rebuild', 'navigation_only', 'Secondary domain drawer'],
+    'F-RH1': ['global overlay + /right-hand fallback', 'canon_wired', 'durable_write_gate', 'SurfaceContext + working draft + conversation spine'],
+    'F-RH3': ['global overlay + /right-hand fallback', 'canon_wired', 'durable_write_gate', 'Right Hand conversation lifecycle spine'],
+    'F-CAM1': ['/camera', 'canon_wired', 'capture_route_confirm', 'Capture-first camera; route after capture'],
+    'F-RC1': ['/room-capture', 'mapped_pending_rebuild', 'capture_route_confirm', 'Room scan capture spine'],
+    'F-E1': ['/field-capture', 'canon_wired', 'capture_route_confirm', 'Field capture -> Daily Log / review spine'],
+    'F-FD1': ['/field-detail', 'mapped_pending_rebuild', 'review_gate', 'Field item drilldown'],
+    'F-FD2': ['/field-detail', 'mapped_pending_rebuild', 'review_gate', 'Field item drilldown'],
+    'F-FU1': ['/relay', 'mapped_pending_rebuild', 'review_gate', 'Office review queue for field updates'],
+    'F-F1': ['/transcript-review', 'mapped_pending_rebuild', 'review_gate', 'Transcript review -> draft/review/audit spine'],
+    'F-PR1': ['/projects', 'mapped_pending_rebuild', 'navigation_only', 'Project graph index'],
+    'F-PR3': ['/projects', 'mapped_pending_rebuild', 'navigation_only', 'Project graph index'],
+    'F-PR2': ['/projects/:id', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project canonical home and lenses'],
+    'F-PR4': ['/projects/:id', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project canonical home and lenses'],
+    'F-PS1': ['/projects/:id/status', 'mapped_pending_rebuild', 'project_artifact_owner', 'Project status lens'],
+    'F-ML1': ['/projects/:id/media', 'future_or_unrouted', 'capture_route_confirm', 'Project media lens is not a distinct live route yet'],
+    'F-ML2': ['/projects/:id/media', 'future_or_unrouted', 'capture_route_confirm', 'Project media lens is not a distinct live route yet'],
+    'F-CO1a': ['/projects/:id/closeout', 'mapped_pending_rebuild', 'operator_confirm', 'Project closeout spine'],
+    'F-CO1b': ['/projects/:id/closeout', 'mapped_pending_rebuild', 'operator_confirm', 'Project closeout spine'],
+    'F-W1': ['/projects/:id/work-orders/:wid or /sub/portal/s/:token/a/:assignmentId', 'client_surface', 'portal_session', 'Work order / assignment spine'],
+    'F-PA1a': ['/projects?archive=1', 'future_or_unrouted', 'navigation_only', 'Project archive state'],
+    'F-PA1b': ['/projects?archive=1', 'future_or_unrouted', 'navigation_only', 'Project archive state'],
+    'F-SL1': ['/sales', 'mapped_pending_rebuild', 'navigation_only', 'Sales pipeline spine'],
+    'F-SL2': ['/sales', 'mapped_pending_rebuild', 'navigation_only', 'Sales pipeline spine'],
+    'F-SL3': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
+    'F-SL4': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
+    'F-LD1a': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
+    'F-LD1b': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
+    'F-PV1': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
+    'F-PV2': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
+    'F-G1': ['/draft-review/:draft_id', 'mapped_pending_rebuild', 'review_gate', 'Draft review gate'],
+    'F-B1': ['/decisions/:id', 'mapped_pending_rebuild', 'operator_confirm', 'Decision card consequence gate'],
+    'F-B1b': ['/decisions/:id?mode=edit', 'mapped_pending_rebuild', 'operator_confirm', 'Decision edit gate'],
+    'F-B1c': ['/proposals/:id/send', 'mapped_pending_rebuild', 'send_signature_gate', 'Client preview / send gate'],
+    'F-B2': ['/decisions/:id', 'mapped_pending_rebuild', 'operator_confirm', 'Decision card consequence gate'],
+    'F-CL1': ['/clients', 'mapped_pending_rebuild', 'navigation_only', 'Client graph index'],
+    'F-CL3': ['/clients', 'mapped_pending_rebuild', 'navigation_only', 'Client graph index'],
+    'F-CL2': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client canonical home'],
+    'F-CL4': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client canonical home'],
+    'F-CL5': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client record'],
+    'F-CL6': ['/clients/:id', 'mapped_pending_rebuild', 'client_artifact_owner', 'Client record'],
+    'F-CA1a': ['/clients?archive=1', 'future_or_unrouted', 'navigation_only', 'Client archive state'],
+    'F-CA1b': ['/clients?archive=1', 'future_or_unrouted', 'navigation_only', 'Client archive state'],
+    'F-CS1': ['/client-success/:clientId or /projects/:id/portal-preview', 'mapped_pending_rebuild', 'client_review_gate', 'Client success / portal preview spine'],
+    'F-CS2': ['/client-success/:clientId or /projects/:id/portal-preview', 'mapped_pending_rebuild', 'client_review_gate', 'Client success / portal preview spine'],
+    'F-WW1a': ['/clients/:id/warranty', 'mapped_pending_rebuild', 'client_artifact_owner', 'Warranty lane'],
+    'F-WW1b': ['/clients/:id/warranty', 'mapped_pending_rebuild', 'client_artifact_owner', 'Warranty lane'],
+    'F-SC1': ['/schedule', 'mapped_pending_rebuild', 'navigation_only', 'Schedule domain'],
+    'F-SC2': ['/schedule', 'mapped_pending_rebuild', 'navigation_only', 'Schedule domain'],
+    'F-SB1': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Subs/team ops spine'],
+    'F-SB2': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Subs/team ops spine'],
+    'F-CR1': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Crew folded into team ops'],
+    'F-CR2': ['/team-ops/subs', 'mapped_pending_rebuild', 'navigation_only', 'Crew folded into team ops'],
+    'F-HR1a': ['/team-ops/time', 'future_or_unrouted', 'time_gate', 'Time tracking route missing'],
+    'F-HR1b': ['/team-ops/time', 'future_or_unrouted', 'time_gate', 'Time tracking route missing'],
+    'F-HR2': ['/team-ops/docs', 'future_or_unrouted', 'document_gate', 'Employee docs route missing'],
+    'F-SP1': ['/settings', 'mapped_pending_rebuild', 'admin_gate', 'Settings hub'],
+    'F-SP1a': ['/settings/me', 'mapped_pending_rebuild', 'admin_gate', 'Account editor'],
+    'F-RR1': ['/role-routing', 'mapped_pending_rebuild', 'admin_gate', 'Role routing matrix'],
+    'F-BC1': ['/settings or /more', 'future_or_unrouted', 'admin_gate', 'Bottom bar customization route missing'],
+    'F-AD1': ['/settings or /home/admin-ops', 'future_or_unrouted', 'admin_gate', 'Admin landing not distinct yet'],
+    'F-AD2': ['/settings or /home/admin-ops', 'future_or_unrouted', 'admin_gate', 'Admin landing not distinct yet'],
+    'F-RP1': ['/reports', 'mapped_pending_rebuild', 'review_gate', 'Reports center'],
+    'F-RP2': ['/reports', 'mapped_pending_rebuild', 'review_gate', 'Reports center'],
+    'F-AV1a': ['/reports or /audit/:packetId', 'future_or_unrouted', 'review_gate', 'Audit portfolio state'],
+    'F-AV1b': ['/reports or /audit/:packetId', 'future_or_unrouted', 'review_gate', 'Audit portfolio state'],
+    'F-H1': ['/audit/:packetId', 'mapped_pending_rebuild', 'audit_read_only', 'Audit detail spine'],
+    'F-TD1': ['/on-me', 'mapped_pending_rebuild', 'task_gate', 'Global to-do / On Me queue'],
+    'F-TD2': ['/on-me', 'mapped_pending_rebuild', 'task_gate', 'Global to-do / On Me queue'],
+    'F-MK1': ['/marketing', 'future_or_unrouted', 'navigation_only', 'Marketing domain missing live route'],
+    'F-MK2': ['/marketing', 'future_or_unrouted', 'navigation_only', 'Marketing domain missing live route'],
+    'F-MK3': ['/marketing/reviews', 'future_or_unrouted', 'navigation_only', 'Marketing reviews route missing'],
+    'F-MK4': ['/marketing/reviews', 'future_or_unrouted', 'navigation_only', 'Marketing reviews route missing'],
+    'F-MK5': ['/marketing/outreach', 'future_or_unrouted', 'navigation_only', 'Marketing outreach route missing'],
+    'F-MK6': ['/marketing/outreach', 'future_or_unrouted', 'navigation_only', 'Marketing outreach route missing'],
+    'F-MK7': ['/marketing/attribution', 'future_or_unrouted', 'navigation_only', 'Marketing attribution route missing'],
+    'F-MK8': ['/marketing/attribution', 'future_or_unrouted', 'navigation_only', 'Marketing attribution route missing'],
+    'F-MK9': ['/marketing/leads or /sales', 'future_or_unrouted', 'navigation_only', 'Leads currently fold into Sales'],
+    'F-MK10': ['/marketing/leads or /sales', 'future_or_unrouted', 'navigation_only', 'Leads currently fold into Sales'],
+  };
+  if (exact[id]) {
+    const [route, status, gate, spineDependency] = exact[id];
+    return { owningRoute: route, routeStatus: status, gate, spineDependency };
+  }
+  if (/^F-MN/.test(id)) return { owningRoute: '/money', routeStatus: 'mapped_pending_rebuild', gate: 'money_guard', spineDependency: 'Money ledger / AR / AP spine' };
+  if (/^F-BK/.test(id)) return { owningRoute: '/money/bookkeeping', routeStatus: 'mapped_pending_rebuild', gate: 'money_guard', spineDependency: 'Bookkeeping / QB export spine' };
+  if (/^F-PU/.test(id)) return { owningRoute: '/money/purchasing', routeStatus: 'future_or_unrouted', gate: 'money_guard', spineDependency: 'Purchasing/vendor spine missing route' };
+  if (/^F-VC/.test(id)) return { owningRoute: '/money/spend-card', routeStatus: 'future_or_unrouted', gate: 'money_guard', spineDependency: 'Spend card route missing' };
+  return { owningRoute: 'unmapped', routeStatus: 'future_or_unrouted', gate: 'conductor_decision', spineDependency: 'Needs route assignment' };
+}
+
+function transitionGate(transition, face) {
+  const text = `${transition.trigger} ${transition.target || ''} ${transition.missing || ''} ${transition.note || ''}`.toLowerCase();
+  if (transition.missing) return 'gap_build_required';
+  if (transition.state) return 'in_face_state';
+  if (/\b(send|sign|approve|reject|confirm|file|save|submit|export|create invoice|bill|pay)\b/.test(text)) {
+    if (/money|invoice|ar|ap|qb|export|bill|pay/.test(text) || /^F-MN|^F-BK|^F-PU|^F-VC/.test(transition.target || '')) return 'money_or_egress_guard';
+    return 'operator_confirm';
+  }
+  if (/right hand|speak|mic|ask/.test(text) || /^F-RH/.test(transition.target || '')) return 'right_hand_route_only';
+  if (face?.system?.gate === 'client_review_gate') return 'client_review_gate';
+  return 'navigation';
+}
+
+function transitionSpine(transition, face) {
+  const text = `${transition.trigger} ${transition.target || ''} ${transition.missing || ''} ${transition.note || ''}`.toLowerCase();
+  if (transition.missing) return 'missing_face_backlog';
+  if (/daily log|capture|camera|field|transcript/.test(text) || /^F-(CAM|E1|FD|FU|F1|RC)/.test(transition.target || '')) return 'capture_to_daily_log_review';
+  if (/proposal|estimate|decision|draft/.test(text) || /^F-(PV|B1|B2|G1|SL|ES)/.test(transition.target || '')) return 'estimate_proposal_decision_spine';
+  if (/money|invoice|ar|ap|qb|vendor|margin|allowance/.test(text) || /^F-(MN|BK|PU|VC)/.test(transition.target || '')) return 'money_spine';
+  if (/client|warranty|portal/.test(text) || /^F-(CL|CS|CA|WW|SH|W1)/.test(transition.target || '')) return 'client_portal_spine';
+  if (/project|work order|closeout|status|media/.test(text) || /^F-(PR|PS|ML|CO|PA)/.test(transition.target || '')) return 'project_graph_spine';
+  if (/right hand|speak|mic/.test(text) || /^F-RH/.test(transition.target || '')) return 'right_hand_surface_context';
+  return face?.system?.spineDependency || 'domain_navigation';
+}
+
 const faces = files.map((file) => {
   const source = readFileSync(path.join(canonDir, file), 'utf8');
   const id = idFromFile(file);
@@ -113,6 +248,7 @@ const faces = files.map((file) => {
     h1,
     device: deviceFromFile(file),
     domain: domainFromId(id),
+    system: systemContractForFace(id),
     canonCorrection:
       id === 'F-CAM1'
         ? 'Founder correction 2026-06-14: camera is capture-first. Destination routing happens after capture; the source file title is superseded.'
@@ -134,6 +270,37 @@ function missing(label, note = '') {
 
 function state(note = '') {
   return { target: '', state: true, missing: '', note };
+}
+
+function missingFaceForDevice(generic, device = 'mobile') {
+  const lane = device === 'desktop' ? 'desktop' : 'mobile';
+  const map = {
+    'Per-job invoice list face': {
+      mobile: 'F-INV1a_mobile_per_job_invoice_list.html',
+      desktop: 'F-INV1b_desktop_per_job_invoice_list.html',
+    },
+    'Per-job invoice detail face': {
+      mobile: 'F-INV2a_mobile_per_job_invoice_detail.html',
+      desktop: 'F-INV2b_desktop_per_job_invoice_detail.html',
+    },
+    'Project setup / new project face': {
+      mobile: 'F-PR0a_mobile_project_setup.html',
+      desktop: 'F-PR0b_desktop_project_setup.html',
+    },
+    'Design workspace face': {
+      mobile: 'F-DES1a_mobile_design_workspace.html',
+      desktop: 'F-DES1b_desktop_design_workspace.html',
+    },
+    'Connections face': {
+      mobile: 'F-UTIL1a_mobile_connections_kb_blackboard.html',
+      desktop: 'F-UTIL1b_desktop_connections_kb_blackboard.html',
+    },
+    'New client face': {
+      mobile: 'F-CL0a_mobile_client_create.html',
+      desktop: 'F-CL0b_desktop_client_create.html',
+    },
+  };
+  return map[generic]?.[lane] ?? generic;
 }
 
 function deviceFromGapLabel(label, fallback = 'unassigned') {
@@ -522,6 +689,16 @@ for (const face of faces) {
       note: 'This face is included, but its click path is not fully specified in the current wireframe set.',
     });
   }
+  face.transitions = face.transitions.map((transition) => {
+    const normalized = transition.missing
+      ? { ...transition, missing: missingFaceForDevice(transition.missing, face.device) }
+      : transition;
+    return {
+      ...normalized,
+      gate: transitionGate(normalized, face),
+      spine: transitionSpine(normalized, face),
+    };
+  });
 }
 
 const missingFaces = [
@@ -529,51 +706,156 @@ const missingFaces = [
     label: 'F-A1b_mobile_owner_home_v5_pulse.html',
     neededFor: 'Updated owner home with 5 brain questions / pulse',
     why: 'Referenced in current conductor/user canon, not present in docs/wireframes/canon.',
+    device: 'mobile',
+    intendedRoute: '/',
+    gate: 'attention_queue',
+    spineDependency: 'Home attention queue',
   },
   {
     label: 'F-RH7_bubble_transitions.html',
     neededFor: 'Right Hand bottom bloom / side Tap to talk pill',
     why: 'Referenced in current conductor/user canon, not present in docs/wireframes/canon.',
+    device: 'mobile',
+    intendedRoute: 'global overlay',
+    gate: 'right_hand_route_only',
+    spineDependency: 'Right Hand surface context / conversation spine',
   },
   {
     label: 'F-EST1_mobile_estimate_builder.html',
     neededFor: 'Estimate builder',
     why: 'Referenced repeatedly as the estimate face; not present in repo canon.',
+    device: 'mobile',
+    intendedRoute: '/estimate/:projectId',
+    gate: 'operator_confirm for publish/proposal; no money write',
+    spineDependency: 'Estimate -> proposal -> invoice line_id spine',
   },
   {
     label: 'F-CHG1_mobile_change_order_builder.html',
     neededFor: 'Change order builder before F-B1 decision',
     why: 'Referenced by sprint dispatch; not present in repo canon.',
+    device: 'mobile',
+    intendedRoute: '/change-orders/new',
+    gate: 'operator_confirm then F-B1 decision',
+    spineDependency: 'Change order -> decision card -> contract adjustment spine',
   },
   {
     label: 'F-DL1_mobile_daily_log.html',
     neededFor: 'Flat Daily Log surface',
     why: 'Referenced by Cursor C and current canon; not present in repo canon.',
+    device: 'mobile',
+    intendedRoute: '/projects/:id/daily-log',
+    gate: 'capture_route_confirm',
+    spineDependency: 'Capture -> Daily Log -> Project graph spine',
   },
   {
-    label: 'Per-job invoice list face',
+    label: 'F-INV1a_mobile_per_job_invoice_list.html',
     neededFor: 'Deposit / progress / final invoices under one job',
     why: 'User canon calls for this; repo only has money/AR/AP faces, not this explicit page.',
+    device: 'mobile',
+    intendedRoute: '/estimate/:projectId/invoice or /projects/:id/money/invoices',
+    gate: 'money_guard',
+    spineDependency: 'Estimate line_id -> contract milestone -> invoice spine',
   },
   {
-    label: 'Project setup / new project face',
+    label: 'F-INV1b_desktop_per_job_invoice_list.html',
+    neededFor: 'Desktop invoice list/detail for the same per-job invoice spine',
+    why: 'Desktop Money has AR/AP, but not the job-owned deposit/progress/final invoice face.',
+    device: 'desktop',
+    intendedRoute: '/estimate/:projectId/invoice or /projects/:id/money/invoices',
+    gate: 'money_guard',
+    spineDependency: 'Estimate line_id -> contract milestone -> invoice spine',
+  },
+  {
+    label: 'F-INV2a_mobile_per_job_invoice_detail.html',
+    neededFor: 'Drill into one deposit/progress/final invoice from the per-job list',
+    why: 'Money AR has invoice rows, but the job-owned invoice drill face is not present.',
+    device: 'mobile',
+    intendedRoute: '/estimate/:projectId/invoice/:invoiceId or /money/invoices/:id',
+    gate: 'money_guard',
+    spineDependency: 'Contract milestone -> invoice detail -> payment spine',
+  },
+  {
+    label: 'F-INV2b_desktop_per_job_invoice_detail.html',
+    neededFor: 'Desktop drill into one deposit/progress/final invoice from the per-job list',
+    why: 'Money AR has invoice rows, but the job-owned invoice drill face is not present.',
+    device: 'desktop',
+    intendedRoute: '/estimate/:projectId/invoice/:invoiceId or /money/invoices/:id',
+    gate: 'money_guard',
+    spineDependency: 'Contract milestone -> invoice detail -> payment spine',
+  },
+  {
+    label: 'F-PR0a_mobile_project_setup.html',
     neededFor: 'Projects/new and client-to-project creation',
     why: 'Live app route exists; no dedicated Canon face.',
+    device: 'mobile',
+    intendedRoute: '/projects/new',
+    gate: 'operator_confirm',
+    spineDependency: 'Client/project graph creation spine',
   },
   {
-    label: 'Design workspace face',
+    label: 'F-PR0b_desktop_project_setup.html',
+    neededFor: 'Desktop projects/new and client-to-project creation',
+    why: 'Live app route exists; no dedicated Canon face.',
+    device: 'desktop',
+    intendedRoute: '/projects/new',
+    gate: 'operator_confirm',
+    spineDependency: 'Client/project graph creation spine',
+  },
+  {
+    label: 'F-CL0a_mobile_client_create.html',
+    neededFor: 'Create a new client from Clients and intake flows',
+    why: 'Live /clients/new exists; no dedicated create-client Canon face.',
+    device: 'mobile',
+    intendedRoute: '/clients/new',
+    gate: 'operator_confirm',
+    spineDependency: 'Client graph creation spine',
+  },
+  {
+    label: 'F-CL0b_desktop_client_create.html',
+    neededFor: 'Desktop create-client flow from Clients and intake flows',
+    why: 'Live /clients/new exists; no dedicated create-client Canon face.',
+    device: 'desktop',
+    intendedRoute: '/clients/new',
+    gate: 'operator_confirm',
+    spineDependency: 'Client graph creation spine',
+  },
+  {
+    label: 'F-DES1a_mobile_design_workspace.html',
     neededFor: 'Deal detail -> design -> estimate bridge',
     why: 'Live app route exists; no dedicated Canon face.',
+    device: 'mobile',
+    intendedRoute: '/design/:projectId',
+    gate: 'review_gate',
+    spineDependency: 'Deal -> design -> estimate spine',
   },
   {
-    label: 'Connections / KB / Blackboard faces',
+    label: 'F-DES1b_desktop_design_workspace.html',
+    neededFor: 'Desktop deal detail -> design -> estimate bridge',
+    why: 'Live app route exists; no dedicated Canon face.',
+    device: 'desktop',
+    intendedRoute: '/design/:projectId',
+    gate: 'review_gate',
+    spineDependency: 'Deal -> design -> estimate spine',
+  },
+  {
+    label: 'F-UTIL1a_mobile_connections_kb_blackboard.html',
     neededFor: 'Settings integrations and knowledge-ingestion holding routes',
     why: 'Live app routes exist; no dedicated Canon faces.',
+    device: 'mobile',
+    intendedRoute: '/connections + /kb-ingestion + /blackboard',
+    gate: 'admin_gate / review_gate',
+    spineDependency: 'Settings / knowledge / Blackboard utility spine',
   },
-].map((gap) => ({
-  ...gap,
-  device: deviceFromGapLabel(gap.label),
-}));
+  {
+    label: 'F-UTIL1b_desktop_connections_kb_blackboard.html',
+    neededFor: 'Desktop settings integrations and knowledge-ingestion holding routes',
+    why: 'Live app routes exist; no dedicated Canon faces.',
+    device: 'desktop',
+    intendedRoute: '/connections + /kb-ingestion + /blackboard',
+    gate: 'admin_gate / review_gate',
+    spineDependency: 'Settings / knowledge / Blackboard utility spine',
+  },
+];
 
 const deviceBreakdown = ['mobile', 'desktop', 'matrix'].map((device) => ({
   device,
@@ -771,20 +1053,25 @@ function selectFace(id, trigger){
 }
 function showGap(transition, sourceFace){
   const source = sourceFace || current;
+  const missingLabel = transition?.missing || 'Transition needs conductor decision';
+  const gapRecord = DATA.missingFaces.find(g => g.label === missingLabel) || null;
   currentGap = {
     sourceId: source?.id || '',
     sourceTitle: source?.h1 || source?.title || '',
     trigger: transition?.trigger || 'Missing transition',
-    missing: transition?.missing || 'Transition needs conductor decision',
-    note: transition?.note || '',
+    missing: missingLabel,
+    note: transition?.note || gapRecord?.why || '',
     target: transition?.target || '',
-    device: deviceFromGapLabel(transition?.missing || '', source?.device || 'unassigned'),
+    device: gapRecord?.device || deviceFromGapLabel(missingLabel, source?.device || 'unassigned'),
+    intendedRoute: gapRecord?.intendedRoute || '',
+    gate: gapRecord?.gate || transition?.gate || 'gap_build_required',
+    spineDependency: gapRecord?.spineDependency || transition?.spine || 'missing_face_backlog',
   };
   trail.push((currentGap.sourceId || 'Gap index') + ' · ' + currentGap.trigger + ' → GAP: ' + currentGap.missing);
   render();
 }
 function gapHtml(gap){
-  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gap · '+esc(gap.missing)+'</title><style>body{margin:0;background:#111821;color:#f4f7fb;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{min-height:100vh;display:grid;place-items:center;padding:28px}.card{width:min(560px,100%);border:1px solid rgba(255,180,180,.45);background:rgba(183,56,56,.16);border-radius:10px;padding:22px;box-shadow:0 22px 60px rgba(0,0,0,.3)}.eyebrow{color:#ffb4b4;text-transform:uppercase;letter-spacing:.1em;font-size:12px;font-weight:800}h1{font-size:30px;line-height:1.1;margin:8px 0 16px}dl{display:grid;gap:10px;margin:0}dt{color:#a8b3bf;font-size:12px;text-transform:uppercase;letter-spacing:.08em}dd{margin:0 0 8px}.pill{display:inline-block;border:1px solid rgba(231,170,59,.45);background:rgba(231,170,59,.14);color:#e7aa3b;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800;text-transform:uppercase}</style></head><body><main class="wrap"><section class="card"><div class="eyebrow">Gap to fill</div><h1>This click has no Canon face yet.</h1><dl><dt>Device lane</dt><dd><span class="pill">'+esc(gap.device || 'unassigned')+'</span></dd><dt>Missing face</dt><dd><span class="pill">'+esc(gap.missing)+'</span></dd><dt>Source click</dt><dd>'+esc(gap.sourceId || 'Gap index')+' · '+esc(gap.trigger)+'</dd><dt>Source screen</dt><dd>'+esc(gap.sourceTitle || 'No source screen selected')+'</dd><dt>What needs to be built</dt><dd>'+esc(gap.note || 'Create or import the missing wireframe face, then map this click to it.')+'</dd></dl></section></main></body></html>';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gap · '+esc(gap.missing)+'</title><style>body{margin:0;background:#111821;color:#f4f7fb;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{min-height:100vh;display:grid;place-items:center;padding:28px}.card{width:min(560px,100%);border:1px solid rgba(255,180,180,.45);background:rgba(183,56,56,.16);border-radius:10px;padding:22px;box-shadow:0 22px 60px rgba(0,0,0,.3)}.eyebrow{color:#ffb4b4;text-transform:uppercase;letter-spacing:.1em;font-size:12px;font-weight:800}h1{font-size:30px;line-height:1.1;margin:8px 0 16px}dl{display:grid;gap:10px;margin:0}dt{color:#a8b3bf;font-size:12px;text-transform:uppercase;letter-spacing:.08em}dd{margin:0 0 8px}.pill{display:inline-block;border:1px solid rgba(231,170,59,.45);background:rgba(231,170,59,.14);color:#e7aa3b;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800;text-transform:uppercase}</style></head><body><main class="wrap"><section class="card"><div class="eyebrow">Gap to fill</div><h1>This click has no Canon face yet.</h1><dl><dt>Device lane</dt><dd><span class="pill">'+esc(gap.device || 'unassigned')+'</span></dd><dt>Missing face</dt><dd><span class="pill">'+esc(gap.missing)+'</span></dd><dt>Owning route to build</dt><dd>'+esc(gap.intendedRoute || 'Route decision required')+'</dd><dt>Gate</dt><dd>'+esc(gap.gate || 'gap_build_required')+'</dd><dt>Spine dependency</dt><dd>'+esc(gap.spineDependency || 'missing_face_backlog')+'</dd><dt>Source click</dt><dd>'+esc(gap.sourceId || 'Gap index')+' · '+esc(gap.trigger)+'</dd><dt>Source screen</dt><dd>'+esc(gap.sourceTitle || 'No source screen selected')+'</dd><dt>What needs to be built</dt><dd>'+esc(gap.note || 'Create or import the missing wireframe face, then map this click to it.')+'</dd></dl></section></main></body></html>';
 }
 function renderFace(){
   if (currentGap) {
@@ -799,9 +1086,9 @@ function renderFace(){
   } else {
     els.previewShell.dataset.mode = 'face';
     els.previewShell.dataset.device = current.device;
-    els.chips.innerHTML = '<span class="chip gold">'+esc(current.id)+'</span><span class="chip blue">'+esc(current.domain)+'</span><span class="chip">'+esc(current.device)+'</span>';
+    els.chips.innerHTML = '<span class="chip gold">'+esc(current.id)+'</span><span class="chip blue">'+esc(current.domain)+'</span><span class="chip">'+esc(current.device)+'</span><span class="chip">'+esc(current.system.routeStatus)+'</span><span class="chip">'+esc(current.system.gate)+'</span>';
     els.title.textContent = current.h1 || current.title;
-    els.meta.textContent = current.file + ' · ' + current.title + (current.canonCorrection ? ' · ' + current.canonCorrection : '');
+    els.meta.textContent = current.file + ' · route: ' + current.system.owningRoute + ' · spine: ' + current.system.spineDependency + (current.canonCorrection ? ' · ' + current.canonCorrection : '');
     els.preview.removeAttribute('srcdoc');
     els.preview.src = 'canon/' + current.file;
     els.original.href = 'canon/' + current.file;
@@ -816,28 +1103,30 @@ function renderTransitions(){
   els.transitions.innerHTML = current.transitions.map((t, i) => {
     const cls = t.missing ? 'missing' : t.state ? 'state' : '';
     const to = t.target || t.missing || 'same face';
-    return '<button class="tbtn '+cls+'" data-i="'+i+'"><span class="row"><b>'+esc(t.trigger)+'</b><span class="arrow">→ '+esc(to)+'</span></span>'+(t.note?'<small>'+esc(t.note)+'</small>':'')+'</button>';
+    return '<button class="tbtn '+cls+'" data-i="'+i+'"><span class="row"><b>'+esc(t.trigger)+'</b><span class="arrow">→ '+esc(to)+'</span></span><small>gate: '+esc(t.gate || 'navigation')+' · spine: '+esc(t.spine || 'domain_navigation')+'</small>'+(t.note?'<small>'+esc(t.note)+'</small>':'')+'</button>';
   }).join('');
 }
 function renderControls(){
   if (currentGap) {
-    els.controls.innerHTML = '<div class="raw"><code>gap</code><span>'+esc(currentGap.missing)+'</span></div><div class="raw"><code>source</code><span>'+esc(currentGap.sourceId || 'No source')+' · '+esc(currentGap.trigger)+'</span></div>';
+    els.controls.innerHTML = '<div class="raw"><code>gap</code><span>'+esc(currentGap.missing)+'</span></div><div class="raw"><code>route</code><span>'+esc(currentGap.intendedRoute || 'Route decision required')+'</span></div><div class="raw"><code>gate</code><span>'+esc(currentGap.gate || 'gap_build_required')+'</span></div><div class="raw"><code>spine</code><span>'+esc(currentGap.spineDependency || 'missing_face_backlog')+'</span></div><div class="raw"><code>source</code><span>'+esc(currentGap.sourceId || 'No source')+' · '+esc(currentGap.trigger)+'</span></div>';
     return;
   }
+  const systemRows = '<div class="raw"><code>route</code><span>'+esc(current.system.owningRoute)+'</span></div><div class="raw"><code>status</code><span>'+esc(current.system.routeStatus)+'</span></div><div class="raw"><code>gate</code><span>'+esc(current.system.gate)+'</span></div><div class="raw"><code>spine</code><span>'+esc(current.system.spineDependency)+'</span></div>';
   if (!current.controls.length) {
-    els.controls.innerHTML = '<div class="raw"><span>No buttons/links were extractable from this static face.</span></div>';
+    els.controls.innerHTML = systemRows + '<div class="raw"><span>No buttons/links were extractable from this static face.</span></div>';
     return;
   }
-  els.controls.innerHTML = current.controls.map(c => '<div class="raw"><code>'+esc(c.kind)+'</code><span>'+esc(c.label)+'</span>'+(c.href?'<span>href='+esc(c.href)+'</span>':'')+(c.dataGo?'<span>state='+esc(c.dataGo)+'</span>':'')+'</div>').join('');
+  els.controls.innerHTML = systemRows + current.controls.map(c => '<div class="raw"><code>'+esc(c.kind)+'</code><span>'+esc(c.label)+'</span>'+(c.href?'<span>href='+esc(c.href)+'</span>':'')+(c.dataGo?'<span>state='+esc(c.dataGo)+'</span>':'')+'</div>').join('');
 }
 function renderMissing(){
   const gaps = filteredMissingFaces();
   els.missingList.innerHTML = gaps.length
-    ? gaps.map((g) => '<button class="gapbtn" data-gap-index="'+g.index+'"><span class="deviceTag">'+esc(g.device)+'</span><b>'+esc(g.label)+'</b><span>'+esc(g.neededFor)+' — '+esc(g.why)+'</span></button>').join('')
+    ? gaps.map((g) => '<button class="gapbtn" data-gap-index="'+g.index+'"><span class="deviceTag">'+esc(g.device)+'</span><b>'+esc(g.label)+'</b><span>'+esc(g.neededFor)+' — '+esc(g.why)+'</span><span>route: '+esc(g.intendedRoute || 'decision required')+' · gate: '+esc(g.gate || 'gap_build_required')+'</span></button>').join('')
     : '<div class="raw"><span>No missing faces for this device filter.</span></div>';
 }
 function renderDeviceBreakdown(){
-  els.deviceBreakdown.innerHTML = DATA.deviceBreakdown.map((row) => '<button class="deviceStat" data-device-filter-side="'+esc(row.device)+'"><b>'+esc(row.device)+'</b><span>'+row.faces+' faces · '+row.edges+' edges</span><span>'+row.transitionGaps+' mapped transition gaps · '+row.missingFaces+' missing faces</span></button>').join('') + '<div class="deviceStat"><b>Unassigned gaps</b><span>'+DATA.missingFaces.filter((gap) => gap.device === 'unassigned').length+' missing faces need a mobile/desktop decision.</span></div>';
+  const unassigned = DATA.missingFaces.filter((gap) => gap.device === 'unassigned').length;
+  els.deviceBreakdown.innerHTML = DATA.deviceBreakdown.map((row) => '<button class="deviceStat" data-device-filter-side="'+esc(row.device)+'"><b>'+esc(row.device)+'</b><span>'+row.faces+' faces · '+row.edges+' edges</span><span>'+row.transitionGaps+' mapped transition gaps · '+row.missingFaces+' missing faces</span></button>').join('') + '<div class="deviceStat"><b>Unassigned gaps</b><span>'+unassigned+' missing faces need a mobile/desktop decision.</span></div>';
 }
 function render(){
   renderList();
