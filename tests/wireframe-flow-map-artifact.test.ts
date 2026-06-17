@@ -91,3 +91,35 @@ test('wireframe build backlog is generated from the interactive gap map', () => 
     assert.ok(gap.spineDependency, `${gap.label} must name the system spine dependency`);
   }
 });
+
+test('wireframe lane dispatches are generated for every implementation lane', () => {
+  const html = readFileSync('docs/wireframes/wireframe-flow-map.html', 'utf8');
+  const json = html.match(/<script id="flow-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(json, 'flow-data JSON script must be present');
+  const data = JSON.parse(json);
+  const dispatches = readFileSync('docs/wireframes/wireframe-system-lane-dispatches.md', 'utf8');
+
+  for (const lane of [
+    'Codex + Claude chrome',
+    'Cursor A capture/log',
+    'Cursor B estimate/CO',
+    'Cursor C money',
+    'Cursor D intake/sales',
+    'Codex utility',
+  ]) {
+    assert.match(dispatches, new RegExp(`^## ${lane.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'), `${lane} dispatch must be present`);
+  }
+
+  assert.match(dispatches, /Base on main after the latest wireframe map\/backlog commit is merged/);
+  assert.match(dispatches, /A source click is not complete while it still opens the gap screen/);
+  assert.match(dispatches, /Money stays behind money_guard/);
+  assert.match(dispatches, /Right Hand may route or draft, but the artifact parks on the owning route/);
+  assert.match(dispatches, /Each implementation PR must regenerate/);
+
+  for (const gap of data.missingFaces as { label: string; intendedRoute: string; gate: string; spineDependency: string }[]) {
+    assert.match(dispatches, new RegExp(gap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} must be assigned in lane dispatches`);
+    assert.match(dispatches, new RegExp(gap.intendedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} route must be named in lane dispatches`);
+    assert.match(dispatches, new RegExp(gap.gate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} gate must be named in lane dispatches`);
+    assert.match(dispatches, new RegExp(gap.spineDependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} spine dependency must be named in lane dispatches`);
+  }
+});
