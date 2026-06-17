@@ -451,15 +451,28 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
   },
   {
     route: '/change-orders/new',
+    appFile: 'src/app/pages/change-orders/new.astro',
     domain: 'sales',
     surface: 'Change order builder',
     wireframes: ['F-CHG1_mobile_change_order_builder.html'],
-    status: 'future_or_unrouted',
-    notes: 'F-CHG1 is now present in repo canon. The live builder route is still pending merge from the Change Order implementation branch.',
+    status: 'canon_wired',
+    notes: 'F-CHG1 builder route exists on the Change Order implementation branch. Submit routes to the F-B1 Decision Card instead of a generic draft state.',
     next: [
       { trigger: 'Back project', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
       { trigger: 'Submit for approval', route: '/decisions/:id', face: 'F-B1_mobile_decision_card.html' },
       { trigger: 'Ask Right Hand', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
+    ],
+  },
+  {
+    route: '/projects/:id/change-order',
+    appFile: 'src/app/pages/projects/[id]/change-order.astro',
+    domain: 'sales',
+    surface: 'Project change order entry',
+    wireframes: ['F-CHG1_mobile_change_order_builder.html'],
+    status: 'redirect',
+    notes: 'Project-owned entry point for change orders. It preserves project context and redirects to /change-orders/new?project_id=:id, where the F-CHG1 builder owns the artifact.',
+    next: [
+      { trigger: 'Open builder', route: '/change-orders/new?project_id=:id', face: 'F-CHG1_mobile_change_order_builder.html' },
     ],
   },
   {
