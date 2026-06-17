@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 test('interactive wireframe flow map carries parseable data for every canon face', () => {
   const html = readFileSync('docs/wireframes/wireframe-flow-map.html', 'utf8');
@@ -8,8 +8,9 @@ test('interactive wireframe flow map carries parseable data for every canon face
   assert.ok(json, 'flow-data JSON script must be present');
 
   const data = JSON.parse(json);
+  const canonFaceCount = readdirSync('docs/wireframes/canon').filter((name) => /^F-.*\.html$/.test(name)).length;
   assert.equal(data.source, 'docs/wireframes/canon/*.html');
-  assert.equal(data.faces.length, 113);
+  assert.equal(data.faces.length, canonFaceCount);
   assert.ok(data.deviceBreakdown.some((row: { device: string; faces: number }) => row.device === 'mobile' && row.faces > 0));
   assert.ok(data.deviceBreakdown.some((row: { device: string; faces: number }) => row.device === 'desktop' && row.faces > 0));
   assert.ok(data.faces.some((face: { id: string }) => face.id === 'F-A1'));
@@ -28,8 +29,20 @@ test('interactive wireframe flow map carries parseable data for every canon face
     'every mapped click path must expose its gate and spine dependency',
   );
   assert.ok(
-    data.missingFaces.some((gap: { label: string }) => gap.label === 'F-EST1_mobile_estimate_builder.html'),
-    'missing estimate-builder face must stay visible',
+    data.faces.some((face: { id: string; file: string }) => face.id === 'F-EST1' && face.file === 'F-EST1_mobile_estimate_builder.html'),
+    'imported estimate-builder face must be part of the playable map',
+  );
+  assert.ok(
+    data.faces.some((face: { id: string; file: string }) => face.id === 'F-RH7' && face.file === 'F-RH7_bubble_transitions.html'),
+    'imported Right Hand bubble face must be part of the playable map',
+  );
+  assert.ok(
+    data.faces.some((face: { id: string; file: string }) => face.id === 'F-DL1' && face.file === 'F-DL1_mobile_daily_log.html'),
+    'imported Daily Log face must be part of the playable map',
+  );
+  assert.ok(
+    data.buildCards.some((card: { label: string; canonStatus: string }) => card.label === 'F-EST1_mobile_estimate_builder.html' && card.canonStatus === 'canon_present'),
+    'estimate-builder implementation card must stay visible after import',
   );
   assert.ok(
     data.missingFaces.some((gap: { label: string }) => gap.label === 'F-INV1a_mobile_per_job_invoice_list.html'),
@@ -75,20 +88,23 @@ test('wireframe build backlog is generated from the interactive gap map', () => 
   const backlog = readFileSync('docs/wireframes/wireframe-system-build-backlog.md', 'utf8');
 
   assert.match(backlog, /^# Right Hand Wireframe System Build Backlog/m);
-  assert.match(backlog, /## Missing Face Implementation Cards/);
+  assert.match(backlog, /## Face Implementation Cards/);
   assert.match(backlog, /## Implementation Rules/);
   assert.match(backlog, /Cursor C money/);
+  assert.match(backlog, /canon_present/);
+  assert.match(backlog, /canon_missing/);
   assert.match(backlog, /F-DL1_mobile_daily_log\.html/);
   assert.match(backlog, /F-INV1a_mobile_per_job_invoice_list\.html/);
   assert.match(backlog, /money_guard/);
   assert.match(backlog, /capture_route_confirm/);
 
-  for (const gap of data.missingFaces as { label: string; device: string; intendedRoute: string; gate: string; spineDependency: string }[]) {
-    assert.notEqual(gap.device, 'unassigned', `${gap.label} must carry a device lane`);
-    assert.match(backlog, new RegExp(gap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} must be listed in backlog`);
-    assert.ok(gap.intendedRoute, `${gap.label} must name the owning route to build`);
-    assert.ok(gap.gate, `${gap.label} must name the gate`);
-    assert.ok(gap.spineDependency, `${gap.label} must name the system spine dependency`);
+  for (const card of data.buildCards as { label: string; device: string; intendedRoute: string; gate: string; spineDependency: string; canonStatus: string }[]) {
+    assert.notEqual(card.device, 'unassigned', `${card.label} must carry a device lane`);
+    assert.match(backlog, new RegExp(card.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${card.label} must be listed in backlog`);
+    assert.ok(['canon_present', 'canon_missing'].includes(card.canonStatus), `${card.label} must name Canon file status`);
+    assert.ok(card.intendedRoute, `${card.label} must name the owning route to build`);
+    assert.ok(card.gate, `${card.label} must name the gate`);
+    assert.ok(card.spineDependency, `${card.label} must name the system spine dependency`);
   }
 });
 
@@ -116,10 +132,11 @@ test('wireframe lane dispatches are generated for every implementation lane', ()
   assert.match(dispatches, /Right Hand may route or draft, but the artifact parks on the owning route/);
   assert.match(dispatches, /Each implementation PR must regenerate/);
 
-  for (const gap of data.missingFaces as { label: string; intendedRoute: string; gate: string; spineDependency: string }[]) {
-    assert.match(dispatches, new RegExp(gap.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} must be assigned in lane dispatches`);
-    assert.match(dispatches, new RegExp(gap.intendedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} route must be named in lane dispatches`);
-    assert.match(dispatches, new RegExp(gap.gate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} gate must be named in lane dispatches`);
-    assert.match(dispatches, new RegExp(gap.spineDependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${gap.label} spine dependency must be named in lane dispatches`);
+  for (const card of data.buildCards as { label: string; intendedRoute: string; gate: string; spineDependency: string; canonStatus: string }[]) {
+    assert.match(dispatches, new RegExp(card.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${card.label} must be assigned in lane dispatches`);
+    assert.match(dispatches, new RegExp(card.canonStatus.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${card.label} Canon status must be named in lane dispatches`);
+    assert.match(dispatches, new RegExp(card.intendedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${card.label} route must be named in lane dispatches`);
+    assert.match(dispatches, new RegExp(card.gate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${card.label} gate must be named in lane dispatches`);
+    assert.match(dispatches, new RegExp(card.spineDependency.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${card.label} spine dependency must be named in lane dispatches`);
   }
 });

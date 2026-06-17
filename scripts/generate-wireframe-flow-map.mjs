@@ -99,8 +99,8 @@ function extractControls(source) {
 function domainFromId(id) {
   if (/^F-(A|P|AO|TO|SH|ES|C|FL|SU)\d/.test(id)) return 'Role homes';
   if (/^F-(S1|D1|RH|CAM|RC)/.test(id)) return 'Global phone chrome';
-  if (/^F-(PR|PS|ML|CO|W1|PA)/.test(id)) return 'Projects';
-  if (/^F-(SL|LD|PV|B1|B2|G1)/.test(id)) return 'Sales / decisions';
+  if (/^F-(PR|PS|ML|CO|W1|PA|DL)/.test(id)) return 'Projects';
+  if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG)/.test(id)) return 'Sales / decisions';
   if (/^F-(MN|BK|PU|VC)/.test(id)) return 'Money';
   if (/^F-(CL|CA|CS|WW)/.test(id)) return 'Clients';
   if (/^F-(E1|FD|FU|F1)/.test(id)) return 'Field capture';
@@ -113,6 +113,7 @@ function domainFromId(id) {
 function systemContractForFace(id) {
   const exact = {
     'F-A1': ['/', 'mapped_pending_rebuild', 'attention_queue', 'Home attention queue: One Thing, On Deck, Pulse'],
+    'F-A1b': ['/', 'mapped_pending_rebuild', 'attention_queue', 'Home attention queue: One Thing, On Deck, Pulse'],
     'F-A2': ['/home/owner', 'mapped_pending_rebuild', 'attention_queue', 'Owner role-root projection'],
     'F-P1': ['/home/pm', 'mapped_pending_rebuild', 'attention_queue', 'PM role-root projection'],
     'F-P2': ['/home/pm', 'mapped_pending_rebuild', 'attention_queue', 'PM role-root projection'],
@@ -132,9 +133,11 @@ function systemContractForFace(id) {
     'F-D1': ['/more', 'mapped_pending_rebuild', 'navigation_only', 'Secondary domain drawer'],
     'F-RH1': ['global overlay + /right-hand fallback', 'canon_wired', 'durable_write_gate', 'SurfaceContext + working draft + conversation spine'],
     'F-RH3': ['global overlay + /right-hand fallback', 'canon_wired', 'durable_write_gate', 'Right Hand conversation lifecycle spine'],
+    'F-RH7': ['global overlay', 'mapped_pending_rebuild', 'right_hand_route_only', 'Right Hand bottom-bloom / travels-never-parks spine'],
     'F-CAM1': ['/camera', 'canon_wired', 'capture_route_confirm', 'Capture-first camera; route after capture'],
     'F-RC1': ['/room-capture', 'mapped_pending_rebuild', 'capture_route_confirm', 'Room scan capture spine'],
     'F-E1': ['/field-capture', 'canon_wired', 'capture_route_confirm', 'Field capture -> Daily Log / review spine'],
+    'F-DL1': ['/projects/:id/daily-log', 'future_or_unrouted', 'capture_route_confirm', 'Capture -> Daily Log -> Project graph spine'],
     'F-FD1': ['/field-detail', 'mapped_pending_rebuild', 'review_gate', 'Field item drilldown'],
     'F-FD2': ['/field-detail', 'mapped_pending_rebuild', 'review_gate', 'Field item drilldown'],
     'F-FU1': ['/relay', 'mapped_pending_rebuild', 'review_gate', 'Office review queue for field updates'],
@@ -159,6 +162,8 @@ function systemContractForFace(id) {
     'F-LD1b': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
     'F-PV1': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
     'F-PV2': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
+    'F-EST1': ['/estimate/:projectId', 'mapped_pending_rebuild', 'operator_confirm', 'Estimate -> proposal -> invoice line_id spine'],
+    'F-CHG1': ['/change-orders/new', 'future_or_unrouted', 'operator_confirm', 'Change order -> decision card -> contract adjustment spine'],
     'F-G1': ['/draft-review/:draft_id', 'mapped_pending_rebuild', 'review_gate', 'Draft review gate'],
     'F-B1': ['/decisions/:id', 'mapped_pending_rebuild', 'operator_confirm', 'Decision card consequence gate'],
     'F-B1b': ['/decisions/:id?mode=edit', 'mapped_pending_rebuild', 'operator_confirm', 'Decision edit gate'],
@@ -274,7 +279,13 @@ function target(id, note = '') {
   return { target: id, missing: '', note };
 }
 
+function faceIdFromFileLabel(label) {
+  return String(label).match(/^(F-[^_]+)_/)?.[1] ?? '';
+}
+
 function missing(label, note = '') {
+  const existingFace = faceIdFromFileLabel(label);
+  if (existingFace && faceById.has(existingFace)) return target(existingFace, note);
   return { target: '', missing: label, note };
 }
 
@@ -336,7 +347,7 @@ const bottomNav = [
   { trigger: 'More', ...target('F-D1', 'More sidebar') },
 ];
 
-add(['F-A1', 'F-A2'], [
+add(['F-A1', 'F-A1b', 'F-A2'], [
   ...bottomNav,
   { trigger: 'One Thing / priority card', ...target('F-B1', 'Decision or review item selected from home') },
   { trigger: 'Project pulse tile', ...target('F-PR2', 'Project detail / project lens') },
@@ -409,6 +420,12 @@ add(['F-RH3'], [
   { trigger: 'Keep talking', ...target('F-RH1') },
   { trigger: 'Bubble transition', ...missing('F-RH7_bubble_transitions.html', 'Referenced by current canon, not present in repo canon') },
 ]);
+add(['F-RH7'], [
+  { trigger: 'Tap to talk pill', ...target('F-RH1', 'Side pill opens the same Right Hand conversation surface') },
+  { trigger: 'Bottom bloom', ...target('F-RH1', 'Bloom grows from center mic into conversation') },
+  { trigger: 'Attach source', ...target('F-CAM1', 'Composer attach opens capture/source picker') },
+  { trigger: 'Return to artifact', ...state('Overlay travels; it does not park on its own artifact route') },
+]);
 add(['F-CAM1'], [
   { trigger: 'Open camera', ...target('F-CAM1', 'Capture starts immediately; no pre-capture job gate') },
   { trigger: 'Walkthru mode', ...target('F-CAM1', 'Internal camera mode') },
@@ -431,6 +448,13 @@ add(['F-E1'], [
   { trigger: 'Office review', ...target('F-FU1') },
   { trigger: 'Transcript review', ...target('F-F1') },
   { trigger: 'Field detail', ...target('F-FD1') },
+]);
+add(['F-DL1'], [
+  { trigger: 'Add media', ...target('F-CAM1') },
+  { trigger: 'File / done', ...target('F-PR2', 'Daily Log is project-owned after visible confirmation') },
+  { trigger: 'Project', ...target('F-PR2') },
+  { trigger: 'Office review', ...target('F-FU1') },
+  { trigger: 'Work order', ...target('F-W1') },
 ]);
 add(['F-FD1', 'F-FD2'], [
   { trigger: 'View transcript review', ...target('F-F1') },
@@ -497,6 +521,18 @@ add(['F-SL3', 'F-SL4'], [
   { trigger: 'Design workspace', ...missing('Design workspace face', 'Live app route exists; Canon file missing') },
   { trigger: 'Estimate builder', ...missing('F-EST1_mobile_estimate_builder.html') },
   { trigger: 'Proposal preview', ...target('F-PV1') },
+]);
+add(['F-EST1'], [
+  { trigger: 'Back project / deal', ...target('F-PR2', 'Estimate remains tied to the project graph') },
+  { trigger: 'Ask Right Hand', ...target('F-RH1', 'Right Hand drafts/refines but does not own estimate artifact') },
+  { trigger: 'Preview proposal', ...target('F-PV1') },
+  { trigger: 'Create invoice', ...missing('Per-job invoice list face', 'Deposit/progress/final invoice list missing') },
+  { trigger: 'Open Money', ...target('F-MN1') },
+]);
+add(['F-CHG1'], [
+  { trigger: 'Back project', ...target('F-PR2') },
+  { trigger: 'Submit for approval', ...target('F-B1', 'Change order goes to decision card before contract adjustment') },
+  { trigger: 'Ask Right Hand', ...target('F-RH1') },
 ]);
 add(['F-LD1a', 'F-LD1b'], [
   { trigger: 'Back pipeline', ...target('F-SL1') },
@@ -711,7 +747,7 @@ for (const face of faces) {
   });
 }
 
-const missingFaces = [
+const missingFaceCandidates = [
   {
     label: 'F-A1b_mobile_owner_home_v5_pulse.html',
     neededFor: 'Updated owner home with 5 brain questions / pulse',
@@ -867,6 +903,19 @@ const missingFaces = [
   },
 ];
 
+const missingFaces = missingFaceCandidates.filter((gap) => {
+  const existingFace = faceIdFromFileLabel(gap.label);
+  return !(existingFace && faceById.has(existingFace));
+});
+
+const buildCards = missingFaceCandidates.map((gap) => {
+  const existingFace = faceIdFromFileLabel(gap.label);
+  return {
+    ...gap,
+    canonStatus: existingFace && faceById.has(existingFace) ? 'canon_present' : 'canon_missing',
+  };
+});
+
 const deviceBreakdown = ['mobile', 'desktop', 'matrix'].map((device) => ({
   device,
   faces: faces.filter((face) => face.device === device).length,
@@ -884,6 +933,7 @@ const data = {
   source: 'docs/wireframes/canon/*.html',
   faces,
   missingFaces,
+  buildCards,
   deviceBreakdown,
 };
 
@@ -911,6 +961,18 @@ function sourceClicksForGap(label) {
     }
   }
   return clicks;
+}
+
+function sourceClicksForBuildCard(label) {
+  const clicks = sourceClicksForGap(label);
+  const targetFaceId = faceIdFromFileLabel(label);
+  if (!targetFaceId) return clicks;
+  for (const face of faces) {
+    for (const transition of face.transitions) {
+      if (transition.target === targetFaceId) clicks.push(`${face.id} ${transition.trigger}`);
+    }
+  }
+  return [...new Set(clicks)];
 }
 
 function countBy(items, keyFor) {
@@ -963,7 +1025,7 @@ function lanePrimaryCheck(lane) {
 function buildBacklogMarkdown() {
   const statusRows = countBy(faces, (face) => face.system.routeStatus);
   const gateRows = countBy(faces, (face) => face.system.gate);
-  const missingRows = [...missingFaces].sort((a, b) => {
+  const cardRows = [...buildCards].sort((a, b) => {
     const priority = priorityForGap(a).localeCompare(priorityForGap(b));
     if (priority !== 0) return priority;
     return a.label.localeCompare(b.label);
@@ -975,7 +1037,7 @@ function buildBacklogMarkdown() {
     '',
     `Generated from ${data.source} at ${data.generatedAt}.`,
     '',
-    'This backlog turns the interactive wireframe map into implementation cards. Each missing face names the device lane, owning route, gate, system spine dependency, and source clicks that currently land on a gap screen.',
+    'This backlog turns the interactive wireframe map into implementation cards. Each card names the device lane, Canon file status, owning route, gate, system spine dependency, and source clicks. A card can be canon_present while the live route is still pending.',
     '',
     '## Coverage',
     '',
@@ -995,16 +1057,17 @@ function buildBacklogMarkdown() {
     '|---|---:|',
     ...gateRows.map(([gate, count]) => `| ${escapeMd(gate)} | ${count} |`),
     '',
-    '## Missing Face Implementation Cards',
+    '## Face Implementation Cards',
     '',
-    '| Priority | Lane | Device | Missing face | Owning route | Gate | Spine dependency | Source clicks |',
-    '|---|---|---|---|---|---|---|---|',
-    ...missingRows.map((gap) => {
-      const clicks = sourceClicksForGap(gap.label);
+    '| Priority | Lane | Device | Canon status | Face | Owning route | Gate | Spine dependency | Source clicks |',
+    '|---|---|---|---|---|---|---|---|---|',
+    ...cardRows.map((gap) => {
+      const clicks = sourceClicksForBuildCard(gap.label);
       return [
         priorityForGap(gap),
         laneForGap(gap),
         gap.device,
+        gap.canonStatus,
         gap.label,
         gap.intendedRoute,
         gap.gate,
@@ -1026,7 +1089,7 @@ function buildBacklogMarkdown() {
 }
 
 function buildLaneDispatchesMarkdown() {
-  const missingRows = [...missingFaces].sort((a, b) => {
+  const cardRows = [...buildCards].sort((a, b) => {
     const lane = laneForGap(a).localeCompare(laneForGap(b));
     if (lane !== 0) return lane;
     const priority = priorityForGap(a).localeCompare(priorityForGap(b));
@@ -1053,20 +1116,21 @@ function buildLaneDispatchesMarkdown() {
     '',
   ];
 
-  for (const [lane, gaps] of groupBy(missingRows, laneForGap)) {
+  for (const [lane, gaps] of groupBy(cardRows, laneForGap)) {
     lines.push(`## ${escapeMd(lane)}`);
     lines.push('');
     lines.push(`Suggested branch: \`${escapeMd(laneBranchName(lane))}\``);
     lines.push('');
     lines.push(`Primary phone/desktop check: ${escapeMd(lanePrimaryCheck(lane))}`);
     lines.push('');
-    lines.push('| Priority | Device | Face to build | Owning route | Gate | Spine dependency | Source clicks that must stop gapping |');
-    lines.push('|---|---|---|---|---|---|---|');
+    lines.push('| Priority | Device | Canon status | Face to build | Owning route | Gate | Spine dependency | Source clicks that must stop gapping or old routing |');
+    lines.push('|---|---|---|---|---|---|---|---|');
     for (const gap of gaps) {
-      const clicks = sourceClicksForGap(gap.label);
+      const clicks = sourceClicksForBuildCard(gap.label);
       lines.push([
         priorityForGap(gap),
         gap.device,
+        gap.canonStatus,
         gap.label,
         gap.intendedRoute,
         gap.gate,
@@ -1412,5 +1476,5 @@ writeFileSync(outFile, html);
 writeFileSync(backlogFile, buildBacklogMarkdown());
 writeFileSync(dispatchFile, buildLaneDispatchesMarkdown());
 console.log(`Wrote ${path.relative(root, outFile)} from ${faces.length} canon faces.`);
-console.log(`Wrote ${path.relative(root, backlogFile)} from ${missingFaces.length} missing face cards.`);
-console.log(`Wrote ${path.relative(root, dispatchFile)} from ${new Set(missingFaces.map(laneForGap)).size} lane dispatches.`);
+console.log(`Wrote ${path.relative(root, backlogFile)} from ${buildCards.length} face implementation cards.`);
+console.log(`Wrote ${path.relative(root, dispatchFile)} from ${new Set(buildCards.map(laneForGap)).size} lane dispatches.`);

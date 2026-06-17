@@ -47,9 +47,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/index.astro',
     domain: 'home',
     surface: 'Owner home / Today',
-    wireframes: ['F-A1_mobile_owner_home.html'],
+    wireframes: ['F-A1_mobile_owner_home.html', 'F-A1b_mobile_owner_home_v5_pulse.html'],
     status: 'mapped_pending_rebuild',
-    notes: 'Root home should be the phone-first F-A1/F-A1b home: One Thing, 5 brain questions, On Deck, Pulse, and no visible back button.',
+    notes: 'Root home should be the phone-first F-A1b home: One Thing, 5 brain questions, On Deck, Pulse, and no visible back button. F-A1 remains the earlier home reference.',
     next: [
       ...homeTabs,
       { trigger: 'One Thing card', route: 'attention.href', face: 'route-specific face', note: 'The attention artifact owns the target route.' },
@@ -157,9 +157,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Start sheet exists as a page, but the canon sheet grammar was listed as a gap in Goal 0.',
     next: [
-      { trigger: 'New estimate', route: '/projects/new?src=create', face: 'F-PR1_mobile_projects_list.html', note: 'Current route starts project creation before estimate; F-EST1 is external/missing in repo.' },
+      { trigger: 'New estimate', route: '/estimate/:projectId or /projects/new?src=create', face: 'F-EST1_mobile_estimate_builder.html', note: 'Canon face is now present; live route still needs the estimate-first/project-known decision.' },
       { trigger: 'Daily log note', route: '/field-capture?src=create', face: 'F-E1_mobile_field_capture.html' },
-      { trigger: 'Change order', route: '/change-orders/new?src=create', face: 'F-B1_mobile_decision_card.html', note: 'Current main still routes through /draft-review; Cursor CO branch adds proper builder.' },
+      { trigger: 'Change order', route: '/change-orders/new?src=create', face: 'F-CHG1_mobile_change_order_builder.html', note: 'Canon builder face is now present; live route is still pending on the CO branch.' },
       { trigger: 'Invoice', route: '/money?src=create', face: 'F-MN1_mobile_money_home.html' },
       { trigger: 'Room scan / LiDAR', route: '/room-capture?src=create', face: 'F-RC1_mobile_room_capture.html' },
       { trigger: 'Ask Right Hand', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
@@ -170,9 +170,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/right-hand.astro',
     domain: 'home',
     surface: 'Right Hand conversation / fallback',
-    wireframes: ['F-RH1_mobile_right_hand_voice_overlay.html', 'F-RH3_mobile_right_hand_conversation_lifecycle.html'],
+    wireframes: ['F-RH1_mobile_right_hand_voice_overlay.html', 'F-RH3_mobile_right_hand_conversation_lifecycle.html', 'F-RH7_bubble_transitions.html'],
     status: 'canon_wired',
-    notes: 'F-RH7 bubble is the live overlay behavior but is not present in docs/wireframes/canon. This route is the fallback page when overlay travel cannot keep the operator on artifact.',
+    notes: 'F-RH7 is now present in repo canon as the bubble/bloom behavior. This route remains the fallback page when overlay travel cannot keep the operator on artifact.',
     next: [
       { trigger: 'Back', route: 'return_to or referrer', face: 'previous face' },
       { trigger: 'Quick action: add photo', route: '/camera?src=right-hand', face: 'F-CAM1_mobile_camera.html' },
@@ -328,12 +328,25 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Project canonical home. Lenses should not become disconnected document surfaces.',
     next: [
-      { trigger: 'Daily Log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html', note: 'External/missing from this repo canon folder.' },
+      { trigger: 'Daily Log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html', note: 'Canon face is present; live route is still pending on the Daily Log branch.' },
       { trigger: 'Status', route: '/projects/:id/status', face: 'F-PS1_mobile_project_status.html' },
       { trigger: 'Portal preview', route: '/projects/:id/portal-preview', face: 'F-CS1_mobile_client_success.html' },
       { trigger: 'Work order', route: '/projects/:id/work-orders/:wid', face: 'F-W1_mobile_work_order.html' },
       { trigger: 'Closeout', route: '/projects/:id/closeout', face: 'F-CO1a_mobile_closeout.html' },
       { trigger: 'Camera landed Daily Log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html' },
+    ],
+  },
+  {
+    route: '/projects/:id/daily-log',
+    domain: 'projects',
+    surface: 'Daily Log',
+    wireframes: ['F-DL1_mobile_daily_log.html'],
+    status: 'future_or_unrouted',
+    notes: 'F-DL1 is now present in repo canon. The flat Daily Log route is still pending merge from the Daily Log implementation branch.',
+    next: [
+      { trigger: 'Add media', route: '/camera?return_to=/projects/:id/daily-log', face: 'F-CAM1_mobile_camera.html' },
+      { trigger: 'File / done', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Office review', route: '/relay', face: 'F-FU1_mobile_field_updates_review.html' },
     ],
   },
   {
@@ -420,9 +433,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/estimate/[projectId].astro',
     domain: 'sales',
     surface: 'Estimate builder',
-    wireframes: ['F-ES1_mobile_estimator_home.html', 'F-ES2_desktop_estimator_home.html'],
-    status: 'missing_canon_face',
-    notes: 'User canon references F-EST1, but that file is not in docs/wireframes/canon. Live estimate builder must be mapped to the external F-EST1 face before rebuild.',
+    wireframes: ['F-EST1_mobile_estimate_builder.html', 'F-ES1_mobile_estimator_home.html', 'F-ES2_desktop_estimator_home.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'F-EST1 is now present in repo canon. Live estimate builder must be rebuilt to this face while preserving proposal/invoice line_id carry.',
     next: [
       { trigger: 'Back', route: '/design/:projectId or /sales/:id', face: 'F-SL3_mobile_deal_detail.html' },
       { trigger: 'Open Right Hand draft', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
@@ -431,6 +444,19 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
       { trigger: 'Proposal open/generate', route: '/estimate/:projectId/proposal', face: 'F-PV1_mobile_proposal_view.html' },
       { trigger: 'Invoice open', route: '/estimate/:projectId/invoice', face: 'per-job invoice face missing from repo' },
       { trigger: 'Money open', route: '/estimate/:projectId/money', face: 'F-MN1_mobile_money_home.html' },
+    ],
+  },
+  {
+    route: '/change-orders/new',
+    domain: 'sales',
+    surface: 'Change order builder',
+    wireframes: ['F-CHG1_mobile_change_order_builder.html'],
+    status: 'future_or_unrouted',
+    notes: 'F-CHG1 is now present in repo canon. The live builder route is still pending merge from the Change Order implementation branch.',
+    next: [
+      { trigger: 'Back project', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Submit for approval', route: '/decisions/:id', face: 'F-B1_mobile_decision_card.html' },
+      { trigger: 'Ask Right Hand', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
     ],
   },
   {
@@ -1050,11 +1076,5 @@ export const WIREFRAME_REFERENCE_MAP: readonly WireframeReferenceEntry[] = [
 ];
 
 export const EXTERNAL_OR_MISSING_CANON_FACES: readonly WireframeReferenceEntry[] = [
-  { wireframe: 'F-A1b_mobile_owner_home_v5_pulse.html', intendedSurface: 'Owner home latest pulse', intendedRoute: '/', status: 'future_or_unrouted', notes: 'Referenced by conductor/user but not present in docs/wireframes/canon.' },
-  { wireframe: 'F-RH7_bubble_transitions.html', intendedSurface: 'Right Hand bubble transitions', intendedRoute: 'global overlay', status: 'future_or_unrouted', notes: 'Referenced by conductor/user but not present in docs/wireframes/canon.' },
-  { wireframe: 'F-EST1_mobile_estimate_builder.html', intendedSurface: 'Estimate builder', intendedRoute: '/estimate/:projectId', status: 'future_or_unrouted', notes: 'Referenced by conductor/user but not present in docs/wireframes/canon.' },
-  { wireframe: 'F-CHG1_mobile_change_order_builder.html', intendedSurface: 'Change order builder', intendedRoute: '/change-orders/new', status: 'future_or_unrouted', notes: 'Referenced by Cursor/dispatch but not present in docs/wireframes/canon.' },
-  { wireframe: 'F-DL1_mobile_daily_log.html', intendedSurface: 'Daily Log', intendedRoute: '/projects/:id/daily-log', status: 'future_or_unrouted', notes: 'Referenced by Cursor/dispatch but not present in docs/wireframes/canon.' },
   { wireframe: 'RightHand_Fix_Review_2026-06-14.html', intendedSurface: 'Fix review integrated reference', intendedRoute: 'multiple spine surfaces', status: 'future_or_unrouted', notes: 'User-provided reference outside docs/wireframes/canon.' },
 ];
-

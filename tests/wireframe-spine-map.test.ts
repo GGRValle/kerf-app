@@ -92,14 +92,22 @@ test('every canon F-* wireframe file is accounted for by the spine map or refere
   assert.deepEqual(missing, [], `canon wireframes missing from spine/reference map:\n${missing.join('\n')}`);
 });
 
-test('external conductor/user canon references stay explicit until imported', () => {
+test('imported conductor/user canon references are no longer classified as external/missing', () => {
+  for (const imported of [
+    'F-A1b_mobile_owner_home_v5_pulse.html',
+    'F-RH7_bubble_transitions.html',
+    'F-EST1_mobile_estimate_builder.html',
+    'F-CHG1_mobile_change_order_builder.html',
+    'F-DL1_mobile_daily_log.html',
+  ]) {
+    assert.ok(
+      !EXTERNAL_OR_MISSING_CANON_FACES.some((entry) => entry.wireframe === imported),
+      `${imported} is now in docs/wireframes/canon and must not stay external/missing`,
+    );
+  }
+
   assert.ok(
-    EXTERNAL_OR_MISSING_CANON_FACES.some((entry) => entry.wireframe === 'F-RH7_bubble_transitions.html'),
-    'F-RH7 must stay named as an external/missing canon face until imported',
-  );
-  assert.ok(
-    EXTERNAL_OR_MISSING_CANON_FACES.some((entry) => entry.wireframe === 'F-EST1_mobile_estimate_builder.html'),
-    'F-EST1 must stay named as an external/missing canon face until imported',
+    EXTERNAL_OR_MISSING_CANON_FACES.some((entry) => entry.wireframe === 'RightHand_Fix_Review_2026-06-14.html'),
+    'integrated RightHand fix review reference remains explicit until imported as a routed canon face',
   );
 });
-
