@@ -100,7 +100,7 @@ function domainFromId(id) {
   if (/^F-(A|P|AO|TO|SH|ES|C|FL|SU)\d/.test(id)) return 'Role homes';
   if (/^F-(S1|D1|RH|CAM|RC)/.test(id)) return 'Global phone chrome';
   if (/^F-(PR|PS|ML|CO|W1|PA|DL)/.test(id)) return 'Projects';
-  if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG)/.test(id)) return 'Sales / decisions';
+  if (/^F-(SL|LD|PV|B1|B2|G1|EST|CHG|DS)/.test(id)) return 'Sales / decisions';
   if (/^F-(MN|BK|PU|VC)/.test(id)) return 'Money';
   if (/^F-(CL|CA|CS|WW)/.test(id)) return 'Clients';
   if (/^F-(E1|FD|FU|F1)/.test(id)) return 'Field capture';
@@ -158,6 +158,7 @@ function systemContractForFace(id) {
     'F-SL2': ['/sales', 'mapped_pending_rebuild', 'navigation_only', 'Sales pipeline spine'],
     'F-SL3': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
     'F-SL4': ['/sales/:id', 'mapped_pending_rebuild', 'navigation_only', 'Deal detail -> design -> estimate spine'],
+    'F-DS1': ['/design/:projectId', 'mapped_pending_rebuild', 'review_gate', 'Design workspace -> estimate spine'],
     'F-LD1a': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
     'F-LD1b': ['/sales?state=lost', 'future_or_unrouted', 'navigation_only', 'Lost-deal state in Sales'],
     'F-PV1': ['/estimate/:projectId/proposal or /proposals/:id/preview', 'mapped_pending_rebuild', 'send_signature_gate', 'Proposal projection; estimate-owned until signed'],
@@ -310,7 +311,7 @@ function missingFaceForDevice(generic, device = 'mobile') {
     },
     'Design workspace face': {
       mobile: 'F-DES1a_mobile_design_workspace.html',
-      desktop: 'F-DES1b_desktop_design_workspace.html',
+      desktop: 'F-DS1_desktop_design_workspace.html',
     },
     'Connections face': {
       mobile: 'F-UTIL1a_mobile_connections_kb_blackboard.html',
@@ -342,7 +343,7 @@ function add(ids, transitions) {
 const bottomNav = [
   { trigger: 'Home', ...target('F-A1', 'Bottom bar home') },
   { trigger: 'Start', ...target('F-S1', 'Bottom bar Start sheet') },
-  { trigger: 'Speak / center mic', ...target('F-RH1', 'Global Right Hand overlay; external F-RH7 bubble still missing from repo canon') },
+  { trigger: 'Speak / center mic', ...target('F-RH1', 'Global Right Hand overlay; F-RH7 defines the imported bubble/bloom behavior') },
   { trigger: 'Camera', ...target('F-CAM1', 'Global camera face') },
   { trigger: 'More', ...target('F-D1', 'More sidebar') },
 ];
@@ -418,7 +419,7 @@ add(['F-RH3'], [
   { trigger: 'Attach source', ...target('F-CAM1', 'Attach camera/photo/source to thread') },
   { trigger: 'Save/confirm', ...target('F-PR2', 'Durable write returns to canonical artifact') },
   { trigger: 'Keep talking', ...target('F-RH1') },
-  { trigger: 'Bubble transition', ...missing('F-RH7_bubble_transitions.html', 'Referenced by current canon, not present in repo canon') },
+  { trigger: 'Bubble transition', ...target('F-RH7', 'Imported Canon bubble/bloom behavior') },
 ]);
 add(['F-RH7'], [
   { trigger: 'Tap to talk pill', ...target('F-RH1', 'Side pill opens the same Right Hand conversation surface') },
@@ -431,7 +432,7 @@ add(['F-CAM1'], [
   { trigger: 'Walkthru mode', ...target('F-CAM1', 'Internal camera mode') },
   { trigger: 'Photo mode', ...target('F-CAM1', 'Internal camera mode') },
   { trigger: 'Scan mode', ...target('F-CAM1', 'Internal camera mode; document source for estimate/CO') },
-  { trigger: 'Done / confirm destination', ...missing('F-DL1_mobile_daily_log.html', 'Route after capture; filed capture should land in Daily Log or project media. Daily Log face missing from repo canon') },
+  { trigger: 'Done / confirm destination', ...target('F-DL1', 'Route after capture; filed capture should land in Daily Log or project media') },
   { trigger: 'Room scan', ...target('F-RC1') },
 ]);
 add(['F-RC1'], [
@@ -528,6 +529,12 @@ add(['F-EST1'], [
   { trigger: 'Preview proposal', ...target('F-PV1') },
   { trigger: 'Create invoice', ...missing('Per-job invoice list face', 'Deposit/progress/final invoice list missing') },
   { trigger: 'Open Money', ...target('F-MN1') },
+]);
+add(['F-DS1'], [
+  { trigger: 'Back deal', ...target('F-SL4') },
+  { trigger: 'Build estimate', ...target('F-EST1') },
+  { trigger: 'Ask Right Hand', ...target('F-RH1', 'Right Hand can draft and retrieve; artifact remains design/estimate-owned') },
+  { trigger: 'Open selections library', ...missing('F-LIB1_desktop_libraries_selections.html', 'Design selections library exists in Canon but is not imported into repo yet') },
 ]);
 add(['F-CHG1'], [
   { trigger: 'Back project', ...target('F-PR2') },
@@ -875,9 +882,9 @@ const missingFaceCandidates = [
     spineDependency: 'Deal -> design -> estimate spine',
   },
   {
-    label: 'F-DES1b_desktop_design_workspace.html',
+    label: 'F-DS1_desktop_design_workspace.html',
     neededFor: 'Desktop deal detail -> design -> estimate bridge',
-    why: 'Live app route exists; no dedicated Canon face.',
+    why: 'Canon desktop face is now imported; live route needs a rebuild to match it.',
     device: 'desktop',
     intendedRoute: '/design/:projectId',
     gate: 'review_gate',
@@ -940,7 +947,7 @@ const data = {
 function priorityForGap(gap) {
   if (/F-A1b|F-RH7|F-DL1/.test(gap.label)) return 'P0';
   if (/F-EST1|F-CHG1|F-INV1a|F-INV2a/.test(gap.label)) return 'P1';
-  if (/F-INV1b|F-INV2b|F-PR0|F-CL0|F-DES1/.test(gap.label)) return 'P2';
+  if (/F-INV1b|F-INV2b|F-PR0|F-CL0|F-DES1|F-DS1/.test(gap.label)) return 'P2';
   return 'P3';
 }
 
@@ -949,7 +956,7 @@ function laneForGap(gap) {
   if (/F-DL1/.test(gap.label)) return 'Cursor A capture/log';
   if (/F-EST1|F-CHG1/.test(gap.label)) return 'Cursor B estimate/CO';
   if (/F-INV/.test(gap.label)) return 'Cursor C money';
-  if (/F-PR0|F-CL0|F-DES1/.test(gap.label)) return 'Cursor D intake/sales';
+  if (/F-PR0|F-CL0|F-DES1|F-DS1/.test(gap.label)) return 'Cursor D intake/sales';
   return 'Codex utility';
 }
 

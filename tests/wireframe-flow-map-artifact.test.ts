@@ -41,8 +41,16 @@ test('interactive wireframe flow map carries parseable data for every canon face
     'imported Daily Log face must be part of the playable map',
   );
   assert.ok(
+    data.faces.some((face: { id: string; file: string }) => face.id === 'F-DS1' && face.file === 'F-DS1_desktop_design_workspace.html'),
+    'imported desktop Design Workspace face must be part of the playable map',
+  );
+  assert.ok(
     data.buildCards.some((card: { label: string; canonStatus: string }) => card.label === 'F-EST1_mobile_estimate_builder.html' && card.canonStatus === 'canon_present'),
     'estimate-builder implementation card must stay visible after import',
+  );
+  assert.ok(
+    data.buildCards.some((card: { label: string; canonStatus: string }) => card.label === 'F-DS1_desktop_design_workspace.html' && card.canonStatus === 'canon_present'),
+    'desktop Design Workspace implementation card must stay visible after import',
   );
   assert.ok(
     data.missingFaces.some((gap: { label: string }) => gap.label === 'F-INV1a_mobile_per_job_invoice_list.html'),

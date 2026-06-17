@@ -419,9 +419,9 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     appFile: 'src/app/pages/design/[projectId].astro',
     domain: 'sales',
     surface: 'Design workspace',
-    wireframes: ['F-SL3_mobile_deal_detail.html', 'F-SL4_desktop_deal_detail.html'],
-    status: 'missing_canon_face',
-    notes: 'Design workspace is live, but no dedicated design-workspace face is in repo. It currently sits between deal detail and estimate.',
+    wireframes: ['F-SL3_mobile_deal_detail.html', 'F-SL4_desktop_deal_detail.html', 'F-DS1_desktop_design_workspace.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Desktop Canon face is imported; mobile design workspace face is still missing. The live route sits between deal detail and estimate and needs a rebuild to match F-DS1 on desktop.',
     next: [
       { trigger: 'Deal back', route: '/sales/:id', face: 'F-SL3_mobile_deal_detail.html' },
       { trigger: 'Open KB', route: '/library', face: 'cost knowledge face missing from repo' },
