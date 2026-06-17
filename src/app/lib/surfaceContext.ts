@@ -6,7 +6,8 @@ export type SurfaceName =
   | 'proposal'
   | 'invoice'
   | 'money'
-  | 'field_capture';
+  | 'field_capture'
+  | 'change_order';
 
 export interface SurfaceContextIds {
   readonly client_id?: string;
@@ -14,6 +15,8 @@ export interface SurfaceContextIds {
   readonly estimate_id?: string;
   readonly proposal_id?: string;
   readonly invoice_id?: string;
+  readonly change_order_id?: string;
+  readonly contract_id?: string;
   readonly line_ids?: readonly string[];
 }
 
@@ -49,6 +52,8 @@ export function createSurfaceContext(
     estimate_id: input.estimate_id,
     proposal_id: input.proposal_id,
     invoice_id: input.invoice_id,
+    change_order_id: input.change_order_id,
+    contract_id: input.contract_id,
     line_ids: input.line_ids,
     phase: input.phase,
     previous,
@@ -64,6 +69,8 @@ export function leaveBehindForSurface(context: SurfaceContext): SurfaceContextPr
       estimate_id: context.estimate_id,
       proposal_id: context.proposal_id,
       invoice_id: context.invoice_id,
+      change_order_id: context.change_order_id,
+      contract_id: context.contract_id,
       line_ids: context.line_ids,
     },
   };
@@ -83,6 +90,7 @@ function isSurfaceName(value: unknown): value is SurfaceName {
     value === 'proposal' ||
     value === 'invoice' ||
     value === 'money' ||
-    value === 'field_capture'
+    value === 'field_capture' ||
+    value === 'change_order'
   );
 }
