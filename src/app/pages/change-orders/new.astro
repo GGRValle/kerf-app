@@ -1,0 +1,45 @@
+---
+// F-CHG1 · Change Order builder (project-known door) · /change-orders/new
+import Layout from '../../layouts/Layout.astro';
+import BuilderShell from '../../components/BuilderShell.astro';
+import { resolveSettings } from '../../lib/builderEngine.js';
+import {
+  getBuilderProject,
+  DEFAULT_CHANGE_ORDER_PROJECT_ID,
+  GGR_BUILDER_SETTINGS,
+} from '../../lib/builderFixtures.js';
+import '../../styles/builder.css';
+
+const requestedId = Astro.url.searchParams.get('project_id');
+const prefill =
+  getBuilderProject(requestedId) ?? getBuilderProject(DEFAULT_CHANGE_ORDER_PROJECT_ID);
+
+const settings = resolveSettings(GGR_BUILDER_SETTINGS, {
+  audience: 'operator',
+  canViewMarkup: true,
+});
+
+const backHref = prefill ? `/projects/${prefill.project_id}` : '/projects';
+const lineIds = Astro.url.searchParams.getAll('line_id');
+---
+
+<Layout
+  title="Change Order"
+  activeHref="/projects"
+  surfaceContext={{
+    surface: 'change_order',
+    project_id: prefill?.project_id,
+    client_id: prefill?.customer_client_id,
+    contract_id: prefill ? `contract_${prefill.project_id}` : undefined,
+    line_ids: lineIds.length > 0 ? lineIds : undefined,
+    phase: 'builder',
+  }}
+>
+  <BuilderShell
+    mode="change_order"
+    settings={settings}
+    prefill={prefill}
+    backHref={backHref}
+    projectId={prefill?.project_id ?? DEFAULT_CHANGE_ORDER_PROJECT_ID}
+  />
+</Layout>
