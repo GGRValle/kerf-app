@@ -10,7 +10,10 @@ export type SurfaceName =
   | 'change_order'
   | 'client'
   | 'project'
-  | 'design';
+  | 'design'
+  | 'connections'
+  | 'kb_ingestion'
+  | 'blackboard';
 
 export interface SurfaceContextIds {
   readonly client_id?: string;
@@ -97,6 +100,9 @@ function isSurfaceName(value: unknown): value is SurfaceName {
     value === 'change_order' ||
     value === 'client' ||
     value === 'project' ||
-    value === 'design'
+    value === 'design' ||
+    value === 'connections' ||
+    value === 'kb_ingestion' ||
+    value === 'blackboard'
   );
 }
