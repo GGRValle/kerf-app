@@ -2,6 +2,7 @@
 // F-EST1 · Estimate builder · /estimate/:projectId (Lane 2)
 import Layout from '../../layouts/Layout.astro';
 import PhaseStrip from '../../components/PhaseStrip.astro';
+import BuilderShell from '../../components/BuilderShell.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import {
   estimateLinesForProject,
@@ -16,6 +17,8 @@ import {
   operatorFacingBlockedReasons,
   operatorFacingPricingLabel,
 } from '../../lib/operatorFacingReasons.js';
+import { resolveSettings } from '../../lib/builderEngine.js';
+import { BUILDER_PROJECTS, GGR_BUILDER_SETTINGS } from '../../lib/builderFixtures.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
@@ -23,6 +26,20 @@ const projectId = Astro.params.projectId ?? '';
 const rightHandEstimateId = Astro.url.searchParams.get('estimate_id') ?? '';
 const rightHandConversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
 const rightHandDraft = rightHandEstimateId ? await getRightHandEstimateStore().read(tenant, rightHandEstimateId) : null;
+const isCanonLeadEstimate =
+  !rightHandDraft &&
+  (projectId === 'new' || Astro.url.searchParams.get('src') === 'create' || Astro.url.searchParams.get('mode') === 'lead');
+const canonEstimateSettings = resolveSettings(GGR_BUILDER_SETTINGS, {
+  audience: 'operator',
+  canViewMarkup: true,
+});
+const canonEstimateClients = BUILDER_PROJECTS.map((project) => ({
+  client_id: project.customer_client_id,
+  display_name: project.customer_name,
+}));
+const draftProject = rightHandDraft
+  ? BUILDER_PROJECTS.find((project) => project.project_id === rightHandDraft.project_id)
+  : null;
 const isLeadStageEstimate = rightHandDraft?.anchor_type === 'deal';
 const dealId = rightHandDraft?.deal_id ?? Astro.url.searchParams.get('deal_id') ?? '';
 const lines = estimateLinesForProject(tenant, projectId);
@@ -81,7 +98,26 @@ const moneyFlowPhases = rightHandDraft ? [
 ] : null;
 ---
 
-<Layout title="Estimate builder" activeHref="/sales">
+<Layout
+  title="Estimate builder"
+  activeHref="/sales"
+  surfaceContext={{
+    surface: 'estimate',
+    project_id: isCanonLeadEstimate ? undefined : projectId,
+    estimate_id: rightHandEstimateId || undefined,
+    client_id: draftProject?.customer_client_id,
+    line_ids: rightHandDraft?.lines.map((line) => line.id),
+    phase: isCanonLeadEstimate ? 'lead_capture' : rightHandDraft ? 'draft_review' : 'builder',
+  }}
+>
+  {isCanonLeadEstimate ? (
+    <BuilderShell
+      mode="estimate"
+      settings={canonEstimateSettings}
+      clients={canonEstimateClients}
+      backHref="/create"
+    />
+  ) : (
   <article class="es-page" data-project={projectId} data-project-id={projectId} data-deal-id={dealId} data-rh-conversation={rightHandConversationId}>
     <a class="es-back" href={isLeadStageEstimate && dealId ? `/sales/${dealId}` : `/design/${projectId}`}>{isLeadStageEstimate ? '‹ Deal' : '‹ Design'}</a>
     <header class="es-hero">
@@ -375,6 +411,7 @@ const moneyFlowPhases = rightHandDraft ? [
       )}
     </section>
   </article>
+  )}
 </Layout>
 
 <script>

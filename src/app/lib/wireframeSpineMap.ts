@@ -157,7 +157,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Start sheet exists as a page, but the canon sheet grammar was listed as a gap in Goal 0.',
     next: [
-      { trigger: 'New estimate', route: '/estimate/:projectId or /projects/new?src=create', face: 'F-EST1_mobile_estimate_builder.html', note: 'Canon face is now present; live route still needs the estimate-first/project-known decision.' },
+      { trigger: 'New estimate', route: '/estimate/new?src=create', face: 'F-EST1_mobile_estimate_builder.html', note: 'Lead-capture estimate door uses F-EST1; project is assigned on save/signature.' },
       { trigger: 'Daily log note', route: '/field-capture?src=create', face: 'F-E1_mobile_field_capture.html' },
       { trigger: 'Change order', route: '/change-orders/new?src=create', face: 'F-CHG1_mobile_change_order_builder.html', note: 'Canon builder face is now present; live route is still pending on the CO branch.' },
       { trigger: 'Invoice', route: '/money?src=create', face: 'F-MN1_mobile_money_home.html' },
