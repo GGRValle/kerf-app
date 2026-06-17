@@ -1,170 +1,167 @@
 ---
-// D-068 · Down-payment invoice projection from Right Hand estimate ·
-// /estimate/:projectId/invoice  (Goal M2 — invoice gets a real page)
+// F-INV1a · Per-job invoice list.
 //
-// Parallel to proposal.astro: framed page (money summary + embedded
-// printable + back-links), guards the same draft.project_id===projectId,
-// and blocks honestly when the estimate is ungraduated. The projection
-// fences (§7159 cap, proposal-basis render fence) live in the projection
-// module — this page only renders what it returns.
+// This route owns the job invoice set. It lists invoice milestones for the
+// estimate/contract basis and drills to F-INV2a detail. Money consequences
+// still live behind the Money page confirmation gate.
 import Layout from '../../../layouts/Layout.astro';
 import Card from '../../../components/Card.astro';
 import PhaseStrip from '../../../components/PhaseStrip.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
 import {
-  buildInvoiceFromRightHandEstimate,
-  renderInvoiceHtml,
-  InvoiceProjectionError,
-  type EstimateInvoiceProjection,
-} from '../../../../api/lib/estimateInvoiceProjection.js';
-import { getInvoiceLedgerStore } from '../../../../api/lib/invoiceLedgerStore.js';
-import { operatorFacingBlockedReasons } from '../../../lib/operatorFacingReasons.js';
+  buildEstimateInvoiceSetView,
+  invoiceDetailSegment,
+} from '../../../lib/estimateInvoiceViews.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
 const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
 const conversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
-const milestone = Astro.url.searchParams.get('milestone') === 'final' ? 'final' : 'down_payment';
 const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
 
 if (draft === null || draft.project_id !== projectId) {
   return Astro.redirect(`/estimate/${encodeURIComponent(projectId)}`);
 }
 
-const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
-const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
-const moneyLink = `/estimate/${encodeURIComponent(projectId)}/money?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
-const milestoneLabel = milestone === 'final' ? 'Final invoice' : 'Down-payment invoice';
+const qs = conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : '';
+const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
+const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
+const moneyLink = `/estimate/${encodeURIComponent(projectId)}/money?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
+const invoiceSet = await buildEstimateInvoiceSetView(tenant, draft);
+const activeItem = invoiceSet.items.find((item) => item.status === 'ready') ?? invoiceSet.items[0] ?? null;
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const phaseStrip = [
   { id: 'estimate', label: 'Estimate', href: estimateBack },
   { id: 'proposal', label: 'Proposal', href: proposalLink },
   { id: 'invoice', label: 'Invoice', active: true },
   { id: 'money', label: 'Money', href: moneyLink },
 ];
-
-let invoice: EstimateInvoiceProjection | null = null;
-let blockedReason = '';
-if (!draft.gate.allowed) {
-  blockedReason = `This estimate is not ready to bill yet. ${operatorFacingBlockedReasons(draft.gate.blocked_reasons)}`;
-} else {
-  try {
-    const now = new Date();
-    const initial = buildInvoiceFromRightHandEstimate(draft, { now, milestone }).invoice;
-    const ledger = getInvoiceLedgerStore();
-    const [alreadyBilledForMilestone, billedToDate] = await Promise.all([
-      ledger.sumIssuedForMilestone(tenant, draft.estimate_id, initial.milestone.milestone_id),
-      ledger.sumIssuedForBasis(tenant, draft.estimate_id),
-    ]);
-    invoice = buildInvoiceFromRightHandEstimate(draft, {
-      now,
-      milestone,
-      alreadyBilledForMilestoneCents: alreadyBilledForMilestone,
-      billedToDateCents: billedToDate,
-    }).invoice;
-  } catch (err) {
-    blockedReason = err instanceof InvoiceProjectionError
-      ? 'No billable basis yet — approve rates on the estimate before billing.'
-      : 'The invoice could not be built from this estimate. Nothing was billed or sent.';
-  }
-}
-const paperHtml = invoice ? renderInvoiceHtml(invoice) : null;
-const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const detailHref = (kind: string) =>
+  `/estimate/${encodeURIComponent(projectId)}/invoice/${encodeURIComponent(kind)}?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
 ---
 
-<Layout title="Invoice draft" activeHref="/sales">
+<Layout
+  title="Invoices"
+  activeHref="/money"
+  surfaceContext={{
+    surface: 'invoice',
+    project_id: projectId,
+    estimate_id: estimateId,
+    line_ids: invoiceSet.line_ids,
+    phase: 'invoice_list',
+  }}
+>
   <article class="iv-page" data-estimate-id={estimateId} data-project-id={projectId}>
-    <a class="iv-back" href={estimateBack}>‹ Back to estimate</a>
-    <a class="iv-back iv-back-secondary" href={proposalLink}>‹ Back to proposal</a>
+    <nav class="iv-nav" aria-label="Invoice flow">
+      <a class="iv-back" href={estimateBack}>‹ Estimate</a>
+      <a class="iv-back iv-back-secondary" href={proposalLink}>Proposal</a>
+      <a class="iv-back iv-back-secondary" href={moneyLink}>Money</a>
+    </nav>
 
     <header class="iv-hero">
-      <div class="iv-crumb">{milestoneLabel} · draft · not sent</div>
-      <h1>{draft.title.replace(/\s*estimate draft$/i, '')}</h1>
-      <p class="iv-sub">Built from the proposal. Issuing and sending are separate, confirmed steps.</p>
+      <div class="iv-crumb">Project money · invoice set</div>
+      <h1>Invoices</h1>
+      <p class="iv-sub">{draft.title.replace(/\s*estimate draft$/i, '')}</p>
     </header>
     <PhaseStrip phases={phaseStrip} />
 
-    {invoice === null ? (
-      <Card eyebrow="Not ready" title="Invoice blocked">
-        <p>{blockedReason}</p>
-        <p class="iv-note">Nothing was billed, posted, or charged. The estimate and rate library were not changed.</p>
-        <div class="iv-actions">
-          <a class="iv-btn primary" href={proposalLink}>Open the proposal</a>
-          <a class="iv-btn ghost" href={moneyLink}>Open Money</a>
-          <a class="iv-btn ghost" href={estimateBack}>Back to estimate</a>
-        </div>
-      </Card>
-    ) : (
-      <>
-        <Card eyebrow="Money summary" title={`${invoice.milestone.label} · ${fmt(invoice.amount_due_cents)} due`}>
-          <dl class="iv-money">
-            <div><dt>Contract base</dt><dd>{fmt(invoice.contract_base_cents)}</dd></div>
-            {invoice.change_orders.length > 0 ? (
-              <div><dt>Adjusted contract (+ change orders)</dt><dd>{fmt(invoice.adjusted_contract_cents)}</dd></div>
-            ) : null}
-            <div><dt>Billed to date</dt><dd>{fmt(invoice.billed_to_date_cents)}</dd></div>
-            {invoice.retention_held_cents > 0 ? (
-              <div><dt>Retention held ({invoice.retention_pct}%)</dt><dd>{fmt(invoice.retention_held_cents)}</dd></div>
-            ) : null}
-            <div class="iv-money-due"><dt>Amount due now</dt><dd>{fmt(invoice.amount_due_cents)}</dd></div>
-            <div><dt>Remaining after this</dt><dd>{fmt(invoice.remaining_after_cents)}</dd></div>
-          </dl>
-          <p class="iv-note">
-            This invoice bills the current milestone. The estimate and proposal remain the basis; invoice detail defaults
-            from that basis and can later be adjusted per invoice when a job needs line-item, phase-level, or lump-sum billing.
-          </p>
-          <p class="iv-note">DRAFT — nothing has been sent, posted, or charged. CA §7159 caps the down payment.</p>
-        </Card>
-        <Card eyebrow="Client body" title="Invoice preview">
-          <div class="iv-paper-wrap">
-            <iframe class="iv-paper-html" title="Invoice preview" sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
-          </div>
-        </Card>
-        <div class="iv-actions">
-          <a class="iv-btn ghost" href={proposalLink}>Back to proposal</a>
-          <a class="iv-btn ghost" href={moneyLink}>Open Money</a>
-          <a class="iv-btn primary" href={`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/invoice?milestone=${milestone}`} target="_blank" rel="noopener">Open printable draft</a>
-        </div>
-      </>
-    )}
+    <section class="iv-summary" aria-label="Invoice set summary">
+      <div>
+        <span>Contract</span>
+        <strong>{fmt(invoiceSet.contract_base_cents)}</strong>
+      </div>
+      <div>
+        <span>Billed</span>
+        <strong>{fmt(invoiceSet.billed_to_date_cents)}</strong>
+      </div>
+      <div class="iv-money-due">
+        <span>Amount due</span>
+        <strong>{activeItem ? fmt(activeItem.amount_due_cents) : fmt(0)}</strong>
+      </div>
+      <div>
+        <span>Remaining</span>
+        <strong>{fmt(invoiceSet.remaining_cents)}</strong>
+      </div>
+    </section>
+
+    <Card eyebrow="Invoices for this job" title="Deposit / progress / final live together here">
+      <p class="iv-note">
+        This invoice bills the current milestone from the estimate and proposal remain the basis. Detail defaults from that
+        basis and can later be adjusted per invoice when a job needs line-item, phase-level, or lump-sum billing.
+      </p>
+      <p class="iv-note">DRAFT — nothing has been sent, posted, billed, or charged from this list.</p>
+      <div class="iv-list">
+        {invoiceSet.items.map((item) => (
+          <a class="iv-invoice" href={detailHref(invoiceDetailSegment(item.kind))} data-status={item.status}>
+            <div class="iv-invoice-head">
+              <div>
+                <h2>{item.kind === 'down_payment' ? 'Deposit invoice' : 'Final invoice'}</h2>
+                <span>{item.label}</span>
+              </div>
+              <strong>{fmt(item.amount_due_cents)}</strong>
+            </div>
+            <div class="iv-chips">
+              <span class={`iv-chip ${item.status === 'ready' ? 'gold' : item.status === 'issued' ? 'green' : 'red'}`}>
+                {item.status === 'ready' ? 'Ready to review' : item.status === 'issued' ? 'Issued' : 'Blocked'}
+              </span>
+              <span class="iv-chip">{item.line_ids.length} line_ids</span>
+              <span class="iv-chip">Contract milestone</span>
+            </div>
+            {item.blocked_reason ? <p class="iv-note">{item.blocked_reason}</p> : null}
+          </a>
+        ))}
+      </div>
+      <div class="iv-line-thread">
+        <strong>Carry-through:</strong> {invoiceSet.line_ids.slice(0, 4).join(', ') || 'No line_ids available yet.'}
+        {invoiceSet.line_ids.length > 4 ? ` + ${invoiceSet.line_ids.length - 4} more` : ''}
+      </div>
+      <div class="iv-actions">
+        {activeItem ? <a class="iv-btn primary" href={detailHref(invoiceDetailSegment(activeItem.kind))}>Open detail</a> : null}
+        <a class="iv-btn ghost" href={moneyLink}>Open Money</a>
+      </div>
+    </Card>
+
+    <Card eyebrow="Money guard" title="Issue happens in Money">
+      <p class="iv-note">This list routes and previews invoices only. Issue, send, record payment, and export stay behind the visible money guard.</p>
+    </Card>
   </article>
 </Layout>
 
-<script>
-  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.iv-paper-html')) {
-    const fit = () => {
-      try {
-        const doc = frame.contentDocument;
-        if (doc?.documentElement) frame.style.height = `${doc.documentElement.scrollHeight}px`;
-      } catch { /* defensive */ }
-    };
-    frame.addEventListener('load', fit);
-    fit();
-  }
-</script>
-
 <style>
   .iv-page { width: min(100%, 920px); margin: 0 auto; padding: 0.9rem 0.9rem 6rem; }
-  .iv-back { display: inline-flex; margin-right: 1rem; color: var(--text-muted, #6a7282); text-decoration: none; font-size: 0.85rem; }
-  .iv-back-secondary { margin-top: 0.25rem; }
+  .iv-nav { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.45rem; }
+  .iv-back { display: inline-flex; color: var(--text-muted, #6a7282); text-decoration: none; font-size: 0.85rem; }
   .iv-hero h1 { margin: 0.2rem 0; font-size: clamp(1.5rem, 5vw, 2rem); }
   .iv-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
   .iv-sub, .iv-note { color: var(--text-muted, #6a7282); line-height: 1.45; }
-  .iv-money { margin: 0.5rem 0 0; display: grid; gap: 0.35rem; }
-  .iv-money > div { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
-  .iv-money dt { color: var(--text-muted, #6a7282); }
-  .iv-money dd { margin: 0; font-variant-numeric: tabular-nums; }
-  /* Amount due is the money anchor (wireframe total-emphasis pattern). */
-  .iv-money-due { margin-top: 0.5rem; padding: 0.6rem 0.75rem; border-radius: 9px;
-    background: color-mix(in srgb, var(--right-hand, #c9a961) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--right-hand, #c9a961) 40%, var(--border, #d8dee6)); }
-  .iv-money-due dt { color: var(--text, inherit); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; }
-  .iv-money-due dd { font-weight: 800; font-size: 1.25rem; color: var(--text, inherit); }
-  .iv-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; overflow: hidden; }
-  .iv-paper-html { width: 100%; min-height: 420px; border: 0; display: block; }
+  .iv-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.65rem; margin: 0.9rem 0; }
+  .iv-summary > div { padding: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 9px; background: var(--surface, #fff); }
+  .iv-summary span { display: block; color: var(--text-muted, #6a7282); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; font-weight: 700; }
+  .iv-summary strong { display: block; margin-top: 0.2rem; font-variant-numeric: tabular-nums; }
+  .iv-money-due { background: color-mix(in srgb, var(--right-hand, #c9a961) 14%, transparent) !important; border-color: color-mix(in srgb, var(--right-hand, #c9a961) 42%, var(--border, #d8dee6)) !important; }
+  .iv-list { display: grid; gap: 0.7rem; margin-top: 0.85rem; }
+  .iv-invoice { display: block; color: inherit; text-decoration: none; padding: 0.78rem; border: 1px solid var(--border, #d8dee6); border-radius: 10px; background: color-mix(in srgb, var(--surface, #fff) 96%, var(--bg, #f6f8fb)); }
+  .iv-invoice[data-status='ready'] { border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6)); }
+  .iv-invoice-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+  .iv-invoice h2 { margin: 0; font-size: 1rem; }
+  .iv-invoice-head span { display: block; margin-top: 0.15rem; color: var(--text-muted, #6a7282); font-size: 0.84rem; }
+  .iv-invoice-head strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .iv-chips { display: flex; gap: 0.42rem; flex-wrap: wrap; margin-top: 0.65rem; }
+  .iv-chip { display: inline-flex; align-items: center; gap: 0.3rem; border-radius: 999px; padding: 0.22rem 0.5rem; background: var(--bg, #f6f8fb); color: var(--text-muted, #6a7282); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.66rem; font-weight: 800; }
+  .iv-chip::before { content: ''; width: 0.34rem; height: 0.34rem; border-radius: 999px; background: currentColor; }
+  .iv-chip.green { color: var(--field-green, #2f8f5b); background: color-mix(in srgb, var(--field-green, #2f8f5b) 12%, transparent); }
+  .iv-chip.gold { color: #8a5a00; background: color-mix(in srgb, var(--right-hand, #c9a961) 18%, transparent); }
+  .iv-chip.red { color: #b42318; background: #fee4e2; }
+  .iv-line-thread { margin-top: 0.9rem; padding: 0.72rem; border: 1px dashed var(--border, #d8dee6); border-radius: 9px; color: var(--text-muted, #6a7282); font-size: 0.86rem; }
   .iv-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
   .iv-btn { padding: 0.55rem 0.9rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--border, #d8dee6); }
   .iv-btn.primary { background: var(--right-hand, #c9a961); color: #1a1300; border-color: transparent; }
   .iv-btn.ghost { background: var(--surface, #fff); color: inherit; }
+  .iv-money { margin: 0.5rem 0 0; display: grid; gap: 0.35rem; }
+  @media (max-width: 640px) {
+    .iv-summary { grid-template-columns: 1fr 1fr; }
+    .iv-invoice-head { align-items: flex-start; }
+  }
 </style>

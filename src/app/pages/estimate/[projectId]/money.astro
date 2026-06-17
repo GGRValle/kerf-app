@@ -46,12 +46,13 @@ if (draft === null || draft.project_id !== projectId) {
 
 const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+const invoiceListLink = `/estimate/${encodeURIComponent(projectId)}/invoice?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const invoiceLink = (kind: MilestoneKind) =>
-  `/estimate/${encodeURIComponent(projectId)}/invoice?estimate_id=${encodeURIComponent(estimateId)}&milestone=${kind}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
+  `/estimate/${encodeURIComponent(projectId)}/invoice/${encodeURIComponent(kind)}?estimate_id=${encodeURIComponent(estimateId)}${conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : ''}`;
 const phaseStrip = [
   { id: 'estimate', label: 'Estimate', href: estimateBack },
   { id: 'proposal', label: 'Proposal', href: proposalLink },
-  { id: 'invoice', label: 'Invoice', href: invoiceLink('down_payment') },
+  { id: 'invoice', label: 'Invoice', href: invoiceListLink },
   { id: 'money', label: 'Money', active: true },
 ];
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

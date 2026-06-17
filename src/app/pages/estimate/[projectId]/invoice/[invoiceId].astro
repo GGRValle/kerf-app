@@ -1,0 +1,179 @@
+---
+// F-INV2a · Per-job invoice detail.
+//
+// Drill surface for a single invoice milestone. It previews the draft invoice
+// and routes consequence work back to Money; it never issues or posts itself.
+import Layout from '../../../../layouts/Layout.astro';
+import PhaseStrip from '../../../../components/PhaseStrip.astro';
+import { createLayoutContext } from '../../../../lib/createLayoutContext.js';
+import { getRightHandEstimateStore } from '../../../../../api/lib/rightHandAssemblyStore.js';
+import { renderInvoiceHtml } from '../../../../../api/lib/estimateInvoiceProjection.js';
+import {
+  buildEstimateInvoiceSetView,
+  invoiceDetailSegment,
+  invoiceKindFromRoute,
+} from '../../../../lib/estimateInvoiceViews.js';
+
+const { context } = createLayoutContext();
+const tenant = context.tenantId;
+const projectId = Astro.params.projectId ?? '';
+const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
+const invoiceId = Astro.params.invoiceId ?? '';
+const conversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
+const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
+
+if (draft === null || draft.project_id !== projectId) {
+  return Astro.redirect(`/estimate/${encodeURIComponent(projectId)}`);
+}
+
+const qs = conversationId ? `&rh_conversation=${encodeURIComponent(conversationId)}` : '';
+const estimateBack = `/estimate/${encodeURIComponent(projectId)}?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
+const proposalLink = `/estimate/${encodeURIComponent(projectId)}/proposal?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
+const listLink = `/estimate/${encodeURIComponent(projectId)}/invoice?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
+const moneyLink = `/estimate/${encodeURIComponent(projectId)}/money?estimate_id=${encodeURIComponent(estimateId)}${qs}`;
+const invoiceSet = await buildEstimateInvoiceSetView(tenant, draft);
+const kind = invoiceKindFromRoute(invoiceId);
+const item = invoiceSet.items.find((candidate) => candidate.kind === kind) ?? invoiceSet.items[0] ?? null;
+const invoice = item?.invoice ?? null;
+const paperHtml = invoice ? renderInvoiceHtml(invoice) : null;
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const phaseStrip = [
+  { id: 'estimate', label: 'Estimate', href: estimateBack },
+  { id: 'proposal', label: 'Proposal', href: proposalLink },
+  { id: 'invoice', label: 'Invoice', active: true },
+  { id: 'money', label: 'Money', href: moneyLink },
+];
+const printableHref = invoice
+  ? `/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/invoice?milestone=${encodeURIComponent(kind)}`
+  : null;
+---
+
+<Layout
+  title="Invoice detail"
+  activeHref="/money"
+  surfaceContext={{
+    surface: 'invoice',
+    project_id: projectId,
+    estimate_id: estimateId,
+    invoice_id: invoice?.invoice_id ?? item?.invoice_id,
+    line_ids: item?.line_ids,
+    phase: 'invoice_detail',
+  }}
+>
+  <article class="ivd-page" data-estimate-id={estimateId} data-project-id={projectId} data-invoice-kind={item?.kind}>
+    <nav class="ivd-nav" aria-label="Invoice flow">
+      <a class="ivd-back" href={listLink}>‹ Back to list</a>
+      <a class="ivd-back" href={moneyLink}>Open Money</a>
+    </nav>
+
+    <header class="ivd-hero">
+      <div class="ivd-crumb">{item?.status ?? 'blocked'} · invoice detail</div>
+      <h1>{item?.kind === 'down_payment' ? 'Deposit invoice' : 'Final invoice'}</h1>
+      <p class="ivd-sub">{draft.title.replace(/\s*estimate draft$/i, '')}</p>
+    </header>
+    <PhaseStrip phases={phaseStrip} />
+
+    <section class="ivd-guard">
+      <strong>Money guard</strong>
+      <p>Right Hand drafted this from the signed estimate basis. Nothing is issued, sent, posted, or recorded from this detail page.</p>
+    </section>
+
+    {invoice === null || item === null ? (
+      <section class="ivd-card">
+        <span class="ivd-chip red">Blocked</span>
+        <h2>Invoice is not ready</h2>
+        <p>{item?.blocked_reason ?? 'No billable invoice basis is available yet.'}</p>
+        <div class="ivd-actions">
+          <a class="ivd-btn primary" href={listLink}>Back to invoice list</a>
+          <a class="ivd-btn" href={estimateBack}>Open estimate</a>
+        </div>
+      </section>
+    ) : (
+      <>
+        <section class="ivd-card">
+          <div class="ivd-total">
+            <span>{invoice.milestone.label}</span>
+            <strong>{fmt(invoice.amount_due_cents)}</strong>
+          </div>
+          <div class="ivd-money">
+            <div><span>Contract base</span><strong>{fmt(invoice.contract_base_cents)}</strong></div>
+            <div><span>Billed to date</span><strong>{fmt(invoice.billed_to_date_cents)}</strong></div>
+            <div><span>Remaining after this</span><strong>{fmt(invoice.remaining_after_cents)}</strong></div>
+            <div><span>Status</span><strong>{item.status === 'ready' ? 'Draft ready' : 'Issued'}</strong></div>
+          </div>
+          <div class="ivd-chips">
+            <span class={`ivd-chip ${item.status === 'ready' ? 'gold' : 'green'}`}>{item.status === 'ready' ? 'Draft ready' : 'Issued'}</span>
+            <span class="ivd-chip">{item.line_ids.length} line_ids</span>
+            <span class="ivd-chip">Contract milestone</span>
+          </div>
+        </section>
+
+        <section class="ivd-card">
+          <h2>Invoice preview</h2>
+          <div class="ivd-paper-wrap">
+            <iframe class="ivd-paper-html" title="Invoice preview" sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
+          </div>
+        </section>
+
+        <section class="ivd-thread">
+          <h2>Line_id carry</h2>
+          <p>{item.line_ids.slice(0, 6).join(', ') || invoice.milestone.milestone_id}</p>
+          <p>Estimate {estimateId} stays the basis for this invoice. Detail defaults are per invoice; Money owns issue and ledger writes.</p>
+        </section>
+
+        <div class="ivd-actions">
+          <a class="ivd-btn primary" href={moneyLink}>Issue in Money</a>
+          {printableHref ? <a class="ivd-btn" href={printableHref} target="_blank" rel="noopener">Preview client copy</a> : null}
+          <a class="ivd-btn" href={listLink}>Back to list</a>
+        </div>
+      </>
+    )}
+  </article>
+</Layout>
+
+<script>
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.ivd-paper-html')) {
+    const fit = () => {
+      try {
+        const doc = frame.contentDocument;
+        if (doc?.documentElement) frame.style.height = `${doc.documentElement.scrollHeight}px`;
+      } catch { /* defensive */ }
+    };
+    frame.addEventListener('load', fit);
+    fit();
+  }
+</script>
+
+<style>
+  .ivd-page { width: min(100%, 920px); margin: 0 auto; padding: 0.9rem 0.9rem 6rem; }
+  .ivd-nav { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.45rem; }
+  .ivd-back { color: var(--text-muted, #6a7282); text-decoration: none; font-size: 0.85rem; }
+  .ivd-hero h1 { margin: 0.2rem 0; font-size: clamp(1.5rem, 5vw, 2rem); }
+  .ivd-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
+  .ivd-sub, .ivd-card p, .ivd-thread p, .ivd-guard p { color: var(--text-muted, #6a7282); line-height: 1.45; }
+  .ivd-guard, .ivd-card, .ivd-thread { margin-top: 0.85rem; padding: 0.85rem; border: 1px solid var(--border, #d8dee6); border-radius: 10px; background: var(--surface, #fff); }
+  .ivd-guard { border-color: color-mix(in srgb, var(--right-hand, #c9a961) 42%, var(--border, #d8dee6)); background: color-mix(in srgb, var(--right-hand, #c9a961) 10%, var(--surface, #fff)); }
+  .ivd-card h2, .ivd-thread h2 { margin: 0 0 0.5rem; font-size: 1rem; }
+  .ivd-total { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; padding-bottom: 0.7rem; border-bottom: 1px solid var(--border, #d8dee6); }
+  .ivd-total span { color: var(--text-muted, #6a7282); }
+  .ivd-total strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  .ivd-money { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; margin-top: 0.75rem; }
+  .ivd-money div { padding: 0.55rem; border-radius: 8px; background: var(--bg, #f6f8fb); }
+  .ivd-money span { display: block; color: var(--text-muted, #6a7282); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ivd-money strong { display: block; margin-top: 0.18rem; font-variant-numeric: tabular-nums; }
+  .ivd-chips { display: flex; flex-wrap: wrap; gap: 0.42rem; margin-top: 0.75rem; }
+  .ivd-chip { display: inline-flex; align-items: center; gap: 0.3rem; border-radius: 999px; padding: 0.22rem 0.5rem; background: var(--bg, #f6f8fb); color: var(--text-muted, #6a7282); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.66rem; font-weight: 800; }
+  .ivd-chip::before { content: ''; width: 0.34rem; height: 0.34rem; border-radius: 999px; background: currentColor; }
+  .ivd-chip.green { color: var(--field-green, #2f8f5b); background: color-mix(in srgb, var(--field-green, #2f8f5b) 12%, transparent); }
+  .ivd-chip.gold { color: #8a5a00; background: color-mix(in srgb, var(--right-hand, #c9a961) 18%, transparent); }
+  .ivd-chip.red { color: #b42318; background: #fee4e2; }
+  .ivd-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; overflow: hidden; }
+  .ivd-paper-html { width: 100%; min-height: 420px; border: 0; display: block; }
+  .ivd-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
+  .ivd-btn { padding: 0.55rem 0.9rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--border, #d8dee6); background: var(--surface, #fff); color: inherit; }
+  .ivd-btn.primary { background: var(--right-hand, #c9a961); color: #1a1300; border-color: transparent; }
+  @media (max-width: 640px) {
+    .ivd-money { grid-template-columns: 1fr; }
+    .ivd-total { align-items: flex-start; }
+  }
+</style>
