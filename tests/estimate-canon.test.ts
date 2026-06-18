@@ -23,6 +23,8 @@ test('estimate opts into Goal 0 canon grammar (opt-in + SurfaceContext + kg-* pr
 test('estimate <style> uses canon tokens only — no raw palette, no parallel grid', () => {
   assert.doesNotMatch(style, /#[0-9a-fA-F]{3,8}\b/);
   assert.doesNotMatch(style, /rgba?\(/);
+  // named raw colors leak past the hex-only parity check (e.g. color-mix(... white))
+  assert.doesNotMatch(style, /color-mix\([^)]*\b(?:white|black|silver|gray|grey)\b/i);
   assert.doesNotMatch(style, /grid-template-columns\s*:\s*repeat\(/);
   assert.doesNotMatch(style, /--right-hand|--kerf-amber/);
 });
