@@ -45,6 +45,7 @@ reg('home', '/login', 'LoginF-LND1', ALL_ROLES, '/');
 reg('field', '/field-capture', 'FieldCapture', FIELD_ROLES, '/');
 reg('field', '/field', 'FieldHome', FIELD_ROLES, '/');
 reg('field', '/field-detail', 'FieldDetail', FIELD_ROLES, '/field');
+reg('field', '/projects/[id]/daily-log', 'ProjectDailyLogF-DL1', FIELD_ROLES, '/projects/[id]');
 reg('field', '/relay', 'RelayReview', FIELD_ROLES, '/');
 reg('field', '/relay/[id]', 'RelayDetail', FIELD_ROLES, '/relay');
 

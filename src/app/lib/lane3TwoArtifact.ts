@@ -20,7 +20,7 @@ export function buildCameraCaptureJobNotePair(input: {
       project: input.project_id,
       consequence_tier: 'reversible',
     },
-    surface_route: `/projects/${input.project_id}/daily_log`,
+    surface_route: `/projects/${input.project_id}/daily-log`,
     created_at: new Date().toISOString(),
   };
   const attention: AttentionArtifact = {
