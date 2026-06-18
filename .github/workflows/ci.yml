@@ -25,7 +25,9 @@ jobs:
   verify:
     name: verify
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Bumped from 5 → 12: the runtime smoke adds a Playwright Chromium install
+    # (+deps) and an `astro build`. Steady-state run is ~3-4 min.
+    timeout-minutes: 12
 
     steps:
       - name: Checkout
@@ -72,6 +74,17 @@ jobs:
       # style noise. See scripts/check-astro-client-scripts.mjs.
       - name: Guard — Astro client scripts (no undeclared vars)
         run: npm run check:astro-scripts
+
+      # Runtime layer: the static guard above catches type-detectable binding
+      # errors; this executes the bundled client JS in a real headless browser
+      # (the exact thing the camera conformance tests never did) and fails on
+      # any uncaught exception / console error / 5xx loading key pages.
+      # `npm run smoke:pages` runs `astro build` then loads /camera + /right-hand.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke — Astro pages execute clean (runtime errors)
+        run: npm run smoke:pages
 
       - name: Smoke proof — proposal-ff
         run: npm run smoke:proposal-ff
