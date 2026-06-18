@@ -53,6 +53,22 @@ test('money/invoice preserve M4 ledger, §7159 cap, the issue gate, and tenant s
   assert.match(invoice, /context\.tenantId/);
 });
 
+// Operator-facing render must not leak the internal "Kerf" codename. The brand
+// is Right Hand; Kerf is the repo/app codename — fine in comments/imports, not
+// in copy an operator reads. Scope to the template (drop frontmatter/style/script).
+function operatorCopy(src: string): string {
+  return src
+    .replace(/^---[\s\S]*?---/, '')
+    .replace(/<style[\s\S]*?<\/style>/g, '')
+    .replace(/<script[\s\S]*?<\/script>/g, '');
+}
+
+test('money + invoice render no operator-facing "Kerf" codename', () => {
+  for (const [name, src] of [['money', money], ['invoice', invoice]] as const) {
+    assert.doesNotMatch(operatorCopy(src), /\bKerf\b/, `${name} leaks the Kerf codename into operator copy`);
+  }
+});
+
 test('SurfaceContext carries line_ids on both surfaces (line-identity carry-through)', () => {
   for (const [name, src] of [['money', money], ['invoice', invoice]] as const) {
     const ctx = (src.match(/surfaceContext=\{\{[\s\S]*?\}\}/) ?? [''])[0];
