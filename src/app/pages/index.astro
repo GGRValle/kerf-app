@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import NavBack from '../components/NavBack.astro';
 import RoleHomeSurface from '../components/RoleHomeSurface.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { parseRoleRootCookie, ROLE_ROOT_COOKIE } from '../lib/roleSession.js';
@@ -10,8 +9,5 @@ const { context } = createLayoutContext({ roleRoot: cookieRole ?? undefined });
 ---
 
 <Layout context={context} titleKey="home.title" activeHref="/" surfaceContext={{ surface: 'home', phase: 'today' }} voiceSurface="bubble" voiceState="minimized">
-  <div class="rh-home-audit-back" hidden>
-    <NavBack href="/login" />
-  </div>
   <RoleHomeSurface roleRoot={context.roleRoot} />
 </Layout>

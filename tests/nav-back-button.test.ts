@@ -49,7 +49,6 @@ test('the return_to sanitizer refuses off-origin targets (open-redirect guard at
 
 // #371 entry/login/role-home/field sweep.
 const NAVBACK_SURFACES: ReadonlyArray<{ file: string; fallback: string }> = [
-  { file: 'src/app/pages/index.astro', fallback: '/login' },
   { file: 'src/app/pages/login.astro', fallback: '/' },
   { file: 'src/app/pages/home/owner.astro', fallback: '/' },
   { file: 'src/app/pages/home/pm.astro', fallback: '/' },
@@ -78,6 +77,10 @@ test('listed surfaces import NavBack with the audit fallback targets', () => {
       `${file} must declare fallback href ${fallback}`,
     );
   }
+});
+
+test('Home (root landing surface) renders no NavBack — Canon: nothing above Home to go back to', () => {
+  assert.doesNotMatch(read('src/app/pages/index.astro'), /NavBack/);
 });
 
 test('back-button sweep does not touch bubble or money modules', () => {

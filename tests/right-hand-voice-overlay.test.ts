@@ -744,7 +744,7 @@ test('F-RH3 bloom-from-heart: composer is one dock with the mic seated dead cent
   assert.match(src, /class="rhvo__composer-row"/);
   assert.match(src, /class="rhvo__dock"/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Home<\/span>/);
-  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Create<\/span>/);
+  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Start<\/span>/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Camera<\/span>/);
   assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">More<\/span>/);
   assert.match(src, /\.rhvo__dock\s*\{[\s\S]*?grid-template-columns: 1fr 1fr 72px 1fr 1fr;/);
