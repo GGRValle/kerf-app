@@ -254,7 +254,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         routeConfirm.textContent = selectedRouteKind === 'job'
           ? 'Confirm and file'
           : selectedRouteKind === 'lead'
-            ? 'Create lead'
+            ? 'Start intake'
             : 'Save for review';
       }
       if (root instanceof HTMLElement) root.dataset.routeKind = selectedRouteKind;
@@ -274,7 +274,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       if (selectedRouteKind === 'lead') {
         routeSuggestion.textContent = 'New lead · Sales intake';
         if (routeHint instanceof HTMLElement) {
-          routeHint.textContent = 'Creates a lead-stage deal. It does not create a project until you convert it later.';
+          routeHint.textContent = 'Starts a new lead intake. It does not create a project until you convert it later.';
         }
         return;
       }
@@ -331,7 +331,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         hideRoutePanel();
         if (lastCapture && capturedDetail instanceof HTMLElement) {
           capturedDetail.textContent = selectedRouteKind === 'lead'
-            ? 'Ready to create a lead-stage intake.'
+            ? 'Ready to start a new lead intake.'
             : 'Ready to save for office review.';
         }
         return;
@@ -363,56 +363,34 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     };
     const routeCaptureToLead = async () => {
       if (!lastCapture) {
-        setStatus('Capture a photo or video first, then create the lead.');
+        setStatus('Capture a photo or video first, then start the lead intake.');
         return false;
       }
       if (isFiling) return true;
       isFiling = true;
       if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
       if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = true;
-      setStatus(`Creating lead from ${friendlyForKind(lastCapture.kind).toLowerCase()}…`);
+      setStatus(`Opening lead intake from ${friendlyForKind(lastCapture.kind).toLowerCase()}…`);
       try {
-        const response = await fetch('/api/v1/sales/deals', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            confirmed: true,
-            name: `${friendlyForKind(lastCapture.kind)} capture lead`,
-            client_name: 'Client TBD',
-            source: `Camera · ${lastCapture.name || friendlyForKind(lastCapture.kind)}`,
-          }),
-        });
-        if (!response.ok) throw new Error(`lead_failed_${response.status}`);
-        const result = await response.json();
-        const dealId = result.deal?.id;
-        if (!dealId) throw new Error('lead_failed_empty');
         try {
           sessionStorage.setItem('kerf.cameraCapture', JSON.stringify({
             ...lastCapture,
-            status: 'attached_to_lead',
+            status: 'pending_lead_intake',
             route_kind: 'lead',
-            deal_id: dealId,
+            source: 'camera',
             returned_at: Date.now(),
           }));
         } catch {
           // Visible navigation is still the fallback.
         }
-        setStatus('Lead created. Opening intake.');
-        window.location.href = `/sales/${encodeURIComponent(dealId)}?src=camera`;
+        setStatus('Opening new lead intake.');
+        window.location.href = `/clients/new?src=camera&capture_kind=${encodeURIComponent(lastCapture.kind)}`;
         return true;
       } catch (err) {
         isFiling = false;
         if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
         if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = false;
-        const code = err instanceof Error ? err.message : '';
-        setStatus(
-          code === 'lead_failed_401'
-            ? 'Your session expired — sign in again, then create the lead.'
-            : code === 'lead_failed_403'
-              ? 'You do not have access to create that lead.'
-              : 'Could not create the lead. Nothing was filed.',
-        );
+        setStatus('Could not open the lead intake. Nothing was filed.');
         return false;
       }
     };

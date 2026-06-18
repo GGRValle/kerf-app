@@ -36,8 +36,18 @@ test('camera route sheet is not job-only: it exposes job, lead, and review desti
   assert.match(camera, /New lead/);
   assert.match(camera, /data-route-kind="review"/);
   assert.match(camera, /Review later/);
-  assert.match(camera, /\/api\/v1\/sales\/deals/);
+  assert.match(camera, /\/clients\/new\?src=camera/);
   assert.match(camera, /\/api\/v1\/camera-captures\/review/);
+});
+
+test('camera new lead starts intake instead of routing to a deal detail dead-end', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  assert.match(camera, /Start intake/);
+  assert.match(camera, /pending_lead_intake/);
+  assert.match(camera, /Opening new lead intake/);
+  assert.match(camera, /\/clients\/new\?src=camera&capture_kind=/);
+  assert.doesNotMatch(camera, /\/api\/v1\/sales\/deals/);
+  assert.doesNotMatch(camera, /window\.location\.href = `\/sales\/\$\{encodeURIComponent\(dealId\)\}\?src=camera`/);
 });
 
 test('field capture removes pre-capture destination picker and routes at preflight', () => {
