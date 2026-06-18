@@ -50,6 +50,30 @@ test('camera new lead starts intake instead of routing to a deal detail dead-end
   assert.doesNotMatch(camera, /window\.location\.href = `\/sales\/\$\{encodeURIComponent\(dealId\)\}\?src=camera`/);
 });
 
+test('clients/new receives the camera capture handoff (no silent drop, canon grammar, no deal/project)', () => {
+  const clientsNew = readFileSync(path.join(ROOT, 'src/app/pages/clients/new.astro'), 'utf8');
+  // Reads the handoff the camera stashes, gated on arriving from the camera.
+  assert.match(clientsNew, /sessionStorage\.getItem\('kerf\.cameraCapture'\)/);
+  assert.match(clientsNew, /'src'\) === 'camera'/);
+  // Surfaces it in Goal 0 canon grammar — no parallel palette.
+  assert.match(clientsNew, /Camera capture attached/);
+  assert.match(clientsNew, /data-grammar="canon"/);
+  assert.match(clientsNew, /kg-card/);
+  // Stays lead/client intake context: no deal, no project, no money behavior.
+  assert.doesNotMatch(clientsNew, /\/api\/v1\/sales\/deals/);
+  assert.doesNotMatch(clientsNew, /project\.created|enter-design/);
+});
+
+test('clients/new clears the camera handoff only after a successful create (retains on failure)', () => {
+  const clientsNew = readFileSync(path.join(ROOT, 'src/app/pages/clients/new.astro'), 'utf8');
+  const okIdx = clientsNew.indexOf('if (res.ok)');
+  const removeIdx = clientsNew.indexOf("removeItem('kerf.cameraCapture')");
+  const alertIdx = clientsNew.indexOf('alert(errorMsg)');
+  assert.ok(okIdx >= 0, 'submit checks res.ok');
+  assert.ok(removeIdx > okIdx, 'handoff is cleared inside the success branch, not before submit');
+  assert.ok(alertIdx > removeIdx, 'the failure path (alert) comes after the success-only clear — capture retained on failure');
+});
+
 test('field capture removes pre-capture destination picker and routes at preflight', () => {
   const field = readFileSync(path.join(ROOT, 'src/app/pages/field-capture.astro'), 'utf8');
   const preStart = field.indexOf('state-pre');
