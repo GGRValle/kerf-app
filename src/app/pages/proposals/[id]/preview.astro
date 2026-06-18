@@ -37,7 +37,6 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
   surfaceContext={{
     surface: 'proposal',
     project_id: proposal.project_id,
-    estimate_id: proposal.proposal_id,
     proposal_id: proposal.proposal_id,
     line_ids: proposal.divisions.flatMap((division) =>
       division.sections.flatMap((section) => section.lines.map((line) => line.line_id)),
@@ -138,7 +137,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
   }
   .pv-title {
     margin: 0.2rem 0 0;
-    font-size: clamp(1.7rem, 6vw, 2.25rem);
+    font-size: 2.25rem;
     line-height: 1.05;
   }
   .pv-sub { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.95rem; }
@@ -197,6 +196,10 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
     text-decoration: none;
   }
   .pv-btn.primary { background: var(--green); border-color: transparent; color: var(--ink); }
+
+  @media (max-width: 640px) {
+    .pv-title { font-size: 1.7rem; }
+  }
 </style>
 
 <script>

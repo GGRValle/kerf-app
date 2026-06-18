@@ -19,6 +19,9 @@ test('proposal preview opts into Goal 0 canon grammar (opt-in + SurfaceContext +
   assert.match(src, /surface: 'proposal'/);
   assert.match(src, /kg-card/);
   assert.match(src, /kg-chip/);
+  // SurfaceContext carries proposal_id; must NOT mislabel it as estimate_id
+  assert.match(src, /proposal_id: proposal\.proposal_id/);
+  assert.doesNotMatch(src, /estimate_id: proposal\.proposal_id/);
 });
 
 test('proposal preview <style> is canon-token only — no raw palette, no parallel grid', () => {
@@ -26,6 +29,9 @@ test('proposal preview <style> is canon-token only — no raw palette, no parall
   assert.doesNotMatch(style, /rgba?\(/);
   assert.doesNotMatch(style, /color-mix\([^)]*\b(?:white|black|silver|gray|grey)\b/i);
   assert.doesNotMatch(style, /grid-template-columns\s*:\s*repeat\(/);
+  // UI rule: no viewport-scaled font sizing (no vw in font-size / clamp)
+  assert.doesNotMatch(style, /font-size:[^;]*\bvw\b/);
+  assert.doesNotMatch(style, /clamp\([^)]*vw/i);
 });
 
 test('scope narrative first, investment summary drills to line items, margin hidden', () => {
