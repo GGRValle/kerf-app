@@ -80,6 +80,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
     surface: 'invoice',
     project_id: projectId,
     estimate_id: estimateId,
+    line_ids: draft.lines.map((line) => line.id),
     phase: draft.gate.allowed ? 'review' : 'draft',
   }}
 >

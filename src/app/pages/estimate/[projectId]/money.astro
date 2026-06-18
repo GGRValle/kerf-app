@@ -155,6 +155,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     surface: 'money',
     project_id: projectId,
     estimate_id: estimateId,
+    line_ids: draft.lines.map((line) => line.id),
     phase: draft.gate.allowed ? 'review' : 'draft',
   }}
 >
@@ -197,7 +198,23 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     ) : null}
 
     <section class="mf-milestones" aria-label="Invoice milestones">
-      {milestones.map((item) => (
+      {milestones.map((item, index) => (
+        <Fragment>
+        {index === 1 ? (
+          <article class="mf-milestone kg-card" data-status="blocked" data-progress-draw>
+            <div class="mf-milestone-head">
+              <div>
+                <span>Progress billing</span>
+                <h2>Progress draw</h2>
+              </div>
+              <strong>Not configured</strong>
+            </div>
+            <p class="mf-note">Progress draws are not configured for this job yet. Deposit and final are available; progress billing needs a separate setup before it can be issued — nothing is billable here.</p>
+            <div class="mf-actions">
+              <span class="mf-btn disabled" aria-disabled="true">Not configured</span>
+            </div>
+          </article>
+        ) : null}
         <article class="mf-milestone kg-card" data-status={item.status}>
           <div class="mf-milestone-head">
             <div>
@@ -244,6 +261,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
             )}
           </div>
         </article>
+        </Fragment>
       ))}
     </section>
 

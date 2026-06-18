@@ -52,3 +52,27 @@ test('money/invoice preserve M4 ledger, §7159 cap, the issue gate, and tenant s
   assert.match(money, /context\.tenantId/);
   assert.match(invoice, /context\.tenantId/);
 });
+
+test('SurfaceContext carries line_ids on both surfaces (line-identity carry-through)', () => {
+  for (const [name, src] of [['money', money], ['invoice', invoice]] as const) {
+    const ctx = (src.match(/surfaceContext=\{\{[\s\S]*?\}\}/) ?? [''])[0];
+    assert.ok(ctx.length > 0, `${name} has a SurfaceContext block`);
+    assert.match(ctx, /line_ids:\s*draft\.lines\.map/, `${name} SurfaceContext carries line_ids`);
+  }
+});
+
+test('canon invoice list shows deposit/progress/final; progress draw is visible, blocked, and has NO issue/write control', () => {
+  // deposit + final are the real, billable milestones
+  assert.match(money, /buildMilestone\('down_payment'\)/);
+  assert.match(money, /buildMilestone\('final'\)/);
+  // progress draw is the visible, not-configured face the Canon map requires
+  assert.match(money, /data-progress-draw/);
+  assert.match(money, /Progress draw/);
+  // and it carries NO issue/write control and NO progress issue endpoint (a
+  // separate money-backend gate is required before progress can be billed)
+  const progressCard = (money.match(/<article[^>]*data-progress-draw[\s\S]*?<\/article>/) ?? [''])[0];
+  assert.ok(progressCard.length > 0, 'progress draw card present');
+  assert.doesNotMatch(progressCard, /<button/, 'progress draw has no button');
+  assert.doesNotMatch(progressCard, /data-issue-milestone/, 'progress draw has no issue control');
+  assert.doesNotMatch(money, /data-issue-milestone="progress_draw"/, 'no progress issue endpoint');
+});
