@@ -7,6 +7,8 @@ import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import '../../styles/lane6.css';
 
 const { t, context } = createLayoutContext();
+const fromCamera = Astro.url.searchParams.get('src') === 'camera';
+const captureKind = Astro.url.searchParams.get('capture_kind') ?? '';
 ---
 
 <Layout titleKey="f_cl.form.title" activeHref="/clients">
@@ -16,6 +18,13 @@ const { t, context } = createLayoutContext();
       <h1 class="lane6-title">{t('f_cl.form.title')}</h1>
       <p class="lane6-subtitle">{t('f_cl.form.subtitle_active')}</p>
     </header>
+
+    {fromCamera && (
+      <div class="f-cl-capture kg-card" data-grammar="canon" id="camera-capture-card" hidden>
+        <span class="kg-chip kg-routechip">Camera capture attached</span>
+        <p class="f-cl-capture__detail" id="camera-capture-detail"></p>
+      </div>
+    )}
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
       <Card title={t('f_cl.form.title')}>
@@ -45,7 +54,33 @@ const { t, context } = createLayoutContext();
     </SurfaceIrreversibilityWrap>
   </article>
 
-  <script define:vars={{ tenantId: context.tenantId, errorMsg: 'Could not create client.' }}>
+  <script define:vars={{ tenantId: context.tenantId, captureKind, errorMsg: 'Could not create client.' }}>
+    // Camera capture handoff: read-only lead/client intake context.
+    // No deal, no project, no invented schema — the create payload is unchanged.
+    let cameraCapture = null;
+    try {
+      const raw = sessionStorage.getItem('kerf.cameraCapture');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.source === 'camera' && (parsed.route_kind === 'lead' || parsed.status === 'pending_lead_intake')) {
+          cameraCapture = parsed;
+        }
+      }
+    } catch {
+      cameraCapture = null;
+    }
+    const captureCard = document.getElementById('camera-capture-card');
+    const captureDetail = document.getElementById('camera-capture-detail');
+    if (cameraCapture && captureCard instanceof HTMLElement) {
+      const kind = typeof cameraCapture.kind === 'string' && cameraCapture.kind ? cameraCapture.kind : (captureKind || 'capture');
+      const name = typeof cameraCapture.name === 'string' ? cameraCapture.name : '';
+      const status = typeof cameraCapture.status === 'string' ? cameraCapture.status : '';
+      if (captureDetail instanceof HTMLElement) {
+        captureDetail.textContent = [kind, name, status].filter(Boolean).join(' · ');
+      }
+      captureCard.hidden = false;
+    }
+
     document.getElementById('new-client-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const form = ev.target;
@@ -62,10 +97,19 @@ const { t, context } = createLayoutContext();
       });
       if (res.ok) {
         const data = await res.json();
+        // Lead created — the camera capture context has served its purpose; clear it.
+        try { sessionStorage.removeItem('kerf.cameraCapture'); } catch { /* ignore */ }
         window.location.href = `/clients/${data.client_id}`;
         return;
       }
+      // Submit failed — keep the handoff so the operator does not lose the capture context.
       alert(errorMsg);
     });
   </script>
+
+  <style>
+    .f-cl-capture { display: grid; gap: 6px; margin-bottom: 12px; }
+    .f-cl-capture .kg-chip { align-self: start; }
+    .f-cl-capture__detail { margin: 0; font-size: 13px; color: var(--muted); }
+  </style>
 </Layout>
