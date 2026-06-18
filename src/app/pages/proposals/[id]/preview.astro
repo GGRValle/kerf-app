@@ -1,8 +1,12 @@
 ---
-// F-PV1 · Mobile/desktop proposal preview · /proposals/:id/preview
+// F-PV1 · Proposal preview · /proposals/:id/preview — Goal 0 canon grammar.
+// Operator preview surface: scope narrative → investment summary → line-item
+// drill, margin hidden (client amounts only — proposals never carry cost/markup).
+// The formal proposal *document* (renderProposalHtml) is the legal artifact and
+// is preserved verbatim behind a "full document" drill — NOT re-grammared.
+// Tenant-scoped lookup and the /proposals/:id/send signature gate are untouched.
 import Layout from '../../../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../../../components/SurfaceIrreversibilityWrap.astro';
-import Card from '../../../components/Card.astro';
 import { createTranslator } from '../../../../i18n/index.js';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getLane6ProposalForTenant } from '../../../lib/lane6Fixtures.js';
@@ -10,7 +14,6 @@ import { loadProposalCaptureOrigin } from '../../../lib/loadProposalCaptureOrigi
 import CaptureOriginPanel from '../../../components/CaptureOriginPanel.astro';
 import ExportActions from '../../../components/ExportActions.astro';
 import { renderProposalHtml } from '../../../../proposal/render.js';
-import '../../../styles/lane6.css';
 
 const { id } = Astro.params;
 const { context } = createLayoutContext();
@@ -23,6 +26,9 @@ if (proposal === null) {
 
 const paperHtml = renderProposalHtml(proposal);
 const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, proposal.project_id);
+// Client-facing total — sum of division subtotals (no cost/markup anywhere on this surface).
+const projectTotalCents = proposal.divisions.reduce((sum, division) => sum + division.subtotal_cents, 0);
+const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 ---
 
 <Layout
@@ -39,55 +45,164 @@ const captureOrigin = await loadProposalCaptureOrigin(proposal.tenant_id, propos
     phase: proposal.status,
   }}
 >
-  <article class="lane6-page f-pv1">
-    <header>
-      <div class="lane6-crumb">{t('f_pv1.crumb')}</div>
-      <h1 class="lane6-title">{t('f_pv1.title')}</h1>
-      <p class="lane6-subtitle">{t('f_pv1.subtitle')} · {proposal.proposal_number}</p>
+  <article class="f-pv1" data-grammar="canon">
+    <header class="pv-head">
+      <div class="pv-crumb">{t('f_pv1.crumb')} · {proposal.proposal_number}</div>
+      <h1 class="pv-title">{proposal.project_name}</h1>
+      <p class="pv-sub">{t('f_pv1.read_only_note')}</p>
     </header>
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-      <ExportActions
-        surface="proposal.preview"
-        scopeDescriptor={`Proposal ${proposal.proposal_number}`}
-        itemCount={proposal.divisions.length}
-        actions={[
-          { label: t('action.print'), format: 'print' },
-          { label: t('f_mn.export.pdf'), format: 'pdf' },
-        ]}
-      />
-      <div class="lane6-operator-bar">
-        <div class="eyebrow">{t('f_pv1.operator_eyebrow')}</div>
-        <div class="lane6-seg" role="group" aria-label={t('f_pv1.operator_eyebrow')}>
-          <span class="active" title={t('f_pv1.view_preview_note')}>{t('f_pv1.view_mobile')}</span>
-          <span title={t('f_pv1.view_preview_note')}>{t('f_pv1.view_desktop')}</span>
-          <span class="lane6-preview-chip">{t('route_shell.card_eyebrow')}</span>
-        </div>
-        <p class="lane6-subtitle">{t('f_pv1.view_preview_note')}</p>
-      </div>
-
-      <Card eyebrow={t('f_pv1.preview_label')} title={proposal.project_name}>
-        <p class="lane6-subtitle">{t('f_pv1.read_only_note')}</p>
+      <!-- 1 · Scope narrative — first -->
+      <section class="kg-card pv-scope" aria-label="Scope of work">
+        <h2 class="pv-h2">Scope of work</h2>
+        <p class="pv-narrative">{proposal.scope_of_work_narrative}</p>
         <CaptureOriginPanel origin={captureOrigin} />
-        <div class="lane6-paper-wrap">
-          <iframe class="lane6-paper-html" title={proposal.project_name} sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
+      </section>
+
+      <!-- 2 · Investment summary — client totals only (margin hidden); drills to line items -->
+      <section class="kg-card pv-invest" aria-label="Investment summary">
+        <div class="pv-invest-head">
+          <h2 class="pv-h2">Investment summary</h2>
+          <span class="kg-chip green pv-total">{fmt(projectTotalCents)}</span>
         </div>
-        <div slot="footer" class="lane6-actions">
-          <a class="lane6-btn ghost" href="/draft-review">{t('f_pv1.back_draft')}</a>
-          <a class="lane6-btn primary" href={`/proposals/${proposal.proposal_id}/send`}>
-            {t('f_pv1.continue_send_gate')}
-          </a>
+        <ul class="pv-divs">
+          {proposal.divisions.map((division) => (
+            <li class="pv-div-row">
+              <span>Div {division.code} · {division.label}</span>
+              <span class="pv-div-sub">{fmt(division.subtotal_cents)}</span>
+            </li>
+          ))}
+        </ul>
+        <details class="pv-drill">
+          <summary>Line items by division</summary>
+          {proposal.divisions.map((division) => (
+            <div class="pv-div" aria-label={`Division ${division.code}`}>
+              <div class="pv-div-header">
+                <span>Div {division.code} · {division.label}</span>
+                <strong>{fmt(division.subtotal_cents)}</strong>
+              </div>
+              {division.sections.map((section) => (
+                <div class="pv-section">
+                  {section.label ? <div class="pv-section-label">{section.label}</div> : null}
+                  {section.lines.map((line) => (
+                    <div class="pv-line" data-line-id={line.line_id}>
+                      <span class="pv-line-desc">{line.description}</span>
+                      <span class="pv-line-amt">{fmt(line.extended_cents)}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </details>
+      </section>
+
+      <!-- 3 · Formal proposal document — legal artifact, preserved verbatim -->
+      <details class="kg-card pv-doc">
+        <summary>View full proposal document</summary>
+        <ExportActions
+          surface="proposal.preview"
+          scopeDescriptor={`Proposal ${proposal.proposal_number}`}
+          itemCount={proposal.divisions.length}
+          actions={[
+            { label: t('action.print'), format: 'print' },
+            { label: t('f_mn.export.pdf'), format: 'pdf' },
+          ]}
+        />
+        <div class="pv-paper-wrap">
+          <iframe class="pv-paper" title={proposal.project_name} sandbox="allow-same-origin" srcdoc={paperHtml}></iframe>
         </div>
-      </Card>
+      </details>
+
+      <div class="pv-actions">
+        <a class="pv-btn ghost" href="/draft-review">{t('f_pv1.back_draft')}</a>
+        <a class="pv-btn primary" href={`/proposals/${proposal.proposal_id}/send`}>{t('f_pv1.continue_send_gate')}</a>
+      </div>
     </SurfaceIrreversibilityWrap>
   </article>
 </Layout>
 
+<style>
+  .f-pv1 {
+    width: min(100%, 920px);
+    margin: 0 auto;
+    padding: 0.9rem 0.9rem 6.25rem;
+  }
+  .pv-head { margin: 0.25rem 0 0.8rem; }
+  .pv-crumb {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .pv-title {
+    margin: 0.2rem 0 0;
+    font-size: clamp(1.7rem, 6vw, 2.25rem);
+    line-height: 1.05;
+  }
+  .pv-sub { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.95rem; }
+  .pv-scope, .pv-invest, .pv-doc { margin: 0.85rem 0; }
+  .pv-h2 { margin: 0; font-size: 1rem; line-height: 1.2; }
+  .pv-narrative { margin: 0.5rem 0 0; color: var(--ink); line-height: 1.45; white-space: pre-wrap; }
+  .pv-invest-head { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+  .pv-total { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+  .pv-divs { list-style: none; margin: 0.7rem 0 0; padding: 0; }
+  .pv-div-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pv-div-sub { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 700; }
+  .pv-drill { margin-top: 0.7rem; }
+  .pv-drill summary { cursor: pointer; font-weight: 700; }
+  .pv-div { border-top: 1px solid var(--line); padding-top: 0.6rem; margin-top: 0.7rem; }
+  .pv-div-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--muted);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+  }
+  .pv-section-label { margin-top: 0.45rem; font-weight: 700; font-size: 0.85rem; }
+  .pv-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.65rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pv-line-amt { flex: 0 0 auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pv-doc summary { cursor: pointer; font-weight: 700; }
+  .pv-paper-wrap { margin-top: 0.7rem; }
+  .pv-paper { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+  .pv-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .pv-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.35rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .pv-btn.primary { background: var(--green); border-color: transparent; color: var(--ink); }
+</style>
+
 <script>
-  // Grow the sandboxed proposal-document iframe to its content height so the
-  // paper reads inline instead of nested-scrolling. srcdoc is same-origin, so
-  // reading contentDocument is permitted; the try/guard is purely defensive.
-  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.lane6-paper-html')) {
+  // Grow the sandboxed formal-document iframe to its content height (srcdoc is
+  // same-origin; the guard is defensive). Preserved from the prior preview.
+  for (const frame of document.querySelectorAll<HTMLIFrameElement>('iframe.pv-paper')) {
     const fit = () => {
       try {
         const doc = frame.contentDocument;
