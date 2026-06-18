@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-RH7 · Bubble transitions (build target)</title>
+<style>
+:root{
+  --bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--paper:#0F1318;
+  --t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--green:#38C977;--rh:#C9A961;--gold:#F5B544;--accent:#C9A961;--topbg:rgba(10,13,17,.92);
+}
+body.light{
+  --bg:#EEF0F3;--bg2:#FFFFFF;--s:#F0F1F4;--s2:#E8EAEE;--bd:#D4D8E0;--bds:#E6E8EC;--paper:#FFFFFF;
+  --t:#1C2128;--dim:#4A5264;--mute:#7A828F;--green:#1E9E58;--rh:#A0823F;--gold:#C28A1E;--accent:#A0823F;--topbg:rgba(238,240,243,.92);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5;transition:background .25s,color .25s}
+.page{max-width:1640px;margin:0 auto;padding:30px 22px 80px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbg);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:10px 22px;margin:-30px -22px 22px;display:flex;align-items:center;gap:13px}
+.topbar .lbl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.topbar .hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+.themebtn{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--bd);background:var(--s);color:var(--dim);cursor:pointer}
+h1{font-size:20px;font-weight:600;margin:0 0 5px}
+.lede{color:var(--dim);max-width:1100px;margin:0 0 18px;line-height:1.6}.lede b{color:var(--t)}
+.flowrow{display:flex;gap:6px;overflow-x:auto;padding-bottom:16px;align-items:stretch}
+.stage{flex:0 0 252px;display:flex;flex-direction:column}
+.arrow{flex:0 0 30px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--accent);font-size:20px;opacity:.6}
+.arrow .at{font-size:7.5px;color:var(--mute);writing-mode:vertical-rl;transform:rotate(180deg);margin-top:5px;letter-spacing:.04em}
+.cap{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:2px}
+.capd{font-size:10px;color:var(--mute);margin-bottom:8px;line-height:1.4;min-height:52px}
+.phone{background:var(--bg2);border:1px solid var(--bd);border-radius:26px;padding:8px;box-shadow:0 6px 22px rgba(0,0,0,.25)}
+.screen{background:var(--paper);border:1px solid var(--bds);border-radius:19px;height:500px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.statusbar{display:flex;justify-content:space-between;padding:6px 12px 3px;font-size:8px;color:var(--mute);font-weight:600}
+.content{flex:1;padding:9px 11px;overflow:hidden}
+.h{font-size:11.5px;font-weight:700;color:var(--t)}.sb{font-size:8.5px;color:var(--mute);margin-bottom:8px}
+.tile{background:var(--s);border:1px solid var(--bd);border-radius:8px;padding:6px 9px;margin-bottom:6px}
+.tile .tt{font-size:9.5px;font-weight:600;color:var(--t)}.tile .td{font-size:8px;color:var(--mute)}
+/* 5-slot bar */
+.navbar{display:flex;align-items:flex-end;justify-content:space-between;padding:7px 12px 11px;border-top:1px solid var(--bds);background:var(--bg2)}
+.nav{display:flex;flex-direction:column;align-items:center;gap:2px}
+.nav .ic{font-size:15px;color:var(--mute);line-height:1}.nav .nl{font-size:7px;color:var(--mute);font-weight:600}
+.nav.mic .nl{color:var(--gold);font-weight:700}
+.circle{width:44px;height:44px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(245,181,68,.22),0 0 14px rgba(245,181,68,.42)}
+.circle svg{width:18px;height:18px}.circle.center{margin-top:-12px}
+/* bloom */
+.bloom{position:absolute;left:8px;right:8px;bottom:8px;top:32%;background:var(--bg2);border:1.5px solid rgba(201,169,97,.5);border-radius:17px;display:flex;flex-direction:column;overflow:hidden}
+.thread{flex:1;padding:7px 9px;display:flex;flex-direction:column;gap:5px;overflow:hidden}
+.b{border-radius:9px;padding:5px 8px;font-size:8.5px;line-height:1.35;max-width:92%}
+.b.you{background:var(--s);align-self:flex-end;border:1px solid var(--bd)}
+.b.rh{background:rgba(201,169,97,.1);border:1px solid rgba(201,169,97,.3);align-self:flex-start}
+.b .who{font-size:6.5px;text-transform:uppercase;font-weight:700;color:var(--mute)}
+.composer{display:flex;justify-content:center;padding:6px 9px 9px;border-top:1px solid var(--bds)}
+/* artifact */
+.artifact{position:absolute;left:9px;right:9px;top:36px;padding:8px 10px;background:var(--s);border:1px solid var(--bd);border-radius:11px;overflow:hidden}
+.artifact .at{font-size:9.5px;font-weight:700;color:var(--t);margin-bottom:4px}
+.artifact .li{display:flex;justify-content:space-between;font-size:8px;color:var(--dim);padding:4px 0;border-bottom:1px solid var(--bds)}
+.artifact .li.chg{color:var(--green);font-weight:600}
+/* minimized pill */
+.pill{position:absolute;bottom:10px;display:flex;align-items:center;gap:7px;background:linear-gradient(180deg,rgba(201,169,97,.18),rgba(201,169,97,.08));border:1.5px solid rgba(201,169,97,.55);border-radius:24px;padding:6px 8px;backdrop-filter:blur(3px)}
+.pill.right{right:10px}
+.pill .pt{font-size:8.5px;color:var(--rh);font-weight:700}
+.smic{width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 4px rgba(245,181,68,.24),0 0 14px rgba(245,181,68,.44)}
+.smic svg{width:17px;height:17px}
+/* open bubble bar */
+.obubble{position:absolute;left:8px;right:8px;bottom:9px;background:linear-gradient(180deg,rgba(201,169,97,.16),rgba(201,169,97,.07));border:1.5px solid rgba(201,169,97,.55);border-radius:15px;padding:7px 8px;backdrop-filter:blur(3px)}
+.othread{padding:0 2px 7px;display:flex;flex-direction:column;gap:4px;max-height:120px;overflow:hidden}
+.obar{display:flex;align-items:center;gap:6px}
+.ctl{width:22px;height:22px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dim);flex-shrink:0}
+.cue{flex:1;min-width:0}.cue .cl{font-size:6.5px;text-transform:uppercase;color:var(--rh);font-weight:700}.cue .ct{font-size:8.5px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.otop{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.comprow{display:flex;align-items:center;gap:6px;margin-top:7px}
+.plus{width:22px;height:22px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--dim);flex-shrink:0}
+.tf{flex:1;min-width:0;font-size:8px;color:var(--mute);border:1px solid var(--bd);border-radius:12px;padding:6px 9px;background:transparent}
+.addhint{font-size:7px;color:var(--mute);margin-top:5px;padding-left:2px}
+.flytag{position:absolute;top:48%;left:50%;transform:translateX(-50%);color:var(--gold);font-size:8px;font-weight:700;background:var(--bg2);border:1px solid rgba(201,169,97,.4);border-radius:20px;padding:3px 9px}
+/* controls callout */
+.controls{display:flex;gap:18px;align-items:flex-start;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:16px 18px;margin-top:24px;flex-wrap:wrap}
+.cbox{flex:1;min-width:220px}
+.cbox h3{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 9px}
+.crow{display:flex;align-items:center;gap:9px;margin-bottom:8px;font-size:11px;color:var(--dim)}
+.crow .ci{width:24px;height:24px;border-radius:50%;border:1px solid var(--bd);background:var(--s);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--t);flex-shrink:0}
+.crow b{color:var(--t)}
+.note{font-size:10.5px;color:var(--mute);margin-top:16px;line-height:1.55;font-style:italic}
+</style></head>
+<body>
+<div class="page">
+<div class="topbar"><span class="lbl">Right Hand</span><span class="lbl" style="color:var(--rh)">Bubble transitions · F-RH7</span><span class="hint">BUILD TARGET · the pinned picture for the implementer</span><button class="themebtn" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'◐ Dark':'◑ Light'">◑ Light</button></div>
+<h1>The bubble, end to end — every transition</h1>
+<p class="lede">The full state machine the build reproduces. <b>Center mic when idle → flies to your hand's side when active → travels WITH you onto the artifact (never parks) → lands minimized → tap to open, speak, refine → tap-close or voice-accept → chains to the next artifact.</b> Every action has a visible finger control; voice and swipe sit on top. Mic side follows the handedness setting (right shown).</p>
+
+<div class="flowrow">
+
+  <!-- 1 IDLE -->
+  <div class="stage"><div class="cap">① Idle</div><div class="capd">Home. Center mic (Speak), 5-slot bar: Home · Start · 🎤 · Camera · ≡. "Tap to talk." Ambidextrous rest.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17</span></div>
+      <div class="content"><div class="h">Right Hand</div><div class="sb">Tap the mic and talk.</div><div class="tile"><div class="tt">One Thing</div><div class="td">Rodriguez — needs slab sq ft</div></div><div class="tile"><div class="tt">On Deck</div><div class="td">Wegrzyn closeout · 2 open</div></div></div>
+      <div class="navbar"><div class="nav"><div class="ic">⌂</div><div class="nl">Home</div></div><div class="nav"><div class="ic">+</div><div class="nl">Start</div></div><div class="nav mic"><div class="circle center"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="#0A0D11" stroke-width="2" fill="none"/></svg></div><div class="nl">Speak</div></div><div class="nav"><div class="ic">▣</div><div class="nl">Camera</div></div><div class="nav"><div class="ic">≡</div><div class="nl">More</div></div></div>
+    </div></div>
+  </div>
+
+  <div class="arrow">→<span class="at">tap mic</span></div>
+
+  <!-- 2 TALKING -->
+  <div class="stage"><div class="cap">② Talking</div><div class="capd">Conversation blooms from the center mic. Mic stays center while you talk — no drift within the convo.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17</span></div>
+      <div class="content" style="opacity:.35"><div class="h">Right Hand</div></div>
+      <div class="bloom"><div class="thread"><div class="b you"><div class="who">You</div>Rodriguez kitchen — walnut, quartzite, tile floor, owner appliances…</div><div class="b rh"><div class="who">RH</div>Got it. Island getting a cooktop, or prep only?</div><div class="b you"><div class="who">You</div>Existing gas stays. Build the estimate.</div></div><div class="composer"><div class="circle"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div></div>
+    </div></div>
+  </div>
+
+  <div class="arrow">→<span class="at">"build it"</span></div>
+
+  <!-- 3 TRANSITION -->
+  <div class="stage"><div class="cap">③ Handoff (the motion)</div><div class="capd">Artifact slides in; the mic <b>animates center → your side</b>; the bubble travels WITH it (not parked). The motion = "now listening, here's your workspace."</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17</span></div>
+      <div class="artifact" style="bottom:78px"><div class="at">Rodriguez · Kitchen estimate</div><div class="li"><span>Walnut cabinetry · 45 LF</span><span>…</span></div><div class="li"><span>Quartzite counters</span><span>…</span></div><div class="li"><span>Tile flooring · 240 SF</span><span>…</span></div></div>
+      <div class="flytag">mic ⟶ side · bubble travels</div>
+      <div class="pill right"><span class="pt">assembling…</span><div class="smic"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+    </div></div>
+  </div>
+
+  <div class="arrow">→<span class="at">lands</span></div>
+
+  <!-- 4 MINIMIZED -->
+  <div class="stage"><div class="cap">④ Landed · minimized</div><div class="capd">Artifact full-screen. Bubble shrinks to a minimal pill on your side — "tap to talk." Use the artifact + bottom bar with fingers; the convo's alive but out of the way.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:42</span><span>kerf-v17</span></div>
+      <div class="artifact" style="bottom:64px"><div class="at">Rodriguez · Kitchen estimate</div><div class="li"><span>Walnut cabinetry · 45 LF</span><span>$28,400</span></div><div class="li"><span>Quartzite counters</span><span>$9,500</span></div><div class="li"><span>Tile flooring · 240 SF</span><span>$7,200</span></div><div class="li"><span>Backsplash</span><span>allowance</span></div></div>
+      <div class="pill right"><span class="pt">tap to talk</span><div class="smic"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+    </div></div>
+  </div>
+
+  <div class="arrow">→<span class="at">tap pill</span></div>
+
+  <!-- 5 OPEN / SPEAK -->
+  <div class="stage"><div class="cap">⑤ Open · talk, type, or attach</div><div class="capd">Pill expands. Chrome row: <b>− collapse · cue · ✕ close</b>. Composer: <b>+ attach · text input · mic</b>. Talk OR type OR add a PDF/plan/photo/video.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:42</span><span>kerf-v17</span></div>
+      <div class="artifact" style="bottom:158px;opacity:.6"><div class="at">Rodriguez · Kitchen estimate</div><div class="li"><span>Walnut cabinetry · 45 LF</span><span>$28,400</span></div></div>
+      <div class="obubble">
+        <div class="otop"><div class="ctl">−</div><div class="cue"><div class="cl">◉ listening</div><div class="ct">…add a backsplash</div></div><div class="ctl">✕</div></div>
+        <div class="othread" style="max-height:88px"><div class="b rh"><div class="who">RH</div>Here's the draft. Change anything?</div><div class="b you"><div class="who">You</div>Bump cabinets to 30k, add a backsplash.</div></div>
+        <div class="comprow"><div class="plus">+</div><div class="tf">Talk or type…</div><div class="smic" style="width:32px;height:32px"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+        <div class="addhint">+ add a PDF, plan, photo, or video</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="arrow">→<span class="at">applies</span></div>
+
+  <!-- 6 EDITING / COLLAPSE -->
+  <div class="stage"><div class="cap">⑥ Applies · collapse to watch</div><div class="capd">Pane shrinks while RH edits so you watch the line land + read the reply. Changed/added lines flagged. "Tap to talk again" re-engages.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:42</span><span>kerf-v17</span></div>
+      <div class="artifact" style="bottom:86px"><div class="at">Rodriguez · Kitchen estimate</div><div class="li chg"><span>Walnut cabinetry · 45 LF</span><span>$30,000 ✎</span></div><div class="li chg"><span>Tile backsplash (added)</span><span>TBD</span></div><div class="li"><span>Quartzite counters</span><span>$9,500</span></div></div>
+      <div class="obubble" style="padding-bottom:7px"><div class="othread" style="max-height:36px"><div class="b rh"><div class="who">RH</div>Done — cabinets $30k, backsplash added (sq ft?).</div></div><div class="obar"><div class="ctl">−</div><div class="cue"><div class="ct" style="color:var(--accent);font-weight:700">tap to talk again</div></div><div class="smic" style="width:34px;height:34px;background:var(--rh)"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div><div class="ctl">✕</div></div></div>
+    </div></div>
+  </div>
+
+  <div class="arrow">→<span class="at">accept</span></div>
+
+  <!-- 7 ACCEPT / CHAIN -->
+  <div class="stage"><div class="cap">⑦ Accept → next artifact</div><div class="capd">Tap ✕, or say "accept these changes, close — now create the proposal." The SAME bubble carries onto the proposal (artifact-general), minimized again.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:43</span><span>kerf-v17</span></div>
+      <div class="artifact" style="bottom:64px"><div class="at">Rodriguez · Proposal</div><div class="li"><span>Kitchen estimate</span><span>accepted ✓</span></div><div class="li"><span>Cover + scope</span><span>drafting…</span></div><div class="li"><span>Terms · payment schedule</span><span>…</span></div></div>
+      <div class="pill right"><span class="pt">tap to talk</span><div class="smic"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+    </div></div>
+  </div>
+
+</div>
+
+<!-- controls callout -->
+<div class="controls">
+  <div class="cbox"><h3>Finger controls — always visible (voice-first, never voice-only)</h3>
+    <div class="crow"><div class="ci">+</div><div><b>Add context</b> — attach a <b>PDF, plan, photo, or video</b> right in the composer (the warm-input path). Video routes to the SEE node (Gemini, D-064). This is always present — talk, type, OR attach.</div></div>
+    <div class="crow"><div class="ci" style="font-size:8px">Aa</div><div><b>Text input</b> — type instead of talk (loud site, precise edit). Voice-first, not voice-only.</div></div>
+    <div class="crow"><div class="ci">−</div><div><b>Collapse</b> — minimize the bubble to the pill; conversation stays alive ("tap to talk").</div></div>
+    <div class="crow"><div class="ci">✕</div><div><b>Close / Done</b> — dismiss/end the bubble. The artifact + bottom bar stay fully finger-operable.</div></div>
+    <div class="crow"><div class="ci">↔</div><div><b>Swipe-to-dismiss</b> — layered shortcut for who reaches for it; never the only way out.</div></div>
+  </div>
+  <div class="cbox"><h3>Two rules the build must hold</h3>
+    <div style="font-size:11.5px;color:var(--dim);line-height:1.7">
+      <b style="color:var(--t)">1 · Travels, never parks.</b> The bubble rides onto the artifact (one surface). No navigate-away-and-park — that caused the live jumpy oscillation (estimate↔convo↔estimate). One surface = no oscillation.<br>
+      <b style="color:var(--t)">2 · Mic side = handedness setting.</b> Docks right by default; a lefty flips to left in Settings (`micSide` prop from day one). Center idle is ambidextrous regardless.
+    </div>
+  </div>
+</div>
+<p class="note">This is the build target — supersedes the navigate-and-park behavior in #308/#310/#311 for the presentation layer. The intent seam (#311), estimator (runEstimate), store (Postgres), and policy gate are unchanged. Voice-edits stay source-labeled + nothing-silent; "file it" / "send" remain the hard consequence gates. Dark + light both.</p>
+</div>
+</body></html>

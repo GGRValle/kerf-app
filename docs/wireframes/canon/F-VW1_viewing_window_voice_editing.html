@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-VW1 · Viewing Window — voice editing</title>
+<style>
+:root{
+  --bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--paper:#0F1318;
+  --t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;
+  --green:#38C977;--rh:#C9A961;--gold:#F5B544;--blue:#7BA8FF;--red:#F8615A;--violet:#9B8AE6;
+  --accent:#C9A961;--topbg:rgba(10,13,17,.92);
+}
+body.light{
+  --bg:#EEF0F3;--bg2:#FFFFFF;--s:#F0F1F4;--s2:#E8EAEE;--bd:#D4D8E0;--bds:#E6E8EC;--paper:#FFFFFF;
+  --t:#1C2128;--dim:#4A5264;--mute:#7A828F;
+  --green:#1E9E58;--rh:#A0823F;--gold:#C28A1E;--blue:#3D6FD6;--red:#D6453E;--violet:#7461C9;
+  --accent:#A0823F;--topbg:rgba(238,240,243,.92);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5;transition:background .25s,color .25s}
+.page{max-width:1380px;margin:0 auto;padding:30px 22px 80px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbg);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:10px 22px;margin:-30px -22px 22px;display:flex;align-items:center;gap:13px}
+.topbar .lbl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.topbar .hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+.themebtn{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--bd);background:var(--s);color:var(--dim);cursor:pointer}
+h1{font-size:20px;font-weight:600;margin:0 0 5px}
+.lede{color:var(--dim);max-width:1060px;margin:0 0 8px;line-height:1.6}
+.principle{background:linear-gradient(120deg,rgba(201,169,97,.13),transparent);border:1px solid rgba(201,169,97,.4);border-radius:11px;padding:12px 16px;margin:14px 0 22px;font-size:12.5px;color:var(--dim)}
+.principle b{color:var(--t)}
+.row{display:flex;gap:18px;overflow-x:auto;padding-bottom:14px;align-items:flex-start}
+.stage{flex:0 0 300px}
+.cap{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:3px}
+.capd{font-size:11px;color:var(--mute);margin-bottom:9px;line-height:1.4;min-height:44px}
+.phone{background:var(--bg2);border:1px solid var(--bd);border-radius:30px;padding:10px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.screen{background:var(--paper);border:1px solid var(--bds);border-radius:22px;height:560px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 4px;font-size:9px;color:var(--mute);font-weight:600}
+.appbar{display:flex;align-items:center;gap:8px;padding:4px 13px 9px;border-bottom:1px solid var(--bds)}
+.appbar .bk{color:var(--accent);font-size:11px}
+.appbar .ttl{font-size:12.5px;font-weight:700;color:var(--t)}
+.appbar .sub{font-size:9px;color:var(--mute)}
+.estbody{flex:1;overflow:hidden;padding:10px 13px;display:flex;flex-direction:column;gap:7px}
+.esthon{font-size:8.5px;color:var(--gold);background:rgba(245,181,68,.12);border:1px solid rgba(245,181,68,.3);border-radius:5px;padding:2px 6px;display:inline-block;margin-bottom:2px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:7px;background:var(--s);border:1px solid var(--bd);border-radius:7px;padding:7px 9px}
+.li .nm{font-size:10.5px;color:var(--t);font-weight:600}
+.li .meta{display:flex;align-items:center;gap:5px;margin-top:2px}
+.li .amt{font-size:10.5px;color:var(--t);font-weight:700;white-space:nowrap}
+.src{font-size:7.5px;font-weight:700;padding:1px 5px;border-radius:4px}
+.src.co{background:rgba(56,201,119,.16);color:var(--green)}
+.src.al{background:rgba(245,181,68,.16);color:var(--gold)}
+.li.changed{border-color:rgba(56,201,119,.6);box-shadow:0 0 0 2px rgba(56,201,119,.14)}
+.li.added{border-color:rgba(201,169,97,.6);box-shadow:0 0 0 2px rgba(201,169,97,.16)}
+.flagchip{font-size:7.5px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(106,114,130,.2);color:var(--mute)}
+/* docked bar — mic on the RIGHT (thumb zone) */
+.dock{position:absolute;left:10px;right:10px;bottom:10px;background:linear-gradient(180deg,rgba(201,169,97,.14),rgba(201,169,97,.06));border:1.5px solid rgba(201,169,97,.5);border-radius:16px;padding:9px 11px;display:flex;align-items:center;gap:9px;backdrop-filter:blur(3px)}
+.dock .dl{font-size:10px;color:var(--dim);flex:1;line-height:1.35}
+.dock .dl b{color:var(--t)}
+.dot{width:30px;height:30px;border-radius:50%;background:var(--rh);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 3px rgba(201,169,97,.16)}
+.dot svg{width:14px;height:14px}
+.dot.idle{background:var(--rh)}
+/* expanded sheet */
+.sheet{position:absolute;left:8px;right:8px;bottom:8px;border:1.5px solid rgba(201,169,97,.55);border-radius:20px;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.3);overflow:hidden;background:var(--bg2)}
+.sheet.tall{top:40%}
+.sheet.short{top:66%}
+.sheethead{display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--bds)}
+.sheethead .lbl{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--rh);font-weight:700;flex:1}
+.sheethead .col{font-size:9px;color:var(--mute);font-weight:700}
+.thread{flex:1;overflow:hidden;padding:9px 11px;display:flex;flex-direction:column;gap:6px}
+.b{border-radius:11px;padding:7px 10px;font-size:10.5px;line-height:1.4;max-width:90%}
+.b.you{background:var(--s);color:var(--t);align-self:flex-end;border:1px solid var(--bd)}
+.b.rh{background:rgba(201,169,97,.1);border:1px solid rgba(201,169,97,.3);color:var(--t);align-self:flex-start}
+.b .who{font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--mute);margin-bottom:2px}
+/* composer — mic DEAD CENTER (F-RH3 canon) */
+/* compact composer bar — context input LEFT, pronounced mic RIGHT, + on a row below (Claude-style; saves vertical real estate) */
+.composer{display:flex;flex-direction:column;gap:7px;padding:8px 11px 11px;border-top:1px solid var(--bds)}
+.crow{display:flex;align-items:center;gap:9px}
+.tf{flex:1;font-size:9.5px;color:var(--mute);border:1px solid var(--bd);border-radius:16px;padding:10px 13px;background:transparent;text-align:left}
+.mic{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mic svg{width:21px;height:21px}
+.mic.hot{background:var(--gold);box-shadow:0 0 0 5px rgba(245,181,68,.26),0 0 20px rgba(245,181,68,.5)}
+.mic.rest{background:var(--rh);box-shadow:0 0 0 5px rgba(201,169,97,.2)}
+.subrow{display:flex;align-items:center;gap:9px;padding-left:2px}
+.plus{width:26px;height:26px;border-radius:50%;border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--dim);font-weight:600}
+.subrow .sl{font-size:8.5px;color:var(--mute)}
+.reeng{display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 11px 11px;border-top:1px solid var(--bds)}
+.reeng .tap{font-size:9.5px;color:var(--accent);font-weight:700;letter-spacing:.03em}
+.note{font-size:10.5px;color:var(--mute);margin-top:9px;line-height:1.55;font-style:italic}
+.rhythm{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 16px;font-size:10px;color:var(--mute)}
+.rhythm b{color:var(--accent)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 6px;font-size:10px;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:9px;height:9px;border-radius:3px;display:inline-block}
+</style></head>
+<body>
+<div class="page">
+<div class="topbar"><span class="lbl">Right Hand</span><span class="lbl" style="color:var(--rh)">Viewing Window · F-VW1</span><span class="hint">persistent conversation + live artifact · voice editing · mic center/right</span><button class="themebtn" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'◐ Dark':'◑ Light'">◑ Light</button></div>
+<h1>The viewing window — edit the estimate by voice, conversation never closes</h1>
+<p class="lede">Artifact-primary; Right Hand docked as an expand-on-tap bubble. <b>Mic lives center (in the conversation) or right (in the docked bar) — never left</b> (right-thumb / ambidextrous canon, F-RH3). Talk to edit → the pane <b>collapses smaller while Right Hand applies the change</b> so you watch it land and read the reply → tap to re-engage and talk again.</p>
+<div class="principle"><b>The shift:</b> #308/#310 = "build it" → navigate to the page and <b>park</b> the conversation. Viewing window = <b>co-exist</b>: the page IS the view, Right Hand stays live on it. <b>Interim:</b> artifact refreshes per meaningful turn; true update-while-talking is Stage 2.</div>
+<div class="rhythm"><b>The rhythm →</b> ① docked (mic right) → ② expand &amp; talk (compact bar) → ③ <b>collapse smaller while it edits</b> (watch + read) → re-engage to talk again ↺ → ④ collapse to dock when done.</div>
+
+<!-- composer detail callout -->
+<div style="display:flex;gap:18px;align-items:center;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:16px 18px;margin:0 0 22px">
+  <div style="flex:0 0 320px">
+    <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8px">◈ The composer bar (zoomed)</div>
+    <div style="background:var(--paper);border:1px solid var(--bds);border-radius:16px;padding:11px 13px">
+      <div class="crow"><div class="tf" style="font-size:11px">Talk, or type a change…</div><div class="mic hot"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+      <div class="subrow" style="margin-top:9px"><div class="plus">+</div><div class="sl">add a photo, scan, or file</div></div>
+    </div>
+  </div>
+  <div style="flex:1;font-size:12px;color:var(--dim);line-height:1.65">
+    <b style="color:var(--t)">Context input LEFT · pronounced mic RIGHT · <code style="color:var(--rh)">+</code> on a line below.</b> A horizontal bar, not a stacked center-mic — so the conversation/artifact above keeps the vertical room (phone real estate is at a premium in the field). Mic is the bigger, brighter circle (right thumb zone). Same shape as the Claude/Canvas input. <span style="color:var(--mute)">Open question for your sketch ↓.</span>
+  </div>
+</div>
+<div class="legend">
+  <span><span class="sw" style="background:var(--green)"></span>company data</span>
+  <span><span class="sw" style="background:var(--gold)"></span>allowance / TBD</span>
+  <span><span class="sw" style="border:2px solid var(--green)"></span>changed by voice</span>
+  <span><span class="sw" style="border:2px solid var(--rh)"></span>added by voice</span>
+</div>
+
+<div class="row">
+
+  <!-- STAGE 1 -->
+  <div class="stage">
+    <div class="cap">① On the estimate</div>
+    <div class="capd">RH brought you here. Estimate fills the screen; RH docked live at the bottom — <b>mic on the RIGHT</b> (thumb zone), latest line showing. You never left the conversation.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17 ▪ 􀛨</span></div>
+      <div class="appbar"><span class="bk">‹</span><div><div class="ttl">Rodriguez · Kitchen</div><div class="sub">Estimate draft · 1234 Main St</div></div></div>
+      <div class="estbody">
+        <div><span class="esthon">⚠ Illustrative pricing — sample cost data</span></div>
+        <div class="li"><div><div class="nm">Walnut slab cabinetry · 45 LF</div><div class="meta"><span class="src co">company</span></div></div><div class="amt">$28,400</div></div>
+        <div class="li"><div><div class="nm">Honed black quartzite counters</div><div class="meta"><span class="src al">allowance</span></div></div><div class="amt">$9,500</div></div>
+        <div class="li"><div><div class="nm">Period tile flooring · 240 SF</div><div class="meta"><span class="src al">allowance</span></div></div><div class="amt">$7,200</div></div>
+        <div class="li"><div><div class="nm">Appliance install (owner-furnished)</div><div class="meta"><span class="flagchip">supply TBD</span></div></div><div class="amt">$1,800</div></div>
+      </div>
+      <div class="dock"><div class="dl"><b>Right Hand</b> · here's the draft — tap to change anything by voice</div><div class="dot idle"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="#0A0D11" stroke-width="2" fill="none"/></svg></div></div>
+    </div></div>
+  </div>
+
+  <!-- STAGE 2 -->
+  <div class="stage">
+    <div class="cap">② Tap → expand &amp; talk</div>
+    <div class="capd">Bubble blooms upward into the live conversation over the estimate. <b>Mic dead-center, hot.</b> You speak the edit — one hand, no typing.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17 ▪ 􀛨</span></div>
+      <div class="appbar"><span class="bk">‹</span><div><div class="ttl">Rodriguez · Kitchen</div><div class="sub">Estimate draft · 1234 Main St</div></div></div>
+      <div class="estbody" style="opacity:.5">
+        <div class="li"><div><div class="nm">Walnut slab cabinetry · 45 LF</div></div><div class="amt">$28,400</div></div>
+        <div class="li"><div><div class="nm">Honed black quartzite counters</div></div><div class="amt">$9,500</div></div>
+      </div>
+      <div class="sheet tall">
+        <div class="sheethead"><span class="lbl">◉ Right Hand — listening</span><span class="col">▾</span></div>
+        <div class="thread">
+          <div class="b rh"><div class="who">Right Hand</div>Here's the Rodriguez kitchen draft. Anything to change?</div>
+          <div class="b you"><div class="who">You</div>Bump the cabinet allowance to thirty thousand, and add a tile backsplash.</div>
+        </div>
+        <div class="composer"><div class="crow"><div class="tf">Listening… or type</div><div class="mic hot"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div><div class="subrow"><div class="plus">+</div><div class="sl">add a photo, scan, or file</div></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- STAGE 3 -->
+  <div class="stage">
+    <div class="cap">③ Collapse smaller while it edits</div>
+    <div class="capd">As RH applies the change the pane <b>shrinks</b> — more estimate shows so you <b>watch it land</b> and <b>read the reply</b>. Not hot; a clear <b>"Tap to talk again"</b> re-engages.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17 ▪ 􀛨</span></div>
+      <div class="appbar"><span class="bk">‹</span><div><div class="ttl">Rodriguez · Kitchen</div><div class="sub">Estimate draft · updating…</div></div></div>
+      <div class="estbody">
+        <div class="li changed"><div><div class="nm">Walnut slab cabinetry · 45 LF</div><div class="meta"><span class="src al">allowance</span> <span class="flagchip">you set</span></div></div><div class="amt">$30,000</div></div>
+        <div class="li added"><div><div class="nm">Tile backsplash</div><div class="meta"><span class="src al">allowance</span> <span class="flagchip">added · sq ft TBD</span></div></div><div class="amt">TBD</div></div>
+        <div class="li"><div><div class="nm">Honed black quartzite counters</div><div class="meta"><span class="src al">allowance</span></div></div><div class="amt">$9,500</div></div>
+        <div class="li"><div><div class="nm">Period tile flooring · 240 SF</div><div class="meta"><span class="src al">allowance</span></div></div><div class="amt">$7,200</div></div>
+      </div>
+      <div class="sheet short">
+        <div class="sheethead"><span class="lbl">◉ Right Hand</span><span class="col">▴ tap to talk</span></div>
+        <div class="thread">
+          <div class="b rh"><div class="who">Right Hand</div>Done — cabinets to $30k, backsplash added as an allowance (need the sq ft when you have it).</div>
+        </div>
+        <div class="reeng"><div class="mic rest"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div><div class="tap">Tap to talk again</div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- STAGE 4 -->
+  <div class="stage">
+    <div class="cap">④ Collapse to dock → updated</div>
+    <div class="capd">When you're done, collapse to the docked bar (still live, mic right). The estimate reflects every voice edit, source-labeled. Conversation never closed.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:42</span><span>kerf-v17 ▪ 􀛨</span></div>
+      <div class="appbar"><span class="bk">‹</span><div><div class="ttl">Rodriguez · Kitchen</div><div class="sub">Estimate draft · not filed · not sent</div></div></div>
+      <div class="estbody">
+        <div class="li"><div><div class="nm">Walnut slab cabinetry · 45 LF</div><div class="meta"><span class="src al">allowance</span></div></div><div class="amt">$30,000</div></div>
+        <div class="li"><div><div class="nm">Tile backsplash</div><div class="meta"><span class="src al">allowance</span> <span class="flagchip">sq ft TBD</span></div></div><div class="amt">TBD</div></div>
+        <div class="li"><div><div class="nm">Honed black quartzite counters</div><div class="meta"><span class="src al">allowance</span></div></div><div class="amt">$9,500</div></div>
+        <div class="li"><div><div class="nm">Period tile flooring · 240 SF</div><div class="meta"><span class="src al">allowance</span></div></div><div class="amt">$7,200</div></div>
+      </div>
+      <div class="dock"><div class="dl">Updated. Say "file it" when ready, or tap to keep editing.</div><div class="dot idle"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="#0A0D11" stroke-width="2" fill="none"/></svg></div></div>
+    </div></div>
+  </div>
+
+</div>
+
+<p class="note">Mic: dead-center in the conversation pane (F-RH3 canon), right-aligned in the docked bar — never left. The ②↔③ loop is the rhythm: expand to talk → it collapses smaller while applying the edit so you watch the line change and read what it wrote → "Tap to talk again" re-engages and re-expands. Edits are source-labeled + nothing-silent (backsplash rides in as a flagged allowance). "File it" stays the one hard consequence gate. Heavy artifact (estimate) → this docked/full pattern; light artifact (task/lead) → a living card in the chat scroll. Update-while-talking is Stage 2.</p>
+</div>
+</body></html>

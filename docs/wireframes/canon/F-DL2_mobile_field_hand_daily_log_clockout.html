@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-DL2 · Field Hand Daily Log + Clock-out</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--green:#38C977;--rh:#C9A961;--gold:#F5B544;--teal:#67D6E0;--cyan:#67D6E0;--blue:#7BA8FF;--amber:#F5B544;--red:#F87171}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--green:#1E8E50;--rh:#8A6D29;--gold:#9A6B12;--teal:#0E6E78;--cyan:#0E6E78;--amber:#9A6B12}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}body.light-mode .phone-notch{background:#1a1a1d!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--green);color:#04210F}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:32px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--green)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px}.frame-label{grid-column:1/-1;color:var(--green);font-weight:600;font-size:13px;margin-bottom:4px}.frame-narr{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin:0 0 14px;max-width:1080px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px}.three .frame-render{padding:22px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:30px;display:flex;justify-content:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim)}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--green);margin:13px 0 6px}.frame-spec h4.a{color:var(--amber)}.frame-spec h4.c{color:var(--cyan)}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.specrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;margin-bottom:40px}
+.phone{width:300px;border:1.5px solid var(--bd);border-radius:38px;padding:10px;background:var(--bg);box-shadow:0 16px 50px rgba(0,0,0,.5);position:relative}
+.phone-notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:104px;height:21px;background:var(--bg);border-radius:0 0 13px 13px}
+.scr{border-radius:28px;overflow:hidden;height:632px;display:flex;flex-direction:column;background:var(--bg)}
+.status-bar{display:flex;justify-content:space-between;padding:10px 17px 4px;font-size:10.5px;font-weight:600}
+.nav-top{display:flex;align-items:center;gap:9px;padding:4px 13px 8px;border-bottom:1px solid var(--bds)}.nav-top .bk{width:25px;height:25px;border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--dim)}.nav-top .bk svg{width:13px;height:13px}.nav-top .ttl{font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700}.nav-top .ttl b{color:var(--green)}.nav-top .dt{margin-left:auto;font-size:9.5px;color:var(--mute);font-weight:600}
+.body{flex:1;overflow-y:auto;padding:11px 13px 12px}
+.step-lb{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:12px 2px 6px}
+.who{display:flex;align-items:center;gap:10px;background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:9px 11px}
+.who .av{width:30px;height:30px;border-radius:50%;background:rgba(56,201,119,.2);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex:none}
+.who .nm{font-size:12px;font-weight:700}.who .rl{font-size:9px;color:var(--mute);margin-top:1px}.who .tag{margin-left:auto;font-size:8px;font-weight:700;text-transform:uppercase;color:var(--green);background:rgba(56,201,119,.15);border-radius:20px;padding:2px 7px;flex:none}
+.jobnote{background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:9px 10px;display:flex;gap:9px}
+.jobnote .thumb{width:32px;height:32px;border-radius:8px;background:rgba(201,169,97,.18);color:var(--rh);display:flex;align-items:center;justify-content:center;flex:none}.jobnote .thumb svg{width:16px;height:16px}
+.jobnote .jt{font-size:11px;font-weight:600;line-height:1.4}.jobnote .jm{font-size:8.5px;color:var(--mute);margin-top:4px;display:flex;align-items:center;gap:5px}
+.src{font-size:7.5px;font-weight:700;text-transform:uppercase;background:rgba(201,169,97,.16);color:var(--rh);border-radius:20px;padding:1px 6px}
+.filed{font-size:7.5px;font-weight:700;text-transform:uppercase;color:var(--green);display:inline-flex;align-items:center;gap:3px}.filed svg{width:8px;height:8px}
+/* friendly nudge */
+.nudge{border-radius:14px;padding:14px 13px;border:1.5px solid rgba(245,181,68,.5);background:linear-gradient(150deg,rgba(245,181,68,.13),rgba(245,181,68,.03));text-align:center}
+.nudge .ne{font-size:30px;line-height:1;margin-bottom:8px}
+.nudge .nt{font-size:14px;font-weight:800;color:var(--gold)}
+.nudge .nx{font-size:11px;color:var(--dim);margin-top:7px;line-height:1.5}
+.nudge .nb{display:flex;gap:8px;margin-top:13px}.nbtn{flex:1;text-align:center;padding:10px;border-radius:10px;font-size:11.5px;font-weight:700}.nbtn.a{background:var(--gold);color:#241B07}.nbtn.b{border:1px solid var(--bd);color:var(--dim)}
+.priv{font-size:8.5px;color:var(--mute);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:5px}.priv svg{width:11px;height:11px;color:var(--green)}
+/* musts checklist */
+.musts{margin-top:7px;border-radius:14px;padding:13px;border:1.5px solid rgba(56,201,119,.5);background:linear-gradient(150deg,rgba(56,201,119,.1),rgba(56,201,119,.02))}
+.musts.blk{border-color:rgba(245,181,68,.55);background:linear-gradient(150deg,rgba(245,181,68,.11),rgba(245,181,68,.02))}
+.musts .mh{display:flex;align-items:center;gap:9px;margin-bottom:11px}.musts .ml{width:32px;height:32px;border-radius:50%;background:rgba(56,201,119,.2);color:var(--green);display:flex;align-items:center;justify-content:center;flex:none}.musts.blk .ml{background:rgba(245,181,68,.2);color:var(--amber)}.musts .ml svg{width:17px;height:17px}
+.musts .ms{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-weight:800}.musts.blk .ms{color:var(--amber)}
+.musts .mv{font-size:14.5px;font-weight:800;margin-top:1px}.musts.blk .mv{font-size:14px}
+.chk{display:flex;align-items:center;gap:9px;font-size:11.5px;padding:5px 0;color:var(--dim)}.chk .ck{width:18px;height:18px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex:none}.chk .ck svg{width:11px;height:11px}.chk .ok{background:rgba(56,201,119,.18);color:var(--green)}.chk .no{background:transparent;border:1.5px solid var(--amber);color:var(--amber)}.chk b{color:var(--t);font-weight:600}.chk .fix{margin-left:auto;font-size:8.5px;font-weight:700;text-transform:uppercase;color:var(--amber);background:rgba(245,181,68,.14);border-radius:20px;padding:2px 8px;flex:none}
+.clockbtn{margin-top:12px;width:100%;border-radius:12px;padding:13px;font-size:14px;font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--green);color:#04210F}.clockbtn svg{width:16px;height:16px}
+.clockbtn.dis{background:var(--bg2);border:1.5px solid var(--bd);color:var(--mute)}
+.route{font-size:9px;color:var(--cyan);text-align:center;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:5px}.route svg{width:11px;height:11px}
+.hrs{font-size:9px;color:var(--mute);text-align:center;margin-top:7px}
+/* manager side */
+.mgr-lb{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);font-weight:800;margin:13px 2px 7px;display:flex;align-items:center;gap:6px}.mgr-lb svg{width:12px;height:12px}
+.routecard{background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:8px 10px}
+.routecard .rr{display:flex;align-items:center;gap:8px;font-size:10.5px;padding:5px 0}.routecard .ri{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}.routecard .ri svg{width:13px;height:13px}
+.routecard .rn b{color:var(--t);font-weight:600}.routecard .rn{color:var(--dim)}.routecard .rt{margin-left:auto;font-size:7.5px;font-weight:700;text-transform:uppercase;border-radius:20px;padding:2px 7px;flex:none}
+.rt.sent{background:rgba(103,214,224,.16);color:var(--cyan)}.rt.wait{background:rgba(245,181,68,.16);color:var(--amber)}
+.appcard{margin-top:9px;border-radius:12px;border:1px solid rgba(103,214,224,.45);background:linear-gradient(150deg,rgba(103,214,224,.1),rgba(103,214,224,.02));padding:11px}
+.appcard .aph{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);font-weight:800;margin-bottom:8px}
+.appcard .apr{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:10.5px;border-bottom:1px solid var(--bds)}.appcard .apr:last-of-type{border-bottom:none}.appcard .apa{width:25px;height:25px;border-radius:50%;background:rgba(56,201,119,.18);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex:none}.appcard .apn b{color:var(--t)}.appcard .apn{color:var(--mute)}.appcard .aph2{margin-left:auto;font-size:11px;font-weight:700;color:var(--t);flex:none}
+.appact{display:flex;gap:8px;margin-top:10px}.appbtn{flex:1;text-align:center;padding:9px;border-radius:10px;font-size:11.5px;font-weight:700}.appbtn.no{border:1px solid var(--bd);color:var(--dim)}.appbtn.yes{background:var(--cyan);color:#04232A}
+.callout-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:8px}.callout{background:var(--bg2);border:1px solid var(--bd);border-left:3px solid var(--green);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--dim)}.callout.a{border-left-color:var(--amber)}.callout.c{border-left-color:var(--cyan)}.callout .ct{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--green);font-weight:700;display:block;margin-bottom:5px}.callout.a .ct{color:var(--amber)}.callout.c .ct{color:var(--cyan)}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--green:#1E8E50;--amber:#9A6B12;--cyan:#0E6E78}.view-toggle-bar,.frame-spec{display:none!important}.three,.specrow,.callout-row{grid-template-columns:1fr 1fr 1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.phone{background:#FFF!important;border-color:#999!important;box-shadow:none!important}@page{size:letter landscape;margin:.35in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · adoption-first · 3 musts · location is manager-side · icons inline</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Field Hand · Mano de Campo</span><span class="sep">›</span><span class="step current">F-DL2 · Daily Log + Clock-out (mobile) · rev 2</span></div>
+<h1>F-DL2 · Field Hand clock-out · warm, not watched</h1>
+<p>Reworked per founder feedback. The crew member's clock-out turns on <strong>three musts they control</strong> — <strong>daily note · cleaned up your work area · submitted pictures</strong> — not on surveillance. There's no "we tracked you on GPS all day" line in the worker's view; <strong>location and over-hours are manager-side signals</strong>, surfaced to the super, not waved in the worker's face. A caring mid-day buzz at ~8 hours invites a check-in rather than scolding. And how hard any of this pushes is <strong>owner-configurable</strong> (F-DL3) — because getting the crew to use it at all is step one.</p></div>
+
+<div class="three">
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>2:31</span><span>●●● 74%</span></div>
+<div class="nav-top"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span class="ttl">Field Hand</span><span class="dt">Mon · 2:31p</span></div>
+<div class="body">
+<div style="text-align:center;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:6px 0 12px">A · Mid-day buzz</div>
+<div class="nudge">
+<div class="ne">👋</div>
+<div class="nt">Slow down there, cowboy</div>
+<div class="nx">You're coming up on <b style="color:var(--t)">8 hours</b> today. Want to check in with Ana or Christian before you keep rolling?</div>
+<div class="nb"><button class="nbtn a">Message Ana</button><button class="nbtn b">All good, keep going</button></div>
+</div>
+<div class="priv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 00-7 7v3l-2 4h18l-2-4V9a7 7 0 00-7-7z"/></svg>This is just a heads-up — nobody's been pinged.</div>
+<div style="margin-top:14px;font-size:10.5px;color:var(--dim);line-height:1.6;padding:0 4px">A nudge that looks out <em>for</em> the worker. It fires on the phone (a buzz) as they approach the day's hours — framed as "check in," never "you're being watched."</div>
+</div>
+</div></div></div>
+
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>4:48</span><span>●●● 71%</span></div>
+<div class="nav-top"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span class="ttl">Daily Log · <b>heading out</b></span><span class="dt">Mon · 4:48p</span></div>
+<div class="body">
+<div style="text-align:center;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:6px 0 10px">B · Ready to clock out</div>
+<div class="who"><span class="av">CM</span><div><div class="nm">Carlos Mendoza</div><div class="rl">Wegrzyn kitchen</div></div><span class="tag">You</span></div>
+<div class="step-lb">Today's note</div>
+<div class="jobnote"><span class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></span><div><div class="jt">Framed north wall, hung uppers. Slab 1/8" short — holding cabinet set.</div><div class="jm"><span class="src">via voice</span><span class="filed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Filed</span></div></div></div>
+<div class="musts">
+<div class="mh"><span class="ml"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg></span><div><div class="ms">Before you head out</div><div class="mv">You're all set 👍</div></div></div>
+<div class="chk"><span class="ck ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><b>Daily note</b>&nbsp;filed</div>
+<div class="chk"><span class="ck ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><b>Work area</b>&nbsp;cleaned up</div>
+<div class="chk"><span class="ck ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><b>Pictures</b>&nbsp;submitted · 2</div>
+<div class="clockbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Clock out</div>
+<div class="hrs">7h 42m today · since 6:58a</div>
+<div class="route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Ana approves it from here</div>
+</div>
+</div>
+</div></div></div>
+
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>5:12</span><span>●●● 69%</span></div>
+<div class="nav-top"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span class="ttl">Heading out</span><span class="dt">Mon · 5:12p</span></div>
+<div class="body">
+<div style="text-align:center;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:6px 0 10px">C · Not quite yet (+ manager view)</div>
+<div class="musts blk">
+<div class="mh"><span class="ml"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></span><div><div class="ms">Hold up</div><div class="mv">Two things before you go</div></div></div>
+<div class="chk"><span class="ck ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><b>Daily note</b>&nbsp;filed</div>
+<div class="chk"><span class="ck no"></span><b>Clean up</b>&nbsp;your work area<span class="fix">Confirm</span></div>
+<div class="chk"><span class="ck no"></span><b>Add a photo</b>&nbsp;or two<span class="fix">+ Photo</span></div>
+<div class="clockbtn dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Clock out</div>
+<div class="hrs">Knock these out — takes 30 seconds.</div>
+</div>
+<div class="mgr-lb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 21c0-4 3.5-6 7-6s7 2 7 6"/></svg>What the manager sees</div>
+<div class="routecard">
+<div class="rr"><span class="ri" style="background:rgba(103,214,224,.16);color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 00-7 7v3l-2 4h18l-2-4V9a7 7 0 00-7-7z"/></svg></span><span class="rn"><b>+1h38m</b> over the window → Ana</span><span class="rt wait">Her call</span></div>
+<div class="rr"><span class="ri" style="background:rgba(106,114,130,.18);color:var(--mute)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v6M12 17v6M1 12h6M17 12h6"/></svg></span><span class="rn">OT &gt; rule would also notify <b>Admin</b></span><span class="rt wait">Rule</span></div>
+</div>
+<div class="appcard">
+<div class="aph">Ana's queue · 3 clock-outs</div>
+<div class="apr"><span class="apa">CM</span><span class="apn"><b style="color:var(--t)">Carlos M.</b> · +1h38m over</span><span class="aph2" style="color:var(--amber)">9:38</span></div>
+<div class="apr"><span class="apa">JR</span><span class="apn"><b style="color:var(--t)">Jorge R.</b> · clean</span><span class="aph2">8:02</span></div>
+<div class="appact"><button class="appbtn no">Send back</button><button class="appbtn yes">Approve</button></div>
+</div>
+</div>
+</div></div></div>
+</div>
+
+<div class="specrow">
+<div class="frame-spec"><h3>A · Mid-day buzz</h3>
+<h4 class="a">Look out for, don't watch</h4><ul>
+<li>Fires as a phone buzz near the day's hour line. Copy invites a <b>check-in</b> ("Message Ana / keep going"), never "you're over."</li>
+<li>"Nobody's been pinged" — the nudge is private to the worker first; escalation only if they blow past + the level allows.</li>
+<li>Playful tone (<em>"slow down there, cowboy"</em>) is the Light/Standard voice; Strict swaps to plain. Tone scales with F-DL3.</li>
+</ul></div>
+<div class="frame-spec"><h3>B · The three musts</h3>
+<h4>What clock-out turns on</h4><ul>
+<li><b>Daily note · Cleaned up work area · Submitted pictures.</b> The founder's must-haves — all things the worker controls.</li>
+<li><b>No surveillance line.</b> "On-site / GPS matched" is gone from the worker's view.</li>
+<li>Hours show as a quiet footnote ("7h 42m"), not a compliance gate.</li>
+<li>"Ana approves it from here" — the worker sees where it goes, plainly.</li>
+</ul></div>
+<div class="frame-spec"><h3>C · Not yet + manager side</h3>
+<h4 class="a">Friendlier block</h4><ul>
+<li>"Hold up — two things before you go" + the fastest fix per item. Never "Can't clock out."</li>
+</ul>
+<h4 class="c">Location/hours live here</h4><ul>
+<li>Over-window + OT are <b>manager-side signals</b> (Ana / Admin by rule), not the worker's checklist.</li>
+<li>Super's queue: Approve / Send back. Nothing auto-approves (D-053 two-artifact, audited).</li>
+<li>What routes, and how loud, is set in <b>F-DL3 guidance level</b>.</li>
+</ul></div>
+</div>
+
+<div class="callout-row"><div class="callout"><span class="ct">Three musts they own</span>Note, clean-up, photos — all within the worker's control. Compliance comes from doing the job right, not from being tracked.</div><div class="callout a"><span class="ct">Care, then nudge</span>The 8-hour buzz looks out for the worker first. Escalation is a last step, sized by the owner's chosen level.</div><div class="callout c"><span class="ct">Watching is the manager's job</span>GPS and over-hours are signals the super sees — never surfaced to the crew as "we were watching you."</div></div>
+</div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

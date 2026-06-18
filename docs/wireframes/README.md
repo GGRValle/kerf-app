@@ -39,6 +39,18 @@ The `--rh` (`#C9A876`) and `--rh-dim` (`#6B5938`) color tokens were introduced i
 
 When tokens disagree across revs, **the latest rev wins** (v5.1 > v5 > v4 > v3 > v2). v2's tokens are a strict subset of v5.1's.
 
+## Wireframe map and implementation train
+
+The current route-to-wireframe control plane lives beside this historical canon:
+
+- `wireframe-flow-map.html` - playable mobile/desktop map. Click source transitions to see the target face or a gap screen.
+- `wireframe-system-build-backlog.md` - generated implementation cards by lane, route, gate, and spine dependency.
+- `wireframe-system-lane-dispatches.md` - generated copy/paste dispatch blocks for Codex/Cursor lanes.
+- `wireframe-system-gap-register.md` - generated missing-face, transition-gap, and duplicate-ID register.
+- `wireframe-implementation-release-plan.md` - human-readable merge order and phone/browser gate for executing the implementation train.
+
+The map is the working bridge between Canon HTML and the live Right Hand app. A surface is not done because a Canon face exists; it is done when the live route matches that face on the correct device lane, preserves the named gate, and passes phone verification.
+
 ---
 
 ## Views Master vs historical canon

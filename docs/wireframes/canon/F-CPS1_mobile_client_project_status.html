@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-CPS1 · Mobile Project Status · client view (executed contract + pending CO)</title>
+<style>
+:root {
+  --kerf-bg: #0A0D11;
+  --kerf-bg-2: #14181F;
+  --kerf-surface: #1A1F28;
+  --kerf-surface-2: #232936;
+  --kerf-border: #2A3140;
+  --kerf-border-soft: #1F2530;
+  --kerf-text: #E8ECF1;
+  --kerf-text-dim: #98A1B3;
+  --kerf-text-mute: #6A7282;
+  --kerf-amber: #F5B544;
+  --kerf-green: #4ADE80;
+  --kerf-red: #F87171;
+  --kerf-blue: #7BA8FF;
+  --kerf-violet: #A78BFA;
+  --kerf-magenta: #E879A8;
+  --kerf-cyan: #67D6E0;
+  --field-green: #38C977;
+  --right-hand: #C9A961;
+
+  /* Paper tokens — independent of theme · client artifacts always render on light paper */
+  --paper-bg: #FCFCFA;
+  --paper-text: #1A1A1A;
+  --paper-text-dim: #555555;
+  --paper-text-mute: #888888;
+  --paper-border: #DDD8CC;
+  --paper-accent: #8B6F1E; /* deep gold, matches right-hand on light */
+  --paper-rule: #C9C2B0;
+}
+/* ===== Light mode (theme toggle) ===== */
+body.light-mode {
+  --kerf-bg: #FFFFFF;
+  --kerf-bg-2: #F4F6F9;
+  --kerf-surface: #FFFFFF;
+  --kerf-surface-2: #EBEEF2;
+  --kerf-border: #C9D0D8;
+  --kerf-border-soft: #DFE3E8;
+  --kerf-text: #0A0D11;
+  --kerf-text-dim: #4A5462;
+  --kerf-text-mute: #7B8492;
+}
+body.light-mode .frame-render { background: linear-gradient(180deg, #F4F6F9 0%, #FFFFFF 100%) !important; }
+body.light-mode .view-toggle-bar { background: rgba(255,255,255,0.92) !important; }
+body.light-mode .phone { box-shadow: 0 16px 50px rgba(0,0,0,0.15); }
+body.light-mode .phone-notch { background: #1a1a1d !important; }
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--kerf-bg); color: var(--kerf-text); line-height: 1.5; font-size: 13px; }
+.page { max-width: 1500px; margin: 0 auto; padding: 32px 24px 80px; }
+
+.view-toggle-bar { position: sticky; top: 0; z-index: 100; background: rgba(10,13,17,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--kerf-border); padding: 8px 24px; margin: -32px -24px 28px; display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--kerf-text-dim); }
+.view-toggle-bar .vtb-label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kerf-text-mute); font-weight: 700; }
+.view-toggle-bar .vtb-options { display: flex; gap: 2px; background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-radius: 8px; padding: 2px; }
+.view-toggle-bar .vtb-tab { padding: 5px 12px; font-size: 11px; border-radius: 6px; color: var(--kerf-text-mute); cursor: pointer; font-weight: 600; }
+.view-toggle-bar .vtb-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.view-toggle-bar .vtb-hint { margin-left: auto; font-size: 10.5px; color: var(--kerf-text-mute); }
+body.presentation-mode .page { max-width: none; padding: 0 24px 80px; }
+body.presentation-mode .frame { grid-template-columns: 1fr; gap: 14px; }
+body.presentation-mode .frame-spec { display: none; }
+
+.page-header { border-bottom: 1px solid var(--kerf-border); padding-bottom: 22px; margin-bottom: 32px; }
+.page-header .crumb { font-size: 11px; color: var(--kerf-text-mute); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.page-header .crumb .step { color: var(--kerf-text-dim); }
+.page-header .crumb .step.current { color: var(--kerf-amber); }
+.page-header .crumb .sep { color: var(--kerf-border); margin: 0 8px; }
+.page-header h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.page-header p { color: var(--kerf-text-dim); margin: 0; font-size: 13px; max-width: 1080px; line-height: 1.6; }
+.page-header p em { color: var(--right-hand); font-style: normal; }
+.page-header p code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+
+.frame { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 56px; align-items: start; }
+.frame-label { grid-column: 1 / -1; font-size: 13px; letter-spacing: 0.04em; color: var(--kerf-amber); font-weight: 600; margin-bottom: 4px; }
+.frame-narr { grid-column: 1 / -1; margin: 0 0 14px; color: var(--kerf-text-dim); font-size: 12.5px; line-height: 1.7; max-width: 1080px; }
+.frame-narr em { color: var(--right-hand); font-style: normal; }
+.frame-narr code { font-family: "SF Mono", Menlo, monospace; padding: 1px 4px; background: var(--kerf-bg-2); color: var(--right-hand); border-radius: 3px; font-size: 11px; }
+.frame-render { border: 1px solid var(--kerf-border); border-radius: 12px; background: linear-gradient(180deg, #14181F 0%, #0A0D11 100%); padding: 32px; display: flex; justify-content: center; }
+.frame-spec { border: 1px solid var(--kerf-border); border-radius: 12px; background: var(--kerf-bg-2); padding: 18px 16px; font-size: 12px; color: var(--kerf-text-dim); height: fit-content; position: sticky; top: 60px; }
+.frame-spec h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin: 0 0 10px; }
+.frame-spec h4 { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kerf-amber); font-weight: 700; margin: 14px 0 6px; }
+.frame-spec h4:first-of-type { margin-top: 0; }
+.frame-spec p { margin: 0 0 8px; line-height: 1.6; }
+.frame-spec em { color: var(--right-hand); font-style: normal; }
+.frame-spec ul { padding-left: 16px; margin: 0 0 8px; }
+.frame-spec li { margin-bottom: 4px; line-height: 1.55; }
+.frame-spec code { background: var(--kerf-surface); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--right-hand); }
+.frame-spec .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 700; margin-right: 4px; }
+.frame-spec .badge.canon { background: rgba(245,181,68,0.16); color: var(--kerf-amber); }
+.frame-spec .badge.client { background: rgba(201,169,97,0.16); color: var(--right-hand); }
+
+/* Phone (dark chrome around light paper) */
+.phone { width: 380px; background: var(--kerf-bg); border: 1.5px solid var(--kerf-border); border-radius: 42px; padding: 14px; position: relative; box-shadow: 0 16px 50px rgba(0,0,0,0.5); }
+.phone-notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 124px; height: 26px; background: var(--kerf-bg); border-radius: 0 0 16px 16px; z-index: 5; }
+.phone-screen { background: var(--kerf-bg); border-radius: 30px; overflow: hidden; height: 740px; display: flex; flex-direction: column; position: relative; }
+
+.status-bar { display: flex; justify-content: space-between; padding: 13px 24px 6px; font-size: 11.5px; color: var(--kerf-text); font-weight: 600; }
+.status-bar .right { color: var(--kerf-text-dim); }
+
+/* Top chrome — dark · operator-facing */
+.top-chrome {
+  padding: 6px 14px 10px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--kerf-border-soft);
+}
+.tc-back {
+  display: flex; align-items: center; gap: 3px;
+  color: var(--kerf-amber); font-size: 12.5px; font-weight: 600;
+}
+.tc-back svg { width: 16px; height: 16px; fill: currentColor; }
+.tc-title { flex: 1; text-align: center; font-size: 13px; color: var(--kerf-text); font-weight: 600; }
+.tc-title .tc-sub { display: block; font-size: 9.5px; color: var(--kerf-text-mute); font-weight: 500; margin-top: 1px; letter-spacing: 0.04em; }
+.tc-action { color: var(--kerf-text-mute); }
+.tc-action svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Operator-only controls bar (above paper) */
+.operator-controls {
+  background: var(--kerf-bg-2);
+  border-bottom: 1px solid var(--kerf-border-soft);
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.op-eyebrow {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--right-hand); font-weight: 700;
+  display: flex; align-items: center; gap: 6px;
+}
+.op-eyebrow .op-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--right-hand); }
+.op-controls-row {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+}
+.op-segmented {
+  display: flex; gap: 2px;
+  background: var(--kerf-surface);
+  border: 1px solid var(--kerf-border-soft);
+  border-radius: 7px;
+  padding: 2px;
+}
+.op-seg-tab {
+  padding: 5px 10px;
+  font-size: 10.5px;
+  border-radius: 5px;
+  color: var(--kerf-text-mute);
+  font-weight: 600;
+  cursor: pointer;
+}
+.op-seg-tab.active { background: var(--kerf-amber); color: #1A1300; }
+.op-toggle {
+  display: flex; align-items: center; gap: 7px;
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--kerf-text-dim);
+  font-weight: 600;
+}
+.op-toggle-switch {
+  width: 28px; height: 16px;
+  background: var(--kerf-surface-2);
+  border-radius: 9px;
+  position: relative;
+  cursor: pointer;
+}
+.op-toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 12px; height: 12px;
+  background: var(--kerf-text-dim);
+  border-radius: 50%;
+  transition: all 0.18s ease;
+}
+.op-toggle-switch.on { background: rgba(245,181,68,0.30); }
+.op-toggle-switch.on::after { left: 14px; background: var(--kerf-amber); }
+
+/* Paper · client-facing artifact · ALWAYS light regardless of theme */
+.paper-area {
+  flex: 1; overflow-y: auto;
+  background: linear-gradient(180deg, #1f2024 0%, #14181F 100%);
+  padding: 16px 14px;
+}
+.paper {
+  background: var(--paper-bg);
+  color: var(--paper-text);
+  border-radius: 4px;
+  padding: 22px 22px 24px;
+  font-family: "Times New Roman", Georgia, serif;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.30), 0 0 0 1px rgba(0,0,0,0.08);
+  line-height: 1.55;
+}
+
+/* Letterhead */
+.letterhead {
+  border-bottom: 2px solid var(--paper-accent);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+.letterhead-row { display: flex; justify-content: space-between; align-items: baseline; }
+.letterhead-brand {
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 16px;
+  color: var(--paper-text);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.letterhead-license {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 9px;
+  color: var(--paper-text-mute);
+  letter-spacing: 0.06em;
+}
+.letterhead-meta {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 9px;
+  color: var(--paper-text-mute);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+/* Proposal title block */
+.proposal-title-block {
+  margin-bottom: 18px;
+}
+.proposal-eyebrow {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper-accent);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.proposal-title {
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 19px;
+  color: var(--paper-text);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.proposal-meta {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 9.5px;
+  color: var(--paper-text-dim);
+  line-height: 1.55;
+}
+.proposal-meta strong { color: var(--paper-text); }
+
+/* Section heading */
+.paper-section { margin-bottom: 18px; }
+.paper-section-title {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-accent);
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--paper-rule);
+}
+
+/* Scope of work · summary view */
+.scope-line {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--paper-rule);
+  font-size: 11px;
+  align-items: baseline;
+}
+.scope-line:last-child { border-bottom: none; }
+.scope-line .sl-name { color: var(--paper-text); }
+.scope-line .sl-name strong { font-weight: 600; }
+.scope-line .sl-name .sl-meta { display: block; font-size: 9.5px; color: var(--paper-text-mute); margin-top: 1px; font-style: italic; }
+.scope-line .sl-amount {
+  color: var(--paper-text);
+  font-weight: 600;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.scope-line .sl-margin {
+  display: block;
+  font-size: 8.5px;
+  color: var(--paper-text-mute);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin-top: 1px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+/* CO modification callout (visible to client when they're seeing the up-to-date proposal) */
+.co-callout {
+  background: rgba(245,181,68,0.06);
+  border-left: 3px solid var(--paper-accent);
+  padding: 8px 11px;
+  margin: 12px 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 10.5px;
+  color: var(--paper-text-dim);
+  line-height: 1.5;
+  border-radius: 0 4px 4px 0;
+}
+.co-callout strong { color: var(--paper-text); font-weight: 700; }
+
+/* Investment summary */
+.investment-block {
+  background: rgba(139,111,30,0.05);
+  border: 1px solid var(--paper-rule);
+  border-radius: 4px;
+  padding: 12px 14px;
+  margin: 14px 0 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.inv-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 4px 0;
+  font-size: 11px;
+  color: var(--paper-text-dim);
+}
+.inv-row.total {
+  padding-top: 8px; margin-top: 4px;
+  border-top: 2px solid var(--paper-accent);
+  font-size: 13px;
+  color: var(--paper-text);
+  font-weight: 700;
+}
+.inv-row .inv-amount {
+  font-family: "SF Mono", Menlo, monospace;
+  font-weight: 600;
+}
+.inv-row.total .inv-amount { font-size: 14px; }
+
+/* Exclusions / allowances list */
+.paper-list {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 10.5px;
+  color: var(--paper-text-dim);
+  line-height: 1.6;
+}
+.paper-list li {
+  padding: 2px 0 2px 14px;
+  position: relative;
+}
+.paper-list li::before {
+  content: '·';
+  position: absolute; left: 4px;
+  color: var(--paper-accent);
+  font-weight: 700;
+}
+
+/* Built-from footer — Kerf brand quiet · client artifact */
+.built-from-footer {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--paper-rule);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 9px;
+  color: var(--paper-text-mute);
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+.built-from-footer strong { color: var(--paper-text-dim); font-weight: 600; }
+
+/* Action ribbon · operator-facing controls below */
+.action-ribbon {
+  flex-shrink: 0; background: var(--kerf-bg-2); border-top: 1px solid var(--kerf-border);
+  padding: 8px 10px; display: flex; gap: 6px; align-items: center;
+}
+.ar-btn {
+  flex: 1; padding: 10px 8px; text-align: center;
+  background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft);
+  border-radius: 10px; font-size: 11px; color: var(--kerf-text); font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer;
+}
+.ar-btn svg { width: 14px; height: 14px; fill: currentColor; }
+.ar-btn .ar-sub { font-size: 9px; color: var(--kerf-text-mute); margin-top: 1px; font-weight: 500; }
+.ar-btn.primary { background: var(--kerf-amber); color: #1A1300; border-color: var(--kerf-amber); }
+.ar-btn.primary .ar-sub { color: rgba(26,19,0,0.65); }
+
+/* Callouts */
+.callout-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+.callout { background: var(--kerf-bg-2); border: 1px solid var(--kerf-border); border-left: 3px solid var(--right-hand); border-radius: 8px; padding: 12px 14px; font-size: 11.5px; color: var(--kerf-text-dim); line-height: 1.55; }
+.callout strong { color: var(--kerf-text); font-weight: 600; }
+.callout em { color: var(--right-hand); font-style: normal; }
+.callout .callout-title { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--right-hand); font-weight: 700; margin-bottom: 5px; }
+
+.spec-loop { background: var(--kerf-surface); border: 1px solid var(--kerf-border-soft); border-radius: 8px; padding: 11px 12px; margin-bottom: 14px; }
+.spec-loop .sl-title { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--kerf-text); font-weight: 700; margin-bottom: 7px; }
+.spec-loop .sl-step { display: flex; gap: 8px; align-items: flex-start; font-size: 11px; color: var(--kerf-text-dim); margin-bottom: 5px; line-height: 1.5; }
+.spec-loop .sl-step .sl-dot { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--kerf-bg-2); color: var(--kerf-text-mute); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 700; margin-top: 1px; }
+.spec-loop .sl-step.done .sl-dot { background: var(--field-green); color: #0A1A0F; }
+.spec-loop .sl-step.current .sl-dot { background: var(--kerf-amber); color: #1A1300; }
+.spec-loop .sl-step.current .sl-name { color: var(--kerf-text); font-weight: 600; }
+/* ===== Print mode · canon 2026-05-18 PM late · auto light + chrome hidden ===== */
+@media print {
+  /* Force light mode regardless of theme toggle */
+  body, body.light-mode {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+    --kerf-bg: #FFFFFF;
+    --kerf-bg-2: #F4F6F9;
+    --kerf-surface: #FFFFFF;
+    --kerf-surface-2: #EBEEF2;
+    --kerf-border: #999999;
+    --kerf-border-soft: #C9D0D8;
+    --kerf-text: #0A0D11;
+    --kerf-text-dim: #4A5462;
+    --kerf-text-mute: #6B7280;
+  }
+  /* Hide screen-only chrome */
+  .view-toggle-bar { display: none !important; }
+  /* Hide metadata sidebar — focus on the wireframe itself */
+  .frame-spec { display: none !important; }
+  /* Force frame to single column + page-break-friendly */
+  .frame {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px !important;
+  }
+  .frame:not(:first-of-type) { page-break-before: always; }
+  /* Frame-render — light background, simple border */
+  .frame-render {
+    background: #FFFFFF !important;
+    padding: 12px !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+  }
+  /* Frame label + narration recolor */
+  .frame-label { color: #6B5119 !important; }
+  .frame-narr { color: #4A5462 !important; }
+  .frame-narr em { color: #6B5119 !important; }
+  /* Page setup */
+  @page { size: letter; margin: 0.5in; }
+  .page { max-width: none !important; padding: 0 !important; }
+  .page-header { border-bottom-color: #999 !important; }
+  .page-header h1 { color: #0A0D11 !important; }
+  .page-header p { color: #4A5462 !important; }
+  /* Phone + desktop frame chrome */
+  .phone, .desktop-frame {
+    background: #FFFFFF !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+  }
+  .phone-screen, .app-body, .main, .body, .app-chrome {
+    background: #FFFFFF !important;
+    color: #0A0D11 !important;
+  }
+  .top-chrome, .top-bar, .bottom-bar {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #0A0D11 !important;
+  }
+  /* Sidebar (desktop) — light backdrop */
+  .sidebar { background: #F4F6F9 !important; border-right-color: #999 !important; color: #0A0D11 !important; }
+  .sb-item, .sb-subitem, .sb-section-label { color: #0A0D11 !important; }
+  /* Cards + rows */
+  .grid-tile, .text-card, .rail-card, .doc-preview, .history-card, .prov-card, .project-row, .money-row, .rh-summary, .rh-card, .edit-summary {
+    background: #FFFFFF !important;
+    border-color: #C9D0D8 !important;
+    color: #0A0D11 !important;
+  }
+  /* Callout row at bottom — keep but lighten */
+  .callout {
+    background: #F4F6F9 !important;
+    border-color: #999 !important;
+    color: #4A5462 !important;
+    page-break-inside: avoid;
+  }
+  .callout strong { color: #0A0D11 !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="view-toggle-bar" id="vtb">
+  <span class="vtb-label">View</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-mode="annotated">Annotated</span>
+    <span class="vtb-tab" data-mode="presentation">True scale</span>
+  </div>
+  <span class="vtb-label" style="margin-left: 14px;">Theme</span>
+  <div class="vtb-options">
+    <span class="vtb-tab active" data-theme="dark">Dark</span>
+    <span class="vtb-tab" data-theme="light">Light</span>
+  </div>
+  <span class="vtb-hint">Press <kbd>V</kbd> to toggle</span>
+</div>
+
+<div class="page-header">
+  <div class="crumb">
+    <span class="step">F-PR2 · Project Detail</span>
+    <span class="sep">›</span>
+    <span class="step">F-B2 · Decision Card · "Preview client view"</span>
+    <span class="sep">›</span>
+    <span class="step current">F-CPS1 · Project Status · client view (post-contract)</span>
+  </div>
+  <h1>F-CPS1 · Mobile Project Status · current scope · client view</h1>
+  <p>
+    Tier 2 surface. Reached via "Preview client view" on the Decision Card OR from Project Detail when the operator wants to see what the client currently sees in their portal. <em>This is NOT a proposal preview</em> (those are pre-contract · F-PV1 covers that). This is the <strong>post-contract client view</strong> — Hernandez EST-014 was signed 2026-04-22 and is now an executed contract; CO-002 is a pending modification. Together they render as the current up-to-date status the client sees. Same convention as F-B1c: <em>dark phone chrome wraps a light paper artifact</em>, because client-facing artifacts always render on light paper regardless of operator theme. Operator controls in a thin band above the paper (itemization toggle + Show margin · operator-only). Per <code>kerf_ai_disclosure_pattern.md</code>: client artifacts say <em>"contractor-reviewed and approved"</em>, never Right Hand-branded. Canon distinction made explicit: <strong>proposal = pre-contract (revisions modify it) · contract = post-signing (change orders modify it).</strong>
+  </p>
+</div>
+
+<div class="frame">
+  <div class="frame-label">Frame · F-CPS1 · Mobile Project Status · Hernandez · executed contract EST-014 + pending CO-002 · summary itemization · margin hidden</div>
+  <p class="frame-narr">
+    Christian opened the client view from F-B2 Decision Card ("Preview client view"). The surface shows the current state Maria H. would see in her client portal — the executed contract (EST-014, signed 2026-04-22) plus the pending CO-002 modification (awaiting Maria's approval). <em>Because EST-014 is signed, scope changes are change orders, not revisions.</em> Operator controls let Christian switch itemization detail and toggle margin visibility (margin OFF by default = exactly what client sees). The paper renders: GGR letterhead, project title with contract status, scope-of-work by phase category, CO-002 as its own explicit scope-of-work entry (so the math reads correctly), investment summary that adds base contract + pending CO = total-if-CO-approved, allowances, exclusions, terms. Footer reads <em>"contractor-reviewed and approved · prepared with Kerf"</em>. Action ribbon: <em>Edit</em> (back to F-G1 Draft for CO-002) · <em>Send to client</em> (triggers V18 send gate · separate confirmation).
+  </p>
+
+  <div class="frame-render">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+
+        <div class="status-bar"><span>15:08</span><span class="right">●●● 64%</span></div>
+
+        <!-- Top chrome -->
+        <div class="top-chrome">
+          <div class="tc-back">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back
+          </div>
+          <div class="tc-title">
+            Project status
+            <span class="tc-sub">client view · what Maria sees</span>
+          </div>
+          <div class="tc-action">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 8a3 3 0 0 0-2.74 1.79l-7.34-4.16a3 3 0 1 0-1.13 2.04l7.55 4.27a2.99 2.99 0 0 0 0 1.92l-7.55 4.27a3 3 0 1 0 1.13 2.04l7.34-4.16A3 3 0 1 0 18 8z"/></svg>
+          </div>
+        </div>
+
+        <!-- Operator controls — above paper, operator-only -->
+        <div class="operator-controls">
+          <div class="op-eyebrow"><span class="op-dot"></span> Operator controls (not visible to client)</div>
+          <div class="op-controls-row">
+            <div class="op-segmented">
+              <span class="op-seg-tab">Detailed</span>
+              <span class="op-seg-tab active">Summary</span>
+              <span class="op-seg-tab">Lump sum</span>
+            </div>
+            <div class="op-toggle">
+              <span>Show margin</span>
+              <div class="op-toggle-switch"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paper -->
+        <div class="paper-area">
+          <div class="paper">
+
+            <!-- Letterhead -->
+            <div class="letterhead">
+              <div class="letterhead-row">
+                <div class="letterhead-brand">GGR Design + Remodeling</div>
+                <div class="letterhead-license">CSLB #1054872</div>
+              </div>
+              <div class="letterhead-meta">San Diego, California · ggrremodel.com · (619) 555-0142</div>
+            </div>
+
+            <!-- Project title -->
+            <div class="proposal-title-block">
+              <div class="proposal-eyebrow">Project status · current scope</div>
+              <div class="proposal-title">Pantry Conversion · Hernandez Residence</div>
+              <div class="proposal-meta">
+                <strong>Maria &amp; Mark Hernandez</strong><br/>
+                1247 Marlborough Ave · San Diego CA 92103<br/>
+                Contract EST-014 · signed 2026-04-22 · Pending CO-002 · status as of 2026-05-17
+              </div>
+            </div>
+
+            <!-- Scope of work (summary itemization) -->
+            <div class="paper-section">
+              <div class="paper-section-title">Scope of work</div>
+
+              <!-- Base contract lines (EST-014 · signed 2026-04-22) -->
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Demolition &amp; framing</strong>
+                  <span class="sl-meta">Remove washer/dryer · frame east wall</span>
+                </div>
+                <div class="sl-amount">$12,400</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Electrical</strong>
+                  <span class="sl-meta">Cap supplies · existing outlet retained</span>
+                </div>
+                <div class="sl-amount">$4,200</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Plumbing termination</strong>
+                  <span class="sl-meta">Cap behind drywall · dryer vent cap + patch</span>
+                </div>
+                <div class="sl-amount">$2,850</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Cabinetry &amp; shelving</strong>
+                  <span class="sl-meta">Factory-finish shaker · base shelving package</span>
+                </div>
+                <div class="sl-amount">$48,200</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Finishes &amp; closeout</strong>
+                  <span class="sl-meta">Drywall patch · paint · hardware · final clean</span>
+                </div>
+                <div class="sl-amount">$8,550</div>
+              </div>
+
+              <div class="scope-line">
+                <div class="sl-name">
+                  <strong>Project management &amp; general</strong>
+                  <span class="sl-meta">Permits · supervision · trash · scheduling</span>
+                </div>
+                <div class="sl-amount">$11,000</div>
+              </div>
+
+              <!-- CO-002 as its own explicit scope line · math now reads correctly -->
+              <div class="scope-line" style="background: rgba(245,181,68,0.05); padding: 8px 0; margin-top: 4px;">
+                <div class="sl-name">
+                  <strong>CO-002 · pantry scope expansion</strong>
+                  <span class="sl-meta">Floor-to-ceiling shelving expanded to long wall · counter run with dedicated circuit · door swing reversal · <em>pending your approval</em></span>
+                </div>
+                <div class="sl-amount" style="color: var(--paper-accent);">+$14,820</div>
+              </div>
+
+              <!-- CO-002 transparency callout · explains the change, doesn't restate the number -->
+              <div class="co-callout">
+                <strong>About CO-002</strong> · Added 2026-05-17 after Christian's site walk with Maria. The original signed contract did not include a long-wall shelving expansion or a dedicated counter circuit; these were discussed and Maria asked for them on-site. CO-002 captures that scope change for your formal approval. <em>Reflected in the revised total below.</em>
+              </div>
+            </div>
+
+            <!-- Investment summary · post-contract math -->
+            <div class="paper-section">
+              <div class="paper-section-title">Investment summary</div>
+              <div class="investment-block">
+                <div class="inv-row">
+                  <span>Contract (EST-014, signed 2026-04-22)</span>
+                  <span class="inv-amount">$87,200.00</span>
+                </div>
+                <div class="inv-row">
+                  <span>Pending CO-002 · awaiting your approval</span>
+                  <span class="inv-amount">+ $14,820.00</span>
+                </div>
+                <div class="inv-row total">
+                  <span>If CO-002 approved · total</span>
+                  <span class="inv-amount">$102,020.00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Allowances -->
+            <div class="paper-section">
+              <div class="paper-section-title">Allowances included</div>
+              <ul class="paper-list">
+                <li>Cabinetry · $12,000 (included in scope above)</li>
+                <li>Tile · $4,000 (selections by client)</li>
+                <li>Hardware · $1,200 (cabinet pulls, knobs, hinges)</li>
+              </ul>
+            </div>
+
+            <!-- Exclusions -->
+            <div class="paper-section">
+              <div class="paper-section-title">Exclusions</div>
+              <ul class="paper-list">
+                <li>Light fixtures (purchased by client, GGR installs)</li>
+                <li>Structural modifications to existing walls</li>
+                <li>Tile pattern design (selections by Maria H.)</li>
+                <li>Permit fees beyond standard residential remodel</li>
+              </ul>
+            </div>
+
+            <!-- Terms (brief) -->
+            <div class="paper-section">
+              <div class="paper-section-title">Terms</div>
+              <ul class="paper-list">
+                <li>Deposit · 25% on contract signing</li>
+                <li>Progress payments · 25% at framing complete · 25% at cabinetry installed · 25% at substantial completion</li>
+                <li>Schedule · 6–8 weeks from start, weather and material availability permitting</li>
+                <li>Warranty · 1 year workmanship from substantial completion</li>
+              </ul>
+            </div>
+
+            <!-- Built-from footer · client artifact disclosure -->
+            <div class="built-from-footer">
+              <strong>Contractor-reviewed and approved.</strong> Prepared with Kerf. Numbers reflect Christian Asdal's review of past similar projects, today's field measurements, and direct conversation with Maria. Questions, changes, or clarifications: call (619) 555-0142 or reply to this proposal.
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Action ribbon -->
+        <div class="action-ribbon">
+          <button class="ar-btn">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zm17.71-10.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></svg>
+            Edit
+          </button>
+          <button class="ar-btn">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 12v7H5v-7H3v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7zm-6-2v-7h-2v7H8l4 4 4-4z"/></svg>
+            Export PDF
+          </button>
+          <button class="ar-btn primary">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            Send
+            <span class="ar-sub">V18 gate</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec sidebar -->
+  <div class="frame-spec">
+    <h3>F-PV1 · Spec</h3>
+
+    <h4>Build position</h4>
+    <div class="spec-loop">
+      <div class="sl-title">Client-facing artifact surfaces</div>
+      <div class="sl-step done"><span class="sl-dot">✓</span><span>F-B1c · Decision Card client preview (CO-level)</span></div>
+      <div class="sl-step current"><span class="sl-dot">PS</span><span><span class="sl-name">F-CPS1</span> · Project Status · client view <em>(this · post-contract)</em></span></div>
+      <div class="sl-step"><span class="sl-dot">PV</span><span>F-PV1 · Proposal View · client preview (pre-contract · Patel ADU)</span></div>
+    </div>
+
+    <h4>Canon distinction · proposal vs contract vs CO</h4>
+    <ul>
+      <li><strong>Proposal</strong> · unsigned · pre-contract · revisions modify it · client previews via F-PV1</li>
+      <li><strong>Contract</strong> · signed proposal · post-signing · change orders modify it · client status views via F-CPS1 (this surface)</li>
+      <li><strong>Change order</strong> · scope modification to an executed contract · CO previews via F-B1c (CO-level only)</li>
+      <li>F-CPS1 exists because clients sometimes need to see the current project status (contract + pending COs together) without the contractor sending a separate document for each piece</li>
+    </ul>
+
+    <h4>Dark chrome · light paper · ALWAYS</h4>
+    <ul>
+      <li><span class="badge client">client</span>Phone chrome theme-aware (dark by default, flips with toggle)</li>
+      <li><span class="badge client">client</span><strong>Paper artifact stays light regardless of theme</strong> · per F-B1c convention · client artifacts always render on light paper because that's what gets sent/printed</li>
+      <li>Paper has its own color tokens (<code>--paper-*</code>) that don't flip with theme</li>
+      <li>Even in dark mode, the operator sees a light document inside their dark phone chrome — accurate preview of what client receives</li>
+    </ul>
+
+    <h4>Operator controls (not visible to client)</h4>
+    <p>Thin band above paper · marked "Operator controls (not visible to client)":</p>
+    <ul>
+      <li><strong>Itemization segmented control:</strong> Detailed (every line) / Summary (this view · phase totals) / Lump sum (single total only). Operator chooses the granularity the client receives.</li>
+      <li><strong>Show margin toggle:</strong> OFF by default = client view. ON = operator-only annotation showing margin per line (small italic text under each amount). Toggle clearly labeled so operator never accidentally sends a margin-visible version.</li>
+    </ul>
+
+    <h4>Paper structure (what client actually sees)</h4>
+    <ul>
+      <li><strong>Letterhead</strong> · GGR brand · CSLB license · contact</li>
+      <li><strong>Proposal title block</strong> · "Pantry Conversion · Hernandez Residence" · revision number · proposal # · date</li>
+      <li><strong>Scope of work</strong> · 6 phase categories with amounts (in summary itemization · would be more granular in Detailed)</li>
+      <li><strong>CO-002 callout</strong> · transparent revision notice · client sees what changed and why (the field walk that surfaced the expansion)</li>
+      <li><strong>Investment summary</strong> · base + revision + total · the headline numbers</li>
+      <li><strong>Allowances</strong> · cabinetry / tile / hardware</li>
+      <li><strong>Exclusions</strong> · 4 items in plain English</li>
+      <li><strong>Terms</strong> · payment schedule · timeline · warranty</li>
+      <li><strong>Built-from footer</strong> · "contractor-reviewed and approved · prepared with Kerf · numbers reflect Christian's review of past similar projects, today's field measurements, and direct conversation with Maria"</li>
+    </ul>
+
+    <h4>Client-facing AI disclosure rule</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>Per <code>kerf_ai_disclosure_pattern.md</code> §13 · client artifacts state <em>"contractor-reviewed and approved"</em>, never <em>"AI-assisted by Kerf Right Hand"</em></li>
+      <li><span class="badge canon">canon</span>The contractor (Christian) is the accountable party · Kerf is the tool · disclosure reflects accountability</li>
+      <li><span class="badge canon">canon</span>"Prepared with Kerf" footer is the only Kerf brand on the artifact — quiet attribution, not co-author</li>
+      <li><span class="badge canon">canon</span>No provider attribution (no "Powered by Llama" or "Built with Claude")</li>
+      <li><span class="badge canon">canon</span>"Numbers reflect Christian's review of past similar projects, today's field measurements, and direct conversation with Maria" — translates the Field → Past Jobs → Pricing continuity into client-facing English without exposing internal mechanics</li>
+    </ul>
+
+    <h4>Continuity made client-readable</h4>
+    <p>The same Field → Scope → Money chain that's visible to the operator at F-PR2 ("Built from: field walk → transcript → priced against your past 11 pantry/cabinetry jobs") gets re-rendered for the client at F-PV1 as plain, trustworthy English:</p>
+    <p><em>"Numbers reflect Christian's review of past similar projects, today's field measurements, and direct conversation with Maria."</em></p>
+    <ul>
+      <li>Past similar projects = the cohort comparable</li>
+      <li>Today's field measurements = the RoomPlan scan from F-RC1</li>
+      <li>Direct conversation with Maria = the transcript from F-F1 (exception-tier · the operator's accountability comes through)</li>
+    </ul>
+    <p>The client sees the substance of the trust chain without seeing the mechanics. That's the doctrine: load-bearing in system, lightweight in experience.</p>
+
+    <h4>V18 send gate</h4>
+    <ul>
+      <li>The "Send" button on the action ribbon is labeled with <em>"V18 gate"</em> — Send is the external send gate from Operating Model Canon validator wall</li>
+      <li>Tapping Send opens a separate confirmation flow (out of scope for this frame) · checks: delivery channel · client email · cc/bcc · attachments · final review</li>
+      <li>This is the LAST gate before the artifact leaves Kerf's control</li>
+      <li>Per the Decision Card canon: approving on F-B1/B2 commits scope/pricing/terms; external send is a separate gate (here)</li>
+    </ul>
+
+    <h4>Doctrine applied</h4>
+    <ul>
+      <li><span class="badge canon">canon</span>One primary cognitive job · operator reviews what client will see, decides whether to send</li>
+      <li><span class="badge canon">canon</span>Lead with smart summary · proposal title + meta + scope in one scan</li>
+      <li><span class="badge canon">canon</span>Operator-only controls clearly separated from client artifact</li>
+      <li><span class="badge canon">canon</span>Plain English on client artifact · no canon vocab leaks · no agent names</li>
+      <li><span class="badge canon">canon</span>Money displayed as dollars · stored as cents per CLAUDE.md</li>
+      <li><span class="badge canon">canon</span>Light + dark theme · paper stays light regardless · client receives the same artifact whether operator was on dark or light</li>
+    </ul>
+
+    <h4>Routes</h4>
+    <ul>
+      <li>Back → F-B2 Decision Card · or F-G1 Draft Review (whichever drilled from)</li>
+      <li>Share icon (top right) → action sheet (export PDF · email link · copy proposal text · screenshot)</li>
+      <li>Itemization segmented control → re-renders scope-of-work section at different granularity (Detailed = every CO line · Summary = phase categories · Lump sum = single total + scope-of-work in paragraph form)</li>
+      <li>Show margin toggle → adds small italic margin annotation per scope line (operator-internal only)</li>
+      <li>Edit → F-G1 Draft Review (operator can revise before sending)</li>
+      <li>Export PDF → generates client-ready PDF · attaches to Hernandez project Files tab</li>
+      <li>Send → V18 external send gate (separate confirmation flow)</li>
+    </ul>
+
+    <h4>What this surface refuses to be</h4>
+    <ul>
+      <li>A spreadsheet (paper-style document, not a grid)</li>
+      <li>A workstation with toolbars and floating panels</li>
+      <li>An itemized line-by-line editor (Edit routes to F-G1 for that)</li>
+      <li>A multi-step wizard for "build a proposal" (the proposal is built upstream at F-G1 · F-PV1 is just preview)</li>
+      <li>A Kerf-branded artifact (the artifact is GGR-branded · Kerf is the tool · "prepared with Kerf" is the only attribution)</li>
+      <li>A surface that exposes margin to the client (margin toggle defaults OFF · clearly labeled operator-only)</li>
+    </ul>
+
+    <h4>Cross-references</h4>
+    <ul>
+      <li><code>proposal_review_phase2/F-22_mobile_proposal_review.html</code> · superseded · operator-internal review</li>
+      <li><code>proposal_review_phase2/F-24_client_render_variant_a.html</code> + <code>F-24a</code> · client render references · superseded</li>
+      <li><code>F-B1c_mobile_decision_card_client_preview.html</code> · sibling · CO-level preview · same paper-on-dark convention</li>
+      <li><code>F-G1_desktop_draft_review.html</code> · upstream · operator-internal scope/confidence/pricing</li>
+      <li><code>F-B1_mobile_decision_card.html</code> / <code>F-B2</code> · operator approval surface · Preview client view button routes here</li>
+      <li><code>kerf_ai_disclosure_pattern.md</code> · §13 · client-facing disclosure rule</li>
+      <li><code>feedback_translate_canon_vocabulary_at_surface.md</code> · plain English on client artifact</li>
+      <li><code>Kerf_Operating_Model_v1_2026-05-17.md</code> · V18 send gate</li>
+    </ul>
+
+    <h4>What's deferred</h4>
+    <ul>
+      <li>Detailed itemization render (15-25 line items at full granularity · vs current Summary's 6 phase categories) · sketches in spec</li>
+      <li>Lump sum render (single total + narrative scope-of-work in paragraph form) · sketches</li>
+      <li>Show margin annotation rendering (operator-internal view) · spec only</li>
+      <li>V18 external send confirmation flow · separate surface</li>
+      <li>PDF export flow · generates artifact for email/print</li>
+      <li>Desktop variant F-PV2 · same logic, more breathing room</li>
+      <li>E-signature flow (client signs proposal in-app) · V2.0+</li>
+      <li>Client-side proposal portal (where client receives + signs) · V2.0+</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Callouts -->
+<div class="callout-row">
+  <div class="callout">
+    <span class="callout-title">What this surface enforces</span>
+    <em>Operator-controlled, client-readable.</em> The contractor sees exactly what the client will receive — same letterhead, same scope summary, same total, same exclusions. Operator controls live in a clearly-separated band above the paper; margin stays OFF by default. The Field → Past jobs → Pricing chain renders for the client as plain English ("Christian's review of past similar projects, today's field measurements, and direct conversation with Maria") without exposing internal mechanics.
+  </div>
+  <div class="callout">
+    <span class="callout-title">What this surface refuses to be</span>
+    Not a Kerf-branded artifact (the proposal is GGR's, prepared with Kerf). Not an in-line line-item editor (Edit routes upstream). Not a Right-Hand-attributed document (client artifacts say <strong>contractor-reviewed</strong>, never AI-assisted). Not a spreadsheet. Not a workstation. <strong>F-PV1 is the operator's view of the client's view — paper on dark chrome, controls quiet, accountability clear.</strong>
+  </div>
+</div>
+
+</div>
+
+<script>
+// Mode toggle (annotated / presentation)
+document.querySelectorAll('[data-mode]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-mode]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('presentation-mode', tab.dataset.mode === 'presentation');
+  });
+});
+
+// Theme toggle (dark / light)
+document.querySelectorAll('[data-theme]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.body.classList.toggle('light-mode', tab.dataset.theme === 'light');
+    try { localStorage.setItem('kerf_wf_theme', tab.dataset.theme); } catch (e) {}
+  });
+});
+
+// Restore saved theme
+try {
+  const saved = localStorage.getItem('kerf_wf_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelectorAll('[data-theme]').forEach(t => t.classList.toggle('active', t.dataset.theme === 'light'));
+  }
+} catch (e) {}
+
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    const next = document.body.classList.contains('presentation-mode') ? 'annotated' : 'presentation';
+    document.querySelector(`[data-mode="${next}"]`).click();
+  }
+});
+</script>
+</body>
+</html>

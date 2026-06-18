@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-RH6 · How you talk to Right Hand</title>
+<style>
+:root{
+  --bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--paper:#0F1318;
+  --t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--green:#38C977;--rh:#C9A961;--gold:#F5B544;--accent:#C9A961;--topbg:rgba(10,13,17,.92);
+}
+body.light{
+  --bg:#EEF0F3;--bg2:#FFFFFF;--s:#F0F1F4;--s2:#E8EAEE;--bd:#D4D8E0;--bds:#E6E8EC;--paper:#FFFFFF;
+  --t:#1C2128;--dim:#4A5264;--mute:#7A828F;--green:#1E9E58;--rh:#A0823F;--gold:#C28A1E;--accent:#A0823F;--topbg:rgba(238,240,243,.92);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5;transition:background .25s,color .25s}
+.page{max-width:1440px;margin:0 auto;padding:30px 22px 80px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbg);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:10px 22px;margin:-30px -22px 22px;display:flex;align-items:center;gap:13px}
+.topbar .lbl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.topbar .hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+.themebtn{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--bd);background:var(--s);color:var(--dim);cursor:pointer}
+h1{font-size:20px;font-weight:600;margin:0 0 5px}
+.lede{color:var(--dim);max-width:1080px;margin:0 0 8px;line-height:1.6}.lede b{color:var(--t)}
+.doctrine{background:linear-gradient(120deg,rgba(201,169,97,.13),transparent);border:1px solid rgba(201,169,97,.4);border-radius:11px;padding:12px 16px;margin:14px 0 22px;font-size:12.5px;color:var(--dim)}
+.doctrine b{color:var(--t)}
+.row{display:flex;gap:18px;overflow-x:auto;padding-bottom:14px;align-items:flex-start}
+.stage{flex:0 0 286px}
+.cap{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:3px}
+.capd{font-size:11px;color:var(--mute);margin-bottom:9px;line-height:1.4;min-height:42px}
+.phone{background:var(--bg2);border:1px solid var(--bd);border-radius:30px;padding:10px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.screen{background:var(--paper);border:1px solid var(--bds);border-radius:22px;height:560px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 4px;font-size:9px;color:var(--mute);font-weight:600}
+.content{flex:1;padding:11px 13px;overflow:hidden}
+.h{font-size:13px;font-weight:700;color:var(--t)}.sb{font-size:9.5px;color:var(--mute);margin-bottom:10px}
+.tile{background:var(--s);border:1px solid var(--bd);border-radius:9px;padding:8px 11px;margin-bottom:7px}
+.tile .tt{font-size:10.5px;font-weight:600;color:var(--t)}.tile .td{font-size:9px;color:var(--mute);margin-top:1px}
+/* 5-slot bar */
+.navbar{display:flex;align-items:flex-end;justify-content:space-between;padding:9px 15px 13px;border-top:1px solid var(--bds);background:var(--bg2)}
+.nav{display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav .ic{font-size:17px;color:var(--mute);line-height:1}.nav .nl{font-size:7.5px;color:var(--mute);font-weight:600}
+.nav.mic .nl{color:var(--gold);font-weight:700}
+.circle{width:50px;height:50px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px rgba(245,181,68,.22),0 0 18px rgba(245,181,68,.42)}
+.circle svg{width:21px;height:21px}.circle.center{margin-top:-14px}
+/* bloom */
+.bloom{position:absolute;left:9px;right:9px;bottom:10px;top:34%;background:var(--bg2);border:1.5px solid rgba(201,169,97,.5);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 28px rgba(0,0,0,.3)}
+.thread{flex:1;padding:9px 11px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.b{border-radius:11px;padding:7px 10px;font-size:10px;line-height:1.4;max-width:90%}
+.b.you{background:var(--s);align-self:flex-end;border:1px solid var(--bd)}
+.b.rh{background:rgba(201,169,97,.1);border:1px solid rgba(201,169,97,.3);align-self:flex-start}
+.b .who{font-size:7px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:var(--mute);margin-bottom:1px}
+.composer{display:flex;justify-content:center;padding:8px 11px 12px;border-top:1px solid var(--bds)}
+.fly{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;color:var(--gold);font-size:9px;font-weight:700}
+.arc{font-size:18px;color:var(--rh);opacity:.6}
+/* artifact + side bubble */
+.artifact{position:absolute;left:11px;right:11px;top:44px;bottom:90px;background:var(--s);border:1px solid var(--bd);border-radius:13px;padding:10px 12px;overflow:hidden}
+.artifact .at{font-size:10.5px;font-weight:700;color:var(--t);margin-bottom:5px}
+.artifact .li{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);padding:5px 0;border-bottom:1px solid var(--bds)}
+.artifact .li.chg{color:var(--green);font-weight:600}
+.sbubble{position:absolute;left:10px;right:10px;bottom:11px;background:linear-gradient(180deg,rgba(201,169,97,.16),rgba(201,169,97,.07));border:1.5px solid rgba(201,169,97,.55);border-radius:17px;padding:8px 9px;display:flex;align-items:center;gap:8px;backdrop-filter:blur(3px)}
+.collapse{width:22px;height:22px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--dim);flex-shrink:0}
+.cue{flex:1;min-width:0}.cue .cl{font-size:7.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--rh);font-weight:700}.cue .ct{font-size:9.5px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smic{width:44px;height:44px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 4px rgba(245,181,68,.24),0 0 16px rgba(245,181,68,.44)}
+.smic svg{width:19px;height:19px}
+.ann{font-size:10px;color:var(--dim);margin-top:8px;line-height:1.45}.ann b{color:var(--rh)}
+/* handedness */
+.hand{display:flex;gap:16px;align-items:center;background:var(--bg2);border:1px solid var(--bd);border-radius:13px;padding:15px 18px;margin-top:26px}
+.handset{flex:0 0 250px}
+.setrow{display:flex;align-items:center;justify-content:space-between;background:var(--s);border:1px solid var(--bd);border-radius:9px;padding:9px 12px;margin-top:8px}
+.setrow .k{font-size:10.5px;color:var(--t);font-weight:600}
+.seg{display:flex;border:1px solid var(--bd);border-radius:7px;overflow:hidden}
+.seg span{font-size:9px;font-weight:700;padding:4px 9px}
+.seg .on{background:var(--gold);color:#0A0D11}.seg .off{color:var(--mute)}
+.minib{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--bds);border-radius:13px;padding:7px 9px;margin-top:8px}
+.minib.l{flex-direction:row-reverse}
+</style></head>
+<body>
+<div class="page">
+<div class="topbar"><span class="lbl">Right Hand</span><span class="lbl" style="color:var(--rh)">How you talk to Right Hand · F-RH6</span><span class="hint">locked doctrine · supersedes F-NAV2 exploration</span><button class="themebtn" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'◐ Dark':'◑ Light'">◑ Light</button></div>
+<h1>How you talk to Right Hand — center idle, docks to your hand when active</h1>
+<p class="lede">The full path, with every locked decision: <b>Start</b> (not Create) · <b>≡</b> More · center mic at rest (ambidextrous, the heart) · on activation it <b>flies to your hand's side</b> (handedness-set) and the artifact takes the screen · voice-edit in place · conversation never closes.</p>
+<div class="doctrine"><b>The motion is the meaning, not drift:</b> center = idle/"tap to talk" (works for any hand); docked-to-side = active/"I'm listening, here's your workspace." Always center idle → always docked active = consistent, not the unexpected drift that was banned. The dock side follows the <b>handedness setting</b> (right default, left flip).</div>
+
+<div class="row">
+
+  <!-- 1 IDLE -->
+  <div class="stage">
+    <div class="cap">① Idle · normal view</div>
+    <div class="capd">Home. Five-slot bar — Home · Start · <b>mic dead-center</b> (Speak) · Camera · More(≡). "Tap to talk." Ambidextrous resting state.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17</span></div>
+      <div class="content"><div class="h">Right Hand</div><div class="sb">Tap the mic and talk.</div>
+        <div class="tile"><div class="tt">One Thing</div><div class="td">Rodriguez estimate — needs slab sq ft</div></div>
+        <div class="tile"><div class="tt">On Deck</div><div class="td">Wegrzyn closeout · 2 open</div></div>
+        <div class="tile"><div class="tt">The Pulse</div><div class="td">3 active · $42k out · 1 lead</div></div>
+      </div>
+      <div class="navbar">
+        <div class="nav"><div class="ic">⌂</div><div class="nl">Home</div></div>
+        <div class="nav"><div class="ic">+</div><div class="nl">Start</div></div>
+        <div class="nav mic"><div class="circle center"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="#0A0D11" stroke-width="2" fill="none"/></svg></div><div class="nl">Speak</div></div>
+        <div class="nav"><div class="ic">▣</div><div class="nl">Camera</div></div>
+        <div class="nav"><div class="ic">≡</div><div class="nl">More</div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 2 TALKING -->
+  <div class="stage">
+    <div class="cap">② Tap → talking (bloom)</div>
+    <div class="capd">Conversation blooms from the center mic (F-RH3). Mic stays dead-center while you talk — never drifts within the conversation.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17</span></div>
+      <div class="content" style="opacity:.4"><div class="h">Right Hand</div></div>
+      <div class="bloom" style="top:30%">
+        <div class="thread">
+          <div class="b you"><div class="who">You</div>New kitchen for the Rodriguez place — walnut cabinets, quartzite, tile floor…</div>
+          <div class="b rh"><div class="who">Right Hand</div>Got it. One thing that swings the number — is the island getting a cooktop, or prep only?</div>
+          <div class="b you"><div class="who">You</div>Existing gas stays. Build the estimate.</div>
+        </div>
+        <div class="composer"><div class="circle"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 3 HANDOFF -->
+  <div class="stage">
+    <div class="cap">③ "Build it" → mic flies to your hand</div>
+    <div class="capd">The artifact takes the screen; the mic <b>animates from center to your side</b> (right default). The motion says "now listening, here's your workspace." Conversation doesn't close.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:41</span><span>kerf-v17</span></div>
+      <div class="artifact" style="bottom:120px">
+        <div class="at">Rodriguez · Kitchen estimate</div>
+        <div class="li"><span>Walnut cabinetry · 45 LF</span><span>$28,400</span></div>
+        <div class="li"><span>Quartzite counters</span><span>$9,500</span></div>
+        <div class="li"><span>Tile flooring · 240 SF</span><span>$7,200</span></div>
+      </div>
+      <div class="fly">center ⟶ side &nbsp;<span class="arc">⤿</span></div>
+      <div class="sbubble"><div class="collapse">−</div><div class="cue"><div class="cl">◉ assembling…</div><div class="ct">building your estimate</div></div><div class="smic"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+    </div></div>
+  </div>
+
+  <!-- 4 BUBBLE EDIT -->
+  <div class="stage">
+    <div class="cap">④ Bubble · voice-edit in place</div>
+    <div class="capd">Artifact primary, mic docked to your side (frees the real estate). Speak a change → it lands live + source-labeled. Pane collapses smaller while it edits so you watch & read.</div>
+    <div class="phone"><div class="screen">
+      <div class="statusbar"><span>9:42</span><span>kerf-v17</span></div>
+      <div class="artifact">
+        <div class="at">Rodriguez · Kitchen estimate</div>
+        <div class="li chg"><span>Walnut cabinetry · 45 LF</span><span>$30,000 ✎</span></div>
+        <div class="li chg"><span>Tile backsplash (added)</span><span>TBD</span></div>
+        <div class="li"><span>Quartzite counters</span><span>$9,500</span></div>
+        <div class="li"><span>Tile flooring · 240 SF</span><span>$7,200</span></div>
+      </div>
+      <div class="sbubble"><div class="collapse">−</div><div class="cue"><div class="cl">◉ Right Hand · listening</div><div class="ct">"…bump cabinets to 30k, add a backsplash"</div></div><div class="smic"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+    </div></div>
+  </div>
+
+</div>
+
+<!-- handedness -->
+<div class="hand">
+  <div class="handset">
+    <div class="cap">Settings · Mic hand</div>
+    <div class="setrow"><span class="k">Mic hand</span><div class="seg"><span class="on">Right</span><span class="off">Left</span></div></div>
+    <div class="minib"><div class="cue"><div class="ct" style="font-size:9px;color:var(--mute)">…listening</div></div><div class="smic" style="width:32px;height:32px"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+    <div class="minib l"><div class="cue"><div class="ct" style="font-size:9px;color:var(--mute)">listening…</div></div><div class="smic" style="width:32px;height:32px"><svg viewBox="0 0 24 24" fill="#0A0D11"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/></svg></div></div>
+  </div>
+  <div style="flex:1;font-size:12px;color:var(--dim);line-height:1.7">
+    <b style="color:var(--t)">Handedness setting</b> — bubble mic docks <b>right by default</b>, a left-handed user flips it to <b>left</b>. This is the <b>first Voice Profile field</b> (D-A R2 relationship model): a benign, user-set, inspectable preference. <b style="color:var(--t)">Build note:</b> the bubble composer reads a <code style="color:var(--rh)">micSide</code> prop from day one (default right) — don't hardcode then retrofit. Center idle is unaffected (ambidextrous).
+    <div style="margin-top:8px;color:var(--mute)">Artifact-general: this is <i>the</i> working-on-anything surface — estimate, lead, task, daily log all open into this bubble (heavy → docked/full, light → living card in the scroll).</div>
+  </div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-DL3 · Field Guidance Level (settings)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--green:#38C977;--rh:#C9A961;--gold:#F5B544;--teal:#67D6E0;--cyan:#67D6E0;--blue:#7BA8FF;--amber:#F5B544;--red:#F87171;--accent:#C9A961}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--green:#1E8E50;--rh:#8A6D29;--gold:#9A6B12;--teal:#0E6E78;--cyan:#0E6E78;--amber:#9A6B12;--accent:#8A6D29}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}body.light-mode .phone-notch{background:#1a1a1d!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--accent);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:32px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:40px}.frame-label{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin-bottom:4px}.frame-narr{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin:0 0 14px;max-width:1080px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:30px;display:flex;justify-content:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.phone{width:322px;border:1.5px solid var(--bd);border-radius:40px;padding:11px;background:var(--bg);box-shadow:0 16px 50px rgba(0,0,0,.5);position:relative}
+.phone-notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:110px;height:23px;background:var(--bg);border-radius:0 0 14px 14px}
+.scr{border-radius:29px;overflow:hidden;height:656px;display:flex;flex-direction:column;background:var(--bg)}
+.status-bar{display:flex;justify-content:space-between;padding:11px 18px 4px;font-size:11px;font-weight:600}
+.nav-top{display:flex;align-items:center;gap:10px;padding:4px 14px 8px;border-bottom:1px solid var(--bds)}.nav-top .bk{width:26px;height:26px;border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--dim)}.nav-top .bk svg{width:14px;height:14px}.nav-top .ttl{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.body{flex:1;overflow-y:auto;padding:13px 14px 14px}
+.intro{font-size:11.5px;color:var(--dim);line-height:1.55;margin-bottom:14px}.intro b{color:var(--t)}
+.opt{border:1.5px solid var(--bds);border-radius:13px;padding:12px 13px;margin-bottom:11px;background:var(--s)}
+.opt.sel{border-color:var(--green);background:linear-gradient(150deg,rgba(56,201,119,.1),rgba(56,201,119,.02))}
+.opt .oh{display:flex;align-items:center;gap:10px}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--bd);flex:none;display:flex;align-items:center;justify-content:center}.opt.sel .radio{border-color:var(--green)}.opt.sel .radio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--green)}
+.opt .on{font-size:14px;font-weight:800}.opt .obadge{margin-left:auto;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-radius:20px;padding:2px 8px;flex:none}
+.obadge.def{background:rgba(56,201,119,.16);color:var(--green)}.obadge.rec{background:rgba(201,169,97,.18);color:var(--rh)}
+.opt .od{font-size:10.5px;color:var(--dim);margin:7px 0 9px;line-height:1.5}
+.feat{display:flex;align-items:flex-start;gap:8px;font-size:10.5px;color:var(--dim);padding:3px 0}.feat .fi{width:15px;flex:none;color:var(--mute);margin-top:1px}.feat .fi svg{width:13px;height:13px}.feat b{color:var(--t);font-weight:600}
+.tone{margin-top:8px;font-size:9.5px;color:var(--mute);font-style:italic;border-top:1px dashed var(--bds);padding-top:7px}
+.note{margin-top:6px;background:rgba(103,214,224,.08);border:1px solid rgba(103,214,224,.3);border-radius:11px;padding:11px 12px;font-size:10.5px;color:var(--dim);line-height:1.55}.note b{color:var(--cyan)}
+.save{margin-top:13px;width:100%;background:var(--accent);color:#1A1300;border-radius:12px;padding:12px;font-size:13.5px;font-weight:800;text-align:center}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}.callout{background:var(--bg2);border:1px solid var(--bd);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--dim)}.callout .ct{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;display:block;margin-bottom:5px}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#8A6D29;--green:#1E8E50}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.phone{background:#FFF!important;border-color:#999!important;box-shadow:none!important}@page{size:letter;margin:.4in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · owner-set · adoption-first default · icons inline</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Settings</span><span class="sep">›</span><span class="step">Field &amp; crew</span><span class="sep">›</span><span class="step current">F-DL3 · Guidance level (mobile)</span></div>
+<h1>F-DL3 · Field guidance level · how hard it pushes is your call</h1>
+<p>The setting behind F-DL2. You decide how much structure the crew feels — because <strong>getting them to use it is step one</strong>, and a tool that feels like a tracking anklet doesn't get used. Three levels: <strong>Light touch</strong> (the default), <strong>Standard</strong>, <strong>Strict</strong>. They change what's required to clock out, how loud the nudges are, what routes to managers, and even the tone of the copy. <strong>Location and hours are always manager-side</strong> — the level decides how much, never whether the crew gets "watched."</p></div>
+
+<div class="frame"><div class="frame-label">Frame · Guidance level picker</div>
+<p class="frame-narr">An owner/admin setting (Settings → Field &amp; crew). Light is selected by default and recommended for a new rollout — start gentle, tighten as trust builds.</p>
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>9:41</span><span>●●● 88%</span></div>
+<div class="nav-top"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span class="ttl">Field guidance level</span></div>
+<div class="body">
+<div class="intro">How much structure should the crew feel at clock-out? <b>Start light — you can always tighten.</b></div>
+
+<div class="opt sel">
+<div class="oh"><span class="radio"></span><span class="on">Light touch</span><span class="obadge def">Default</span></div>
+<div class="od">Encourage good habits without anyone feeling watched. Best for getting a new crew comfortable.</div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span><b>Clock-out asks for:</b> a daily note (the rest are gentle reminders, not blocks)</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 00-7 7v3l-2 4h18l-2-4V9a7 7 0 00-7-7z"/></svg></span><span><b>Location:</b> not shown to the crew at all</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0v5l-2 3h16l-2-3z"/></svg></span><span><b>8-hour buzz:</b> friendly check-in, private to the worker</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></span><span><b>Manager alerts:</b> only if a worker asks for help</span></div>
+<div class="tone">Voice: playful — "slow down there, cowboy"</div>
+</div>
+
+<div class="opt">
+<div class="oh"><span class="radio"></span><span class="on">Standard</span><span class="obadge rec">Most shops</span></div>
+<div class="od">The three musts, friendly nudges, light manager oversight. A fair middle.</div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span><b>Clock-out requires:</b> daily note · cleaned work area · pictures</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 00-7 7v3l-2 4h18l-2-4V9a7 7 0 00-7-7z"/></svg></span><span><b>Location:</b> manager-side only (super sees over-window)</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0v5l-2 3h16l-2-3z"/></svg></span><span><b>8-hour buzz:</b> check-in; over-hours notifies the super</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span><b>Manager alerts:</b> super approves clock-outs; OT &gt; rule → admin</span></div>
+<div class="tone">Voice: warm — "hold up, two things before you go"</div>
+</div>
+
+<div class="opt">
+<div class="oh"><span class="radio"></span><span class="on">Strict</span></div>
+<div class="od">Tight compliance for crews or jobs that need it (prevailing-wage, certified payroll, insurance). More is enforced and recorded.</div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span><b>Clock-out requires:</b> the three musts + on-site verification + hours in window</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span><span><b>Location:</b> geofence checked; <em>shown to the worker</em> as "on-site confirmed"</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0v5l-2 3h16l-2-3z"/></svg></span><span><b>8-hour buzz:</b> requires a logged check-in to keep going</span></div>
+<div class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></span><span><b>Manager alerts:</b> every exception routed + full audit trail</span></div>
+<div class="tone">Voice: plain — "two items required before clock-out"</div>
+</div>
+
+<div class="note"><b>Always true, every level:</b> location and hours are signals for managers, not a scoreboard shown to the crew (until you choose Strict). Right Hand never auto-disciplines — it routes to a person.</div>
+<div class="save">Save guidance level</div>
+</div>
+</div></div></div>
+<div class="frame-spec"><h3>F-DL3 · Spec</h3>
+<h4>Three levels</h4><ul>
+<li><b>Light touch (default):</b> note encouraged; no location to crew; private buzz; managers alerted only on a help request. Adoption-first.</li>
+<li><b>Standard:</b> the three musts required; location manager-side; over-hours → super; super approves.</li>
+<li><b>Strict:</b> musts + geofence + hours-window enforced and shown; check-in required to continue; every exception audited.</li>
+</ul>
+<h4>What scales</h4><ul>
+<li>Clock-out requirements · whether the worker sees location · nudge enforcement · what routes to managers · copy tone.</li>
+</ul>
+<h4>Invariants (all levels)</h4><ul>
+<li>Location/hours are <b>manager signals</b>, not crew-facing surveillance — until Strict, opted into deliberately.</li>
+<li>Right Hand routes to a human; it never auto-disciplines.</li>
+<li>Sits in Settings → Field &amp; crew; owner/admin permission. Per-tenant; could later be per-crew or per-job.</li>
+</ul>
+<h4>Why it exists</h4><ul>
+<li>Adoption is step one. The owner sizes the pressure; the product defaults gentle (D-048 daily-simple).</li>
+</ul>
+</div></div>
+
+<div class="callout-row"><div class="callout"><span class="ct">Start gentle, tighten later</span>Default is Light — get the crew comfortable, then turn the dial up only where a job or payroll rule demands it. The product never assumes maximum surveillance.</div><div class="callout"><span class="ct">One dial, many surfaces</span>This level drives F-DL2's musts, nudge, copy tone, and routing — and any future field surface. Change it once; the whole field experience adjusts.</div></div>
+</div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

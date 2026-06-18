@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-ORCH1 · Background Orchestration Flow</title>
+<style>
+:root{
+  --bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;
+  --t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;
+  --green:#38C977;--rh:#C9A961;--gold:#F5B544;--blue:#7BA8FF;--red:#F8615A;--violet:#9B8AE6;
+  --accent:#C9A961;--topbg:rgba(10,13,17,.92);
+}
+body.light{
+  --bg:#F4F5F7;--bg2:#FFFFFF;--s:#F0F1F4;--s2:#E8EAEE;--bd:#D4D8E0;--bds:#E2E5EA;
+  --t:#1C2128;--dim:#4A5264;--mute:#7A828F;
+  --green:#1E9E58;--rh:#A0823F;--gold:#C28A1E;--blue:#3D6FD6;--red:#D6453E;--violet:#7461C9;
+  --accent:#A0823F;--topbg:rgba(244,245,247,.92);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5;transition:background .25s,color .25s}
+.page{max-width:1320px;margin:0 auto;padding:30px 24px 80px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbg);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:10px 24px;margin:-30px -24px 24px;display:flex;align-items:center;gap:14px}
+.topbar .lbl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.topbar .hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+.themebtn{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--bd);background:var(--s);color:var(--dim);cursor:pointer}
+h1{font-size:20px;font-weight:600;margin:0 0 6px}
+.lede{color:var(--dim);max-width:1040px;margin:0 0 8px;line-height:1.6}
+.principle{background:linear-gradient(120deg,rgba(201,169,97,.14),rgba(201,169,97,.03));border:1px solid rgba(201,169,97,.42);border-radius:12px;padding:13px 17px;margin:16px 0 26px}
+.principle b{color:var(--t)}
+.principle .pl{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--rh);font-weight:700;margin-bottom:5px}
+.stage{display:grid;grid-template-columns:30px 1fr;gap:14px;margin-bottom:10px;align-items:stretch}
+.snum{width:30px;height:30px;border-radius:8px;background:var(--s2);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:1px solid var(--bd)}
+.scard{background:var(--bg2);border:1px solid var(--bd);border-radius:11px;padding:13px 16px}
+.scard .st{font-size:13.5px;font-weight:600;color:var(--t);margin-bottom:3px}
+.scard .sd{font-size:12px;color:var(--dim);line-height:1.55}
+.scard .sd b{color:var(--t)}
+.arrowrow{text-align:center;color:var(--accent);opacity:.5;font-size:15px;margin:0 0 10px 44px;line-height:1}
+/* fan-out lanes */
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
+.lane{background:var(--s);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+.lane .ln{font-size:11.5px;font-weight:600;color:var(--t)}
+.lane .ld{font-size:10px;color:var(--mute);margin-top:1px;line-height:1.35}
+.lane.est{border-color:rgba(245,181,68,.5);background:linear-gradient(135deg,rgba(245,181,68,.1),transparent)}
+/* gate */
+.gate{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:11px}
+.gbox{border-radius:9px;padding:11px 13px;border:1px solid var(--bd)}
+.gbox.silent{background:rgba(56,201,119,.08);border-color:rgba(56,201,119,.35)}
+.gbox.surface{background:rgba(245,181,68,.1);border-color:rgba(245,181,68,.45)}
+.gbox .gh{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;margin-bottom:5px}
+.gbox.silent .gh{color:var(--green)} .gbox.surface .gh{color:var(--gold)}
+.gbox .gt{font-size:11.5px;color:var(--dim);line-height:1.5}
+.gbox .gt b{color:var(--t)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0 6px 44px;font-size:10.5px;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.chip{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px}
+.chip.co{background:rgba(56,201,119,.16);color:var(--green)}
+.chip.mo{background:rgba(123,168,255,.16);color:var(--blue)}
+.chip.al{background:rgba(245,181,68,.16);color:var(--gold)}
+.chip.tbd{background:rgba(106,114,130,.2);color:var(--mute)}
+.stop{background:linear-gradient(120deg,rgba(248,97,90,.12),transparent);border:1px solid rgba(248,97,90,.4);border-radius:11px;padding:12px 16px;margin-left:44px}
+.stop .sh{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:4px}
+.stop .stt{font-size:12px;color:var(--dim)}.stop .stt b{color:var(--t)}
+.foot{font-size:11px;color:var(--mute);margin-top:22px;line-height:1.6;font-style:italic}
+@media(max-width:740px){.lanes{grid-template-columns:repeat(2,1fr)}.gate{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="page">
+<div class="topbar"><span class="lbl">Right Hand</span><span class="lbl" style="color:var(--rh)">Background Orchestration · F-ORCH1</span><span class="hint">how the nine work behind one conductor</span><button class="themebtn" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'◐ Dark':'◑ Light'">◑ Light</button></div>
+<h1>What happens in the background as you talk</h1>
+<p class="lede">One conductor (Right Hand, frontier tier) over nine specialists (platform tier) working in parallel. Reference: <code>_docs/architecture/RightHand_Background_Orchestration_Choreography.md</code>.</p>
+<div class="principle"><div class="pl">◈ The principle everything serves</div><b>The system fills in silently and only interrupts you for the rare thing that's both high-consequence AND genuinely uncertain.</b> Everything else you review later at the artifact — never mid-sentence. Permissive on the way in; strict only when something becomes real.</div>
+
+<div class="stage"><div class="snum">1</div><div class="scard"><div class="st">You talk → Right Hand curates in real time</div><div class="sd">RH doesn't transcribe — it turns speech into structured reality (client · address · scope · quantities) and <b>tags every value with a confidence level + a routing envelope</b>. Inferring, not interrogating.</div></div></div>
+<div class="arrowrow">↓</div>
+
+<div class="stage"><div class="snum">2</div><div class="scard"><div class="st">The curated signal fans out — parallel, background, silent</div><div class="sd">The routing envelope names which domains each item touches; one utterance lands in many lanes at once. Each works only its slice. None talk to you.</div>
+<div class="lanes">
+  <div class="lane est"><div class="ln">Estimating</div><div class="ld">scope → line items, allowances</div></div>
+  <div class="lane"><div class="ln">Sales / Intake</div><div class="ld">opens lead:draft</div></div>
+  <div class="lane"><div class="ln">Clients</div><div class="ld">creates the client record</div></div>
+  <div class="lane"><div class="ln">Projects</div><div class="ld">job posture, daily log</div></div>
+  <div class="lane"><div class="ln">Field / Capture</div><div class="ld">photos · scans · evidence</div></div>
+  <div class="lane"><div class="ln">Scheduling</div><div class="ld">phase + duration hooks</div></div>
+  <div class="lane"><div class="ln">Money / QB</div><div class="ld">budget + margin frame</div></div>
+  <div class="lane"><div class="ln">People / Admin</div><div class="ld">subs · compliance</div></div>
+  <div class="lane"><div class="ln">Client Success</div><div class="ld">sentiment · closeout</div></div>
+</div></div></div>
+<div class="arrowrow">↓</div>
+
+<div class="stage"><div class="snum">3</div><div class="scard"><div class="st">Each specialist fills its artifact — trust hierarchy</div><div class="sd">Per value, ranked source of truth. A missing/uncertain value becomes a <b>visible flag on the draft, not a question to you.</b></div>
+<div class="legend">
+  <span><span class="chip co">company data</span> fill silently (highest trust)</span>
+  <span><span class="chip mo">model knowledge</span> backfill, labeled</span>
+  <span><span class="chip al">allowance</span> never asserted as fact</span>
+  <span><span class="chip tbd">TBD</span> flagged placeholder</span>
+</div></div></div>
+<div class="arrowrow">↓</div>
+
+<div class="stage"><div class="snum">4</div><div class="scard"><div class="st">Confidence × consequence gate — what surfaces vs what stays a flag</div><div class="sd">Per value: <b>how sure am I × how much does getting it wrong cost?</b> (This is Framework 002 · Attention Allocation, applied at emit time.)</div>
+<div class="gate">
+  <div class="gbox silent"><div class="gh">✓ Fill silently / soft-flag</div><div class="gt">High confidence <b>or</b> low consequence. The dozen ordinary unknowns. No interruption — flooring species → allowance + flag.</div></div>
+  <div class="gbox surface"><div class="gh">! Surface — ONE question</div><div class="gt">Low confidence <b>AND</b> high consequence only. e.g. <b>"is the kitchen staying in its footprint?"</b> — swings the number, genuinely unknown. The rare interrupt worth your flow.</div></div>
+</div></div></div>
+<div class="arrowrow">↓</div>
+
+<div class="stage"><div class="snum">5</div><div class="scard"><div class="st">Right Hand conducts — you stay in the conversation</div><div class="sd">RH surfaces the one thing that needs you, vouches for the rest, never relays nine agents' status. The agents keep building as you talk — so by <b>"take me there," the estimate is already assembled</b>, flags marking the soft spots.</div></div></div>
+<div class="arrowrow">↓</div>
+
+<div class="stage"><div class="snum">6</div><div class="scard"><div class="st">You review at the artifact — not in the stream</div><div class="sd">On the estimate page: source-labeled lines, flagged assumptions, TBDs visible. You scan a finished draft and correct <b>only the exceptions</b> ("bump the cabinet allowance, flooring's white oak") → the estimating agent updates. Never quizzed line by line.</div></div></div>
+<div class="arrowrow">↓</div>
+
+<div class="stop"><div class="sh">⛔ The only hard stop — the consequence gate</div><div class="stt">Filing the lead · sending to the client · anything touching money → <b>one confirmation, not a quiz.</b> "File this as a lead for Rodriguez?" → Yes → done.</div></div>
+
+<p class="foot">It earns its silence: every flag you correct teaches that lane the tenant's real numbers (tenant-private CRAFT) → next job, fewer guesses, fewer flags, less to review. Better data → less interruption. — Runtime note: today only the conductor is wired (Sprint E ≈ 4 tools, request/response); the nine background agents aren't instantiated, which is why "build it" currently loops. The build stands up estimating first on this exact pattern, then generalizes.</p>
+</div>
+</body></html>

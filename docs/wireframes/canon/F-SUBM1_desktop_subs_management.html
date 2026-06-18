@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right Hand · F-SUBM1 · Subs Management (PM/Super, GC-side)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--accent:#C9A961;--rh:#C9A961;--gold:#F5B544;--green:#38C977;--blue:#7BA8FF;--violet:#A78BFA;--red:#F87171;--coral:#F0997B}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--accent:#8A6D29;--rh:#8A6D29;--gold:#9A6B12;--green:#1E8E50;--blue:#185FA5;--violet:#6B4FBF}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--accent);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:28px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 340px;gap:28px;margin-bottom:40px}.frame-label{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin-bottom:10px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:22px;display:flex;justify-content:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.win{width:100%;max-width:960px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.win-dots{display:flex;align-items:center;gap:6px;padding:7px 12px;background:#000;border-bottom:1px solid var(--bds)}.win-dots .d{width:9px;height:9px;border-radius:50%;background:#333}.win-dots .u{margin-left:12px;font-size:10px;color:var(--mute);font-family:monospace}
+.topbar{display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid var(--bds);background:var(--bg)}
+.topbar .wm{font-size:14px;font-weight:800;color:var(--rh)}
+.cmdk{margin-left:18px;flex:1;max-width:300px;display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--bds);border-radius:9px;padding:7px 11px;color:var(--mute);font-size:11.5px}.cmdk svg{width:13px;height:13px}.cmdk .kbd{margin-left:auto;font-size:9px;font-weight:700;background:var(--s2);border:1px solid var(--bd);border-radius:5px;padding:1px 6px;color:var(--dim)}
+.tb-mic{margin-left:auto;width:34px;height:34px;border-radius:50%;background:var(--rh);display:flex;align-items:center;justify-content:center;color:#241B07;flex:none}.tb-mic svg{width:18px;height:18px}
+.tb-av{width:32px;height:32px;border-radius:50%;background:rgba(201,169,97,.22);color:var(--rh);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border:2px solid var(--rh);flex:none}
+.layout{display:flex;height:600px}
+.side{width:178px;flex:none;border-right:1px solid var(--bds);background:var(--bg2);padding:12px 8px;overflow-y:auto}
+.nav{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--dim);margin-bottom:2px}.nav.on{background:rgba(201,169,97,.14);color:var(--t);font-weight:600}.nav svg{width:15px;height:15px;flex:none}
+.nav-div{height:1px;background:var(--bds);margin:9px 6px}
+.col{flex:1;overflow-y:auto;padding:14px 18px;min-width:0}
+.back{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);font-weight:600;border:1px solid var(--bd);border-radius:7px;padding:4px 10px;margin-bottom:12px}
+.hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}.hdr h2{font-size:19px;font-weight:800;margin:0}.hdr .meta{font-size:11px;color:var(--mute)}.hdr .act{margin-left:auto;font-size:11px;font-weight:700;color:#241B07;background:var(--rh);border-radius:8px;padding:7px 13px}
+.split{display:grid;grid-template-columns:1fr 300px;gap:16px}
+.subc{background:var(--s);border:1px solid var(--bds);border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px}
+.subc.on{border-color:rgba(201,169,97,.45);background:rgba(201,169,97,.06)}
+.subc .ic{width:34px;height:34px;border-radius:9px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--rh);flex:none}
+.subc .nm{font-size:13px;font-weight:600}.subc .tr{font-size:10px;color:var(--mute);margin-top:1px}
+.subc .st{margin-left:auto;display:flex;align-items:center;gap:7px;flex:none}
+.pill{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 8px;border-radius:20px;border:1px solid var(--bd);color:var(--dim)}
+.pill.wo{background:rgba(123,168,255,.13);border-color:rgba(123,168,255,.35);color:var(--blue)}
+.pill.coiok{background:rgba(56,201,119,.13);border-color:rgba(56,201,119,.35);color:var(--green)}
+.pill.coibad{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.4);color:var(--red)}
+/* detail / comms */
+.det{border:1px solid var(--bds);border-radius:12px;background:var(--bg2);display:flex;flex-direction:column;overflow:hidden}
+.det .dh{padding:11px 13px;border-bottom:1px solid var(--bds)}.det .dn{font-size:13px;font-weight:700}.det .dm{font-size:10px;color:var(--mute);margin-top:2px}
+.det .wos{padding:10px 13px;border-bottom:1px solid var(--bds)}.det .wl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:800;margin-bottom:6px}
+.det .wo1{font-size:11px;display:flex;align-items:center;gap:7px;margin-bottom:5px}.det .wo1 .dt2{margin-left:auto;color:var(--mute);font-size:9.5px}
+.thread{flex:1;overflow-y:auto;padding:11px 13px;display:flex;flex-direction:column;gap:7px}
+.bub{border-radius:10px;padding:7px 9px;font-size:10.5px;line-height:1.4;max-width:90%}
+.bub.them{background:var(--s);align-self:flex-start;border-bottom-left-radius:3px}
+.bub.you{background:rgba(201,169,97,.13);border:1px solid rgba(201,169,97,.3);align-self:flex-end;border-bottom-right-radius:3px}
+.bub .bl{font-size:7px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;margin-bottom:2px;color:var(--mute)}
+.relay{margin:0 13px 10px;background:rgba(201,169,97,.07);border:1px solid rgba(201,169,97,.26);border-radius:8px;padding:7px 9px;font-size:9.5px;color:var(--dim);line-height:1.45}.relay b{color:var(--rh)}
+.cfoot{border-top:1px solid var(--bds);padding:9px 11px;display:flex;align-items:center;gap:8px}.cfoot .ti{flex:1;font-size:10px;color:var(--mute)}.cfoot .snd{font-size:10px;font-weight:700;color:#241B07;background:var(--rh);border-radius:7px;padding:5px 10px}
+.note{grid-column:1/-1;color:var(--dim);font-size:12px;line-height:1.6;margin:16px 0 0;max-width:1100px}.note b{color:var(--rh)}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#EEE;--s2:#E4E8ED;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#8A6D29;--rh:#8A6D29;--gold:#9A6B12}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.win{box-shadow:none!important}.win-dots{background:#ddd!important}@page{size:letter landscape;margin:.3in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · D-060 §6 · PM/Super manage subs · other side of F-SH2 · two-sided isolation</span></div>
+<div class="page-header"><div class="crumb"><span class="step">Right Hand · PM / Super</span><span class="sep">›</span><span class="step current">F-SUBM1 · Subcontractors</span></div>
+<h1>F-SUBM1 · Subs Management — the GC side of the sub relationship</h1>
+<p>How PM/Super manage and talk to their subs (D-060 §6): roster, work orders out, COI/insurance status, and <strong>direct communication</strong> through the Right Hand relay. This is the <strong>other side</strong> of the F-SH2 sub portal — the GC writes here, the sub reads it in their isolated portal. <strong>Two-sided isolation</strong>: the GC sees all their subs; each sub sees only its own slice. Projection of existing Sub/Team data, not a new domain.</p></div>
+
+<div class="frame"><div class="frame-label">Frame · F-SUBM1 · Subcontractors (Pacific Tile selected)</div>
+<div class="frame-render"><div class="win">
+<div class="win-dots"><span class="d"></span><span class="d"></span><span class="d"></span><span class="u">app.kerf · /subs</span></div>
+<div class="topbar"><span class="wm">Right Hand</span>
+<div class="cmdk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Search subs…<span class="kbd">⌘K</span></div>
+<span class="tb-mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></span>
+<span class="tb-av">SO</span></div>
+<div class="layout">
+<div class="side">
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-5 8 5v12"/><path d="M9 21v-6h6v6"/></svg>Projects</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Field</div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Schedule</div>
+<div class="nav on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 21c0-4 3-6 7-6M16 11l2 2 4-4"/></svg>Subs</div>
+<div class="nav-div"></div>
+<div class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-2.94.66 1.65 1.65 0 01-3.32 0 1.65 1.65 0 00-2.94-.66l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9z"/></svg>Settings</div>
+</div>
+<div class="col">
+<span class="back"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Home</span>
+<div class="hdr"><h2>Subcontractors</h2><span class="meta">· 8 active</span><span class="act">+ Send a work order</span></div>
+<div class="split">
+<div>
+<div class="subc on"><span class="ic">PT</span><div><div class="nm">Pacific Tile</div><div class="tr">Tile &amp; stone · Marco P.</div></div><div class="st"><span class="pill wo">2 WOs</span><span class="pill coibad">COI 3d</span></div></div>
+<div class="subc"><span class="ic">RE</span><div><div class="nm">Reyes Electric</div><div class="tr">Electrical · Danny R.</div></div><div class="st"><span class="pill wo">1 WO</span><span class="pill coiok">COI ok</span></div></div>
+<div class="subc"><span class="ic">VP</span><div><div class="nm">Valley Plumbing</div><div class="tr">Plumbing · Sam V.</div></div><div class="st"><span class="pill wo">3 WOs</span><span class="pill coiok">COI ok</span></div></div>
+<div class="subc"><span class="ic">GD</span><div><div class="nm">Got Drywall</div><div class="tr">Drywall · Luis G.</div></div><div class="st"><span class="pill coiok">COI ok</span></div></div>
+<div class="subc"><span class="ic">SC</span><div><div class="nm">SoCal HVAC</div><div class="tr">Mechanical · Ann T.</div></div><div class="st"><span class="pill wo">1 WO</span><span class="pill coiok">COI ok</span></div></div>
+</div>
+<div class="det">
+<div class="dh"><div class="dn">Pacific Tile</div><div class="dm">Tile &amp; stone · Marco P. · isolated portal</div></div>
+<div class="wos"><div class="wl">Work orders out</div>
+<div class="wo1"><span style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex:none"></span>Moore — tile install<span class="dt2">starts Mon 6/9</span></div>
+<div class="wo1"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);flex:none"></span>Coring — complete<span class="dt2">invoiced</span></div>
+</div>
+<div class="thread">
+<div class="bub them"><div class="bl">Pacific Tile</div>Got the Moore WO — confirming my crew for Monday.</div>
+<div class="bub you"><div class="bl">You · via Right Hand</div>Perfect. Grout color on Wegrzyn is the warm gray — same as Coring.</div>
+<div class="bub them"><div class="bl">Pacific Tile</div>👍 And my COI renewal is uploaded.</div>
+</div>
+<div class="relay"><b>Right Hand relay:</b> this thread is the GC side of the sub's portal. The sub sees only their own jobs — never your other subs, clients, or money.</div>
+<div class="cfoot"><span class="ti">Message Pacific Tile…</span><span class="snd">Send</span></div>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+<div class="frame-spec"><h3>F-SUBM1 · Spec</h3>
+<h4>GC-side sub management (D-060 §6)</h4><ul>
+<li>Roster of the GC's subs with <b>active WOs</b> + <b>COI/insurance</b> status at a glance.</li>
+<li>Per-sub detail: WOs out, schedule, and a <b>direct message thread</b>.</li>
+<li>Send a work order → lands in the sub's portal (F-SH2).</li>
+</ul>
+<h4>Two-sided isolation</h4><ul>
+<li>The comms thread is the <b>other side</b> of the F-SH2 portal, carried by the Right Hand relay.</li>
+<li>The GC sees all their subs; each sub sees <b>only its own slice</b> — never other subs, clients, or money.</li>
+</ul>
+<h4>Placement</h4><ul>
+<li>Lives on the merged <b>PM / Super</b> home (D-060 §5). Admin gets the compliance projection (COI/W-9/payment) of the same Sub.</li>
+<li>Back control (non-home, §1).</li>
+</ul>
+</div></div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>

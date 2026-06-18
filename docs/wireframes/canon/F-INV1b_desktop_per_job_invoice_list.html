@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right Hand · F-INV1b · Desktop per-job invoice list</title>
+<style>
+:root{--bg:#0a0d11;--panel:#14181f;--card:#1a1f28;--line:#2a3140;--muted:#98a1b3;--dim:#6a7282;--ink:#e8ecf1;--gold:#f5b544;--green:#38c977;--red:#f87171;--blue:#7ba8ff}
+body.light-mode{--bg:#fff;--panel:#f4f6f9;--card:#fff;--line:#c9d0d8;--muted:#4a5462;--dim:#7b8492;--ink:#0a0d11}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.45}.page{max-width:1420px;margin:0 auto;padding:28px 22px 70px}.bar{position:sticky;top:0;z-index:5;margin:-28px -22px 24px;padding:8px 22px;border-bottom:1px solid var(--line);background:rgba(10,13,17,.92);display:flex;gap:8px}.bar span{border:1px solid var(--line);border-radius:7px;padding:5px 10px;color:var(--muted)}.bar .active{background:var(--gold);border-color:var(--gold);color:#1a1300}.page-header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}.crumb{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin-bottom:7px}.crumb strong{color:var(--gold)}h1{font-size:21px;margin:0 0 6px}.page-header p{margin:0;color:var(--muted);max-width:920px}.frame{display:grid;grid-template-columns:1fr 320px;gap:22px}.render{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel),var(--bg));padding:22px}.spec{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;color:var(--muted);height:max-content}.spec h3,.spec h4{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink);margin:0 0 8px}.spec h4{margin-top:16px;color:var(--gold)}.spec ul{margin:0;padding-left:17px}.spec li{margin-bottom:5px}.desktop{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg);min-height:740px}.chrome{height:42px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 14px}.dot{width:10px;height:10px;border-radius:50%;background:var(--dim)}.url{font-family:"SF Mono",Menlo,monospace;color:var(--dim);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 10px;margin-left:10px}.body{display:grid;grid-template-columns:230px 1fr 310px;min-height:698px}.side{background:var(--panel);border-right:1px solid var(--line);padding:16px 12px}.logo{display:flex;gap:9px;align-items:center;border-bottom:1px solid var(--line);padding:0 6px 14px}.mark{width:26px;height:26px;border-radius:7px;background:var(--gold);color:#1a1300;display:grid;place-items:center;font-weight:900}.navlabel{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin:18px 8px 7px}.navitem{padding:9px 10px;border-radius:8px;color:var(--muted);font-weight:700}.navitem.active{background:rgba(245,181,68,.1);color:var(--gold)}.main{padding:18px 22px}.breadcrumbs{color:var(--dim);font-size:11px;margin-bottom:12px}.head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.head h2{font-size:24px;margin:0 0 5px}.head p{margin:0;color:var(--muted)}.btn{border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink);font-weight:800;padding:8px 11px;text-decoration:none}.btn.primary{background:var(--gold);border-color:var(--gold);color:#1a1300}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.metric{border:1px solid var(--line);background:var(--card);border-radius:11px;padding:12px}.metric span{display:block;color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.1em}.metric b{display:block;font-size:18px;margin-top:4px}.table{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}.row{display:grid;grid-template-columns:1.4fr .9fr .8fr .75fr 90px;gap:12px;align-items:center;padding:13px 14px;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.row.header{background:var(--panel);color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:900}.name b{display:block}.name span,.muted{color:var(--muted);font-size:11px}.amount{font-family:"SF Mono",Menlo,monospace;font-weight:900}.chip{display:inline-flex;gap:5px;align-items:center;border-radius:6px;padding:3px 7px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;background:var(--panel);color:var(--muted)}.chip:before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}.green{background:rgba(56,201,119,.12);color:var(--green)}.gold{background:rgba(245,181,68,.14);color:var(--gold)}.red{background:rgba(248,113,113,.12);color:var(--red)}.rail{padding:18px 16px;border-left:1px solid var(--line);background:var(--panel)}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:12px}.card h3{margin:0 0 7px;font-size:13px}.card p{margin:0;color:var(--muted)}.line-list{font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--muted);display:grid;gap:5px}.warn{border-color:rgba(245,181,68,.45);background:rgba(245,181,68,.08)}@media(max-width:900px){.frame{grid-template-columns:1fr}.body{grid-template-columns:1fr}.side,.rail{display:none}.render{padding:8px}.row{grid-template-columns:1fr}.row.header{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="bar"><span class="active">Annotated</span><span>Desktop</span></div>
+  <header class="page-header">
+    <div class="crumb">F-PV2 / F-MN2 <strong>to</strong> F-INV1b</div>
+    <h1>F-INV1b · Desktop per-job invoice list</h1>
+    <p>Desktop density for the same job-owned invoice set. It is not AR aging: AR can link here, but this surface belongs to the project contract and its payment schedule.</p>
+  </header>
+  <section class="frame">
+    <div class="render">
+      <div class="desktop">
+        <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">right-hand.local/projects/wegrzyn/money/invoices</span></div>
+        <div class="body">
+          <aside class="side"><div class="logo"><div class="mark">RH</div><div><b>Right Hand</b><div class="muted">GGR Remodel</div></div></div><div class="navlabel">Domains</div><div class="navitem">Home</div><div class="navitem">Projects</div><div class="navitem active">Money</div><div class="navitem">Sales</div><div class="navitem">Field</div></aside>
+          <main class="main">
+            <div class="breadcrumbs">Projects / Wegrzyn kitchen + primary bath / Money / Invoices</div>
+            <div class="head"><div><h2>Per-job invoices</h2><p>Deposit, progress, and final invoices tied to contract milestones and estimate line_ids.</p></div><a class="btn primary" href="#">Issue selected</a></div>
+            <div class="metrics"><div class="metric"><span>Contract</span><b>$187,500</b></div><div class="metric"><span>Open AR</span><b>$42,750</b></div><div class="metric"><span>Current milestone</span><b>2 of 4</b></div><div class="metric"><span>Line_ids carried</span><b>8</b></div></div>
+            <section class="table">
+              <div class="row header"><div>Invoice</div><div>Milestone</div><div>Status</div><div>Amount</div><div>Action</div></div>
+              <div class="row"><div class="name"><b>INV-WEG-01 Deposit</b><span>Signed contract deposit</span></div><div>1 of 4</div><div><span class="chip green">Paid</span></div><div class="amount">$46,875</div><a class="btn" href="#">Detail</a></div>
+              <div class="row"><div class="name"><b>INV-WEG-02 Progress</b><span>Cabinets, tile, primary bath labor</span></div><div>2 of 4</div><div><span class="chip gold">Draft ready</span></div><div class="amount">$42,750</div><a class="btn" href="#">Detail</a></div>
+              <div class="row"><div class="name"><b>INV-WEG-03 Progress</b><span>Rough inspections and finish material</span></div><div>3 of 4</div><div><span class="chip">Scheduled</span></div><div class="amount">$61,875</div><a class="btn" href="#">Detail</a></div>
+              <div class="row"><div class="name"><b>INV-WEG-04 Final</b><span>Punch, closeout, warranty handoff</span></div><div>4 of 4</div><div><span class="chip red">Locked</span></div><div class="amount">$36,000</div><a class="btn" href="#">Detail</a></div>
+            </section>
+          </main>
+          <aside class="rail">
+            <div class="card warn"><h3>Right Hand context</h3><p>Carried from proposal: estimate est_wegrzyn_041, contract con_wegrzyn_041, line_ids for cabinets, tile, bath labor, and appliance allowance.</p></div>
+            <div class="card"><h3>Money guard</h3><p>Issue, send, record payment, export, and QB sync all require visible confirmation.</p></div>
+            <div class="card"><h3>Line_id thread</h3><div class="line-list"><span>line_kit_cabinets</span><span>line_tile_floor</span><span>line_primary_bath_labor</span><span>line_appliance_allowance</span></div></div>
+          </aside>
+        </div>
+      </div>
+    </div>
+    <aside class="spec">
+      <h3>Contract</h3>
+      <ul><li>Owning route: project money invoice list.</li><li>Global Money AR can deep-link in, but does not own the job invoice set.</li><li>Same spine as mobile F-INV1a.</li></ul>
+      <h4>Click paths</h4>
+      <ul><li>Detail goes to F-INV2b.</li><li>Issue selected remains gated.</li><li>Back through project, estimate, proposal, or Money source.</li></ul>
+    </aside>
+  </section>
+</div>
+</body>
+</html>

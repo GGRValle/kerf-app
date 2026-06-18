@@ -129,7 +129,7 @@ test('camera-capture POST requires confirm and returns two artifacts', async () 
       assert.equal(body.artifacts.work.kind, 'daily_log_entry');
       assert.equal(body.artifacts.attention.work_artifact_ref, body.artifacts.work.id);
       assert.equal(body.artifacts.attention.state, 'review_suggested');
-      assert.match(body.daily_log_route, /daily_log/);
+      assert.match(body.daily_log_route, /\/daily-log$/);
     }
     const events = await getApiDeps().eventStore.readAll();
     assert.equal(

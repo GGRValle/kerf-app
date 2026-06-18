@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-MEM-RH · Right Hand Memory System</title>
+<style>
+:root{
+  --bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;
+  --t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;
+  --green:#38C977;--rh:#C9A961;--gold:#F5B544;--blue:#7BA8FF;--red:#F8615A;--violet:#9B8AE6;
+  --accent:#C9A961;
+  --topbg:rgba(10,13,17,.92);
+}
+body.light{
+  --bg:#F4F5F7;--bg2:#FFFFFF;--s:#F0F1F4;--s2:#E8EAEE;--bd:#D4D8E0;--bds:#E2E5EA;
+  --t:#1C2128;--dim:#4A5264;--mute:#7A828F;
+  --green:#1E9E58;--rh:#A0823F;--gold:#C28A1E;--blue:#3D6FD6;--red:#D6453E;--violet:#7461C9;
+  --accent:#A0823F;
+  --topbg:rgba(244,245,247,.92);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.55;transition:background .25s,color .25s}
+.page{max-width:1500px;margin:0 auto;padding:32px 24px 80px}
+.topbar{position:sticky;top:0;z-index:100;background:var(--topbg);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:9px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.topbar .lbl{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.topbar .hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+.themebtn{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--bd);background:var(--s);color:var(--dim);cursor:pointer}
+.themebtn:hover{color:var(--t);border-color:var(--accent)}
+.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.crumb .sep{margin:0 6px}.crumb .cur{color:var(--accent)}
+h1{font-size:20px;font-weight:600;margin:0 0 7px}
+.lede{color:var(--dim);max-width:1040px;margin:0 0 14px;line-height:1.65}
+.doctrine{background:linear-gradient(120deg,rgba(201,169,97,.14),rgba(201,169,97,.03));border:1px solid rgba(201,169,97,.42);border-radius:12px;padding:15px 18px;margin:18px 0 30px}
+body.light .doctrine{background:linear-gradient(120deg,rgba(160,130,63,.12),rgba(160,130,63,.02));border-color:rgba(160,130,63,.45)}
+.doctrine .dl{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--rh);font-weight:700;margin-bottom:7px}
+.doctrine .big{font-size:16px;color:var(--t);font-weight:600;line-height:1.5}
+.doctrine .sm{font-size:12.5px;color:var(--dim);margin-top:8px;line-height:1.6}
+.stack{display:flex;flex-direction:column;gap:0;margin:26px 0}
+.flowlabel{text-align:center;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;padding:6px 0}
+.arrow{text-align:center;color:var(--accent);font-size:18px;line-height:1;padding:5px 0;opacity:.6}
+.arrow .t{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);display:block;margin-top:2px}
+.layer{border:1px solid var(--bd);border-radius:13px;padding:0;overflow:hidden;background:var(--bg2)}
+.layer .lhead{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--bds)}
+.layer .lnum{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.layer .lt{flex:1}
+.layer .lt .nm{font-size:14.5px;font-weight:600;color:var(--t)}
+.layer .lt .role{font-size:11px;color:var(--mute);letter-spacing:.04em;text-transform:uppercase;font-weight:600;margin-top:1px}
+.layer .auth{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:20px}
+.layer .lbody{padding:14px 18px;font-size:12.5px;color:var(--dim);line-height:1.65}
+.layer .lbody b{color:var(--t)}
+.layer .ex{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.layer .ex span{font-size:10px;padding:3px 9px;border-radius:6px;background:var(--s2);color:var(--dim);border:1px solid var(--bd)}
+.L1 .lnum{background:rgba(106,114,130,.2);color:var(--mute)} .L1{border-color:var(--bd)}
+.L2 .lnum{background:rgba(56,201,119,.16);color:var(--green)} .L2{border-color:rgba(56,201,119,.35)}
+.L3 .lnum{background:rgba(123,168,255,.16);color:var(--blue)}
+.L4 .lnum{background:rgba(155,138,230,.16);color:var(--violet)}
+.auth.record{background:rgba(106,114,130,.18);color:var(--mute)}
+.auth.truth{background:rgba(56,201,119,.16);color:var(--green)}
+.auth.proposes{background:rgba(123,168,255,.16);color:var(--blue)}
+.auth.view{background:rgba(155,138,230,.16);color:var(--violet)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:30px 0}
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:17px 19px}
+.card h3{margin:0 0 11px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.card ul{margin:0;padding-left:16px}
+.card li{font-size:12.5px;color:var(--dim);line-height:1.65;margin-bottom:7px}
+.card li b{color:var(--t)}
+.card code{background:var(--s2);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--rh)}
+.floor{display:flex;align-items:flex-start;gap:9px;margin-bottom:9px}
+.floor .ic{color:var(--gold);flex-shrink:0;margin-top:1px}
+.floor .ft{font-size:12.5px;color:var(--dim);line-height:1.55}
+.floor .ft b{color:var(--t)}
+.eval{display:flex;align-items:flex-start;gap:9px;margin-bottom:9px}
+.eval .ic{color:var(--red);flex-shrink:0;font-size:11px;margin-top:2px}
+.eval .et{font-size:12.5px;color:var(--dim);line-height:1.55}
+.eval .et b{color:var(--t)}
+.synapse{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:20px;margin:30px 0}
+.synapse h3{margin:0 0 16px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+.fnode{flex:1;min-width:130px;background:var(--s);border:1px solid var(--bd);border-radius:10px;padding:12px;text-align:center}
+.fnode .fn{font-size:12px;font-weight:600;color:var(--t);margin-bottom:3px}
+.fnode .fd{font-size:10.5px;color:var(--mute);line-height:1.4}
+.fsep{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:16px;padding:0 8px;opacity:.6}
+.note{font-size:11.5px;color:var(--mute);margin-top:14px;line-height:1.6;font-style:italic}
+.seedbox{background:linear-gradient(135deg,rgba(56,201,119,.08),transparent);border:1px solid rgba(56,201,119,.3);border-radius:10px;padding:13px 16px;margin-top:14px}
+.seedbox .sl{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:6px}
+.seedbox .st{font-size:12px;color:var(--dim);line-height:1.6}
+.seedbox code{background:var(--s2);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--rh)}
+</style></head>
+<body>
+<div class="page">
+<div class="topbar"><span class="lbl">Right Hand</span><span class="lbl" style="color:var(--rh)">Memory System</span><span class="hint">F-MEM-RH · how truth persists, stays walled, and outlives the conversation · doctrine, not launch req</span><button class="themebtn" id="themeToggle" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'◐ Dark':'◑ Light'">◑ Light</button></div>
+<div class="crumb"><span>Right Hand</span><span class="sep">›</span><span>Architecture</span><span class="sep">›</span><span class="cur">F-MEM-RH · Memory System</span></div>
+<h1>Right Hand — Memory &amp; Continuity</h1>
+<p class="lede">How Right Hand keeps the kernel of truth alive longer than any single conversation can hold it. Truth never lives in the chat — it lives in the layers below, and the conversation reaches them through synapses. This is the picture of how memory works, rendered so you can see the whole shape at once. <i>Doctrine of record: <code>_docs/architecture/RightHand_Memory_Reference.md</code> (incl. the six-layer crosswalk, voice/role memory placement, and compaction-as-routing).</i></p>
+<div class="doctrine">
+  <div class="dl">◈ The authority doctrine — everything hangs on this</div>
+  <div class="big">Memory helps Right Hand <i>remember</i>. The graph tells Right Hand what is <i>true</i>.</div>
+  <div class="sm">Memory retrieves and proposes. The graph commits. Sentry governs shared learning. Three roles, never collapsed. The most expensive mistake in the build is letting a retrieval substrate become the system of record — it must not.</div>
+</div>
+<div class="flowlabel">↓ data flows down into truth · queries reach up for slices ↓</div>
+<div class="stack">
+  <div class="layer L4">
+    <div class="lhead">
+      <div class="lnum">4</div>
+      <div class="lt"><div class="nm">Human-Readable Wiki / Blackboard View</div><div class="role">audit · learning · operator trust · memory exposure</div></div>
+      <div class="auth view">a view · not authority</div>
+    </div>
+    <div class="lbody">
+      Markdown / Obsidian-style summaries, generated <b>from</b> the graph below. The "picture worth a thousand words" — for the <b>human</b> auditing, for Sentry review, and for a multimodal agent that needs the <i>shape</i> of things cheaply. Also the <b>memory-exposure surface</b>: where the user inspects and corrects the memory that manages them. Never the source of truth.
+      <div class="ex"><span>operator audit</span><span>Sentry review</span><span>playbooks</span><span>glanceable shape</span><span>inspect &amp; correct</span></div>
+    </div>
+  </div>
+  <div class="arrow">↑<span class="t">renders from</span></div>
+  <div class="layer L3">
+    <div class="lhead">
+      <div class="lnum">3</div>
+      <div class="lt"><div class="nm">Memory / Retrieval Substrate</div><div class="role">helps recall the right slice — plumbing</div></div>
+      <div class="auth proposes">retrieves · proposes</div>
+    </div>
+    <div class="lbody">
+      Vector / entity-linked / graph retrieval that surfaces the relevant slice to the reply brain. It <b>serves</b> the graph; it does not <b>become</b> the graph. Buy this, don't build it. <b>Mem0 = recall layer only</b> (its OSS graph-store was removed — not a queryable operational graph). Candidates: Zep/Graphiti · pgvector + entity-linking · Mem0-style extraction · hybrid.
+      <div class="ex"><span>fuzzy recall</span><span>semantic search</span><span>entity linking</span><span>proposes, never commits</span></div>
+    </div>
+  </div>
+  <div class="arrow">↕<span class="t">serves / retrieves from</span></div>
+  <div class="layer L2">
+    <div class="lhead">
+      <div class="lnum">2</div>
+      <div class="lt"><div class="nm">Work Thread / Business Graph</div><div class="role">the system of record — THE AUTHORITY</div></div>
+      <div class="auth truth">commits truth</div>
+    </div>
+    <div class="lbody">
+      Where <b>Chen, Wegrzyn, COIs, invoices, schedules, commitments</b> live. Client · project · estimate · daily log · scope · assumptions · open loops · gates · decisions — each with a source ref back to the ledger. <b>Graph-adjacent: per-(tenant × user) Voice/Role memory</b> (Voice Profile, preferences, role continuity — governed by memory-exposure, never cross-tenant). When Right Hand needs to know <b>what is true</b>, it reads here. The graph commits; nothing else does. <i>Near-term: structured records + event log. A true graph DB earns its keep only when multi-hop reasoning across jobs/people/schedules is the workload.</i>
+      <div class="ex"><span>job-keyed</span><span>source-referenced</span><span>open loops</span><span>gates &amp; commitments</span><span>voice/role (graph-adjacent)</span></div>
+    </div>
+  </div>
+  <div class="arrow">↑<span class="t">curator promotes (validated)</span></div>
+  <div class="layer L1">
+    <div class="lhead">
+      <div class="lnum">1</div>
+      <div class="lt"><div class="nm">Immutable Event Ledger</div><div class="role">raw source of record — never rewritten</div></div>
+      <div class="auth record">cold · immutable</div>
+    </div>
+    <div class="lbody">
+      Raw transcripts, photos, scans, voice turns, files, tool outputs, source refs. <b>Tenant-scoped. Never rewritten.</b> The anti-loss layer: truth is never destroyed by compaction because the original always survives here and is addressable. Nothing downstream is trusted over the ledger.
+      <div class="ex"><span>transcripts</span><span>photos · scans</span><span>voice turns</span><span>tool outputs</span><span>addressable, never bulk-read</span></div>
+    </div>
+  </div>
+</div>
+<div class="synapse">
+  <h3>◈ The synapse — how a query reaches truth without reading everything</h3>
+  <div class="flow">
+    <div class="fnode"><div class="fn">Query / conversation</div><div class="fd">"what's the schedule state?"</div></div>
+    <div class="fsep">→</div>
+    <div class="fnode"><div class="fn">Tier-0 triage</div><div class="fd">discerns what's needed + which route to fire</div></div>
+    <div class="fsep">→</div>
+    <div class="fnode"><div class="fn">Topology map</div><div class="fd">holds routes, not data — "schedule lane → here"</div></div>
+    <div class="fsep">→</div>
+    <div class="fnode"><div class="fn">Retrieval (L3)</div><div class="fd">pulls only the relevant slice</div></div>
+    <div class="fsep">→</div>
+    <div class="fnode"><div class="fn">Graph (L2)</div><div class="fd">confirms what's true · commits</div></div>
+  </div>
+  <div class="note">The orchestrator holds a lightweight <b>map</b> (routes, not archive) so working memory stays small and fast. Cost scales with what the query needs — not with total tenant history. The pile grows forever; the per-query reach stays cheap. Modality-matched: shape questions return visual slices, fact questions return structured records. <b>Compaction is this same mechanism on the time axis: demotion-with-a-route, never summarization-with-loss</b> — when context fills, detail demotes a tier and leaves a breadcrumb; nothing is destroyed. New eval: after compaction, every demoted load-bearing fact must still be reachable (route completeness).</div>
+  <div class="seedbox">
+    <div class="sl">✓ Already seeded — PR #305</div>
+    <div class="st">The first two rungs already shipped for conversation state: <code>updated_working_draft</code> = working memory · server merge/fabrication-floor = the write validator (curator in miniature) · <code>rawText</code> = the immutable ledger · <code>draft_fabrication_flags</code> = the honesty seam. The grand architecture is the <b>generalization of what #305 already proved</b> — not a new system.</div>
+  </div>
+</div>
+<div class="cols">
+  <div class="card">
+    <h3>The floors — enforced at every layer</h3>
+    <div class="floor"><span class="ic">▎</span><div class="ft"><b>Tenant isolation.</b> No cross-tenant recall, ever. Structure may promote platform-wide (Sentry-governed); tenant facts never cross the wall.</div></div>
+    <div class="floor"><span class="ic">▎</span><div class="ft"><b>Source support.</b> Every committed fact traces to a ledger source ref.</div></div>
+    <div class="floor"><span class="ic">▎</span><div class="ft"><b>No durable action without confirm.</b> The gate. Memory proposes; the human commits consequential / financial / contractual actions.</div></div>
+    <div class="floor"><span class="ic">▎</span><div class="ft"><b>No raw model output as truth.</b> Server validates, floors, merges before commit.</div></div>
+    <div class="floor"><span class="ic">▎</span><div class="ft"><b>Deterministic validation</b> at the write path — not model discretion.</div></div>
+  </div>
+  <div class="card">
+    <h3>Core evals — failure modes are regressions, not edge cases</h3>
+    <div class="eval"><span class="ic">●</span><div class="et"><b>Tenant bleed</b> — tenant A's fact surfacing for tenant B. Zero tolerance.</div></div>
+    <div class="eval"><span class="ic">●</span><div class="et"><b>Wrong-job recall</b> — Chen data attributed to Wegrzyn (the live failure already seen).</div></div>
+    <div class="eval"><span class="ic">●</span><div class="et"><b>Stale scope</b> — recalling superseded scope as current.</div></div>
+    <div class="eval"><span class="ic">●</span><div class="et"><b>False closure</b> — "we already filed it" with no ledger event. The honesty floor as a test.</div></div>
+    <div class="eval"><span class="ic">●</span><div class="et"><b>Fabrication accumulation</b> — the curator inventing facts during promotion.</div></div>
+    <div class="eval"><span class="ic">●</span><div class="et"><b>Omission</b> — a load-bearing fact dropped in compaction (the original scar).</div></div>
+    <div class="eval"><span class="ic">●</span><div class="et"><b>Route loss</b> — a demoted fact whose breadcrumb wasn't written or points wrong: silent omission one layer over. Compact → probe → a miss is a regression.</div></div>
+  </div>
+</div>
+<div class="card" style="margin-top:16px">
+  <h3>The strategic line — why this is safe to adopt rather than build</h3>
+  <p style="margin:0;font-size:12.5px;color:var(--dim);line-height:1.7"><b style="color:var(--t)">Buy the plumbing; build the judgment.</b> The moat is not "Right Hand has vector memory" — the substrate is commoditizing for everyone. The moat is the judgment riding on top: contractor-specific salience · tenant-safe learning · multimodal site-evidence distillation · "what matters next / what to interrupt Christian about" · consequence &amp; money gates · wrong-job risk · scope-drift detection · Sentry-reviewed Blackboard plays · per-tenant CRAFT. The substrate retrieves; the graph commits; Sentry governs; <b style="color:var(--t)">the judgment is ours.</b></p>
+</div>
+</div>
+</body></html>

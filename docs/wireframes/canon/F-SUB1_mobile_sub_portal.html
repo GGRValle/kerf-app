@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerf · F-SUB1 · Mobile Sub Portal (execution + company wrapper)</title>
+<style>:root{--bg:#0A0D11;--bg2:#14181F;--s:#1A1F28;--s2:#232936;--bd:#2A3140;--bds:#1F2530;--t:#E8ECF1;--dim:#98A1B3;--mute:#6A7282;--accent:#C9A961;--amber:#F5B544;--green:#38C977;--blue:#7BA8FF;--red:#F87171;--rh:#C9A961}
+body.light-mode{--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--s2:#EBEEF2;--bd:#C9D0D8;--bds:#DFE3E8;--t:#0A0D11;--dim:#4A5462;--mute:#7B8492;--accent:#9A7B2E;--amber:#9A6B12}
+body.light-mode .frame-render{background:linear-gradient(180deg,#F4F6F9,#FFF)!important}body.light-mode .view-toggle-bar{background:rgba(255,255,255,.92)!important}body.light-mode .phone-notch{background:#1a1a1d!important}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:13px;line-height:1.5}
+.page{max-width:1700px;margin:0 auto;padding:32px 24px 80px}
+.view-toggle-bar{position:sticky;top:0;z-index:100;background:rgba(10,13,17,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:8px 24px;margin:-32px -24px 28px;display:flex;align-items:center;gap:14px}
+.vtb-label{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}.vtb-options{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:2px}.vtb-tab{padding:5px 12px;font-size:11px;border-radius:6px;color:var(--mute);cursor:pointer;font-weight:600}.vtb-tab.active{background:var(--amber);color:#1A1300}.vtb-hint{margin-left:auto;font-size:10.5px;color:var(--mute)}
+body.presentation-mode .frame-spec{display:none}body.presentation-mode .frame{grid-template-columns:1fr}
+.page-header{border-bottom:1px solid var(--bd);padding-bottom:22px;margin-bottom:32px}.crumb{font-size:11px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}.crumb .sep{margin:0 6px}.crumb .step.current{color:var(--accent)}
+.page-header h1{font-size:19px;font-weight:600;margin:0 0 6px}.page-header p{color:var(--dim);margin:0;max-width:1080px;line-height:1.6}
+.frame{display:grid;grid-template-columns:1fr 360px;gap:28px;margin-bottom:56px}.frame-label{grid-column:1/-1;color:var(--accent);font-weight:600;font-size:13px;margin-bottom:4px}.frame-narr{grid-column:1/-1;color:var(--dim);font-size:12.5px;line-height:1.7;margin:0 0 14px;max-width:1080px}
+.frame-render{border:1px solid var(--bd);border-radius:12px;background:linear-gradient(180deg,#14181F,#0A0D11);padding:30px;display:flex;justify-content:center}
+.frame-spec{border:1px solid var(--bd);border-radius:12px;background:var(--bg2);padding:18px 16px;font-size:12px;color:var(--dim);position:sticky;top:60px;height:fit-content}
+.frame-spec h3{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--t);margin:0 0 10px}.frame-spec h4{font-size:10.5px;text-transform:uppercase;color:var(--accent);margin:14px 0 6px}.frame-spec h4.warn{color:var(--red)}
+.frame-spec ul{padding-left:16px;margin:0 0 8px}.frame-spec li{margin-bottom:5px}.frame-spec code{font-family:monospace;font-size:11px;color:var(--rh)}
+.phone{width:316px;border:1.5px solid var(--bd);border-radius:40px;padding:11px;background:var(--bg);box-shadow:0 16px 50px rgba(0,0,0,.5);position:relative}
+.phone-notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:110px;height:23px;background:var(--bg);border-radius:0 0 14px 14px}
+.scr{border-radius:29px;overflow:hidden;height:640px;display:flex;flex-direction:column;background:var(--bg)}
+.status-bar{display:flex;justify-content:space-between;padding:11px 18px 4px;font-size:11px;font-weight:600}
+.apphdr{display:flex;align-items:center;padding:5px 16px 7px}.apphdr .wm{font-size:13px;font-weight:700;color:var(--rh)}.apphdr .for{font-size:10px;color:var(--mute);margin-left:7px}.apphdr .av{margin-left:auto;width:27px;height:27px;border-radius:50%;background:rgba(201,169,97,.2);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.body{flex:1;overflow-y:auto;padding:6px 14px 14px}
+.sec{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:13px 2px 7px}
+.wo{background:var(--s);border:1px solid var(--bds);border-left:4px solid var(--accent);border-radius:11px;padding:13px}
+.wo .lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}.wo .ttl{font-size:15px;font-weight:600;margin-top:5px}.wo .m{font-size:10.5px;color:var(--mute);margin-top:5px}
+.accept{display:flex;gap:8px;margin-top:11px}.btn{flex:1;text-align:center;font-size:12px;font-weight:600;padding:9px;border-radius:9px}.btn.y{background:var(--accent);color:#2A1F08}.btn.n{border:1px solid var(--bd);color:var(--dim)}
+.row{background:var(--s);border:1px solid var(--bds);border-radius:9px;padding:9px 11px;margin-bottom:6px;display:flex;align-items:center;gap:9px;font-size:11.5px}
+.row .ico{width:16px;height:16px;color:var(--accent);flex:none}.row .meta{margin-left:auto;font-size:10px;flex:none}
+.tag{font-size:9px;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:20px}.tag.todo{background:rgba(245,181,68,.15);color:var(--amber)}.tag.ok{background:rgba(56,201,119,.15);color:var(--green)}.tag.due{background:rgba(123,168,255,.15);color:var(--blue)}
+.acq{margin-top:14px;background:rgba(201,169,97,.08);border:1px solid rgba(201,169,97,.35);border-radius:11px;padding:11px 12px;text-align:center}
+.acq .t{font-size:11.5px;color:var(--t)}.acq .t b{color:var(--accent)}.acq .l{font-size:10.5px;color:var(--accent);font-weight:600;margin-top:5px;text-decoration:underline}
+.botbar{display:flex;justify-content:space-around;align-items:flex-end;padding:7px 4px 11px;border-top:1px solid var(--bds);background:var(--bg)}.nav{font-size:9px;color:var(--mute);text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}.nav.on{color:var(--accent)}.bi{width:24px;height:24px;display:block}
+.micwrap{flex:1;display:flex;flex-direction:column;align-items:center}.mic{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;margin-top:-19px;box-shadow:0 0 0 5px var(--bg);color:#2A1F08}.mic .bi{width:25px;height:25px}
+.callout-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}.callout{background:var(--bg2);border:1px solid var(--bd);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:11.5px;color:var(--dim)}.callout.r{border-left-color:var(--red)}.callout .ct{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;display:block;margin-bottom:5px}.callout.r .ct{color:var(--red)}
+@media print{body,body.light-mode{background:#FFF!important;color:#0A0D11!important;--bg:#FFF;--bg2:#F4F6F9;--s:#FFF;--bd:#999;--bds:#C9D0D8;--t:#0A0D11;--dim:#4A5462;--mute:#6B7280;--accent:#9A7B2E}.view-toggle-bar,.frame-spec{display:none!important}.frame{grid-template-columns:1fr!important}.frame-render{background:#FFF!important;border:1px solid #999!important;box-shadow:none!important}.phone{background:#FFF!important;border-color:#999!important;box-shadow:none!important}@page{size:letter;margin:.5in}.page{max-width:none!important;padding:0!important}}
+</style></head><body><div class="page">
+<div class="view-toggle-bar"><span class="vtb-label">View</span><div class="vtb-options"><span class="vtb-tab active" data-mode="annotated">Annotated</span><span class="vtb-tab" data-mode="presentation">True scale</span></div><span class="vtb-label" style="margin-left:14px">Theme</span><div class="vtb-options"><span class="vtb-tab active" data-theme="dark">Dark</span><span class="vtb-tab" data-theme="light">Light</span></div><span class="vtb-hint">Press <kbd>V</kbd> · execution + wrapper · tightest isolation · icons inline</span></div>
+<div class="page-header"><div class="crumb"><span class="step">External · sub portal</span><span class="sep">›</span><span class="step current">F-SUB1 · Sub portal (mobile)</span></div>
+<h1>F-SUB1 · Mobile Sub Portal · Field Hand behavior + company wrapper</h1>
+<p>Two things at once. <strong>Execution grammar</strong> (accept WO/PO → schedule → docs → capture → submit) because a sub works like a field user, plus a <strong>company wrapper</strong> (PO, payment, required docs) because they're a business. And the <strong>tightest isolation wall in the system</strong>: an external party sees only their own WO/PO/docs/payment with this one tenant — never margin, client comms, internal notes, other subs, or project financials. Quiet Right Hand branding because the sub portal is also an acquisition funnel — subs experience the system and become leads.</p></div>
+<div class="frame"><div class="frame-label">Frame · F-SUB1 · Sub portal</div>
+<p class="frame-narr">Leads with the open work order to accept, then the company-wrapper rows the sub actually needs — schedule, required docs (the thing blocking their pay), uploads/daily, completion state, payment status, and a thread with the PM/super/admin. A quiet "get your own Right Hand" hook at the bottom. Everything outside their relationship with GGR is invisible.</p>
+<div class="frame-render"><div class="phone"><div class="phone-notch"></div><div class="scr">
+<div class="status-bar"><span>9:41</span><span>●●● 88%</span></div>
+<div class="apphdr"><span class="wm">Right Hand</span><span class="for">· for GGR</span><span class="av">RV</span></div>
+<div class="body">
+<div class="sec">Your work order</div>
+<div class="wo"><div class="lbl">Needs your acceptance</div><div class="ttl">Framing — Wegrzyn kitchen</div><div class="m">PO-1042 · $8,400 · start Fri Jun 6 · 1423 Oak St, Poway</div>
+<div class="accept"><div class="btn y">Accept</div><div class="btn n">Question</div></div></div>
+<div class="sec">This job</div>
+<div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Schedule — Fri–Mon<span class="meta tag due">2 days</span></div>
+<div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>Required docs — COI + W9<span class="meta tag todo">missing</span></div>
+<div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Upload photos / daily<span class="meta">add</span></div>
+<div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Completion / sign-off<span class="meta tag todo">not yet</span></div>
+<div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 2-2.5 2-2.5 4M12 17h.01"/></svg>Payment status<span class="meta tag ok">paid on accept</span></div>
+<div class="row"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/></svg>Messages — Ana (super)<span class="meta">2</span></div>
+<div class="acq"><div class="t">Like working this way? <b>Right Hand</b> runs your whole shop.</div><div class="l">Get your own — free to try</div></div>
+</div>
+<div class="botbar"><div class="nav on"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Create</div><div class="micwrap"><div class="mic"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></div></div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Camera</div><div class="nav"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>More</div></div>
+</div></div></div>
+<div class="frame-spec"><h3>F-SUB1 · Spec</h3>
+<h4>Execution + wrapper</h4><ul>
+<li>Execution: accept WO/PO → schedule → docs → capture → submit/complete.</li>
+<li>Company wrapper: PO, payment status, required docs (COI/W9), completion sign-off, messages.</li>
+</ul>
+<h4 class="warn">Isolation — the tightest wall</h4><ul>
+<li>External party. Sees ONLY their own WO/PO/docs/payment/messages <strong>with this one tenant</strong>.</li>
+<li><strong>Never</strong>: margin · client comms · internal notes · other subs · project financials · other tenants. (Storage-isolation canon, Wall 1 + permission lattice at its strictest.)</li>
+</ul>
+<h4>Growth wedge</h4><ul>
+<li>Subs experience Right Hand and become leads — the double-win. Quiet "get your own" hook, polished enough to leave an impression, never pushy. "Right Hand · for GGR" header signals it's the tenant's instance.</li>
+<li>Accent: muted Right Hand gold (brand intro without overwhelming a limited UI).</li>
+</ul></div>
+</div>
+<div class="callout-row"><div class="callout"><span class="ct">Field Hand + a company wrapper</span>Works like a field user (accept, capture, submit) but wrapped with the business pieces a sub-company needs — PO, docs, payment. Required docs sit right where they block pay, so the sub fixes it fast.</div><div class="callout r"><span class="ct">Tightest wall + a funnel</span>The most restricted surface in the system — one tenant, their own work only — and an acquisition channel at the same time. Isolation-first, acquisition-aware.</div></div>
+</div>
+<script>document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('presentation-mode',t.dataset.mode==='presentation')}));document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){const n=document.body.classList.contains('presentation-mode')?'annotated':'presentation';document.querySelector('[data-mode="'+n+'"]').click()}});document.querySelectorAll('[data-theme]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-theme]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.body.classList.toggle('light-mode',t.dataset.theme==='light');try{localStorage.setItem('kerf_wf_theme',t.dataset.theme)}catch(e){}}));try{if(localStorage.getItem('kerf_wf_theme')==='light'){document.body.classList.add('light-mode');document.querySelectorAll('[data-theme]').forEach(t=>t.classList.toggle('active',t.dataset.theme==='light'))}}catch(e){}</script>
+</body></html>
