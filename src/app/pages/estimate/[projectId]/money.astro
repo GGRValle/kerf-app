@@ -148,8 +148,18 @@ const downPayment = milestones[0];
 const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amount_due_cents ?? 0);
 ---
 
-<Layout title="Money" activeHref="/money">
-  <article class="mf-page" data-estimate-id={estimateId} data-project-id={projectId}>
+<Layout
+  title="Money"
+  activeHref="/money"
+  surfaceContext={{
+    surface: 'money',
+    project_id: projectId,
+    estimate_id: estimateId,
+    line_ids: draft.lines.map((line) => line.id),
+    phase: draft.gate.allowed ? 'review' : 'draft',
+  }}
+>
+  <article class="mf-page" data-grammar="canon" data-estimate-id={estimateId} data-project-id={projectId}>
     <nav class="mf-nav" aria-label="Money flow">
       <a href={estimateBack}>‹ Estimate</a>
       <a href={proposalLink}>Proposal</a>
@@ -188,8 +198,24 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     ) : null}
 
     <section class="mf-milestones" aria-label="Invoice milestones">
-      {milestones.map((item) => (
-        <article class="mf-milestone" data-status={item.status}>
+      {milestones.map((item, index) => (
+        <Fragment>
+        {index === 1 ? (
+          <article class="mf-milestone kg-card" data-status="blocked" data-progress-draw>
+            <div class="mf-milestone-head">
+              <div>
+                <span>Progress billing</span>
+                <h2>Progress draw</h2>
+              </div>
+              <strong>Not configured</strong>
+            </div>
+            <p class="mf-note">Progress draws are not configured for this job yet. Deposit and final are available; progress billing needs a separate setup before it can be issued — nothing is billable here.</p>
+            <div class="mf-actions">
+              <span class="mf-btn disabled" aria-disabled="true">Not configured</span>
+            </div>
+          </article>
+        ) : null}
+        <article class="mf-milestone kg-card" data-status={item.status}>
           <div class="mf-milestone-head">
             <div>
               <span>{item.kind === 'down_payment' ? 'Due at signing' : 'Due at completion'}</span>
@@ -203,7 +229,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
               <div><dt>Milestone amount</dt><dd>{fmt(item.billed_cents + item.invoice.amount_due_cents + item.invoice.retention_held_cents)}</dd></div>
               <div><dt>Billed</dt><dd>{fmt(item.billed_cents)}</dd></div>
               <div><dt>Remaining to issue</dt><dd>{fmt(item.remaining_cents)}</dd></div>
-              <div><dt>Paid</dt><dd>Not tracked in Kerf yet</dd></div>
+              <div><dt>Paid</dt><dd>Not tracked yet</dd></div>
             </dl>
           ) : (
             <p class="mf-note">{item.blocked_reason}</p>
@@ -235,6 +261,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
             )}
           </div>
         </article>
+        </Fragment>
       ))}
     </section>
 
@@ -288,7 +315,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
   }
 
   .mf-nav a {
-    color: var(--text-muted, #6a7282);
+    color: var(--muted);
     text-decoration: none;
     font-size: 0.86rem;
   }
@@ -299,7 +326,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
 
   .mf-hero h1 {
     margin: 0.2rem 0 0;
-    font-size: clamp(1.65rem, 6vw, 2.25rem);
+    font-size: 2.25rem;
     line-height: 1.05;
     letter-spacing: 0;
   }
@@ -307,7 +334,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
   .mf-hero p,
   .mf-note,
   .mf-muted {
-    color: var(--text-muted, #6a7282);
+    color: var(--muted);
     line-height: 1.42;
   }
 
@@ -315,22 +342,20 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-muted, #6a7282);
+    color: var(--muted);
   }
 
   .mf-summary {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.65rem;
     margin: 0.85rem 0;
   }
 
-  .mf-summary > div,
-  .mf-milestone {
-    border: 1px solid var(--border, #d4d9e2);
+  .mf-summary > div {
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: var(--surface, #fff);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    background: var(--panel);
   }
 
   .mf-summary > div {
@@ -343,7 +368,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-muted, #6a7282);
+    color: var(--muted);
   }
 
   .mf-summary strong {
@@ -364,11 +389,11 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
   }
 
   .mf-milestone[data-status='ready'] {
-    border-color: color-mix(in srgb, var(--field-green, #2f8f5b) 48%, var(--border, #d4d9e2));
+    border-color: color-mix(in srgb, var(--green) 48%, var(--line));
   }
 
   .mf-milestone[data-status='blocked'] {
-    border-color: color-mix(in srgb, var(--accent, #f5b544) 48%, var(--border, #d4d9e2));
+    border-color: color-mix(in srgb, var(--amber) 48%, var(--line));
   }
 
   .mf-milestone-head {
@@ -387,7 +412,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
   .mf-milestone-head > strong {
     padding: 0.28rem 0.55rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--surface, #fff) 80%, var(--field-green, #2f8f5b));
+    background: color-mix(in srgb, var(--panel) 80%, var(--green));
     font-size: 0.78rem;
     white-space: nowrap;
   }
@@ -403,11 +428,11 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     justify-content: space-between;
     gap: 1rem;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border, #dce1e9);
+    border-bottom: 1px solid var(--line);
   }
 
   .mf-money-list dt {
-    color: var(--text-muted, #6a7282);
+    color: var(--muted);
   }
 
   .mf-money-list dd {
@@ -447,27 +472,29 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     border-radius: 8px;
     text-decoration: none;
     font-weight: 700;
-    border: 1px solid var(--border, #d8dee6);
+    border: 1px solid var(--line);
     font: inherit;
   }
 
   .mf-btn.primary {
-    background: var(--right-hand, #c9a961);
-    color: #1a1300;
+    background: var(--gold);
+    color: var(--bg);
     border-color: transparent;
   }
 
   .mf-btn.ghost {
-    background: var(--surface, #fff);
+    background: var(--panel);
     color: inherit;
   }
 
   .mf-btn.disabled {
-    color: var(--text-muted, #6a7282);
-    background: color-mix(in srgb, var(--surface, #fff) 80%, var(--bg, #f6f8fb));
+    color: var(--muted);
+    background: color-mix(in srgb, var(--panel) 80%, var(--bg));
   }
 
   @media (max-width: 640px) {
+    .mf-hero h1 { font-size: 1.65rem; }
+
     .mf-page {
       padding-inline: 0.75rem;
     }

@@ -73,8 +73,18 @@ const paperHtml = invoice ? renderInvoiceHtml(invoice) : null;
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 ---
 
-<Layout title="Invoice draft" activeHref="/sales">
-  <article class="iv-page" data-estimate-id={estimateId} data-project-id={projectId}>
+<Layout
+  title="Invoice draft"
+  activeHref="/sales"
+  surfaceContext={{
+    surface: 'invoice',
+    project_id: projectId,
+    estimate_id: estimateId,
+    line_ids: draft.lines.map((line) => line.id),
+    phase: draft.gate.allowed ? 'review' : 'draft',
+  }}
+>
+  <article class="iv-page" data-grammar="canon" data-estimate-id={estimateId} data-project-id={projectId}>
     <a class="iv-back" href={estimateBack}>‹ Back to estimate</a>
     <a class="iv-back iv-back-secondary" href={proposalLink}>‹ Back to proposal</a>
 
@@ -146,25 +156,26 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
 
 <style>
   .iv-page { width: min(100%, 920px); margin: 0 auto; padding: 0.9rem 0.9rem 6rem; }
-  .iv-back { display: inline-flex; margin-right: 1rem; color: var(--text-muted, #6a7282); text-decoration: none; font-size: 0.85rem; }
+  .iv-back { display: inline-flex; margin-right: 1rem; color: var(--muted); text-decoration: none; font-size: 0.85rem; }
   .iv-back-secondary { margin-top: 0.25rem; }
-  .iv-hero h1 { margin: 0.2rem 0; font-size: clamp(1.5rem, 5vw, 2rem); }
-  .iv-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
-  .iv-sub, .iv-note { color: var(--text-muted, #6a7282); line-height: 1.45; }
+  .iv-hero h1 { margin: 0.2rem 0; font-size: 2rem; }
+  @media (max-width: 640px) { .iv-hero h1 { font-size: 1.5rem; } }
+  .iv-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .iv-sub, .iv-note { color: var(--muted); line-height: 1.45; }
   .iv-money { margin: 0.5rem 0 0; display: grid; gap: 0.35rem; }
   .iv-money > div { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
-  .iv-money dt { color: var(--text-muted, #6a7282); }
+  .iv-money dt { color: var(--muted); }
   .iv-money dd { margin: 0; font-variant-numeric: tabular-nums; }
   /* Amount due is the money anchor (wireframe total-emphasis pattern). */
   .iv-money-due { margin-top: 0.5rem; padding: 0.6rem 0.75rem; border-radius: 9px;
-    background: color-mix(in srgb, var(--right-hand, #c9a961) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--right-hand, #c9a961) 40%, var(--border, #d8dee6)); }
-  .iv-money-due dt { color: var(--text, inherit); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; }
-  .iv-money-due dd { font-weight: 800; font-size: 1.25rem; color: var(--text, inherit); }
-  .iv-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--border, #d8dee6); border-radius: 8px; overflow: hidden; }
+    background: color-mix(in srgb, var(--gold) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line)); }
+  .iv-money-due dt { color: var(--ink); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; }
+  .iv-money-due dd { font-weight: 800; font-size: 1.25rem; color: var(--ink); }
+  .iv-paper-wrap { margin-top: 0.75rem; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .iv-paper-html { width: 100%; min-height: 420px; border: 0; display: block; }
   .iv-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
-  .iv-btn { padding: 0.55rem 0.9rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--border, #d8dee6); }
-  .iv-btn.primary { background: var(--right-hand, #c9a961); color: #1a1300; border-color: transparent; }
-  .iv-btn.ghost { background: var(--surface, #fff); color: inherit; }
+  .iv-btn { padding: 0.55rem 0.9rem; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid var(--line); }
+  .iv-btn.primary { background: var(--gold); color: var(--bg); border-color: transparent; }
+  .iv-btn.ghost { background: var(--panel); color: inherit; }
 </style>

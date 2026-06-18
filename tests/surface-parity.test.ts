@@ -117,6 +117,7 @@ const REGISTRY: ReadonlyArray<{ surface: string; file: string; contract: CanonCo
   { surface: 'Proposal', file: 'src/app/pages/estimate/[projectId]/proposal.astro', contract: { requireSurfaceContext: true } },
   { surface: 'Proposal preview', file: 'src/app/pages/proposals/[id]/preview.astro', contract: { requireSurfaceContext: true } },
   { surface: 'Invoice', file: 'src/app/pages/estimate/[projectId]/invoice.astro', contract: { requireSurfaceContext: true } },
+  { surface: 'Money · per-job', file: 'src/app/pages/estimate/[projectId]/money.astro', contract: { requireSurfaceContext: true } },
   { surface: 'Money', file: 'src/app/pages/money/index.astro', contract: {} },
 ];
 

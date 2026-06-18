@@ -86,7 +86,7 @@ test('Goal A: money surface is the only page that issues invoice milestones, and
   assert.match(src, /Nothing will be sent, posted, charged, or marked paid/i);
   assert.match(src, /Payment recording is not connected/i);
   assert.match(src, /Paid recorded/);
-  assert.match(src, /Not tracked in Kerf yet/);
+  assert.match(src, /Not tracked yet/);
   for (const rel of [PAGES.estimate, PAGES.proposal, PAGES.invoice]) {
     assert.ok(!/\/invoice\/issue/.test(pageText(rel)), `${rel} must not issue invoice milestones`);
   }
