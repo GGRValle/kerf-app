@@ -21,7 +21,8 @@ test('apiRouter export does not inject a default platform session', () => {
 test('RoleHomeSurface hides F-xx wireframe codes outside dev/debug', () => {
   const src = read('src/app/components/RoleHomeSurface.astro');
   assert.match(src, /showWireframeRef/);
-  assert.match(src, /import\.meta\.env\.DEV/);
+  assert.match(src, /Astro\.url\.searchParams\.get\('debug'\) === '1'/);
+  assert.doesNotMatch(src, /import\.meta\.env\.DEV/);
   assert.doesNotMatch(src, />\{wireframe\} · \{t\(ROLE_LABEL_KEYS/);
 });
 

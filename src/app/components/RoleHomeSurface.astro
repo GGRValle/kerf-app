@@ -12,8 +12,8 @@ export interface Props {
 const { roleRoot, wireframeOverride } = Astro.props as Props;
 const { t } = createLayoutContext({ roleRoot });
 const wireframe = wireframeOverride ?? wireframeIdForRole(roleRoot);
-const showWireframeRef =
-  import.meta.env.DEV || Astro.url.searchParams.get('debug') === '1';
+const showWireframeRef = Astro.url.searchParams.get('debug') === '1';
+const showRoleCrumb = roleRoot !== 'owner' || showWireframeRef;
 const ROLE_LABEL_KEYS = {
   owner: 'roleRoot.owner',
   pm: 'roleRoot.pm',
@@ -24,12 +24,14 @@ const ROLE_LABEL_KEYS = {
 ---
 
 <section class="role-home" data-wireframe={wireframe} data-role-root={roleRoot}>
-  <p class="role-home__crumb">
-    {showWireframeRef ? (
-      <span class="role-home__wireframe-ref">{wireframe} · </span>
-    ) : null}
-    {t(ROLE_LABEL_KEYS[roleRoot])}
-  </p>
+  {showRoleCrumb ? (
+    <p class="role-home__crumb">
+      {showWireframeRef ? (
+        <span class="role-home__wireframe-ref">{wireframe} · </span>
+      ) : null}
+      {t(ROLE_LABEL_KEYS[roleRoot])}
+    </p>
+  ) : null}
   {roleRoot === 'owner' ? (
     <RightHandHomeSurface />
   ) : (
