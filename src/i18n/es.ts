@@ -517,6 +517,7 @@ export const ES: TranslationMap = {
   'shell.nav.projects': 'Projects',
   'shell.nav.create': 'Iniciar',
   'shell.nav.camera': 'Cámara',
+  'shell.nav.back_to_camera': 'Volver a la cámara',
   'shell.nav.more': 'More',
   'shell.nav.speak': 'Habla',
   'shell.nav.log': 'Registro',

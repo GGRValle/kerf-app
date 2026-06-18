@@ -548,6 +548,7 @@ export type I18nKey =
   | 'shell.nav.projects'
   | 'shell.nav.create'
   | 'shell.nav.camera'
+  | 'shell.nav.back_to_camera'
   | 'shell.nav.more'
   | 'shell.nav.speak'
   | 'shell.nav.log'
