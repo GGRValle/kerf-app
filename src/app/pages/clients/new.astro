@@ -55,7 +55,7 @@ const captureKind = Astro.url.searchParams.get('capture_kind') ?? '';
   </article>
 
   <script define:vars={{ tenantId: context.tenantId, captureKind, errorMsg: 'Could not create client.' }}>
-    // Camera capture handoff (F-DL1 follow-up): read-only intake context.
+    // Camera capture handoff: read-only lead/client intake context.
     // No deal, no project, no invented schema — the create payload is unchanged.
     let cameraCapture = null;
     try {
