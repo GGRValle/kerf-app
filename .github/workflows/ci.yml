@@ -61,5 +61,17 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      # `tsc --noEmit` above never parses `.astro` files, so an undeclared
+      # variable in a client `<script>` slips through (it also bundles clean —
+      # esbuild treats unknown identifiers as runtime globals). That is how
+      # #386 shipped `ReferenceError: selectedProjectClient is not defined`
+      # green and blanked the live camera until #389. This guard runs
+      # `astro check` over the `.astro` files and fails the build on the
+      # missing-binding diagnostic class (ts2304/2552/2448/2454/18004) — the
+      # ReferenceError class — while tolerating pre-existing implicit-any
+      # style noise. See scripts/check-astro-client-scripts.mjs.
+      - name: Guard — Astro client scripts (no undeclared vars)
+        run: npm run check:astro-scripts
+
       - name: Smoke proof — proposal-ff
         run: npm run smoke:proposal-ff
