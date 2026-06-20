@@ -81,3 +81,19 @@ test('smoke fixture itself performs no store/ledger/money write', () => {
   const src = readFileSync(path.join(ROOT, 'src/app/lib/rightHandSmokeFixtures.ts'), 'utf8');
   assert.doesNotMatch(src, /\.save\(|getInvoiceLedgerStore|invoice\/issue|issueInvoice|appendLedger/, 'fixture writes nothing');
 });
+
+test('smoke money page keeps Issue controls but the issue handler is read-only on the fixture', () => {
+  const money = readFileSync(path.join(ROOT, 'src/app/pages/estimate/[projectId]/money.astro'), 'utf8');
+  // Issue controls still render for the allowed (deposit/final) milestones
+  assert.match(money, /data-issue-milestone/, 'issue controls still render');
+  // The page marks itself a smoke fixture only when the smoke draft supplied it
+  assert.match(money, /const isSmokeFixture = smokeDraft !== null/, 'frontmatter derives the smoke flag');
+  assert.match(money, /data-smoke=\{isSmokeFixture \? 'true' : undefined\}/, 'article carries the smoke flag');
+  // The client handler reads the flag and short-circuits BEFORE the POST
+  const script = (money.match(/<script>[\s\S]*?<\/script>/) ?? [''])[0];
+  assert.match(script, /dataset\['smoke'\] === 'true'/, 'handler reads the smoke flag');
+  assert.match(script, /Smoke fixture is read-only\. Nothing was recorded\./, 'clear read-only message');
+  const guardIdx = script.indexOf('Smoke fixture is read-only');
+  const fetchIdx = script.indexOf('/invoice/issue');
+  assert.ok(guardIdx > 0 && fetchIdx > 0 && guardIdx < fetchIdx, 'the read-only guard precedes the issue POST (no write on smoke)');
+});
