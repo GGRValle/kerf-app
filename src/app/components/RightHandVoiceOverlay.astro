@@ -2268,12 +2268,21 @@ const { t } = createLayoutContext();
     };
 
     const resumeBubble = document.getElementById('rhvo-bubble') as HTMLButtonElement | null;
+    // The parked affordance is split by breakpoint: the desktop side pill
+    // (.rhvo-bubble, hidden < 900px) AND a body flag that lights the mobile
+    // center mic ("Tap to reengage" + glow). One affordance per breakpoint;
+    // both clear on engage (hideResumeBubble runs on open) so nothing
+    // duplicates while the overlay is open — the one-mic rule.
     const showResumeBubble = (label?: string) => {
+      document.body.classList.add('rh-reengage');
       if (!resumeBubble) return;
       resumeBubble.textContent = label ?? bubbleLabelFor(readResumeState(sessionStorage));
       resumeBubble.hidden = false;
     };
-    const hideResumeBubble = () => { if (resumeBubble) resumeBubble.hidden = true; };
+    const hideResumeBubble = () => {
+      document.body.classList.remove('rh-reengage');
+      if (resumeBubble) resumeBubble.hidden = true;
+    };
 
     // ── Parked-recovery poll (thinking-state card, Part 3) ────────────────
     // A full-page navigation kills the in-flight assembly fetch, but the
@@ -2558,6 +2567,9 @@ const { t } = createLayoutContext();
     cursor: pointer;
   }
   .rhvo-bubble:active { transform: scale(0.97); }
+  /* Mobile uses the center-mic "Tap to reengage" affordance; the side pill is
+     the desktop-only reengage path (the bottom nav is hidden >=900px). */
+  @media (max-width: 899px) { .rhvo-bubble { display: none; } }
 
   .rhvo {
     position: fixed;
