@@ -19,11 +19,14 @@ function chipTone(tone: MoneyQueueRow['chip_tone']): 'red' | 'amber' | 'green' |
 ) : (
   <ul class="money-queue">
     {rows.map((row) => (
-      <li class:list={['money-row', row.attention && 'attention']}>
+      <li class="money-row">
         {row.href ? (
           <a class="money-row-link" href={row.href}>
             <div class="money-row-main">
-              <Chip label={row.chip} tone={chipTone(row.chip_tone)} />
+              <span class="money-row-flags">
+                {row.attention ? <Chip label="Attention" tone="amber" variant="outlined" /> : null}
+                <Chip label={row.chip} tone={chipTone(row.chip_tone)} />
+              </span>
               <strong>{row.label}</strong>
               <span class="money-row-detail">{row.detail}</span>
             </div>
@@ -32,7 +35,10 @@ function chipTone(tone: MoneyQueueRow['chip_tone']): 'red' | 'amber' | 'green' |
         ) : (
           <div class="money-row-body">
             <div class="money-row-main">
-              <Chip label={row.chip} tone={chipTone(row.chip_tone)} />
+              <span class="money-row-flags">
+                {row.attention ? <Chip label="Attention" tone="amber" variant="outlined" /> : null}
+                <Chip label={row.chip} tone={chipTone(row.chip_tone)} />
+              </span>
               <strong>{row.label}</strong>
               <span class="money-row-detail">{row.detail}</span>
             </div>

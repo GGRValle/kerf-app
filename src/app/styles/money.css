@@ -95,10 +95,6 @@
   background: var(--bg, #1a1f26);
 }
 
-.money-row.attention {
-  border-left: 3px solid var(--gold, #d4923a);
-}
-
 .money-row-body,
 .money-row-link {
   display: grid;
@@ -114,6 +110,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+/* Attention is a chip/dot inside the row (not a left rail) — canon status grammar. */
+.money-row-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .money-row-main strong {

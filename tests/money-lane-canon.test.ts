@@ -45,3 +45,12 @@ test('money.css keeps the dark hex ONLY as canon-token fallbacks (canon-primary)
     assert.match(before, /var\(--[a-z-]+,\s*$/, `hex ${m[0]} must be a var() fallback, never a standalone color`);
   }
 });
+
+test('money attention is a chip/dot, never a left row-rail', () => {
+  const css = read('src/app/styles/money.css');
+  assert.doesNotMatch(css, /\.money-row\.attention/, 'no .money-row.attention rule (the row-rail antipattern)');
+  assert.doesNotMatch(css, /\.money-row[^{]*\{[^}]*border-left/, 'no left rail on money rows');
+  const list = read('src/app/components/MoneyQueueList.astro');
+  assert.doesNotMatch(list, /'attention'/, "no 'attention' rail class on the row");
+  assert.match(list, /row\.attention \? <Chip/, 'attention exposes a chip when set');
+});
