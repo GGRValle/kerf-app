@@ -18,8 +18,12 @@ if (!projected.capabilities.moneyRead) {
 }
 ---
 
-<Layout titleKey="f_bk.recon.title" activeHref="/money">
-  <article class="money-page">
+<Layout
+  titleKey="f_bk.recon.title"
+  activeHref="/money"
+  surfaceContext={{ surface: 'money', phase: 'bookkeeping_recon' }}
+>
+  <article class="money-page" data-grammar="canon">
     <header>
       <div class="money-crumb"><a href="/money">{t('f_mn.crumb')}</a> · {t('f_bk.recon.title')}</div>
       <h1 class="money-title">{t('f_bk.recon.title')}</h1>

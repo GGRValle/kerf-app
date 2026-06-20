@@ -118,7 +118,13 @@ const REGISTRY: ReadonlyArray<{ surface: string; file: string; contract: CanonCo
   { surface: 'Proposal preview', file: 'src/app/pages/proposals/[id]/preview.astro', contract: { requireSurfaceContext: true } },
   { surface: 'Invoice', file: 'src/app/pages/estimate/[projectId]/invoice.astro', contract: { requireSurfaceContext: true } },
   { surface: 'Money · per-job', file: 'src/app/pages/estimate/[projectId]/money.astro', contract: { requireSurfaceContext: true } },
-  { surface: 'Money', file: 'src/app/pages/money/index.astro', contract: {} },
+  { surface: 'Money · home', file: 'src/app/pages/money/index.astro', contract: { requireSurfaceContext: true } },
+  { surface: 'Money · AR', file: 'src/app/pages/money/ar.astro', contract: { requireSurfaceContext: true } },
+  { surface: 'Money · AP', file: 'src/app/pages/money/ap.astro', contract: { requireSurfaceContext: true } },
+  { surface: 'Money · allowances', file: 'src/app/pages/money/allowances.astro', contract: { requireSurfaceContext: true } },
+  { surface: 'Money · bookkeeping', file: 'src/app/pages/money/bookkeeping.astro', contract: { requireSurfaceContext: true } },
+  { surface: 'Money · QB export', file: 'src/app/pages/money/qb-export.astro', contract: { requireSurfaceContext: true } },
+  { surface: 'Money · margin', file: 'src/app/pages/money/margin.astro', contract: { requireSurfaceContext: true } },
 ];
 
 test('canon coverage registry: tracked surfaces enforce-on-adoption', () => {
