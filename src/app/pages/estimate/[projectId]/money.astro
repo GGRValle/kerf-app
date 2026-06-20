@@ -9,6 +9,7 @@ import Card from '../../../components/Card.astro';
 import PhaseStrip from '../../../components/PhaseStrip.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
+import { getRightHandSmokeDraft } from '../../../lib/rightHandSmokeFixtures.js';
 import {
   buildInvoiceFromRightHandEstimate,
   InvoiceProjectionError,
@@ -38,7 +39,13 @@ const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
 const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
 const conversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
-const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
+// Smoke fixture (tenant-scoped, read-only) takes precedence for the one stable
+// smoke estimate id so the deposit/progress/final face is phone-verifiable after
+// deploy; every other id falls through to the real store. Writes nothing.
+const smokeDraft = getRightHandSmokeDraft(estimateId, tenant);
+const draft = smokeDraft
+  ?? (estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null);
+const isSmokeFixture = smokeDraft !== null;
 
 if (draft === null || draft.project_id !== projectId) {
   return Astro.redirect(`/estimate/${encodeURIComponent(projectId)}`);
@@ -159,7 +166,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
     phase: draft.gate.allowed ? 'review' : 'draft',
   }}
 >
-  <article class="mf-page" data-grammar="canon" data-estimate-id={estimateId} data-project-id={projectId}>
+  <article class="mf-page" data-grammar="canon" data-smoke={isSmokeFixture ? 'true' : undefined} data-estimate-id={estimateId} data-project-id={projectId}>
     <nav class="mf-nav" aria-label="Money flow">
       <a href={estimateBack}>‹ Estimate</a>
       <a href={proposalLink}>Proposal</a>
@@ -273,6 +280,7 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
 
 <script>
   const estimateId = document.querySelector<HTMLElement>('.mf-page')?.dataset['estimateId'] ?? '';
+  const isSmokeFixture = document.querySelector<HTMLElement>('.mf-page')?.dataset['smoke'] === 'true';
   const issueConsequence = ['issue', 'invoice_milestone'].join('_');
 
   document.querySelectorAll<HTMLButtonElement>('[data-issue-milestone]').forEach((button) => {
@@ -281,6 +289,10 @@ const downPaymentCapCents = downPayment.billed_cents + (downPayment.invoice?.amo
       const label = milestone === 'final' ? 'final invoice' : 'down payment invoice';
       const ok = window.confirm(`Record this ${label} in the billing ledger? Nothing will be sent, posted, charged, or marked paid.`);
       if (!ok) return;
+      if (isSmokeFixture) {
+        alert('Smoke fixture is read-only. Nothing was recorded.');
+        return;
+      }
       button.disabled = true;
       const res = await fetch(`/api/v1/right-hand/estimates/${encodeURIComponent(estimateId)}/invoice/issue`, {
         method: 'POST',

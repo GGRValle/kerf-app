@@ -12,6 +12,7 @@ import Card from '../../../components/Card.astro';
 import PhaseStrip from '../../../components/PhaseStrip.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { getRightHandEstimateStore } from '../../../../api/lib/rightHandAssemblyStore.js';
+import { getRightHandSmokeDraft } from '../../../lib/rightHandSmokeFixtures.js';
 import {
   buildInvoiceFromRightHandEstimate,
   renderInvoiceHtml,
@@ -27,7 +28,11 @@ const projectId = Astro.params.projectId ?? '';
 const estimateId = Astro.url.searchParams.get('estimate_id') ?? '';
 const conversationId = Astro.url.searchParams.get('rh_conversation') ?? '';
 const milestone = Astro.url.searchParams.get('milestone') === 'final' ? 'final' : 'down_payment';
-const draft = estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null;
+// Smoke fixture (tenant-scoped, read-only) takes precedence for the one stable
+// smoke estimate id so the invoice drill is phone-verifiable after deploy; every
+// other id falls through to the real store. Writes nothing.
+const draft = getRightHandSmokeDraft(estimateId, tenant)
+  ?? (estimateId ? await getRightHandEstimateStore().read(tenant, estimateId) : null);
 
 if (draft === null || draft.project_id !== projectId) {
   return Astro.redirect(`/estimate/${encodeURIComponent(projectId)}`);
