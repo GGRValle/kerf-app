@@ -556,7 +556,7 @@ export const ES: TranslationMap = {
   'rh_voice.title': 'Mano Derecha está escuchando',
   'rh_voice.caption_label': 'Escuché',
   'rh_voice.typed_input_label': 'Dile a Mano Derecha lo que dijiste',
-  'rh_voice.typed_input_placeholder': 'Habla natural o escribe aquí. Te preguntaré antes de archivar algo.',
+  'rh_voice.typed_input_placeholder': 'Habla o escribe. Preguntaré antes de archivar.',
   'rh_voice.authority_deterministic': 'Habla natural. Te pregunto antes de archivar algo.',
   'rh_voice.action_cancel': 'Cerrar',
   'rh_voice.action_done': 'Listo',
