@@ -24,8 +24,12 @@ const totalCents = iifTotalCents(bills);
 const billsJson = JSON.stringify(bills);
 ---
 
-<Layout titleKey="f_bk.qb.title" activeHref="/money">
-  <article class="money-page">
+<Layout
+  titleKey="f_bk.qb.title"
+  activeHref="/money"
+  surfaceContext={{ surface: 'money', phase: 'qb_export' }}
+>
+  <article class="money-page" data-grammar="canon">
     <header>
       <div class="money-crumb"><a href="/money">{t('f_mn.crumb')}</a> · {t('f_bk.qb.title')}</div>
       <h1 class="money-title">{t('f_bk.qb.title')}</h1>
