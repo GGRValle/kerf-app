@@ -81,7 +81,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
             ? 'Talk while you film. Right Hand will route the walkthrough after you capture.'
             : initialMode === 'scan'
               ? 'Room scan needs native LiDAR. This web build keeps it separate for now.'
-              : 'Capture first — Right Hand will suggest where it goes.'}
+              : 'Capture first. Choose where it goes before filing.'}
         </p>
       </div>
 
@@ -229,7 +229,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     const copyForMode = (mode) => {
       if (mode === 'walkthru') return 'Talk while you film. Right Hand will route the walkthrough after you capture.';
       if (mode === 'scan') return 'Room scan needs native LiDAR. This web build keeps it separate for now.';
-      return 'Capture first — Right Hand will suggest where it goes.';
+      return 'Capture first. Choose where it goes before filing.';
     };
     const modeLabel = (mode) => (mode === 'walkthru' ? 'Walkthrough' : mode === 'scan' ? 'Scan' : 'Photo');
     const setStatus = (message) => {

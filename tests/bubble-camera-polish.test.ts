@@ -1,9 +1,10 @@
 /**
  * Chrome/Bubble + Camera polish.
- * Bubble: the parked affordance is one-per-breakpoint — desktop keeps the side
- * pill (hidden <900px), mobile lights the center nav mic via a body.rh-reengage
- * flag ("Tap to reengage" + glow). Camera: per-mode CAPTURE label; photo stays
- * quiet; the listening/REC pill is walkthru-only.
+ * Bubble: parked affordance is one-per-breakpoint — desktop keeps the side pill
+ * (hidden <900px), mobile lights the center nav mic via body.rh-reengage. The
+ * DORMANT center mic shows the mic only (no visible "Speak"); "Tap to reengage"
+ * appears only when parked. Camera: per-mode CAPTURE label; photo stays quiet
+ * (no Right Hand/listening/walkthrough language); listening/REC is walkthru-only.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,21 +22,28 @@ test('overlay drives a body.rh-reengage flag; side pill is desktop-only', () => 
   assert.match(overlay, /max-width: 899px\)\s*\{\s*\.rhvo-bubble\s*\{\s*display: none/, 'pill hidden on mobile');
 });
 
-test('mobile center mic = one FAB with a Tap-to-reengage hint + glow when parked', () => {
+test('dormant mobile center mic shows the mic only; Tap-to-reengage only under body.rh-reengage', () => {
   const nav = read('src/app/components/MobileBottomNav.astro');
   assert.equal((nav.match(/class="mbn-fab"/g) || []).length, 1, 'one center mic (one-mic rule)');
+  // Dormant: no VISIBLE "Speak" label (hidden via visibility; a11y name kept on the <a>)
+  assert.match(nav, /\.mbn-speak-label\s*\{[^}]*visibility:\s*hidden/, 'dormant Speak label is not visible');
+  assert.match(nav, /class="mbn-speak"[\s\S]*?aria-label=\{t\(slot\.labelKey\)\}/, 'a11y name kept on the speak link');
+  // Reengage hint: hidden by default, shown ONLY under body.rh-reengage
   assert.match(nav, /class="mbn-reengage-hint"[^>]*>Tap to reengage</, 'reengage hint present');
+  assert.match(nav, /\.mbn-reengage-hint\s*\{[^}]*display:\s*none/, 'hint hidden by default');
   assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-reengage-hint\s*\{\s*display: block/, 'hint shows on reengage');
-  assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-speak-label\s*\{\s*display: none/, 'Speak label hides on reengage');
   assert.match(nav, /body\.rh-reengage\)\s*\.mbn-fab\s*\{\s*animation: mbn-reengage-glow/, 'FAB glows on reengage');
 });
 
-test('camera: per-mode CAPTURE label, photo quiet, listening/REC walkthru-only', () => {
+test('camera: CAPTURE label, photo quiet (no Right Hand/listening/walkthrough), REC walkthru-only', () => {
   const cam = read('src/app/pages/camera.astro');
   assert.match(cam, /cam-job-chip__label">CAPTURE</, 'top label CAPTURE');
   assert.match(cam, /modeLabel\(initialMode\)/, 'chip label is mode-specific');
-  assert.doesNotMatch(cam, /Photo · walkthru · scan/, 'no stale multi-mode chip copy in photo mode');
-  assert.match(cam, /recPill\.hidden = mode !== 'walkthru'/, 'listening/REC pill gated to walkthru');
+  assert.doesNotMatch(cam, /Photo · walkthru · scan/, 'no stale multi-mode chip copy');
+  // Photo hero is the quiet session-card line; the old Right Hand copy is gone
+  assert.match(cam, /Capture first\. Choose where it goes before filing\./, 'photo copy is the quiet line');
+  assert.doesNotMatch(cam, /Right Hand will suggest/, 'no "Right Hand will suggest" copy anywhere');
+  // listening/REC pill stays gated to walkthru + recording (so photo never shows it)
+  assert.match(cam, /recPill\.hidden = mode !== 'walkthru'/, 'listening/REC pill walkthru-gated');
   assert.match(cam, /Media ready/, 'session card title');
-  assert.match(cam, /Capture first\. Choose where it goes before filing\./, 'session card detail copy');
 });

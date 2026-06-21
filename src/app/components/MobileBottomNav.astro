@@ -133,6 +133,10 @@ const ICONS: Record<ShellNavIcon, string> = {
   }
   .mbn-speak-label {
     margin-top: 34px;
+    /* Dormant center mic shows the mic ONLY — the visible "Speak" is hidden.
+       The a11y name stays on the .mbn-speak <a> aria-label; visibility (not
+       display) keeps the slot height so the absolute FAB stays positioned. */
+    visibility: hidden;
   }
 
   /* Parked conversation (body.rh-reengage, set by the Right Hand overlay on
@@ -150,7 +154,6 @@ const ICONS: Record<ShellNavIcon, string> = {
     font-weight: 700;
     color: var(--kerf-amber);
   }
-  :global(body.rh-reengage) .mbn-speak .mbn-speak-label { display: none; }
   :global(body.rh-reengage) .mbn-speak .mbn-reengage-hint { display: block; }
   :global(body.rh-reengage) .mbn-fab {
     animation: mbn-reengage-glow 2.4s ease-in-out infinite;
