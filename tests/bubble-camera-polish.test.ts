@@ -50,3 +50,9 @@ test('camera: CAPTURE label, photo quiet (no Right Hand/listening/walkthrough), 
   assert.match(cam, /\.cam-rec-pill\[hidden\]\s*\{\s*display: none/, 'hidden actually hides the listening/REC pill');
   assert.match(cam, /Media ready/, 'session card title');
 });
+
+test('home .rhb bubble: minimized "tap to talk" pill suppressed on mobile dormant, handoff preserved', () => {
+  const rhb = read('src/app/components/RightHandBubble.astro');
+  assert.match(rhb, /@media \(max-width: 899px\)\s*\{\s*\.rhb\[data-state='minimized'\]\s*\.rhb-pill\s*\{\s*display: none/, 'minimized pill hidden on mobile dormant');
+  assert.doesNotMatch(rhb, /max-width: 899px\)\s*\{\s*\.rhb\[data-state='handoff'\]/, 'handoff/travel pill NOT suppressed on mobile');
+});
