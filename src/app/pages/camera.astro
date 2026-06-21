@@ -16,6 +16,8 @@ const fallbackReturn = selectedProject ? `/projects/${selectedProject.project_id
 const returnHref = safeReturnTo || fallbackReturn;
 const modeParam = Astro.url.searchParams.get('mode');
 const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam : 'photo';
+// System-intake label: top stays CAPTURE; the mode reads CAPTURE Photo / Walkthrough / Scan.
+const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m === 'scan' ? 'Scan' : 'Photo');
 ---
 
 <Layout
@@ -59,8 +61,8 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
             <button type="button" class="cam-icon-btn" aria-label="Camera settings">⚙</button>
           </div>
           <div class="cam-job-chip kg-routechip" id="cam-job-chip">
-            <span class="cam-job-chip__label">Capture</span>
-            <strong id="cam-job-chip-label">{routePrefilled ? (selectedProject?.project_name ?? 'Active job') : 'Photo · walkthru · scan'}</strong>
+            <span class="cam-job-chip__label">CAPTURE</span>
+            <strong id="cam-job-chip-label">{routePrefilled ? (selectedProject?.project_name ?? 'Active job') : modeLabel(initialMode)}</strong>
           </div>
           <div class="cam-topbar__group">
             <button type="button" class="cam-icon-btn" aria-label="Flash">⚡</button>
@@ -79,7 +81,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
             ? 'Talk while you film. Right Hand will route the walkthrough after you capture.'
             : initialMode === 'scan'
               ? 'Room scan needs native LiDAR. This web build keeps it separate for now.'
-              : 'Capture first — Right Hand will suggest where it goes.'}
+              : 'Capture first. Choose where it goes before filing.'}
         </p>
       </div>
 
@@ -93,7 +95,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
         </div>
 
         <div class="cam-mode-strip" role="tablist" aria-label="Camera mode">
-          <button type="button" role="tab" data-mode="walkthru" aria-selected={initialMode === 'walkthru' ? 'true' : 'false'}>Walkthru</button>
+          <button type="button" role="tab" data-mode="walkthru" aria-selected={initialMode === 'walkthru' ? 'true' : 'false'}>Walkthrough</button>
           <button type="button" role="tab" data-mode="photo" aria-selected={initialMode === 'photo' ? 'true' : 'false'}>Photo</button>
           <button type="button" role="tab" data-mode="scan" aria-selected={initialMode === 'scan' ? 'true' : 'false'}>Scan</button>
         </div>
@@ -227,8 +229,9 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
     const copyForMode = (mode) => {
       if (mode === 'walkthru') return 'Talk while you film. Right Hand will route the walkthrough after you capture.';
       if (mode === 'scan') return 'Room scan needs native LiDAR. This web build keeps it separate for now.';
-      return 'Capture first — Right Hand will suggest where it goes.';
+      return 'Capture first. Choose where it goes before filing.';
     };
+    const modeLabel = (mode) => (mode === 'walkthru' ? 'Walkthrough' : mode === 'scan' ? 'Scan' : 'Photo');
     const setStatus = (message) => {
       if (status instanceof HTMLElement) status.textContent = message;
     };
@@ -237,7 +240,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       if (routeConfirmed && selectedProjectName) {
         jobChipLabel.textContent = selectedProjectName;
       } else {
-        jobChipLabel.textContent = 'Photo · walkthru · scan';
+        jobChipLabel.textContent = modeLabel(currentMode);
       }
     };
     const setRouteKind = (kind) => {
@@ -599,6 +602,7 @@ const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam
       currentMode = mode;
       if (viewfinder instanceof HTMLElement) viewfinder.dataset.mode = mode;
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.textContent = copyForMode(mode);
+      syncRouteChip();
       if (recPill instanceof HTMLElement) {
         recPill.hidden = mode !== 'walkthru'
           || typeof MediaRecorder === 'undefined'

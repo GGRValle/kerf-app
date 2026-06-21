@@ -43,6 +43,7 @@ const ICONS: Record<ShellNavIcon, string> = {
       >
         <span class="mbn-fab" set:html={ICONS[slot.icon]} />
         <span class="mbn-speak-label">{t(slot.labelKey)}</span>
+        <span class="mbn-reengage-hint" aria-hidden="true">Tap to reengage</span>
       </a>
     ) : (
       <a class="mbn-tab" href={slot.href} aria-current={isActive(slot.href) ? 'page' : undefined}>
@@ -132,7 +133,42 @@ const ICONS: Record<ShellNavIcon, string> = {
   }
   .mbn-speak-label {
     margin-top: 34px;
+    /* Dormant center mic shows the mic ONLY — the visible "Speak" is hidden.
+       The a11y name stays on the .mbn-speak <a> aria-label; visibility (not
+       display) keeps the slot height so the absolute FAB stays positioned. */
+    visibility: hidden;
   }
+
+  /* Parked conversation (body.rh-reengage, set by the Right Hand overlay on
+     close): the center mic invites re-entry — "Tap to reengage" + a subtle
+     oscillating glow. This is the MOBILE reengage path; desktop keeps the side
+     pill (this nav is hidden >=900px). One affordance per breakpoint. */
+  .mbn-reengage-hint {
+    display: none;
+    position: absolute;
+    bottom: 0.55rem;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: var(--kerf-amber);
+  }
+  :global(body.rh-reengage) .mbn-speak .mbn-reengage-hint { display: block; }
+  :global(body.rh-reengage) .mbn-fab {
+    animation: mbn-reengage-glow 2.4s ease-in-out infinite;
+  }
+  @keyframes mbn-reengage-glow {
+    0%, 100% { box-shadow: 0 6px 18px rgba(245, 181, 68, 0.4); }
+    50% { box-shadow: 0 6px 22px rgba(245, 181, 68, 0.85), 0 0 0 5px rgba(245, 181, 68, 0.16); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(body.rh-reengage) .mbn-fab {
+      animation: none;
+      box-shadow: 0 6px 22px rgba(245, 181, 68, 0.72);
+    }
+  }
+
   @media (min-width: 900px) {
     .mobile-bottom-nav {
       display: none;
