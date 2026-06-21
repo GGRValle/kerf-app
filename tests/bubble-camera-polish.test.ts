@@ -45,5 +45,8 @@ test('camera: CAPTURE label, photo quiet (no Right Hand/listening/walkthrough), 
   assert.doesNotMatch(cam, /Right Hand will suggest/, 'no "Right Hand will suggest" copy anywhere');
   // listening/REC pill stays gated to walkthru + recording (so photo never shows it)
   assert.match(cam, /recPill\.hidden = mode !== 'walkthru'/, 'listening/REC pill walkthru-gated');
+  // ...and the hidden attribute must actually hide it (beat the kg-chip display rule),
+  // else the listening/REC pill renders in photo + walkthru-not-recording.
+  assert.match(cam, /\.cam-rec-pill\[hidden\]\s*\{\s*display: none/, 'hidden actually hides the listening/REC pill');
   assert.match(cam, /Media ready/, 'session card title');
 });

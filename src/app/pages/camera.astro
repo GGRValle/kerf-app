@@ -984,6 +984,12 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     transform: translateX(-50%);
     font-size: 0.68rem;
   }
+  /* The hidden attribute MUST win over the kg-chip display rule — otherwise the
+     listening/REC pill renders in photo mode and in walkthru-not-recording (it
+     is gated hidden in JS, but kg-chip's display out-specified [hidden]). */
+  [data-grammar="canon"].f-cam1 .cam-rec-pill[hidden] {
+    display: none;
+  }
   .cam-camera-state {
     position: absolute;
     z-index: 4;
