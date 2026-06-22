@@ -25,7 +25,8 @@ test('camera shows post-capture route suggestion with confirm/change', () => {
   assert.match(camera, /Confirm and file/);
   assert.match(camera, /id="cam-route-select"/);
   assert.match(camera, /applySelectedRoute/);
-  assert.match(camera, /pending_route/);
+  assert.match(camera, /capture_store_session_id/);
+  assert.match(camera, /Saved on phone/);
 });
 
 test('camera route sheet is not job-only: it exposes job, lead, and review destinations', () => {

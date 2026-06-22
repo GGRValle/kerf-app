@@ -94,7 +94,8 @@ test('F-CAM1 V1 camera opens capture-first and routes after capture', () => {
   assert.match(src, /Confirm and file/);
   assert.match(src, /Capture first\. Choose where it goes before filing\./);
   assert.match(src, /route_pending/);
-  assert.match(src, /pending_route/);
+  assert.match(src, /capture_store_session_id/);
+  assert.match(src, /Saved on phone/);
   assert.match(src, /showRoutePanel/);
   assert.match(src, /data-route-confirmed/);
   assert.match(src, /Walkthru/);
