@@ -43,7 +43,6 @@ const ICONS: Record<ShellNavIcon, string> = {
       >
         <span class="mbn-fab" set:html={ICONS[slot.icon]} />
         <span class="mbn-speak-label">{t(slot.labelKey)}</span>
-        <span class="mbn-reengage-hint" aria-hidden="true">Tap to reengage</span>
       </a>
     ) : (
       <a class="mbn-tab" href={slot.href} aria-current={isActive(slot.href) ? 'page' : undefined}>
@@ -53,6 +52,7 @@ const ICONS: Record<ShellNavIcon, string> = {
     ),
   )}
 </nav>
+<a class="mbn-reengage-pill" href="/right-hand" data-rh-speak>Continue</a>
 <style>
   .mobile-bottom-nav {
     position: fixed;
@@ -143,18 +143,27 @@ const ICONS: Record<ShellNavIcon, string> = {
      close): the center mic invites re-entry — "Tap to reengage" + a subtle
      oscillating glow. This is the MOBILE reengage path; desktop keeps the side
      pill (this nav is hidden >=900px). One affordance per breakpoint. */
-  .mbn-reengage-hint {
+  /* Reengage CTA: a separate pill ABOVE the bar (not text jammed under the
+     mic). Shows only when a conversation is parked; the center mic also glows.
+     Tapping it (data-rh-speak) reopens the parked conversation. */
+  .mbn-reengage-pill {
     display: none;
-    position: absolute;
-    bottom: 0.55rem;
+    position: fixed;
     left: 50%;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
+    z-index: 81;
+    padding: 0.34rem 0.95rem;
+    border-radius: 999px;
+    background: var(--kerf-amber);
+    color: #1a1300;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-decoration: none;
     white-space: nowrap;
-    font-size: 0.58rem;
-    font-weight: 700;
-    color: var(--kerf-amber);
+    box-shadow: 0 8px 20px rgba(245, 181, 68, 0.5);
   }
-  :global(body.rh-reengage) .mbn-speak .mbn-reengage-hint { display: block; }
+  :global(body.rh-reengage) .mbn-reengage-pill { display: block; }
   :global(body.rh-reengage) .mbn-fab {
     animation: mbn-reengage-glow 2.4s ease-in-out infinite;
   }
@@ -170,8 +179,9 @@ const ICONS: Record<ShellNavIcon, string> = {
   }
 
   @media (min-width: 900px) {
-    .mobile-bottom-nav {
-      display: none;
+    .mobile-bottom-nav,
+    .mbn-reengage-pill {
+      display: none !important;
     }
   }
 </style>
