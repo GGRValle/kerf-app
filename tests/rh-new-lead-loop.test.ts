@@ -30,9 +30,10 @@ test('forward cue is detected and runs BEFORE the project + new-project-intake g
   assert.ok(projectGateIdx > 0 && cueIdx < projectGateIdx, 'cue precedes the project gate (no "which job?" loop)');
 });
 
-test('CTA route is guarded to a real /estimate/ URL from resume state', () => {
+test('CTA route is guarded to an app-local /estimate/ path (anchored startsWith, not a loose substring)', () => {
   assert.match(ov, /readResumeState\(sessionStorage\)\?\.href/);
-  assert.ok(ov.includes('/\\/estimate\\//.test(resumeHref)'), 'guards the CTA route to an /estimate/ URL');
+  assert.ok(ov.includes("resumeHref.startsWith('/estimate/')"), 'anchored same-origin path guard present');
+  assert.ok(!ov.includes('/\\/estimate\\//.test(resumeHref)'), 'loose substring guard removed');
 });
 
 test('reply + CTA copy is honest: "I built the estimate draft." + "Review estimate ›", normal tone', () => {

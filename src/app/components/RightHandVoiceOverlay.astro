@@ -1918,12 +1918,12 @@ const { t } = createLayoutContext();
       // estimate already in view → offer a tappable "Review estimate ›" instead
       // of looping on the humble fallback. Runs BEFORE the project/intake gates
       // so it can never fall into /projects/new (lead-lifecycle). No auto-jump,
-      // and NO "filed/saved" language — nothing was filed. Guarded to a real
-      // /estimate/ route from the assembled draft's resume state; with no
-      // estimate yet, fall through to normal handling (no CTA).
+      // and NO "filed/saved" language — nothing was filed. Guarded to an
+      // app-local /estimate/ route (anchored startsWith, NOT a loose substring
+      // — resumeHref is session state); no estimate yet → normal handling (no CTA).
       if (FORWARD_CUE.test(clean)) {
         const resumeHref = readResumeState(sessionStorage)?.href ?? '';
-        if (/\/estimate\//.test(resumeHref)) {
+        if (resumeHref.startsWith('/estimate/')) {
           appendTurn('right_hand', 'I built the estimate draft.', 'normal', { label: 'Review estimate ›', route: resumeHref });
           returnToListening();
           return;
