@@ -295,6 +295,9 @@ const { t } = createLayoutContext();
       text: string;
       tone?: 'normal' | 'consequence' | 'saved';
       at?: number;
+      // Optional tappable next-step rendered under the reply (e.g. "Review estimate ›").
+      // Navigation only — never implies a durable write happened.
+      action?: { label: string; route: string };
     };
 
     const VOICE_CONVERSATION_SESSION_KEY = 'kerf.voiceConversation';
@@ -373,9 +376,13 @@ const { t } = createLayoutContext();
         const speakerIcon = turn.speaker === 'right_hand'
           ? '<span class="rhvo__speaker-shield" aria-hidden="true"></span>'
           : '';
+        const cta = turn.action
+          ? `<button type="button" class="rhvo__thread-cta" data-cta-route="${escapeHtml(turn.action.route)}">${escapeHtml(turn.action.label)}</button>`
+          : '';
         return `<div class="rhvo__thread-turn rhvo__thread-turn--${speakerClass} rhvo__thread-turn--${turn.tone ?? 'normal'}">
           <span class="rhvo__speaker">${speakerIcon}${escapeHtml(label)}</span>
           <p>${escapeHtml(turn.text)}</p>
+          ${cta}
         </div>`;
       }).join('');
       threadEl.hidden = conversationTurns.length === 0;
@@ -383,10 +390,10 @@ const { t } = createLayoutContext();
       scrollConversationToLatest();
     };
 
-    const appendTurn = (speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal'): number | null => {
+    const appendTurn = (speaker: 'operator' | 'right_hand' | 'system', text: string, tone: 'normal' | 'consequence' | 'saved' = 'normal', action?: { label: string; route: string }): number | null => {
       const clean = text.trim();
       if (!clean) return null;
-      conversationTurns.push({ speaker, text: clean, tone, at: Date.now() });
+      conversationTurns.push({ speaker, text: clean, tone, at: Date.now(), ...(action ? { action } : {}) });
       renderThread();
       persistConversation();
       return conversationTurns.length - 1;
@@ -1882,6 +1889,8 @@ const { t } = createLayoutContext();
     // ── Turn commit (Packet #27): Save asks the server to create a durable
     // artifact through the validator wall. The UI only shows `handled` after the
     // API returns a TRP whose work_artifact came from real persistence.
+    // Forward cues: the operator asking "what's next" with a draft already built.
+    const FORWARD_CUE = /\b(new lead|what now|what'?s next|next step|take me (?:to )?(?:the )?next)\b/i;
     const resolveTurn = async (text: string) => {
       const clean = text.trim();
       const intent = classifyTranscriptIntent(clean);
@@ -1904,6 +1913,21 @@ const { t } = createLayoutContext();
         persistConversation();
         navigate(resolution.href, { resume: true });
         return;
+      }
+      // Forward cue ("new lead" / "what now" / "next step") with an assembled
+      // estimate already in view → offer a tappable "Review estimate ›" instead
+      // of looping on the humble fallback. Runs BEFORE the project/intake gates
+      // so it can never fall into /projects/new (lead-lifecycle). No auto-jump,
+      // and NO "filed/saved" language — nothing was filed. Guarded to an
+      // app-local /estimate/ route (anchored startsWith, NOT a loose substring
+      // — resumeHref is session state); no estimate yet → normal handling (no CTA).
+      if (FORWARD_CUE.test(clean)) {
+        const resumeHref = readResumeState(sessionStorage)?.href ?? '';
+        if (resumeHref.startsWith('/estimate/')) {
+          appendTurn('right_hand', 'I built the estimate draft.', 'normal', { label: 'Review estimate ›', route: resumeHref });
+          returnToListening();
+          return;
+        }
       }
       if (turnNeedsProjectBeforeSave(baseTrp)) {
         returnToListening();
@@ -2489,6 +2513,13 @@ const { t } = createLayoutContext();
     // and only because the operator explicitly chose it (F-CAM1).
     overlay.querySelectorAll<HTMLElement>('[data-move]').forEach((el) => {
       el.addEventListener('click', () => routeMove(el.getAttribute('data-move')));
+    });
+    // In-thread tappable next-step (e.g. "Review estimate ›"). Delegated so it
+    // survives thread re-renders. Navigation only — never a durable-write claim.
+    threadEl?.addEventListener('click', (ev) => {
+      const cta = (ev.target as HTMLElement | null)?.closest<HTMLElement>('[data-cta-route]');
+      const route = cta?.getAttribute('data-cta-route');
+      if (route) navigate(route, { resume: true });
     });
     try {
       // Persistent re-entry bubble (replaces the one-shot auto-open that read
@@ -3100,6 +3131,20 @@ const { t } = createLayoutContext();
     text-align: left;
   }
   .rhvo__moves { display: grid; gap: 0.5rem; }
+  .rhvo__thread-cta {
+    justify-self: start;
+    margin-top: 0.2rem;
+    min-height: 36px;
+    padding: 0.32rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--rhvo-border);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .rhvo__thread-cta:hover { border-color: var(--kerf-border); }
   .rhvo__move {
     min-height: 44px;
     border-radius: 12px;
