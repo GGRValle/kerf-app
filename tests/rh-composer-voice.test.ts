@@ -42,3 +42,10 @@ test('voice proof: live meter, interim caption, mic-active, no-audio cue, text f
   // text fallback still submits typed notes
   assert.match(ov, /class="rhvo__composer-send"/, 'send control for typed text');
 });
+
+test('unified: the Layout renders ONE Right Hand bubble (the overlay) — no .rhb, no voiceSurface switch', () => {
+  const layout = readFileSync(path.join(ROOT, 'src/app/layouts/Layout.astro'), 'utf8');
+  assert.match(layout, /<RightHandVoiceOverlay\s*\/>/, 'the overlay is the single bubble, rendered unconditionally');
+  assert.doesNotMatch(layout, /RightHandBubble/, 'the presentation-only .rhb is removed');
+  assert.doesNotMatch(layout, /voiceSurface/, 'the voiceSurface switch is removed');
+});
