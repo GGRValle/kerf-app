@@ -230,6 +230,12 @@ const dockMicAction = state === 'idle' ? 'tap_mic' : state === 'minimized' || st
   .rhb[data-state='minimized'] .rhb-pill { display: inline-flex; }
   .rhb[data-state='handoff'] .rhb-bloom,
   .rhb[data-state='minimized'] .rhb-bloom { display: none; }
+  /* Mobile dormant = center nav mic ONLY: suppress the 'minimized' "tap to talk"
+     side pill on phones (the bottom-nav center mic is the affordance there). The
+     'handoff' travel pill + the desktop behavior are preserved. */
+  @media (max-width: 899px) {
+    .rhb[data-state='minimized'] .rhb-pill { display: none; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .rhb-wave i { animation: none; }
