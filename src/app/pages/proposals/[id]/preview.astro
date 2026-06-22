@@ -68,7 +68,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
         <ul class="pv-divs">
           {proposal.divisions.map((division) => (
             <li class="pv-div-row">
-              <span>Div {division.code} · {division.label}</span>
+              <span>{division.label}</span>
               <span class="pv-div-sub">{fmt(division.subtotal_cents)}</span>
             </li>
           ))}
@@ -76,9 +76,9 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
         <details class="pv-drill">
           <summary>Line items by division</summary>
           {proposal.divisions.map((division) => (
-            <div class="pv-div" aria-label={`Division ${division.code}`}>
+            <div class="pv-div" aria-label={division.label}>
               <div class="pv-div-header">
-                <span>Div {division.code} · {division.label}</span>
+                <span>{division.label}</span>
                 <strong>{fmt(division.subtotal_cents)}</strong>
               </div>
               {division.sections.map((section) => (

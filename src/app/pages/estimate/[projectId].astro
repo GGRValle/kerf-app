@@ -34,25 +34,24 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minim
 const rhPricedLines = rightHandDraft?.lines.filter((line) => typeof line.extended_cents === 'number' && line.extended_cents > 0) ?? [];
 const rhOpenLines = rightHandDraft?.lines.filter((line) => line.open_item || !(typeof line.extended_cents === 'number' && line.extended_cents > 0)) ?? [];
 const rhTotalCents = rhPricedLines.filter((line) => !line.flags.includes('removed')).reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
-const rhSuggestedCents = rhPricedLines.filter((line) => !line.flags.includes('removed') && line.flags.includes('suggested')).reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
 const qtyFor = (line: { quantity?: number; uom?: string }) => (
   typeof line.quantity === 'number' && line.uom ? `${line.quantity.toLocaleString('en-US')} ${line.uom}` : ''
 );
 const rhActiveLines = rhPricedLines.filter((line) => !line.flags.includes('removed'));
-const rhPrimaryLines = rhActiveLines.filter((line) => !line.flags.includes('suggested'));
-const rhSuggestedLines = rhActiveLines.filter((line) => line.flags.includes('suggested'));
 const rhRemovedLines = rhPricedLines.filter((line) => line.flags.includes('removed'));
 const rhGraduableLines = rhActiveLines.filter((line) => line.source_type !== 'company_data');
-const rhLineGroups = Array.from(rhPrimaryLines.reduce((groups, line) => {
+// One estimate review: every active priced line (incl. Right Hand suggestions),
+// grouped by trade. Suggested lines carry a Needs-review chip + inline Remove.
+const rhLineGroups = Array.from(rhActiveLines.reduce((groups, line) => {
   const code = line.division?.code ?? 'ZZ';
   const label = line.division?.label ?? 'Unassigned';
   const key = `${code}::${label}`;
-  const current = groups.get(key) ?? { code, label, subtotal: 0, lines: [] as typeof rhPrimaryLines };
+  const current = groups.get(key) ?? { code, label, subtotal: 0, lines: [] as typeof rhActiveLines };
   current.subtotal += line.extended_cents ?? line.price_cents ?? 0;
   current.lines.push(line);
   groups.set(key, current);
   return groups;
-}, new Map<string, { code: string; label: string; subtotal: number; lines: typeof rhPrimaryLines }>()).values())
+}, new Map<string, { code: string; label: string; subtotal: number; lines: typeof rhActiveLines }>()).values())
   .sort((a, b) => a.code.localeCompare(b.code));
 const gateStatus = rightHandDraft?.gate.allowed
   ? 'Ready for review'
@@ -97,11 +96,10 @@ const moneyFlowPhases = rightHandDraft ? [
           <div class="es-total-card">
             <span class="es-kicker">Draft total</span>
             <strong>{fmt(rhTotalCents)}</strong>
-            {rhSuggestedCents > 0 ? <span class="es-subtle">Includes {fmt(rhSuggestedCents)} suggested lines</span> : null}
           </div>
           <div class="es-stat-card">
             <span class="es-kicker">Priced lines</span>
-            <strong>{rhPrimaryLines.length}</strong>
+            <strong>{rhActiveLines.length}</strong>
           </div>
           <div class="es-stat-card">
             <span class="es-kicker">Open items</span>
@@ -125,10 +123,7 @@ const moneyFlowPhases = rightHandDraft ? [
           <a class="es-btn" href={`/api/v1/right-hand/estimates/${encodeURIComponent(rightHandEstimateId)}/workbook`} download>Download workbook</a>
           <label class="es-btn es-wb-import">Import workbook<input id="wb-import" type="file" accept=".xlsx" hidden /></label>
           {rhGraduableLines.length > 0 ? (
-            <button class="es-btn" type="button" id="rh-use-here-all">Use here for priced draft lines</button>
-          ) : null}
-          {isLeadStageEstimate && dealId ? (
-            <button class="es-btn" id="rh-convert" type="button" data-deal-id={dealId}>Convert to project…</button>
+            <button class="es-btn" type="button" id="rh-use-here-all">Confirm all</button>
           ) : null}
         </div>
 
@@ -184,11 +179,11 @@ const moneyFlowPhases = rightHandDraft ? [
       </div>
       {rightHandDraft ? (
         <>
-          {rhPrimaryLines.length === 0 ? <p class="es-empty">Right Hand captured the scope, but the draft still needs pricing.</p> : null}
+          {rhActiveLines.length === 0 ? <p class="es-empty">Right Hand captured the scope, but the draft still needs pricing.</p> : null}
           {rhLineGroups.map((group) => (
-            <section class="es-division" aria-label={`${group.code} ${group.label}`}>
+            <section class="es-division" aria-label={group.label}>
               <div class="es-division-head">
-                <span>{group.code} · {group.label}</span>
+                <span>{group.label}</span>
                 <strong>{fmt(group.subtotal)}</strong>
               </div>
               {group.lines.map((line) => (
@@ -202,14 +197,17 @@ const moneyFlowPhases = rightHandDraft ? [
                     <span>{typeof line.unit_cents === 'number' ? `${fmt(line.unit_cents)}/${line.uom ?? 'unit'}` : 'Needs rate'}</span>
                     <button class="es-btn es-btn-mini" type="button" data-edit-line={line.id} data-qty={line.quantity ?? ''} data-unit={line.unit_cents ?? ''}>Edit</button>
                     {line.source_type !== 'company_data' ? (
-                      <button class="es-btn es-btn-mini" type="button" data-use-here-line={line.id}>Use here</button>
+                      <button class="es-btn es-btn-mini" type="button" data-use-here-line={line.id}>Confirm</button>
                     ) : (
                       <button class="es-btn es-btn-mini" type="button" data-save-standard-line={line.id}>Save as standard</button>
                     )}
+                    {line.flags.includes('suggested') ? (
+                      <button class="es-btn es-btn-mini" type="button" data-remove-suggested={line.id}>Remove</button>
+                    ) : null}
                   </div>
                   <div class="es-line-meta">
                     <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
-                    {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
+                    {(line.source_type !== 'company_data' && !line.flags.includes('approved_for_this_estimate')) || line.flags.includes('suggested') ? <span class="es-tag es-needs-review">Needs review</span> : null}
                     {line.matched_by ? <span class="es-tag es-match">{line.matched_by === 'line_id' ? 'exact match' : 'matched'}</span> : null}
                     {line.flags.includes('operator_edited') ? <span class="es-tag es-edited">edited</span> : null}
                     {line.flags.includes('approved_for_this_estimate') ? <span class="es-tag es-approved">approved here</span> : null}
@@ -218,29 +216,6 @@ const moneyFlowPhases = rightHandDraft ? [
               ))}
             </section>
           ))}
-          {rhSuggestedLines.length > 0 ? (
-            <details class="es-suggested">
-              <summary>Suggested lines ({rhSuggestedLines.length}) · {fmt(rhSuggestedCents)}</summary>
-              <p class="es-meta">These are plausible scope companions. Keep them only if they belong in this estimate.</p>
-              {rhSuggestedLines.map((line) => (
-                <article class="es-line-card es-line-card-suggested" data-line-id={line.id}>
-                  <div class="es-line-main">
-                    <h3>{line.label}</h3>
-                    <strong>{fmt(line.extended_cents ?? 0)}</strong>
-                  </div>
-                  <div class="es-line-math">
-                    <span>{qtyFor(line) || 'Needs quantity'}</span>
-                    <span>{typeof line.unit_cents === 'number' ? `${fmt(line.unit_cents)}/${line.uom ?? 'unit'}` : 'Needs rate'}</span>
-                    <button class="es-btn es-btn-mini" type="button" data-remove-suggested={line.id}>Remove</button>
-                  </div>
-                  <div class="es-line-meta">
-                    <span class="es-tag es-suggested-tag">Suggested</span>
-                    {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
-                  </div>
-                </article>
-              ))}
-            </details>
-          ) : null}
           {rhRemovedLines.length > 0 ? (
             <details class="es-removed-row">
               <summary>Removed lines ({rhRemovedLines.length})</summary>
@@ -290,7 +265,6 @@ const moneyFlowPhases = rightHandDraft ? [
               <span>{line.label}</span>
               <div>
                 <span class={`es-source ${line.source_type}`}>{line.source_label}</span>
-                {line.cost_code ? <span class="es-tag">{line.cost_code}</span> : null}
               </div>
             </article>
           ))}
@@ -461,7 +435,7 @@ const moneyFlowPhases = rightHandDraft ? [
   });
 
   document.getElementById('rh-use-here-all')?.addEventListener('click', async () => {
-    const sure = window.confirm('Use these priced draft rates on this estimate only? This will not save company standards or affect future estimates.');
+    const sure = window.confirm('Confirm these draft lines on this estimate only? This will not save company standards or change future estimates.');
     if (!sure) return;
     const out = await postJsonNoDefaultConfirm(
       `/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/use-here`,
@@ -473,7 +447,7 @@ const moneyFlowPhases = rightHandDraft ? [
   document.querySelectorAll<HTMLButtonElement>('[data-use-here-line]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const lineId = btn.getAttribute('data-use-here-line') ?? '';
-      const sure = window.confirm('Use this rate on this estimate only? This will not save a standard.');
+      const sure = window.confirm('Confirm this line on this estimate only? This will not save a standard.');
       if (!sure) return;
       const out = await postJsonNoDefaultConfirm(
         `/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/use-here`,
@@ -486,7 +460,7 @@ const moneyFlowPhases = rightHandDraft ? [
   document.querySelectorAll<HTMLButtonElement>('[data-save-standard-line]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const lineId = btn.getAttribute('data-save-standard-line') ?? '';
-      const sure = window.confirm('Save this as a tenant rate standard for future estimates? This is separate from Use here.');
+      const sure = window.confirm('Save this as a tenant rate standard for future estimates? This is separate from confirming a rate on one estimate.');
       if (!sure) return;
       const out = await postJsonNoDefaultConfirm(
         `/api/v1/right-hand/estimates/${encodeURIComponent(estimateIdParam)}/save-rate-standard`,
@@ -494,25 +468,6 @@ const moneyFlowPhases = rightHandDraft ? [
       );
       if (out) alert(out.operator_message ?? 'Standard saved.');
     });
-  });
-
-  // D-066 conversion: explicit operator action, confirmed, one-way. The
-  // system never calls this — only this tap does.
-  document.getElementById('rh-convert')?.addEventListener('click', async (ev) => {
-    const dealIdAttr = (ev.currentTarget as HTMLButtonElement).dataset['dealId'];
-    if (!dealIdAttr) return;
-    const sure = window.confirm('Convert this lead into a project? This is one-way — there is no going back to lead status. The estimate carries over line-for-line.');
-    if (!sure) return;
-    const res = await fetch(`/api/v1/right-hand/deals/${encodeURIComponent(dealIdAttr)}/convert-to-project`, {
-      method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: '{}',
-    });
-    const out = await res.json().catch(() => null) as { ok?: boolean; project_id?: string; operator_message?: string } | null;
-    if (!res.ok || !out?.ok || !out.project_id) {
-      alert(out?.operator_message ?? `Conversion failed (${res.status}). Nothing was created.`);
-      return;
-    }
-    alert(out.operator_message ?? 'Project created.');
-    window.location.href = `/estimate/${encodeURIComponent(out.project_id)}?estimate_id=${encodeURIComponent(estimateIdParam)}`;
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-remove-suggested]').forEach((btn) => {
@@ -940,7 +895,8 @@ const moneyFlowPhases = rightHandDraft ? [
 
   .es-source.allowance,
   .es-tag.pending,
-  .es-suggested-tag {
+  .es-suggested-tag,
+  .es-needs-review {
     color: var(--amber);
     border-color: color-mix(in srgb, var(--amber) 42%, var(--line));
   }

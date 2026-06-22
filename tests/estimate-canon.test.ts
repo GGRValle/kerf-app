@@ -37,6 +37,5 @@ test('estimate canon wiring preserves the estimator engine + line_id hooks + gat
   assert.match(src, /data-edit-line=/);
   assert.match(src, /data-use-here-line=/);
   assert.match(src, /confirmed: true/);
-  assert.match(src, /convert-to-project/);
   assert.match(src, /save-rate-standard/);
 });
