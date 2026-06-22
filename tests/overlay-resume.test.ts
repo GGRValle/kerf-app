@@ -79,12 +79,13 @@ test('assembly resolves to exactly one honest ending: ready, question, or snag',
   assert.equal(phaseAfterAssembly({ ok: true, hasRoute: false, openQuestionCount: 5 }), 'snag'); // no route = not done, questions cannot mask it
 });
 
-test('working narration is honest: elapsed-keyed text, no percentages, no agent names, no fake stages', () => {
-  const samples = [workingNarration(0), workingNarration(15_000), workingNarration(45_000), workingNarration(120_000)];
-  assert.equal(samples[0], samples[1] === samples[0] ? samples[0] : samples[0]); // deterministic at a given elapsed
-  assert.notEqual(samples[0], samples[2]); // acknowledges real elapsed time
-  assert.notEqual(samples[2], samples[3]);
-  for (const text of samples) {
+test('working narration is phase-keyed: assembling → pricing → checking → building, honest tail, no fake completion claims', () => {
+  assert.equal(workingNarration(0), 'Assembling estimate…');
+  assert.equal(workingNarration(5_000), 'Pricing lines…');
+  assert.equal(workingNarration(10_000), 'Checking gaps…');
+  assert.equal(workingNarration(15_000), 'Building proposal…');
+  assert.equal(workingNarration(95_000), 'Taking longer than usual — still working on it.');
+  for (const text of [workingNarration(0), workingNarration(5_000), workingNarration(10_000), workingNarration(15_000), workingNarration(95_000)]) {
     assert.ok(!/%|\d+\s*percent/i.test(text), 'no percentage claims');
     assert.ok(!/agent/i.test(text), 'no agent names in operator copy');
     assert.ok(!/almost (done|ready|there)/i.test(text), 'no unverifiable completion claims');
@@ -93,7 +94,7 @@ test('working narration is honest: elapsed-keyed text, no percentages, no agent 
 
 test('bubble wears the phase truth: working → ready/question/snag, stale-working degrades honestly', () => {
   const resume = { at: 1, href: '/x', hint: 'Estimate draft ready' };
-  assert.equal(bubbleLabelForPhase({ phase: 'working', at: 1000 }, resume, 2000), 'Building your estimate…');
+  assert.equal(bubbleLabelForPhase({ phase: 'working', at: 1000 }, resume, 2000), 'Assembling estimate…');
   assert.equal(bubbleLabelForPhase({ phase: 'ready', at: 1000 }, null, 2000), 'Estimate draft ready');
   assert.equal(
     bubbleLabelForPhase({ phase: 'question', at: 1000, detail: 'Needs your call: 3 questions' }, null, 2000),
