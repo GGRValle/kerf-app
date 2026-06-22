@@ -345,13 +345,17 @@ test('Dunne render: contains client name + designer of record attribution', () =
   assert.match(html, /Designer of Record: Heather Ault, Del Sur Designs/);
 });
 
-test('Dunne render: contains both CSI division headers with subtotals', () => {
+test('Dunne render: division headers use plain trade names (no CSI code prefix) with subtotals', () => {
   const html = renderProposalHtml(makeDunneFixture());
-  assert.match(html, /Div 01 — General Requirements/);
-  assert.match(html, /Div 12 — Furnishings/);
+  assert.match(html, /General Requirements/);
+  assert.match(html, /Furnishings/);
+  // UX spine: the "Div NN — " CSI code prefix is gone from operator/client headers + footers
+  assert.doesNotMatch(html, /Div 01 — General Requirements/);
+  assert.doesNotMatch(html, /Div 12 — Furnishings/);
+  assert.doesNotMatch(html, /Div 01 Subtotal/);
   // Subtotals appear in division headers + footers
-  assert.match(html, /\$4,537\.00/); // Div 01 subtotal
-  assert.match(html, /\$12,215\.66/); // Div 12 subtotal
+  assert.match(html, /\$4,537\.00/); // General Requirements subtotal
+  assert.match(html, /\$12,215\.66/); // Furnishings subtotal
 });
 
 test('Dunne render: contains sub-section labels within Div 12', () => {

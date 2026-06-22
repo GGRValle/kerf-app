@@ -139,12 +139,12 @@ function renderDivision(div: CsiDivision): string {
   return `
     <div class="kerf-proposal__division">
       <div class="kerf-proposal__division-header">
-        <span>Div ${esc(div.code)} — ${esc(div.label)}</span>
+        <span>${esc(div.label)}</span>
         <span class="kerf-proposal__division-subtotal">${formatDollars(div.subtotal_cents)}</span>
       </div>
       ${sections}
       <div class="kerf-proposal__division-footer">
-        <span>Div ${esc(div.code)} Subtotal</span>
+        <span>${esc(div.label)} subtotal</span>
         <span>${formatDollars(div.subtotal_cents)}</span>
       </div>
     </div>`.trim();
