@@ -898,7 +898,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     const hydratePendingCapture = async () => {
       if (lastCapture) return;
       try {
-        const pending = await listPending();
+        const pending = await listPending(capturePrincipalSnapshot());
         const session = pending.find((candidate) => candidate.item_ids.length > 0);
         if (!session) return;
         const items = await listItems(session.id);

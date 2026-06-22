@@ -14,8 +14,11 @@ import { fileURLToPath } from 'node:url';
 import {
   CAPTURE_DB_NAME,
   CAPTURE_DB_VERSION,
+  captureSessionBelongsToPrincipal,
   rollupCaptureSessionStatus,
   type CaptureItem,
+  type CapturePrincipalSnapshot,
+  type CaptureSession,
 } from '../src/app/lib/captureStore.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -61,6 +64,36 @@ test('server-principal snapshot is cache-only; upload authority is not client as
   assert.doesNotMatch(store, /tenant_id.*localStorage|localStorage.*tenant_id/);
 });
 
+test('pending recovery is principal-scoped: principal B cannot see principal A local sessions', () => {
+  const principalA: CapturePrincipalSnapshot = {
+    tenant_id: 'tenant_ggr',
+    user_id: 'owner',
+    source: 'server_principal_snapshot',
+  };
+  const principalB: CapturePrincipalSnapshot = {
+    tenant_id: 'tenant_valle',
+    user_id: 'owner',
+    source: 'server_principal_snapshot',
+  };
+  const sessionA: CaptureSession = {
+    id: 'cap_session_a',
+    tenant_id: principalA.tenant_id,
+    user_id: principalA.user_id,
+    created_at: 1,
+    updated_at: 1,
+    route_intent: 'lead',
+    destination: null,
+    status: 'saved_on_phone',
+    item_ids: ['cap_item_a'],
+  };
+  assert.equal(captureSessionBelongsToPrincipal(sessionA, principalA), true);
+  assert.equal(captureSessionBelongsToPrincipal(sessionA, principalB), false);
+  assert.match(store, /export async function listPending\(principal: CapturePrincipalSnapshot\)/);
+  assert.match(store, /listSessions\(\{ tenant_id: principal\.tenant_id, user_id: principal\.user_id \}\)/);
+  assert.match(camera, /listPending\(capturePrincipalSnapshot\(\)\)/);
+  assert.doesNotMatch(camera, /listPending\(\)/);
+});
+
 test('session rollup is conservative: any unsaved item keeps the session captured', () => {
   assert.equal(rollupCaptureSessionStatus([]), 'captured');
   assert.equal(rollupCaptureSessionStatus([item('saved_on_phone')]), 'saved_on_phone');
@@ -79,7 +112,7 @@ test('camera binds to durable store, renders sync proof, and recovers pending se
   assert.match(camera, /setCaptureSyncState\('saved_on_phone'\)/);
   assert.match(camera, /Saved on phone\. Choose where it goes before filing\./);
   assert.match(camera, /const hydratePendingCapture = async \(\) =>/);
-  assert.match(camera, /listPending\(\)/);
+  assert.match(camera, /listPending\(capturePrincipalSnapshot\(\)\)/);
   assert.match(camera, /indexeddb_recovery/);
 });
 

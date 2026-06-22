@@ -56,6 +56,8 @@ export interface AddCaptureItemInput {
 }
 
 export interface ListSessionFilter {
+  readonly tenant_id: string;
+  readonly user_id: string;
   readonly status?: CaptureSyncState;
   readonly route_intent?: CaptureRouteIntent;
 }
@@ -134,6 +136,13 @@ export function principalSnapshotFromSurfaceContext(fallback?: {
     : fallback?.user_id ?? '';
   if (!tenant || !user) throw new Error('capture_principal_snapshot_missing');
   return { tenant_id: tenant, user_id: user, source: 'server_principal_snapshot' };
+}
+
+export function captureSessionBelongsToPrincipal(
+  session: Pick<CaptureSession, 'tenant_id' | 'user_id'>,
+  principal: Pick<CapturePrincipalSnapshot, 'tenant_id' | 'user_id'>,
+): boolean {
+  return session.tenant_id === principal.tenant_id && session.user_id === principal.user_id;
 }
 
 export async function createSession(
@@ -272,7 +281,8 @@ export async function addItem(sessionId: string, input: AddCaptureItemInput): Pr
   }
 }
 
-export async function listSessions(filter: ListSessionFilter = {}): Promise<CaptureSession[]> {
+export async function listSessions(filter: ListSessionFilter): Promise<CaptureSession[]> {
+  if (!filter.tenant_id || !filter.user_id) throw new Error('capture_principal_filter_missing');
   const db = await openCaptureDb();
   try {
     const tx = db.transaction(CAPTURE_SESSION_STORE, 'readonly');
@@ -281,6 +291,7 @@ export async function listSessions(filter: ListSessionFilter = {}): Promise<Capt
     );
     await transactionDone(tx);
     return sessions
+      .filter((session) => captureSessionBelongsToPrincipal(session, filter))
       .filter((session) => filter.status === undefined || session.status === filter.status)
       .filter((session) => filter.route_intent === undefined || session.route_intent === filter.route_intent)
       .sort((a, b) => b.updated_at - a.updated_at);
@@ -289,8 +300,8 @@ export async function listSessions(filter: ListSessionFilter = {}): Promise<Capt
   }
 }
 
-export async function listPending(): Promise<CaptureSession[]> {
-  const sessions = await listSessions();
+export async function listPending(principal: CapturePrincipalSnapshot): Promise<CaptureSession[]> {
+  const sessions = await listSessions({ tenant_id: principal.tenant_id, user_id: principal.user_id });
   return sessions.filter((session) => session.status !== 'synced');
 }
 
