@@ -161,16 +161,19 @@ export function phaseAfterAssembly(input: {
 }
 
 /**
- * Honest in-flight narration, keyed ONLY by real elapsed time. Each string
- * describes what the work IS or how long it has actually been running —
- * never invented progress, never a stage the client can't observe, never an
- * agent name. (Backend stage events would unlock richer narration; until
- * that channel exists, under-narrating beats fabricating.)
+ * In-flight narration for the assembling state, keyed to real elapsed time
+ * (the backend emits no stage events yet, so phases advance on a timer): a
+ * familiar Assembling → Pricing → Checking → Building progression so the
+ * operator sees motion, then an honest "taking longer" tail past 90s. No
+ * percentages, no completion claims, no agent names. (Real backend stage
+ * events would let these track actual progress instead of elapsed time.)
  */
 export function workingNarration(elapsedMs: number): string {
   if (elapsedMs >= 90_000) return 'Taking longer than usual — still working on it.';
-  if (elapsedMs >= 30_000) return 'Still building — bigger scopes take a minute.';
-  return 'Building your estimate — pricing from your saved rates.';
+  if (elapsedMs >= 15_000) return 'Building proposal…';
+  if (elapsedMs >= 10_000) return 'Checking gaps…';
+  if (elapsedMs >= 5_000) return 'Pricing lines…';
+  return 'Assembling estimate…';
 }
 
 /** How long a parked "working" phase may go unresolved before the label
@@ -190,7 +193,7 @@ export function bubbleLabelForPhase(
     if (phaseState.phase === 'working') {
       return nowMs - phaseState.at >= WORKING_PHASE_STALE_MS
         ? bubbleLabelFor(resume)
-        : 'Building your estimate…';
+        : 'Assembling estimate…';
     }
     if (phaseState.phase === 'ready') return 'Estimate draft ready';
     if (phaseState.phase === 'question') return phaseState.detail ?? 'Needs your call';
