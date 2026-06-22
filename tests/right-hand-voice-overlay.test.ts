@@ -739,24 +739,23 @@ test('F-RH3 conversation surface: latest turn and composer stay anchored on phon
   assert.match(src, /overscroll-behavior: contain/);
 });
 
-test('F-RH3 bloom-from-heart: composer is one dock with the mic seated dead center', () => {
+test('F-RH3 engaged composer is a RAIL: + attach · text · mic on the right (no centered dock)', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /class="rhvo__composer-row"/);
-  assert.match(src, /class="rhvo__dock"/);
-  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Home<\/span>/);
-  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Start<\/span>/);
-  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">Camera<\/span>/);
-  assert.match(src, /<span class="rhvo__dock-item" aria-hidden="true">More<\/span>/);
-  assert.match(src, /\.rhvo__dock\s*\{[\s\S]*?grid-template-columns: 1fr 1fr 72px 1fr 1fr;/);
-  assert.match(src, /\.rhvo__indicator\s*\{[\s\S]*?width: 64px;[\s\S]*?height: 64px;/);
-  assert.doesNotMatch(src, /\.rhvo\[data-state='listening'\] \.rhvo__indicator\s*\{[\s\S]*?width:/);
+  // P0 correction: the centered fake dock (Home/Start/MIC/Camera/More) is gone.
+  assert.doesNotMatch(src, /class="rhvo__dock"/);
+  assert.doesNotMatch(src, /rhvo__dock-item/);
+  // The mic now lives INSIDE the rail, right-aligned + rail-sized (was 64px centered).
+  assert.match(src, /rhvo__composer-row[\s\S]*?class="rhvo__indicator"[\s\S]*?<\/form>/);
+  assert.match(src, /\.rhvo__indicator\s*\{[\s\S]*?width: 48px;[\s\S]*?height: 48px;/);
+  assert.match(src, /\.rhvo__indicator\s*\{[\s\S]*?justify-self: end;/);
 });
 
 test('F-RH3 bloom-from-heart: surface grows upward then holds and scrolls', () => {
   const src = readFileSync(path.join(ROOT, OVERLAY), 'utf8');
   assert.match(src, /data-has-thread="false"/);
   assert.match(src, /--rhvo-bloom-height: min\(38svh, 22rem\)/);
-  assert.match(src, /\.rhvo\[data-state='listening'\] \{ --rhvo-bloom-height: min\(58svh, 34rem\); \}/);
+  assert.match(src, /\.rhvo\[data-state='listening'\] \{ --rhvo-bloom-height: min\(46svh, 27rem\); \}/);
   assert.match(src, /\.rhvo\[data-has-thread='true'\] \{ --rhvo-bloom-height: min\(84svh, 46rem\); \}/);
   assert.match(src, /height: var\(--rhvo-bloom-height\)/);
   assert.match(src, /max-height: min\(84svh, 46rem\)/);

@@ -89,6 +89,7 @@ const { t } = createLayoutContext();
       ><span class="rhvo__bar"></span><span class="rhvo__bar"></span><span class="rhvo__bar"></span
       ><span class="rhvo__bar"></span>
     </div>
+    <p class="rhvo__noaudio" id="rhvo-noaudio" aria-live="polite">No audio detected — speak up, or type below.</p>
 
     <div class="rhvo__thread" id="rhvo-thread" aria-live="polite"></div>
 
@@ -107,6 +108,9 @@ const { t } = createLayoutContext();
       ><span class="rhvo__cursor" id="rhvo-cursor" aria-hidden="true"></span>
     </div>
 
+    <!-- Composer RAIL (P0): + attach · text input · mic-on-the-right. No centered
+         mic, no fake dock — the meter + interim caption sit above this rail and
+         stay visible while listening. -->
     <form class="rhvo__composer" id="rhvo-composer">
       <div class="rhvo__composer-row">
         <button type="button" class="rhvo__composer-add" id="rhvo-source-add" aria-label="Attach or paste source">+</button>
@@ -126,10 +130,6 @@ const { t } = createLayoutContext();
           placeholder={t('rh_voice.typed_input_placeholder')}
         ></textarea>
         <button type="submit" class="rhvo__composer-send" aria-label="Send typed note to Right Hand">Send</button>
-      </div>
-      <div class="rhvo__dock">
-        <span class="rhvo__dock-item" aria-hidden="true">Home</span>
-        <span class="rhvo__dock-item" aria-hidden="true">Start</span>
         <button
           type="button"
           class="rhvo__indicator"
@@ -145,8 +145,6 @@ const { t } = createLayoutContext();
             >
           </span>
         </button>
-        <span class="rhvo__dock-item" aria-hidden="true">Camera</span>
-        <span class="rhvo__dock-item" aria-hidden="true">More</span>
       </div>
     </form>
 
@@ -2089,6 +2087,9 @@ const { t } = createLayoutContext();
       analyser.fftSize = 512;
       src.connect(analyser);
       const buf = new Uint8Array(analyser.frequencyBinCount);
+      const NO_AUDIO_RMS = 0.004; // below quiet ambient — mic open but effectively no input
+      let silentFrames = 0;
+      overlay.dataset.noAudio = 'false';
       const tick = () => {
         if (!analyser) return;
         analyser.getByteTimeDomainData(buf);
@@ -2105,6 +2106,14 @@ const { t } = createLayoutContext();
           const weight = BAR_WEIGHTS[b] ?? 1;
           const h = Math.max(0.18, Math.min(1, level * weight));
           meterBars[b]!.style.transform = `scaleY(${h})`;
+        }
+        // No-audio proof: mic open but effectively silent for ~3s → show the cue.
+        if (rms < NO_AUDIO_RMS) {
+          silentFrames += 1;
+          if (silentFrames > 170) overlay.dataset.noAudio = 'true';
+        } else {
+          silentFrames = 0;
+          overlay.dataset.noAudio = 'false';
         }
         if (rms >= SPEECH_RMS) {
           speaking = true;
@@ -2614,7 +2623,7 @@ const { t } = createLayoutContext();
       --rhvo-mute: #7b8492;
     }
   }
-  .rhvo[data-state='listening'] { --rhvo-bloom-height: min(58svh, 34rem); }
+  .rhvo[data-state='listening'] { --rhvo-bloom-height: min(46svh, 27rem); }
   .rhvo[data-state='fallback'],
   .rhvo[data-state='reply'],
   .rhvo[data-state='confirm'],
@@ -2674,15 +2683,16 @@ const { t } = createLayoutContext();
   }
   .rhvo__indicator {
     position: relative;
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     padding: 0;
     border: 0;
     background: transparent;
     color: inherit;
-    justify-self: center;
+    justify-self: end;
     align-self: center;
     overflow: visible;
+    cursor: pointer;
   }
   .rhvo__pulse {
     position: absolute;
@@ -2824,6 +2834,19 @@ const { t } = createLayoutContext();
     transform: scaleY(0.18);
     transition: transform 0.08s linear;
   }
+  /* No-audio cue: mic open but silent for ~3s (set by the meter tick). */
+  .rhvo__noaudio {
+    order: 4;
+    grid-column: 1 / -1;
+    display: none;
+    width: 100%;
+    margin: 0.1rem 0 0;
+    text-align: center;
+    font-size: 0.74rem;
+    color: var(--rhvo-mute);
+  }
+  .rhvo[data-state='listening'][data-no-audio='true'] .rhvo__noaudio,
+  .rhvo[data-state='fallback'][data-no-audio='true'] .rhvo__noaudio { display: block; color: #f5b544; }
   .rhvo__caption {
     order: 5;
     grid-column: 1 / -1;
@@ -2986,30 +3009,13 @@ const { t } = createLayoutContext();
     padding: 0.56rem 0 0.1rem;
     border-top: 1px solid var(--rhvo-border);
   }
+  /* P0 composer RAIL: + attach · text input · Send (when typed) · mic (right). */
   .rhvo__composer-row {
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) auto;
-    align-items: end;
+    grid-template-columns: 40px minmax(0, 1fr) auto auto;
+    align-items: center;
     gap: 0.5rem;
     width: 100%;
-  }
-  .rhvo__dock {
-    display: grid;
-    grid-template-columns: 1fr 1fr 72px 1fr 1fr;
-    align-items: center;
-    gap: 0.1rem;
-    min-height: 72px;
-    width: 100%;
-  }
-  .rhvo__dock-item {
-    align-self: end;
-    padding-bottom: 0.38rem;
-    text-align: center;
-    color: var(--rhvo-mute);
-    opacity: 0.58;
-    font-size: 0.58rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
   }
   .rhvo__composer-add,
   .rhvo__composer-send {
