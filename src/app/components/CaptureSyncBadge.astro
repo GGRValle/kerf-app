@@ -1,0 +1,66 @@
+---
+/**
+ * CaptureSyncBadge — the shared status chip for the capture sync-state grammar.
+ *
+ * Presentation ONLY: it renders whatever state it is given. The caller owns the
+ * TRUTH CONTRACT (see lib/captureSyncState.ts) — pass a state only when its
+ * precondition actually holds. Drop into a [data-grammar="canon"] surface
+ * (Camera, Capture Review / Recent Proof, Active Job).
+ *
+ *   <CaptureSyncBadge state="captured" />
+ *   <CaptureSyncBadge state="failed" retryHref="/camera?retry=abc123" />
+ */
+import { CAPTURE_SYNC, type CaptureSyncState } from '../lib/captureSyncState.js';
+
+export interface Props {
+  state: CaptureSyncState;
+  /** When state is 'failed', renders a "· Retry" affordance pointing here. */
+  retryHref?: string;
+}
+
+const { state, retryHref } = Astro.props;
+const meta = CAPTURE_SYNC[state];
+const toneClass = meta.tone === 'neutral' ? '' : meta.tone;
+---
+
+<span
+  class:list={['kg-chip', 'cap-sync', toneClass, { 'cap-sync--working': state === 'syncing' }]}
+  data-sync-state={state}
+  role="status"
+>
+  {state === 'syncing' ? <span class="cap-sync__spin" aria-hidden="true"></span> : null}
+  <span class="cap-sync__label">{meta.label}</span>
+  {state === 'failed' && retryHref ? (
+    <a class="cap-sync__retry" href={retryHref}>Retry</a>
+  ) : null}
+</span>
+
+<style>
+  /* Inherits the canon kg-chip shape + tone from surface-grammar.css; these add
+     only the spinner, the Retry affordance, and a calm neutral baseline so the
+     happy path (blue → green) reads as progress. */
+  .cap-sync { gap: 6px; }
+  .cap-sync:not(.blue):not(.green):not(.amber):not(.red) {
+    color: var(--muted, #9aa6b2);
+  }
+  .cap-sync__retry {
+    color: inherit;
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .cap-sync__retry::before { content: ' · '; text-decoration: none; }
+  .cap-sync__spin {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: cap-sync-spin 0.8s linear infinite;
+  }
+  @keyframes cap-sync-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .cap-sync__spin { animation: none; opacity: 0.55; }
+  }
+</style>
