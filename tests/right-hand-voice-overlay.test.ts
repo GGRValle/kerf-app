@@ -1299,8 +1299,8 @@ test('Home folds the resolved turn into the shared Attention Artifact queue', ()
   const card = readFileSync(path.join(ROOT, 'src/app/lib/attentionArtifactCard.ts'), 'utf8');
   // Mounted on the Right Hand home surface.
   assert.match(home, /RoleHomeSurface/);
-  assert.match(home, /voiceSurface="bubble"/);
-  assert.match(home, /voiceState="minimized"/);
+  // Unified bubble: home uses the single Right Hand overlay (no voiceSurface override).
+  assert.doesNotMatch(home, /voiceSurface=/);
   assert.doesNotMatch(surface, /RightHandResultCard/);
   assert.match(surface, /The one thing/);
   assert.match(surface, /On deck/);
