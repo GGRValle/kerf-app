@@ -1,0 +1,217 @@
+---
+const activeJobHref = '/projects/proj_wegrzyn_kitchen';
+const dailyLogHref = `${activeJobHref}/daily-log`;
+const recentProofHref = '/field-detail';
+const waitingHref = '/relay';
+
+const todayItems = [
+  {
+    label: 'Active job',
+    title: 'Wegrzyn kitchen + primary bath',
+    detail: 'Use captures, voice, and job notes as proof. Field Hand files the context after you confirm.',
+    href: activeJobHref,
+    tone: 'green',
+  },
+  {
+    label: 'Capture',
+    title: 'Photo, walkthrough, or scan',
+    detail: 'Open the camera first. Route the session when you are done.',
+    href: '/camera',
+    tone: 'amber',
+  },
+  {
+    label: 'Daily log',
+    title: 'Turn today into a draft',
+    detail: 'Use job proof and a short voice note before filing the log.',
+    href: dailyLogHref,
+    tone: 'blue',
+  },
+] as const;
+
+const proofItems = [
+  { label: 'Recent proof', value: 'Last capture', href: recentProofHref },
+  { label: 'Waiting', value: 'Office review', href: waitingHref },
+  { label: 'Work orders', value: 'Job tasks', href: `${activeJobHref}/work-orders/wo_wegrzyn_kitchen` },
+] as const;
+---
+
+<section class="fh-home kg-grid" data-grammar="canon" aria-label="Field Hand home">
+  <header class="fh-home__head kg-pagehead kg-span-12">
+    <p class="fh-home__eyebrow">Field Hand</p>
+    <h1>Today on site</h1>
+    <p>Capture what happened. Field Hand turns the proof into the next safe step.</p>
+  </header>
+
+  <a class="fh-home__primary kg-card kg-span-12" href="/camera">
+    <span class="kg-routechip">Start here</span>
+    <strong>Capture first</strong>
+    <span>Take photos, record a walkthrough, or scan the room. Choose where it goes after the session.</span>
+  </a>
+
+  <section class="fh-home__section kg-span-12" aria-labelledby="fh-today-title">
+    <div class="fh-home__section-head">
+      <h2 id="fh-today-title">Today</h2>
+      <span>Field truth</span>
+    </div>
+    <div class="fh-home__cards">
+      {todayItems.map((item) => (
+        <a class="fh-card kg-card" href={item.href}>
+          <span class:list={['kg-chip', item.tone]}>{item.label}</span>
+          <strong>{item.title}</strong>
+          <span>{item.detail}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="fh-home__section kg-span-12" aria-labelledby="fh-quick-title">
+    <div class="fh-home__section-head">
+      <h2 id="fh-quick-title">Quick paths</h2>
+      <span>No office clutter</span>
+    </div>
+    <div class="fh-proof">
+      {proofItems.map((item) => (
+        <a class="fh-proof__row" href={item.href}>
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
+        </a>
+      ))}
+    </div>
+  </section>
+</section>
+
+<style>
+  .fh-home {
+    gap: 1rem;
+    padding-bottom: 5.5rem;
+  }
+
+  .fh-home__head {
+    gap: 0.25rem;
+  }
+
+  .fh-home__eyebrow {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .fh-home__head h1 {
+    margin: 0;
+    font-size: 2.1rem;
+    line-height: 0.98;
+  }
+
+  .fh-home__head p:last-child {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .fh-home__primary {
+    display: grid;
+    gap: 0.55rem;
+    padding: 1rem;
+    color: inherit;
+    text-decoration: none;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--green) 16%, var(--panel)), var(--panel));
+    border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+  }
+
+  .fh-home__primary strong {
+    font-size: 1.35rem;
+    line-height: 1.05;
+  }
+
+  .fh-home__primary span:last-child,
+  .fh-card span:last-child {
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  .fh-home__section {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .fh-home__section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .fh-home__section-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .fh-home__section-head span {
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .fh-home__cards {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .fh-card {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.9rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .fh-card strong {
+    font-size: 1.05rem;
+    line-height: 1.15;
+  }
+
+  .fh-proof {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+
+  .fh-proof__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 52px;
+    padding: 0.85rem 0.95rem;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fh-proof__row:last-child {
+    border-bottom: 0;
+  }
+
+  .fh-proof__row span {
+    color: var(--muted);
+  }
+
+  .fh-proof__row strong {
+    text-align: right;
+  }
+
+  @media (min-width: 720px) {
+    .fh-home__cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

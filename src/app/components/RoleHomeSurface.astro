@@ -1,5 +1,6 @@
 ---
 import RightHandHomeSurface from './RightHandHomeSurface.astro';
+import FieldHandHomeSurface from './FieldHandHomeSurface.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { wireframeIdForRole } from '../lib/roleSession.js';
 import type { RoleRoot } from '../lib/layout-props.js';
@@ -34,6 +35,8 @@ const ROLE_LABEL_KEYS = {
   ) : null}
   {roleRoot === 'owner' ? (
     <RightHandHomeSurface />
+  ) : roleRoot === 'field_hand' ? (
+    <FieldHandHomeSurface />
   ) : (
     <div class="role-home__stub">
       <strong>{t('platform.home.stub_title')}</strong>

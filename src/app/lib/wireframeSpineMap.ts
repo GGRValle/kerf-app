@@ -140,12 +140,13 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     domain: 'home',
     surface: 'Field hand home',
     wireframes: ['F-C1_mobile_field_hand_home.html', 'F-FH1_mobile_field_hand_home.html', 'F-FL1_mobile_foreman_home.html', 'F-SU1_mobile_superintendent_home.html', 'F-SU2_desktop_superintendent_home.html'],
-    status: 'mapped_pending_rebuild',
-    notes: 'Role-specific field, foreman, and superintendent projections need explicit routing by role.',
+    status: 'canon_wired',
+    notes: 'Mobile field-hand role root is live as a capture-first surface. Foreman/superintendent variants still need role-specific expansion.',
     next: [
-      { trigger: 'Capture', route: '/field-capture', face: 'F-E1_mobile_field_capture.html' },
+      { trigger: 'Capture', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
       { trigger: 'Project detail', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
-      { trigger: 'On me', route: '/on-me', face: 'F-TD1_mobile_global_todo.html' },
+      { trigger: 'Daily log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html' },
+      { trigger: 'Waiting', route: '/relay', face: 'F-RV1_mobile_office_review.html' },
     ],
   },
   {

@@ -53,7 +53,6 @@ const NAVBACK_SURFACES: ReadonlyArray<{ file: string; fallback: string }> = [
   { file: 'src/app/pages/home/owner.astro', fallback: '/' },
   { file: 'src/app/pages/home/pm.astro', fallback: '/' },
   { file: 'src/app/pages/home/admin-ops.astro', fallback: '/' },
-  { file: 'src/app/pages/home/field.astro', fallback: '/' },
   { file: 'src/app/pages/home/sub.astro', fallback: '/' },
   { file: 'src/app/pages/field.astro', fallback: '/' },
 ];
@@ -81,6 +80,12 @@ test('listed surfaces import NavBack with the audit fallback targets', () => {
 
 test('Home (root landing surface) renders no NavBack — Canon: nothing above Home to go back to', () => {
   assert.doesNotMatch(read('src/app/pages/index.astro'), /NavBack/);
+});
+
+test('Field Hand home is a mobile role root, not a child page with NavBack', () => {
+  const source = read('src/app/pages/home/field.astro');
+  assert.doesNotMatch(source, /NavBack/);
+  assert.match(source, /RoleHomeSurface/);
 });
 
 test('back-button sweep does not touch bubble or money modules', () => {
