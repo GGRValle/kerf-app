@@ -57,6 +57,26 @@ function captureDestinationKind(value: string | undefined): CaptureUploadDestina
   return null;
 }
 
+async function authorizeCaptureUploadDestination(
+  destinationKind: CaptureUploadDestinationKind,
+  destinationId: string,
+  tenant: PersistenceTenantId,
+): Promise<{ ok: true } | { ok: false; status: 404 | 409; error: string }> {
+  if (destinationKind === 'job' || destinationKind === 'daily_log') {
+    if (await projectVisibleToTenant(destinationId, tenant)) return { ok: true };
+    return { ok: false, status: 404, error: 'project_not_found' };
+  }
+  if (destinationKind === 'lead') {
+    if (destinationId === 'new') return { ok: true };
+    return { ok: false, status: 409, error: 'destination_invalid' };
+  }
+  if (destinationKind === 'review') {
+    if (destinationId === 'office_queue') return { ok: true };
+    return { ok: false, status: 409, error: 'destination_invalid' };
+  }
+  return { ok: false, status: 409, error: 'destination_invalid' };
+}
+
 /**
  * Lane3 project reads must see fixture projects AND event-backed projects —
  * POST /projects and D-066 convert-to-project both emit project.created with
@@ -260,8 +280,9 @@ lane3WorkRoutes.post('/capture-sync/items', async (c) => {
   if (destinationKind === null || !destinationId) {
     return c.json({ error: 'destination_required' }, 409);
   }
-  if (destinationKind === 'job' && !(await projectVisibleToTenant(destinationId, tenant))) {
-    return c.json({ error: 'project_not_found' }, 404);
+  const destinationAuth = await authorizeCaptureUploadDestination(destinationKind, destinationId, tenant);
+  if (!destinationAuth.ok) {
+    return c.json({ error: destinationAuth.error }, destinationAuth.status);
   }
 
   let uploadBody: ArrayBuffer;

@@ -122,6 +122,109 @@ test('POST /capture-sync/items re-resolves job destination under the authenticat
   });
 });
 
+test('POST /capture-sync/items only accepts whitelisted lead and review destinations', async () => {
+  await withPersistenceDir('capture-sync-whitelist-', async (dir) => {
+    const app = createApiRouter();
+    for (const destination of [
+      { kind: 'lead', id: 'lead_valle_foreign' },
+      { kind: 'review', id: 'review_valle_foreign' },
+    ]) {
+      const res = await app.request('/capture-sync/items', {
+        method: 'POST',
+        headers: {
+          Authorization: PLATFORM_SESSION_GGR_OWNER,
+          'Content-Type': 'image/jpeg',
+          'X-Capture-Session-Id': `cap_session_${destination.kind}`,
+          'X-Capture-Item-Id': `cap_item_${destination.kind}`,
+          'X-Capture-Kind': 'photo',
+          'X-Capture-File-Name': `${destination.kind}.jpg`,
+          'X-Capture-Destination-Kind': destination.kind,
+          'X-Capture-Destination-Id': destination.id,
+        },
+        body: new Uint8Array([1, 2, 3]),
+      });
+      assert.equal(res.status, 409);
+      const body = await res.json() as { error: string };
+      assert.equal(body.error, 'destination_invalid');
+    }
+
+    assert.equal(existsSync(path.join(dir, 'capture-uploads')), false);
+
+    for (const destination of [
+      { kind: 'lead', id: 'new' },
+      { kind: 'review', id: 'office_queue' },
+    ]) {
+      const res = await app.request('/capture-sync/items', {
+        method: 'POST',
+        headers: {
+          Authorization: PLATFORM_SESSION_GGR_OWNER,
+          'Content-Type': 'image/jpeg',
+          'X-Capture-Session-Id': `cap_session_${destination.kind}_ok`,
+          'X-Capture-Item-Id': `cap_item_${destination.kind}_ok`,
+          'X-Capture-Kind': 'photo',
+          'X-Capture-File-Name': `${destination.kind}.jpg`,
+          'X-Capture-Destination-Kind': destination.kind,
+          'X-Capture-Destination-Id': destination.id,
+        },
+        body: new Uint8Array([4, 5, 6]),
+      });
+      assert.equal(res.status, 201);
+      const body = await res.json() as {
+        receipt: { destination_kind: string; destination_id: string; tenant_id: string };
+      };
+      assert.equal(body.receipt.destination_kind, destination.kind);
+      assert.equal(body.receipt.destination_id, destination.id);
+      assert.equal(body.receipt.tenant_id, 'tenant_ggr');
+    }
+  });
+});
+
+test('POST /capture-sync/items re-resolves daily log destination under the authenticated tenant', async () => {
+  await withPersistenceDir('capture-sync-daily-log-', async (dir) => {
+    const app = createApiRouter();
+    const rejected = await app.request('/capture-sync/items', {
+      method: 'POST',
+      headers: {
+        Authorization: PLATFORM_SESSION_VALLE_PM,
+        'Content-Type': 'image/jpeg',
+        'X-Capture-Session-Id': 'cap_session_daily_foreign',
+        'X-Capture-Item-Id': 'cap_item_daily_foreign',
+        'X-Capture-Kind': 'photo',
+        'X-Capture-File-Name': 'daily.jpg',
+        'X-Capture-Destination-Kind': 'daily_log',
+        'X-Capture-Destination-Id': 'proj_wegrzyn_kitchen',
+      },
+      body: new Uint8Array([1, 2, 3]),
+    });
+    assert.equal(rejected.status, 404);
+    const rejectedBody = await rejected.json() as { error: string };
+    assert.equal(rejectedBody.error, 'project_not_found');
+    assert.equal(existsSync(path.join(dir, 'capture-uploads')), false);
+
+    const accepted = await app.request('/capture-sync/items', {
+      method: 'POST',
+      headers: {
+        Authorization: PLATFORM_SESSION_GGR_OWNER,
+        'Content-Type': 'image/jpeg',
+        'X-Capture-Session-Id': 'cap_session_daily_ok',
+        'X-Capture-Item-Id': 'cap_item_daily_ok',
+        'X-Capture-Kind': 'photo',
+        'X-Capture-File-Name': 'daily.jpg',
+        'X-Capture-Destination-Kind': 'daily_log',
+        'X-Capture-Destination-Id': 'proj_wegrzyn_kitchen',
+      },
+      body: new Uint8Array([4, 5, 6]),
+    });
+    assert.equal(accepted.status, 201);
+    const acceptedBody = await accepted.json() as {
+      receipt: { destination_kind: string; destination_id: string; tenant_id: string };
+    };
+    assert.equal(acceptedBody.receipt.destination_kind, 'daily_log');
+    assert.equal(acceptedBody.receipt.destination_id, 'proj_wegrzyn_kitchen');
+    assert.equal(acceptedBody.receipt.tenant_id, 'tenant_ggr');
+  });
+});
+
 test('queue source only marks synced after a server receipt and never sends client tenant authority', () => {
   assert.match(queueSrc, /listPending\(principal\)/);
   assert.match(queueSrc, /markSyncing\(item\.id\)/);
@@ -144,7 +247,10 @@ test('camera installs the upload queue, retries on lifecycle events, and marks u
 test('server route does not trust client tenant and validates destination before storing bytes', () => {
   assert.match(lane3Src, /const tenant = requireApiTenant\(c\)/);
   assert.match(lane3Src, /const session = requireApiSession\(c\)/);
+  assert.match(lane3Src, /authorizeCaptureUploadDestination\(destinationKind, destinationId, tenant\)/);
   assert.match(lane3Src, /projectVisibleToTenant\(destinationId, tenant\)/);
+  assert.match(lane3Src, /destinationKind === 'lead'[\s\S]*destinationId === 'new'/);
+  assert.match(lane3Src, /destinationKind === 'review'[\s\S]*destinationId === 'office_queue'/);
   assert.match(lane3Src, /tenantId: tenant/);
   assert.match(lane3Src, /client_tenant_ignored/);
 });
