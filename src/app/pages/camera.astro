@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import CaptureSyncBadge from '../components/CaptureSyncBadge.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { listLane23Projects } from '../lib/lane23Fixtures.js';
 
@@ -41,6 +42,8 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     data-selected-project-id={routePrefilled ? (selectedProject?.project_id ?? '') : ''}
     data-return-href={returnHref}
     data-initial-mode={initialMode}
+    data-tenant-id={context.tenantId}
+    data-principal-user-id={context.roleRoot}
   >
     <h1 id="camera-title" class="cam-sr-only">Camera</h1>
 
@@ -115,6 +118,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
           <div class="cam-thumb" id="cam-thumb" aria-hidden="true"></div>
           <div class="cam-captured__copy">
             <strong id="cam-captured-title">Media ready</strong>
+            <span id="cam-sync-badge"><CaptureSyncBadge state="captured" /></span>
             <span id="cam-captured-detail">Capture first. Choose where it goes before filing.</span>
           </div>
         </div>
@@ -182,6 +186,16 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
   </section>
 
   <script>
+    import {
+      addItem,
+      createSession,
+      listItems,
+      listPending,
+      principalSnapshotFromSurfaceContext,
+      setDestination,
+    } from '../lib/captureStore.js';
+    import { CAPTURE_SYNC } from '../lib/captureSyncState.js';
+
     const root = document.querySelector('.f-cam1');
     const status = document.querySelector('#camera-status');
     const jobChipLabel = document.querySelector('#cam-job-chip-label');
@@ -225,6 +239,9 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     let recorderChunks = [];
     let recordingStartedAt = 0;
     let isFiling = false;
+    let activeCaptureSessionId = '';
+    let activeCaptureItemId = '';
+    let lastCapturePreviewUrl = '';
 
     const copyForMode = (mode) => {
       if (mode === 'walkthru') return 'Talk while you film. Right Hand will route the walkthrough after you capture.';
@@ -235,6 +252,47 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     const setStatus = (message) => {
       if (status instanceof HTMLElement) status.textContent = message;
     };
+    const setCaptureSyncState = (state) => {
+      const badge = document.querySelector('#cam-sync-badge [data-sync-state]');
+      if (!(badge instanceof HTMLElement)) return;
+      const meta = CAPTURE_SYNC[state] || CAPTURE_SYNC.captured;
+      badge.setAttribute('data-sync-state', state);
+      badge.classList.toggle('blue', meta.tone === 'blue');
+      badge.classList.toggle('green', meta.tone === 'green');
+      badge.classList.toggle('amber', meta.tone === 'amber');
+      badge.classList.toggle('red', meta.tone === 'red');
+      badge.classList.toggle('cap-sync--working', state === 'syncing');
+      const label = badge.querySelector('.cap-sync__label');
+      if (label instanceof HTMLElement) label.textContent = meta.label;
+    };
+    const capturePrincipalSnapshot = () => principalSnapshotFromSurfaceContext({
+      tenant_id: root instanceof HTMLElement ? root.dataset.tenantId || '' : '',
+      user_id: root instanceof HTMLElement ? root.dataset.principalUserId || '' : '',
+    });
+    const ensureCaptureSession = async () => {
+      if (activeCaptureSessionId) return activeCaptureSessionId;
+      const session = await createSession(
+        currentMode === 'walkthru' ? 'estimate_walk' : 'daily_log',
+        capturePrincipalSnapshot(),
+      );
+      activeCaptureSessionId = session.id;
+      return session.id;
+    };
+    const persistSessionDestination = async (destination) => {
+      if (!activeCaptureSessionId) return;
+      try {
+        await setDestination(activeCaptureSessionId, destination);
+      } catch {
+        // Destination still travels through the visible route flow; local store is best-effort.
+      }
+    };
+    const blobFromCanvas = () => new Promise((resolve) => {
+      if (!(canvas instanceof HTMLCanvasElement)) {
+        resolve(null);
+        return;
+      }
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.82);
+    });
     const syncRouteChip = () => {
       if (!(jobChipLabel instanceof HTMLElement)) return;
       if (routeConfirmed && selectedProjectName) {
@@ -332,6 +390,9 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         updateSurfaceContextProject('');
         syncRouteChip();
         hideRoutePanel();
+        void persistSessionDestination(selectedRouteKind === 'lead'
+          ? { kind: 'lead', id: 'new' }
+          : { kind: 'review', id: 'office_queue' });
         if (lastCapture && capturedDetail instanceof HTMLElement) {
           capturedDetail.textContent = selectedRouteKind === 'lead'
             ? 'Ready to start a new lead intake.'
@@ -357,6 +418,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       updateSurfaceContextProject(selectedProjectId);
       syncRouteChip();
       hideRoutePanel();
+      void persistSessionDestination({ kind: 'job', id: selectedProjectId });
       if (lastCapture) {
         if (capturedDetail instanceof HTMLElement) {
           capturedDetail.textContent = `Ready to file to ${selectedProjectName} · Daily Log.`;
@@ -466,6 +528,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       if (isFiling) return true;
       isFiling = true;
       setStatus(`Filing ${friendlyForKind(lastCapture.kind).toLowerCase()} to ${selectedProjectName}…`);
+      void persistSessionDestination({ kind: 'job', id: selectedProjectId });
       if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
       if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = true;
       try {
@@ -660,13 +723,15 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     const updateLastShot = (kind, previewUrl = '') => {
       const friendly = friendlyForKind(kind);
       if (root instanceof HTMLElement) root.classList.add('has-capture');
-      if (captured instanceof HTMLElement) captured.hidden = true;
+      if (captured instanceof HTMLElement) captured.hidden = false;
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.hidden = true;
       if (capturedTitle instanceof HTMLElement) capturedTitle.textContent = `${friendly} ready`;
       if (capturedDetail instanceof HTMLElement) {
         capturedDetail.textContent = routeConfirmed && selectedProjectName
           ? `Ready to file to ${selectedProjectName} · Daily Log.`
-          : 'Captured — confirm destination before filing.';
+          : lastCapture?.status === 'saved_on_phone'
+            ? 'Saved on phone. Choose where it goes before filing.'
+            : 'Captured — keep this screen open until it saves.';
       }
       if (thumb instanceof HTMLElement) {
         thumb.className = `cam-thumb ${kind === 'photo' ? 'is-photo' : kind === 'scan' ? 'is-scan' : 'is-video'}`;
@@ -681,25 +746,61 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         if (label instanceof HTMLElement) label.textContent = friendly;
       }
       setStatus(routeConfirmed && selectedProjectName
-        ? `${friendly} ready — tap Done to file to ${selectedProjectName}.`
-        : `${friendly} captured — tap Done to choose where it goes.`);
+        ? `${friendly} saved on phone — tap Done to file to ${selectedProjectName}.`
+        : lastCapture?.status === 'saved_on_phone'
+          ? `${friendly} saved on phone — tap Done to choose where it goes.`
+          : `${friendly} captured — tap Done to choose where it goes.`);
       if (!routeConfirmed) showRoutePanel();
     };
-    const rememberCapture = (capture) => {
+    const rememberCapture = async (capture, blob) => {
+      let savedItem = null;
+      const sessionId = await ensureCaptureSession();
       lastCapture = {
         project_id: routeConfirmed ? selectedProjectId : '',
         project_name: routeConfirmed ? selectedProjectName : '',
         at: Date.now(),
-        status: routeConfirmed ? 'ready_to_file' : 'pending_route',
+        status: 'captured',
+        capture_store_session_id: sessionId,
         ...capture,
       };
+      setCaptureSyncState('captured');
+      if (blob instanceof Blob) {
+        try {
+          savedItem = await addItem(sessionId, {
+            kind: capture.kind === 'walkthrough' ? 'video' : capture.kind,
+            blob,
+            name: capture.name || `${capture.kind} capture`,
+            metadata: {
+              source: capture.source || '',
+              route_kind: selectedRouteKind,
+            },
+          });
+          activeCaptureItemId = savedItem.id;
+          lastCapture = {
+            ...lastCapture,
+            status: 'saved_on_phone',
+            capture_store_item_id: savedItem.id,
+            bytes: savedItem.blob.size,
+          };
+          setCaptureSyncState('saved_on_phone');
+        } catch {
+          lastCapture = {
+            ...lastCapture,
+            status: 'captured',
+            capture_store_item_id: '',
+          };
+          setCaptureSyncState('captured');
+          setStatus(`${friendlyForKind(capture.kind)} captured, but not saved on phone yet. Keep this screen open.`);
+        }
+      }
       try {
         sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(lastCapture));
       } catch {
         // Visible state still tells the operator what happened.
       }
+      return savedItem;
     };
-    const captureStillFromVideo = (kind = 'photo') => {
+    const captureStillFromVideo = async (kind = 'photo') => {
       if (!(video instanceof HTMLVideoElement) || !(canvas instanceof HTMLCanvasElement)) {
         return false;
       }
@@ -712,7 +813,8 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       ctx.drawImage(video, 0, 0, width, height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
       const name = `${kind === 'walkthrough' ? 'walkthrough-frame' : 'photo'}-${Date.now()}.jpg`;
-      rememberCapture({ kind, name, source: 'getUserMedia_canvas_frame' });
+      const blob = await blobFromCanvas();
+      await rememberCapture({ kind, name, source: 'getUserMedia_canvas_frame' }, blob);
       updateLastShot(kind, dataUrl);
       return true;
     };
@@ -721,17 +823,17 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         resolve(false);
         return;
       }
-      recorder.addEventListener('stop', () => {
+      recorder.addEventListener('stop', async () => {
         const mime = recorder.mimeType || 'video/webm';
         const blob = new Blob(recorderChunks, { type: mime });
         const ext = mime.includes('mp4') ? 'mp4' : 'webm';
         const objectUrl = URL.createObjectURL(blob);
-        rememberCapture({
+        await rememberCapture({
           kind: 'walkthrough',
           name: `walkthrough-${recordingStartedAt || Date.now()}.${ext}`,
           source: 'getUserMedia_mediarecorder',
           bytes: blob.size,
-        });
+        }, blob);
         updateLastShot('walkthrough', objectUrl);
         if (recPill instanceof HTMLElement) recPill.hidden = true;
         if (root instanceof HTMLElement) root.classList.remove('is-recording');
@@ -740,7 +842,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       }, { once: true });
       recorder.stop();
     });
-    const startWalkthruRecording = () => {
+    const startWalkthruRecording = async () => {
       if (typeof MediaStream === 'undefined' || !(cameraStream instanceof MediaStream) || typeof MediaRecorder === 'undefined') {
         return captureStillFromVideo('walkthrough');
       }
@@ -778,7 +880,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       const capturedInline = currentMode === 'walkthru'
         ? startWalkthruRecording()
         : captureStillFromVideo('photo');
-      if (!capturedInline) {
+      if (!(await capturedInline)) {
         setStatus('Camera unavailable here — using fallback file picker.');
         openFallbackCapture();
       }
@@ -786,12 +888,42 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     const onSelectedFile = (file, kind) => {
       if (!file) return;
       const objectUrl = kind === 'photo' && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
-      rememberCapture({
+      void rememberCapture({
         kind,
         name: file.name || `${kind} capture`,
         source: 'file_input_fallback',
-      });
+      }, file);
       updateLastShot(kind, objectUrl);
+    };
+    const hydratePendingCapture = async () => {
+      if (lastCapture) return;
+      try {
+        const pending = await listPending(capturePrincipalSnapshot());
+        const session = pending.find((candidate) => candidate.item_ids.length > 0);
+        if (!session) return;
+        const items = await listItems(session.id);
+        const item = items[items.length - 1];
+        if (!item || !(item.blob instanceof Blob)) return;
+        activeCaptureSessionId = session.id;
+        activeCaptureItemId = item.id;
+        const captureKind = item.kind === 'video' ? 'walkthrough' : item.kind;
+        lastCapturePreviewUrl = item.kind === 'photo' ? URL.createObjectURL(item.blob) : '';
+        lastCapture = {
+          kind: captureKind,
+          name: item.name,
+          source: 'indexeddb_recovery',
+          at: item.created_at,
+          status: item.status,
+          capture_store_session_id: session.id,
+          capture_store_item_id: item.id,
+          bytes: item.blob.size,
+        };
+        setCaptureSyncState(item.status);
+        updateLastShot(captureKind, lastCapturePreviewUrl);
+        setStatus(`${friendlyForKind(captureKind)} restored from this phone — tap Done to choose where it goes.`);
+      } catch {
+        // Recovery is best-effort; a fresh capture still works.
+      }
     };
     const done = async () => {
       if (recorder instanceof MediaRecorder && recorder.state === 'recording') {
@@ -823,6 +955,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     }
     setRouteKind('job');
     void setMode(currentMode);
+    void hydratePendingCapture();
   </script>
 </Layout>
 

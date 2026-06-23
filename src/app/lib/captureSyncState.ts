@@ -10,14 +10,15 @@
  * A surface may show a state ONLY when that state's `truth` precondition
  * actually holds. The badge is presentation; truth is the binder's job.
  *
- * As of this sprint there is NO sync engine: captures are sessionStorage/in-
- * memory only (they do NOT survive a tab close, reload, or network drop). So
- * the only state that is truthful TODAY is `captured`. Showing "Saved on phone"
- * for a sessionStorage blob is a durability lie — the opposite of field truth.
+ * As of this sprint the durable on-device store can make `saved_on_phone`
+ * truthful only after IndexedDB put + read-back confirms the blob. There is
+ * still NO upload sync engine: `syncing`, `synced`, and `failed` stay dark
+ * until a real server upload/retry path backs them. Showing any state before
+ * its proof exists is a durability lie — the opposite of field truth.
  *
  * The integration lane (durable on-device store + real upload/retry) must land
- * before `saved_on_phone` / `syncing` / `synced` / `failed` are bound to live
- * data. This module is the contract those lanes converge on.
+ * before `syncing` / `synced` / `failed` are bound to live data. This module is
+ * the contract those lanes converge on.
  * ────────────────────────────────────────────────────────────────────────────
  */
 
@@ -52,8 +53,8 @@ export const CAPTURE_SYNC: Record<CaptureSyncState, CaptureSyncMeta> = {
   saved_on_phone: {
     label: 'Saved on phone',
     tone: 'neutral',
-    truth: 'Durably persisted on-device — survives tab close, reload, and offline. Requires the durable-store engine.',
-    liveToday: false,
+    truth: 'Durably persisted on-device — survives tab close, reload, and offline. Requires IndexedDB put plus read-back of the stored blob.',
+    liveToday: true,
   },
   syncing: {
     label: 'Syncing…',
@@ -91,7 +92,7 @@ export const CAPTURE_SYNC_ORDER: readonly CaptureSyncState[] = [
   'failed',
 ];
 
-/** True only for states a surface may truthfully show today (no engine yet). */
+/** True only for states a surface may truthfully show today. */
 export function isLiveToday(state: CaptureSyncState): boolean {
   return CAPTURE_SYNC[state].liveToday;
 }
