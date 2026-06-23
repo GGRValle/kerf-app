@@ -4,7 +4,9 @@ import type { PersistenceTenantId } from '../../persistence/events.js';
 import { appendDailyLogEntryAndSurface } from '../lib/dailyLogCommit.js';
 import { appendValidatedEvent, generateEventId } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import { persistCaptureUpload, type CaptureUploadDestinationKind } from '../lib/captureUploadReceiptStore.js';
 import {
+  requireApiSession,
   requireApiTenant,
   tenantOverrideFlags,
   tenantParamConflictsWithScope,
@@ -37,6 +39,43 @@ import type { AttentionArtifact } from '../../contracts/lane1/attentionArtifact.
 export const lane3WorkRoutes = new Hono<{ Variables: ApiVariables }>();
 
 type ProjectVisibility = 'fixture' | 'event_backed' | null;
+type CaptureUploadKind = 'photo' | 'video' | 'scan' | 'note';
+
+const CAPTURE_UPLOAD_MAX_BYTES = 250 * 1024 * 1024;
+
+function cleanCaptureHeader(value: string | undefined, fallback = ''): string {
+  return (value ?? '').trim().replace(/[^A-Za-z0-9_.:/-]/g, '_').slice(0, 220) || fallback;
+}
+
+function captureUploadKind(value: string | undefined): CaptureUploadKind | null {
+  if (value === 'photo' || value === 'video' || value === 'scan' || value === 'note') return value;
+  return null;
+}
+
+function captureDestinationKind(value: string | undefined): CaptureUploadDestinationKind | null {
+  if (value === 'job' || value === 'lead' || value === 'review' || value === 'daily_log') return value;
+  return null;
+}
+
+async function authorizeCaptureUploadDestination(
+  destinationKind: CaptureUploadDestinationKind,
+  destinationId: string,
+  tenant: PersistenceTenantId,
+): Promise<{ ok: true } | { ok: false; status: 404 | 409; error: string }> {
+  if (destinationKind === 'job' || destinationKind === 'daily_log') {
+    if (await projectVisibleToTenant(destinationId, tenant)) return { ok: true };
+    return { ok: false, status: 404, error: 'project_not_found' };
+  }
+  if (destinationKind === 'lead') {
+    if (destinationId === 'new') return { ok: true };
+    return { ok: false, status: 409, error: 'destination_invalid' };
+  }
+  if (destinationKind === 'review') {
+    if (destinationId === 'office_queue') return { ok: true };
+    return { ok: false, status: 409, error: 'destination_invalid' };
+  }
+  return { ok: false, status: 409, error: 'destination_invalid' };
+}
 
 /**
  * Lane3 project reads must see fixture projects AND event-backed projects —
@@ -215,6 +254,69 @@ lane3WorkRoutes.post('/camera-captures/review', async (c) => {
       capture_id: captureId,
       event_id: event.event_id,
       review_route: `/relay?src=camera&capture_id=${encodeURIComponent(captureId)}`,
+      ...tenantOverrideFlags(c),
+    },
+    201,
+  );
+});
+
+lane3WorkRoutes.post('/capture-sync/items', async (c) => {
+  const tenant = requireApiTenant(c);
+  const session = requireApiSession(c);
+  const sessionId = cleanCaptureHeader(c.req.header('x-capture-session-id'));
+  const itemId = cleanCaptureHeader(c.req.header('x-capture-item-id'));
+  const kind = captureUploadKind(c.req.header('x-capture-kind'));
+  const destinationKind = captureDestinationKind(c.req.header('x-capture-destination-kind'));
+  const destinationId = cleanCaptureHeader(c.req.header('x-capture-destination-id'));
+  const fileName = cleanCaptureHeader(c.req.header('x-capture-file-name'), `${kind ?? 'capture'}.bin`);
+  const clientTenant = cleanCaptureHeader(c.req.header('x-capture-tenant-id'));
+
+  if (!sessionId || !itemId) {
+    return c.json({ error: 'capture_identity_required' }, 400);
+  }
+  if (kind === null) {
+    return c.json({ error: 'invalid_capture_kind' }, 400);
+  }
+  if (destinationKind === null || !destinationId) {
+    return c.json({ error: 'destination_required' }, 409);
+  }
+  const destinationAuth = await authorizeCaptureUploadDestination(destinationKind, destinationId, tenant);
+  if (!destinationAuth.ok) {
+    return c.json({ error: destinationAuth.error }, destinationAuth.status);
+  }
+
+  let uploadBody: ArrayBuffer;
+  try {
+    uploadBody = await c.req.arrayBuffer();
+  } catch {
+    return c.json({ error: 'read_body_failed' }, 400);
+  }
+  if (uploadBody.byteLength <= 0) {
+    return c.json({ error: 'empty_capture_upload' }, 400);
+  }
+  if (uploadBody.byteLength > CAPTURE_UPLOAD_MAX_BYTES) {
+    return c.json({ error: 'capture_upload_too_large', max_bytes: CAPTURE_UPLOAD_MAX_BYTES }, 413);
+  }
+
+  const { persistenceDir } = getApiDeps();
+  const receipt = await persistCaptureUpload({
+    persistenceDir,
+    tenantId: tenant,
+    principalRole: session.roleRoot,
+    sessionId,
+    itemId,
+    captureKind: kind,
+    fileName,
+    contentType: c.req.header('content-type') ?? 'application/octet-stream',
+    destination: { kind: destinationKind, id: destinationId },
+    bytes: new Uint8Array(uploadBody),
+  });
+
+  return c.json(
+    {
+      ok: true,
+      receipt,
+      client_tenant_ignored: clientTenant.length > 0 && clientTenant !== tenant,
       ...tenantOverrideFlags(c),
     },
     201,

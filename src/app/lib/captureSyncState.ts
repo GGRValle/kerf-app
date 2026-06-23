@@ -11,10 +11,11 @@
  * actually holds. The badge is presentation; truth is the binder's job.
  *
  * As of this sprint the durable on-device store can make `saved_on_phone`
- * truthful only after IndexedDB put + read-back confirms the blob. There is
- * still NO upload sync engine: `syncing`, `synced`, and `failed` stay dark
- * until a real server upload/retry path backs them. Showing any state before
- * its proof exists is a durability lie — the opposite of field truth.
+ * truthful only after IndexedDB put + read-back confirms the blob. The upload
+ * queue may make `syncing`, `synced`, and `failed` truthful only through the
+ * server receipt path: upload in flight, server byte receipt, or a real failed
+ * attempt. Showing any state before its proof exists is a durability lie — the
+ * opposite of field truth.
  *
  * The integration lane (durable on-device store + real upload/retry) must land
  * before `syncing` / `synced` / `failed` are bound to live data. This module is
@@ -60,25 +61,25 @@ export const CAPTURE_SYNC: Record<CaptureSyncState, CaptureSyncMeta> = {
     label: 'Syncing…',
     tone: 'blue',
     truth: 'An upload to the server is actually in flight right now.',
-    liveToday: false,
+    liveToday: true,
   },
   synced: {
     label: 'Synced',
     tone: 'green',
-    truth: 'The server has confirmed receipt. The capture is safe everywhere.',
-    liveToday: false,
+    truth: 'The server has confirmed byte receipt and stored a receipt manifest under the authenticated tenant.',
+    liveToday: true,
   },
   needs_attention: {
     label: 'Needs attention',
     tone: 'amber',
     truth: 'A real decision or action is pending on this capture (operator must do something).',
-    liveToday: false,
+    liveToday: true,
   },
   failed: {
     label: 'Failed',
     tone: 'red',
     truth: 'A sync attempt genuinely failed (not merely "not started"). A Retry must be offered.',
-    liveToday: false,
+    liveToday: true,
   },
 };
 
