@@ -77,6 +77,12 @@ test('project landing preserves camera last-shot history before clearing the fil
   assert.ok(clearIdx > preserveIdx, 'project clears one-time filed banner only after preserving camera history');
 });
 
+test('camera IndexedDB recovery restores only unrouted sessions as active captures', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  assert.match(camera, /pending\.find\(\(candidate\) => candidate\.destination === null && candidate\.item_ids\.length > 0\)/);
+  assert.doesNotMatch(camera, /pending\.find\(\(candidate\) => candidate\.item_ids\.length > 0\)/);
+});
+
 test('clients/new receives the camera capture handoff (no silent drop, canon grammar, no deal/project)', () => {
   const clientsNew = readFileSync(path.join(ROOT, 'src/app/pages/clients/new.astro'), 'utf8');
   // Reads the handoff the camera stashes, gated on arriving from the camera.

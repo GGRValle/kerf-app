@@ -1008,7 +1008,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       if (lastCapture) return;
       try {
         const pending = await listPending(capturePrincipalSnapshot());
-        const session = pending.find((candidate) => candidate.item_ids.length > 0);
+        const session = pending.find((candidate) => candidate.destination === null && candidate.item_ids.length > 0);
         if (!session) return;
         const items = await listItems(session.id);
         const item = items[items.length - 1];
