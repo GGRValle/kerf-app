@@ -51,6 +51,13 @@ test('camera new lead starts intake instead of routing to a deal detail dead-end
   assert.doesNotMatch(camera, /window\.location\.href = `\/sales\/\$\{encodeURIComponent\(dealId\)\}\?src=camera`/);
 });
 
+test('camera job filing lands on the job, not the launch surface', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  assert.match(camera, /const base = `\/projects\/\$\{encodeURIComponent\(selectedProjectId\)\}`/);
+  assert.match(camera, /const destination = base\.includes\('\?'\) \? `\$\{base\}&src=camera` : `\$\{base\}\?src=camera`/);
+  assert.doesNotMatch(camera, /const base = root\?\.getAttribute\('data-return-href'\) \|\| `\/projects\/\$\{selectedProjectId\}`/);
+});
+
 test('clients/new receives the camera capture handoff (no silent drop, canon grammar, no deal/project)', () => {
   const clientsNew = readFileSync(path.join(ROOT, 'src/app/pages/clients/new.astro'), 'utf8');
   // Reads the handoff the camera stashes, gated on arriving from the camera.

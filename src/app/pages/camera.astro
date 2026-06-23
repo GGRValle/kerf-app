@@ -623,7 +623,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         );
         return false;
       }
-      const base = root?.getAttribute('data-return-href') || `/projects/${selectedProjectId}`;
+      const base = `/projects/${encodeURIComponent(selectedProjectId)}`;
       const destination = base.includes('?') ? `${base}&src=camera` : `${base}?src=camera`;
       window.location.href = destination;
       return true;
