@@ -191,9 +191,11 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       createSession,
       listItems,
       listPending,
+      markNeedsAttention,
       principalSnapshotFromSurfaceContext,
       setDestination,
     } from '../lib/captureStore.js';
+    import { installCaptureUploadQueue, processCaptureUploadQueue } from '../lib/captureUploadQueue.js';
     import { CAPTURE_SYNC } from '../lib/captureSyncState.js';
 
     const root = document.querySelector('.f-cam1');
@@ -265,10 +267,36 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       const label = badge.querySelector('.cap-sync__label');
       if (label instanceof HTMLElement) label.textContent = meta.label;
     };
+    const reflectCaptureItemStatus = (item) => {
+      if (!item || item.id !== activeCaptureItemId) return;
+      if (lastCapture) {
+        lastCapture = {
+          ...lastCapture,
+          status: item.status,
+          server_ref: item.server_ref || '',
+        };
+      }
+      setCaptureSyncState(item.status);
+      if (capturedDetail instanceof HTMLElement) {
+        if (item.status === 'syncing') capturedDetail.textContent = 'Syncing to Right Hand. Keep capturing — this keeps working in the background.';
+        if (item.status === 'synced') capturedDetail.textContent = 'Synced. The server has the capture.';
+        if (item.status === 'failed') capturedDetail.textContent = 'Saved on phone. Sync failed — retry when you have a better connection.';
+        if (item.status === 'needs_attention') capturedDetail.textContent = 'Saved on phone. Choose where it goes before filing.';
+      }
+    };
     const capturePrincipalSnapshot = () => principalSnapshotFromSurfaceContext({
       tenant_id: root instanceof HTMLElement ? root.dataset.tenantId || '' : '',
       user_id: root instanceof HTMLElement ? root.dataset.principalUserId || '' : '',
     });
+    const processActiveCaptureQueue = async () => {
+      try {
+        await processCaptureUploadQueue(capturePrincipalSnapshot(), {
+          onItemStatus: reflectCaptureItemStatus,
+        });
+      } catch {
+        // Queue failures are reflected per item when possible; local save remains truthful.
+      }
+    };
     const ensureCaptureSession = async () => {
       if (activeCaptureSessionId) return activeCaptureSessionId;
       const session = await createSession(
@@ -276,14 +304,27 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         capturePrincipalSnapshot(),
       );
       activeCaptureSessionId = session.id;
+      if (routeConfirmed && selectedProjectId) {
+        await setDestination(activeCaptureSessionId, { kind: 'job', id: selectedProjectId });
+      }
       return session.id;
     };
     const persistSessionDestination = async (destination) => {
       if (!activeCaptureSessionId) return;
       try {
         await setDestination(activeCaptureSessionId, destination);
+        await processActiveCaptureQueue();
       } catch {
         // Destination still travels through the visible route flow; local store is best-effort.
+      }
+    };
+    const markActiveCaptureNeedsAttention = async (reason) => {
+      if (!activeCaptureItemId) return;
+      try {
+        const item = await markNeedsAttention(activeCaptureItemId, reason);
+        if (item) reflectCaptureItemStatus(item);
+      } catch {
+        // The visible route panel remains the source of action.
       }
     };
     const blobFromCanvas = () => new Promise((resolve) => {
@@ -935,6 +976,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         return;
       }
       if (!routeConfirmed || !selectedProjectId) {
+        await markActiveCaptureNeedsAttention('destination_required');
         showRoutePanel();
         return;
       }
@@ -949,6 +991,10 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     photoInput?.addEventListener('change', () => onSelectedFile(photoInput instanceof HTMLInputElement ? photoInput.files?.[0] : null, 'photo'));
     videoInput?.addEventListener('change', () => onSelectedFile(videoInput instanceof HTMLInputElement ? videoInput.files?.[0] : null, 'walkthrough'));
     window.addEventListener('pagehide', stopCamera);
+    const stopCaptureQueue = installCaptureUploadQueue(capturePrincipalSnapshot(), {
+      onItemStatus: reflectCaptureItemStatus,
+    });
+    window.addEventListener('pagehide', stopCaptureQueue, { once: true });
 
     if (routeConfirmed) {
       syncRouteChip();

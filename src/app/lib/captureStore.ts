@@ -358,6 +358,10 @@ export function markSynced(itemId: string, serverRef: string): Promise<CaptureIt
   return markItemStatus(itemId, 'synced', { server_ref: serverRef, error_reason: undefined });
 }
 
+export function markNeedsAttention(itemId: string, reason: string): Promise<CaptureItem | null> {
+  return markItemStatus(itemId, 'needs_attention', { error_reason: reason });
+}
+
 export function markFailed(itemId: string, reason: string): Promise<CaptureItem | null> {
   return markItemStatus(itemId, 'failed', { error_reason: reason });
 }

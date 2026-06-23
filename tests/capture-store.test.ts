@@ -99,12 +99,14 @@ test('session rollup is conservative: any unsaved item keeps the session capture
   assert.equal(rollupCaptureSessionStatus([item('saved_on_phone')]), 'saved_on_phone');
   assert.equal(rollupCaptureSessionStatus([item('saved_on_phone'), item('captured')]), 'captured');
   assert.equal(rollupCaptureSessionStatus([item('syncing'), item('saved_on_phone')]), 'syncing');
+  assert.equal(rollupCaptureSessionStatus([item('needs_attention'), item('saved_on_phone')]), 'needs_attention');
   assert.equal(rollupCaptureSessionStatus([item('failed'), item('saved_on_phone')]), 'failed');
   assert.equal(rollupCaptureSessionStatus([item('synced'), item('synced')]), 'synced');
 });
 
 test('camera binds to durable store, renders sync proof, and recovers pending sessions', () => {
   assert.match(camera, /import \{[\s\S]*addItem[\s\S]*createSession[\s\S]*listPending[\s\S]*setDestination[\s\S]*\} from '\.\.\/lib\/captureStore\.js'/);
+  assert.match(camera, /import \{ installCaptureUploadQueue, processCaptureUploadQueue \} from '\.\.\/lib\/captureUploadQueue\.js'/);
   assert.match(camera, /<CaptureSyncBadge state="captured" \/>/);
   assert.match(camera, /data-tenant-id=\{context\.tenantId\}/);
   assert.match(camera, /data-principal-user-id=\{context\.roleRoot\}/);
@@ -114,6 +116,8 @@ test('camera binds to durable store, renders sync proof, and recovers pending se
   assert.match(camera, /const hydratePendingCapture = async \(\) =>/);
   assert.match(camera, /listPending\(capturePrincipalSnapshot\(\)\)/);
   assert.match(camera, /indexeddb_recovery/);
+  assert.match(camera, /installCaptureUploadQueue\(capturePrincipalSnapshot\(\)/);
+  assert.match(camera, /processCaptureUploadQueue\(capturePrincipalSnapshot\(\)/);
 });
 
 test('camera still keeps legacy lead-intake handoff while durable store owns media safety', () => {
