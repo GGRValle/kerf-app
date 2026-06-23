@@ -136,6 +136,15 @@ const brain = project ? getProjectBrain(project.project_id) : null;
             : 'Capture is still pending — open Camera to try filing again.';
         }
         if (capture.status === 'filed_to_daily_log') {
+          try {
+            sessionStorage.setItem('kerf.cameraLastShot', JSON.stringify({
+              kind: capture.kind,
+              preview_url: typeof capture.preview_url === 'string' ? capture.preview_url : '',
+              captured_at: capture.returned_at || Date.now(),
+            }));
+          } catch {
+            // Cosmetic camera history only; the daily-log event is already filed.
+          }
           sessionStorage.removeItem('kerf.cameraCapture');
         }
       }
