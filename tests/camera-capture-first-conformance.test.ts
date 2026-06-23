@@ -29,6 +29,13 @@ test('camera shows post-capture route suggestion with confirm/change', () => {
   assert.match(camera, /Saved on phone/);
 });
 
+test('camera route panel cannot file before a capture exists', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  assert.match(camera, /if \(!lastCapture\) \{[\s\S]*Capture first\. Then choose where it goes\.[\s\S]*return;/);
+  assert.match(camera, /routeConfirm\.disabled = !lastCapture \|\| isFiling/);
+  assert.match(camera, /routeConfirm\?\.addEventListener\('click', \(\) => \{[\s\S]*if \(!lastCapture\)/);
+});
+
 test('camera route sheet is not job-only: it exposes job, lead, and review destinations', () => {
   const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
   assert.match(camera, /data-route-kind="job"/);
@@ -56,6 +63,24 @@ test('camera job filing lands on the job, not the launch surface', () => {
   assert.match(camera, /const base = `\/projects\/\$\{encodeURIComponent\(selectedProjectId\)\}`/);
   assert.match(camera, /const destination = base\.includes\('\?'\) \? `\$\{base\}&src=camera` : `\$\{base\}\?src=camera`/);
   assert.doesNotMatch(camera, /const base = root\?\.getAttribute\('data-return-href'\) \|\| `\/projects\/\$\{selectedProjectId\}`/);
+});
+
+test('project landing preserves camera last-shot history before clearing the filed banner handoff', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  const project = readFileSync(path.join(ROOT, 'src/app/pages/projects/[id]/index.astro'), 'utf8');
+  assert.match(camera, /sessionStorage\.setItem\('kerf\.cameraLastShot'/);
+  assert.match(camera, /previewUrl\.startsWith\('data:image\/'\)/);
+  assert.match(camera, /sessionStorage\.setItem\('kerf\.cameraCapture', JSON\.stringify\(lastCapture\)\)/);
+  const preserveIdx = project.indexOf("sessionStorage.setItem('kerf.cameraLastShot'");
+  const clearIdx = project.indexOf("sessionStorage.removeItem('kerf.cameraCapture')");
+  assert.ok(preserveIdx >= 0, 'project landing preserves last-shot history');
+  assert.ok(clearIdx > preserveIdx, 'project clears one-time filed banner only after preserving camera history');
+});
+
+test('camera IndexedDB recovery restores only unrouted sessions as active captures', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  assert.match(camera, /pending\.find\(\(candidate\) => candidate\.destination === null && candidate\.item_ids\.length > 0\)/);
+  assert.doesNotMatch(camera, /pending\.find\(\(candidate\) => candidate\.item_ids\.length > 0\)/);
 });
 
 test('clients/new receives the camera capture handoff (no silent drop, canon grammar, no deal/project)', () => {

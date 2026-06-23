@@ -361,6 +361,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       }
       if (root instanceof HTMLElement) root.dataset.routeKind = selectedRouteKind;
       syncRouteSuggestion();
+      syncRouteConfirmState();
     };
     const updateSurfaceContextProject = (projectId) => {
       const ctx = window.__KERF_SURFACE_CONTEXT__;
@@ -401,12 +402,26 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
           : 'Choose an existing job, a new lead, or review later.';
       }
     };
+    const syncRouteConfirmState = () => {
+      if (!(routeConfirm instanceof HTMLButtonElement)) return;
+      routeConfirm.disabled = !lastCapture || isFiling;
+      routeConfirm.setAttribute('aria-disabled', routeConfirm.disabled ? 'true' : 'false');
+    };
     const showRoutePanel = () => {
       if (!(routePanel instanceof HTMLElement)) return;
+      if (!lastCapture) {
+        routePanel.hidden = true;
+        routePanel.style.display = 'none';
+        if (root instanceof HTMLElement) root.classList.remove('route-pending');
+        setStatus('Capture first. Then choose where it goes.');
+        syncRouteConfirmState();
+        return;
+      }
       routePanel.hidden = false;
       routePanel.style.display = 'grid';
       if (root instanceof HTMLElement) root.classList.add('route-pending');
       syncRouteSuggestion();
+      syncRouteConfirmState();
       setStatus('Confirm where this capture goes, then tap Done again.');
     };
     const hideRoutePanel = () => {
@@ -466,6 +481,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         }
         setStatus(`${friendlyForKind(lastCapture.kind)} ready — tap Done to file to ${selectedProjectName}.`);
       }
+      syncRouteConfirmState();
     };
     const routeCaptureToLead = async () => {
       if (!lastCapture) {
@@ -739,6 +755,11 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       });
     });
     routeConfirm?.addEventListener('click', () => {
+      if (!lastCapture) {
+        setStatus('Capture first. Then choose where it goes.');
+        syncRouteConfirmState();
+        return;
+      }
       applySelectedRoute();
       void fileCapture();
     });
@@ -760,6 +781,41 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       }
       const input = fallbackInputForMode();
       if (input instanceof HTMLInputElement) input.click();
+    };
+    const persistLastShotSnapshot = (kind, previewUrl = '') => {
+      const durablePreview = previewUrl.startsWith('data:image/') ? previewUrl : '';
+      try {
+        sessionStorage.setItem('kerf.cameraLastShot', JSON.stringify({
+          kind,
+          preview_url: durablePreview,
+          captured_at: Date.now(),
+        }));
+      } catch {
+        // Cosmetic history only. IndexedDB remains the durable capture source.
+      }
+    };
+    const hydrateLastShotSnapshot = () => {
+      if (!(lastShot instanceof HTMLElement)) return;
+      let raw = null;
+      try {
+        raw = sessionStorage.getItem('kerf.cameraLastShot');
+      } catch {
+        raw = null;
+      }
+      if (!raw) return;
+      try {
+        const snapshot = JSON.parse(raw);
+        const kind = snapshot?.kind === 'walkthrough' || snapshot?.kind === 'scan' ? snapshot.kind : 'photo';
+        const previewUrl = typeof snapshot?.preview_url === 'string' ? snapshot.preview_url : '';
+        const friendly = friendlyForKind(kind);
+        lastShot.classList.add('has-last-shot');
+        lastShot.dataset.kind = kind;
+        lastShot.style.setProperty('--last-shot-image', previewUrl ? `url("${previewUrl}")` : 'none');
+        const label = lastShot.querySelector('span');
+        if (label instanceof HTMLElement) label.textContent = friendly;
+      } catch {
+        // Ignore malformed cosmetic history.
+      }
     };
     const updateLastShot = (kind, previewUrl = '') => {
       const friendly = friendlyForKind(kind);
@@ -786,6 +842,15 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         const label = lastShot.querySelector('span');
         if (label instanceof HTMLElement) label.textContent = friendly;
       }
+      persistLastShotSnapshot(kind, previewUrl);
+      if (lastCapture && previewUrl.startsWith('data:image/')) {
+        lastCapture = { ...lastCapture, preview_url: previewUrl };
+        try {
+          sessionStorage.setItem('kerf.cameraCapture', JSON.stringify(lastCapture));
+        } catch {
+          // The visual thumbnail already updated; capture storage remains durable.
+        }
+      }
       setStatus(routeConfirmed && selectedProjectName
         ? `${friendly} saved on phone — tap Done to file to ${selectedProjectName}.`
         : lastCapture?.status === 'saved_on_phone'
@@ -805,6 +870,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         ...capture,
       };
       setCaptureSyncState('captured');
+      syncRouteConfirmState();
       if (blob instanceof Blob) {
         try {
           savedItem = await addItem(sessionId, {
@@ -824,6 +890,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
             bytes: savedItem.blob.size,
           };
           setCaptureSyncState('saved_on_phone');
+          syncRouteConfirmState();
         } catch {
           lastCapture = {
             ...lastCapture,
@@ -831,6 +898,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
             capture_store_item_id: '',
           };
           setCaptureSyncState('captured');
+          syncRouteConfirmState();
           setStatus(`${friendlyForKind(capture.kind)} captured, but not saved on phone yet. Keep this screen open.`);
         }
       }
@@ -940,7 +1008,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       if (lastCapture) return;
       try {
         const pending = await listPending(capturePrincipalSnapshot());
-        const session = pending.find((candidate) => candidate.item_ids.length > 0);
+        const session = pending.find((candidate) => candidate.destination === null && candidate.item_ids.length > 0);
         if (!session) return;
         const items = await listItems(session.id);
         const item = items[items.length - 1];
@@ -1001,6 +1069,8 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     }
     setRouteKind('job');
     void setMode(currentMode);
+    hydrateLastShotSnapshot();
+    syncRouteConfirmState();
     void hydratePendingCapture();
   </script>
 </Layout>
