@@ -856,7 +856,6 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         : lastCapture?.status === 'saved_on_phone'
           ? `${friendly} saved on phone — tap Done to choose where it goes.`
           : `${friendly} captured — tap Done to choose where it goes.`);
-      if (!routeConfirmed) showRoutePanel();
     };
     const rememberCapture = async (capture, blob) => {
       let savedItem = null;

@@ -29,6 +29,20 @@ test('camera shows post-capture route suggestion with confirm/change', () => {
   assert.match(camera, /Saved on phone/);
 });
 
+test('camera routes the session from Done instead of interrupting after each capture', () => {
+  const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
+  const updateStart = camera.indexOf('const updateLastShot =');
+  const rememberStart = camera.indexOf('const rememberCapture =');
+  const doneStart = camera.indexOf('const done = async');
+  const listenersStart = camera.indexOf("document.querySelectorAll('.cam-mode-strip");
+  assert.ok(updateStart >= 0 && rememberStart > updateStart, 'updateLastShot block exists');
+  assert.ok(doneStart >= 0 && listenersStart > doneStart, 'Done handler block exists');
+  const updateBlock = camera.slice(updateStart, rememberStart);
+  const doneBlock = camera.slice(doneStart, listenersStart);
+  assert.doesNotMatch(updateBlock, /showRoutePanel\(\)/, 'capturing media must not open routing');
+  assert.match(doneBlock, /markActiveCaptureNeedsAttention\('destination_required'\)[\s\S]*showRoutePanel\(\)/);
+});
+
 test('camera route panel cannot file before a capture exists', () => {
   const camera = readFileSync(path.join(ROOT, 'src/app/pages/camera.astro'), 'utf8');
   assert.match(camera, /if \(!lastCapture\) \{[\s\S]*Capture first\. Then choose where it goes\.[\s\S]*return;/);
