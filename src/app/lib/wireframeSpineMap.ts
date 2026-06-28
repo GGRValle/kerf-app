@@ -842,7 +842,21 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     next: [
       { trigger: 'Your settings', route: '/settings/me', face: 'F-SP1a_desktop_account_editor.html' },
       { trigger: 'Connections', route: '/connections', face: 'F-UTIL1b_desktop_connections_kb_blackboard.html' },
+      { trigger: 'Build map', route: '/wireframes', face: 'F-SP1_desktop_settings.html' },
       { trigger: 'Project audit', route: '/audit/:packetId', face: 'F-H1_desktop_audit_detail.html' },
+    ],
+  },
+  {
+    route: '/wireframes',
+    appFile: 'src/app/pages/wireframes.astro',
+    domain: 'people_admin_ops',
+    surface: 'Wireframe build map',
+    wireframes: ['F-SP1_desktop_settings.html', 'F-D1_mobile_more_sidebar.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Internal launch checklist tying live routes to the canon wireframe map. This is admin-only proof, not a customer/field surface.',
+    next: [
+      { trigger: 'Back settings', route: '/settings', face: 'F-SP1_desktop_settings.html' },
+      { trigger: 'Open mapped route', route: 'entry.route', face: 'entry.wireframes[0]' },
     ],
   },
   {

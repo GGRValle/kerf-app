@@ -19,6 +19,7 @@ export const LANE2_SURFACES: readonly RegisterSurfaceInput[] = [
   { domain: 'sales', route: '/design/:projectId', roleScope: ['owner', 'pm', 'admin_ops'], component: 'design/workspace', backTo: '/sales' },
   { domain: 'sales', route: '/library', roleScope: ['owner', 'pm', 'admin_ops'], component: 'kb/library', backTo: '/' },
   { domain: 'sales', route: '/estimate/:projectId', roleScope: ['owner', 'pm', 'admin_ops'], component: 'estimate/builder', backTo: '/design/:projectId' },
+  { domain: 'sales', route: '/change-orders/new', roleScope: ['owner', 'pm', 'admin_ops'], component: 'change-orders/new', backTo: '/projects' },
 ];
 
 /**

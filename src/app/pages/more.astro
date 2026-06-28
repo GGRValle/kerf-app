@@ -36,6 +36,20 @@ const quickLinks = [
       tone="green"
     />
 
+    <Card eyebrow="Route anywhere" title="Say it, type it, or tap it.">
+      <form class="more-page__route" action="/right-hand" method="get" role="search">
+        <label class="sr-only" for="more-route-q">Ask Right Hand to route you</label>
+        <input id="more-route-q" name="q" type="search" placeholder="Ask: take me to Wegrzyn daily..." />
+        <button type="submit">Ask</button>
+      </form>
+      <div class="more-page__route-chips" aria-label="Common routes">
+        <a href="/projects/proj_wegrzyn_kitchen">This job</a>
+        <a href="/camera">Camera</a>
+        <a href="/sales">Sales</a>
+        <a href="/change-orders/new">Change order</a>
+      </div>
+    </Card>
+
     <Card eyebrow={t('shell.more.domains_eyebrow')} title={t('shell.more.domains_title')}>
       <p class="more-page__copy">{t('shell.more.domains_copy')}</p>
       <nav class="more-page__nav" aria-label={t('shell.more.domains_aria')}>
@@ -74,6 +88,55 @@ const quickLinks = [
     line-height: 1.45;
   }
 
+  .more-page__route {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-bottom: 0.7rem;
+  }
+
+  .more-page__route input,
+  .more-page__route button {
+    min-height: 44px;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 8px;
+    font: inherit;
+  }
+
+  .more-page__route input {
+    min-width: 0;
+    padding: 0 0.8rem;
+    background: var(--surface-2, #f1efe7);
+    color: var(--text, #181713);
+  }
+
+  .more-page__route button {
+    padding: 0 0.9rem;
+    background: var(--kerf-text, #181713);
+    color: var(--kerf-bg, #f7f6f1);
+    font-weight: 900;
+  }
+
+  .more-page__route-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .more-page__route-chips a {
+    display: inline-flex;
+    min-height: 32px;
+    align-items: center;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 999px;
+    padding: 0 0.65rem;
+    background: var(--surface-2, #f1efe7);
+    color: inherit;
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
   .more-page__actions {
     display: grid;
     gap: 0.65rem;
@@ -82,10 +145,11 @@ const quickLinks = [
   .more-page__action,
   .more-page__nav a {
     border: 1px solid var(--border, #d8dee6);
-    border-radius: 10px;
+    border-radius: 8px;
     color: inherit;
     text-decoration: none;
     background: var(--surface, #fff);
+    box-shadow: 0 10px 24px rgba(24, 23, 19, 0.06);
   }
 
   .more-page__action {

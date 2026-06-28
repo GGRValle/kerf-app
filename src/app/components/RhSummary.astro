@@ -25,27 +25,37 @@ const { headline, detail, tone = 'neutral' } = Astro.props;
     margin-bottom: 0.85rem;
     background: var(--surface, #fff);
     border: 1px solid var(--border, #d8dee6);
-    border-radius: 14px;
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(24, 23, 19, 0.07);
   }
   .rh-avatar {
     flex-shrink: 0;
     width: 2rem;
     height: 2rem;
-    border-radius: 999px;
+    border-radius: 8px;
     display: grid;
     place-items: center;
     font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--right-hand, #c9a961);
-    background: color-mix(in srgb, var(--right-hand, #c9a961) 20%, transparent);
+    font-weight: 900;
+    color: var(--kerf-bg, #f7f6f1);
+    background: var(--kerf-text, #181713);
   }
   .rh-text {
     font-size: 0.92rem;
     line-height: 1.45;
   }
+  .rh-text strong {
+    display: block;
+    line-height: 1.2;
+  }
   .rh-text em {
+    display: block;
+    margin-top: 0.12rem;
     font-style: normal;
     color: var(--text-muted, #5c6670);
   }
-  .rh-green .rh-text strong { color: var(--field-green, #38c977); }
+  .rh-green .rh-avatar {
+    color: #fff;
+    background: var(--field-green, #0f7a53);
+  }
 </style>

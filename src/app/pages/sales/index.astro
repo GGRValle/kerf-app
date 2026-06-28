@@ -12,7 +12,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maxim
 ---
 
 <Layout title="Sales · Pipeline" activeHref="/sales">
-  <article class="sl-page">
+  <article class="sl-page" data-grammar="canon">
     <header class="sl-head">
       <div class="sl-crumb">Sales</div>
       <h1>Pipeline</h1>
@@ -43,19 +43,19 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maxim
 </Layout>
 
 <style>
-  .sl-page { padding: 1rem; }
-  .sl-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); }
+  .sl-page { display: grid; gap: 0.85rem; padding: 0 0 5.5rem; }
+  .sl-crumb { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0; color: var(--muted); font-weight: 900; }
   .sl-head h1 { margin: 0.1rem 0; }
-  .sl-sub { color: var(--text-muted, #6a7282); margin: 0 0 1rem; }
+  .sl-sub { color: var(--muted); margin: 0; }
   .sl-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; }
-  .sl-col { background: var(--surface, #11151c); border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.6rem; }
+  .sl-col { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem; box-shadow: var(--shadow); }
   .sl-col-head { font-size: 0.85rem; margin: 0 0 0.5rem; display: flex; justify-content: space-between; }
-  .sl-count { color: var(--text-muted, #6a7282); }
-  .sl-card { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.55rem; margin-bottom: 0.4rem; border: 1px solid var(--border, #2a3140); border-radius: 9px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); text-decoration: none; }
-  .sl-card:hover { border-color: var(--accent, #f5b544); }
+  .sl-count { color: var(--muted); }
+  .sl-card { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.65rem; margin-bottom: 0.4rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); text-decoration: none; }
+  .sl-card:hover { border-color: var(--gold); }
   .sl-client { font-size: 0.82rem; }
-  .sl-meta { font-size: 0.75rem; color: var(--text-muted, #98a1b3); font-variant-numeric: tabular-nums; }
-  .sl-src { font-size: 0.7rem; color: var(--text-muted, #6a7282); }
-  .sl-col-empty { color: var(--text-muted, #6a7282); text-align: center; margin: 0.2rem 0; }
-  .sl-empty { color: var(--text-muted, #6a7282); }
+  .sl-meta { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sl-src { font-size: 0.7rem; color: var(--muted); }
+  .sl-col-empty { color: var(--muted); text-align: center; margin: 0.2rem 0; }
+  .sl-empty { color: var(--muted); }
 </style>

@@ -1,0 +1,139 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const returnTo = Astro.url.searchParams.get('return_to') ?? '/projects';
+const safeReturnTo =
+  returnTo.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('://') ? returnTo : '/projects';
+---
+
+<Layout
+  title="Change order"
+  activeHref="/create"
+  surfaceContext={{
+    surface: 'change_order',
+    phase: 'planned_builder',
+  }}
+>
+  <section class="co-page" data-grammar="canon" aria-labelledby="co-title">
+    <a class="co-back" href={safeReturnTo}>Back</a>
+    <header class="co-head kg-pagehead">
+      <p class="co-eyebrow">Change order</p>
+      <h1 id="co-title">Price the change before it leaves the office.</h1>
+      <p>Use this when the job changed and the owner needs a clear yes, edit, or hold. Nothing customer-facing sends from here.</p>
+    </header>
+
+    <section class="co-card kg-card" aria-label="Change order draft">
+      <div class="co-row">
+        <span>Status</span>
+        <strong>Draft-only today. Nothing sends.</strong>
+      </div>
+      <div class="co-row">
+        <span>Job</span>
+        <strong>Choose project first</strong>
+      </div>
+      <div class="co-row">
+        <span>What changed</span>
+        <strong>Scope, price, schedule, and proof</strong>
+      </div>
+      <div class="co-row">
+        <span>Gate</span>
+        <strong>Owner approval before send</strong>
+      </div>
+      <div class="co-actions">
+        <a class="co-btn" href="/projects">Pick project</a>
+        <a class="co-btn" href="/right-hand">Tell Right Hand</a>
+        <button class="co-btn co-btn--primary" type="button" disabled aria-disabled="true">Create change order</button>
+      </div>
+    </section>
+  </section>
+</Layout>
+
+<style>
+  .co-page {
+    display: grid;
+    gap: 0.85rem;
+    padding-bottom: 5.5rem;
+  }
+
+  .co-back {
+    justify-self: start;
+    color: var(--kerf-text-dim);
+    font-size: 0.88rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .co-head {
+    gap: 0.28rem;
+  }
+
+  .co-eyebrow {
+    margin: 0;
+    color: var(--right-hand);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .co-head h1 {
+    margin: 0;
+    font-size: clamp(1.85rem, 7vw, 2.45rem);
+    line-height: 1;
+  }
+
+  .co-head p:last-child {
+    margin: 0.2rem 0 0;
+    color: var(--kerf-text-dim);
+    line-height: 1.38;
+  }
+
+  .co-card {
+    display: grid;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .co-row {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.9rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .co-row span {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .co-row strong {
+    font-size: 1rem;
+  }
+
+  .co-actions {
+    display: grid;
+    gap: 8px;
+    padding: 0.9rem;
+  }
+
+  .co-btn {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .co-btn--primary {
+    background: var(--gold);
+    color: #181713;
+    opacity: 0.65;
+  }
+</style>

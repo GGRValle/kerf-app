@@ -29,14 +29,14 @@ const DOMAIN_LABEL_KEYS: Record<ShellBusinessDomain, I18nKey> = {
 
 const DOMAIN_ROUTE_PRIORITY: Record<ShellBusinessDomain, readonly string[]> = {
   home: ['/', '/on-me'],
-  sales: ['/decisions'],
+  sales: ['/sales', '/decisions'],
   clients: ['/clients'],
   projects: ['/projects', '/draft-review'],
   field: ['/field-capture', '/relay'],
   schedule: ['/schedule'],
   money: ['/money'],
   people_admin_ops: ['/settings', '/reports'],
-  client_success: ['/transcript-review'],
+  client_success: ['/client-success', '/transcript-review'],
 };
 
 export interface MoreDomainLink {

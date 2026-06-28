@@ -77,6 +77,7 @@ reg('people_admin_ops', '/settings/me', 'PersonalSettings', ALL_ROLES, '/setting
 reg('people_admin_ops', '/connections', 'Connections', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/reports', 'Reports', OWNER_PM_ADMIN, '/');
 reg('people_admin_ops', '/role-routing', 'RoleRouting', OWNER_PM_ADMIN, '/settings');
+reg('people_admin_ops', '/wireframes', 'WireframeBuildMap', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/more', 'More', ALL_ROLES, '/');
 reg('people_admin_ops', '/create', 'Create', ALL_ROLES, '/');
 reg('people_admin_ops', '/camera', 'Camera', ALL_ROLES, '/');

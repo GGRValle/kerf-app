@@ -39,6 +39,51 @@ test('owner More nav includes Projects in ≤2 taps from any screen', () => {
   assert.equal(projects.href, '/projects');
 });
 
+test('owner More nav lands on built Sales instead of the old decisions placeholder', () => {
+  const links = moreDomainLinksForRole('owner');
+  const sales = links.find((l) => l.domain === 'sales');
+  assert.ok(sales);
+  assert.equal(sales.href, '/sales');
+});
+
+test('wireframe build map and change-order builder are live routes', () => {
+  const catalog = read('src/shell/surfaceCatalog.ts');
+  const buildMap = read('src/app/pages/wireframes.astro');
+  const spineMap = read('src/app/lib/wireframeSpineMap.ts');
+  const start = read('src/app/pages/create.astro');
+  const changeOrder = read('src/app/pages/change-orders/new.astro');
+
+  assert.match(catalog, /\/wireframes/);
+  assert.match(buildMap, /WIREFRAME_SPINE_MAP/);
+  assert.match(buildMap, /\/change-orders\/new/);
+  assert.match(spineMap, /F-S1_mobile_start_action_sheet\.html/);
+  assert.match(spineMap, /F-CHG1_mobile_change_order_builder\.html/);
+  assert.match(spineMap, /F-B1_mobile_decision_card\.html/);
+  assert.match(start, /\/change-orders\/new\?src=create/);
+  assert.match(changeOrder, /Draft-only today\. Nothing sends\./);
+  assert.match(changeOrder, /disabled/);
+});
+
+test('working surfaces keep wireframe/build language out of operator screens', () => {
+  for (const file of [
+    'src/app/pages/create.astro',
+    'src/app/pages/more.astro',
+    'src/app/pages/sales/index.astro',
+    'src/app/pages/design/[projectId].astro',
+    'src/app/pages/field.astro',
+    'src/app/pages/money/index.astro',
+    'src/app/pages/projects/index.astro',
+    'src/app/pages/right-hand.astro',
+    'src/app/pages/room-capture.astro',
+    'src/app/pages/change-orders/new.astro',
+  ]) {
+    const src = read(file);
+    assert.doesNotMatch(src, /BuildTruthStrip/);
+    assert.doesNotMatch(src, /wireframes=\{/);
+    assert.doesNotMatch(src, /Being wired|Build target/);
+  }
+});
+
 test('camera Done files through Lane 3 daily-log endpoint before claiming attachment', () => {
   const src = read('src/app/pages/camera.astro');
   assert.doesNotMatch(src, /TODO\(lane-3\)/);

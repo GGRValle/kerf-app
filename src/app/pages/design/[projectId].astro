@@ -31,7 +31,7 @@ const TABS = [
 ---
 
 <Layout title="Design workspace" activeHref="/sales">
-  <article class="ds-page" data-project={projectId}>
+  <article class="ds-page" data-grammar="canon" data-project={projectId}>
     <a class="ds-back" href={`/sales/${projectId.replace(/^proj_/, '')}`}>‹ Deal</a>
     <header>
       <div class="ds-crumb">Design · {projectId}</div>
@@ -160,24 +160,24 @@ const TABS = [
 </script>
 
 <style>
-  .ds-page { padding: 1rem; }
-  .ds-back { color: var(--text-muted, #98a1b3); text-decoration: none; font-size: 0.85rem; }
-  .ds-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); margin-top: 0.6rem; }
-  .ds-sub { color: var(--text-muted, #98a1b3); }
-  .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.8rem 0; border-bottom: 1px solid var(--border, #2a3140); padding-bottom: 0.5rem; }
-  .ds-tab { padding: 0.4rem 0.7rem; border: 1px solid var(--border, #2a3140); border-radius: 999px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; font-size: 0.85rem; }
-  .ds-tab[aria-selected='true'] { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
+  .ds-page { display: grid; gap: 0.85rem; padding: 0 0 5.5rem; }
+  .ds-back { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 800; }
+  .ds-crumb { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0; color: var(--muted); margin-top: 0.2rem; font-weight: 900; }
+  .ds-sub { color: var(--muted); }
+  .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0; border-bottom: 1px solid var(--line); padding-bottom: 0.5rem; }
+  .ds-tab { min-height: 36px; padding: 0.35rem 0.65rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 900; }
+  .ds-tab[aria-selected='true'] { background: var(--design-accent, #666c37); border-color: transparent; color: #fff; }
   .ds-soon { font-size: 0.62rem; margin-left: 0.3rem; opacity: 0.6; }
   .ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   @media (max-width: 720px) { .ds-two { grid-template-columns: 1fr; } }
-  .ds-lib, .ds-sel { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.7rem; background: var(--surface, #11151c); }
+  .ds-lib, .ds-sel { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem; background: var(--panel); box-shadow: var(--shadow); }
   .ds-lib h2, .ds-sel h2 { font-size: 0.95rem; margin: 0 0 0.6rem; display: flex; justify-content: space-between; align-items: baseline; }
   .ds-link { font-size: 0.78rem; }
-  .ds-libitem, .ds-selitem { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border, #222a36); }
-  .ds-meta { display: block; font-size: 0.75rem; color: var(--text-muted, #98a1b3); }
-  .ds-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; text-decoration: none; }
-  .ds-btn.primary { display: inline-block; margin-top: 0.7rem; background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
-  .ds-ok { color: var(--field-green, #38c977); font-size: 0.82rem; }
-  .ds-empty { color: var(--text-muted, #6a7282); font-size: 0.9rem; }
-  .ds-stub-card { border: 1px dashed var(--border, #2a3140); border-radius: 12px; padding: 1.2rem; color: var(--text-muted, #98a1b3); background: var(--surface, #11151c); }
+  .ds-libitem, .ds-selitem { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+  .ds-meta { display: block; font-size: 0.75rem; color: var(--muted); }
+  .ds-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); cursor: pointer; font: inherit; font-weight: 900; text-decoration: none; }
+  .ds-btn.primary { display: inline-block; margin-top: 0.7rem; background: var(--design-accent, #666c37); border-color: transparent; color: #fff; }
+  .ds-ok { color: var(--green); font-size: 0.82rem; }
+  .ds-empty { color: var(--muted); font-size: 0.9rem; }
+  .ds-stub-card { border: 1px dashed var(--line); border-radius: 8px; padding: 1.2rem; color: var(--muted); background: var(--panel); }
 </style>
