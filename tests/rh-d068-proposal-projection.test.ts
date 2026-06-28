@@ -152,6 +152,27 @@ test('render fence: suggested, removed, and rank-7 lines never reach the client 
   assert.ok(!allDescriptions.some((d) => /suggested|placeholder|Removed/i.test(d)));
 });
 
+test('Use here graduation clears the suggestion fence for client proposal projection', () => {
+  const draft = graduatedDraft();
+  const approvedSuggested = {
+    ...draft,
+    lines: draft.lines.map((row) => row.id === 'l4'
+      ? {
+          ...row,
+          flags: [...row.flags, 'operator_graduated', 'approved_for_this_estimate'],
+          source_type: 'company_data' as const,
+          source_label: 'Approved here',
+          source_ref: `operator-approval:estimate=${draft.estimate_id}:line=${row.id}`,
+          tier: 'company' as const,
+        }
+      : row),
+  } as RightHandEstimateDraft;
+
+  const { held_back, rendered_line_ids } = buildProposalFromRightHandEstimate(approvedSuggested, { now: NOW });
+  assert.ok(rendered_line_ids.includes('l4'));
+  assert.equal(held_back.find((row) => row.line_id === 'l4'), undefined);
+});
+
 test('tie-out to the penny: divisions === included estimate lines === total === payment schedule', () => {
   const { proposal } = buildProposalFromRightHandEstimate(graduatedDraft(), { now: NOW });
   const included = 2_800_000 + 320_000 + 500_000;

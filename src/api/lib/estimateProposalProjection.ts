@@ -97,8 +97,16 @@ const isPriced = (line: RightHandEstimateLine): boolean => lineAmount(line) > 0;
 const isSuggestedLine = (line: RightHandEstimateLine): boolean =>
   line.flags.includes('suggested') || line.suggested === true;
 
+const isOperatorGraduatedLine = (line: RightHandEstimateLine): boolean =>
+  line.flags.includes('operator_graduated') ||
+  line.flags.includes('approved_for_this_estimate') ||
+  line.source_ref.startsWith('operator-approval:');
+
+const isPendingSuggestedLine = (line: RightHandEstimateLine): boolean =>
+  isSuggestedLine(line) && !isOperatorGraduatedLine(line);
+
 const isClientCandidate = (line: RightHandEstimateLine): boolean =>
-  !line.flags.includes('removed') && !isSuggestedLine(line) && isPriced(line);
+  !line.flags.includes('removed') && !isPendingSuggestedLine(line) && isPriced(line);
 
 /** Internal vocabulary must never appear in a client-facing render body. */
 export function containsInternalVocabulary(text: string): boolean {
@@ -113,8 +121,7 @@ export function containsInternalVocabulary(text: string): boolean {
 export function isGraduatedClientLine(line: RightHandEstimateLine): boolean {
   if (!isPriced(line)) return true;
   if (line.source_type === 'allowance') return true;
-  if (line.flags.includes('operator_graduated')) return true;
-  if (line.source_ref.startsWith('operator-approval:')) return true;
+  if (isOperatorGraduatedLine(line)) return true;
   if (line.source_ref.startsWith('tenant-rate-standard:')) return true;
   if (line.tier === 'company') return true;
   return false;
@@ -125,8 +132,7 @@ export function isGraduatedClientLine(line: RightHandEstimateLine): boolean {
  * prices are model-invented and never render client-facing.
  */
 const hasPriceBasis = (line: RightHandEstimateLine): boolean =>
-  line.flags.includes('operator_graduated') ||
-  line.source_ref.startsWith('operator-approval:') ||
+  isOperatorGraduatedLine(line) ||
   line.source_ref.startsWith('tenant-rate-standard:') ||
   isTenantRateCardSourceRef(line.source_ref) ||
   line.source_type === 'allowance';
@@ -150,7 +156,7 @@ function classifyLine(line: RightHandEstimateLine): { render: true } | { render:
       held: { line_id: line.id, label: line.label, amount_cents: lineAmount(line), reason: 'internal_vocabulary' },
     };
   }
-  if (isSuggestedLine(line)) {
+  if (isPendingSuggestedLine(line)) {
     return {
       render: false,
       held: { line_id: line.id, label: line.label, amount_cents: lineAmount(line), reason: 'suggestion_pending_review' },
