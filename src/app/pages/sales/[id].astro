@@ -1,6 +1,7 @@
 ---
 // F-SL3/F-SL4 · Deal detail · /sales/:id (Lane 2)
 import Layout from '../../layouts/Layout.astro';
+import CameraReturn from '../../components/CameraReturn.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import { dealById, dealStageLabel } from '../../../sales/index.js';
 
@@ -14,6 +15,7 @@ const projectId = deal?.project_id ?? (deal ? `proj_${deal.id}` : '');
 
 <Layout title={deal ? `Deal · ${deal.name}` : 'Deal'} activeHref="/sales">
   <article class="dl-page">
+    <CameraReturn />
     <a class="dl-back" href="/sales">‹ Pipeline</a>
     {!deal ? (
       <p class="dl-empty">Deal not found for this tenant.</p>

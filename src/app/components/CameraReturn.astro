@@ -1,0 +1,85 @@
+---
+// Shared "Back to camera" return affordance for capture-first destination pages.
+//
+// The camera (src/app/pages/camera.astro) routes every post-capture destination
+// with `?src=camera`: new lead → /sales/:id, review later → /relay, search jobs
+// → /projects. Those pages are otherwise dead-ends on a phone — a field user who
+// just filed a capture has no clear way back to keep capturing (founder report:
+// "stuck" on the lead intake form). This renders a deterministic return path,
+// shown ONLY when arriving from the camera (so it never clutters normal nav).
+//
+// Zero client JS by design — a pure SSR conditional plus a link. Nothing to crash
+// the page on load, unlike the #386 client-JS ReferenceError that shipped CI-green.
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+
+export interface Props {
+  /** Where the camera lives. Deterministic — always returns to the capture surface. */
+  href?: string;
+  /**
+   * The `src` query-param value. Defaults to the current request's `src`.
+   * Exposed so callers/tests can force the affordance on or off.
+   */
+  src?: string | null;
+}
+
+const { href = '/camera', src } = Astro.props;
+const source = src ?? Astro.url.searchParams.get('src');
+const fromCamera = source === 'camera';
+const { t } = createLayoutContext();
+const label = t('shell.nav.back_to_camera');
+---
+
+{fromCamera && (
+  <nav class="cam-return" aria-label={label}>
+    <a class="cam-return-link" href={href} data-camera-return>
+      <span class="cam-return-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M8.5 5 7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-1.5-2zM12 17a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+      </span>
+      <span class="cam-return-text">{label}</span>
+    </a>
+  </nav>
+)}
+
+<style>
+  .cam-return {
+    margin: 0 0 0.85rem;
+  }
+  .cam-return-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    /* Field tap target — comfortable on a phone (>= 44px). */
+    min-height: 44px;
+    padding: 0.4rem 0.95rem 0.4rem 0.65rem;
+    border: 1px solid var(--border, var(--kerf-border, #2a3140));
+    border-radius: 999px;
+    background: var(--surface, var(--kerf-bg-2, #14181f));
+    color: var(--text, var(--kerf-text, #e8edf4));
+    text-decoration: none;
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .cam-return-link:hover {
+    border-color: var(--accent, var(--kerf-amber, #f5b544));
+  }
+  .cam-return-link:focus-visible {
+    outline: 2px solid var(--accent, var(--kerf-amber, #f5b544));
+    outline-offset: 2px;
+  }
+  .cam-return-icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    /* Capture accent — same amber as the Speak/capture FAB, for instant recognition. */
+    color: var(--accent, var(--kerf-amber, #f5b544));
+  }
+  .cam-return-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+</style>

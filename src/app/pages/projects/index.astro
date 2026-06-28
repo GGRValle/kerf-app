@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import CameraReturn from '../../components/CameraReturn.astro';
 import SectionLabel from '../../components/SectionLabel.astro';
 import Row from '../../components/Row.astro';
 import Chip from '../../components/Chip.astro';
@@ -16,6 +17,7 @@ const projects = await listProjectRecordsForTenant(tenantReader, context.tenantI
 
 <Layout titleKey="project.list.title" activeHref="/projects">
   <div class="lane23-page">
+    <CameraReturn />
     <div class="lane23-bc">
       <div>
         <h1>{t('project.list.title')}</h1>

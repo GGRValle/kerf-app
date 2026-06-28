@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import CameraReturn from '../../components/CameraReturn.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 
 const { t } = createLayoutContext();
@@ -25,6 +26,7 @@ const relayCopyJson = JSON.stringify(relayCopy).replace(/</g, '\\u003c');
 
 <Layout titleKey="rh.relay.list.title" activeHref={Astro.url.pathname}>
   <main class="relay-page">
+    <CameraReturn />
     <header class="relay-header">
       <h1>{relayCopy.title}</h1>
       <p>{relayCopy.lead}</p>
