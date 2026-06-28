@@ -9,6 +9,26 @@ const oneThing = homeSections.oneThing;
 const onDeck = homeSections.onDeck;
 const pulse = homeSections.pulse;
 const allHomeItems = [...(oneThing ? [oneThing] : []), ...onDeck, ...pulse];
+const loopStages = [
+  { label: 'Start', href: '/create', count: '12', note: 'capture / job walk', state: 'live' },
+  { label: 'Design', href: '/more#design', count: '3', note: 'selections / plans', state: 'needs setup' },
+  { label: 'Sales', href: '/clients', count: '5', note: 'estimate / signed', state: 'needs you' },
+  { label: 'Project', href: '/projects', count: '4', note: 'docs / schedule', state: 'live' },
+  { label: 'Crew', href: '/home/field', count: '2', note: 'work / proof', state: 'field hand' },
+  { label: 'Money', href: '/money', count: '$51k', note: 'invoice / pay', state: 'at risk' },
+  { label: 'Success', href: '/reports', count: '7', note: 'client / team', state: 'pulse' },
+];
+const routeShortcuts = [
+  { label: 'Job', hint: 'Wegrzyn daily', href: '/projects/proj_wegrzyn_kitchen' },
+  { label: 'Crew', hint: 'where crews are', href: '/home/field' },
+  { label: 'Money', hint: 'invoices', href: '/money' },
+];
+const truthStates = [
+  { label: 'Captured', value: 'durable on phone', tone: 'green' },
+  { label: 'Draft', value: 'agent-built', tone: 'blue' },
+  { label: 'Needs review', value: 'your call', tone: 'amber' },
+  { label: 'Sent / Signed', value: 'receipt-backed', tone: 'neutral' },
+];
 const brainQuestions = [
   { label: 'Needs me', value: allHomeItems.filter((item) => item.needsUser).length, tone: 'amber', href: '/on-me' },
   { label: 'Stuck', value: allHomeItems.filter((item) => item.state === 'risk_changed').length, tone: 'red', href: '/relay' },
@@ -20,8 +40,58 @@ const brainQuestions = [
 
 <section class="rh-home kg-grid f-a1b-home" data-grammar="canon" aria-label="Right Hand home">
   <div class="rh-home__hello kg-pagehead kg-span-12">
-    <p class="rh-home__eyebrow">Good morning, {operatorName}</p>
-    <h1>The one thing</h1>
+    <p class="rh-home__eyebrow">Right Hand · From capture to completion</p>
+    <h1>Morning, {operatorName}. One thing needs you — the rest is moving.</h1>
+    <p class="rh-home__lede">Say where you want to go, or tap the loop.</p>
+  </div>
+
+  <section class="rh-route kg-card kg-span-12" aria-labelledby="rh-route-title">
+    <div>
+      <p class="rh-home__eyebrow">Route anywhere</p>
+      <h2 id="rh-route-title">Find a job, daily, crew, invoice, or file.</h2>
+    </div>
+    <form class="rh-route__search" action="/right-hand" method="get" role="search">
+      <label class="sr-only" for="rh-route-q">Ask Right Hand to route you</label>
+      <input id="rh-route-q" name="q" type="search" placeholder="Ask: take me to Wegrzyn daily..." />
+      <button type="submit">Ask</button>
+    </form>
+    <div class="rh-route__chips" aria-label="Common routes">
+      {routeShortcuts.map((shortcut) => (
+        <a class="kg-chip" href={shortcut.href}>
+          <strong>{shortcut.label}</strong>
+          <span>{shortcut.hint}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <nav class="rh-loop kg-span-12" aria-label="From capture to completion loop">
+    {loopStages.map((stage) => (
+      <a class="rh-loop__stage kg-card" href={stage.href} data-loop-stage={stage.label.toLowerCase()}>
+        <span class="rh-loop__dot" aria-hidden="true"></span>
+        <strong>{stage.label}</strong>
+        <span class="rh-loop__count">{stage.count}</span>
+        <small>{stage.note}</small>
+        <em>{stage.state}</em>
+      </a>
+    ))}
+  </nav>
+
+  <section class="rh-truth kg-card kg-span-12" aria-label="Truth state">
+    <p class="rh-home__eyebrow">Truth state</p>
+    <div class="rh-truth__grid">
+      {truthStates.map((state) => (
+        <span class:list={['kg-chip', state.tone !== 'neutral' ? state.tone : undefined]}>
+          <strong>{state.label}</strong>
+          {state.value}
+        </span>
+      ))}
+    </div>
+  </section>
+
+  <div class="rh-home__section-head rh-home__section-head--one kg-span-12">
+    <h2>The one thing</h2>
+    <span>Needs your call</span>
   </div>
 
   {oneThing ? (
@@ -242,6 +312,13 @@ const brainQuestions = [
     display: grid;
     gap: 0.2rem;
   }
+  .rh-home__lede {
+    max-width: 40rem;
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+    font-size: 0.96rem;
+    line-height: 1.35;
+  }
   .rh-home__eyebrow {
     margin: 0;
     color: var(--gold);
@@ -263,6 +340,124 @@ const brainQuestions = [
   .rh-home h2 {
     font-size: 1.35rem;
     line-height: 1.05;
+  }
+  .rh-route {
+    display: grid;
+    gap: 0.85rem;
+    padding: 0.95rem;
+    border-color: color-mix(in srgb, var(--gold) 34%, var(--line));
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--gold-soft) 40%, transparent), transparent 54%),
+      var(--panel);
+  }
+  .rh-route__search {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .rh-route__search .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .rh-route__search input {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.82rem 0.95rem;
+    background: var(--bg);
+    color: var(--ink);
+    font: inherit;
+  }
+  .rh-route__search button {
+    border: 0;
+    border-radius: 999px;
+    min-width: 4.1rem;
+    padding: 0 0.75rem;
+    background: var(--gold);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 800;
+  }
+  .rh-route__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .rh-route__chips .kg-chip {
+    gap: 5px;
+    text-decoration: none;
+  }
+  .rh-route__chips .kg-chip span {
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .rh-loop {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(8.2rem, 1fr);
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 8px;
+    scroll-snap-type: x proximity;
+  }
+  .rh-loop__stage {
+    position: relative;
+    display: grid;
+    gap: 0.35rem;
+    min-height: 8.4rem;
+    padding: 0.78rem;
+    color: var(--ink);
+    text-decoration: none;
+    scroll-snap-align: start;
+  }
+  .rh-loop__dot {
+    width: 0.56rem;
+    height: 0.56rem;
+    border-radius: 999px;
+    background: var(--gold);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold-soft) 70%, transparent);
+  }
+  .rh-loop__stage strong {
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .rh-loop__count {
+    font-size: 1.25rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .rh-loop__stage small {
+    min-height: 2.2em;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .rh-loop__stage em {
+    align-self: end;
+    color: var(--gold);
+    font-size: 0.68rem;
+    font-style: normal;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .rh-truth {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.85rem;
+  }
+  .rh-truth__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .rh-truth__grid .kg-chip {
+    gap: 5px;
   }
   .rh-empty {
     display: grid;
@@ -418,5 +613,16 @@ const brainQuestions = [
   }
   @media (max-width: 520px) {
     .rh-brain__grid { align-items: stretch; }
+    .rh-home h1 { font-size: 1.62rem; }
+    .rh-route {
+      gap: 0.65rem;
+      padding: 0.78rem;
+    }
+    .rh-route__search {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .rh-route__search input {
+      padding: 0.7rem 0.85rem;
+    }
   }
 </style>

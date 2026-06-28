@@ -50,7 +50,6 @@ test('the return_to sanitizer refuses off-origin targets (open-redirect guard at
 // #371 entry/login/role-home/field sweep.
 const NAVBACK_SURFACES: ReadonlyArray<{ file: string; fallback: string }> = [
   { file: 'src/app/pages/login.astro', fallback: '/' },
-  { file: 'src/app/pages/home/owner.astro', fallback: '/' },
   { file: 'src/app/pages/home/pm.astro', fallback: '/' },
   { file: 'src/app/pages/home/admin-ops.astro', fallback: '/' },
   { file: 'src/app/pages/home/sub.astro', fallback: '/' },
@@ -80,6 +79,12 @@ test('listed surfaces import NavBack with the audit fallback targets', () => {
 
 test('Home (root landing surface) renders no NavBack — Canon: nothing above Home to go back to', () => {
   assert.doesNotMatch(read('src/app/pages/index.astro'), /NavBack/);
+});
+
+test('Owner home is a mobile role root, not a child page with NavBack', () => {
+  const source = read('src/app/pages/home/owner.astro');
+  assert.doesNotMatch(source, /NavBack/);
+  assert.match(source, /RoleHomeSurface/);
 });
 
 test('Field Hand home is a mobile role root, not a child page with NavBack', () => {
