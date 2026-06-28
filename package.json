@@ -13,6 +13,8 @@
     "build": "tsc",
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
+    "check:astro-scripts": "node scripts/check-astro-client-scripts.mjs",
+    "smoke:pages": "npm run build:astro && node scripts/smoke-astro-pages.mjs",
     "pretest": "npm run demo:v15-vertical-slice:esbuild",
     "test": "node --import tsx --test tests/*.test.ts",
     "smoke": "tsx src/examples/smoke.ts",
@@ -53,8 +55,10 @@
     "pg": "^8.21.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.20.0",
+    "playwright": "^1.61.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0"
   }
