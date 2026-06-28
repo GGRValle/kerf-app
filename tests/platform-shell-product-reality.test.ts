@@ -107,8 +107,15 @@ test('camera Done files through Lane 3 daily-log endpoint before claiming attach
 });
 
 test('login and layout brand use Right Hand in user-facing copy', () => {
-  assert.match(read('src/i18n/en.ts'), /'login\.title': 'Sign in to Right Hand'/);
+  const en = read('src/i18n/en.ts');
+  const es = read('src/i18n/es.ts');
+  const settings = read('src/app/pages/settings.astro');
+
+  assert.match(en, /'login\.title': 'Sign in to Right Hand'/);
   assert.match(read('src/i18n/en.ts'), /'layout\.brand': 'Right Hand'/);
+  assert.doesNotMatch(en, /Wall 1|tenant settings|tenant and role/);
+  assert.doesNotMatch(es, /Wall 1|tenant settings|inquilino y rol/);
+  assert.doesNotMatch(settings, /tenant/i);
 });
 
 test('app shell uses Right Hand contractor skin with explicit dark mode', () => {
