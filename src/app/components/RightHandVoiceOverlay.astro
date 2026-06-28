@@ -1838,6 +1838,7 @@ const { t } = createLayoutContext();
     };
 
     const commitTurnServerSide = async (trp: TurnResolutionPacket): Promise<{ ok: true; trp: TurnResolutionPacket } | { ok: false; message: string; projectCorrection: boolean }> => {
+      const tenantId = currentTenantId();
       try {
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         const res = await fetch('/api/v1/right-hand/commit-turn', {
