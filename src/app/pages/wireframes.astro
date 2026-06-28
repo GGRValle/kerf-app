@@ -18,16 +18,36 @@ const priorityRoutes = new Set([
   '/design/:projectId',
   '/estimate/:projectId',
   '/change-orders/new',
+  '/projects/:id/money/invoices',
+  '/money/invoices/:invoiceId',
+  '/projects/:id/daily-log',
   '/money',
   '/decisions/:id',
 ]);
 
 const rows = WIREFRAME_SPINE_MAP.filter((entry) => priorityRoutes.has(entry.route));
+const mobileRows = WIREFRAME_SPINE_MAP.filter((entry) =>
+  entry.wireframes.some((face) => face.includes('_mobile_') || face.includes('mobile')),
+);
+const wiredCount = WIREFRAME_SPINE_MAP.filter((entry) => entry.status === 'canon_wired').length;
+const attachedCount = WIREFRAME_SPINE_MAP.filter((entry) => entry.appFile).length;
+const mobilePendingCount = mobileRows.filter((entry) => entry.status !== 'canon_wired').length;
+const trainCards = [
+  { label: 'P0 mobile', detail: 'Home, Start, Right Hand, Camera, Daily Log', href: '/', count: 'Now' },
+  { label: 'P1 money', detail: 'Estimate, change order, job invoices, invoice detail', href: '/projects/proj_wegrzyn_kitchen/money/invoices', count: 'In pass' },
+  { label: 'P2 tablet', detail: 'Project setup, client intake, Design Hand scaling', href: '/design/proj_wegrzyn_kitchen', count: 'Next' },
+  { label: 'P3 desktop', detail: 'Dense back-office views after mobile proves the flow', href: '/money', count: 'After' },
+] as const;
 const labelFor = (status: string) =>
   status === 'canon_wired' ? 'Live' :
   status === 'future_or_unrouted' ? 'Planned' :
   status === 'redirect' ? 'Redirect' :
   'Being wired';
+const hrefFor = (route: string) =>
+  route
+    .replace(':id', 'proj_wegrzyn_kitchen')
+    .replace(':projectId', 'proj_wegrzyn_kitchen')
+    .replace(':invoiceId', 'inv-weg-02');
 ---
 
 <Layout title="Build map" activeHref="/settings">
@@ -45,13 +65,30 @@ const labelFor = (status: string) =>
       note="Use this page to catch stale routes, old holding pages, and missing route ownership before launch."
     />
 
+    <section class="wireframe-stats" aria-label="Build status">
+      <div class="kg-card"><span>Total routes</span><strong>{WIREFRAME_SPINE_MAP.length}</strong></div>
+      <div class="kg-card"><span>Attached pages</span><strong>{attachedCount}</strong></div>
+      <div class="kg-card"><span>Canon wired</span><strong>{wiredCount}</strong></div>
+      <div class="kg-card"><span>Mobile rebuilds left</span><strong>{mobilePendingCount}</strong></div>
+    </section>
+
+    <section class="wireframe-train" aria-label="Mobile-first train">
+      {trainCards.map((card) => (
+        <a class="kg-card" href={card.href}>
+          <span>{card.count}</span>
+          <strong>{card.label}</strong>
+          <small>{card.detail}</small>
+        </a>
+      ))}
+    </section>
+
     <div class="wireframe-map__list">
       {rows.map((entry) => (
         <article class="wireframe-row kg-card" data-status={entry.status}>
           <div>
             <span class="wireframe-row__state">{labelFor(entry.status)}</span>
             <h2>{entry.surface}</h2>
-            <a href={entry.route.replace(':id', 'proj_wegrzyn_kitchen').replace(':projectId', 'proj_wegrzyn_kitchen')}>{entry.route}</a>
+            <a href={hrefFor(entry.route)}>{entry.route}</a>
           </div>
           <p>{entry.notes}</p>
           <div class="wireframe-row__faces">
@@ -97,6 +134,51 @@ const labelFor = (status: string) =>
   .wireframe-map__list {
     display: grid;
     gap: 0.7rem;
+  }
+
+  .wireframe-stats,
+  .wireframe-train {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .wireframe-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wireframe-stats .kg-card,
+  .wireframe-train .kg-card {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .wireframe-stats span,
+  .wireframe-train span,
+  .wireframe-train small {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+
+  .wireframe-stats strong {
+    font-size: 1.55rem;
+    line-height: 1;
+  }
+
+  .wireframe-train .kg-card {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .wireframe-train strong {
+    font-size: 1rem;
+  }
+
+  @media (min-width: 760px) {
+    .wireframe-stats,
+    .wireframe-train {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
 
   .wireframe-row {

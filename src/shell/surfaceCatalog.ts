@@ -62,6 +62,8 @@ reg('money', '/money/allowances', 'MoneyAllowances', OWNER_PM_ADMIN, '/money');
 reg('money', '/money/bookkeeping', 'MoneyBookkeeping', OWNER_PM_ADMIN, '/money');
 reg('money', '/money/qb-export', 'MoneyQuickBooksIifExport', OWNER_PM_ADMIN, '/money');
 reg('money', '/money/margin', 'MoneyMargin', ['owner'], '/money');
+reg('money', '/projects/[id]/money/invoices', 'ProjectInvoiceList', OWNER_PM_ADMIN, '/projects/[id]');
+reg('money', '/money/invoices/[invoiceId]', 'MoneyInvoiceDetail', OWNER_PM_ADMIN, '/money');
 
 reg('clients', '/clients', 'ClientsIndex', OWNER_PM_ADMIN, '/');
 reg('clients', '/clients/new', 'ClientNew', OWNER_PM_ADMIN, '/clients');

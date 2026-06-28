@@ -52,16 +52,32 @@ test('wireframe build map and change-order builder are live routes', () => {
   const spineMap = read('src/app/lib/wireframeSpineMap.ts');
   const start = read('src/app/pages/create.astro');
   const changeOrder = read('src/app/pages/change-orders/new.astro');
+  const projectInvoices = read('src/app/pages/projects/[id]/money/invoices.astro');
+  const invoiceDetail = read('src/app/pages/money/invoices/[invoiceId].astro');
+  const moneyFixtures = read('src/app/lib/moneyFixtures.ts');
 
   assert.match(catalog, /\/wireframes/);
+  assert.match(catalog, /\/projects\/\[id\]\/money\/invoices/);
+  assert.match(catalog, /\/money\/invoices\/\[invoiceId\]/);
   assert.match(buildMap, /WIREFRAME_SPINE_MAP/);
   assert.match(buildMap, /\/change-orders\/new/);
+  assert.match(buildMap, /\/projects\/:id\/money\/invoices/);
+  assert.match(buildMap, /\/money\/invoices\/:invoiceId/);
   assert.match(spineMap, /F-S1_mobile_start_action_sheet\.html/);
   assert.match(spineMap, /F-CHG1_mobile_change_order_builder\.html/);
   assert.match(spineMap, /F-B1_mobile_decision_card\.html/);
+  assert.match(spineMap, /F-INV1a_mobile_per_job_invoice_list\.html/);
+  assert.match(spineMap, /F-INV2a_mobile_per_job_invoice_detail\.html/);
   assert.match(start, /\/change-orders\/new\?src=create/);
-  assert.match(changeOrder, /Draft-only today\. Nothing sends\./);
+  assert.match(start, /\/projects\/proj_wegrzyn_kitchen\/money\/invoices\?src=create/);
+  assert.match(changeOrder, /Create decision card/);
   assert.match(changeOrder, /disabled/);
+  assert.match(projectInvoices, /Project money/);
+  assert.match(projectInvoices, /\/money\/invoices\/\$\{invoice\.id\}/);
+  assert.match(invoiceDetail, /Money guard/);
+  assert.match(invoiceDetail, /Issue invoice/);
+  assert.match(invoiceDetail, /disabled/);
+  assert.match(moneyFixtures, /href: '\/money\/invoices\/inv-weg-02'/);
 });
 
 test('working surfaces keep wireframe/build language out of operator screens', () => {
@@ -76,6 +92,8 @@ test('working surfaces keep wireframe/build language out of operator screens', (
     'src/app/pages/right-hand.astro',
     'src/app/pages/room-capture.astro',
     'src/app/pages/change-orders/new.astro',
+    'src/app/pages/projects/[id]/money/invoices.astro',
+    'src/app/pages/money/invoices/[invoiceId].astro',
   ]) {
     const src = read(file);
     assert.doesNotMatch(src, /BuildTruthStrip/);

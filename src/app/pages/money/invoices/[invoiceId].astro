@@ -1,0 +1,269 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import {
+  findJobInvoice,
+  formatInvoiceMoney,
+} from '../../../lib/jobInvoiceFixtures.js';
+
+const invoiceId = Astro.params.invoiceId ?? '';
+const invoice = findJobInvoice(invoiceId);
+
+if (invoice === null) {
+  return Astro.redirect('/money');
+}
+
+const returnToRaw = Astro.url.searchParams.get('return_to') ?? `/projects/${invoice.project_id}/money/invoices`;
+const returnTo =
+  returnToRaw.startsWith('/') && !returnToRaw.startsWith('//') && !returnToRaw.includes('://')
+    ? returnToRaw
+    : `/projects/${invoice.project_id}/money/invoices`;
+const statusTone = {
+  paid: 'green',
+  ready: 'amber',
+  scheduled: '',
+  blocked: 'red',
+} as const;
+---
+
+<Layout
+  title="Invoice detail"
+  activeHref="/money"
+  surfaceContext={{
+    surface: 'invoice_detail',
+    project_id: invoice.project_id,
+    invoice_id: invoice.id,
+    phase: 'money_guard',
+  }}
+>
+  <article class="invoice-detail" data-grammar="canon">
+    <header class="id-top kg-pagehead">
+      <a class="id-back" href={returnTo}>Back to list</a>
+      <span class="kg-chip">{invoice.milestone}</span>
+    </header>
+
+    <section class="id-guard kg-card" aria-label="Money guard">
+      <span class:list={['kg-chip', statusTone[invoice.status]]}>{invoice.status_label}</span>
+      <strong>Money guard</strong>
+      <p>{invoice.gate_note}</p>
+    </section>
+
+    <section class="id-paper kg-card" aria-label="Invoice preview">
+      <div class="id-paper-head">
+        <div>
+          <p>Invoice</p>
+          <h1>{invoice.label}</h1>
+          <span>{invoice.project_name}</span>
+        </div>
+        <div>
+          <strong>{formatInvoiceMoney(invoice.amount_cents)}</strong>
+          <span>{invoice.due_label}</span>
+        </div>
+      </div>
+
+      <div class="id-lines">
+        {invoice.lines.map((line) => (
+          <div>
+            <span>{line.label}</span>
+            <strong>{formatInvoiceMoney(line.amount_cents)}</strong>
+          </div>
+        ))}
+        <div class="id-total">
+          <span>Total</span>
+          <strong>{formatInvoiceMoney(invoice.amount_cents)}</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="id-chips">
+      <span class:list={['kg-chip', statusTone[invoice.status]]}>{invoice.invoice_no}</span>
+      <span class="kg-chip">Line IDs carried</span>
+      <span class="kg-chip">Contract milestone</span>
+    </div>
+
+    <section class="id-thread kg-card">
+      <strong>Line thread</strong>
+      <p>{invoice.line_ids.join(', ')}. These lines remain tied to the estimate, signed contract, and this invoice milestone.</p>
+    </section>
+
+    <div class="id-actions">
+      <button class="id-btn id-btn--primary" type="button" disabled aria-disabled="true">Issue invoice</button>
+      <button class="id-btn" type="button" disabled aria-disabled="true">Preview client copy</button>
+      <a class="id-btn" href={returnTo}>Back to list</a>
+      <a class="id-btn" href="/money">Open Money</a>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .invoice-detail {
+    display: grid;
+    gap: 0.85rem;
+    padding-bottom: 5.5rem;
+  }
+
+  .id-back {
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .id-guard {
+    display: grid;
+    gap: 0.3rem;
+    border-color: color-mix(in srgb, var(--gold) 32%, var(--line));
+    background: color-mix(in srgb, var(--gold-soft) 30%, var(--panel));
+  }
+
+  .id-guard strong {
+    font-size: 1.05rem;
+  }
+
+  .id-guard p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .id-paper {
+    background: #fffdfa;
+    color: #1c1a15;
+    box-shadow: 0 14px 36px rgba(24, 23, 19, 0.12);
+  }
+
+  .id-paper-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 2px solid #9c7a23;
+    padding-bottom: 0.85rem;
+  }
+
+  .id-paper-head p,
+  .id-paper-head h1 {
+    margin: 0;
+  }
+
+  .id-paper-head p {
+    color: #6b6046;
+    font-size: 0.74rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .id-paper-head h1 {
+    font-family: Georgia, serif;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .id-paper-head span {
+    display: block;
+    color: #665f50;
+    font-size: 0.82rem;
+  }
+
+  .id-paper-head > div:last-child {
+    text-align: right;
+  }
+
+  .id-paper-head > div:last-child strong {
+    display: block;
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .id-lines {
+    display: grid;
+    margin-top: 0.85rem;
+  }
+
+  .id-lines div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px dotted #d8d0bd;
+    padding: 0.55rem 0;
+    font-size: 0.9rem;
+  }
+
+  .id-lines strong {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .id-lines .id-total {
+    border-top: 2px solid #9c7a23;
+    border-bottom: 0;
+    margin-top: 0.45rem;
+    padding-top: 0.7rem;
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .id-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .id-thread {
+    display: grid;
+    gap: 0.25rem;
+    border-style: dashed;
+  }
+
+  .id-thread p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  .id-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .id-btn {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font-weight: 900;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .id-btn[disabled] {
+    opacity: 0.65;
+  }
+
+  .id-btn--primary {
+    border-color: var(--gold);
+    background: var(--gold);
+    color: #181713;
+  }
+
+  @media (min-width: 820px) {
+    .invoice-detail {
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
+      align-items: start;
+    }
+
+    .id-top,
+    .id-guard,
+    .id-paper,
+    .id-chips {
+      grid-column: 1;
+    }
+
+    .id-thread,
+    .id-actions {
+      grid-column: 2;
+    }
+  }
+</style>

@@ -4,6 +4,12 @@ import Layout from '../../layouts/Layout.astro';
 const returnTo = Astro.url.searchParams.get('return_to') ?? '/projects';
 const safeReturnTo =
   returnTo.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('://') ? returnTo : '/projects';
+
+const proofItems = [
+  '3 photos from cabinet wall',
+  'Voice note from site walk',
+  '8 line items from estimate draft',
+] as const;
 ---
 
 <Layout
@@ -22,29 +28,46 @@ const safeReturnTo =
       <p>Use this when the job changed and the owner needs a clear yes, edit, or hold. Nothing customer-facing sends from here.</p>
     </header>
 
-    <section class="co-card kg-card" aria-label="Change order draft">
-      <div class="co-row">
-        <span>Status</span>
-        <strong>Draft-only today. Nothing sends.</strong>
-      </div>
-      <div class="co-row">
-        <span>Job</span>
-        <strong>Choose project first</strong>
-      </div>
-      <div class="co-row">
-        <span>What changed</span>
-        <strong>Scope, price, schedule, and proof</strong>
-      </div>
-      <div class="co-row">
-        <span>Gate</span>
-        <strong>Owner approval before send</strong>
-      </div>
-      <div class="co-actions">
-        <a class="co-btn" href="/projects">Pick project</a>
-        <a class="co-btn" href="/right-hand">Tell Right Hand</a>
-        <button class="co-btn co-btn--primary" type="button" disabled aria-disabled="true">Create change order</button>
+    <section class="co-summary kg-card">
+      <span class="kg-chip kg-routechip">Draft only</span>
+      <h2>Wegrzyn kitchen · cabinet wall change</h2>
+      <p>Right Hand can collect the change and prepare the owner decision. The customer never sees this until you approve it.</p>
+      <div class="co-money">
+        <div><span>Draft price</span><strong>$4,850</strong></div>
+        <div><span>Schedule hit</span><strong>+2 days</strong></div>
+        <div><span>Proof</span><strong>{proofItems.length} items</strong></div>
+        <div><span>Gate</span><strong>Owner approval</strong></div>
       </div>
     </section>
+
+    <section class="co-card kg-card" aria-label="Change order draft">
+      <div class="co-section">Change</div>
+      <div class="co-row">
+        <span>Scope</span>
+        <strong>Add backing, adjust cabinet run, move two outlets, update tile edge.</strong>
+      </div>
+      <div class="co-row">
+        <span>Price basis</span>
+        <strong>Labor, electrical allowance, cabinet modification, tile trim.</strong>
+      </div>
+      <div class="co-row">
+        <span>Decision</span>
+        <strong>Review as decision card before sending.</strong>
+      </div>
+    </section>
+
+    <section class="co-card kg-card" aria-label="Proof">
+      <div class="co-section">Proof</div>
+      <ul class="co-proof">
+        {proofItems.map((item) => <li>{item}</li>)}
+      </ul>
+    </section>
+
+    <div class="co-actions">
+      <a class="co-btn" href="/projects/proj_wegrzyn_kitchen">Open job</a>
+      <a class="co-btn" href="/right-hand">Tell Right Hand</a>
+      <button class="co-btn co-btn--primary" type="button" disabled aria-disabled="true">Create decision card</button>
+    </div>
   </section>
 </Layout>
 
@@ -94,6 +117,52 @@ const safeReturnTo =
     overflow: hidden;
   }
 
+  .co-summary {
+    display: grid;
+    gap: 0.65rem;
+    border-color: color-mix(in srgb, var(--gold) 32%, var(--line));
+    background: color-mix(in srgb, var(--gold-soft) 34%, var(--panel));
+  }
+
+  .co-summary h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    line-height: 1.05;
+  }
+
+  .co-summary p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.38;
+  }
+
+  .co-money {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .co-money div {
+    display: grid;
+    gap: 0.12rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.65rem;
+    background: var(--panel);
+  }
+
+  .co-money span,
+  .co-section {
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .co-section {
+    padding: 0.75rem 0.9rem 0;
+  }
+
   .co-row {
     display: grid;
     gap: 0.2rem;
@@ -115,7 +184,17 @@ const safeReturnTo =
   .co-actions {
     display: grid;
     gap: 8px;
-    padding: 0.9rem;
+  }
+
+  .co-proof {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0.9rem 0.9rem 0.9rem 1.7rem;
+  }
+
+  .co-proof li {
+    color: var(--muted);
   }
 
   .co-btn {

@@ -332,7 +332,7 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Project canonical home. Lenses should not become disconnected document surfaces.',
     next: [
-      { trigger: 'Daily Log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html', note: 'Canon face is present; live route is still pending on the Daily Log branch.' },
+      { trigger: 'Daily Log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html' },
       { trigger: 'Status', route: '/projects/:id/status', face: 'F-PS1_mobile_project_status.html' },
       { trigger: 'Portal preview', route: '/projects/:id/portal-preview', face: 'F-CS1_mobile_client_success.html' },
       { trigger: 'Work order', route: '/projects/:id/work-orders/:wid', face: 'F-W1_mobile_work_order.html' },
@@ -342,11 +342,12 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
   },
   {
     route: '/projects/:id/daily-log',
+    appFile: 'src/app/pages/projects/[id]/daily-log.astro',
     domain: 'projects',
     surface: 'Daily Log',
     wireframes: ['F-DL1_mobile_daily_log.html', 'F-DL2_mobile_field_hand_daily_log_clockout.html'],
-    status: 'future_or_unrouted',
-    notes: 'F-DL1 is now present in repo canon. The flat Daily Log route is still pending merge from the Daily Log implementation branch.',
+    status: 'mapped_pending_rebuild',
+    notes: 'Flat Daily Log route is live in the canon frame. Clock-out variant still needs role-specific expansion.',
     next: [
       { trigger: 'Add media', route: '/camera?return_to=/projects/:id/daily-log', face: 'F-CAM1_mobile_camera.html' },
       { trigger: 'File / done', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
@@ -452,11 +453,12 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
   },
   {
     route: '/change-orders/new',
+    appFile: 'src/app/pages/change-orders/new.astro',
     domain: 'sales',
     surface: 'Change order builder',
     wireframes: ['F-CHG1_mobile_change_order_builder.html'],
-    status: 'future_or_unrouted',
-    notes: 'F-CHG1 is now present in repo canon. The live builder route is still pending merge from the Change Order implementation branch.',
+    status: 'mapped_pending_rebuild',
+    notes: 'Mobile-first draft builder route is live with proof, price, schedule, and an approval gate. Decision-card write remains disabled until the operator gate is wired.',
     next: [
       { trigger: 'Back project', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
       { trigger: 'Submit for approval', route: '/decisions/:id', face: 'F-B1_mobile_decision_card.html' },
@@ -492,6 +494,33 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
       { trigger: 'Open Money', route: '/estimate/:projectId/money', face: 'F-MN1_mobile_money_home.html' },
       { trigger: 'Open invoice detail', route: '/estimate/:projectId/invoice/:invoiceId or /money/invoices/:id', face: 'F-INV2a_mobile_per_job_invoice_detail.html' },
       { trigger: 'Open printable draft', route: '/api/v1/right-hand/estimates/:id/invoice', face: 'print artifact, invoice projection' },
+    ],
+  },
+  {
+    route: '/projects/:id/money/invoices',
+    appFile: 'src/app/pages/projects/[id]/money/invoices.astro',
+    domain: 'money',
+    surface: 'Project invoice set',
+    wireframes: ['F-INV1a_mobile_per_job_invoice_list.html', 'F-INV1b_desktop_per_job_invoice_list.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Project-owned invoice set is live for deposit, progress, and final invoices. Global Money links into it; the job owns the artifact.',
+    next: [
+      { trigger: 'Back project', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Open invoice detail', route: '/money/invoices/:invoiceId', face: 'F-INV2a_mobile_per_job_invoice_detail.html' },
+      { trigger: 'Open Money', route: '/money', face: 'F-MN1_mobile_money_home.html' },
+    ],
+  },
+  {
+    route: '/money/invoices/:invoiceId',
+    appFile: 'src/app/pages/money/invoices/[invoiceId].astro',
+    domain: 'money',
+    surface: 'Invoice detail',
+    wireframes: ['F-INV2a_mobile_per_job_invoice_detail.html', 'F-INV2b_desktop_per_job_invoice_detail.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Invoice detail is live with the money guard visible. Issue, send, payment, and export actions remain disabled until the money guard is wired.',
+    next: [
+      { trigger: 'Back to list', route: '/projects/:id/money/invoices', face: 'F-INV1a_mobile_per_job_invoice_list.html' },
+      { trigger: 'Open Money', route: '/money', face: 'F-MN1_mobile_money_home.html' },
     ],
   },
   {
