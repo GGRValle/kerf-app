@@ -1,9 +1,9 @@
 /**
  * Chrome/Bubble + Camera polish.
  * Bubble: parked affordance is one-per-breakpoint — desktop keeps the side pill
- * (hidden <900px), mobile lights the center nav mic via body.rh-reengage. The
- * DORMANT center mic shows the mic only (no visible "Speak"); "Tap to reengage"
- * appears only when parked. Camera: per-mode CAPTURE label; photo stays quiet
+ * (hidden <900px), mobile lights the center dock action via body.rh-reengage.
+ * The center action keeps a visible Speak/Habla label; "Tap to reengage"
+ * swaps in only when parked. Camera: per-mode CAPTURE label; photo stays quiet
  * (no Right Hand/listening/walkthrough language); listening/REC is walkthru-only.
  */
 import test from 'node:test';
@@ -22,17 +22,18 @@ test('overlay drives a body.rh-reengage flag; side pill is desktop-only', () => 
   assert.match(overlay, /max-width: 899px\)\s*\{\s*\.rhvo-bubble\s*\{\s*display: none/, 'pill hidden on mobile');
 });
 
-test('dormant mobile center mic shows the mic only; Tap-to-reengage only under body.rh-reengage', () => {
+test('mobile center action is a visible dock tile; Tap-to-reengage only under body.rh-reengage', () => {
   const nav = read('src/app/components/MobileBottomNav.astro');
   assert.equal((nav.match(/class="mbn-fab"/g) || []).length, 1, 'one center mic (one-mic rule)');
-  // Dormant: no VISIBLE "Speak" label (hidden via visibility; a11y name kept on the <a>)
-  assert.match(nav, /\.mbn-speak-label\s*\{[^}]*visibility:\s*hidden/, 'dormant Speak label is not visible');
+  assert.match(nav, /\.mbn-speak-label\s*\{[^}]*display:\s*block/, 'dormant Speak label is visible');
+  assert.doesNotMatch(nav, /\.mbn-speak-label\s*\{[^}]*visibility:\s*hidden/, 'Speak label is not hidden');
   assert.match(nav, /class="mbn-speak"[\s\S]*?aria-label=\{t\(slot\.labelKey\)\}/, 'a11y name kept on the speak link');
   // Reengage hint: hidden by default, shown ONLY under body.rh-reengage
   assert.match(nav, /class="mbn-reengage-hint"[^>]*>Tap to reengage</, 'reengage hint present');
   assert.match(nav, /\.mbn-reengage-hint\s*\{[^}]*display:\s*none/, 'hint hidden by default');
+  assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-speak-label\s*\{\s*display: none/, 'label swaps out on reengage');
   assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-reengage-hint\s*\{\s*display: block/, 'hint shows on reengage');
-  assert.match(nav, /body\.rh-reengage\)\s*\.mbn-fab\s*\{\s*animation: mbn-reengage-glow/, 'FAB glows on reengage');
+  assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\{\s*animation: mbn-reengage-glow/, 'dock action glows on reengage');
 });
 
 test('camera: CAPTURE label, photo quiet (no Right Hand/listening/walkthrough), REC walkthru-only', () => {

@@ -91,3 +91,19 @@ test('owner home is decision-first with agent work summarized behind it', () => 
   assert.doesNotMatch(src, /rh-brain/);
   assert.doesNotMatch(src, /truthStates/);
 });
+
+test('mobile bottom nav uses the Right Hand dock design', () => {
+  const nav = read('src/app/components/MobileBottomNav.astro');
+
+  assert.match(nav, /left: 12px/);
+  assert.match(nav, /right: 12px/);
+  assert.match(nav, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
+  assert.match(nav, /border-radius: 8px/);
+  assert.match(nav, /backdrop-filter: blur\(18px\)/);
+  assert.match(nav, /\.mbn-speak\s*\{[\s\S]*?background: var\(--kerf-amber\)/);
+  assert.match(nav, /\.mbn-speak-label\s*\{[\s\S]*?display: block/);
+  assert.match(nav, /data-role-root='field_hand'[\s\S]*?\.mbn-speak/);
+  assert.match(nav, /background: var\(--field-green\)/);
+  assert.doesNotMatch(nav, /border-radius: 50%/);
+  assert.doesNotMatch(nav, /visibility:\s*hidden/);
+});
