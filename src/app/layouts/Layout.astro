@@ -86,7 +86,7 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
     <title>{pageTitle}</title>
     {/* PWA install (Goal B PR-1): manifest + standalone chrome + home-screen icon. */}
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#0A0D11" />
+    <meta name="theme-color" content="#f7f6f1" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Right Hand" />
@@ -105,7 +105,10 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
       <script id="kerf-surface-context" type="application/json" set:html={emittedSurfaceContextJson}></script>
       <header class="kerf-topbar">
         <div class="kerf-topbar-lead">
-          <a class="kerf-brand" href="/">{t('right_hand.title')}</a>
+          <a class="kerf-brand" href="/">
+            <span>{t('right_hand.title')}</span>
+            <span class="kerf-brand-tagline">From capture to completion.</span>
+          </a>
         </div>
         <nav class="kerf-nav" aria-label={t('layout.nav.primary')} id="kerf-primary-nav">
           {navItems.map((item) => {

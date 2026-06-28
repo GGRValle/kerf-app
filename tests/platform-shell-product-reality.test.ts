@@ -65,3 +65,29 @@ test('login and layout brand use Right Hand in user-facing copy', () => {
   assert.match(read('src/i18n/en.ts'), /'login\.title': 'Sign in to Right Hand'/);
   assert.match(read('src/i18n/en.ts'), /'layout\.brand': 'Right Hand'/);
 });
+
+test('app shell uses Right Hand contractor skin with explicit dark mode', () => {
+  const shell = read('src/app/styles/shell.css');
+  const layout = read('src/app/layouts/Layout.astro');
+
+  assert.match(shell, /--kerf-bg: #f7f6f1/);
+  assert.match(shell, /:root\[data-theme='dark'\]/);
+  assert.match(shell, /linear-gradient\(rgba\(24, 23, 19, 0\.035\) 1px, transparent 1px\)/);
+  assert.match(shell, /background-size: 22px 22px/);
+  assert.match(layout, /kerf-brand-tagline/);
+  assert.match(layout, /From capture to completion\./);
+});
+
+test('owner home is decision-first with agent work summarized behind it', () => {
+  const src = read('src/app/components/RightHandHomeSurface.astro');
+
+  assert.match(src, /<h2>The one thing<\/h2>/);
+  assert.match(src, /Right Hand handled/);
+  assert.match(src, /Route anywhere/);
+  assert.match(src, /Filed underneath/);
+  assert.ok(src.indexOf('<h2>The one thing</h2>') < src.indexOf('Right Hand handled'));
+  assert.ok(src.indexOf('Right Hand handled') < src.indexOf('Route anywhere'));
+  assert.ok(src.indexOf('Route anywhere') < src.indexOf('Filed underneath'));
+  assert.doesNotMatch(src, /rh-brain/);
+  assert.doesNotMatch(src, /truthStates/);
+});

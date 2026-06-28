@@ -1,29 +1,28 @@
 /*
- * Shared canon skin · Phase 1J Agent 0 (tokens + phone-shell foundation).
- * Tokens lifted verbatim from docs/wireframes/canon/F-E1_mobile_field_capture.html :root.
- * Generic shell vocabulary (--bg/--surface/--text/--border/--accent/--chip-*) is
- * remapped onto the canon --kerf-* tokens, so every consuming component inherits
- * the canon skin without per-page repaint.
+ * Shared Right Hand skin.
+ * The default shell now matches the contractor prototype: warm paper, black
+ * jobsite type, small gold action states, and explicit dark mode only when the
+ * user setting writes data-theme="dark" to <html>.
  */
 :root {
-  /* ===== Canon tokens (dark base · verbatim from F-E1) ===== */
-  --kerf-bg: #0A0D11;
-  --kerf-bg-2: #14181F;
-  --kerf-surface: #1A1F28;
-  --kerf-surface-2: #232936;
-  --kerf-border: #2A3140;
-  --kerf-border-soft: #1F2530;
-  --kerf-text: #E8ECF1;
-  --kerf-text-dim: #98A1B3;
-  --kerf-text-mute: #6A7282;
-  --kerf-amber: #F5B544;
-  --kerf-green: #4ADE80;
-  --kerf-red: #F87171;
-  --kerf-blue: #7BA8FF;
+  color-scheme: light;
+  --kerf-bg: #f7f6f1;
+  --kerf-bg-2: #eeece4;
+  --kerf-surface: #ffffff;
+  --kerf-surface-2: #f1efe7;
+  --kerf-border: #d9d4c7;
+  --kerf-border-soft: #ebe6d9;
+  --kerf-text: #181713;
+  --kerf-text-dim: #5d5a50;
+  --kerf-text-mute: #817d72;
+  --kerf-amber: #e5b93f;
+  --kerf-green: #256f5b;
+  --kerf-red: #b84831;
+  --kerf-blue: #265f91;
   --kerf-violet: #A78BFA;
   --kerf-magenta: #E879A8;
-  --field-green: #38C977;
-  --right-hand: #C9A961;
+  --field-green: #0f7a53;
+  --right-hand: #d6ad36;
 
   /* Compatibility aliases for legacy --kerf-* names used by field-capture. */
   --kerf-line: var(--kerf-border-soft);
@@ -46,39 +45,21 @@
   --chip-neutral: var(--kerf-text-mute);
 }
 
-/*
- * Theme cascade (LOCKED — Christian 2026-05-28, docs/wireframes/CATALOG.md):
- * default follows the OS; the only manual switch lives in user Settings and
- * writes data-theme to <html>. Accents stay constant across themes — only
- * bg/surface/border/text flip. Light values are verbatim from F-E1 body.light-mode.
- */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) {
-    --kerf-bg: #FFFFFF;
-    --kerf-bg-2: #F4F6F9;
-    --kerf-surface: #FFFFFF;
-    --kerf-surface-2: #EBEEF2;
-    --kerf-border: #C9D0D8;
-    --kerf-border-soft: #DFE3E8;
-    --kerf-text: #0A0D11;
-    --kerf-text-dim: #4A5462;
-    --kerf-text-mute: #7B8492;
-  }
-}
-
 :root[data-theme='light'] {
-  --kerf-bg: #FFFFFF;
-  --kerf-bg-2: #F4F6F9;
-  --kerf-surface: #FFFFFF;
-  --kerf-surface-2: #EBEEF2;
-  --kerf-border: #C9D0D8;
-  --kerf-border-soft: #DFE3E8;
-  --kerf-text: #0A0D11;
-  --kerf-text-dim: #4A5462;
-  --kerf-text-mute: #7B8492;
+  color-scheme: light;
+  --kerf-bg: #f7f6f1;
+  --kerf-bg-2: #eeece4;
+  --kerf-surface: #ffffff;
+  --kerf-surface-2: #f1efe7;
+  --kerf-border: #d9d4c7;
+  --kerf-border-soft: #ebe6d9;
+  --kerf-text: #181713;
+  --kerf-text-dim: #5d5a50;
+  --kerf-text-mute: #817d72;
 }
 
 :root[data-theme='dark'] {
+  color-scheme: dark;
   --kerf-bg: #0A0D11;
   --kerf-bg-2: #14181F;
   --kerf-surface: #1A1F28;
@@ -97,7 +78,11 @@
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: var(--bg);
+  background:
+    linear-gradient(rgba(24, 23, 19, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 23, 19, 0.035) 1px, transparent 1px),
+    var(--bg);
+  background-size: 22px 22px;
   color: var(--text);
 }
 
@@ -115,10 +100,12 @@ body {
   flex-direction: row;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-top, 0px));
-  padding-top: max(0.6rem, env(safe-area-inset-top, 0px));
-  background: var(--surface);
+  padding: 0.72rem 1rem calc(0.72rem + env(safe-area-inset-top, 0px));
+  padding-top: max(0.72rem, env(safe-area-inset-top, 0px));
+  background: color-mix(in srgb, var(--kerf-surface) 92%, transparent);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(24, 23, 19, 0.08);
+  backdrop-filter: blur(18px);
 }
 
 .kerf-topbar-lead {
@@ -128,11 +115,21 @@ body {
 }
 
 .kerf-brand {
+  display: grid;
+  gap: 0.08rem;
   font-weight: 700;
   font-size: 1.05rem;
   letter-spacing: -0.01em;
   color: var(--text);
   text-decoration: none;
+}
+
+.kerf-brand-tagline {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .kerf-nav {
@@ -153,16 +150,16 @@ body {
 .kerf-topbar-rh {
   margin-left: auto;
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 8px;
   display: grid;
   place-items: center;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 900;
   text-decoration: none;
-  color: var(--right-hand, #c9a961);
-  background: color-mix(in srgb, var(--right-hand, #c9a961) 18%, var(--kerf-surface));
+  color: var(--kerf-bg);
+  background: var(--kerf-text);
 }
 
 .kerf-nav-link {
@@ -171,7 +168,7 @@ body {
   white-space: nowrap;
   font-size: 0.85rem;
   padding: 0.4rem 0.75rem;
-  border-radius: 999px;
+  border-radius: 8px;
   color: var(--text-muted);
   text-decoration: none;
   border: 1px solid transparent;
@@ -179,10 +176,10 @@ body {
 
 .kerf-nav-link.active,
 .kerf-nav-link[aria-current='page'] {
-  color: var(--accent);
-  font-weight: 600;
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--kerf-text);
+  font-weight: 800;
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
 }
 
 .kerf-main {

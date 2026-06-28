@@ -23,18 +23,10 @@ const routeShortcuts = [
   { label: 'Crew', hint: 'where crews are', href: '/home/field' },
   { label: 'Money', hint: 'invoices', href: '/money' },
 ];
-const truthStates = [
-  { label: 'Captured', value: 'durable on phone', tone: 'green' },
-  { label: 'Draft', value: 'agent-built', tone: 'blue' },
-  { label: 'Needs review', value: 'your call', tone: 'amber' },
-  { label: 'Sent / Signed', value: 'receipt-backed', tone: 'neutral' },
-];
-const brainQuestions = [
-  { label: 'Needs me', value: allHomeItems.filter((item) => item.needsUser).length, tone: 'amber', href: '/on-me' },
-  { label: 'Stuck', value: allHomeItems.filter((item) => item.state === 'risk_changed').length, tone: 'red', href: '/relay' },
-  { label: 'Changed', value: allHomeItems.filter((item) => item.state === 'review_suggested' || item.kind === 'ready_to_save').length, tone: 'blue', href: '/draft-review' },
-  { label: 'Money', value: allHomeItems.filter((item) => item.tone === 'money').length, tone: 'green', href: '/money' },
-  { label: 'Can wait', value: allHomeItems.filter((item) => !item.needsUser).length, tone: 'neutral', href: '/projects' },
+const handledSummaries = [
+  { label: 'Captured', value: `${allHomeItems.length}`, note: 'items filed or queued' },
+  { label: 'Needs you', value: `${allHomeItems.filter((item) => item.needsUser).length}`, note: 'decisions held' },
+  { label: 'Money', value: `${allHomeItems.filter((item) => item.tone === 'money').length}`, note: 'items tied to work' },
 ];
 ---
 
@@ -42,52 +34,8 @@ const brainQuestions = [
   <div class="rh-home__hello kg-pagehead kg-span-12">
     <p class="rh-home__eyebrow">Right Hand · From capture to completion</p>
     <h1>Morning, {operatorName}. One thing needs you — the rest is moving.</h1>
-    <p class="rh-home__lede">Say where you want to go, or tap the loop.</p>
+    <p class="rh-home__lede">Right Hand drafts, files, and holds the important work for your call.</p>
   </div>
-
-  <section class="rh-route kg-card kg-span-12" aria-labelledby="rh-route-title">
-    <div>
-      <p class="rh-home__eyebrow">Route anywhere</p>
-      <h2 id="rh-route-title">Find a job, daily, crew, invoice, or file.</h2>
-    </div>
-    <form class="rh-route__search" action="/right-hand" method="get" role="search">
-      <label class="sr-only" for="rh-route-q">Ask Right Hand to route you</label>
-      <input id="rh-route-q" name="q" type="search" placeholder="Ask: take me to Wegrzyn daily..." />
-      <button type="submit">Ask</button>
-    </form>
-    <div class="rh-route__chips" aria-label="Common routes">
-      {routeShortcuts.map((shortcut) => (
-        <a class="kg-chip" href={shortcut.href}>
-          <strong>{shortcut.label}</strong>
-          <span>{shortcut.hint}</span>
-        </a>
-      ))}
-    </div>
-  </section>
-
-  <nav class="rh-loop kg-span-12" aria-label="From capture to completion loop">
-    {loopStages.map((stage) => (
-      <a class="rh-loop__stage kg-card" href={stage.href} data-loop-stage={stage.label.toLowerCase()}>
-        <span class="rh-loop__dot" aria-hidden="true"></span>
-        <strong>{stage.label}</strong>
-        <span class="rh-loop__count">{stage.count}</span>
-        <small>{stage.note}</small>
-        <em>{stage.state}</em>
-      </a>
-    ))}
-  </nav>
-
-  <section class="rh-truth kg-card kg-span-12" aria-label="Truth state">
-    <p class="rh-home__eyebrow">Truth state</p>
-    <div class="rh-truth__grid">
-      {truthStates.map((state) => (
-        <span class:list={['kg-chip', state.tone !== 'neutral' ? state.tone : undefined]}>
-          <strong>{state.label}</strong>
-          {state.value}
-        </span>
-      ))}
-    </div>
-  </section>
 
   <div class="rh-home__section-head rh-home__section-head--one kg-span-12">
     <h2>The one thing</h2>
@@ -121,17 +69,57 @@ const brainQuestions = [
     </div>
   )}
 
-  <section class="rh-brain kg-card kg-span-12" aria-label="Right Hand working set">
-    <div class="rh-brain__grid">
-      {brainQuestions.map((question) => (
-        <a class="rh-brain__item" href={question.href} data-tone={question.tone}>
-          <span class:list={['kg-chip', question.tone !== 'neutral' ? question.tone : undefined]}>
-            {question.label}
-          </span>
-          <strong>{question.value}</strong>
+  <section class="rh-handled kg-card kg-span-12" aria-label="Right Hand handled">
+    <div>
+      <p class="rh-home__eyebrow">Right Hand handled</p>
+      <h2>Small checks, no office trip.</h2>
+    </div>
+    <div class="rh-handled__grid">
+      {handledSummaries.map((item) => (
+        <a class="rh-handled__item" href={item.label === 'Money' ? '/money' : item.label === 'Needs you' ? '/on-me' : '/projects'}>
+          <strong>{item.value}</strong>
+          <span>{item.label}</span>
+          <small>{item.note}</small>
         </a>
       ))}
     </div>
+  </section>
+
+  <section class="rh-route kg-card kg-span-12" aria-labelledby="rh-route-title">
+    <div>
+      <p class="rh-home__eyebrow">Route anywhere</p>
+      <h2 id="rh-route-title">Say it, type it, or tap it.</h2>
+    </div>
+    <form class="rh-route__search" action="/right-hand" method="get" role="search">
+      <label class="sr-only" for="rh-route-q">Ask Right Hand to route you</label>
+      <input id="rh-route-q" name="q" type="search" placeholder="Ask: take me to Wegrzyn daily..." />
+      <button type="submit">Ask</button>
+    </form>
+    <div class="rh-route__chips" aria-label="Common routes">
+      {routeShortcuts.map((shortcut) => (
+        <a class="kg-chip" href={shortcut.href}>
+          <strong>{shortcut.label}</strong>
+          <span>{shortcut.hint}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="rh-spine kg-span-12" aria-label="Job spine underneath">
+    <div class="rh-home__section-head">
+      <h2>Filed underneath</h2>
+      <span>Start → Success</span>
+    </div>
+    <nav class="rh-loop" aria-label="From capture to completion loop">
+      {loopStages.map((stage) => (
+        <a class="rh-loop__stage kg-card" href={stage.href} data-loop-stage={stage.label.toLowerCase()}>
+          <span class="rh-loop__dot" aria-hidden="true"></span>
+          <strong>{stage.label}</strong>
+          <small>{stage.note}</small>
+          <em>{stage.state}</em>
+        </a>
+      ))}
+    </nav>
   </section>
 
   <section class="rh-home__section kg-span-12" aria-labelledby="rh-on-deck-title">
@@ -395,10 +383,51 @@ const brainQuestions = [
     color: var(--muted);
     font-weight: 700;
   }
+  .rh-handled {
+    display: grid;
+    gap: 0.85rem;
+    padding: 0.95rem;
+  }
+  .rh-handled__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .rh-handled__item {
+    display: grid;
+    gap: 0.2rem;
+    min-height: 5.8rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--line) 16%, transparent);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .rh-handled__item strong {
+    color: var(--gold);
+    font-size: 1.55rem;
+    line-height: 1;
+  }
+  .rh-handled__item span {
+    font-size: 0.84rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .rh-handled__item small {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 750;
+    line-height: 1.2;
+  }
+  .rh-spine {
+    display: grid;
+    gap: 0.6rem;
+  }
   .rh-loop {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(8.2rem, 1fr);
+    grid-auto-columns: minmax(7.4rem, 1fr);
     gap: 8px;
     overflow-x: auto;
     padding: 2px 2px 8px;
@@ -408,7 +437,7 @@ const brainQuestions = [
     position: relative;
     display: grid;
     gap: 0.35rem;
-    min-height: 8.4rem;
+    min-height: 7.1rem;
     padding: 0.78rem;
     color: var(--ink);
     text-decoration: none;
@@ -423,11 +452,6 @@ const brainQuestions = [
   }
   .rh-loop__stage strong {
     font-size: 1rem;
-    line-height: 1;
-  }
-  .rh-loop__count {
-    font-size: 1.25rem;
-    font-weight: 900;
     line-height: 1;
   }
   .rh-loop__stage small {
@@ -445,19 +469,6 @@ const brainQuestions = [
     font-weight: 900;
     letter-spacing: 0;
     text-transform: uppercase;
-  }
-  .rh-truth {
-    display: grid;
-    gap: 0.7rem;
-    padding: 0.85rem;
-  }
-  .rh-truth__grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-  .rh-truth__grid .kg-chip {
-    gap: 5px;
   }
   .rh-empty {
     display: grid;
@@ -479,37 +490,6 @@ const brainQuestions = [
   .rh-empty--small {
     padding: 0.8rem 0.9rem;
     font-size: 0.86rem;
-  }
-  .rh-brain {
-    padding: 10px;
-  }
-  .rh-brain__grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .rh-brain__item {
-    display: grid;
-    flex: 1 1 96px;
-    gap: 6px;
-    min-width: 0;
-    padding: 6px;
-    border-radius: var(--radius);
-    color: var(--ink);
-    text-decoration: none;
-    background: color-mix(in srgb, var(--line) 24%, transparent);
-  }
-  .rh-brain__item .kg-chip {
-    justify-content: center;
-    min-width: 0;
-    padding-inline: 7px;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-  .rh-brain__item strong {
-    font-size: 1rem;
-    line-height: 1;
-    color: var(--ink);
   }
   .rh-home__section {
     display: grid;
@@ -612,7 +592,7 @@ const brainQuestions = [
     }
   }
   @media (max-width: 520px) {
-    .rh-brain__grid { align-items: stretch; }
+    .rh-handled__grid { grid-template-columns: 1fr; }
     .rh-home h1 { font-size: 1.62rem; }
     .rh-route {
       gap: 0.65rem;
