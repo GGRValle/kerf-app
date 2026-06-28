@@ -24,9 +24,14 @@ const kbLinks = [
 
 <Layout titleKey="kb.ingestion.title" activeHref="/kb-ingestion">
   <section class="kb-page" aria-labelledby="kb-title">
+    <header class="kb-page__head">
+      <p>Cost knowledge</p>
+      <h1 id="kb-title">Review staged costs.</h1>
+    </header>
+
     <RhSummary
       headline="Cost knowledge review"
-      detail="This is the review surface for future cost-knowledge ingestion. It is read-only in the phone pass."
+      detail="Review cost data before it can affect an estimate. Right Hand can stage sources here, but pricing changes wait for approval."
       tone="green"
     />
 
@@ -44,7 +49,7 @@ const kbLinks = [
     <Card eyebrow="Boundary" title="No cost promotion from this page">
       <p class="kb-page__copy">
         This page does not add pricing data, train a model, or change estimate
-        costs. It only points to the review surfaces already wired.
+        costs by itself. It keeps staged cost proof visible until an owner approves promotion.
       </p>
     </Card>
   </section>
@@ -54,6 +59,27 @@ const kbLinks = [
   .kb-page {
     display: grid;
     gap: 0.85rem;
+  }
+
+  .kb-page__head {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .kb-page__head p {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .kb-page__head h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 9vw, 3.1rem);
+    line-height: 0.98;
+    letter-spacing: 0;
   }
 
   .kb-page__copy {

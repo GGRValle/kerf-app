@@ -1,19 +1,18 @@
 /**
  * Lane · Money & Office — Connections registry.
  *
- * One canonical list of every third-party integration Kerf speaks to. This
+ * One canonical list of every third-party integration Right Hand can speak to. This
  * is the single source other lanes read for their "Connected" signals, so the
  * shape is intentionally small and stable.
  *
- * Honesty rule: `status` reflects reality. Nothing is wired to a live OAuth
- * flow yet, so every card is `not_wired` — an honest "not built yet" state,
- * never a dead toggle that pretends to connect.
+ * Honesty rule: `status` reflects reality. Cards can request setup, but they
+ * never pretend credentials were stored or a live connection was created.
  */
 
 export type ConnectionStatus =
   | 'connected' // live, token present
   | 'not_connected' // wired, but operator has not connected
-  | 'not_wired'; // integration UI exists, real connect flow not built yet
+  | 'not_wired'; // setup request surface exists; live credential handoff is held
 
 export type ConnectionCategory = 'accounting' | 'scheduling' | 'comms' | 'capture' | 'documents' | 'storage';
 
@@ -106,6 +105,6 @@ export function connectionStatusLabel(status: ConnectionStatus): string {
     case 'not_connected':
       return 'Not connected';
     case 'not_wired':
-      return 'Not wired yet';
+      return 'Needs setup';
   }
 }

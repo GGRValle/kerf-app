@@ -8,6 +8,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { moreDomainLinksForRole } from '../src/shell/moreDomainNav.js';
+import { WIREFRAME_SPINE_MAP } from '../src/app/lib/wireframeSpineMap.js';
+import { connectionStatusLabel } from '../src/app/lib/connectionsRegistry.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');
@@ -22,14 +24,20 @@ test('RoleHomeSurface hides F-xx wireframe codes outside dev/debug', () => {
   const src = read('src/app/components/RoleHomeSurface.astro');
   assert.match(src, /showWireframeRef/);
   assert.match(src, /Astro\.url\.searchParams\.get\('debug'\) === '1'/);
+  assert.match(src, /operation-home/);
   assert.doesNotMatch(src, /import\.meta\.env\.DEV/);
   assert.doesNotMatch(src, />\{wireframe\} · \{t\(ROLE_LABEL_KEYS/);
+  assert.doesNotMatch(src, /platform\.home\.stub_title|platform\.home\.stub_body|role-home__stub/);
 });
 
 test('More page is driven from surfaceCatalog roleScope', () => {
   const src = read('src/app/pages/more.astro');
   assert.match(src, /moreDomainLinksForRole/);
   assert.doesNotMatch(src, /MORE_NAV_LINKS/);
+});
+
+test('connection setup state stays in contractor language', () => {
+  assert.equal(connectionStatusLabel('not_wired'), 'Needs setup');
 });
 
 test('owner More nav includes Projects in ≤2 taps from any screen', () => {
@@ -91,6 +99,12 @@ test('working surfaces keep wireframe/build language out of operator screens', (
     'src/app/pages/projects/index.astro',
     'src/app/pages/right-hand.astro',
     'src/app/pages/room-capture.astro',
+    'src/app/pages/settings/me.astro',
+    'src/app/pages/connections.astro',
+    'src/app/pages/kb-ingestion/index.astro',
+    'src/app/pages/kb-ingestion/[id].astro',
+    'src/app/pages/library.astro',
+    'src/app/pages/decisions/[id].astro',
     'src/app/pages/change-orders/new.astro',
     'src/app/pages/projects/[id]/money/invoices.astro',
     'src/app/pages/money/invoices/[invoiceId].astro',
@@ -99,7 +113,17 @@ test('working surfaces keep wireframe/build language out of operator screens', (
     assert.doesNotMatch(src, /BuildTruthStrip/);
     assert.doesNotMatch(src, /wireframes=\{/);
     assert.doesNotMatch(src, /Being wired|Build target/);
+    assert.doesNotMatch(src, /not wired|Not built yet|placeholder — no fake controls|future queue|coming in a later pass/i);
   }
+});
+
+test('attached app routes are marked built in the live wireframe spine', () => {
+  const stillPending = WIREFRAME_SPINE_MAP
+    .filter((entry) => entry.appFile)
+    .filter((entry) => entry.status === 'mapped_pending_rebuild')
+    .map((entry) => entry.route);
+
+  assert.deepEqual(stillPending, []);
 });
 
 test('camera Done files through Lane 3 daily-log endpoint before claiming attachment', () => {

@@ -116,7 +116,7 @@ test('Room scan reached from Camera starts honestly instead of showing post-scan
   assert.match(src, /const freshScan/);
   assert.match(src, /mode'\) === 'start'/);
   assert.match(src, /Start room scan/);
-  assert.match(src, /Native capture not available in this web build/);
+  assert.match(src, /Use the native app for live LiDAR capture/);
   assert.match(src, /href="\/room-capture\?scan_id=demo_last"/);
 });
 test('ActionsStrip delegates to ExportPrintBar', () => {

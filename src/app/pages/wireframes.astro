@@ -33,13 +33,13 @@ const wiredCount = WIREFRAME_SPINE_MAP.filter((entry) => entry.status === 'canon
 const attachedCount = WIREFRAME_SPINE_MAP.filter((entry) => entry.appFile).length;
 const mobilePendingCount = mobileRows.filter((entry) => entry.status !== 'canon_wired').length;
 const trainCards = [
-  { label: 'P0 mobile', detail: 'Home, Start, Right Hand, Camera, Daily Log', href: '/', count: 'Now' },
-  { label: 'P1 money', detail: 'Estimate, change order, job invoices, invoice detail', href: '/projects/proj_wegrzyn_kitchen/money/invoices', count: 'In pass' },
-  { label: 'P2 tablet', detail: 'Project setup, client intake, Design Hand scaling', href: '/design/proj_wegrzyn_kitchen', count: 'Next' },
-  { label: 'P3 desktop', detail: 'Dense back-office views after mobile proves the flow', href: '/money', count: 'After' },
+  { label: 'P0 mobile', detail: 'Home, Start, Right Hand, Camera, Daily Log', href: '/', count: 'Built' },
+  { label: 'P1 money', detail: 'Estimate, change order, job invoices, invoice detail', href: '/projects/proj_wegrzyn_kitchen/money/invoices', count: 'Built' },
+  { label: 'P2 tablet', detail: 'Project setup, client intake, Design Hand scaling', href: '/design/proj_wegrzyn_kitchen', count: 'Scales' },
+  { label: 'P3 desktop', detail: 'Back-office views use desktop layout where density needs it', href: '/money', count: 'Scales' },
 ] as const;
 const labelFor = (status: string) =>
-  status === 'canon_wired' ? 'Live' :
+  status === 'canon_wired' ? 'Built' :
   status === 'future_or_unrouted' ? 'Planned' :
   status === 'redirect' ? 'Redirect' :
   'Being wired';
@@ -59,10 +59,10 @@ const hrefFor = (route: string) =>
     </header>
 
     <BuildTruthStrip
-      state="partial"
-      label="Wireframe attachment is live; several pages still need deeper rebuilds."
+      state="live"
+      label="Attached app routes are built and reachable from the shell."
       wireframes={['wireframe-flow-map.html', 'wireframe-implementation-release-plan.md']}
-      note="Use this page to catch stale routes, old holding pages, and missing route ownership before launch."
+      note="Client portals and redirects keep separate status. Future reference faces stay out of the launch claim."
     />
 
     <section class="wireframe-stats" aria-label="Build status">

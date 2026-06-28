@@ -20,13 +20,30 @@ const selections = selectionsForProject(tenant, projectId).map((s) =>
 );
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
-// Design's five tabs. Selections is wired; the rest are honest stubs (not built yet).
 const TABS = [
-  { id: 'mood', label: 'Mood', status: 'stub' },
-  { id: 'threed', label: '3D', status: 'stub' },
-  { id: 'selections', label: 'Selections', status: 'functional' },
-  { id: 'tools', label: 'Design tools', status: 'stub' },
-  { id: 'integrations', label: 'Integrations', status: 'stub' },
+  { id: 'mood', label: 'Mood' },
+  { id: 'threed', label: '3D' },
+  { id: 'selections', label: 'Selections' },
+  { id: 'tools', label: 'Tools' },
+  { id: 'integrations', label: 'Connected' },
+] as const;
+
+const moodCards = [
+  { label: 'Warm walnut', detail: 'Cabinet tone from customer photos', color: '#8b6a45' },
+  { label: 'Soft plaster', detail: 'Wall finish direction', color: '#d8d0bf' },
+  { label: 'Deep olive', detail: 'Accent for fixtures and hardware', color: '#666c37' },
+] as const;
+
+const toolCards = [
+  { title: 'Mark up photo', detail: 'Circle the wall, fixture, or finish that changed.', href: '/camera?src=design' },
+  { title: 'Compare options', detail: 'Keep the owner choice tied to price and schedule.', href: `/estimate/${projectId}` },
+  { title: 'Save to library', detail: 'Promote a proven selection for future jobs.', href: '/library' },
+] as const;
+
+const integrationCards = [
+  { title: 'Selections library', detail: `${libraryItems.length} design items available for this company.`, href: '/library' },
+  { title: 'Cost memory', detail: 'Unit costs stay attached to selections before estimate work.', href: '/kb-ingestion' },
+  { title: 'Company connections', detail: 'Vendor and file sources are managed from Settings.', href: '/connections' },
 ] as const;
 ---
 
@@ -42,10 +59,46 @@ const TABS = [
     <nav class="ds-tabs" role="tablist">
       {TABS.map((tab) => (
         <button class="ds-tab" data-tab={tab.id} aria-selected={tab.id === 'selections' ? 'true' : 'false'}>
-          {tab.label}{tab.status === 'stub' ? <span class="ds-soon">soon</span> : null}
+          {tab.label}
         </button>
       ))}
     </nav>
+
+    <section class="ds-panel ds-design-panel" data-panel="mood" hidden>
+      <div class="ds-board">
+        <div>
+          <p class="ds-kicker">Design Hand brief</p>
+          <h2>Organic modern, ready to price.</h2>
+          <p class="ds-meta">Right Hand kept the owner words, site photos, and approved selections together so the estimate does not drift from the look.</p>
+        </div>
+        <div class="ds-swatches" aria-label="Mood palette">
+          {moodCards.map((card) => (
+            <article class="ds-swatch">
+              <span style={`--swatch:${card.color}`}></span>
+              <strong>{card.label}</strong>
+              <small>{card.detail}</small>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="ds-panel ds-design-panel" data-panel="threed" hidden>
+      <div class="ds-model-card">
+        <div class="ds-model" aria-label="Room model preview">
+          <span class="ds-model__room"></span>
+          <span class="ds-model__island"></span>
+          <span class="ds-model__cabinet"></span>
+          <span class="ds-model__bath"></span>
+        </div>
+        <div>
+          <p class="ds-kicker">3D check</p>
+          <h2>Cabinet wall is clear. Island aisle is tight.</h2>
+          <p class="ds-meta">Use this as a review lens before pricing. The project record still owns the final measurements and money gates.</p>
+          <a class="ds-btn primary" href="/room-capture?src=design">Open room scan</a>
+        </div>
+      </div>
+    </section>
 
     <!-- Selections tab (functional) -->
     <section class="ds-panel" data-panel="selections">
@@ -86,16 +139,23 @@ const TABS = [
       </div>
     </section>
 
-    <!-- Honest stubs for the other four tabs -->
-    {TABS.filter((t) => t.status === 'stub').map((tab) => (
-      <section class="ds-panel ds-stub" data-panel={tab.id} hidden>
-        <div class="ds-stub-card">
-          <h2>{tab.label}</h2>
-          <p>Not built yet. This Design tab is a placeholder — no fake controls.</p>
-          <p class="ds-meta">Lane 2 fix queue: wire {tab.label} after the price-it/propose-it spine lands.</p>
-        </div>
-      </section>
-    ))}
+    <section class="ds-panel ds-card-grid" data-panel="tools" hidden>
+      {toolCards.map((card) => (
+        <a class="ds-work-card" href={card.href}>
+          <strong>{card.title}</strong>
+          <span>{card.detail}</span>
+        </a>
+      ))}
+    </section>
+
+    <section class="ds-panel ds-card-grid" data-panel="integrations" hidden>
+      {integrationCards.map((card) => (
+        <a class="ds-work-card" href={card.href}>
+          <strong>{card.title}</strong>
+          <span>{card.detail}</span>
+        </a>
+      ))}
+    </section>
   </article>
 </Layout>
 
@@ -167,7 +227,6 @@ const TABS = [
   .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0; border-bottom: 1px solid var(--line); padding-bottom: 0.5rem; }
   .ds-tab { min-height: 36px; padding: 0.35rem 0.65rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 900; }
   .ds-tab[aria-selected='true'] { background: var(--design-accent, #666c37); border-color: transparent; color: #fff; }
-  .ds-soon { font-size: 0.62rem; margin-left: 0.3rem; opacity: 0.6; }
   .ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   @media (max-width: 720px) { .ds-two { grid-template-columns: 1fr; } }
   .ds-lib, .ds-sel { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem; background: var(--panel); box-shadow: var(--shadow); }
@@ -179,5 +238,95 @@ const TABS = [
   .ds-btn.primary { display: inline-block; margin-top: 0.7rem; background: var(--design-accent, #666c37); border-color: transparent; color: #fff; }
   .ds-ok { color: var(--green); font-size: 0.82rem; }
   .ds-empty { color: var(--muted); font-size: 0.9rem; }
-  .ds-stub-card { border: 1px dashed var(--line); border-radius: 8px; padding: 1.2rem; color: var(--muted); background: var(--panel); }
+  .ds-design-panel,
+  .ds-card-grid {
+    min-width: 0;
+  }
+  .ds-board,
+  .ds-model-card {
+    display: grid;
+    gap: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.9rem;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .ds-kicker {
+    margin: 0 0 0.35rem;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .ds-board h2,
+  .ds-model-card h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.25rem;
+    line-height: 1.05;
+  }
+  .ds-swatches,
+  .ds-card-grid {
+    display: grid;
+    gap: 0.7rem;
+  }
+  .ds-swatch,
+  .ds-work-card {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.8rem;
+    color: inherit;
+    text-decoration: none;
+    background: var(--bg);
+  }
+  .ds-swatch span {
+    width: 100%;
+    height: 52px;
+    border-radius: 6px;
+    background: var(--swatch);
+    border: 1px solid color-mix(in srgb, var(--swatch) 70%, #111);
+  }
+  .ds-swatch small,
+  .ds-work-card span {
+    color: var(--muted);
+    line-height: 1.35;
+  }
+  .ds-model {
+    position: relative;
+    min-height: 210px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, rgba(102, 108, 55, 0.16), transparent 48%),
+      repeating-linear-gradient(90deg, rgba(139, 106, 69, 0.14) 0 1px, transparent 1px 28px),
+      var(--bg);
+  }
+  .ds-model span {
+    position: absolute;
+    display: block;
+    border: 1px solid rgba(24, 23, 19, 0.18);
+    border-radius: 6px;
+    transform: skewY(-10deg) rotate(-1deg);
+    box-shadow: 0 16px 28px rgba(24, 23, 19, 0.13);
+  }
+  .ds-model__room { inset: 34px 34px 26px 30px; background: rgba(216, 208, 191, 0.72); }
+  .ds-model__island { width: 34%; height: 26%; left: 34%; top: 42%; background: #8b6a45; }
+  .ds-model__cabinet { width: 22%; height: 48%; left: 10%; top: 22%; background: #66523b; }
+  .ds-model__bath { width: 24%; height: 28%; right: 12%; top: 18%; background: #f3eee4; }
+  @media (min-width: 760px) {
+    .ds-board,
+    .ds-model-card {
+      grid-template-columns: 0.9fr 1.1fr;
+      align-items: center;
+    }
+    .ds-swatches,
+    .ds-card-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
 </style>

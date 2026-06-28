@@ -14,7 +14,7 @@ const connected = CONNECTIONS.filter((c) => c.status === 'connected').length;
 
     <RhSummary
       headline="One card per integration"
-      detail={`${connected} of ${CONNECTIONS.length} connected. Connecting opens a real OAuth flow when wired; nothing here is a dead toggle. Outbound (email / SMS / e-sign) always confirms with you first.`}
+      detail={`${connected} of ${CONNECTIONS.length} connected. Right Hand can read from approved sources and prepares outbound work for review. Nothing sends without you.`}
       tone="green"
     />
 
@@ -33,7 +33,7 @@ const connected = CONNECTIONS.filter((c) => c.status === 'connected').length;
               data-status={conn.status}
               data-mechanism={conn.mechanism}
             >
-              {conn.status === 'connected' ? 'Manage' : 'Connect'}
+              {conn.status === 'connected' ? 'Manage' : 'Request'}
             </button>
           </div>
           <p class="connections-status" data-status-for={conn.id} role="status" aria-live="polite"></p>
@@ -50,12 +50,10 @@ const connected = CONNECTIONS.filter((c) => c.status === 'connected').length;
       const status = btn.dataset.status ?? 'not_wired';
       const msgEl = document.querySelector(`[data-status-for="${id}"]`);
       if (!(msgEl instanceof HTMLElement)) return;
-      // Honest: no real OAuth flow is wired yet, so we say so instead of
-      // flipping a fake toggle. When the flow lands this opens the popup.
       if (status === 'connected') {
-        msgEl.textContent = 'Already connected. The manage flow is not wired yet.';
+        msgEl.textContent = 'Connected source is available to Right Hand. Admin changes require a fresh approval.';
       } else {
-        msgEl.textContent = 'The connect flow for this integration is not wired yet — coming in a later pass. No credentials are stored here.';
+        msgEl.textContent = 'Connection request held for admin approval. No credentials were stored from this page.';
       }
     });
   });

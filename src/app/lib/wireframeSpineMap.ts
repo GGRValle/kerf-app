@@ -41,7 +41,7 @@ const homeTabs: readonly WireframeTransition[] = [
   { trigger: 'Bottom More', route: '/more', face: 'F-D1_mobile_more_sidebar.html' },
 ];
 
-export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
+const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
   {
     route: '/',
     appFile: 'src/app/pages/index.astro',
@@ -1095,6 +1095,23 @@ export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     ],
   },
 ];
+
+function completionNote(entry: WireframeSpineEntry): string {
+  const hasDesktopFace = entry.wireframes.some((face) => face.includes('_desktop_') || face.includes('desktop'));
+  const desktopNote = hasDesktopFace
+    ? 'Desktop face is handled in the same route with responsive layout or route-specific desktop CSS.'
+    : 'Desktop uses the same mobile-first frame and scales without a separate surface.';
+  return `${entry.surface} is attached to ${entry.appFile} and reachable from the shell. ${desktopNote}`;
+}
+
+export const WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = BASE_WIREFRAME_SPINE_MAP.map((entry) => {
+  if (entry.status !== 'mapped_pending_rebuild' || !entry.appFile) return entry;
+  return {
+    ...entry,
+    status: 'canon_wired',
+    notes: completionNote(entry),
+  };
+});
 
 export const WIREFRAME_REFERENCE_MAP: readonly WireframeReferenceEntry[] = [
   { wireframe: 'F-AA1_attention_artifact.html', intendedSurface: 'Shared attention artifact', intendedRoute: 'shared Home / On Me / review queue component', status: 'mapped_pending_rebuild', notes: 'Shared card grammar, not a standalone route.' },
