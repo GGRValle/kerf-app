@@ -215,17 +215,18 @@ test('app shell uses Right Hand contractor skin with explicit dark mode', () => 
 test('owner home is decision-first with agent work summarized behind it', () => {
   const src = read('src/app/components/RightHandHomeSurface.astro');
 
+  // Decision-first ORDER: the ask/route bar leads, then the one thing, then handled work summarized behind it.
+  // Loop-first migration (PR #424): the old fixture-snapshot assertions (Ortiz fixture, /proj_ramirez_bath,
+  // evidence-strip) and the forbid-loop-strip/forbid-rh-brain rules were the PRE-redesign home and are now
+  // superseded by right-hand-loop-shell.test.ts, which owns the loop-strip / rh-brain / route-anywhere structure.
+  // This test keeps the decision-first guard that survives the redesign; it does not assert the old markup.
   assert.match(src, /Find a job, invoice, crew, or log/);
-  assert.match(src, /<h2>The one thing<\/h2>/);
-  assert.match(src, /Ortiz kitchen proposal/);
-  assert.match(src, /evidence-strip/);
+  assert.match(src, /The one thing/);
   assert.match(src, /Right Hand handled/);
-  assert.match(src, /\/design\/proj_ramirez_bath\?focus=tile-edge/);
-  assert.doesNotMatch(src, /loop-strip/);
-  assert.ok(src.indexOf('<h2>The one thing</h2>') < src.indexOf('Right Hand handled'));
-  assert.ok(src.indexOf('Find a job, invoice, crew, or log') < src.indexOf('<h2>The one thing</h2>'));
+  assert.ok(src.indexOf('The one thing') < src.indexOf('Right Hand handled'));
+  assert.ok(src.indexOf('Find a job, invoice, crew, or log') < src.indexOf('The one thing'));
+  // Still no fake backdrop art or fixture work-artifact state on the live home path.
   assert.doesNotMatch(src, /jobsite-capture|decision-evidence|url\('/);
-  assert.doesNotMatch(src, /rh-brain/);
   assert.doesNotMatch(src, /truthStates/);
 });
 
