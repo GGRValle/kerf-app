@@ -19,7 +19,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: '/draft-review', labelKey: 'nav.draft_review', domain: 'projects', roleRoots: ['owner', 'pm'] },
   { href: '/money', labelKey: 'nav.money', domain: 'money', roleRoots: ['owner', 'pm', 'admin_ops'] },
   { href: '/projects', labelKey: 'nav.projects', domain: 'projects', roleRoots: ['owner', 'pm', 'admin_ops'] },
-  { href: '/work', labelKey: 'nav.work', domain: 'schedule', roleRoots: ['owner', 'pm', 'admin_ops', 'field_hand'] },
+  { href: '/schedule', labelKey: 'nav.schedule', domain: 'schedule', roleRoots: ['owner', 'pm', 'admin_ops', 'field_hand'] },
   { href: '/relay', labelKey: 'nav.relay', domain: 'field', roleRoots: ['owner', 'pm', 'field_hand'] },
   { href: '/reports', labelKey: 'nav.reports', domain: 'reports', roleRoots: ['owner', 'pm', 'admin_ops'] },
   { href: '/settings', labelKey: 'nav.settings', domain: 'settings', roleRoots: ROLE_ROOTS_ALL },

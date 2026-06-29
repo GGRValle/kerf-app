@@ -1,5 +1,6 @@
 ---
 import LoginSurface from '../components/LoginSurface.astro';
+import NavBack from '../components/NavBack.astro';
 import { roleHomePath } from '../lib/roleSession.js';
 import {
   isBasicAuthEnabled,
@@ -28,6 +29,7 @@ const hasError = Astro.url.searchParams.get('error') !== null;
     <title>Sign in to Right Hand</title>
   </head>
   <body>
+    <NavBack href="/" />
     <LoginSurface
       mode="right-hand"
       authEnabled={authEnabled}

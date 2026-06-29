@@ -98,6 +98,7 @@ export const EN: TranslationMap = {
   'nav.clients': 'Clients',
   'nav.role_routing': 'Roles',
   'layout.brand': 'Right Hand',
+  'layout.brand_tagline': 'From capture to completion.',
   'layout.nav.primary': 'Primary navigation',
   'layout.speak_fab.label': 'Talk to Right Hand',
   'layout.speak_fab.title': 'Talk to Right Hand',

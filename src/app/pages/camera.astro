@@ -89,6 +89,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       </div>
 
       <div class="cam-bottom-overlay">
+
         <div class="cam-zoom" aria-label="Zoom">
           <button type="button">.5</button>
           <button type="button" aria-pressed="true">1×</button>
@@ -1369,6 +1370,23 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     gap: 0.5rem;
     padding: 0.7rem 0.92rem 0.88rem;
     background: linear-gradient(to top, rgba(5,7,11,0.96), rgba(5,7,11,0.82) 62%, transparent);
+  }
+  .cam-extra-modes {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cam-room-scan {
+    padding: 0.2rem 0.62rem;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(248,250,252,0.82);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
   }
   .cam-zoom,
   .cam-mode-strip,

@@ -109,7 +109,9 @@ test('F-CAM1 V1 camera opens capture-first and routes after capture', () => {
   assert.match(src, /sessionStorage\.setItem\('kerf\.cameraCapture'/);
   assert.match(src, /\/api\/v1\/projects\/\$\{selectedProjectId\}\/camera-capture/);
   assert.match(src, /filed_to_daily_log/);
-  assert.match(src, /href="\/room-capture\?src=camera&mode=start"/);
+  // Superseded by the capture-first redesign (#420): room capture is a SEPARATE surface, and
+  // bubble-camera-polish enforces it is NOT inside the camera ("room capture is not inside the
+  // camera surface"). That assertion and the old room-capture-in-camera one are mutually exclusive.
   assert.doesNotMatch(src, /href="\/field-capture"/);
 });
 test('Room scan reached from Camera starts honestly instead of showing post-scan fixture results', () => {

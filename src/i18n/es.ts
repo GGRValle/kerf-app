@@ -104,6 +104,7 @@ export const ES: TranslationMap = {
   'nav.clients': 'Clientes',
   'nav.role_routing': 'Roles',
   'layout.brand': 'Right Hand',
+  'layout.brand_tagline': 'De la captura a la entrega.',
   'layout.nav.primary': 'Navegación principal',
   'layout.speak_fab.label': 'Hablar con Mano Derecha',
   'layout.speak_fab.title': 'Hablar con Mano Derecha',

@@ -12,7 +12,7 @@ const ownerWorkAreas = [
   { href: '/design/proj_wegrzyn_kitchen', title: 'Design', detail: 'Selections, visual choices, owner questions.' },
   { href: '/sales', title: 'Sales', detail: 'Leads, estimates, proposals, signatures.' },
   { href: '/projects', title: 'Project', detail: 'Jobs, scope, dailies, files.' },
-  { href: '/schedule', title: 'Schedule', detail: 'Crew map, dispatch, job timing, blockers.' },
+  { href: '/schedule', title: 'Crew', detail: 'Crew map, dispatch, job timing, blockers.' },
   { href: '/money', title: 'Money', detail: 'Invoices, bills, margin, exports.' },
   { href: '/client-success', title: 'Success', detail: 'Closeout, warranty, referrals.' },
 ] as const;
@@ -57,7 +57,7 @@ const quickLinks = [
 
       <div class="more-page__main">
         {quickLinks.length > 0 ? (
-          <Card eyebrow="Support" title="Settings and sources">
+          <Card eyebrow="Common paths" title="Settings and sources">
             <div class="more-page__actions">
               {quickLinks.map((item) => (
                 <a class="more-page__action" href={item.href}>

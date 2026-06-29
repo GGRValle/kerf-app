@@ -106,6 +106,7 @@ export type I18nKey =
   | 'nav.clients'
   | 'nav.role_routing'
   | 'layout.brand'
+  | 'layout.brand_tagline'
   | 'layout.nav.primary'
   | 'layout.speak_fab.label'
   | 'layout.speak_fab.title'

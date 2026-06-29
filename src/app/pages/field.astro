@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import NavBack from '../components/NavBack.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { getApiDeps } from '../../api/lib/deps.js';
 import { listAssignmentsForProject } from '../lib/lane3WorkFixtures.js';
@@ -112,6 +113,7 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
     phase: 'field_ops',
   }}
 >
+  <NavBack href="/" />
   <article class="field-ops" data-grammar="canon">
     <header class="field-ops__hero">
       <p class="field-ops__eyebrow">Field</p>
