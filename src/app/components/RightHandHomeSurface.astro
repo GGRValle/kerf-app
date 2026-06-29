@@ -1,361 +1,241 @@
 ---
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-import { composeHomeAttentionSections } from '../../attention/attentionArtifact.js';
 
 const { context } = createLayoutContext();
-const operatorName = context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian' : 'there';
-const homeSections = composeHomeAttentionSections();
-const oneThing = homeSections.oneThing;
-const onDeck = homeSections.onDeck;
-const pulse = homeSections.pulse;
-const allHomeItems = [...(oneThing ? [oneThing] : []), ...onDeck, ...pulse];
+const operatorName =
+  context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian' : 'there';
+
+// The owner front door is the BUSINESS LOOP, not a list of SaaS domains. Each
+// stage is route-anywhere: tap to land on the real surface for that part of the
+// loop. Stage order is the loop order (capture → completion).
 const loopStages = [
-  { label: 'Start', href: '/create', count: '12', note: 'capture / job walk', state: 'live' },
-  { label: 'Design', href: '/more#design', count: '3', note: 'selections / plans', state: 'needs setup' },
-  { label: 'Sales', href: '/clients', count: '5', note: 'estimate / signed', state: 'needs you' },
-  { label: 'Project', href: '/projects', count: '4', note: 'docs / schedule', state: 'live' },
-  { label: 'Crew', href: '/home/field', count: '2', note: 'work / proof', state: 'field hand' },
-  { label: 'Money', href: '/money', count: '$51k', note: 'invoice / pay', state: 'at risk' },
-  { label: 'Success', href: '/reports', count: '7', note: 'client / team', state: 'pulse' },
+  { label: 'Start', href: '/camera' },
+  { label: 'Design', href: '/design/proj_wegrzyn_kitchen' },
+  { label: 'Sales', href: '/sales' },
+  { label: 'Project', href: '/projects' },
+  { label: 'Crew', href: '/team-ops/subs' },
+  { label: 'Money', href: '/money' },
+  { label: 'Success', href: '/client-success' },
 ];
-const routeShortcuts = [
-  { label: 'Job', hint: 'Wegrzyn daily', href: '/projects/proj_wegrzyn_kitchen' },
-  { label: 'Crew', hint: 'where crews are', href: '/home/field' },
-  { label: 'Money', hint: 'invoices', href: '/money' },
-];
-const truthStates = [
-  { label: 'Captured', value: 'durable on phone', tone: 'green' },
-  { label: 'Draft', value: 'agent-built', tone: 'blue' },
-  { label: 'Needs review', value: 'your call', tone: 'amber' },
-  { label: 'Sent / Signed', value: 'receipt-backed', tone: 'neutral' },
-];
-const brainQuestions = [
-  { label: 'Needs me', value: allHomeItems.filter((item) => item.needsUser).length, tone: 'amber', href: '/on-me' },
-  { label: 'Stuck', value: allHomeItems.filter((item) => item.state === 'risk_changed').length, tone: 'red', href: '/relay' },
-  { label: 'Changed', value: allHomeItems.filter((item) => item.state === 'review_suggested' || item.kind === 'ready_to_save').length, tone: 'blue', href: '/draft-review' },
-  { label: 'Money', value: allHomeItems.filter((item) => item.tone === 'money').length, tone: 'green', href: '/money' },
-  { label: 'Can wait', value: allHomeItems.filter((item) => !item.needsUser).length, tone: 'neutral', href: '/projects' },
+
+// Background work is a HONEST count of what Right Hand carried, with no fake
+// attention rows. Real attention items are projected live in the script below.
+const backgroundWork = [
+  { label: 'Captured', href: '/projects' },
+  { label: 'Drafted', href: '/draft-review' },
+  { label: 'Synced', href: '/connections' },
 ];
 ---
 
-<section class="rh-home kg-grid f-a1b-home" data-grammar="canon" aria-label="Right Hand home">
-  <div class="rh-home__hello kg-pagehead kg-span-12">
-    <p class="rh-home__eyebrow">Right Hand · From capture to completion</p>
-    <h1>Morning, {operatorName}. One thing needs you — the rest is moving.</h1>
-    <p class="rh-home__lede">Say where you want to go, or tap the loop.</p>
-  </div>
+<section class="rh-home kg-grid" data-grammar="canon" aria-label="Right Hand owner home">
+  <form class="route-bar kg-span-12" action="/right-hand" method="get" role="search">
+    <a class="icon-btn icon-btn--dark" href="/right-hand" data-rh-speak aria-label="Start voice route">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+        <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z" />
+      </svg>
+    </a>
+    <label class="sr-only" for="rh-route-anywhere">Find a job, invoice, crew, or log</label>
+    <input id="rh-route-anywhere" name="q" type="search" placeholder="Find a job, invoice, crew, or log" />
+    <a class="icon-btn" href="/camera" aria-label="Open camera">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8.5 5 7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-1.5-2zM12 17a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+      </svg>
+    </a>
+  </form>
 
-  <section class="rh-route kg-card kg-span-12" aria-labelledby="rh-route-title">
-    <div>
-      <p class="rh-home__eyebrow">Route anywhere</p>
-      <h2 id="rh-route-title">Find a job, daily, crew, invoice, or file.</h2>
-    </div>
-    <form class="rh-route__search" action="/right-hand" method="get" role="search">
-      <label class="sr-only" for="rh-route-q">Ask Right Hand to route you</label>
-      <input id="rh-route-q" name="q" type="search" placeholder="Ask: take me to Wegrzyn daily..." />
-      <button type="submit">Ask</button>
-    </form>
-    <div class="rh-route__chips" aria-label="Common routes">
-      {routeShortcuts.map((shortcut) => (
-        <a class="kg-chip" href={shortcut.href}>
-          <strong>{shortcut.label}</strong>
-          <span>{shortcut.hint}</span>
-        </a>
-      ))}
-    </div>
-  </section>
-
-  <nav class="rh-loop kg-span-12" aria-label="From capture to completion loop">
+  <nav class="loop-strip kg-span-12" aria-label="From capture to completion">
     {loopStages.map((stage) => (
-      <a class="rh-loop__stage kg-card" href={stage.href} data-loop-stage={stage.label.toLowerCase()}>
-        <span class="rh-loop__dot" aria-hidden="true"></span>
-        <strong>{stage.label}</strong>
-        <span class="rh-loop__count">{stage.count}</span>
-        <small>{stage.note}</small>
-        <em>{stage.state}</em>
-      </a>
+      <a class="kg-chip loop-strip__stage" href={stage.href}>{stage.label}</a>
     ))}
   </nav>
 
-  <section class="rh-truth kg-card kg-span-12" aria-label="Truth state">
-    <p class="rh-home__eyebrow">Truth state</p>
-    <div class="rh-truth__grid">
-      {truthStates.map((state) => (
-        <span class:list={['kg-chip', state.tone !== 'neutral' ? state.tone : undefined]}>
-          <strong>{state.label}</strong>
-          {state.value}
-        </span>
-      ))}
+  <section class="agent-read kg-span-12" aria-label="Right Hand readout">
+    <p>Morning, <strong>{operatorName}</strong>.</p>
+  </section>
+
+  <section class="rh-section kg-span-12" aria-labelledby="rh-one-title">
+    <div class="rh-brain" data-attention-band="one">
+      <span class="rh-brain__kicker">Needs you</span>
+      <h2 id="rh-one-title">The one thing</h2>
+    </div>
+    <div class="aa-slot" id="rh-one-thing" data-empty="Nothing needs you right now">
+      <p class="aa-empty">Nothing needs you right now</p>
     </div>
   </section>
 
-  <div class="rh-home__section-head rh-home__section-head--one kg-span-12">
-    <h2>The one thing</h2>
-    <span>Needs your call</span>
-  </div>
-
-  {oneThing ? (
-    <a
-      id="rh-one-slot"
-      class:list={['aa-card', 'aa-card--one', 'kg-card', `aa-tone-${oneThing.tone}`]}
-      href={oneThing.href}
-      data-attention-id={oneThing.id}
-      data-attention-source={oneThing.source}
-      data-attention-state={oneThing.state ?? oneThing.kind}
-      data-consequence-tier={oneThing.consequenceTier}
-    >
-      <span class="aa-card__rail" aria-hidden="true"></span>
-      <span class="aa-card__body">
-        <span class="aa-card__top">
-          <span class="aa-card__domain">{oneThing.domain ?? oneThing.label}</span>
-          <span class="aa-card__state">{oneThing.label}</span>
-        </span>
-        <strong class="aa-card__headline">{oneThing.headline}</strong>
-        <span class="aa-card__because">{oneThing.because ?? oneThing.detail}</span>
-      </span>
-    </a>
-  ) : (
-    <div id="rh-one-empty" class="rh-empty">
-      <strong>Nothing needs you right now.</strong>
-      <span>New captures, decisions, and changes will land here.</span>
+  <section class="rh-section kg-span-12" aria-labelledby="rh-deck-title">
+    <div class="rh-section__head">
+      <h2 id="rh-deck-title">On deck</h2>
+      <span>Across your jobs</span>
     </div>
-  )}
+    <div class="aa-slot aa-slot--deck" id="rh-on-deck" data-empty="No queued decisions">
+      <p class="aa-empty">No queued decisions</p>
+    </div>
+  </section>
 
-  <section class="rh-brain kg-card kg-span-12" aria-label="Right Hand working set">
-    <div class="rh-brain__grid">
-      {brainQuestions.map((question) => (
-        <a class="rh-brain__item" href={question.href} data-tone={question.tone}>
-          <span class:list={['kg-chip', question.tone !== 'neutral' ? question.tone : undefined]}>
-            {question.label}
-          </span>
-          <strong>{question.value}</strong>
+  <section class="rh-section kg-span-12" aria-labelledby="rh-pulse-title">
+    <div class="rh-section__head">
+      <h2 id="rh-pulse-title">The pulse</h2>
+      <span>company pulse</span>
+    </div>
+    <div class="aa-slot aa-slot--pulse" id="rh-pulse" data-empty="No company pulse items yet">
+      <p class="aa-empty">No company pulse items yet</p>
+    </div>
+  </section>
+
+  <section class="rh-section kg-span-12" aria-labelledby="rh-handled-title">
+    <div class="rh-section__head">
+      <h2 id="rh-handled-title">Right Hand handled</h2>
+      <span>background work</span>
+    </div>
+    <div class="handled-grid">
+      {backgroundWork.map((item) => (
+        <a class="kg-card handled-card" href={item.href}>
+          <span>{item.label}</span>
         </a>
       ))}
-    </div>
-  </section>
-
-  <section class="rh-home__section kg-span-12" aria-labelledby="rh-on-deck-title">
-    <div class="rh-home__section-head">
-      <h2 id="rh-on-deck-title">On deck</h2>
-      <span>Next 5</span>
-    </div>
-    <div class="rh-deck" id="rh-deck-list">
-      {onDeck.length > 0 ? (
-        onDeck.map((item) => (
-          <a
-            class:list={['aa-card', 'aa-card--deck', 'kg-card', `aa-tone-${item.tone}`]}
-            href={item.href}
-            data-attention-id={item.id}
-            data-attention-source={item.source}
-            data-attention-state={item.state ?? item.kind}
-            data-consequence-tier={item.consequenceTier}
-          >
-            <span class="aa-card__rail" aria-hidden="true"></span>
-            <span class="aa-card__body">
-              <span class="aa-card__top">
-                <span class="aa-card__domain">{item.domain ?? item.label}</span>
-                <span class="aa-card__state">{item.label}</span>
-              </span>
-              <strong class="aa-card__headline">{item.headline}</strong>
-              <span class="aa-card__because">{item.because ?? item.detail}</span>
-            </span>
-          </a>
-        ))
-      ) : (
-        <div class="rh-empty rh-empty--small">No queued decisions.</div>
-      )}
-    </div>
-  </section>
-
-  <section class="rh-home__section kg-span-12" aria-labelledby="rh-pulse-title">
-    <div class="rh-home__section-head">
-      <h2 id="rh-pulse-title">The pulse</h2>
-      <span>Company status</span>
-    </div>
-    <div class="rh-pulse" id="rh-pulse-list">
-      {pulse.length > 0 ? (
-        pulse.map((item) => (
-          <a
-            class:list={['aa-card', 'aa-card--pulse', 'kg-card', `aa-tone-${item.tone}`]}
-            href={item.href}
-            data-attention-id={item.id}
-            data-attention-source={item.source}
-            data-attention-state={item.state ?? item.kind}
-            data-consequence-tier={item.consequenceTier}
-          >
-            <span class="aa-card__rail" aria-hidden="true"></span>
-            <span class="aa-card__body">
-              <span class="aa-card__top">
-                <span class="aa-card__domain">{item.domain ?? item.label}</span>
-                <span class="aa-card__state">{item.label}</span>
-              </span>
-              <strong class="aa-card__headline">{item.headline}</strong>
-              <span class="aa-card__because">{item.because ?? item.detail}</span>
-            </span>
-          </a>
-        ))
-      ) : (
-        <div class="rh-empty rh-empty--small">No company pulse items yet.</div>
-      )}
     </div>
   </section>
 </section>
 
 <script>
   import {
-    attentionFromRelayCard,
+    TURN_RESOLUTION_SESSION_KEY,
+    parseTurnResolution,
+  } from '../../voice/realtime/turnResolution.js';
+  import {
     attentionFromTurnResolution,
+    attentionFromRelayCard,
     composeHomeAttentionSections,
+    type AttentionProjection,
   } from '../../attention/attentionArtifact.js';
   import { createAttentionArtifactCard } from '../lib/attentionArtifactCard.js';
-  import {
-    parseTurnResolution,
-    TURN_RESOLUTION_SESSION_KEY,
-  } from '../../voice/realtime/turnResolution.js';
 
-  const deckList = document.getElementById('rh-deck-list');
-  const pulseList = document.getElementById('rh-pulse-list');
-
-  function apiUrl(path: string): string {
-    return new URL(path, window.location.origin).toString();
-  }
-
-  function oneThingEmpty(): HTMLElement {
-    const empty = document.createElement('div');
-    empty.id = 'rh-one-empty';
-    empty.className = 'rh-empty';
-    const title = document.createElement('strong');
-    title.textContent = 'Nothing needs you right now.';
-    const body = document.createElement('span');
-    body.textContent = 'New captures, decisions, and changes will land here.';
-    empty.append(title, body);
-    return empty;
-  }
-
-  function listEmpty(message: string): HTMLElement {
-    const empty = document.createElement('div');
-    empty.className = 'rh-empty rh-empty--small';
-    empty.textContent = message;
-    return empty;
-  }
-
-  function renderOne(item: ReturnType<typeof attentionFromTurnResolution> | null) {
-    const existing = document.getElementById('rh-one-slot') ?? document.getElementById('rh-one-empty');
-    const next = item
-      ? createAttentionArtifactCard(item, { variant: 'one' })
-      : oneThingEmpty();
-    next.classList.add('kg-card');
-    next.id = item ? 'rh-one-slot' : 'rh-one-empty';
-    existing?.replaceWith(next);
-  }
-
-  function renderList(
-    container: Element | null,
-    items: ReturnType<typeof attentionFromTurnResolution>[],
-    variant: 'deck' | 'pulse',
-    emptyMessage: string,
-  ) {
-    if (!(container instanceof HTMLElement)) return;
-    container.innerHTML = '';
-    if (items.length === 0) {
-      container.append(listEmpty(emptyMessage));
-      return;
+  // Read the turn the overlay stashed (if any) and project it through the SAME
+  // attention artifact card the Office Review surface uses. No fixtures: when
+  // nothing is live, the section renders its honest empty state.
+  function liveTurnProjection(): AttentionProjection | null {
+    try {
+      const raw = sessionStorage.getItem(TURN_RESOLUTION_SESSION_KEY);
+      const trp = parseTurnResolution(raw);
+      if (!trp) return null;
+      return attentionFromTurnResolution(trp, trp.work_artifact ? 'pulse' : 'one_thing');
+    } catch {
+      return null;
     }
-    items.forEach((item) => {
-      const card = createAttentionArtifactCard(item, { variant });
-      card.classList.add('kg-card');
-      container.append(card);
-    });
   }
 
-  function renderHomeAttention(live: ReturnType<typeof attentionFromTurnResolution>[]) {
-    const sections = composeHomeAttentionSections({
-      live,
-    });
-    renderOne(sections.oneThing);
-    renderList(deckList, [...sections.onDeck], 'deck', 'No queued decisions.');
-    renderList(pulseList, [...sections.pulse], 'pulse', 'No company pulse items yet.');
+  function fillSlot(id: string, items: readonly AttentionProjection[], variant: 'one' | 'deck' | 'pulse') {
+    const slot = document.getElementById(id);
+    if (!(slot instanceof HTMLElement)) return;
+    if (!items.length) return; // keep the server-rendered honest empty state
+    slot.innerHTML = '';
+    for (const item of items) {
+      slot.append(createAttentionArtifactCard(item, { variant }));
+    }
   }
 
-  async function loadRelayAttention() {
+  function render(live: readonly AttentionProjection[]) {
+    const { oneThing, onDeck, pulse } = composeHomeAttentionSections({ live });
+    fillSlot('rh-one-thing', oneThing ? [oneThing] : [], 'one');
+    fillSlot('rh-on-deck', onDeck, 'deck');
+    fillSlot('rh-pulse', pulse, 'pulse');
+  }
+
+  function apiUrl(pathname: string): string {
+    return new URL(pathname, window.location.origin).toString();
+  }
+
+  // Optional enrichment: fold the office-review feed into the same live queue so
+  // the pulse reflects real field captures. Failure is silent — the turn
+  // projection (and honest empty states) still stand.
+  async function loadLive() {
+    const turn = liveTurnProjection();
+    const live: AttentionProjection[] = turn ? [turn] : [];
+    render(live); // paint immediately from local state
+
     try {
       const res = await fetch(apiUrl('/api/v1/field-daily/relay-feed?tenant_id=tenant_ggr'));
+      if (!res.ok) return;
       const body = await res.json();
-      if (!res.ok || !Array.isArray(body.items)) return [];
-      return body.items.map((item: unknown) => attentionFromRelayCard(item));
+      const items = Array.isArray(body.items) ? body.items : [];
+      for (const item of items) {
+        live.push(attentionFromRelayCard(item));
+      }
+      render(live);
     } catch {
-      return [];
+      /* keep the local projection + empty states */
     }
   }
 
-  async function hydrateHomeAttention() {
-    const live = [];
-    try {
-      const trp = parseTurnResolution(sessionStorage.getItem(TURN_RESOLUTION_SESSION_KEY));
-      if (trp) live.push(attentionFromTurnResolution(trp, trp.work_artifact ? 'pulse' : 'one_thing'));
-    } catch { /* storage unavailable — keep the honest empty state */ }
-    live.push(...await loadRelayAttention());
-    if (live.length > 0) renderHomeAttention(live);
-  }
-
-  void hydrateHomeAttention();
+  void loadLive();
 </script>
 
 <style>
+  /* Canon grammar (F-A1b): question band + red CHIP, never a red row rail. All
+     color comes from canon tokens resolved by [data-grammar="canon"] on .rh-home. */
   .rh-home {
-    gap: 12px;
-  }
-  .rh-home > * {
-    grid-column: 1 / -1;
-  }
-  .rh-home__hello {
+    --aa-dot: var(--gold);
     display: grid;
-    gap: 0.2rem;
-  }
-  .rh-home__lede {
-    max-width: 40rem;
-    margin: 0.35rem 0 0;
-    color: var(--muted);
-    font-size: 0.96rem;
-    line-height: 1.35;
-  }
-  .rh-home__eyebrow {
-    margin: 0;
-    color: var(--gold);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0;
-    text-transform: uppercase;
-  }
-  .rh-home h1,
-  .rh-home h2 {
-    margin: 0;
+    gap: 0.82rem;
+    max-width: 46rem;
+    margin: 0 auto;
     color: var(--ink);
-    letter-spacing: 0;
   }
-  .rh-home h1 {
-    font-size: 2.2rem;
-    line-height: 0.98;
-  }
-  .rh-home h2 {
-    font-size: 1.35rem;
-    line-height: 1.05;
-  }
-  .rh-route {
+
+  .route-bar {
     display: grid;
-    gap: 0.85rem;
-    padding: 0.95rem;
-    border-color: color-mix(in srgb, var(--gold) 34%, var(--line));
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--gold-soft) 40%, transparent), transparent 54%),
-      var(--panel);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.62rem;
+    padding: 0.64rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow);
   }
-  .rh-route__search {
+
+  .icon-btn {
+    width: 3rem;
+    height: 3rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--ink);
+    text-decoration: none;
   }
-  .rh-route__search .sr-only {
+
+  .icon-btn--dark {
+    background: var(--ink);
+    color: var(--panel);
+  }
+
+  .icon-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+  }
+
+  .route-bar input {
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.02rem;
+    font-weight: 900;
+    outline: 0;
+  }
+
+  .route-bar input::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  .sr-only {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -363,266 +243,140 @@ const brainQuestions = [
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
-  .rh-route__search input {
-    min-width: 0;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.82rem 0.95rem;
-    background: var(--bg);
-    color: var(--ink);
-    font: inherit;
-  }
-  .rh-route__search button {
-    border: 0;
-    border-radius: 999px;
-    min-width: 4.1rem;
-    padding: 0 0.75rem;
-    background: var(--gold);
-    color: var(--ink);
-    font: inherit;
-    font-weight: 800;
-  }
-  .rh-route__chips {
+
+  .loop-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 7px;
+    gap: 0.4rem;
   }
-  .rh-route__chips .kg-chip {
-    gap: 5px;
+
+  .loop-strip__stage {
     text-decoration: none;
   }
-  .rh-route__chips .kg-chip span {
-    color: var(--muted);
-    font-weight: 700;
-  }
-  .rh-loop {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(8.2rem, 1fr);
-    gap: 8px;
-    overflow-x: auto;
-    padding: 2px 2px 8px;
-    scroll-snap-type: x proximity;
-  }
-  .rh-loop__stage {
-    position: relative;
-    display: grid;
-    gap: 0.35rem;
-    min-height: 8.4rem;
-    padding: 0.78rem;
+
+  .agent-read {
     color: var(--ink);
-    text-decoration: none;
-    scroll-snap-align: start;
+    font-size: 1.1rem;
+    line-height: 1.2;
   }
-  .rh-loop__dot {
-    width: 0.56rem;
-    height: 0.56rem;
-    border-radius: 999px;
-    background: var(--gold);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold-soft) 70%, transparent);
+
+  .agent-read p {
+    margin: 0;
+    font-weight: 650;
   }
-  .rh-loop__stage strong {
-    font-size: 1rem;
-    line-height: 1;
-  }
-  .rh-loop__count {
-    font-size: 1.25rem;
-    font-weight: 900;
-    line-height: 1;
-  }
-  .rh-loop__stage small {
-    min-height: 2.2em;
-    color: var(--muted);
-    font-size: 0.76rem;
-    font-weight: 700;
-    line-height: 1.15;
-  }
-  .rh-loop__stage em {
-    align-self: end;
+
+  .agent-read strong {
     color: var(--gold);
-    font-size: 0.68rem;
-    font-style: normal;
-    font-weight: 900;
-    letter-spacing: 0;
-    text-transform: uppercase;
+    font-weight: 950;
   }
-  .rh-truth {
-    display: grid;
-    gap: 0.7rem;
-    padding: 0.85rem;
-  }
-  .rh-truth__grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-  .rh-truth__grid .kg-chip {
-    gap: 5px;
-  }
-  .rh-empty {
-    display: grid;
-    gap: 0.25rem;
-    padding: 1rem;
-    border-radius: var(--radius);
-    border: 1px dashed var(--line);
-    background: var(--panel);
-    color: var(--muted);
-  }
-  .rh-empty strong {
-    color: var(--ink);
-    font-size: 0.98rem;
-  }
-  .rh-empty span {
-    font-size: 0.88rem;
-    line-height: 1.35;
-  }
-  .rh-empty--small {
-    padding: 0.8rem 0.9rem;
-    font-size: 0.86rem;
-  }
-  .rh-brain {
-    padding: 10px;
-  }
-  .rh-brain__grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .rh-brain__item {
-    display: grid;
-    flex: 1 1 96px;
-    gap: 6px;
-    min-width: 0;
-    padding: 6px;
-    border-radius: var(--radius);
-    color: var(--ink);
-    text-decoration: none;
-    background: color-mix(in srgb, var(--line) 24%, transparent);
-  }
-  .rh-brain__item .kg-chip {
-    justify-content: center;
-    min-width: 0;
-    padding-inline: 7px;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-  .rh-brain__item strong {
-    font-size: 1rem;
-    line-height: 1;
-    color: var(--ink);
-  }
-  .rh-home__section {
+
+  .rh-section {
     display: grid;
     gap: 0.6rem;
   }
-  .rh-home__section-head {
+
+  .rh-brain {
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.72rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--gold-soft);
+  }
+
+  .rh-brain__kicker {
+    color: var(--amber);
+    font-size: 0.7rem;
+    font-weight: 950;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .rh-brain h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.2rem;
+    line-height: 1.05;
+  }
+
+  .rh-section__head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
   }
-  .rh-home__section-head span {
+
+  .rh-section__head h2 {
+    margin: 0;
+    color: var(--gold);
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+
+  .rh-section__head span {
     color: var(--muted);
     font-size: 0.78rem;
-    font-weight: 700;
+    font-weight: 900;
   }
-  .rh-deck,
-  .rh-pulse {
+
+  .aa-slot {
     display: grid;
     gap: 0.55rem;
   }
-  .rh-pulse {
-    max-height: 28rem;
-    overflow: auto;
-    padding-bottom: 0.2rem;
-  }
-  .rh-home .aa-card {
-    --aa-dot: var(--gold);
-    --aa-state-home: var(--gold);
-    display: grid;
-    grid-template-columns: 10px minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
-    border-color: var(--line);
+
+  .aa-empty {
+    margin: 0;
+    padding: 0.85rem 0.9rem;
+    border: 1px dashed var(--line);
     border-radius: var(--radius);
     background: var(--panel);
-    color: var(--ink);
+    color: var(--muted);
+    font-weight: 800;
+  }
+
+  .handled-grid {
+    display: grid;
+    gap: 0.55rem;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .handled-card {
+    display: grid;
+    place-items: center;
+    min-height: 3.4rem;
+    color: var(--gold);
+    font-weight: 950;
     text-decoration: none;
   }
+
+  @media screen and (max-width: 600px) {
+    .handled-grid {
+      grid-auto-flow: row;
+    }
+  }
+</style>
+
+<!-- Canon overrides for the shared attention card (injected into .rh-home by the
+     script above, so these must be global). Red status is a CHIP and the rail uses
+     the attention-dot token — there is NO red border-left rail anywhere. -->
+<style is:global>
   .rh-home .aa-card__rail {
-    width: 8px;
-    min-height: 8px;
-    align-self: start;
-    margin-top: 0.32rem;
-    border-radius: 999px;
     background: var(--aa-dot);
   }
-  .rh-home .aa-card__domain {
-    color: var(--aa-dot);
+
+  .rh-home .aa-card[data-consequence-tier='durable'] .aa-card__chip {
+    font-weight: 850;
   }
-  .rh-home .aa-card__headline {
-    color: var(--ink);
+
+  .rh-home .aa-card[data-attention-state='risk_changed'] {
+    --aa-dot: var(--red);
+    border-color: color-mix(in srgb, var(--red) 32%, var(--line));
   }
-  .rh-home .aa-card__because,
-  .rh-home .aa-card__chip,
-  .rh-home .aa-card__expand {
-    color: var(--muted);
-  }
-  .rh-home .aa-card__state,
-  .rh-home .aa-card__chip {
-    border-color: var(--line);
-    background: var(--panel);
-    color: var(--ink);
-  }
-  .rh-home .aa-card__chip--source {
-    border-color: var(--line);
-    background: color-mix(in srgb, var(--line) 24%, transparent);
-  }
-  .rh-home .aa-card--one {
-    border-color: color-mix(in srgb, var(--gold) 55%, var(--line));
-    background: color-mix(in srgb, var(--gold-soft) 46%, var(--panel));
-  }
-  .rh-home .aa-card--one[data-attention-state='risk_changed'] {
-    border-color: var(--line);
-    background: var(--panel);
-  }
-  .rh-home .aa-tone-team { --aa-dot: var(--green); }
-  .rh-home .aa-tone-project { --aa-dot: var(--blue); }
-  .rh-home .aa-tone-money { --aa-dot: var(--gold); }
-  .rh-home .aa-tone-selection { --aa-dot: var(--blue); }
-  .rh-home .aa-tone-client { --aa-dot: var(--green); }
-  .rh-home .aa-tone-review { --aa-dot: var(--gold); }
-  .rh-home .aa-tone-neutral { --aa-dot: var(--muted); }
-  .rh-home .aa-card[data-attention-state='handled'] { --aa-state-home: var(--green); }
-  .rh-home .aa-card[data-attention-state='next_options'] { --aa-state-home: var(--gold); }
-  .rh-home .aa-card[data-attention-state='needs_you'] { --aa-state-home: var(--blue); }
-  .rh-home .aa-card[data-attention-state='risk_changed'] { --aa-state-home: var(--red); }
-  .rh-home .aa-card[data-attention-state='review_suggested'] { --aa-state-home: var(--blue); }
-  .rh-home .aa-card[data-attention-state='risk_changed'] .aa-card__rail {
-    background: var(--aa-dot);
-  }
+
   .rh-home .aa-card[data-attention-state='risk_changed'] .aa-card__state {
-    border-color: transparent;
     background: var(--red-soft);
     color: var(--red);
-  }
-  @media (min-width: 760px) {
-    .rh-deck {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-  @media (max-width: 520px) {
-    .rh-brain__grid { align-items: stretch; }
-    .rh-home h1 { font-size: 1.62rem; }
-    .rh-route {
-      gap: 0.65rem;
-      padding: 0.78rem;
-    }
-    .rh-route__search {
-      grid-template-columns: minmax(0, 1fr) auto;
-    }
-    .rh-route__search input {
-      padding: 0.7rem 0.85rem;
-    }
+    border-color: transparent;
   }
 </style>

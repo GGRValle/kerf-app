@@ -215,7 +215,7 @@ reviewRoutes.post('/review/draft/reject', async (c) => {
   if (!body.proposal_id || !body.project_id) {
     return c.json({ error: 'invalid_body' }, 400);
   }
-  const reason = body.reason_text?.trim() || 'Operator rejected draft at review — return to field capture.';
+  const reason = body.reason_text?.trim() || 'Operator rejected draft at review — return to capture.';
   const { eventStore } = getApiDeps();
   const correlation_id = body.project_id;
   const overridden = await appendValidatedEvent(
@@ -225,7 +225,7 @@ reviewRoutes.post('/review/draft/reject', async (c) => {
       suggestion_id: `draft_review_${body.proposal_id}`,
       surface: 'draft.review',
       suggestion_payload: { proposal_id: body.proposal_id, action: 'accept_draft' },
-      chosen_alternative: { action: 'reject_draft', return_to: '/field-capture' },
+      chosen_alternative: { action: 'reject_draft', return_to: '/camera' },
       reason_text: reason,
       source_refs: [{ kind: 'doc', uri: `kerf://proposal/${body.proposal_id}/reject`, excerpt: reason }],
     },
@@ -247,7 +247,7 @@ reviewRoutes.post('/review/draft/reject', async (c) => {
   return c.json({
     ok: true,
     event_id: overridden.event_id,
-    return_to: '/field-capture',
+    return_to: '/camera',
     ...tenantOverrideFlags(c),
   });
 });

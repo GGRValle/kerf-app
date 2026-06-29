@@ -10,6 +10,19 @@ const personalFacts = [
   { dt: 'Role', dd: context.roleRoot },
   { dt: 'Language', dd: context.locale === 'es' ? 'Español' : 'English' },
 ] as const;
+
+const preferenceRows = [
+  { label: 'Office language', value: context.locale === 'es' ? 'Spanish' : 'English', note: 'Customer-facing copy can still be English.' },
+  { label: 'Field Hand language', value: 'Spanish native', note: 'Crew surfaces default to ES with jobsite terms.' },
+  { label: 'Customer language', value: 'English', note: 'Proposal, invoice, and portal copy stay customer-ready.' },
+  { label: 'Approval rule', value: 'Ask before sending', note: 'Money and client messages require review.' },
+] as const;
+
+const notificationRows = [
+  { label: 'Needs you', value: 'Immediate' },
+  { label: 'Daily log filed', value: 'End of day' },
+  { label: 'Crew reply', value: 'Immediate' },
+] as const;
 ---
 
 <Layout title="Your settings" activeHref="/settings">
@@ -32,11 +45,28 @@ const personalFacts = [
           </div>
         ))}
       </dl>
-      <p class="us1-notice">Editing your profile is not wired yet — coming in a later pass. No values are changed from this page.</p>
     </Card>
 
-    <Card eyebrow="Preferences" title="Notifications &amp; language">
-      <p class="us1-notice">Notification and language preferences will live here. Not wired yet.</p>
+    <Card eyebrow="Language" title="Who sees what language">
+      <dl class="us1-facts">
+        {preferenceRows.map((row) => (
+          <div>
+            <dt>{row.label}</dt>
+            <dd>{row.value}<span>{row.note}</span></dd>
+          </div>
+        ))}
+      </dl>
+    </Card>
+
+    <Card eyebrow="Notifications" title="When Right Hand interrupts">
+      <dl class="us1-facts us1-facts--compact">
+        {notificationRows.map((row) => (
+          <div>
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
     </Card>
 
     <Card eyebrow="Admin" title="Looking for company settings?">
@@ -57,6 +87,20 @@ const personalFacts = [
     font-weight: 700; color: var(--text-muted, #5c6670);
   }
   .us1-facts dd { margin: 0; line-height: 1.4; }
+  .us1-facts dd span {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--text-muted, #5c6670);
+    font-size: 0.82rem;
+  }
+  .us1-facts--compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .us1-notice { margin: 0.4rem 0 0; font-size: 0.82rem; color: var(--text-muted, #5c6670); line-height: 1.4; }
   .us1-link { color: inherit; }
+  @media (max-width: 560px) {
+    .us1-facts--compact {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>

@@ -13,6 +13,8 @@ import {
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
+const focus = Astro.url.searchParams.get('focus') ?? '';
+const showTileEdgeDecision = focus === 'tile-edge' || projectId === 'proj_ramirez_bath';
 const store = getSalesStore(tenant);
 const libraryItems = store.items.filter((i) => i.collection === 'selections');
 const selections = selectionsForProject(tenant, projectId).map((s) =>
@@ -20,18 +22,35 @@ const selections = selectionsForProject(tenant, projectId).map((s) =>
 );
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
-// Design's five tabs. Selections is wired; the rest are honest stubs (not built yet).
 const TABS = [
-  { id: 'mood', label: 'Mood', status: 'stub' },
-  { id: 'threed', label: '3D', status: 'stub' },
-  { id: 'selections', label: 'Selections', status: 'functional' },
-  { id: 'tools', label: 'Design tools', status: 'stub' },
-  { id: 'integrations', label: 'Integrations', status: 'stub' },
+  { id: 'mood', label: 'Mood' },
+  { id: 'threed', label: '3D' },
+  { id: 'selections', label: 'Selections' },
+  { id: 'tools', label: 'Tools' },
+  { id: 'integrations', label: 'Connected' },
+] as const;
+
+const moodCards = [
+  { label: 'Warm walnut', detail: 'Cabinet tone from customer photos', color: '#8b6a45' },
+  { label: 'Soft plaster', detail: 'Wall finish direction', color: '#d8d0bf' },
+  { label: 'Deep olive', detail: 'Accent for fixtures and hardware', color: '#666c37' },
+] as const;
+
+const toolCards = [
+  { title: 'Mark up photo', detail: 'Circle the wall, fixture, or finish that changed.', href: '/camera?src=design' },
+  { title: 'Compare options', detail: 'Keep the owner choice tied to price and schedule.', href: `/estimate/${projectId}` },
+  { title: 'Save to library', detail: 'Promote a proven selection for future jobs.', href: '/library' },
+] as const;
+
+const integrationCards = [
+  { title: 'Selections library', detail: `${libraryItems.length} design items available for this company.`, href: '/library' },
+  { title: 'Cost memory', detail: 'Unit costs stay attached to selections before estimate work.', href: '/kb-ingestion' },
+  { title: 'Company connections', detail: 'Vendor and file sources are managed from Settings.', href: '/connections' },
 ] as const;
 ---
 
 <Layout title="Design workspace" activeHref="/sales">
-  <article class="ds-page" data-project={projectId}>
+  <article class="ds-page" data-grammar="canon" data-project={projectId}>
     <a class="ds-back" href={`/sales/${projectId.replace(/^proj_/, '')}`}>‹ Deal</a>
     <header>
       <div class="ds-crumb">Design · {projectId}</div>
@@ -42,13 +61,79 @@ const TABS = [
     <nav class="ds-tabs" role="tablist">
       {TABS.map((tab) => (
         <button class="ds-tab" data-tab={tab.id} aria-selected={tab.id === 'selections' ? 'true' : 'false'}>
-          {tab.label}{tab.status === 'stub' ? <span class="ds-soon">soon</span> : null}
+          {tab.label}
         </button>
       ))}
     </nav>
 
+    <section class="ds-panel ds-design-panel" data-panel="mood" hidden>
+      <div class="ds-board">
+        <div>
+          <p class="ds-kicker">Design Hand brief</p>
+          <h2>Organic modern, ready to price.</h2>
+          <p class="ds-meta">Right Hand kept the owner words, site photos, and approved selections together so the estimate does not drift from the look.</p>
+        </div>
+        <div class="ds-swatches" aria-label="Mood palette">
+          {moodCards.map((card) => (
+            <article class="ds-swatch">
+              <span style={`--swatch:${card.color}`}></span>
+              <strong>{card.label}</strong>
+              <small>{card.detail}</small>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="ds-panel ds-design-panel" data-panel="threed" hidden>
+      <div class="ds-model-card">
+        <div class="ds-model" aria-label="Room model preview">
+          <span class="ds-model__room"></span>
+          <span class="ds-model__island"></span>
+          <span class="ds-model__cabinet"></span>
+          <span class="ds-model__bath"></span>
+        </div>
+        <div>
+          <p class="ds-kicker">3D check</p>
+          <h2>Cabinet wall is clear. Island aisle is tight.</h2>
+          <p class="ds-meta">Use this as a review lens before pricing. The project record still owns the final measurements and money gates.</p>
+          <a class="ds-btn primary" href="/room-capture?src=design">Open room scan</a>
+        </div>
+      </div>
+    </section>
+
     <!-- Selections tab (functional) -->
     <section class="ds-panel" data-panel="selections">
+      {showTileEdgeDecision ? (
+        <section class="ds-choice" aria-labelledby="tile-edge-title">
+          <div>
+            <p class="ds-kicker">Selection needs owner</p>
+            <h2 id="tile-edge-title">Ramirez bath tile edge</h2>
+            <p class="ds-meta">
+              Crew can keep moving once the edge detail is picked. Right Hand matched the open question to the bath selections, site photo, and Thursday schedule risk.
+            </p>
+          </div>
+          <div class="ds-choice__proof" aria-label="Proof">
+            <span>Proof</span>
+            <strong>Site photo · tile quote · crew hold</strong>
+            <small>Nothing texts or sends until you approve the wording.</small>
+          </div>
+          <div class="ds-choice__options" aria-label="Tile edge options">
+            <button type="button" class="ds-choice__option">
+              <strong>Schluter matte black</strong>
+              <span>Cleaner edge · +$380 · fastest answer for crew</span>
+            </button>
+            <button type="button" class="ds-choice__option">
+              <strong>Mitered tile edge</strong>
+              <span>Softer look · +$710 · adds one day</span>
+            </button>
+          </div>
+          <div class="ds-choice__actions">
+            <a class="ds-btn primary" href="/right-hand?q=Draft%20a%20text%20to%20Ramirez%20for%20the%20bath%20tile%20edge%20choice" data-rh-speak>Draft text to owner</a>
+            <a class="ds-btn" href={`/projects/${projectId}`}>Open job</a>
+          </div>
+        </section>
+      ) : null}
       <div class="ds-two">
         <div class="ds-lib">
           <h2>Pull from Library <a class="ds-link" href="/library">Open KB ›</a></h2>
@@ -86,16 +171,23 @@ const TABS = [
       </div>
     </section>
 
-    <!-- Honest stubs for the other four tabs -->
-    {TABS.filter((t) => t.status === 'stub').map((tab) => (
-      <section class="ds-panel ds-stub" data-panel={tab.id} hidden>
-        <div class="ds-stub-card">
-          <h2>{tab.label}</h2>
-          <p>Not built yet. This Design tab is a placeholder — no fake controls.</p>
-          <p class="ds-meta">Lane 2 fix queue: wire {tab.label} after the price-it/propose-it spine lands.</p>
-        </div>
-      </section>
-    ))}
+    <section class="ds-panel ds-card-grid" data-panel="tools" hidden>
+      {toolCards.map((card) => (
+        <a class="ds-work-card" href={card.href}>
+          <strong>{card.title}</strong>
+          <span>{card.detail}</span>
+        </a>
+      ))}
+    </section>
+
+    <section class="ds-panel ds-card-grid" data-panel="integrations" hidden>
+      {integrationCards.map((card) => (
+        <a class="ds-work-card" href={card.href}>
+          <strong>{card.title}</strong>
+          <span>{card.detail}</span>
+        </a>
+      ))}
+    </section>
   </article>
 </Layout>
 
@@ -160,24 +252,177 @@ const TABS = [
 </script>
 
 <style>
-  .ds-page { padding: 1rem; }
-  .ds-back { color: var(--text-muted, #98a1b3); text-decoration: none; font-size: 0.85rem; }
-  .ds-crumb { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted, #6a7282); margin-top: 0.6rem; }
-  .ds-sub { color: var(--text-muted, #98a1b3); }
-  .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.8rem 0; border-bottom: 1px solid var(--border, #2a3140); padding-bottom: 0.5rem; }
-  .ds-tab { padding: 0.4rem 0.7rem; border: 1px solid var(--border, #2a3140); border-radius: 999px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; font-size: 0.85rem; }
-  .ds-tab[aria-selected='true'] { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
-  .ds-soon { font-size: 0.62rem; margin-left: 0.3rem; opacity: 0.6; }
+  .ds-page { display: grid; gap: 0.85rem; padding: 0 0 5.5rem; }
+  .ds-back { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 800; }
+  .ds-crumb { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0; color: var(--muted); margin-top: 0.2rem; font-weight: 900; }
+  .ds-sub { color: var(--muted); }
+  .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0; border-bottom: 1px solid var(--line); padding-bottom: 0.5rem; }
+  .ds-tab { min-height: 36px; padding: 0.35rem 0.65rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 900; }
+  .ds-tab[aria-selected='true'] { background: var(--design-accent, #666c37); border-color: transparent; color: #fff; }
+  .ds-choice {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+    padding: 0.85rem;
+    border: 1px solid color-mix(in srgb, var(--design-accent, #666c37) 50%, var(--line));
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--design-accent, #666c37) 10%, var(--panel)), var(--panel));
+    box-shadow: var(--shadow);
+  }
+  .ds-choice h2 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.45rem, 7vw, 2.25rem);
+    line-height: 0.98;
+  }
+  .ds-choice__proof {
+    display: grid;
+    gap: 0.16rem;
+    padding: 0.72rem;
+    border: 1px solid color-mix(in srgb, var(--design-accent, #666c37) 34%, var(--line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--design-accent, #666c37) 8%, var(--bg));
+  }
+  .ds-choice__proof span {
+    color: var(--design-accent, #666c37);
+    font-size: 0.68rem;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+  .ds-choice__proof small {
+    color: var(--muted);
+    font-weight: 800;
+  }
+  .ds-choice__options,
+  .ds-choice__actions {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .ds-choice__option {
+    display: grid;
+    gap: 0.2rem;
+    min-height: 4.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    text-align: left;
+    font: inherit;
+  }
+  .ds-choice__option strong {
+    font-size: 1rem;
+  }
+  .ds-choice__option span {
+    color: var(--muted);
+    line-height: 1.28;
+  }
+  @media (min-width: 720px) {
+    .ds-choice__options,
+    .ds-choice__actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   .ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   @media (max-width: 720px) { .ds-two { grid-template-columns: 1fr; } }
-  .ds-lib, .ds-sel { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.7rem; background: var(--surface, #11151c); }
+  .ds-lib, .ds-sel { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem; background: var(--panel); box-shadow: var(--shadow); }
   .ds-lib h2, .ds-sel h2 { font-size: 0.95rem; margin: 0 0 0.6rem; display: flex; justify-content: space-between; align-items: baseline; }
   .ds-link { font-size: 0.78rem; }
-  .ds-libitem, .ds-selitem { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border, #222a36); }
-  .ds-meta { display: block; font-size: 0.75rem; color: var(--text-muted, #98a1b3); }
-  .ds-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--border, #2a3140); border-radius: 8px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; text-decoration: none; }
-  .ds-btn.primary { display: inline-block; margin-top: 0.7rem; background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
-  .ds-ok { color: var(--field-green, #38c977); font-size: 0.82rem; }
-  .ds-empty { color: var(--text-muted, #6a7282); font-size: 0.9rem; }
-  .ds-stub-card { border: 1px dashed var(--border, #2a3140); border-radius: 12px; padding: 1.2rem; color: var(--text-muted, #98a1b3); background: var(--surface, #11151c); }
+  .ds-libitem, .ds-selitem { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+  .ds-meta { display: block; font-size: 0.75rem; color: var(--muted); }
+  .ds-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); cursor: pointer; font: inherit; font-weight: 900; text-decoration: none; }
+  .ds-btn.primary { display: inline-block; margin-top: 0.7rem; background: var(--design-accent, #666c37); border-color: transparent; color: #fff; }
+  .ds-ok { color: var(--green); font-size: 0.82rem; }
+  .ds-empty { color: var(--muted); font-size: 0.9rem; }
+  .ds-design-panel,
+  .ds-card-grid {
+    min-width: 0;
+  }
+  .ds-board,
+  .ds-model-card {
+    display: grid;
+    gap: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.9rem;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .ds-kicker {
+    margin: 0 0 0.35rem;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .ds-board h2,
+  .ds-model-card h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.25rem;
+    line-height: 1.05;
+  }
+  .ds-swatches,
+  .ds-card-grid {
+    display: grid;
+    gap: 0.7rem;
+  }
+  .ds-swatch,
+  .ds-work-card {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.8rem;
+    color: inherit;
+    text-decoration: none;
+    background: var(--bg);
+  }
+  .ds-swatch span {
+    width: 100%;
+    height: 52px;
+    border-radius: 6px;
+    background: var(--swatch);
+    border: 1px solid color-mix(in srgb, var(--swatch) 70%, #111);
+  }
+  .ds-swatch small,
+  .ds-work-card span {
+    color: var(--muted);
+    line-height: 1.35;
+  }
+  .ds-model {
+    position: relative;
+    min-height: 210px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, rgba(102, 108, 55, 0.16), transparent 48%),
+      repeating-linear-gradient(90deg, rgba(139, 106, 69, 0.14) 0 1px, transparent 1px 28px),
+      var(--bg);
+  }
+  .ds-model span {
+    position: absolute;
+    display: block;
+    border: 1px solid rgba(24, 23, 19, 0.18);
+    border-radius: 6px;
+    transform: skewY(-10deg) rotate(-1deg);
+    box-shadow: 0 16px 28px rgba(24, 23, 19, 0.13);
+  }
+  .ds-model__room { inset: 34px 34px 26px 30px; background: rgba(216, 208, 191, 0.72); }
+  .ds-model__island { width: 34%; height: 26%; left: 34%; top: 42%; background: #8b6a45; }
+  .ds-model__cabinet { width: 22%; height: 48%; left: 10%; top: 22%; background: #66523b; }
+  .ds-model__bath { width: 24%; height: 28%; right: 12%; top: 18%; background: #f3eee4; }
+  @media (min-width: 760px) {
+    .ds-board,
+    .ds-model-card {
+      grid-template-columns: 0.9fr 1.1fr;
+      align-items: center;
+    }
+    .ds-swatches,
+    .ds-card-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
 </style>

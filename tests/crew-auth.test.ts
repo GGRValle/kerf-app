@@ -265,7 +265,7 @@ test('exemptions: install + login load pre-session; real paths and every travers
   for (const p of [
     '/manifest.webmanifest', '/sw.js',
     '/icons/192.png', '/icons/512.png', '/icons/maskable-512.png',
-    '/login', '/auth/login',
+    '/login', '/login/field', '/auth/login',
   ]) {
     assert.equal(isAuthExemptPath(p), true, `${p} must be exempt`);
   }
@@ -276,9 +276,9 @@ test('exemptions: install + login load pre-session; real paths and every travers
   // Traversal / encoding / case tricks must NOT slip past the exact-match gate
   // (keeps #366's narrowing — no prefix widening).
   for (const p of [
-    '/login/../home/owner', '/auth/login/../../home/owner',
+    '/login/../home/owner', '/login/field/../home/owner', '/auth/login/../../home/owner',
     '/icons/../home/field', '/manifest.webmanifest/../home/owner',
-    '/Login', '/LOGIN', '/login/', '/auth/login/x',
+    '/Login', '/LOGIN', '/login/', '/login/field/', '/login/field/x', '/auth/login/x',
   ]) {
     assert.equal(isAuthExemptPath(p), false, `${p} must stay gated`);
   }

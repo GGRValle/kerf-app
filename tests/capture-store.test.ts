@@ -120,9 +120,12 @@ test('camera binds to durable store, renders sync proof, and recovers pending se
   assert.match(camera, /processCaptureUploadQueue\(capturePrincipalSnapshot\(\)/);
 });
 
-test('camera still keeps legacy lead-intake handoff while durable store owns media safety', () => {
+test('camera lead placeholder keeps durable media safety without forcing intake', () => {
   assert.match(camera, /sessionStorage\.setItem\('kerf\.cameraCapture'/);
   assert.match(camera, /capture_store_session_id/);
   assert.match(camera, /capture_store_item_id/);
-  assert.match(camera, /\/clients\/new\?src=camera&capture_kind=/);
+  assert.match(camera, /\/api\/v1\/sales\/deals/);
+  assert.match(camera, /lead_placeholder_created/);
+  assert.match(camera, /await persistSessionDestination\(\{ kind: 'lead', id: 'new' \}\)/);
+  assert.doesNotMatch(camera, /\/clients\/new\?src=camera&capture_kind=/);
 });

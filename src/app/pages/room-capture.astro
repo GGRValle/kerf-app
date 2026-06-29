@@ -73,19 +73,20 @@ const source = Astro.url.searchParams.get('src') ?? '';
 const scanId = Astro.url.searchParams.get('scan_id') ?? '';
 const freshScan =
   Astro.url.searchParams.get('mode') === 'start' ||
-  ((source === 'create' || source === 'camera') && scanId.length === 0);
+  ((source === 'start' || source === 'create' || source === 'camera') && scanId.length === 0);
+const backHref = source === 'start' ? '/start' : source === 'create' ? '/start' : source === 'camera' ? '/camera' : '/';
 ---
 
-<Layout titleKey="f_rc1.title" activeHref={freshScan ? '/camera' : '/field-capture'}>
+<Layout titleKey="f_rc1.title" activeHref="/camera">
   {freshScan ? (
     <article class="f-rc1 f-rc1-start">
-      <a class="room-back" href={source === 'create' ? '/create' : source === 'camera' ? '/camera' : '/'}>‹ Back</a>
+      <a class="room-back" href={backHref}>‹ Back</a>
       <header class="f-rc1-header">
         <div class="crumb">Room scan</div>
         <h1>Start room scan</h1>
         <p class="subtitle">
-          On iPhone, this opens Apple RoomCapture so you can scan the room. In this web preview,
-          native room scanning is not wired yet.
+          On iPhone, this opens the native room scan. This web view shows the same review
+          surface Right Hand uses after measurements come back.
         </p>
       </header>
 
@@ -102,7 +103,7 @@ const freshScan =
         <div class="action-ribbon room-start-actions">
           <button type="button" class="ar-btn primary" disabled aria-disabled="true">
             Open iPhone room scan
-            <span class="ar-preview">Native capture not available in this web build</span>
+            <span class="ar-preview">Use the native app for live LiDAR capture</span>
           </button>
           <a class="ar-btn" href="/room-capture?scan_id=demo_last">View demo scan</a>
         </div>

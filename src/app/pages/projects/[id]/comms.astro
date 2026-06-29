@@ -1,0 +1,339 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getProjectRecordForTenant } from '../../../lib/projectRecords.js';
+import { listAssignmentsForProject, listProjectNotes } from '../../../lib/lane3WorkFixtures.js';
+
+const { context } = createLayoutContext();
+const { id } = Astro.params;
+const { tenantReader } = getApiDeps();
+const project = id ? await getProjectRecordForTenant(tenantReader, context.tenantId, id) : null;
+const notes = project ? listProjectNotes(project.project_id) : [];
+const assignments = project
+  ? listAssignmentsForProject(
+      context.tenantId as 'tenant_ggr' | 'tenant_valle' | 'tenant_hpg',
+      project.project_id,
+    )
+  : [];
+const primaryAssignment = assignments[0];
+
+const channels = project
+  ? [
+      {
+        title: 'Owner / PM thread',
+        meta: 'Approvals, decisions, and what needs a call',
+        state: 'Needs you',
+        tone: 'amber',
+      },
+      {
+        title: 'Crew + subs',
+        meta: primaryAssignment
+          ? `${primaryAssignment.sub_label} · ${primaryAssignment.trade}`
+          : 'Field updates and dispatch notes',
+        state: 'Live',
+        tone: 'green',
+      },
+      {
+        title: 'Client-safe updates',
+        meta: 'Only approved messages and photos leave the company',
+        state: 'Draft',
+        tone: 'blue',
+      },
+      {
+        title: 'Office review',
+        meta: 'Right Hand elevates blockers, risks, and unclear items',
+        state: 'Watched',
+        tone: 'blue',
+      },
+    ]
+  : [];
+
+const threads = project
+  ? notes.length > 0
+    ? notes.map((note) => ({
+        title: note.evidence_label,
+        meta: note.body,
+        state: 'Source',
+        tone: 'blue',
+      }))
+    : [
+        {
+          title: 'No active project messages yet',
+          meta: 'Start with voice, type, or a capture. Right Hand will route the thread.',
+          state: 'Ready',
+          tone: 'green',
+        },
+      ]
+  : [];
+---
+
+<Layout title="Project comms" activeHref="/projects">
+  {project === null ? (
+    <p>Project not found.</p>
+  ) : (
+    <article class="project-comms" data-grammar="canon" data-project-id={project.project_id}>
+      <a class="project-comms__back" href={`/projects/${project.project_id}`}>‹ Back to project</a>
+      <header class="project-comms__hero">
+        <div>
+          <span>Project comms</span>
+          <h1>Messages, decisions, and field signals.</h1>
+          <p>{project.project_name} · {project.client_name}</p>
+        </div>
+        <a href="/right-hand" data-rh-speak>Tell Right Hand</a>
+      </header>
+
+      <section class="project-comms__grid" aria-label="Project communications">
+        <div class="project-comms__main">
+          <section class="project-comms__panel">
+            <div class="project-comms__panel-head">
+              <span>Channels</span>
+              <strong>Company · crew · client</strong>
+            </div>
+            <div class="project-comms-list">
+              {channels.map((channel) => (
+                <article class="project-comms-row">
+                  <div>
+                    <strong>{channel.title}</strong>
+                    <p>{channel.meta}</p>
+                  </div>
+                  <span class={`kg-chip ${channel.tone}`}>{channel.state}</span>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section class="project-comms__panel">
+            <div class="project-comms__panel-head">
+              <span>Recent signal</span>
+              <strong>What Right Hand can use</strong>
+            </div>
+            <div class="project-comms-list">
+              {threads.map((thread) => (
+                <article class="project-comms-row">
+                  <div>
+                    <strong>{thread.title}</strong>
+                    <p>{thread.meta}</p>
+                  </div>
+                  <span class={`kg-chip ${thread.tone}`}>{thread.state}</span>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <aside class="project-comms__side">
+          <section class="project-comms__panel project-comms__decision">
+            <span>Right Hand watch</span>
+            <h2>Important threads get lifted.</h2>
+            <p>Questions, blockers, and client-risk messages should surface to the right person instead of sitting in chat.</p>
+            <a href="/right-hand" data-rh-speak>Ask what needs attention</a>
+          </section>
+
+          <section class="project-comms__panel">
+            <div class="project-comms__panel-head">
+              <span>Next safe move</span>
+              <strong>Talk, capture, or attach</strong>
+            </div>
+            <div class="project-comms-actions">
+              <a href="/camera">Capture proof</a>
+              <a href={`/projects/${project.project_id}/docs`}>Project docs</a>
+              <a href={`/projects/${project.project_id}/daily-log`}>Daily log</a>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </article>
+  )}
+</Layout>
+
+<style>
+  .project-comms {
+    width: min(100%, 1080px);
+    margin: 0 auto;
+    padding: 0.75rem 1rem 6.5rem;
+    color: var(--ink);
+  }
+
+  .project-comms h1,
+  .project-comms h2,
+  .project-comms p {
+    margin: 0;
+    letter-spacing: 0;
+  }
+
+  .project-comms__back,
+  .project-comms__hero a,
+  .project-comms__decision a,
+  .project-comms-actions a {
+    color: inherit;
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  .project-comms__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.15rem;
+    margin-bottom: 0.58rem;
+    padding: 0.36rem 0.64rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+    color: var(--muted);
+    font-size: 0.84rem;
+  }
+
+  .project-comms__hero,
+  .project-comms__panel {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--panel) 96%, var(--bg));
+  }
+
+  .project-comms__hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1rem;
+    padding: 0.95rem;
+    border-color: color-mix(in srgb, var(--ink) 82%, var(--gold));
+    background:
+      radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 31%),
+      linear-gradient(135deg, color-mix(in srgb, var(--ink) 95%, var(--gold)), var(--ink));
+    color: var(--bg);
+  }
+
+  .project-comms__hero span,
+  .project-comms__panel-head span,
+  .project-comms__decision > span {
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .project-comms__hero h1 {
+    margin-top: 0.28rem;
+    color: var(--bg);
+    font-size: 1.85rem;
+    line-height: 1.02;
+  }
+
+  .project-comms__hero p {
+    margin-top: 0.22rem;
+    color: color-mix(in srgb, var(--bg) 72%, var(--gold));
+    font-weight: 760;
+  }
+
+  .project-comms__hero a,
+  .project-comms__decision a,
+  .project-comms-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.3rem;
+    padding: 0.5rem 0.78rem;
+    border: 1px solid color-mix(in srgb, var(--gold) 48%, var(--line));
+    border-radius: 8px;
+    background: var(--gold);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .project-comms__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+    gap: 0.68rem;
+    margin-top: 0.68rem;
+  }
+
+  .project-comms__main,
+  .project-comms__side,
+  .project-comms-list,
+  .project-comms-actions {
+    display: grid;
+    align-content: start;
+    gap: 0.68rem;
+  }
+
+  .project-comms__panel {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.82rem;
+  }
+
+  .project-comms__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .project-comms__panel-head strong {
+    color: var(--muted);
+    font-size: 0.84rem;
+    text-align: right;
+  }
+
+  .project-comms-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    align-items: center;
+    padding: 0.68rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+  }
+
+  .project-comms-row strong {
+    display: block;
+    line-height: 1.15;
+  }
+
+  .project-comms-row p,
+  .project-comms__decision p {
+    margin-top: 0.18rem;
+    color: var(--muted);
+    font-weight: 760;
+    line-height: 1.32;
+  }
+
+  .project-comms__decision {
+    border-color: color-mix(in srgb, var(--gold) 44%, var(--line));
+  }
+
+  .project-comms__decision h2 {
+    font-size: 1.38rem;
+    line-height: 1.08;
+  }
+
+  .project-comms__decision a {
+    justify-self: start;
+  }
+
+  .project-comms-actions a {
+    justify-content: start;
+    background: var(--panel);
+    color: var(--ink);
+  }
+
+  @media (max-width: 820px) {
+    .project-comms {
+      padding-inline: 0.85rem;
+    }
+
+    .project-comms__hero,
+    .project-comms__grid,
+    .project-comms-row {
+      grid-template-columns: 1fr;
+    }
+
+    .project-comms__hero a,
+    .project-comms-row .kg-chip {
+      justify-self: start;
+    }
+  }
+</style>

@@ -1,0 +1,949 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { createLayoutContext } from '../lib/createLayoutContext.js';
+import { getApiDeps } from '../../api/lib/deps.js';
+import { getProjectBrain, listAssignmentsForProject, listProjectSelections } from '../lib/lane3WorkFixtures.js';
+import { listProjectRecordsForTenant } from '../lib/projectRecords.js';
+
+const { context } = createLayoutContext();
+const { tenantReader } = getApiDeps();
+const projects = await listProjectRecordsForTenant(tenantReader, context.tenantId);
+const selectedProjectId = Astro.url.searchParams.get('project_id');
+
+const pinPositions = [
+  { x: 24, y: 38 },
+  { x: 58, y: 54 },
+  { x: 78, y: 28 },
+  { x: 38, y: 70 },
+] as const;
+
+function toneForProject(phase: string, hasCrew: boolean): 'green' | 'amber' | 'blue' {
+  if (hasCrew) return 'green';
+  if (phase === 'closeout') return 'blue';
+  return 'amber';
+}
+
+function formatDate(iso: string | undefined): string {
+  if (!iso) return 'Unscheduled';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(iso));
+}
+
+const projectRows = projects.map((project, index) => {
+  const assignments = listAssignmentsForProject(
+    context.tenantId as 'tenant_ggr' | 'tenant_valle' | 'tenant_hpg',
+    project.project_id,
+  );
+  const selections = listProjectSelections(project.project_id);
+  const brain = getProjectBrain(project.project_id);
+  const openSelections = selections.filter((selection) => selection.lifecycle !== 'approved');
+  const position = pinPositions[index % pinPositions.length];
+  return {
+    project,
+    assignments,
+    brain,
+    openSelections,
+    openWork: project.work_orders.filter((workOrder) => workOrder.status !== 'complete').length,
+    doneWork: project.work_orders.filter((workOrder) => workOrder.status === 'complete').length,
+    href: `/projects/${project.project_id}`,
+    status: assignments.length > 0 ? 'Crew assigned' : project.phase === 'closeout' ? 'Punch list' : 'Needs dispatch',
+    tone: toneForProject(project.phase, assignments.length > 0),
+    x: position.x,
+    y: position.y,
+  };
+});
+
+const activeRow =
+  projectRows.find((row) => row.project.project_id === selectedProjectId) ??
+  projectRows.find((row) => row.assignments.length > 0) ??
+  projectRows[0] ??
+  null;
+const activeProject = activeRow?.project ?? null;
+const activeAssignment = activeRow?.assignments[0] ?? null;
+const blocker = activeRow?.openSelections[0] ?? null;
+const crewAssignments = projectRows.flatMap((row) =>
+  row.assignments.map((assignment) => ({
+    ...assignment,
+    projectName: row.project.project_name,
+    projectHref: `/projects/${row.project.project_id}`,
+  })),
+);
+
+const phaseRows = activeProject
+  ? [
+      {
+        group: 'Complete',
+        state: 'done',
+        title: 'Site protection + demo',
+        meta: `${activeProject.project_name} · proof filed`,
+        chip: 'Synced',
+      },
+      {
+        group: 'Now',
+        state: 'now',
+        title: activeAssignment?.trade ? `${activeAssignment.trade} crew window` : activeRow?.brain?.next_action ?? 'Current field phase',
+        meta: activeAssignment
+          ? `${formatDate(activeAssignment.start_at)} – ${formatDate(activeAssignment.end_at)} · ${activeAssignment.location_label}`
+          : 'Right Hand is holding the current job context.',
+        chip: activeAssignment?.wo_sent_at ? 'Sent' : 'This week',
+      },
+      {
+        group: 'Next',
+        state: blocker ? 'blocked' : 'future',
+        title: blocker ? `${blocker.label} blocks the next phase` : 'Next field phase',
+        meta: blocker ? 'Selection needs your call before the schedule moves.' : 'No schedule blockers detected.',
+        chip: blocker ? 'Needs you' : 'Clear',
+      },
+      {
+        group: 'Later',
+        state: 'future',
+        title: 'Finish, punch, and closeout',
+        meta: `${activeRow?.openWork ?? 0} open tasks · ${activeRow?.doneWork ?? 0} complete`,
+        chip: 'Planned',
+      },
+    ]
+  : [];
+
+const crew = [
+  {
+    name: 'Ana Morales',
+    role: 'Lead carpenter',
+    initials: 'AM',
+    job: projectRows[0]?.project.project_name ?? 'Active job',
+    href: projectRows[0]?.href ?? '/projects',
+    status: 'Clocked in · rough carpentry',
+    action: 'Needs cabinet blocking answer',
+    tone: 'amber',
+  },
+  {
+    name: 'Marco Silva',
+    role: 'Field tech',
+    initials: 'MS',
+    job: projectRows[1]?.project.project_name ?? projectRows[0]?.project.project_name ?? 'Active job',
+    href: projectRows[1]?.href ?? projectRows[0]?.href ?? '/projects',
+    status: 'On route · punch photos due',
+    action: 'Ask for final proof set',
+    tone: 'blue',
+  },
+  {
+    name: 'Rigo Perez',
+    role: 'Superintendent',
+    initials: 'RP',
+    job: projectRows[0]?.project.project_name ?? 'Active job',
+    href: projectRows[0]?.href ?? '/projects',
+    status: 'Available · 22 min away',
+    action: 'Dispatch for intake photos',
+    tone: 'green',
+  },
+] as const;
+
+const primaryProjectRow = activeRow ?? projectRows[0];
+const secondaryProjectRow = projectRows.find((row) => row.project.project_id !== primaryProjectRow?.project.project_id) ?? primaryProjectRow;
+const comms = [
+  {
+    source: 'Crew channel',
+    title: `${primaryProjectRow?.project.project_name ?? 'Active job'} question needs a PM call`,
+    detail: 'Right Hand marked the message as project-impacting and kept the job context attached.',
+    project: primaryProjectRow?.project.client_name.split(',')[0] ?? 'Job',
+    tone: 'amber',
+    href: primaryProjectRow?.href ?? '/projects',
+  },
+  {
+    source: 'Elevated by Right Hand',
+    title: `${secondaryProjectRow?.project.project_name ?? 'Active job'} needs proof before closeout`,
+    detail: 'Crew can add photos from Capture or upload from the phone library before this clears.',
+    project: secondaryProjectRow?.project.client_name.split(',')[0] ?? 'Proof',
+    tone: secondaryProjectRow?.tone ?? 'amber',
+    href: secondaryProjectRow?.href ?? '/projects',
+  },
+  {
+    source: 'Slack connection',
+    title: 'Slack can mirror field channels here',
+    detail: 'When connected, project channels stay searchable while Right Hand elevates the messages that matter.',
+    project: 'Setup',
+    tone: 'blue',
+    href: '/connections',
+  },
+] as const;
+
+const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${projectRows.length} jobs moving now`;
+---
+
+<Layout
+  title="Work"
+  activeHref="/work"
+  surfaceContext={{
+    surface: 'field_capture',
+    phase: 'work_ops',
+  }}
+>
+  <article class="work-ops" data-surface="work_ops">
+    <header class="work-hero">
+      <div>
+        <span class="work-eyebrow">Work</span>
+        <h1>Jobs, crews, and blockers.</h1>
+        <p>One place for the map, schedule, crew dispatch, and field messages that need a call.</p>
+      </div>
+      <div class="work-mode" aria-label="Work views">
+        <span class="active">Map</span>
+        <span>Timeline</span>
+        <span>Crew</span>
+      </div>
+    </header>
+
+    <section class="work-map" aria-label="Active job map">
+      <div class="work-map__copy">
+        <span class="work-eyebrow">Active map</span>
+        <h2>{jobCountLabel}</h2>
+        <p>Tap a job to open its tasks, proof, schedule, docs, and messages.</p>
+      </div>
+      <div class="work-map__canvas" aria-hidden="true">
+        <span class="work-road work-road--one"></span>
+        <span class="work-road work-road--two"></span>
+        <span class="work-road work-road--three"></span>
+        {projectRows.map((row) => (
+          <a
+            class={`work-pin work-pin--${row.tone}`}
+            href={row.href}
+            style={`--x:${row.x}%; --y:${row.y}%;`}
+            aria-label={`${row.project.project_name} · ${row.status}`}
+          >
+            <span></span>
+          </a>
+        ))}
+      </div>
+      <div class="work-map__jobs">
+        {projectRows.map((row) => (
+          <a class="work-job-row" href={row.href}>
+            <span class={`kg-chip ${row.tone}`}>{row.status}</span>
+            <strong>{row.project.project_name}</strong>
+            <small>{row.project.address_line}</small>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    {activeProject && (
+      <section class="work-decision" aria-label="Work decision">
+        <div>
+          <span>Needs you</span>
+          <h2>{blocker ? `${blocker.label} is holding the next phase.` : 'No blocker is holding today’s work.'}</h2>
+          <p>
+            {blocker
+              ? 'Right Hand has the project context and can hold a reschedule until you approve it.'
+              : 'Crew assignments and field proof are lined up. Nothing moves to a client or money without approval.'}
+          </p>
+        </div>
+        <div class="work-decision__actions">
+          <a href={blocker ? `/projects/${activeProject.project_id}/selections` : `/projects/${activeProject.project_id}`}>{blocker ? 'Review selection' : 'Review job'}</a>
+          <a class="primary" href={`/projects/${activeProject.project_id}`}>Open project</a>
+        </div>
+      </section>
+    )}
+
+    <section class="work-command" aria-label="Tell Right Hand about work">
+      <a href="/right-hand" data-rh-speak>
+        <span class="work-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>Tell Right Hand what changed in the field…</span>
+      </a>
+      <a href="/camera">Add proof</a>
+    </section>
+
+    <section class="work-grid" aria-label="Work area">
+      <div class="work-main">
+        <section class="work-panel">
+          <div class="work-panel__head">
+            <span>Timeline</span>
+            <strong>{activeProject?.project_name ?? 'No active project'}</strong>
+          </div>
+          <div class="work-timeline">
+            {phaseRows.map((phase, index) => (
+              <article class={`work-phase work-phase--${phase.state}`}>
+                <div class="work-phase__rail">
+                  <span>{phase.state === 'done' ? '✓' : phase.state === 'now' ? '' : index + 1}</span>
+                  {index < phaseRows.length - 1 && <i></i>}
+                </div>
+                <div class="work-phase__body">
+                  <small>{phase.group}</small>
+                  <strong>{phase.title}</strong>
+                  <p>{phase.meta}</p>
+                  <span class={`work-chip work-chip--${phase.state}`}>{phase.chip}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section class="work-panel">
+          <div class="work-panel__head">
+            <span>Crew dispatch</span>
+            <strong>People and next moves</strong>
+          </div>
+          <div class="crew-grid">
+            {crew.map((person) => (
+              <article class="crew-card">
+                <div class="crew-card__top">
+                  <span class="crew-avatar" aria-label={`${person.name} headshot`}>
+                    <span>{person.initials}</span>
+                  </span>
+                  <div>
+                    <h3>{person.name}</h3>
+                    <p>{person.role}</p>
+                  </div>
+                  <span class={`kg-chip ${person.tone}`}>{person.status.split(' · ')[0]}</span>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Assigned</dt>
+                    <dd>{person.job}</dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{person.status}</dd>
+                  </div>
+                  <div>
+                    <dt>Next move</dt>
+                    <dd>{person.action}</dd>
+                  </div>
+                </dl>
+                <div class="crew-card__actions">
+                  <a href="/camera">Capture</a>
+                  <a href={person.href}>Job</a>
+                  <button type="button">Message</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <aside class="work-side">
+        <section class="work-panel">
+          <div class="work-panel__head">
+            <span>Crews today</span>
+            <strong>{crewAssignments.length} assignments</strong>
+          </div>
+          <div class="assignment-list">
+            {crewAssignments.map((assignment) => (
+              <a class="assignment-row" href={assignment.projectHref}>
+                <span>{assignment.sub_label.slice(0, 2).toUpperCase()}</span>
+                <div>
+                  <strong>{assignment.sub_label}</strong>
+                  <p>{assignment.trade} · {assignment.projectName}</p>
+                  <small>{formatDate(assignment.start_at)} · {assignment.location_label}</small>
+                </div>
+              </a>
+            ))}
+            {crewAssignments.length === 0 && <p class="work-empty">No crew assignments yet.</p>}
+          </div>
+        </section>
+
+        <section class="work-panel">
+          <div class="work-panel__head">
+            <span>Comms</span>
+            <strong>What needs attention</strong>
+          </div>
+          <div class="comms-list">
+            {comms.map((item) => (
+              <article class="comm-card">
+                <span class={`kg-chip ${item.tone}`}>{item.project}</span>
+                <div>
+                  <p>{item.source}</p>
+                  <h3>{item.title}</h3>
+                  <span>{item.detail}</span>
+                </div>
+                <a href={item.href}>Review</a>
+              </article>
+            ))}
+          </div>
+        </section>
+      </aside>
+    </section>
+  </article>
+</Layout>
+
+<style>
+  .work-ops {
+    width: min(100%, 1120px);
+    margin: 0 auto;
+    padding: 0.75rem 1rem 6.5rem;
+    color: var(--ink);
+  }
+
+  .work-ops h1,
+  .work-ops h2,
+  .work-ops h3,
+  .work-ops p {
+    margin: 0;
+    letter-spacing: 0;
+  }
+
+  .work-hero,
+  .work-map,
+  .work-decision,
+  .work-command,
+  .work-panel {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--panel) 96%, var(--bg));
+  }
+
+  .work-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1rem;
+    padding: 0.95rem;
+    border-color: color-mix(in srgb, var(--ink) 82%, var(--gold));
+    background:
+      radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--gold) 24%, transparent), transparent 30%),
+      linear-gradient(135deg, color-mix(in srgb, var(--ink) 95%, var(--gold)), var(--ink));
+    color: var(--bg);
+  }
+
+  .work-eyebrow,
+  .work-panel__head span,
+  .work-decision span {
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .work-hero h1 {
+    margin-top: 0.28rem;
+    color: var(--bg);
+    font-size: 1.9rem;
+    line-height: 1.02;
+  }
+
+  .work-hero p {
+    margin-top: 0.22rem;
+    color: color-mix(in srgb, var(--bg) 72%, var(--gold));
+    font-weight: 760;
+  }
+
+  .work-mode {
+    display: flex;
+    gap: 0.32rem;
+    padding: 0.28rem;
+    border: 1px solid color-mix(in srgb, var(--bg) 16%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--bg) 8%, transparent);
+  }
+
+  .work-mode span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: 0.3rem 0.58rem;
+    border-radius: 7px;
+    color: color-mix(in srgb, var(--bg) 78%, var(--gold));
+    font-size: 0.8rem;
+    font-weight: 900;
+  }
+
+  .work-mode .active {
+    background: var(--gold);
+    color: var(--ink);
+  }
+
+  .work-ops .kg-chip {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 1.55rem;
+    padding: 0.12rem 0.48rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .work-ops .kg-chip.green {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--green) 16%, var(--panel));
+    color: var(--green);
+  }
+
+  .work-ops .kg-chip.amber {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--gold) 17%, var(--panel));
+    color: color-mix(in srgb, var(--gold) 72%, var(--ink));
+  }
+
+  .work-ops .kg-chip.blue {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--blue, var(--gold)) 13%, var(--panel));
+    color: color-mix(in srgb, var(--blue, var(--gold)) 72%, var(--ink));
+  }
+
+  .work-map {
+    display: grid;
+    grid-template-columns: minmax(15rem, 0.7fr) minmax(19rem, 1fr) minmax(16rem, 0.8fr);
+    gap: 0.7rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .work-map__copy {
+    align-self: center;
+  }
+
+  .work-map h2 {
+    font-size: 1.35rem;
+  }
+
+  .work-map p,
+  .work-decision p,
+  .work-empty {
+    color: var(--muted);
+    font-weight: 760;
+    line-height: 1.35;
+  }
+
+  .work-map__canvas {
+    position: relative;
+    min-height: 14rem;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--line) 78%, var(--gold));
+    border-radius: 10px;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--gold) 8%, transparent) 1px, transparent 1px),
+      linear-gradient(0deg, color-mix(in srgb, var(--gold) 8%, transparent) 1px, transparent 1px),
+      color-mix(in srgb, var(--ink) 92%, var(--gold));
+    background-size: 32px 32px;
+  }
+
+  .work-road {
+    position: absolute;
+    height: 2px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 42%, transparent);
+    transform-origin: left center;
+  }
+
+  .work-road--one { top: 32%; left: 8%; width: 86%; transform: rotate(10deg); }
+  .work-road--two { top: 62%; left: 3%; width: 92%; transform: rotate(-8deg); }
+  .work-road--three { top: 14%; left: 38%; width: 56%; transform: rotate(67deg); }
+
+  .work-pin {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    display: grid;
+    place-items: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 999px;
+    background: var(--gold);
+    box-shadow: 0 0 0 0.45rem color-mix(in srgb, var(--gold) 18%, transparent);
+    transform: translate(-50%, -50%);
+  }
+
+  .work-pin span {
+    width: 0.46rem;
+    height: 0.46rem;
+    border-radius: 999px;
+    background: var(--ink);
+  }
+
+  .work-pin--green {
+    background: var(--green);
+    box-shadow: 0 0 0 0.45rem color-mix(in srgb, var(--green) 20%, transparent);
+  }
+
+  .work-pin--blue {
+    background: color-mix(in srgb, var(--blue, var(--gold)) 78%, var(--green));
+  }
+
+  .work-map__jobs,
+  .assignment-list,
+  .comms-list,
+  .crew-grid {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .work-job-row,
+  .assignment-row,
+  .comm-card,
+  .crew-card {
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+  }
+
+  .work-job-row,
+  .assignment-row {
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.6rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .work-job-row strong,
+  .assignment-row strong {
+    line-height: 1.05;
+  }
+
+  .work-job-row small,
+  .assignment-row small,
+  .assignment-row p,
+  .comm-card span,
+  .crew-card p,
+  .crew-card dd {
+    color: var(--muted);
+  }
+
+  .work-decision {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.75rem;
+    padding: 0.78rem;
+  }
+
+  .work-decision h2 {
+    margin-top: 0.15rem;
+    font-size: 1.18rem;
+    line-height: 1.08;
+  }
+
+  .work-decision__actions,
+  .crew-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
+  }
+
+  .work-decision__actions a,
+  .crew-card__actions a,
+  .crew-card__actions button,
+  .work-command a:last-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.2rem;
+    padding: 0.38rem 0.72rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .work-decision__actions .primary {
+    border-color: color-mix(in srgb, var(--gold) 48%, var(--line));
+    background: var(--gold);
+  }
+
+  .work-command {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 8rem;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.42rem;
+  }
+
+  .work-command a:first-child {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    gap: 0.58rem;
+    min-height: 2.55rem;
+    padding: 0.58rem 0.72rem;
+    border-radius: 8px;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 38%),
+      color-mix(in srgb, var(--ink) 92%, var(--gold));
+    color: var(--bg);
+    font-weight: 850;
+    text-decoration: none;
+  }
+
+  .work-command a:first-child span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .work-wave {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.14rem;
+    width: 1.15rem;
+    flex: 0 0 auto;
+  }
+
+  .work-wave i {
+    display: block;
+    width: 0.14rem;
+    border-radius: 999px;
+    background: var(--gold);
+  }
+
+  .work-wave i:nth-child(1) { height: 0.42rem; }
+  .work-wave i:nth-child(2) { height: 0.88rem; }
+  .work-wave i:nth-child(3) { height: 0.64rem; }
+  .work-wave i:nth-child(4) { height: 1rem; }
+
+  .work-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.55fr);
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .work-main,
+  .work-side {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+  }
+
+  .work-panel {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.78rem;
+  }
+
+  .work-panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .work-panel__head strong {
+    text-align: right;
+  }
+
+  .work-timeline {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .work-phase {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .work-phase__rail {
+    display: grid;
+    justify-items: center;
+    grid-template-rows: 1.45rem 1fr;
+  }
+
+  .work-phase__rail span {
+    display: grid;
+    place-items: center;
+    width: 1.42rem;
+    height: 1.42rem;
+    border-radius: 999px;
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 0.72rem;
+    font-weight: 950;
+  }
+
+  .work-phase--done .work-phase__rail span,
+  .work-chip--done,
+  .work-chip--clear {
+    background: var(--green);
+    color: var(--bg);
+  }
+
+  .work-phase--now .work-phase__rail span {
+    box-shadow: inset 0 0 0 0.35rem var(--ink);
+  }
+
+  .work-phase__rail i {
+    width: 2px;
+    min-height: 2.65rem;
+    background: var(--line);
+  }
+
+  .work-phase__body {
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.48rem 0.58rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+  }
+
+  .work-phase__body small {
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .work-phase__body p {
+    color: var(--muted);
+    font-weight: 760;
+  }
+
+  .work-chip {
+    width: fit-content;
+    min-height: 1.55rem;
+    padding: 0.16rem 0.48rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--gold) 18%, var(--panel));
+    color: var(--ink);
+    font-size: 0.74rem;
+    font-weight: 900;
+  }
+
+  .work-chip--blocked {
+    background: color-mix(in srgb, var(--red, #c74e3f) 14%, var(--panel));
+  }
+
+  .crew-card {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.72rem;
+  }
+
+  .crew-card__top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.58rem;
+  }
+
+  .crew-avatar {
+    display: grid;
+    place-items: center;
+    width: 2.58rem;
+    height: 2.58rem;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--gold) 42%, var(--panel)), transparent 28%),
+      linear-gradient(145deg, color-mix(in srgb, var(--ink) 86%, var(--gold)), var(--ink));
+    color: var(--bg);
+    font-weight: 950;
+  }
+
+  .crew-card dl {
+    display: grid;
+    gap: 0.42rem;
+    margin: 0;
+  }
+
+  .crew-card dl div {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .crew-card dt {
+    color: var(--gold);
+    font-size: 0.68rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .crew-card dd {
+    margin: 0;
+    font-weight: 780;
+  }
+
+  .assignment-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .assignment-row > span {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--gold) 17%, var(--panel));
+    color: var(--ink);
+    font-weight: 950;
+  }
+
+  .comm-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.58rem;
+    align-items: center;
+    padding: 0.62rem;
+  }
+
+  .comm-card p {
+    color: var(--gold);
+    font-size: 0.68rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .comm-card h3 {
+    font-size: 1rem;
+    line-height: 1.08;
+  }
+
+  .comm-card a {
+    color: var(--gold);
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  @media (max-width: 880px) {
+    .work-ops {
+      padding-inline: 0.72rem;
+    }
+
+    .work-hero,
+    .work-map,
+    .work-decision,
+    .work-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .work-mode {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .work-command {
+      grid-template-columns: minmax(0, 1fr) 6.4rem;
+    }
+
+    .work-panel__head,
+    .work-decision__actions {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .work-panel__head strong {
+      text-align: left;
+    }
+
+    .crew-card__top,
+    .comm-card {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .crew-card__top > .kg-chip,
+    .comm-card > a {
+      grid-column: 2;
+      justify-self: start;
+    }
+  }
+</style>

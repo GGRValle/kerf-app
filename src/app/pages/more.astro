@@ -3,62 +3,73 @@ import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
 import RhSummary from '../components/RhSummary.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
-import { moreDomainLinksForRole } from '../../shell/moreDomainNav.js';
-import type { ShellRoleRoot } from '../../contracts/lane1/domains.js';
 
-const { context, t } = createLayoutContext();
-const domainLinks = moreDomainLinksForRole(context.roleRoot as ShellRoleRoot);
+const { context } = createLayoutContext();
+const isFieldRole = context.roleRoot === 'field_hand' || context.roleRoot === 'sub';
+
+const ownerWorkAreas = [
+  { href: '/start', title: 'Start', detail: 'Capture, new lead, change order, room scan.' },
+  { href: '/design/proj_wegrzyn_kitchen', title: 'Design', detail: 'Selections, visual choices, owner questions.' },
+  { href: '/sales', title: 'Sales', detail: 'Leads, estimates, proposals, signatures.' },
+  { href: '/projects', title: 'Project', detail: 'Jobs, scope, dailies, files.' },
+  { href: '/schedule', title: 'Crew', detail: 'Crew map, dispatch, job timing, blockers.' },
+  { href: '/money', title: 'Money', detail: 'Invoices, bills, margin, exports.' },
+  { href: '/client-success', title: 'Success', detail: 'Closeout, warranty, referrals.' },
+] as const;
+
+const fieldWorkAreas = [
+  { href: '/start', title: 'Start', detail: 'Capture, note, work order update.' },
+  { href: '/schedule', title: 'Schedule', detail: 'Today, assignments, proof, start windows.' },
+] as const;
+
+const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
 
 const quickLinks = [
-  {
-    href: '/schedule',
-    titleKey: 'shell.domain.schedule' as const,
-    detailKey: 'shell.more.schedule_detail' as const,
-  },
-  {
-    href: '/reports',
-    titleKey: 'nav.reports' as const,
-    detailKey: 'shell.more.reports_detail' as const,
-  },
-  {
-    href: '/settings',
-    titleKey: 'nav.settings' as const,
-    detailKey: 'shell.more.settings_detail' as const,
-  },
-].filter((item) => domainLinks.some((link) => link.href === item.href));
+  { href: '/settings', title: 'Settings', detail: 'Company preferences, people, permissions.' },
+  { href: '/connections', title: 'Sources', detail: 'What Right Hand can use with proof.' },
+  { href: '/kb-ingestion', title: 'Knowledge', detail: 'Staged costs and learning review.' },
+] as const;
 ---
 
 <Layout titleKey="shell.more.title" activeHref="/more">
   <section class="more-page" aria-labelledby="more-title">
     <RhSummary
-      headline={t('shell.more.title')}
-      detail={t('shell.more.lead')}
+      headline="More"
+      detail="Open the work area you need. The job spine stays here; home stays focused on decisions."
       tone="green"
     />
 
-    <Card eyebrow={t('shell.more.domains_eyebrow')} title={t('shell.more.domains_title')}>
-      <p class="more-page__copy">{t('shell.more.domains_copy')}</p>
-      <nav class="more-page__nav" aria-label={t('shell.more.domains_aria')}>
-        {domainLinks.map((link) => (
-          <a href={link.href}>
-            <span>{t(link.labelKey)}</span>
-          </a>
-        ))}
-      </nav>
-    </Card>
-
-    {quickLinks.length > 0 ? (
-      <Card eyebrow={t('shell.more.quick_eyebrow')} title={t('shell.more.quick_title')}>
-        <div class="more-page__actions">
-          {quickLinks.map((item) => (
-            <a class="more-page__action" href={item.href}>
-              <span>{t(item.titleKey)}</span>
-              <small>{t(item.detailKey)}</small>
+    <section class="more-page__shell" aria-label="Work areas">
+      <aside class="more-page__sidebar" aria-labelledby="more-domains-title">
+        <div class="more-page__sidebar-head">
+          <p>From capture to completion</p>
+          <h2 id="more-domains-title">Work areas</h2>
+        </div>
+        <nav class="more-page__nav" aria-label="Job spine work areas">
+          {workAreas.map((area) => (
+            <a href={area.href}>
+              <span>{area.title}</span>
+              <small>{area.detail}</small>
             </a>
           ))}
-        </div>
-      </Card>
-    ) : null}
+        </nav>
+      </aside>
+
+      <div class="more-page__main">
+        {quickLinks.length > 0 ? (
+          <Card eyebrow="Common paths" title="Settings and sources">
+            <div class="more-page__actions">
+              {quickLinks.map((item) => (
+                <a class="more-page__action" href={item.href}>
+                  <span>{item.title}</span>
+                  <small>{item.detail}</small>
+                </a>
+              ))}
+            </div>
+          </Card>
+        ) : null}
+      </div>
+    </section>
   </section>
 </Layout>
 
@@ -68,10 +79,42 @@ const quickLinks = [
     gap: 0.85rem;
   }
 
-  .more-page__copy {
-    margin: 0 0 0.85rem;
+  .more-page__shell {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .more-page__sidebar {
+    display: grid;
+    gap: 0.72rem;
+    padding: 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    box-shadow: 0 12px 28px rgba(24, 23, 19, 0.06);
+  }
+
+  .more-page__sidebar-head {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .more-page__sidebar-head p,
+  .more-page__sidebar-head h2 {
+    margin: 0;
+  }
+
+  .more-page__sidebar-head p {
     color: var(--text-muted, #5c6670);
-    line-height: 1.45;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .more-page__sidebar-head h2 {
+    font-size: 1.18rem;
+    line-height: 1.05;
   }
 
   .more-page__actions {
@@ -79,19 +122,25 @@ const quickLinks = [
     gap: 0.65rem;
   }
 
-  .more-page__action,
   .more-page__nav a {
     border: 1px solid var(--border, #d8dee6);
-    border-radius: 10px;
+    border-radius: 8px;
     color: inherit;
     text-decoration: none;
     background: var(--surface, #fff);
+    box-shadow: 0 10px 24px rgba(24, 23, 19, 0.06);
   }
 
   .more-page__action {
     display: grid;
     gap: 0.15rem;
     padding: 0.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 8px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--surface, #fff);
+    box-shadow: 0 10px 24px rgba(24, 23, 19, 0.06);
   }
 
   .more-page__action:hover,
@@ -125,5 +174,17 @@ const quickLinks = [
 
   .more-page__nav a::after {
     content: none;
+  }
+
+  @media (min-width: 860px) {
+    .more-page__shell {
+      grid-template-columns: minmax(15rem, 0.42fr) minmax(0, 0.58fr);
+      align-items: start;
+    }
+
+    .more-page__sidebar {
+      position: sticky;
+      top: 1rem;
+    }
   }
 </style>

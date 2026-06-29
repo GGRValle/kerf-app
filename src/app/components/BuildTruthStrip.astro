@@ -1,0 +1,71 @@
+---
+export interface Props {
+  state: 'live' | 'partial' | 'mock';
+  label: string;
+  wireframes?: readonly string[];
+  note?: string;
+}
+
+const { state, label, wireframes = [], note } = Astro.props;
+const stateLabel = state === 'live' ? 'Live' : state === 'partial' ? 'Being wired' : 'Planned';
+---
+
+<aside class="build-truth" data-build-state={state} aria-label="Build truth-state">
+  <span class="build-truth__state">{stateLabel}</span>
+  <strong>{label}</strong>
+  {wireframes.length > 0 ? <span class="build-truth__faces">{wireframes.join(' · ')}</span> : null}
+  {note ? <small>{note}</small> : null}
+</aside>
+
+<style>
+  .build-truth {
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.72rem 0.8rem;
+    border: 1px solid var(--kerf-border, #d9d4c7);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--kerf-surface, #fff) 88%, transparent);
+    color: var(--kerf-text, #181713);
+    box-shadow: 0 10px 24px rgba(24, 23, 19, 0.06);
+  }
+
+  .build-truth__state {
+    justify-self: start;
+    border: 1px solid var(--kerf-border, #d9d4c7);
+    border-radius: 999px;
+    padding: 0.2rem 0.46rem;
+    color: var(--kerf-text, #181713);
+    background: var(--kerf-surface-2, #f1efe7);
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .build-truth[data-build-state='live'] .build-truth__state {
+    border-color: color-mix(in srgb, var(--field-green, #0f7a53) 35%, var(--kerf-border, #d9d4c7));
+    background: color-mix(in srgb, var(--field-green, #0f7a53) 12%, var(--kerf-surface, #fff));
+  }
+
+  .build-truth[data-build-state='partial'] .build-truth__state {
+    border-color: color-mix(in srgb, var(--kerf-amber, #e5b93f) 42%, var(--kerf-border, #d9d4c7));
+    background: color-mix(in srgb, var(--kerf-amber, #e5b93f) 16%, var(--kerf-surface, #fff));
+  }
+
+  .build-truth[data-build-state='mock'] .build-truth__state {
+    border-color: color-mix(in srgb, var(--kerf-red, #b84831) 32%, var(--kerf-border, #d9d4c7));
+    background: color-mix(in srgb, var(--kerf-red, #b84831) 10%, var(--kerf-surface, #fff));
+  }
+
+  .build-truth strong {
+    font-size: 0.94rem;
+    line-height: 1.15;
+  }
+
+  .build-truth__faces,
+  .build-truth small {
+    color: var(--kerf-text-dim, #5d5a50);
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+</style>

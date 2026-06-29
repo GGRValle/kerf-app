@@ -1,0 +1,342 @@
+---
+import { ROLE_ROOT_COOKIE } from '../lib/roleSession.js';
+
+export interface Props {
+  authEnabled: boolean;
+  signInAvailable: boolean;
+  hasError: boolean;
+  nextParam: string;
+  mode?: 'right-hand' | 'field-hand';
+}
+
+const {
+  authEnabled,
+  signInAvailable,
+  hasError,
+  nextParam,
+  mode = 'right-hand',
+} = Astro.props;
+
+const isField = mode === 'field-hand';
+const formNext = nextParam || (isField ? '/home/field' : '');
+---
+
+<main
+  class:list={['login-shell', { 'login-shell--field': isField }]}
+  data-login-mode={mode}
+  data-auth-enabled={authEnabled ? 'true' : 'false'}
+>
+  <section class="login-brand" aria-label="Right Hand">
+    <p class="login-brand__eyebrow">Right Hand</p>
+    <h1>{isField ? 'Field Hand' : 'From capture to completion.'}</h1>
+    <p>
+      {isField
+        ? 'One clean surface for today: work order, proof, daily log, and help from Right Hand.'
+        : 'Sign in, then tell Right Hand where you want to go or what needs to happen next.'}
+    </p>
+  </section>
+
+  <section class="login-card" aria-labelledby="login-title">
+    <div class="login-card__top">
+      <span class="login-card__mark" aria-hidden="true">{isField ? 'FH' : 'RH'}</span>
+      <div>
+        <p class="login-card__kicker">{isField ? 'Crew doorway' : 'Operator doorway'}</p>
+        <h2 id="login-title">{isField ? 'Sign in to Field Hand' : 'Sign in to Right Hand'}</h2>
+      </div>
+    </div>
+
+    {signInAvailable ? (
+      <form class="login-form" method="POST" action="/auth/login">
+        {hasError ? (
+          <p class="login-error" role="alert">That sign-in did not work. Check the password and try again.</p>
+        ) : null}
+        <input type="hidden" name="next" value={formNext} />
+        {isField ? (
+          <input type="hidden" name="username" value="field" autocomplete="username" />
+        ) : (
+          <label class="login-field">
+            <span>Username</span>
+            <input
+              type="text"
+              name="username"
+              autocomplete="username"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              required
+            />
+          </label>
+        )}
+        <label class="login-field">
+          <span>{isField ? 'Field password' : 'Password'}</span>
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit">{isField ? 'Open Field Hand' : 'Open Right Hand'}</button>
+      </form>
+    ) : authEnabled ? (
+      <p class="login-error" role="alert">
+        Sign-in is not available because this deploy is missing a tenant-bound login binding.
+      </p>
+    ) : isField ? (
+      <form class="login-form" id="field-preview-form">
+        <p class="login-note">Local preview mode. Opens the Field Hand role without production credentials.</p>
+        <button type="submit">Open Field Hand preview</button>
+      </form>
+    ) : (
+      <form class="login-form" id="owner-preview-form">
+        <p class="login-note">
+          Local preview mode. Opens the owner view without production credentials.
+          In production, role and permissions come from the company account, not a login choice.
+        </p>
+        <button type="submit">Open Right Hand preview</button>
+      </form>
+    )}
+
+    <div class="login-card__links">
+      {isField ? (
+        <a href="/login">Owner / office sign-in</a>
+      ) : (
+        <a href="/login/field">Field Hand sign-in</a>
+      )}
+      <span>Tenant scoped</span>
+      <span>Approval gated</span>
+    </div>
+  </section>
+</main>
+
+<script define:vars={{ cookieName: ROLE_ROOT_COOKIE }}>
+  const ownerPreview = document.getElementById('owner-preview-form');
+  ownerPreview?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    document.cookie = `${cookieName}=owner; path=/; max-age=2592000; SameSite=Lax`;
+    window.location.href = '/home/owner';
+  });
+
+  const fieldPreview = document.getElementById('field-preview-form');
+  fieldPreview?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    document.cookie = `${cookieName}=field_hand; path=/; max-age=2592000; SameSite=Lax`;
+    window.location.href = '/home/field';
+  });
+</script>
+
+<style is:global>
+  body {
+    margin: 0;
+    min-width: 320px;
+    background:
+      linear-gradient(rgba(24, 23, 19, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(24, 23, 19, 0.035) 1px, transparent 1px),
+      #f7f3ea;
+    background-size: 24px 24px;
+    color: #181713;
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+  }
+</style>
+
+<style>
+  .login-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+    align-items: center;
+    gap: clamp(2rem, 7vw, 6rem);
+    padding: clamp(1.25rem, 4vw, 4rem);
+    box-sizing: border-box;
+  }
+
+  .login-brand {
+    max-width: 42rem;
+  }
+
+  .login-brand__eyebrow,
+  .login-card__kicker {
+    margin: 0 0 0.75rem;
+    color: #b98b19;
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .login-brand h1 {
+    margin: 0;
+    max-width: 13ch;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(3rem, 7vw, 6.5rem);
+    line-height: 0.92;
+    letter-spacing: 0;
+  }
+
+  .login-brand p {
+    max-width: 34rem;
+    margin: 1.2rem 0 0;
+    color: #6f675c;
+    font-size: 1.08rem;
+    line-height: 1.55;
+  }
+
+  .login-card {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1.2rem;
+    border: 1px solid rgba(48, 43, 35, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 252, 245, 0.92);
+    box-shadow: 0 24px 70px rgba(48, 43, 35, 0.18);
+    backdrop-filter: blur(14px);
+  }
+
+  .login-card__top {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 1.15rem;
+  }
+
+  .login-card__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 8px;
+    background: #221b12;
+    color: #f2b833;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+  }
+
+  .login-shell--field .login-card__mark {
+    color: #54c08a;
+  }
+
+  .login-card__kicker {
+    margin-bottom: 0.1rem;
+    color: #7f766a;
+  }
+
+  .login-card h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    letter-spacing: 0;
+  }
+
+  .login-form {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .login-field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .login-field span,
+  .login-form legend {
+    color: #7f766a;
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .login-field input {
+    min-height: 3rem;
+    box-sizing: border-box;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid rgba(48, 43, 35, 0.2);
+    border-radius: 8px;
+    background: #fffef9;
+    color: #181713;
+    font-size: 1rem;
+  }
+
+  .login-field input:focus {
+    outline: 3px solid rgba(242, 184, 51, 0.24);
+    border-color: #d99e18;
+  }
+
+  .login-form button {
+    min-height: 3.1rem;
+    border: 0;
+    border-radius: 8px;
+    background: #f2b833;
+    color: #181713;
+    font-size: 1rem;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .login-shell--field .login-form button {
+    background: #20180f;
+    color: #fff7e8;
+  }
+
+  .login-note {
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid rgba(242, 184, 51, 0.34);
+    border-radius: 8px;
+    background: rgba(242, 184, 51, 0.08);
+    color: #675b4b;
+    line-height: 1.45;
+  }
+
+  .login-error {
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid rgba(188, 69, 58, 0.38);
+    border-radius: 8px;
+    background: rgba(188, 69, 58, 0.08);
+    color: #5b1f18;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+
+  .login-card__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 1rem;
+  }
+
+  .login-card__links a,
+  .login-card__links span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.65rem;
+    padding: 0 0.62rem;
+    border: 1px solid rgba(48, 43, 35, 0.16);
+    border-radius: 999px;
+    background: #fffef9;
+    color: #5c5449;
+    font-size: 0.78rem;
+    font-weight: 850;
+    text-decoration: none;
+  }
+
+  .login-card__links a {
+    color: #181713;
+    border-color: rgba(242, 184, 51, 0.45);
+  }
+
+  @media (max-width: 760px) {
+    .login-shell {
+      grid-template-columns: 1fr;
+      align-content: center;
+      gap: 1.2rem;
+      padding: 1rem;
+    }
+
+    .login-brand h1 {
+      max-width: 11ch;
+      font-size: 2.7rem;
+    }
+
+    .login-brand p {
+      font-size: 1rem;
+    }
+  }
+</style>

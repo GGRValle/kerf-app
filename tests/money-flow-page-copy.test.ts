@@ -120,19 +120,25 @@ test('M3: estimate page keeps the gate/blocked state visible and translated', ()
 // internal language from user-facing UI"). The money fields on the wire are
 // unchanged — the operator just enters dollars + percent. ──
 
-test('M3: estimate add-line form speaks dollars + percent, not raw cents/bps', () => {
+test('M3: estimate add-line form speaks dollars, percent, and real units', () => {
   const src = pageText(PAGES.estimate);
   // No developer units in the visible form.
   assert.ok(!/Unit cost \(cents\)/.test(src), 'no raw "cents" unit in the add form');
   assert.ok(!/Markup bps/.test(src), 'no raw "bps" jargon in the add form');
   // Operator-facing units instead.
-  assert.match(src, /placeholder="Unit cost \(\$\)"/);
+  assert.match(src, />Unit cost</);
+  assert.match(src, /placeholder="\$0\.00"/);
+  assert.match(src, /Dollar cost per selected unit/);
+  assert.match(src, />Unit</);
+  assert.match(src, /What the quantity counts/);
+  assert.match(src, /HR · hour/);
   assert.match(src, /placeholder="Markup %"/);
   // Conversion to the stored integer cents / basis points happens client-side
   // before POST, so the API contract (and every money path) is unchanged.
+  assert.match(src, /moneyFromInput/);
   assert.match(src, /Math\.round\(unitDollars \* 100\)/);
   assert.match(src, /markup_bps = Math\.round/);
-  assert.match(src, /unit_cost_cents, markup_bps/);
+  assert.match(src, /uom, unit_cost_cents, markup_bps/);
 });
 
 test('M3: estimate line-type options are human-cased, not raw lowercase enums', () => {

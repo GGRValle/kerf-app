@@ -45,7 +45,7 @@ export const MONEY_AR_ROWS: readonly MoneyQueueRow[] = [
     amount_cents: 18_500_00,
     chip: 'Due soon',
     chip_tone: 'amber',
-    href: null,
+    href: '/money/invoices/inv-weg-02',
     attention: true,
   },
   {
@@ -55,7 +55,7 @@ export const MONEY_AR_ROWS: readonly MoneyQueueRow[] = [
     amount_cents: 12_750_00,
     chip: 'Late',
     chip_tone: 'red',
-    href: null,
+    href: '/money/invoices/inv-weg-01',
     attention: true,
   },
   {
@@ -65,7 +65,7 @@ export const MONEY_AR_ROWS: readonly MoneyQueueRow[] = [
     amount_cents: 9_200_00,
     chip: 'On track',
     chip_tone: 'green',
-    href: null,
+    href: '/money/invoices/inv-weg-04',
   },
   {
     id: 'ar_4',

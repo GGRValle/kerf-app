@@ -25,6 +25,12 @@ const counts: Record<string, number> = {
   templates: store.templates.length,
 };
 const selectionItems = store.items.filter((i) => i.collection === 'selections');
+const collectionNotes: Record<string, string> = {
+  cost: 'Cost rows feed estimate suggestions after review. Right Hand keeps source and unit basis visible.',
+  vendors: 'Vendor records support quotes, work orders, and purchasing handoffs.',
+  assemblies: 'Assemblies bundle catalog items into repeatable scopes.',
+  templates: 'Templates bundle assemblies into a job archetype.',
+};
 const ladder = store.templates.map((tpl) => ({
   template: tpl,
   assemblies: templateAssemblies(tpl, store.assemblies).map((asm) => ({
@@ -46,7 +52,6 @@ const ladder = store.templates.map((tpl) => ({
       {KB_COLLECTIONS.map((col) => (
         <button class="lib-tab" data-tab={col} aria-selected={col === 'selections' ? 'true' : 'false'}>
           {kbCollectionLabel(col)} <span class="lib-count">{counts[col] ?? 0}</span>
-          {functional.has(col) ? null : <span class="lib-soon">soon</span>}
         </button>
       ))}
     </nav>
@@ -89,19 +94,19 @@ const ladder = store.templates.map((tpl) => ({
       ))}
     </section>
 
-    <!-- Other collections: cost + vendors stubbed honestly; assemblies/templates shown via ladder -->
     {KB_COLLECTIONS.filter((c) => c !== 'selections').map((col) => (
       <section class="lib-panel" data-panel={col} hidden>
         {functional.has(col) ? (
-          <div class="lib-stub-card lib-ok">
+          <div class="lib-collection-card">
             <h2>{kbCollectionLabel(col)} ({counts[col] ?? 0})</h2>
-            <p>{col === 'assemblies' ? 'Assemblies bundle catalog items.' : 'Templates bundle assemblies into a job archetype.'} See the ladder under Selections.</p>
+            <p>{collectionNotes[col]}</p>
+            <a href="#selections" class="lib-card-link" data-tab-link="selections">See the ladder under Selections</a>
           </div>
         ) : (
-          <div class="lib-stub-card">
+          <div class="lib-collection-card">
             <h2>{kbCollectionLabel(col)} ({counts[col] ?? 0})</h2>
-            <p>Not built yet — this collection has data ({counts[col] ?? 0} rows) but its dedicated editor is a placeholder. No fake controls.</p>
-            <p class="lib-meta">Guardrail held: the schema can hold a flat-rate price book + rebate catalog (modeled on the catalog item), no vertical UI.</p>
+            <p>{collectionNotes[col]}</p>
+            <a href="/kb-ingestion" class="lib-card-link">Review staged cost proof</a>
           </div>
         )}
       </section>
@@ -120,6 +125,12 @@ const ladder = store.templates.map((tpl) => ({
   }
   document.querySelectorAll('.lib-tab').forEach((b) =>
     b.addEventListener('click', () => showTab(b.getAttribute('data-tab') ?? 'selections')),
+  );
+  document.querySelectorAll('[data-tab-link]').forEach((link) =>
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      showTab(link.getAttribute('data-tab-link') ?? 'selections');
+    }),
   );
 
   document.getElementById('imp-go')?.addEventListener('click', async () => {
@@ -147,7 +158,6 @@ const ladder = store.templates.map((tpl) => ({
   .lib-tab { padding: 0.4rem 0.7rem; border: 1px solid var(--border, #2a3140); border-radius: 999px; background: var(--bg, #0a0d11); color: var(--text, #e8edf4); cursor: pointer; font: inherit; font-size: 0.85rem; }
   .lib-tab[aria-selected='true'] { background: var(--field-green, #2f8f5b); border-color: transparent; color: #fff; }
   .lib-count { color: var(--text-muted, #98a1b3); }
-  .lib-soon { font-size: 0.62rem; margin-left: 0.25rem; opacity: 0.6; }
   .lib-import { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 0.75rem; background: var(--surface, #11151c); margin-bottom: 1rem; }
   .lib-import h2 { font-size: 0.95rem; margin: 0 0 0.5rem; }
   .lib-import-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
@@ -162,6 +172,7 @@ const ladder = store.templates.map((tpl) => ({
   .lib-asm { margin: 0.4rem 0 0.4rem 0.8rem; padding-left: 0.6rem; border-left: 2px solid var(--border, #2a3140); }
   .lib-asm-head { font-weight: 600; font-size: 0.9rem; }
   .lib-leaf { margin-left: 0.8rem; font-size: 0.85rem; color: var(--text, #cdd6e2); }
-  .lib-stub-card { border: 1px dashed var(--border, #2a3140); border-radius: 12px; padding: 1.1rem; color: var(--text-muted, #98a1b3); background: var(--surface, #11151c); }
-  .lib-stub-card.lib-ok { border-style: solid; }
+  .lib-collection-card { border: 1px solid var(--border, #2a3140); border-radius: 12px; padding: 1.1rem; color: var(--text-muted, #98a1b3); background: var(--surface, #11151c); }
+  .lib-collection-card h2 { color: var(--text, #e8edf4); }
+  .lib-card-link { display: inline-block; margin-top: 0.4rem; color: var(--field-green, #2f8f5b); font-weight: 800; text-decoration: none; }
 </style>

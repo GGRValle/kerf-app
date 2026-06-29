@@ -18,6 +18,7 @@ import type { ProjectAuditEntry } from '../src/project/projectAuditProjection.js
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DAILY_LOG_PAGE = path.join(ROOT, 'src/app/pages/projects/[id]/daily-log.astro');
+const DAILY_SUMMARY_PAGE = path.join(ROOT, 'src/app/pages/projects/[id]/daily.astro');
 
 function captured(
   entry_id: string,
@@ -117,4 +118,18 @@ test('F-DL1 daily-log page is one flat canon-grammar surface', () => {
 test('daily_log tab redirect preserves canonical route', () => {
   const tabPage = readFileSync(path.join(ROOT, 'src/app/pages/projects/[id]/[tab].astro'), 'utf8');
   assert.match(tabPage, /tab === 'daily_log'[\s\S]*\/daily-log/);
+});
+
+test('project daily summary groups reports, photos, videos, people, and Right Hand summary', () => {
+  const src = readFileSync(DAILY_SUMMARY_PAGE, 'utf8');
+  assert.match(src, /Daily progress at a glance/);
+  assert.match(src, /Daily reports/);
+  assert.match(src, /Jobsite photos/);
+  assert.match(src, /Videos/);
+  assert.match(src, /Who took them/);
+  assert.match(src, /Right Hand summary/);
+  assert.match(src, /Captured by/);
+  assert.match(src, /daily-report-packages/);
+  assert.match(src, /daily-video-strip/);
+  assert.match(src, /daily-people-strip/);
 });

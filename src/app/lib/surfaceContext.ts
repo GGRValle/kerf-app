@@ -6,6 +6,8 @@ export type SurfaceName =
   | 'proposal'
   | 'invoice'
   | 'money'
+  | 'connections'
+  | 'client_success'
   | 'field_capture'
   | 'daily_log';
 
@@ -90,6 +92,8 @@ function isSurfaceName(value: unknown): value is SurfaceName {
     value === 'proposal' ||
     value === 'invoice' ||
     value === 'money' ||
+    value === 'connections' ||
+    value === 'client_success' ||
     value === 'field_capture' ||
     value === 'daily_log'
   );

@@ -22,6 +22,116 @@ const ROLE_LABEL_KEYS = {
   field_hand: 'roleRoot.field_hand',
   sub: 'roleRoot.sub',
 } as const;
+
+type RoleHomeMode = 'pm' | 'admin_ops' | 'team_ops' | 'estimator' | 'sub';
+type RoleHomeAction = { label: string; href: string; detail: string };
+type RoleHomeMetric = { label: string; value: string };
+type RoleHomeConfig = {
+  eyebrow: string;
+  title: string;
+  lead: string;
+  oneThing: string;
+  proof: string;
+  actions: readonly RoleHomeAction[];
+  metrics: readonly RoleHomeMetric[];
+};
+
+const mode: RoleHomeMode =
+  wireframe.startsWith('F-ES') ? 'estimator' :
+  wireframe.startsWith('F-TO') ? 'team_ops' :
+  roleRoot === 'sub' ? 'sub' :
+  roleRoot === 'admin_ops' ? 'admin_ops' :
+  'pm';
+
+const ROLE_HOME_CONFIG: Record<RoleHomeMode, RoleHomeConfig> = {
+  pm: {
+    eyebrow: 'Project Hand',
+    title: 'Run the jobs that need you.',
+    lead: 'Right Hand is watching schedule, field notes, and money gates. You get the job that needs a call, not a dashboard.',
+    oneThing: 'Wegrzyn kitchen needs a 1 PM crew sync before cabinets move.',
+    proof: 'Pulled from today’s field note, cabinet delivery photo, and the schedule hold on Hector’s crew.',
+    actions: [
+      { label: 'Open Wegrzyn job', href: '/projects/proj_wegrzyn_kitchen', detail: 'Daily log, status, work orders, and money.' },
+      { label: 'Review office cards', href: '/relay', detail: 'Field captures waiting on office follow-up.' },
+      { label: 'Check schedule', href: '/schedule', detail: 'Tomorrow’s crew and delivery conflicts.' },
+    ],
+    metrics: [
+      { label: 'Needs you', value: '3' },
+      { label: 'Crew holds', value: '1' },
+      { label: 'Logs ready', value: '4' },
+    ],
+  },
+  admin_ops: {
+    eyebrow: 'Admin / Ops',
+    title: 'Keep the office clean.',
+    lead: 'Right Hand gathers paperwork, money exceptions, and missing approvals so office work stays tied to the job.',
+    oneThing: 'Progress invoice is ready; final lien release is the only hold.',
+    proof: 'Matched signed proposal, deposit receipt, open AR, and closeout checklist.',
+    actions: [
+      { label: 'Open Money', href: '/money', detail: 'AR, AP, allowances, bookkeeping.' },
+      { label: 'Review settings', href: '/settings', detail: 'Company preferences and approved connections.' },
+      { label: 'Open reports', href: '/reports', detail: 'Audit packets and job proof.' },
+    ],
+    metrics: [
+      { label: 'Open AR', value: '$51k' },
+      { label: 'Clean exports', value: '6' },
+      { label: 'Missing docs', value: '1' },
+    ],
+  },
+  team_ops: {
+    eyebrow: 'Team Ops',
+    title: 'Crews, subs, and coverage.',
+    lead: 'Right Hand turns job needs into the people view: who is assigned, who is blocked, and what proof is missing.',
+    oneThing: 'Moore tile sub needs a work order before tomorrow’s start.',
+    proof: 'Built from the schedule, sub compliance list, and Wegrzyn cabinet sequence.',
+    actions: [
+      { label: 'Open subs', href: '/team-ops/subs', detail: 'Coverage, COI, and work-order readiness.' },
+      { label: 'Open schedule', href: '/schedule', detail: 'Crew map and start windows.' },
+      { label: 'Send work order', href: '/sub/portal/s/demo-token/a/wo-wegrzyn-01', detail: 'Sub view with limited permissions.' },
+    ],
+    metrics: [
+      { label: 'Crews active', value: '5' },
+      { label: 'COI holds', value: '1' },
+      { label: 'Ready WOs', value: '4' },
+    ],
+  },
+  estimator: {
+    eyebrow: 'Estimate Hand',
+    title: 'Price what can be won.',
+    lead: 'Right Hand brings design choices, field proof, and cost memory into the estimate without burying you in forms.',
+    oneThing: 'Patel ADU needs framing and finish pricing before the owner call.',
+    proof: 'Pulled from captured photos, Selections library, and prior ADU labor bands.',
+    actions: [
+      { label: 'Open sales', href: '/sales', detail: 'Deals sorted by next estimate move.' },
+      { label: 'Build estimate', href: '/estimate/proj_wegrzyn_kitchen', detail: 'Line items, approvals, and proposal handoff.' },
+      { label: 'Open library', href: '/library', detail: 'Cost memory and selection standards.' },
+    ],
+    metrics: [
+      { label: 'Bids due', value: '4' },
+      { label: 'Lines drafted', value: '38' },
+      { label: 'Owner edits', value: '-12%' },
+    ],
+  },
+  sub: {
+    eyebrow: 'Sub Hand',
+    title: 'Only what you need for the work.',
+    lead: 'Limited access: assignment, job proof, schedule, and the updates the contractor needs back from you.',
+    oneThing: 'Wegrzyn cabinet wall is ready for install after 8 AM.',
+    proof: 'Includes approved scope, access note, marked photo, and work-order checklist.',
+    actions: [
+      { label: 'Open assignment', href: '/sub/portal/s/demo-token/a/wo-wegrzyn-01', detail: 'Scope, arrival, proof, and closeout.' },
+      { label: 'See job', href: '/sub/portal/s/demo-token', detail: 'Sub portal with limited job access.' },
+      { label: 'Ask Right Hand', href: '/right-hand', detail: 'Clarify scope before you roll.' },
+    ],
+    metrics: [
+      { label: 'Today', value: '1 job' },
+      { label: 'Proof needed', value: '2 photos' },
+      { label: 'Pay status', value: 'clear' },
+    ],
+  },
+};
+
+const roleHome = ROLE_HOME_CONFIG[mode];
 ---
 
 <section class="role-home" data-wireframe={wireframe} data-role-root={roleRoot}>
@@ -38,14 +148,39 @@ const ROLE_LABEL_KEYS = {
   ) : roleRoot === 'field_hand' ? (
     <FieldHandHomeSurface />
   ) : (
-    <div class="role-home__stub">
-      <strong>{t('platform.home.stub_title')}</strong>
-      <p>{t('platform.home.stub_body')}</p>
-      <ul class="role-home__links">
-        <li><a href="/field-capture">{t('nav.field_capture')}</a></li>
-        <li><a href="/projects">{t('nav.projects')}</a></li>
-        <li><a href="/on-me">{t('platform.on_me.nav')}</a></li>
-      </ul>
+    <div class="operation-home" data-home-mode={mode}>
+      <header class="operation-home__head">
+        <span>{roleHome.eyebrow}</span>
+        <h1>{roleHome.title}</h1>
+        <p>{roleHome.lead}</p>
+      </header>
+
+      <section class="operation-home__decision" aria-label="Next decision">
+        <div>
+          <span class="operation-home__label">Needs you</span>
+          <strong>{roleHome.oneThing}</strong>
+          <p>{roleHome.proof}</p>
+        </div>
+        <a href={roleHome.actions[0].href}>Open</a>
+      </section>
+
+      <section class="operation-home__metrics" aria-label="Right Hand work">
+        {roleHome.metrics.map((metric) => (
+          <div>
+            <span>{metric.label}</span>
+            <strong>{metric.value}</strong>
+          </div>
+        ))}
+      </section>
+
+      <nav class="operation-home__actions" aria-label="Role work">
+        {roleHome.actions.map((action) => (
+          <a href={action.href} data-rh-speak={action.href === '/right-hand' ? true : undefined}>
+            <span>{action.label}</span>
+            <small>{action.detail}</small>
+          </a>
+        ))}
+      </nav>
     </div>
   )}
 </section>
@@ -62,19 +197,113 @@ const ROLE_LABEL_KEYS = {
   .role-home__wireframe-ref {
     color: var(--kerf-amber, #f5b544);
   }
-  .role-home__stub {
-    border: 1px dashed var(--border);
-    border-radius: 12px;
+  .operation-home {
+    display: grid;
+    gap: 0.85rem;
+    padding-bottom: 5.5rem;
+  }
+  .operation-home__head {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .operation-home__head span,
+  .operation-home__label,
+  .operation-home__metrics span {
+    color: var(--text-muted, #5c6670);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .operation-home__head h1 {
+    margin: 0;
+    max-width: 12ch;
+    font-size: clamp(2rem, 10vw, 3.6rem);
+    line-height: 0.96;
+    letter-spacing: 0;
+  }
+  .operation-home__head p,
+  .operation-home__decision p,
+  .operation-home__actions small {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.42;
+  }
+  .operation-home__decision,
+  .operation-home__metrics > div,
+  .operation-home__actions a {
+    border: 1px solid var(--kerf-border, #d8d1bf);
+    border-radius: 8px;
+    background: var(--kerf-surface, #fffaf0);
+    box-shadow: 0 14px 34px rgba(24, 23, 19, 0.08);
+  }
+  .operation-home__decision {
+    display: grid;
+    gap: 0.8rem;
     padding: 1rem;
-    color: var(--text-muted);
   }
-  .role-home__stub strong {
+  .operation-home__decision strong {
     display: block;
-    color: var(--text);
-    margin-bottom: 0.35rem;
+    margin: 0.25rem 0 0.35rem;
+    font-size: 1.2rem;
+    line-height: 1.08;
   }
-  .role-home__links {
-    margin: 0.75rem 0 0;
-    padding-left: 1.1rem;
+  .operation-home__decision a,
+  .operation-home__actions a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 900;
+  }
+  .operation-home__decision > a {
+    justify-self: start;
+    min-height: 42px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0 1rem;
+    border-radius: 8px;
+    background: var(--kerf-amber, #e5b93f);
+    color: #181713;
+  }
+  .operation-home__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+  .operation-home__metrics > div {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.8rem;
+  }
+  .operation-home__metrics strong {
+    font-size: 1.08rem;
+    line-height: 1;
+  }
+  .operation-home__actions {
+    display: grid;
+    gap: 0.65rem;
+  }
+  .operation-home__actions a {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.85rem;
+  }
+  @media (min-width: 760px) {
+    .operation-home {
+      grid-template-columns: minmax(260px, 0.86fr) minmax(360px, 1.14fr);
+      align-items: start;
+    }
+    .operation-home__head {
+      grid-row: span 3;
+      position: sticky;
+      top: 6rem;
+    }
+    .operation-home__decision {
+      grid-template-columns: 1fr auto;
+      align-items: end;
+    }
+    .operation-home__actions {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 </style>

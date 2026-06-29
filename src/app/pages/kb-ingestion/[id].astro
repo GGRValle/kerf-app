@@ -10,6 +10,10 @@ const batchId = id ?? 'cost-kb-preview';
 <Layout titleKey="kb.ingestion.detail.title" activeHref="/kb-ingestion">
   <section class="kb-detail" aria-labelledby="kb-detail-title">
     <p class="kb-detail__crumb"><a href="/kb-ingestion">Back to cost knowledge review</a></p>
+    <header class="kb-detail__head">
+      <p>Cost batch</p>
+      <h1 id="kb-detail-title">Check before promotion.</h1>
+    </header>
 
     <Card eyebrow="Ingestion batch" title={batchId}>
       <div class="kb-detail__status">
@@ -19,8 +23,8 @@ const batchId = id ?? 'cost-kb-preview';
 
       <dl class="kb-detail__facts">
         <div>
-          <dt>What this represents</dt>
-          <dd>A future batch of cost data that must pass validation before promotion.</dd>
+          <dt>What this is</dt>
+          <dd>A staged batch of cost data that must pass validation before it can affect estimates.</dd>
         </div>
         <div>
           <dt>Current state</dt>
@@ -48,6 +52,27 @@ const batchId = id ?? 'cost-kb-preview';
   .kb-detail__crumb {
     margin: 0;
     font-size: 0.85rem;
+  }
+
+  .kb-detail__head {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .kb-detail__head p {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .kb-detail__head h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 9vw, 3rem);
+    line-height: 0.98;
+    letter-spacing: 0;
   }
 
   .kb-detail__crumb a,

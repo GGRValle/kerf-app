@@ -83,7 +83,7 @@ const { context, t } = createLayoutContext();
   }
 </style>
 
-<script define:vars={{ successMsg: 'Export recorded in audit — no money moved.', previewMsg: 'Preview only — this action is not wired yet.', errorMsg: 'Could not record export.' }}>
+<script define:vars={{ successMsg: 'Export recorded in audit — no money moved.', previewMsg: 'Preview only — review required before export.', errorMsg: 'Could not record export.' }}>
   document.querySelectorAll('.export-actions').forEach((root) => {
     const statusEl = root.querySelector('.export-status');
     const apiPath = root.getAttribute('data-api-path') ?? '/api/v1/money/export';

@@ -10,6 +10,11 @@ const settingLinks = [
     detail: 'Personal profile, language, and notifications — separate from Admin.',
   },
   {
+    href: '/settings/people',
+    title: 'People & access',
+    detail: 'Add users, assign type and permissions, employee data, and pay profile.',
+  },
+  {
     href: '/connections',
     title: 'Connections',
     detail: 'QuickBooks, calendar, email, SMS, RoomPlan, Bluebeam, DocuSign, storage.',
@@ -18,6 +23,11 @@ const settingLinks = [
     href: '/role-routing',
     title: 'Role routing',
     detail: 'Preview how owner, PM, admin, and field views are separated.',
+  },
+  {
+    href: '/wireframes',
+    title: 'Build map',
+    detail: 'Internal route and launch-state checklist.',
   },
   {
     href: '/clients',
@@ -36,11 +46,11 @@ const settingLinks = [
   <section class="settings-page" aria-labelledby="settings-title">
     <RhSummary
       headline="Settings"
-      detail="Settings are safe-read for this phone pass. Use these links to inspect tenant and role behavior that is already visible."
+      detail="Settings are read-only in this phone pass. Use these links to check company preferences and role views."
       tone="green"
     />
 
-    <Card eyebrow="Current tenant" title="GGR internal test">
+    <Card eyebrow="Current company" title="GGR internal test">
       <dl class="settings-page__facts">
         <div>
           <dt>Voice</dt>
@@ -52,7 +62,7 @@ const settingLinks = [
         </div>
         <div>
           <dt>Status</dt>
-          <dd>Preview only. No tenant setting is changed from this page.</dd>
+          <dd>Preview only. No company setting is changed from this page.</dd>
         </div>
       </dl>
     </Card>
@@ -119,7 +129,7 @@ const settingLinks = [
     gap: 0.15rem;
     padding: 0.85rem;
     border: 1px solid var(--border, #d8dee6);
-    border-radius: 10px;
+    border-radius: 8px;
     color: inherit;
     text-decoration: none;
     background: var(--surface, #fff);

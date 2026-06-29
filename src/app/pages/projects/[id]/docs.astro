@@ -1,0 +1,333 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getProjectRecordForTenant } from '../../../lib/projectRecords.js';
+
+const { context } = createLayoutContext();
+const { id } = Astro.params;
+const { tenantReader } = getApiDeps();
+const project = id ? await getProjectRecordForTenant(tenantReader, context.tenantId, id) : null;
+
+const signedDocs = project
+  ? [
+      {
+        title: 'Signed estimate',
+        meta: 'Client-facing estimate · receipt-backed',
+        state: 'Signed',
+        tone: 'green',
+      },
+      {
+        title: 'Contract package',
+        meta: 'Agreement, payment terms, scope attachments',
+        state: 'Filed',
+        tone: 'green',
+      },
+      {
+        title: 'Change order log',
+        meta: 'Approved changes and pending drafts',
+        state: 'Needs review',
+        tone: 'amber',
+      },
+    ]
+  : [];
+const workingDocs = project
+  ? [
+      {
+        title: 'Plans',
+        meta: 'Drawing set, details, revisions',
+        state: 'Source',
+        tone: 'blue',
+      },
+      {
+        title: 'Specs',
+        meta: 'Selections, installation notes, product data',
+        state: 'Draft',
+        tone: 'amber',
+      },
+      {
+        title: 'Permits',
+        meta: 'City permit set and inspection references',
+        state: 'Filed',
+        tone: 'green',
+      },
+      {
+        title: 'Sub packets',
+        meta: 'Trade scopes, insurance, work-order attachments',
+        state: 'Ready',
+        tone: 'blue',
+      },
+    ]
+  : [];
+---
+
+<Layout title="Project docs" activeHref="/projects">
+  {project === null ? (
+    <p>Project not found.</p>
+  ) : (
+    <article class="project-docs" data-grammar="canon" data-project-id={project.project_id}>
+      <a class="project-docs__back" href={`/projects/${project.project_id}`}>‹ Back to project</a>
+      <header class="project-docs__hero">
+        <div>
+          <span>Project docs</span>
+          <h1>Contracts, plans, specs, and proof.</h1>
+          <p>{project.project_name} · {project.client_name}</p>
+        </div>
+        <a href="/right-hand" data-rh-speak>Ask Right Hand</a>
+      </header>
+
+      <section class="project-docs__grid" aria-label="Project documents">
+        <div class="project-docs__main">
+          <section class="project-docs__panel">
+            <div class="project-docs__panel-head">
+              <span>Signed / client-facing</span>
+              <strong>Receipt-backed</strong>
+            </div>
+            <div class="project-doc-list">
+              {signedDocs.map((doc) => (
+                <article class="project-doc-row">
+                  <div>
+                    <strong>{doc.title}</strong>
+                    <p>{doc.meta}</p>
+                  </div>
+                  <span class={`kg-chip ${doc.tone}`}>{doc.state}</span>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section class="project-docs__panel">
+            <div class="project-docs__panel-head">
+              <span>Working documents</span>
+              <strong>Plans · specs · permits</strong>
+            </div>
+            <div class="project-doc-list">
+              {workingDocs.map((doc) => (
+                <article class="project-doc-row">
+                  <div>
+                    <strong>{doc.title}</strong>
+                    <p>{doc.meta}</p>
+                  </div>
+                  <span class={`kg-chip ${doc.tone}`}>{doc.state}</span>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <aside class="project-docs__side">
+          <section class="project-docs__panel">
+            <div class="project-docs__panel-head">
+              <span>Truth state</span>
+              <strong>What can be trusted</strong>
+            </div>
+            <div class="project-doc-proof">
+              <p><strong>Signed</strong> requires a real signature artifact.</p>
+              <p><strong>Filed</strong> requires a durable write.</p>
+              <p><strong>Sent</strong> requires a send receipt.</p>
+            </div>
+          </section>
+
+          <section class="project-docs__panel">
+            <div class="project-docs__panel-head">
+              <span>Next safe move</span>
+              <strong>Ask, attach, or upload</strong>
+            </div>
+            <div class="project-doc-actions">
+              <a href="/camera">Capture doc</a>
+              <a href={`/projects/${project.project_id}/comms`}>Comms</a>
+              <a href={`/projects/${project.project_id}/portal-preview`}>Client view</a>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </article>
+  )}
+</Layout>
+
+<style>
+  .project-docs {
+    width: min(100%, 1080px);
+    margin: 0 auto;
+    padding: 0.75rem 1rem 6.5rem;
+    color: var(--ink);
+  }
+
+  .project-docs h1,
+  .project-docs p {
+    margin: 0;
+    letter-spacing: 0;
+  }
+
+  .project-docs__back,
+  .project-docs__hero a,
+  .project-doc-actions a {
+    color: inherit;
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  .project-docs__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.15rem;
+    margin-bottom: 0.58rem;
+    padding: 0.36rem 0.64rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+    color: var(--muted);
+    font-size: 0.84rem;
+  }
+
+  .project-docs__hero,
+  .project-docs__panel {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--panel) 96%, var(--bg));
+  }
+
+  .project-docs__hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1rem;
+    padding: 0.95rem;
+    border-color: color-mix(in srgb, var(--ink) 82%, var(--gold));
+    background:
+      radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--gold) 24%, transparent), transparent 30%),
+      linear-gradient(135deg, color-mix(in srgb, var(--ink) 95%, var(--gold)), var(--ink));
+    color: var(--bg);
+  }
+
+  .project-docs__hero span,
+  .project-docs__panel-head span {
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .project-docs__hero h1 {
+    margin-top: 0.28rem;
+    color: var(--bg);
+    font-size: 1.85rem;
+    line-height: 1.02;
+  }
+
+  .project-docs__hero p {
+    margin-top: 0.22rem;
+    color: color-mix(in srgb, var(--bg) 72%, var(--gold));
+    font-weight: 760;
+  }
+
+  .project-docs__hero a,
+  .project-doc-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.3rem;
+    padding: 0.5rem 0.78rem;
+    border: 1px solid color-mix(in srgb, var(--gold) 48%, var(--line));
+    border-radius: 8px;
+    background: var(--gold);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .project-docs__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+    gap: 0.68rem;
+    margin-top: 0.68rem;
+  }
+
+  .project-docs__main,
+  .project-docs__side {
+    display: grid;
+    align-content: start;
+    gap: 0.68rem;
+  }
+
+  .project-docs__panel {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.82rem;
+  }
+
+  .project-docs__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .project-docs__panel-head strong {
+    color: var(--muted);
+    font-size: 0.84rem;
+    text-align: right;
+  }
+
+  .project-doc-list,
+  .project-doc-proof,
+  .project-doc-actions {
+    display: grid;
+    gap: 0.48rem;
+  }
+
+  .project-doc-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    align-items: center;
+    padding: 0.68rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+  }
+
+  .project-doc-row strong {
+    display: block;
+    line-height: 1.15;
+  }
+
+  .project-doc-row p,
+  .project-doc-proof p {
+    margin-top: 0.16rem;
+    color: var(--muted);
+    font-weight: 760;
+    line-height: 1.32;
+  }
+
+  .project-doc-proof p {
+    margin-top: 0;
+    padding: 0.62rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+  }
+
+  .project-doc-actions a {
+    justify-content: start;
+    background: var(--panel);
+    color: var(--ink);
+  }
+
+  @media (max-width: 820px) {
+    .project-docs {
+      padding-inline: 0.85rem;
+    }
+
+    .project-docs__hero,
+    .project-docs__grid,
+    .project-doc-row {
+      grid-template-columns: 1fr;
+    }
+
+    .project-docs__hero a,
+    .project-doc-row .kg-chip {
+      justify-self: start;
+    }
+  }
+</style>

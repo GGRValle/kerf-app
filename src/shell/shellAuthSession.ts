@@ -86,10 +86,12 @@ export function isAuthExemptPath(pathname: string): boolean {
     pathname === '/icons/192.png' ||
     pathname === '/icons/512.png' ||
     pathname === '/icons/maskable-512.png' ||
-    // The crew login surface itself must be reachable before a session exists
-    // (Goal B PR-2). Exact paths only — never a prefix — so /login/../home/owner
-    // and friends stay gated, same discipline as the PWA assets above.
+    // The login surfaces themselves must be reachable before a session exists
+    // (Goal B PR-2 + Field Hand doorway). Exact paths only — never a prefix —
+    // so /login/../home/owner and friends stay gated, same discipline as the
+    // PWA assets above.
     pathname === '/login' ||
+    pathname === '/login/field' ||
     pathname === '/auth/login'
   );
 }

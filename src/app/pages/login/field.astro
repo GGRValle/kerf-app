@@ -1,0 +1,39 @@
+---
+import LoginSurface from '../../components/LoginSurface.astro';
+import { roleHomePath } from '../../lib/roleSession.js';
+import {
+  isBasicAuthEnabled,
+  deployTenantId,
+  platformSessionFromShellCookie,
+  safeNextPath,
+} from '../../../shell/shellAuthSession.js';
+
+const authEnabled = isBasicAuthEnabled();
+const signInAvailable = authEnabled && deployTenantId() !== null;
+
+const existing = platformSessionFromShellCookie(Astro.request.headers.get('cookie') ?? undefined);
+if (existing !== null) {
+  return Astro.redirect(safeNextPath(Astro.url.searchParams.get('next')) ?? roleHomePath(existing.roleRoot));
+}
+
+const nextParam = safeNextPath(Astro.url.searchParams.get('next')) ?? '/home/field';
+const hasError = Astro.url.searchParams.get('error') !== null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in to Field Hand</title>
+  </head>
+  <body>
+    <LoginSurface
+      mode="field-hand"
+      authEnabled={authEnabled}
+      signInAvailable={signInAvailable}
+      hasError={hasError}
+      nextParam={nextParam}
+    />
+  </body>
+</html>

@@ -4,35 +4,65 @@ import Card from '../../components/Card.astro';
 import Chip from '../../components/Chip.astro';
 
 const { id } = Astro.params;
-const packetId = id ?? 'sample-decision-packet';
+const packetId = id ?? 'co-wegrzyn-cabinet-wall';
+const proofItems = [
+  'Field photo: east cabinet wall marked by Marcus',
+  'Labor basis: 12 carpenter hours, 4 painter hours',
+  'Schedule note: two-day cabinet hold if approved today',
+] as const;
 ---
 
 <Layout titleKey="decisions.detail.title" activeHref="/decisions">
   <section class="decision-detail" aria-labelledby="decision-detail-title">
     <p class="decision-detail__crumb"><a href="/decisions">Back to decisions</a></p>
+    <header class="decision-detail__head">
+      <p>Decision</p>
+      <h1 id="decision-detail-title">Approve the change.</h1>
+    </header>
 
-    <Card eyebrow="Decision packet" title={packetId}>
+    <Card eyebrow="Owner approval" title="Approve the cabinet wall change?">
       <div class="decision-detail__status">
-        <Chip label="Preview" tone="amber" />
-        <span>Review shape only. No approval is recorded from this page.</span>
+        <Chip label="Waiting on you" tone="amber" />
+        <span>Nothing sends to the client until you approve the final copy.</span>
       </div>
       <dl class="decision-detail__facts">
         <div>
-          <dt>What this represents</dt>
-          <dd>A future queue item that needs a human before the system acts.</dd>
+          <dt>Job</dt>
+          <dd>Wegrzyn kitchen + primary bath</dd>
         </div>
         <div>
-          <dt>Where to inspect the live gates</dt>
-          <dd>Proposal send, office review cards, and project audit are wired now.</dd>
+          <dt>Draft amount</dt>
+          <dd>$4,850 · two-day schedule hit</dd>
+        </div>
+        <div>
+          <dt>Packet</dt>
+          <dd>{packetId}</dd>
         </div>
       </dl>
     </Card>
 
-    <Card eyebrow="Next move" title="Open a wired review path">
+    <Card eyebrow="Proof" title="What Right Hand used">
+      <ul class="decision-detail__proof">
+        {proofItems.map((item) => <li>{item}</li>)}
+      </ul>
+    </Card>
+
+    <Card eyebrow="Learning" title="Good / Fix trains the next draft">
+      <div class="decision-detail__learn">
+        <button type="button">Good</button>
+        <button type="button">Fix</button>
+      </div>
+      <p class="decision-detail__copy">
+        If you tap Fix, Right Hand keeps the correction with this job: what changed,
+        which proof was wrong or missing, and how the next estimate or message should read.
+      </p>
+    </Card>
+
+    <Card eyebrow="Next move" title="Review, adjust, then send">
       <div class="decision-detail__actions">
-        <a href="/proposals/prop_lane6_pass/send">Proposal send gate</a>
+        <a href="/change-orders/new?decision=co-wegrzyn-cabinet-wall">Edit change order</a>
+        <a href="/projects/proj_wegrzyn_kitchen">Open job</a>
         <a href="/relay">Office review cards</a>
-        <a href="/projects/proj_wegrzyn_kitchen/audit">Project audit</a>
       </div>
     </Card>
   </section>
@@ -47,6 +77,27 @@ const packetId = id ?? 'sample-decision-packet';
   .decision-detail__crumb {
     margin: 0;
     font-size: 0.85rem;
+  }
+
+  .decision-detail__head {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .decision-detail__head p {
+    margin: 0;
+    color: var(--text-muted, #5c6670);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .decision-detail__head h1 {
+    margin: 0;
+    font-size: clamp(1.9rem, 10vw, 3.15rem);
+    line-height: 0.96;
+    letter-spacing: 0;
   }
 
   .decision-detail__crumb a,
@@ -91,6 +142,47 @@ const packetId = id ?? 'sample-decision-packet';
   .decision-detail__actions {
     display: grid;
     gap: 0.65rem;
+  }
+
+  .decision-detail__proof {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.4;
+  }
+
+  .decision-detail__copy {
+    margin: 0.75rem 0 0;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.4;
+  }
+
+  .decision-detail__learn {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .decision-detail__learn button {
+    min-height: 2.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    color: inherit;
+    font: inherit;
+    font-weight: 950;
+  }
+
+  .decision-detail__learn button:first-child {
+    background: color-mix(in srgb, var(--field-green, #0f7a53) 13%, var(--surface, #fff));
+    border-color: color-mix(in srgb, var(--field-green, #0f7a53) 42%, var(--border, #d8dee6));
+  }
+
+  .decision-detail__learn button:last-child {
+    background: color-mix(in srgb, var(--right-hand, #c9a961) 17%, var(--surface, #fff));
+    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 48%, var(--border, #d8dee6));
   }
 
   .decision-detail__actions a {

@@ -1,0 +1,290 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/Card.astro';
+import RhSummary from '../../components/RhSummary.astro';
+
+const people = [
+  {
+    name: 'Christian Asdal',
+    type: 'Owner',
+    access: 'Full company',
+    employee: 'Company admin',
+    pay: 'Owner draw',
+    login: 'Active',
+  },
+  {
+    name: 'Ana Morales',
+    type: 'Project manager',
+    access: 'Jobs, schedule, client messages',
+    employee: 'W-2 manager',
+    pay: 'Salary',
+    login: 'Active',
+  },
+  {
+    name: 'Luis Ramirez',
+    type: 'Field Hand',
+    access: 'Today, capture, daily log, assigned jobs',
+    employee: 'W-2 field',
+    pay: 'Hourly + clock',
+    login: 'Invite ready',
+  },
+  {
+    name: 'North Crew',
+    type: 'Field crew',
+    access: 'Assigned work orders and proof only',
+    employee: 'Crew group',
+    pay: 'Crew hours',
+    login: 'Not invited',
+  },
+] as const;
+
+const permissionPacks = [
+  {
+    title: 'Owner / company admin',
+    detail: 'Company settings, people, money, approvals, and every loop stage.',
+  },
+  {
+    title: 'Project manager',
+    detail: 'Projects, schedule, change orders, daily logs, client-safe packets.',
+  },
+  {
+    title: 'Field Hand',
+    detail: 'Today, capture, work orders, assigned jobs, daily log, and help.',
+  },
+  {
+    title: 'Sub / vendor',
+    detail: 'Scoped assignment portal only. No company-wide routes.',
+  },
+] as const;
+---
+
+<Layout title="People & access" activeHref="/settings">
+  <section class="people-access" aria-labelledby="people-access-title">
+    <div class="people-access__crumb"><a href="/settings">Settings</a> · Company · People & access</div>
+    <h1 id="people-access-title">People & access</h1>
+
+    <RhSummary
+      headline="Sign-in is per person."
+      detail="Company setup assigns type, permissions, employee profile, and pay rules before that person can sign in."
+      tone="green"
+    />
+
+    <Card eyebrow="Add user" title="Create the person first">
+      <form class="people-access__form" aria-label="Add user setup model">
+        <label>
+          <span>Name</span>
+          <input value="New employee" />
+        </label>
+        <label>
+          <span>Login</span>
+          <input value="email or phone invite" />
+        </label>
+        <label>
+          <span>Type</span>
+          <select>
+            <option>Owner / company admin</option>
+            <option>Project manager</option>
+            <option>Sales / estimator</option>
+            <option>Field Hand</option>
+            <option>Sub / vendor</option>
+          </select>
+        </label>
+        <label>
+          <span>Permissions</span>
+          <select>
+            <option>Full company</option>
+            <option>Project manager</option>
+            <option>Sales + estimate</option>
+            <option>Assigned jobs only</option>
+            <option>Sub portal only</option>
+          </select>
+        </label>
+        <label>
+          <span>Employee data</span>
+          <input value="hire date, phone, emergency contact, docs" />
+        </label>
+        <label>
+          <span>Pay profile</span>
+          <select>
+            <option>Hourly + clock</option>
+            <option>Salary</option>
+            <option>Subcontractor</option>
+            <option>Owner draw</option>
+            <option>Not tracked</option>
+          </select>
+        </label>
+      </form>
+      <p class="people-access__note">
+        This is the company setup model: invite the person, then Right Hand resolves their tenant and role from the server every time they sign in.
+      </p>
+    </Card>
+
+    <Card eyebrow="Current team" title="GGR people">
+      <div class="people-access__table-wrap">
+        <div class="people-access__table" role="table" aria-label="Current team access">
+          <div class="people-access__row people-access__row--head" role="row">
+            <span>Person</span>
+            <span>Type</span>
+            <span>Access</span>
+            <span>Employee</span>
+            <span>Pay</span>
+            <span>Login</span>
+          </div>
+          {people.map((person) => (
+            <div class="people-access__row" role="row">
+              <strong>{person.name}</strong>
+              <span>{person.type}</span>
+              <span>{person.access}</span>
+              <span>{person.employee}</span>
+              <span>{person.pay}</span>
+              <span class="people-access__chip">{person.login}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+
+    <Card eyebrow="Permission packs" title="What each sign-in can reach">
+      <div class="people-access__packs">
+        {permissionPacks.map((pack) => (
+          <article>
+            <h2>{pack.title}</h2>
+            <p>{pack.detail}</p>
+          </article>
+        ))}
+      </div>
+    </Card>
+  </section>
+</Layout>
+
+<style>
+  .people-access {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.9rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .people-access > * {
+    min-width: 0;
+  }
+
+  .people-access__crumb {
+    color: var(--text-muted, #5c6670);
+    font-size: 0.78rem;
+  }
+
+  .people-access__crumb a {
+    color: inherit;
+  }
+
+  .people-access h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .people-access__form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .people-access__form label {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .people-access__form span,
+  .people-access__row--head,
+  .people-access__packs h2 {
+    color: var(--text-muted, #5c6670);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .people-access__form input,
+  .people-access__form select {
+    width: 100%;
+    min-height: 2.55rem;
+    box-sizing: border-box;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    color: inherit;
+    font: inherit;
+  }
+
+  .people-access__note {
+    margin: 0.8rem 0 0;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.45;
+  }
+
+  .people-access__table-wrap {
+    max-width: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .people-access__table {
+    display: grid;
+    min-width: 840px;
+  }
+
+  .people-access__row {
+    display: grid;
+    grid-template-columns: 1.1fr 0.8fr 1.35fr 1fr 0.8fr 0.8fr;
+    gap: 0.7rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.72rem 0;
+    border-bottom: 1px solid var(--border, #d8dee6);
+  }
+
+  .people-access__row:last-child {
+    border-bottom: 0;
+  }
+
+  .people-access__chip {
+    display: inline-flex;
+    justify-self: start;
+    padding: 0.16rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--right-hand, #c9a961) 38%, var(--border, #d8dee6));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--right-hand, #c9a961) 10%, transparent);
+    font-weight: 800;
+  }
+
+  .people-access__packs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .people-access__packs article {
+    padding: 0.8rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+  }
+
+  .people-access__packs h2 {
+    margin: 0 0 0.35rem;
+  }
+
+  .people-access__packs p {
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 720px) {
+    .people-access__form,
+    .people-access__packs {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

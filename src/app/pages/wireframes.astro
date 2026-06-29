@@ -1,0 +1,239 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BuildTruthStrip from '../components/BuildTruthStrip.astro';
+import { WIREFRAME_SPINE_MAP } from '../lib/wireframeSpineMap.js';
+
+const priorityRoutes = new Set([
+  '/',
+  '/start',
+  '/right-hand',
+  '/camera',
+  '/more',
+  '/home/field',
+  '/field',
+  '/room-capture',
+  '/projects',
+  '/projects/:id',
+  '/sales',
+  '/design/:projectId',
+  '/estimate/:projectId',
+  '/change-orders/new',
+  '/projects/:id/money/invoices',
+  '/money/invoices/:invoiceId',
+  '/projects/:id/daily-log',
+  '/money',
+  '/decisions/:id',
+]);
+
+const rows = WIREFRAME_SPINE_MAP.filter((entry) => priorityRoutes.has(entry.route));
+const mobileRows = WIREFRAME_SPINE_MAP.filter((entry) =>
+  entry.wireframes.some((face) => face.includes('_mobile_') || face.includes('mobile')),
+);
+const wiredCount = WIREFRAME_SPINE_MAP.filter((entry) => entry.status === 'canon_wired').length;
+const attachedCount = WIREFRAME_SPINE_MAP.filter((entry) => entry.appFile).length;
+const mobilePendingCount = mobileRows.filter((entry) => entry.status !== 'canon_wired').length;
+const trainCards = [
+  { label: 'P0 mobile', detail: 'Home, Start, Right Hand, Camera, Daily Log', href: '/', count: 'Built' },
+  { label: 'P1 money', detail: 'Estimate, change order, job invoices, invoice detail', href: '/projects/proj_wegrzyn_kitchen/money/invoices', count: 'Built' },
+  { label: 'P2 tablet', detail: 'Project setup, client intake, Design Hand scaling', href: '/design/proj_wegrzyn_kitchen', count: 'Scales' },
+  { label: 'P3 desktop', detail: 'Back-office views use desktop layout where density needs it', href: '/money', count: 'Scales' },
+] as const;
+const labelFor = (status: string) =>
+  status === 'canon_wired' ? 'Built' :
+  status === 'future_or_unrouted' ? 'Planned' :
+  status === 'redirect' ? 'Redirect' :
+  'Being wired';
+const hrefFor = (route: string) =>
+  route
+    .replace(':id', 'proj_wegrzyn_kitchen')
+    .replace(':projectId', 'proj_wegrzyn_kitchen')
+    .replace(':invoiceId', 'inv-weg-02');
+---
+
+<Layout title="Build map" activeHref="/settings">
+  <section class="wireframe-map" data-grammar="canon" aria-labelledby="wireframe-map-title">
+    <header class="wireframe-map__head kg-pagehead">
+      <p class="wireframe-map__eyebrow">Build map</p>
+      <h1 id="wireframe-map-title">Routes tied to the new wireframes.</h1>
+      <p>This is the launch checklist for the surfaces that matter now. It does not claim planned work is live.</p>
+    </header>
+
+    <BuildTruthStrip
+      state="live"
+      label="Attached app routes are built and reachable from the shell."
+      wireframes={['wireframe-flow-map.html', 'wireframe-implementation-release-plan.md']}
+      note="Client portals and redirects keep separate status. Future reference faces stay out of the launch claim."
+    />
+
+    <section class="wireframe-stats" aria-label="Build status">
+      <div class="kg-card"><span>Total routes</span><strong>{WIREFRAME_SPINE_MAP.length}</strong></div>
+      <div class="kg-card"><span>Attached pages</span><strong>{attachedCount}</strong></div>
+      <div class="kg-card"><span>Canon wired</span><strong>{wiredCount}</strong></div>
+      <div class="kg-card"><span>Mobile rebuilds left</span><strong>{mobilePendingCount}</strong></div>
+    </section>
+
+    <section class="wireframe-train" aria-label="Mobile-first train">
+      {trainCards.map((card) => (
+        <a class="kg-card" href={card.href}>
+          <span>{card.count}</span>
+          <strong>{card.label}</strong>
+          <small>{card.detail}</small>
+        </a>
+      ))}
+    </section>
+
+    <div class="wireframe-map__list">
+      {rows.map((entry) => (
+        <article class="wireframe-row kg-card" data-status={entry.status}>
+          <div>
+            <span class="wireframe-row__state">{labelFor(entry.status)}</span>
+            <h2>{entry.surface}</h2>
+            <a href={hrefFor(entry.route)}>{entry.route}</a>
+          </div>
+          <p>{entry.notes}</p>
+          <div class="wireframe-row__faces">
+            {entry.wireframes.map((face) => <span>{face}</span>)}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .wireframe-map {
+    display: grid;
+    gap: 0.85rem;
+    padding-bottom: 5.5rem;
+  }
+
+  .wireframe-map__head {
+    gap: 0.25rem;
+  }
+
+  .wireframe-map__eyebrow {
+    margin: 0;
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .wireframe-map__head h1 {
+    margin: 0;
+    font-size: clamp(1.85rem, 7vw, 2.45rem);
+    line-height: 1;
+  }
+
+  .wireframe-map__head p:last-child {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    line-height: 1.38;
+  }
+
+  .wireframe-map__list {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .wireframe-stats,
+  .wireframe-train {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .wireframe-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wireframe-stats .kg-card,
+  .wireframe-train .kg-card {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .wireframe-stats span,
+  .wireframe-train span,
+  .wireframe-train small {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+
+  .wireframe-stats strong {
+    font-size: 1.55rem;
+    line-height: 1;
+  }
+
+  .wireframe-train .kg-card {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .wireframe-train strong {
+    font-size: 1rem;
+  }
+
+  @media (min-width: 760px) {
+    .wireframe-stats,
+    .wireframe-train {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .wireframe-row {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.9rem;
+  }
+
+  .wireframe-row h2 {
+    margin: 0.28rem 0 0;
+    font-size: 1.05rem;
+    line-height: 1.12;
+  }
+
+  .wireframe-row a {
+    color: var(--gold);
+    font-size: 0.86rem;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .wireframe-row p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .wireframe-row__state,
+  .wireframe-row__faces span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0 0.5rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+
+  .wireframe-row[data-status='canon_wired'] .wireframe-row__state {
+    border-color: color-mix(in srgb, var(--green) 36%, var(--line));
+    background: var(--green-soft);
+  }
+
+  .wireframe-row[data-status='future_or_unrouted'] .wireframe-row__state {
+    border-color: color-mix(in srgb, var(--red) 30%, var(--line));
+    background: var(--red-soft);
+  }
+
+  .wireframe-row__faces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+</style>

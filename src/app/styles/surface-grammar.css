@@ -12,37 +12,17 @@
  * green/red/amber) are theme-constant — only bg/panel/ink/muted/line/*-soft/
  * shadow flip — exactly as the prototype does it.
  *
- * THEME: follows the app's mechanism (dark = default; light via
- * [data-theme="light"] or prefers-color-scheme) so canon surfaces theme
- * consistently with the shell. NOTE FOR THE CONDUCTOR: the canon prototype is
- * LIGHT-first; the app is DARK-first. Both modes carry exact prototype values
- * here — the default-mode choice is a one-line decision (see SURFACE_GRAMMAR.md).
+ * THEME: follows the app's own mechanism (matches shell.css / the bubble).
+ * Right Hand is light-first to match the contractor prototype, so the base
+ * canon scope carries the light tokens. Light is ALSO addressable explicitly
+ * via [data-theme="light"] (the app's theme toggle) and tracks the OS via
+ * prefers-color-scheme: light; dark is explicit through [data-theme="dark"].
+ * Tokens never sit on a bare :root — they stay under [data-grammar="canon"] so
+ * the layer can't repaint an existing surface.
  */
 
-/* ---- Tokens · dark (app default) — prototype [data-theme="dark"] values ---- */
-[data-grammar="canon"] {
-  --bg: #0c1117;
-  --panel: #151b23;
-  --ink: #eef2f7;
-  --muted: #9aa6b2;
-  --line: #28313b;
-  --line-strong: #3a4652;
-  /* accents — theme-constant (prototype does not redefine these in dark) */
-  --gold: #e7aa3b;
-  --gold-soft: #2c2415;
-  --blue: #2f6df0;
-  --blue-soft: #16233c;
-  --green: #22784a;
-  --green-soft: #14281d;
-  --red: #b73838;
-  --red-soft: #321a1d;
-  --amber: #aa6719;
-  --amber-soft: #302313;
-  --shadow: 0 16px 50px rgba(0, 0, 0, .38);
-  --radius: 8px;
-}
-
-/* ---- Tokens · light — prototype :root default values ---- */
+/* ---- Token values · light (prototype :root) and dark (prototype dark) ---- */
+[data-grammar="canon"],
 [data-theme="light"] [data-grammar="canon"] {
   --bg: #f4f5f7;
   --panel: #ffffff;
@@ -50,28 +30,50 @@
   --muted: #667281;
   --line: #dfe3e8;
   --line-strong: #c7ced6;
+  --gold: #e7aa3b;
   --gold-soft: #fbf0d9;
+  --blue: #2f6df0;
   --blue-soft: #e8eefc;
+  --green: #22784a;
   --green-soft: #e6f3ec;
+  --red: #b73838;
   --red-soft: #fdecec;
+  --amber: #aa6719;
   --amber-soft: #f8ecda;
   --shadow: 0 16px 50px rgba(20, 30, 44, .12);
+  --radius: 8px;
 }
+
+/* ---- Tokens · light via OS preference. Base [data-grammar="canon"] is
+   already light; this tracks the OS for anyone reading prefers-color-scheme.
+   Explicit [data-theme="dark"] (two attribute selectors) still wins over this
+   single-attribute selector, so a forced dark theme is never overridden. ---- */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme]) [data-grammar="canon"] {
+  [data-grammar="canon"] {
     --bg: #f4f5f7;
     --panel: #ffffff;
     --ink: #111722;
     --muted: #667281;
     --line: #dfe3e8;
     --line-strong: #c7ced6;
-    --gold-soft: #fbf0d9;
-    --blue-soft: #e8eefc;
-    --green-soft: #e6f3ec;
-    --red-soft: #fdecec;
-    --amber-soft: #f8ecda;
     --shadow: 0 16px 50px rgba(20, 30, 44, .12);
   }
+}
+
+/* ---- Tokens · dark — prototype [data-theme="dark"] values ---- */
+[data-theme="dark"] [data-grammar="canon"] {
+  --bg: #0c1117;
+  --panel: #151b23;
+  --ink: #eef2f7;
+  --muted: #9aa6b2;
+  --line: #28313b;
+  --line-strong: #3a4652;
+  --gold-soft: #2c2415;
+  --blue-soft: #16233c;
+  --green-soft: #14281d;
+  --red-soft: #321a1d;
+  --amber-soft: #302313;
+  --shadow: 0 16px 50px rgba(0, 0, 0, .38);
 }
 
 /* ---- Layout · 12-col grid (prototype .grid / .spanN) ---- */

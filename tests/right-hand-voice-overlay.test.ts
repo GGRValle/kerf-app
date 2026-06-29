@@ -1305,8 +1305,8 @@ test('Home folds the resolved turn into the shared Attention Artifact queue', ()
   assert.match(surface, /The one thing/);
   assert.match(surface, /On deck/);
   assert.match(surface, /The pulse/);
-  assert.match(surface, /Right Hand working set/);
-  assert.match(surface, /Needs me/);
+  assert.match(surface, /Right Hand handled/);
+  assert.match(surface, /Needs you/);
   // Reads the stashed TRP and projects it through the same card used by review.
   assert.match(surface, /TURN_RESOLUTION_SESSION_KEY/);
   assert.match(surface, /parseTurnResolution\(/);

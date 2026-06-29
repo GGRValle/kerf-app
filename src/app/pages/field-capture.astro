@@ -19,6 +19,9 @@ import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { getLane23ProjectForTenant, LANE23_FIXTURE_DRAFT_ID } from '../lib/lane23Fixtures.js';
 
 const { t, context } = createLayoutContext();
+
+return Astro.redirect('/field');
+
 const fixtureDraftHref = `/draft-review/${LANE23_FIXTURE_DRAFT_ID}`;
 const assignedProject = getLane23ProjectForTenant('proj_wegrzyn_kitchen', context.tenantId);
 

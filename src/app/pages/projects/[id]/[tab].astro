@@ -3,14 +3,11 @@ import Layout from '../../../layouts/Layout.astro';
 import ActionsStrip from '../../../components/ActionsStrip.astro';
 import ProjectTabStrip from '../../../components/ProjectTabStrip.astro';
 import ProjectTabContent from '../../../components/project/ProjectTabContent.astro';
-import ProjectBrainSummary from '../../../components/ProjectBrainSummary.astro';
 import { createLayoutContext } from '../../../lib/createLayoutContext.js';
 import { isProjectTabId } from '../../../lib/lane23Fixtures.js';
 import { getApiDeps } from '../../../../api/lib/deps.js';
 import { getProjectRecordForTenant } from '../../../lib/projectRecords.js';
-import { getProjectBrain } from '../../../lib/lane3WorkFixtures.js';
 import '../../../styles/lane23.css';
-import '../../../styles/lane3work.css';
 
 const { t, context } = createLayoutContext();
 const { id, tab } = Astro.params;
@@ -25,8 +22,6 @@ if (tab === 'scope' && project !== null) {
 if (tab === 'daily_log' && project !== null) {
   return Astro.redirect(`/projects/${project.project_id}/daily-log`);
 }
-
-const brain = project ? getProjectBrain(project.project_id) : null;
 ---
 
 <Layout titleKey="project.list.title" activeHref="/projects">
@@ -44,18 +39,6 @@ const brain = project ? getProjectBrain(project.project_id) : null;
         </div>
         <ActionsStrip surface="project_detail" projectId={project.project_id} tenantId={context.tenantId} wired />
       </div>
-
-      {brain !== null && (
-        <ProjectBrainSummary
-          brain={brain}
-          labels={{
-            nextAction: t('project.brain.next_action'),
-            crewOnSite: t('project.brain.crew_on_site'),
-            openItems: t('project.brain.open_items'),
-            lastCapture: t('project.brain.last_capture'),
-          }}
-        />
-      )}
 
       <ProjectTabStrip projectId={project.project_id} activeTab={activeTab} labelFor={t} />
 
