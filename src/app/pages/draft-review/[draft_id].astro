@@ -55,7 +55,7 @@ const draft = isFixtureDraft ? fixtureDraft : eventDraft;
 const canReviewDraft = !!draft && draft.lines.length > 0;
 const draftReviewHref = `/draft-review/${encodeURIComponent(draftId)}`;
 const loopPhases = [
-  { id: 'capture', label: 'Capture', href: '/field-capture' },
+  { id: 'capture', label: 'Capture', href: '/camera' },
   { id: 'review', label: 'Review', href: '/transcript-review' },
   { id: 'draft', label: 'Draft', active: true, href: draftReviewHref },
 ];
@@ -96,7 +96,7 @@ const copy = {
         <Card title={t('review.draft.not_found_title')}>
           <p class="lane23-notice">{t('review.draft.not_found_body')}</p>
           <div class="lane23-loop-actions">
-            <a class="lane23-btn" href="/field-capture">{t('nav.field_capture')}</a>
+            <a class="lane23-btn" href="/camera">{t('nav.field_capture')}</a>
             <a class="lane23-btn primary" href={`/draft-review/${LANE23_FIXTURE_DRAFT_ID}`}>
               {t('review.draft.fixture_preview_link')}
             </a>

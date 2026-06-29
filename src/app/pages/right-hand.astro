@@ -5,24 +5,24 @@ import Card from '../components/Card.astro';
 
 const actions = [
   {
+    href: '/kb-ingestion',
+    title: 'Review staged learning',
+    detail: 'Approve or reject the costs, language, and lessons Right Hand wants to remember.',
+  },
+  {
+    href: '/connections',
+    title: 'Check sources',
+    detail: 'See what Right Hand can use, what is connected, and what still needs setup.',
+  },
+  {
+    href: '/blackboard',
+    title: 'Open blackboard',
+    detail: 'Review company learning, agent notes, and system-wide operating memory.',
+  },
+  {
     href: '/',
-    title: 'Back to Home',
-    detail: 'See what Right Hand is holding for you and what needs attention.',
-  },
-  {
-    href: '/field-capture',
-    title: 'Add note or media',
-    detail: 'Attach photos, videos, typed notes, or a follow-up capture.',
-  },
-  {
-    href: '/projects',
-    title: 'Open Projects',
-    detail: 'Find the job before reviewing scope, field notes, or audit history.',
-  },
-  {
-    href: '/draft-review',
-    title: 'Review draft',
-    detail: 'Open the current draft review path when an estimate or proposal is ready.',
+    title: 'Back to work',
+    detail: 'Return to the operating loop. Use the mic or Ask buttons to talk to Right Hand.',
   },
 ] as const;
 
@@ -39,19 +39,20 @@ const backHref =
     : '';
 ---
 
-<Layout title="Right Hand" activeHref="/right-hand">
+<Layout title="Right Hand learning" activeHref="/right-hand">
   <section class="rh-fallback" aria-labelledby="rh-fallback-title" data-grammar="canon">
     {backHref ? <a class="rh-fallback__back" href={backHref}>‹ Back</a> : null}
     <RhSummary
-      headline="Right Hand"
-      detail="Use the bottom mic to talk. This page is the fallback if the voice overlay does not open."
-      tone="green"
+      headline="Right Hand learning"
+      detail="The mic and Ask buttons open the working conversation. This page is for Knowledge Base, system learning, and onboarding."
+      tone="blue"
     />
 
-    <Card eyebrow="Next move" title="Where do you want to go?">
+    <Card eyebrow="Knowledge Base · onboarding" title="How Right Hand works">
       <p class="rh-fallback__copy">
-        Right Hand stays on the bottom mic. If you landed here, pick a surface
-        and keep working; nothing has been filed or sent from this page.
+        Right Hand is the conversational layer over the operating system. It can
+        draft, route, summarize, and prepare work, but sends, money, files, and
+        durable writes stay behind the visible approval gates.
       </p>
       <div class="rh-fallback__actions">
         {actions.map((action) => (

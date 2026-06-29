@@ -31,6 +31,7 @@ const totals = estimateTotals(lines);
 const clientLines = clientVisibleLines(lines).map(lineBreakdown);
 const approvedCount = selectionsForProject(tenant, projectId).filter((s) => s.lifecycle === 'approved').length;
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const unitFor = (line: { uom?: string }) => line.uom ?? 'unit';
 const rhPricedLines = rightHandDraft?.lines.filter((line) => typeof line.extended_cents === 'number' && line.extended_cents > 0) ?? [];
 const rhOpenLines = rightHandDraft?.lines.filter((line) => line.open_item || !(typeof line.extended_cents === 'number' && line.extended_cents > 0)) ?? [];
 const rhTotalCents = rhPricedLines.filter((line) => !line.flags.includes('removed')).reduce((sum, line) => sum + (line.extended_cents ?? line.price_cents ?? 0), 0);
@@ -117,7 +118,7 @@ const moneyFlowPhases = rightHandDraft ? [
         </div>
 
         <div class="es-rh-actions" aria-label="Estimate actions">
-          <a class="es-btn primary" href={`/right-hand?conversation_id=${rightHandDraft.conversation_id}&return_to=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`}>
+          <a class="es-btn primary" href={`/right-hand?conversation_id=${rightHandDraft.conversation_id}&return_to=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`} data-rh-speak>
             Back to conversation
           </a>
           <a class="es-btn" href={`/api/v1/right-hand/estimates/${encodeURIComponent(rightHandEstimateId)}/workbook`} download>Download workbook</a>
@@ -150,20 +151,49 @@ const moneyFlowPhases = rightHandDraft ? [
     </div>
 
     <form class="es-add" id="add-form" hidden>
-      <input id="ln-label" placeholder="Label" />
-      <select id="ln-type">
-        <option value="material">Material</option>
-        <option value="labor">Labor</option>
-        <option value="product">Product</option>
-        <option value="allowance">Allowance</option>
-        <option value="subcontract">Subcontractor</option>
-        <option value="equipment">Equipment</option>
-        <option value="fee">Fee</option>
-        <option value="markup">Markup (internal)</option>
-      </select>
-      <input id="ln-qty" type="number" step="0.01" min="0" value="1" placeholder="Qty" />
-      <input id="ln-cost" type="number" step="0.01" min="0" placeholder="Unit cost ($)" />
-      <input id="ln-markup" type="number" step="0.1" min="0" value="30" placeholder="Markup %" />
+      <label class="es-field es-field-wide" for="ln-label">
+        <span>Line item</span>
+        <input id="ln-label" placeholder="Demolition labor, tile material, permit fee..." />
+      </label>
+      <label class="es-field" for="ln-type">
+        <span>Type</span>
+        <select id="ln-type">
+          <option value="material">Material</option>
+          <option value="labor">Labor</option>
+          <option value="product">Product</option>
+          <option value="allowance">Allowance</option>
+          <option value="subcontract">Subcontractor</option>
+          <option value="equipment">Equipment</option>
+          <option value="fee">Fee</option>
+          <option value="markup">Markup (internal)</option>
+        </select>
+      </label>
+      <label class="es-field" for="ln-qty">
+        <span>Quantity</span>
+        <input id="ln-qty" type="number" step="0.01" min="0" value="1" placeholder="1" aria-describedby="ln-qty-help" />
+        <small id="ln-qty-help">How many units.</small>
+      </label>
+      <label class="es-field" for="ln-uom">
+        <span>Unit</span>
+        <select id="ln-uom" aria-describedby="ln-uom-help">
+          <option value="EA">EA · each</option>
+          <option value="HR">HR · hour</option>
+          <option value="LS">LS · lump sum</option>
+          <option value="SF">SF · square foot</option>
+          <option value="LF">LF · linear foot</option>
+          <option value="DAY">DAY</option>
+        </select>
+        <small id="ln-uom-help">What the quantity counts.</small>
+      </label>
+      <label class="es-field" for="ln-cost">
+        <span>Unit cost</span>
+        <input id="ln-cost" type="text" inputmode="decimal" placeholder="$0.00" aria-describedby="ln-cost-help" />
+        <small id="ln-cost-help">Dollar cost per selected unit.</small>
+      </label>
+      <label class="es-field" for="ln-markup">
+        <span>Markup</span>
+        <input id="ln-markup" type="number" step="0.1" min="0" value="30" placeholder="Markup %" />
+      </label>
       <button class="es-btn primary" id="add-go" type="button">Add</button>
     </form>
     </details>
@@ -233,6 +263,7 @@ const moneyFlowPhases = rightHandDraft ? [
           {breakdowns.map((b) => (
             <div class="es-row" data-internal={b.line.client_visible ? 'false' : 'true'}>
               <span class="es-ln-label">{b.line.label} <span class="es-tag">{b.line.line_type}</span>{b.line.client_visible ? null : <span class="es-tag internal">internal</span>}</span>
+              <span class="es-ln-num">{b.line.quantity.toLocaleString('en-US')} {unitFor(b.line)} × {fmt(b.line.unit_cost_cents)}/{unitFor(b.line)}</span>
               <span class="es-ln-num">cost {fmt(b.extended_cost_cents)}</span>
               <span class="es-ln-num">+mkup {fmt(b.markup_cents)}</span>
               <span class="es-ln-num strong">{fmt(b.client_price_cents)}</span>
@@ -493,20 +524,51 @@ const moneyFlowPhases = rightHandDraft ? [
     f.hidden = !f.hidden;
   });
 
+  const lineTypeSelect = document.getElementById('ln-type') as HTMLSelectElement | null;
+  const unitSelect = document.getElementById('ln-uom') as HTMLSelectElement | null;
+  const unitCostInput = document.getElementById('ln-cost') as HTMLInputElement | null;
+  const defaultUnitForType = (type: string): string => ({
+    labor: 'HR',
+    material: 'EA',
+    product: 'EA',
+    allowance: 'LS',
+    subcontract: 'LS',
+    equipment: 'DAY',
+    fee: 'LS',
+    markup: 'LS',
+  }[type] ?? 'EA');
+  lineTypeSelect?.addEventListener('change', () => {
+    if (!unitSelect || unitSelect.dataset.touched === 'true') return;
+    unitSelect.value = defaultUnitForType(lineTypeSelect.value);
+  });
+  unitSelect?.addEventListener('change', () => {
+    unitSelect.dataset.touched = 'true';
+  });
+  const moneyFromInput = (value: string): number => Number(value.replace(/[$,\s]/g, ''));
+  unitCostInput?.addEventListener('blur', () => {
+    const dollars = moneyFromInput(unitCostInput.value);
+    if (!Number.isFinite(dollars)) return;
+    unitCostInput.value = `$${dollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  });
+  unitCostInput?.addEventListener('focus', () => {
+    unitCostInput.value = unitCostInput.value.replace(/[$,]/g, '');
+  });
+
   document.getElementById('add-go')?.addEventListener('click', async () => {
     const label = (document.getElementById('ln-label') as HTMLInputElement).value.trim();
     const line_type = (document.getElementById('ln-type') as HTMLSelectElement).value;
     const quantity = parseFloat((document.getElementById('ln-qty') as HTMLInputElement).value || '1');
+    const uom = ((document.getElementById('ln-uom') as HTMLSelectElement).value || 'EA').trim().toUpperCase();
     // Operator enters dollars + percent (same convention as the Edit prompt
     // above); convert to the stored integer cents / basis points before POST.
     // The API contract (unit_cost_cents / markup_bps) is unchanged.
-    const unitDollars = parseFloat((document.getElementById('ln-cost') as HTMLInputElement).value || '');
+    const unitDollars = moneyFromInput((document.getElementById('ln-cost') as HTMLInputElement).value || '');
     const markupPct = parseFloat((document.getElementById('ln-markup') as HTMLInputElement).value || '0');
     const unit_cost_cents = Math.round(unitDollars * 100);
     const markup_bps = Math.round((Number.isNaN(markupPct) ? 0 : markupPct) * 100);
     if (!label || Number.isNaN(unitDollars)) { alert('Label and a unit cost (in dollars) are required.'); return; }
     const client_visible = line_type !== 'markup';
-    const out = await post(`/api/v1/estimate/${projectId}/lines`, { label, line_type, quantity, unit_cost_cents, markup_bps, client_visible }, `Add line "${label}"?`);
+    const out = await post(`/api/v1/estimate/${projectId}/lines`, { label, line_type, quantity, uom, unit_cost_cents, markup_bps, client_visible }, `Add line "${label}"?`);
     if (out) window.location.reload();
   });
 
@@ -750,6 +812,30 @@ const moneyFlowPhases = rightHandDraft ? [
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.45rem;
     margin-top: 0.7rem;
+  }
+
+  .es-field {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .es-field-wide {
+    grid-column: 1 / -1;
+  }
+
+  .es-field span {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .es-field small {
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.25;
   }
 
   .es-add input,

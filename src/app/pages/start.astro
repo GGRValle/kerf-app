@@ -1,0 +1,90 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const actions = [
+  { href: '/projects/new?src=start', title: 'New estimate', detail: 'Start a lead, site walk, or proposal.' },
+  { href: '/field-capture?src=start', title: 'Daily log note', detail: 'Add a job note, photo, or site condition.' },
+  { href: '/change-orders/new?src=start', title: 'Change order', detail: 'Collect scope changes before pricing or sending.' },
+  { href: '/projects/proj_wegrzyn_kitchen/money/invoices?src=start', title: 'Invoice', detail: 'Open the job invoice set. Nothing posts without review.' },
+  { href: '/room-capture?src=start', title: 'Room scan / LiDAR', detail: 'Capture a room, then let Right Hand summarize it.' },
+  { href: '/right-hand', title: 'Ask Right Hand', detail: 'Use the conversation when you are not sure what to start.', speak: true },
+];
+---
+
+<Layout title="Start" activeHref="/start">
+  <section class="start-sheet" aria-labelledby="start-title">
+    <a class="start-back" href="/">‹ Back home</a>
+    <p class="start-sheet__eyebrow">Start something</p>
+    <h1 id="start-title">Start</h1>
+    <p class="start-sheet__lede">Use this when speaking is not convenient. Right Hand still handles the routing and review behind the scenes.</p>
+    <div class="start-sheet__list">
+      {actions.map((action) => (
+        <a class="start-action" href={action.href} data-rh-speak={action.speak ? true : undefined}>
+          <span>{action.title}</span>
+          <small>{action.detail}</small>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .start-sheet {
+    display: grid;
+    gap: 0.8rem;
+  }
+  .start-back {
+    justify-self: start;
+    color: var(--kerf-text-dim);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .start-sheet__eyebrow {
+    margin: 0;
+    color: var(--right-hand);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .start-sheet h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    line-height: 1;
+  }
+  .start-sheet__lede {
+    margin: 0;
+    color: var(--kerf-text-dim);
+    line-height: 1.45;
+  }
+  .start-sheet__list {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .start-action {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.95rem;
+    border: 1px solid var(--kerf-border);
+    border-radius: 8px;
+    background: var(--kerf-surface);
+    color: inherit;
+    text-decoration: none;
+    box-shadow: 0 12px 28px rgba(24, 23, 19, 0.07);
+  }
+  .start-action span {
+    font-weight: 800;
+    font-size: 1.02rem;
+  }
+  .start-action small {
+    color: var(--kerf-text-dim);
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+  @media (min-width: 760px) {
+    .start-sheet__list {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

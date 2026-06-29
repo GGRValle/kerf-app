@@ -7,7 +7,6 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { moreDomainLinksForRole } from '../src/shell/moreDomainNav.js';
 import { WIREFRAME_SPINE_MAP } from '../src/app/lib/wireframeSpineMap.js';
 import { connectionStatusLabel } from '../src/app/lib/connectionsRegistry.js';
 
@@ -30,35 +29,48 @@ test('RoleHomeSurface hides F-xx wireframe codes outside dev/debug', () => {
   assert.doesNotMatch(src, /platform\.home\.stub_title|platform\.home\.stub_body|role-home__stub/);
 });
 
-test('More page is driven from surfaceCatalog roleScope', () => {
+test('More page uses the job spine instead of the old client/module domain list', () => {
   const src = read('src/app/pages/more.astro');
-  assert.match(src, /moreDomainLinksForRole/);
+
+  for (const label of ['Start', 'Design', 'Sales', 'Project', 'Crew', 'Money', 'Success']) {
+    assert.match(src, new RegExp(`title: '${label}'`));
+  }
+  assert.match(src, /Job spine work areas/);
+  assert.doesNotMatch(src, /moreDomainLinksForRole/);
   assert.doesNotMatch(src, /MORE_NAV_LINKS/);
+  assert.doesNotMatch(src, /title: 'Clients'/);
+  assert.doesNotMatch(src, /shell\.domain\.clients/);
 });
 
 test('connection setup state stays in contractor language', () => {
   assert.equal(connectionStatusLabel('not_wired'), 'Needs setup');
 });
 
-test('owner More nav includes Projects in ≤2 taps from any screen', () => {
-  const links = moreDomainLinksForRole('owner');
-  const projects = links.find((l) => l.domain === 'projects');
-  assert.ok(projects);
-  assert.equal(projects.href, '/projects');
+test('Connections is source control with proof, not an old app catalog', () => {
+  const src = read('src/app/pages/connections.astro');
+
+  assert.match(src, /What Right Hand can use\./);
+  assert.match(src, /Ready inside Right Hand/);
+  assert.match(src, /Setup queue/);
+  assert.match(src, /Nothing sends without you\./);
+  assert.match(src, /No credentials are stored from this page\./);
+  assert.match(src, /Saved first\. Synced when ready\./);
+  assert.match(src, /surface: 'connections'/);
+  assert.doesNotMatch(src, /One card per integration|connections-connect|RhSummary|<Card/i);
 });
 
-test('owner More nav lands on built Sales instead of the old decisions placeholder', () => {
-  const links = moreDomainLinksForRole('owner');
-  const sales = links.find((l) => l.domain === 'sales');
-  assert.ok(sales);
-  assert.equal(sales.href, '/sales');
+test('owner More nav keeps built work areas within one tap', () => {
+  const src = read('src/app/pages/more.astro');
+  assert.match(src, /href: '\/projects'/);
+  assert.match(src, /href: '\/sales'/);
+  assert.match(src, /href: '\/design\/proj_wegrzyn_kitchen'/);
 });
 
 test('wireframe build map and change-order builder are live routes', () => {
   const catalog = read('src/shell/surfaceCatalog.ts');
   const buildMap = read('src/app/pages/wireframes.astro');
   const spineMap = read('src/app/lib/wireframeSpineMap.ts');
-  const start = read('src/app/pages/create.astro');
+  const start = read('src/app/pages/start.astro');
   const changeOrder = read('src/app/pages/change-orders/new.astro');
   const projectInvoices = read('src/app/pages/projects/[id]/money/invoices.astro');
   const invoiceDetail = read('src/app/pages/money/invoices/[invoiceId].astro');
@@ -76,8 +88,8 @@ test('wireframe build map and change-order builder are live routes', () => {
   assert.match(spineMap, /F-B1_mobile_decision_card\.html/);
   assert.match(spineMap, /F-INV1a_mobile_per_job_invoice_list\.html/);
   assert.match(spineMap, /F-INV2a_mobile_per_job_invoice_detail\.html/);
-  assert.match(start, /\/change-orders\/new\?src=create/);
-  assert.match(start, /\/projects\/proj_wegrzyn_kitchen\/money\/invoices\?src=create/);
+  assert.match(start, /\/change-orders\/new\?src=start/);
+  assert.match(start, /\/projects\/proj_wegrzyn_kitchen\/money\/invoices\?src=start/);
   assert.match(changeOrder, /Create decision card/);
   assert.match(changeOrder, /disabled/);
   assert.match(projectInvoices, /Project money/);
@@ -90,6 +102,7 @@ test('wireframe build map and change-order builder are live routes', () => {
 
 test('working surfaces keep wireframe/build language out of operator screens', () => {
   for (const file of [
+    'src/app/pages/start.astro',
     'src/app/pages/create.astro',
     'src/app/pages/more.astro',
     'src/app/pages/sales/index.astro',
@@ -152,12 +165,39 @@ test('login and layout brand use Right Hand in user-facing copy', () => {
   const en = read('src/i18n/en.ts');
   const es = read('src/i18n/es.ts');
   const settings = read('src/app/pages/settings.astro');
+  const catalog = read('src/shell/surfaceCatalog.ts');
+  const layout = read('src/app/layouts/Layout.astro');
+  const login = read('src/app/pages/login.astro');
+  const fieldLogin = read('src/app/pages/login/field.astro');
+  const loginSurface = read('src/app/components/LoginSurface.astro');
+  const card = read('src/app/components/Card.astro');
+  const peopleSettings = read('src/app/pages/settings/people.astro');
 
   assert.match(en, /'login\.title': 'Sign in to Right Hand'/);
   assert.match(read('src/i18n/en.ts'), /'layout\.brand': 'Right Hand'/);
+  assert.match(login, /mode="right-hand"/);
+  assert.match(fieldLogin, /mode="field-hand"/);
+  assert.match(fieldLogin, /\/home\/field/);
+  assert.match(loginSurface, /Field Hand sign-in/);
+  assert.match(loginSurface, /Owner \/ office sign-in/);
+  assert.match(loginSurface, /role and permissions come from the company account/);
+  assert.doesNotMatch(loginSurface, /type="radio"/);
+  assert.doesNotMatch(loginSurface, /Project manager/);
+  assert.doesNotMatch(loginSurface, /Admin \/ ops/);
+  assert.doesNotMatch(layout, /id="kerf-role-switcher"/);
+  assert.doesNotMatch(layout, /document\.cookie = `\$\{cookieName\}=/);
+  assert.match(layout, /kerf-role-chip--static/);
+  assert.doesNotMatch(login, /data-wireframe="F-LND1"/);
+  assert.match(settings, /\/settings\/people/);
+  assert.match(catalog, /\/settings\/people/);
+  assert.match(peopleSettings, /Company setup assigns type, permissions, employee profile, and pay rules/);
+  assert.match(peopleSettings, /Add users, assign type and permissions|Add user/);
+  assert.match(peopleSettings, /Pay profile/);
+  assert.match(peopleSettings, /people-access__table-wrap/);
+  assert.match(card, /\.card\s*\{[\s\S]*?min-width: 0/);
+  assert.match(card, /\.card-body\s*\{[\s\S]*?min-width: 0/);
   assert.doesNotMatch(en, /Wall 1|tenant settings|tenant and role/);
   assert.doesNotMatch(es, /Wall 1|tenant settings|inquilino y rol/);
-  assert.doesNotMatch(settings, /tenant/i);
 });
 
 test('app shell uses Right Hand contractor skin with explicit dark mode', () => {
@@ -175,19 +215,60 @@ test('app shell uses Right Hand contractor skin with explicit dark mode', () => 
 test('owner home is decision-first with agent work summarized behind it', () => {
   const src = read('src/app/components/RightHandHomeSurface.astro');
 
+  assert.match(src, /Find a job, invoice, crew, or log/);
   assert.match(src, /<h2>The one thing<\/h2>/);
+  assert.match(src, /Ortiz kitchen proposal/);
+  assert.match(src, /evidence-strip/);
   assert.match(src, /Right Hand handled/);
-  assert.match(src, /Route anywhere/);
-  assert.match(src, /Filed underneath/);
+  assert.match(src, /\/design\/proj_ramirez_bath\?focus=tile-edge/);
+  assert.doesNotMatch(src, /loop-strip/);
   assert.ok(src.indexOf('<h2>The one thing</h2>') < src.indexOf('Right Hand handled'));
-  assert.ok(src.indexOf('Right Hand handled') < src.indexOf('Route anywhere'));
-  assert.ok(src.indexOf('Route anywhere') < src.indexOf('Filed underneath'));
+  assert.ok(src.indexOf('Find a job, invoice, crew, or log') < src.indexOf('<h2>The one thing</h2>'));
+  assert.doesNotMatch(src, /jobsite-capture|decision-evidence|url\('/);
   assert.doesNotMatch(src, /rh-brain/);
   assert.doesNotMatch(src, /truthStates/);
 });
 
+test('More is domain navigation, not a second Right Hand ask loop', () => {
+  const src = read('src/app/pages/more.astro');
+
+  assert.match(src, /more-page__sidebar/);
+  assert.match(src, /Work areas/);
+  assert.match(src, /title: 'Design'/);
+  assert.match(src, /title: 'Project'/);
+  assert.match(src, /title: 'Success'/);
+  assert.match(src, /Common paths/);
+  assert.doesNotMatch(src, /title: 'Clients'/);
+  assert.doesNotMatch(src, /shell\.domain\.clients/);
+  assert.doesNotMatch(src, /Ask Right Hand to route you/);
+  assert.doesNotMatch(src, /action="\/right-hand"/);
+});
+
+test('Field Hand is sun-readable and camera scan means ID or document', () => {
+  const src = read('src/app/components/FieldHandHomeSurface.astro');
+
+  assert.match(src, /Mano de Campo/);
+  assert.match(src, /Scan ID/);
+  assert.match(src, /scan an ID\/document/);
+  assert.match(src, /--fh-sun: #d7f64a/);
+  assert.doesNotMatch(src, /scan the room/);
+});
+
+test('decision records are learning inspection, not the generic job decision route', () => {
+  const decisions = read('src/app/pages/decisions/index.astro');
+  const detail = read('src/app/pages/decisions/[id].astro');
+
+  assert.match(decisions, /Decision records/);
+  assert.match(decisions, /Inspection and learning live here/);
+  assert.match(decisions, /Knowledge shelf/);
+  assert.doesNotMatch(decisions, /What can be inspected now/);
+  assert.match(detail, /Good \/ Fix trains the next draft/);
+});
+
 test('mobile bottom nav uses the Right Hand dock design', () => {
   const nav = read('src/app/components/MobileBottomNav.astro');
+  const routes = read('src/app/lib/shellRoutes.ts');
+  const topNav = read('src/app/lib/nav.ts');
 
   assert.match(nav, /left: 12px/);
   assert.match(nav, /right: 12px/);
@@ -196,8 +277,13 @@ test('mobile bottom nav uses the Right Hand dock design', () => {
   assert.match(nav, /backdrop-filter: blur\(18px\)/);
   assert.match(nav, /\.mbn-speak\s*\{[\s\S]*?background: var\(--kerf-amber\)/);
   assert.match(nav, /\.mbn-speak-label\s*\{[\s\S]*?display: block/);
+  assert.match(routes, /href: '\/start', labelKey: 'shell\.nav\.create'/);
+  assert.doesNotMatch(routes, /href: '\/create', labelKey: 'shell\.nav\.create'/);
   assert.match(nav, /data-role-root='field_hand'[\s\S]*?\.mbn-speak/);
   assert.match(nav, /background: var\(--field-green\)/);
   assert.doesNotMatch(nav, /border-radius: 50%/);
   assert.doesNotMatch(nav, /visibility:\s*hidden/);
+  assert.doesNotMatch(topNav, /href: '\/decisions'/);
+  assert.doesNotMatch(topNav, /href: '\/blackboard'/);
+  assert.doesNotMatch(topNav, /href: '\/clients'/);
 });

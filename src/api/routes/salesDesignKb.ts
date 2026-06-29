@@ -256,6 +256,7 @@ salesDesignKbRoutes.post('/estimate/:projectId/seed-from-selections', async (c) 
       line_type: sel.line_type,
       label: item?.label ?? sel.library_ref,
       quantity: 1,
+      uom: item?.uom ?? 'EA',
       unit_cost_cents: sel.amount_cents,
       markup_bps: item?.default_markup_bps ?? 3000,
       client_visible: sel.client_visible,
@@ -271,9 +272,11 @@ salesDesignKbRoutes.post('/estimate/:projectId/lines', async (c) => {
   const { confirmed, body } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'money_write' }, 409);
   const label = typeof body['label'] === 'string' ? (body['label'] as string).trim() : '';
-  const unit = body['unit_cost_cents'];
+  const unitCostCents = body['unit_cost_cents'];
   const qty = typeof body['quantity'] === 'number' ? (body['quantity'] as number) : 1;
-  if (label.length === 0 || !Number.isInteger(unit)) {
+  const rawUom = typeof body['uom'] === 'string' ? (body['uom'] as string).trim().toUpperCase() : '';
+  const uom = /^[A-Z0-9 /-]{1,12}$/.test(rawUom) ? rawUom : 'EA';
+  if (label.length === 0 || !Number.isInteger(unitCostCents)) {
     return c.json({ error: 'invalid_line', reason: 'label and integer unit_cost_cents required' }, 400);
   }
   const store = getSalesStore(tenant);
@@ -285,7 +288,8 @@ salesDesignKbRoutes.post('/estimate/:projectId/lines', async (c) => {
     line_type: (typeof body['line_type'] === 'string' ? body['line_type'] : 'material') as EstimateLine['line_type'],
     label,
     quantity: qty,
-    unit_cost_cents: unit as number,
+    uom,
+    unit_cost_cents: unitCostCents as number,
     markup_bps: Number.isInteger(body['markup_bps']) ? (body['markup_bps'] as number) : 3000,
     client_visible: body['client_visible'] !== false,
   };

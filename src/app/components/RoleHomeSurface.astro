@@ -175,7 +175,7 @@ const roleHome = ROLE_HOME_CONFIG[mode];
 
       <nav class="operation-home__actions" aria-label="Role work">
         {roleHome.actions.map((action) => (
-          <a href={action.href}>
+          <a href={action.href} data-rh-speak={action.href === '/right-hand' ? true : undefined}>
             <span>{action.label}</span>
             <small>{action.detail}</small>
           </a>

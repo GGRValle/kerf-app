@@ -2,7 +2,6 @@
 import Layout from '../../layouts/Layout.astro';
 import SurfaceIrreversibilityWrap from '../../components/SurfaceIrreversibilityWrap.astro';
 import RhSummary from '../../components/RhSummary.astro';
-import Card from '../../components/Card.astro';
 import ExportActions from '../../components/ExportActions.astro';
 import MoneyQueueList from '../../components/MoneyQueueList.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
@@ -13,6 +12,7 @@ import {
   MONEY_AR_ROWS,
   MONEY_AP_ROWS,
   MONEY_ALLOWANCE_ROWS,
+  MARGIN_TARGETS,
   moneyTenant,
 } from '../../lib/moneyFixtures.js';
 import '../../styles/money.css';
@@ -26,6 +26,71 @@ if (moneyTenant() !== context.tenantId) {
   return Astro.redirect('/');
 }
 const summary = MONEY_HOME_SUMMARY;
+const cashInRows = MONEY_AR_ROWS.slice(0, 3);
+const cashOutRows = MONEY_AP_ROWS.slice(0, 3);
+const riskRows = MONEY_ALLOWANCE_ROWS;
+const primaryMove = MONEY_AR_ROWS[0];
+const lateRows = MONEY_AR_ROWS.filter((row) => row.chip_tone === 'red');
+const lateCents = lateRows.reduce((total, row) => total + row.amount_cents, 0);
+const readyToBillCents = MONEY_AR_ROWS.reduce((total, row) => total + row.amount_cents, 0);
+const billsToScheduleCents = MONEY_AP_ROWS.reduce((total, row) => total + row.amount_cents, 0);
+const marginAverage =
+  MARGIN_TARGETS.length === 0
+    ? null
+    : Math.round(MARGIN_TARGETS.reduce((total, row) => total + row.actual_pct, 0) / MARGIN_TARGETS.length);
+const storyCards = [
+  {
+    label: 'Ready to bill',
+    value: formatMoneyUsd(readyToBillCents),
+    detail: `${summary.ar_count} client invoices or draws`,
+    href: '/money/ar',
+    tone: 'green',
+  },
+  {
+    label: 'Late / needs follow-up',
+    value: formatMoneyUsd(lateCents),
+    detail: lateRows.length > 0 ? `${lateRows.length} client follow-up${lateRows.length === 1 ? '' : 's'}` : 'No late client money',
+    href: '/money/ar',
+    tone: lateRows.length > 0 ? 'red' : 'green',
+  },
+  {
+    label: 'Bills to schedule',
+    value: formatMoneyUsd(billsToScheduleCents),
+    detail: `${summary.ap_count} vendor or supplier bills`,
+    href: '/money/ap',
+    tone: 'amber',
+  },
+  {
+    label: 'Allowance / CO risk',
+    value: formatMoneyUsd(summary.allowance_risk_cents),
+    detail: `${summary.allowance_count} items to clean up before margin moves`,
+    href: '/money/allowances',
+    tone: 'amber',
+  },
+  {
+    label: 'Job invoices',
+    value: 'Wegrzyn',
+    detail: 'Deposit, progress, and final invoice set',
+    href: '/projects/proj_wegrzyn_kitchen/money/invoices',
+    tone: 'neutral',
+  },
+  ...(projected.capabilities.marginVisible
+    ? [
+        {
+          label: 'Profit watch',
+          value: marginAverage === null ? '—' : `${marginAverage}%`,
+          detail: `${MARGIN_TARGETS.length} jobs against margin targets`,
+          href: '/money/margin',
+          tone: 'green',
+        },
+      ]
+    : []),
+] as const;
+const guardrails = [
+  'No invoice sends without approval',
+  'No vendor bill is paid from this screen',
+  'Every money move stays on the audit trail',
+] as const;
 ---
 
 <Layout
@@ -36,11 +101,11 @@ const summary = MONEY_HOME_SUMMARY;
     phase: 'operating_queue',
   }}
 >
-  <article class="money-page" data-grammar="canon">
-    <header>
+  <article class="money-page money-cockpit" data-grammar="canon">
+    <header class="money-cockpit__header">
       <div class="money-crumb">{t('f_mn.crumb')}</div>
-      <h1 class="money-title">{t('f_mn.home.title')}</h1>
-      <p class="money-subtitle">{t('f_mn.home.subtitle')}</p>
+      <h1 class="money-title">Cash, billing, and bills.</h1>
+      <p class="money-subtitle">See what can be invoiced, what is late, what is safe to schedule, and where margin is moving.</p>
       <nav class="money-nav-pills" aria-label={t('f_mn.nav.aria')}>
         <a class="active" href="/money">{t('f_mn.nav.home')}</a>
         <a href="/money/ar">{t('f_mn.nav.ar')}</a>
@@ -55,52 +120,88 @@ const summary = MONEY_HOME_SUMMARY;
     </header>
 
     <SurfaceIrreversibilityWrap kind="daily" safetyLineBudget={3}>
-      <ExportActions
-        surface="money.home"
-        scopeDescriptor="Money home · operating queue"
-        itemCount={summary.ar_count + summary.ap_count + summary.allowance_count}
-        actions={[
-          { label: t('action.print'), format: 'print' },
-          { label: t('f_mn.export.pdf'), format: 'pdf' },
-        ]}
+      <div class="money-utility-row">
+        <span>Owner money view · read-only until a gated action opens</span>
+        <ExportActions
+          surface="money.home"
+          scopeDescriptor="Money home · operating queue"
+          itemCount={summary.ar_count + summary.ap_count + summary.allowance_count}
+          actions={[
+            { label: t('action.print'), format: 'print' },
+            { label: t('f_mn.export.pdf'), format: 'pdf' },
+          ]}
+        />
+      </div>
+
+      <section class="money-hero" aria-label="The money move">
+        <div class="money-hero__copy">
+          <span>The money move</span>
+          <h2>{primaryMove.label}</h2>
+          <p>{primaryMove.detail}. Nothing sends, posts, charges, or marks paid until you open the guarded detail and approve it.</p>
+        </div>
+        <div class="money-hero__amount">
+          <strong>{formatMoneyUsd(primaryMove.amount_cents)}</strong>
+          <span>{primaryMove.chip}</span>
+        </div>
+        <div class="money-hero__actions">
+          <a class="money-btn primary" href="/projects/proj_wegrzyn_kitchen/money/invoices">Open job invoices</a>
+          <a class="money-btn ghost" href="/right-hand" data-rh-speak>Ask Right Hand</a>
+        </div>
+      </section>
+
+      <section class="money-story-grid" aria-label="Money drill-downs">
+        {storyCards.map((card) => (
+          <a class:list={['money-story-card', `money-story-card--${card.tone}`]} href={card.href}>
+            <span>{card.label}</span>
+            <strong>{card.value}</strong>
+            <em>{card.detail}</em>
+          </a>
+        ))}
+      </section>
+
+      <RhSummary
+        headline="Right Hand is watching cash, bills, and margin."
+        detail="Open a number to drill into the source. Approval, sending, posting, payment, and reconciliation stay behind the existing money gates."
+        tone="green"
       />
-      <RhSummary headline={t('f_mn.home.rh_headline')} detail={t('f_mn.home.rh_detail')} tone="green" />
 
-      <dl class="money-summary-grid">
-        <div class="money-summary-tile">
-          <dt>{t('f_mn.home.ar_due')}</dt>
-          <dd>{formatMoneyUsd(summary.ar_due_cents)}</dd>
-        </div>
-        <div class="money-summary-tile">
-          <dt>{t('f_mn.home.ap_due')}</dt>
-          <dd>{formatMoneyUsd(summary.ap_due_cents)}</dd>
-        </div>
-        <div class="money-summary-tile">
-          <dt>{t('f_mn.home.allowance_risk')}</dt>
-          <dd>{formatMoneyUsd(summary.allowance_risk_cents)}</dd>
-        </div>
-      </dl>
+      <section class="money-flow" aria-label="Money operating lanes">
+        <article class="money-panel">
+          <div class="money-panel__head">
+            <span>Cash coming in</span>
+            <a href="/money/ar">Open AR</a>
+          </div>
+          <h2>Client money to review.</h2>
+          <MoneyQueueList rows={cashInRows} emptyLabel={t('f_mn.empty')} />
+        </article>
 
-      <Card title={t('f_mn.home.ar_section')} eyebrow={t('f_mn.home.attention')}>
-        <MoneyQueueList rows={MONEY_AR_ROWS.slice(0, 2)} emptyLabel={t('f_mn.empty')} />
-        <div class="money-actions">
-          <a class="money-btn ghost" href="/money/ar">{t('f_mn.home.see_ar')}</a>
-          <a class="money-btn ghost" href="/projects/proj_wegrzyn_kitchen/money/invoices">Wegrzyn invoices</a>
+        <article class="money-panel">
+          <div class="money-panel__head">
+            <span>Cash going out</span>
+            <a href="/money/ap">Open AP</a>
+          </div>
+          <h2>Bills to schedule or hold.</h2>
+          <MoneyQueueList rows={cashOutRows} emptyLabel={t('f_mn.empty')} />
+        </article>
+
+        <article class="money-panel">
+          <div class="money-panel__head">
+            <span>Before it hits money</span>
+            <a href="/money/allowances">Open risk</a>
+          </div>
+          <h2>Allowances and change-order risk.</h2>
+          <MoneyQueueList rows={riskRows} emptyLabel={t('f_mn.empty')} />
+        </article>
+      </section>
+
+      <section class="money-proof" aria-label="Money guardrails">
+        <span>Guardrails</span>
+        <div>
+          {guardrails.map((guardrail) => (
+            <strong>{guardrail}</strong>
+          ))}
         </div>
-      </Card>
-
-      <Card title={t('f_mn.home.ap_section')}>
-        <MoneyQueueList rows={MONEY_AP_ROWS.slice(0, 2)} emptyLabel={t('f_mn.empty')} />
-        <div class="money-actions">
-          <a class="money-btn ghost" href="/money/ap">{t('f_mn.home.see_ap')}</a>
-        </div>
-      </Card>
-
-      <Card title={t('f_mn.home.allowance_section')}>
-        <MoneyQueueList rows={MONEY_ALLOWANCE_ROWS} emptyLabel={t('f_mn.empty')} />
-      </Card>
-
-      <p class="money-notice">{t('f_mn.no_payment_notice')}</p>
+      </section>
     </SurfaceIrreversibilityWrap>
   </article>
 </Layout>

@@ -6,18 +6,18 @@ import RhSummary from '../../components/RhSummary.astro';
 const decisionLinks = [
   {
     href: '/decisions/sample-decision-packet',
-    title: 'Sample decision packet',
-    detail: 'Inspect the approval shape without sending, paying, or filing anything.',
+    title: 'Decision packet library',
+    detail: 'Inspect the proof shape after a decision is made.',
   },
   {
-    href: '/proposals/prop_lane6_pass/send',
-    title: 'Proposal send gate',
-    detail: 'Open the client-send review path and its approval boundary.',
+    href: '/kb-ingestion',
+    title: 'Knowledge review',
+    detail: 'See staged costs, corrections, and what can be promoted later.',
   },
   {
-    href: '/relay',
-    title: 'Office review cards',
-    detail: 'Review field captures that currently need a human decision.',
+    href: '/audit/altpkt_proposal_fixture_viewed_owner_review',
+    title: 'Audit trail',
+    detail: 'Check what proof was used, who approved, and what stayed blocked.',
   },
 ] as const;
 ---
@@ -25,12 +25,12 @@ const decisionLinks = [
 <Layout titleKey="decisions.title" activeHref="/decisions">
   <section class="decision-hub" aria-labelledby="decision-hub-title">
     <RhSummary
-      headline="Decisions"
-      detail="This is the review-before-action hub. It points to existing gates and keeps approvals inspectable."
+      headline="Decision records"
+      detail="Inspection and learning live here. Day-to-day choices stay inside the job, design, money, or field surface where the work belongs."
       tone="green"
     />
 
-    <Card eyebrow="Review queue" title="What can be inspected now">
+    <Card eyebrow="Knowledge shelf" title="Inspect proof and learning">
       <div class="decision-hub__actions">
         {decisionLinks.map((link) => (
           <a class="decision-hub__action" href={link.href}>
@@ -41,10 +41,10 @@ const decisionLinks = [
       </div>
     </Card>
 
-    <Card eyebrow="Boundary" title="No automatic action">
+    <Card eyebrow="Boundary" title="Not the daily work queue">
       <p class="decision-hub__copy">
-        Decisions shown here are review surfaces. Money movement, client sends,
-        and durable writes still route through their specific gates.
+        A tile selection opens in Design. An invoice opens in Money. A field note
+        opens in the job or office review. This shelf keeps the proof and learning trail visible afterward.
       </p>
     </Card>
   </section>

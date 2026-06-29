@@ -10,15 +10,15 @@ const safeProjectId = (raw: string | null) => raw && /^[A-Za-z0-9_-]+$/.test(raw
 const requestedProjectId = safeProjectId(Astro.url.searchParams.get('project_id'));
 const selectedProject = projects.find((project) => project.project_id === requestedProjectId) ?? null;
 const suggestedJob = selectedProject ?? projects[0] ?? null;
-const routePrefilled = selectedProject !== null;
+const routePrefilled = false;
 const rawReturnTo = Astro.url.searchParams.get('return_to') ?? '';
 const safeReturnTo = rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : '';
 const fallbackReturn = selectedProject ? `/projects/${selectedProject.project_id}?src=camera` : '/';
 const returnHref = safeReturnTo || fallbackReturn;
 const modeParam = Astro.url.searchParams.get('mode');
 const initialMode = modeParam === 'walkthru' || modeParam === 'scan' ? modeParam : 'photo';
-// System-intake label: top stays CAPTURE; the mode reads CAPTURE Photo / Walkthrough / Scan.
-const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m === 'scan' ? 'Scan' : 'Photo');
+// System-intake label: top stays CAPTURE; the mode reads CAPTURE Photo / Walkthrough / Scan ID.
+const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m === 'scan' ? 'Scan ID' : 'Photo');
 ---
 
 <Layout
@@ -26,7 +26,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
   activeHref="/camera"
   surfaceContext={{
     surface: 'field_capture',
-    phase: routePrefilled ? 'capture' : 'route_pending',
+    phase: 'capture',
     ...(routePrefilled && selectedProject ? { project_id: selectedProject.project_id } : {}),
   }}
 >
@@ -39,7 +39,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     data-suggested-project-client={suggestedJob?.client_name ?? ''}
     data-suggested-match="job-site GPS"
     data-route-confirmed={routePrefilled ? 'true' : 'false'}
-    data-selected-project-id={routePrefilled ? (selectedProject?.project_id ?? '') : ''}
+    data-selected-project-id={suggestedJob?.project_id ?? ''}
     data-return-href={returnHref}
     data-initial-mode={initialMode}
     data-tenant-id={context.tenantId}
@@ -83,12 +83,10 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
           {initialMode === 'walkthru'
             ? 'Talk while you film. Right Hand will route the walkthrough after you capture.'
             : initialMode === 'scan'
-              ? 'Room scan needs native LiDAR. This web build keeps it separate for now.'
+              ? 'Line up the ID or document. Right Hand saves it as a scan and asks where it belongs.'
               : 'Capture first. Choose where it goes before filing.'}
         </p>
       </div>
-
-      <a class="cam-room-link" href="/room-capture?src=camera&mode=start">Room scan</a>
 
       <div class="cam-bottom-overlay">
         <div class="cam-zoom" aria-label="Zoom">
@@ -100,13 +98,13 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         <div class="cam-mode-strip" role="tablist" aria-label="Camera mode">
           <button type="button" role="tab" data-mode="walkthru" aria-selected={initialMode === 'walkthru' ? 'true' : 'false'}>Walkthrough</button>
           <button type="button" role="tab" data-mode="photo" aria-selected={initialMode === 'photo' ? 'true' : 'false'}>Photo</button>
-          <button type="button" role="tab" data-mode="scan" aria-selected={initialMode === 'scan' ? 'true' : 'false'}>Scan</button>
+          <button type="button" role="tab" data-mode="scan" aria-selected={initialMode === 'scan' ? 'true' : 'false'}>Scan ID</button>
         </div>
 
         <div class="cam-controls">
-          <div class="cam-last-shot" id="cam-last-shot" aria-hidden="true">
+          <button type="button" class="cam-last-shot" id="cam-last-shot" aria-label="Review last capture">
             <span>Last</span>
-          </div>
+          </button>
           <button type="button" class="cam-shutter" id="cam-shutter" aria-label="Capture media"></button>
           <button type="button" class="cam-done" id="cam-done">Done</button>
         </div>
@@ -122,6 +120,16 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
             <span id="cam-captured-detail">Capture first. Choose where it goes before filing.</span>
           </div>
         </div>
+      </section>
+
+      <section class="cam-review-sheet kg-card" id="cam-review-sheet" hidden aria-label="Last capture preview">
+        <div class="cam-review-head">
+          <p class="cam-route-eyebrow">Last capture</p>
+          <button type="button" class="cam-route-close" id="cam-review-close" aria-label="Close capture preview">×</button>
+        </div>
+        <div class="cam-review-media" id="cam-review-media" aria-hidden="true"></div>
+        <strong id="cam-review-title">Capture ready</strong>
+        <p id="cam-review-detail">This is the latest capture in this session.</p>
       </section>
 
       <section class="cam-route-panel kg-card" id="cam-route-panel" hidden aria-label="Confirm capture destination">
@@ -141,7 +149,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
           </button>
           <button type="button" class="cam-route-kind" data-route-kind="lead" aria-pressed="false">
             <strong>New lead</strong>
-            <span>Start intake</span>
+            <span>Create placeholder</span>
           </button>
           <button type="button" class="cam-route-kind" data-route-kind="review" aria-pressed="false">
             <strong>Review later</strong>
@@ -166,7 +174,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         <p class="cam-route-hint" id="cam-route-hint">
           {suggestedJob
             ? `Right Hand matched your active job by job-site GPS. Pick a destination, then confirm.`
-            : 'Pick where this capture belongs, then confirm.'}
+            : 'Capture as much as you need. Done opens routing for the whole session.'}
         </p>
         <div class="cam-route-actions">
           <button type="button" class="cam-route-confirm" id="cam-route-confirm">Confirm destination</button>
@@ -223,6 +231,11 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     const capturedDetail = document.querySelector('#cam-captured-detail');
     const thumb = document.querySelector('#cam-thumb');
     const lastShot = document.querySelector('#cam-last-shot');
+    const reviewSheet = document.querySelector('#cam-review-sheet');
+    const reviewClose = document.querySelector('#cam-review-close');
+    const reviewMedia = document.querySelector('#cam-review-media');
+    const reviewTitle = document.querySelector('#cam-review-title');
+    const reviewDetail = document.querySelector('#cam-review-detail');
     const shutter = document.querySelector('#cam-shutter');
     const doneButton = document.querySelector('#cam-done');
     let currentMode = root?.getAttribute('data-initial-mode') || 'photo';
@@ -244,13 +257,14 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     let activeCaptureSessionId = '';
     let activeCaptureItemId = '';
     let lastCapturePreviewUrl = '';
+    let captureCollapseTimer = 0;
 
     const copyForMode = (mode) => {
       if (mode === 'walkthru') return 'Talk while you film. Right Hand will route the walkthrough after you capture.';
-      if (mode === 'scan') return 'Room scan needs native LiDAR. This web build keeps it separate for now.';
+      if (mode === 'scan') return 'Line up the ID or document. Right Hand saves it as a scan and asks where it belongs.';
       return 'Capture first. Choose where it goes before filing.';
     };
-    const modeLabel = (mode) => (mode === 'walkthru' ? 'Walkthrough' : mode === 'scan' ? 'Scan' : 'Photo');
+    const modeLabel = (mode) => (mode === 'walkthru' ? 'Walkthrough' : mode === 'scan' ? 'Scan ID' : 'Photo');
     const setStatus = (message) => {
       if (status instanceof HTMLElement) status.textContent = message;
     };
@@ -266,6 +280,43 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       badge.classList.toggle('cap-sync--working', state === 'syncing');
       const label = badge.querySelector('.cap-sync__label');
       if (label instanceof HTMLElement) label.textContent = meta.label;
+    };
+    const scheduleCapturedCollapse = () => {
+      if (!(captured instanceof HTMLElement)) return;
+      window.clearTimeout(captureCollapseTimer);
+      captureCollapseTimer = window.setTimeout(() => {
+        const routingOpen = routePanel instanceof HTMLElement && !routePanel.hidden;
+        const reviewing = reviewSheet instanceof HTMLElement && !reviewSheet.hidden;
+        if (!routingOpen && !reviewing) captured.hidden = true;
+      }, 3000);
+    };
+    const closeLastShotReview = () => {
+      if (reviewSheet instanceof HTMLElement) reviewSheet.hidden = true;
+    };
+    const openLastShotReview = () => {
+      const capture = lastCapture;
+      const previewUrl = lastCapturePreviewUrl || (capture && typeof capture.preview_url === 'string' ? capture.preview_url : '');
+      let snapshotKind = capture?.kind;
+      if (!snapshotKind && lastShot instanceof HTMLElement) snapshotKind = lastShot.dataset.kind;
+      const kind = snapshotKind === 'walkthrough' || snapshotKind === 'scan' ? snapshotKind : 'photo';
+      const friendly = friendlyForKind(kind);
+      if (!(reviewSheet instanceof HTMLElement)) {
+        if (captured instanceof HTMLElement && capture) captured.hidden = false;
+        return;
+      }
+      if (reviewTitle instanceof HTMLElement) reviewTitle.textContent = `${friendly} preview`;
+      if (reviewDetail instanceof HTMLElement) {
+        reviewDetail.textContent = capture
+          ? `${friendly} is saved in this capture session. Tap Done when you are ready to route it.`
+          : 'This is cosmetic history only. Take a new capture to file it.';
+      }
+      if (reviewMedia instanceof HTMLElement) {
+        reviewMedia.classList.toggle('has-preview', Boolean(previewUrl));
+        reviewMedia.style.backgroundImage = previewUrl ? `url("${previewUrl}")` : '';
+        reviewMedia.textContent = previewUrl ? '' : kind === 'walkthrough' ? 'Walkthrough saved' : kind === 'scan' ? 'Scan saved' : 'Photo saved';
+      }
+      reviewSheet.hidden = false;
+      if (captured instanceof HTMLElement) captured.hidden = true;
     };
     const reflectCaptureItemStatus = (item) => {
       if (!item || item.id !== activeCaptureItemId) return;
@@ -356,7 +407,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         routeConfirm.textContent = selectedRouteKind === 'job'
           ? 'Confirm and file'
           : selectedRouteKind === 'lead'
-            ? 'Start intake'
+            ? 'Create lead placeholder'
             : 'Save for review';
       }
       if (root instanceof HTMLElement) root.dataset.routeKind = selectedRouteKind;
@@ -375,9 +426,9 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     const syncRouteSuggestion = () => {
       if (!(routeSuggestion instanceof HTMLElement)) return;
       if (selectedRouteKind === 'lead') {
-        routeSuggestion.textContent = 'New lead · Sales intake';
+        routeSuggestion.textContent = 'New lead · Placeholder';
         if (routeHint instanceof HTMLElement) {
-          routeHint.textContent = 'Starts a new lead intake. It does not create a project until you convert it later.';
+          routeHint.textContent = 'Creates a lead shell so you can keep moving. Right Hand can fill in the details from the conversation later.';
         }
         return;
       }
@@ -485,34 +536,59 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     };
     const routeCaptureToLead = async () => {
       if (!lastCapture) {
-        setStatus('Capture a photo or video first, then start the lead intake.');
+        setStatus('Capture a photo or video first, then create the lead placeholder.');
         return false;
       }
       if (isFiling) return true;
       isFiling = true;
       if (doneButton instanceof HTMLButtonElement) doneButton.disabled = true;
       if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = true;
-      setStatus(`Opening lead intake from ${friendlyForKind(lastCapture.kind).toLowerCase()}…`);
+      setStatus(`Creating a lead placeholder from ${friendlyForKind(lastCapture.kind).toLowerCase()}…`);
       try {
+        const dealId = `deal_camera_${Date.now().toString(36)}`;
+        const response = await fetch('/api/v1/sales/deals', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            confirmed: true,
+            deal_id: dealId,
+            name: 'Camera capture lead',
+            client_name: 'Client TBD',
+            source: 'Camera capture',
+          }),
+        });
+        if (!response.ok) throw new Error(`lead_failed_${response.status}`);
+        const result = await response.json();
+        const createdDealId = result?.deal?.id || dealId;
+        await persistSessionDestination({ kind: 'lead', id: 'new' });
         try {
           sessionStorage.setItem('kerf.cameraCapture', JSON.stringify({
             ...lastCapture,
-            status: 'pending_lead_intake',
+            status: 'lead_placeholder_created',
             route_kind: 'lead',
+            deal_id: createdDealId,
             source: 'camera',
             returned_at: Date.now(),
           }));
         } catch {
           // Visible navigation is still the fallback.
         }
-        setStatus('Opening new lead intake.');
-        window.location.href = `/clients/new?src=camera&capture_kind=${encodeURIComponent(lastCapture.kind)}`;
+        setStatus('Lead placeholder created. Opening the lead.');
+        window.location.href = `/sales/${encodeURIComponent(createdDealId)}?src=camera`;
         return true;
       } catch (err) {
         isFiling = false;
         if (doneButton instanceof HTMLButtonElement) doneButton.disabled = false;
         if (routeConfirm instanceof HTMLButtonElement) routeConfirm.disabled = false;
-        setStatus('Could not open the lead intake. Nothing was filed.');
+        const code = err instanceof Error ? err.message : '';
+        setStatus(
+          code === 'lead_failed_401'
+            ? 'Your session expired — sign in again, then create the lead.'
+            : code === 'lead_failed_403'
+              ? 'You do not have access to create that lead.'
+              : 'Could not create the lead placeholder. The capture is still saved on this phone.',
+        );
         return false;
       }
     };
@@ -540,6 +616,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         if (!response.ok) throw new Error(`review_failed_${response.status}`);
         const result = await response.json();
         const reviewRoute = result.review_route || '/relay?src=camera';
+        await persistSessionDestination({ kind: 'review', id: 'office_queue' });
         try {
           sessionStorage.setItem('kerf.cameraCapture', JSON.stringify({
             ...lastCapture,
@@ -674,11 +751,6 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     });
     const startCamera = async () => {
       cameraFailure = null;
-      if (currentMode === 'scan') {
-        stopCamera();
-        setCameraState('Native scan is separate', 'LiDAR/room scan is not available in this web camera yet.');
-        return false;
-      }
       if (!window.isSecureContext) {
         cameraFailure = 'secure_context_required';
         stopCamera();
@@ -731,13 +803,11 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       document.querySelectorAll('[data-mode]').forEach((button) => {
         if (button instanceof HTMLButtonElement) button.setAttribute('aria-selected', button.dataset.mode === mode ? 'true' : 'false');
       });
-      if (mode === 'scan') {
-        setStatus('');
-      } else {
-        setStatus(routeConfirmed && selectedProjectName
-          ? `Ready for ${selectedProjectName}.`
+      setStatus(routeConfirmed && selectedProjectName
+        ? `Ready for ${selectedProjectName}.`
+        : mode === 'scan'
+          ? 'Camera open — scan the ID or document, then route it.'
           : 'Camera open — capture now, route after.');
-      }
       await startCamera();
     };
     routeSelect?.addEventListener('change', () => {
@@ -760,6 +830,10 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         syncRouteConfirmState();
         return;
       }
+      if (selectedRouteKind !== 'job') {
+        void fileCapture();
+        return;
+      }
       applySelectedRoute();
       void fileCapture();
     });
@@ -772,13 +846,9 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     // was removed — competing handlers and preventDefault-on-pointerdown made the
     // iOS tap path unreliable (a likely cause of "Confirm and file did nothing").
     const kindForMode = () => currentMode === 'walkthru' ? 'walkthrough' : currentMode === 'scan' ? 'scan' : 'photo';
-    const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'Document scan' : 'Photo';
+    const friendlyForKind = (kind) => kind === 'walkthrough' ? 'Walkthrough' : kind === 'scan' ? 'ID scan' : 'Photo';
     const fallbackInputForMode = () => currentMode === 'walkthru' ? videoInput : photoInput;
     const openFallbackCapture = () => {
-      if (currentMode === 'scan') {
-        setStatus('Room scan is native LiDAR and is not available in this web camera yet.');
-        return;
-      }
       const input = fallbackInputForMode();
       if (input instanceof HTMLInputElement) input.click();
     };
@@ -819,6 +889,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     };
     const updateLastShot = (kind, previewUrl = '') => {
       const friendly = friendlyForKind(kind);
+      lastCapturePreviewUrl = previewUrl || lastCapturePreviewUrl;
       if (root instanceof HTMLElement) root.classList.add('has-capture');
       if (captured instanceof HTMLElement) captured.hidden = false;
       if (viewfinderCopy instanceof HTMLElement) viewfinderCopy.hidden = true;
@@ -856,6 +927,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         : lastCapture?.status === 'saved_on_phone'
           ? `${friendly} saved on phone — tap Done to choose where it goes.`
           : `${friendly} captured — tap Done to choose where it goes.`);
+      scheduleCapturedCollapse();
     };
     const rememberCapture = async (capture, blob) => {
       let savedItem = null;
@@ -920,7 +992,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       if (!ctx) return false;
       ctx.drawImage(video, 0, 0, width, height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-      const name = `${kind === 'walkthrough' ? 'walkthrough-frame' : 'photo'}-${Date.now()}.jpg`;
+      const name = `${kind === 'walkthrough' ? 'walkthrough-frame' : kind === 'scan' ? 'id-scan' : 'photo'}-${Date.now()}.jpg`;
       const blob = await blobFromCanvas();
       await rememberCapture({ kind, name, source: 'getUserMedia_canvas_frame' }, blob);
       updateLastShot(kind, dataUrl);
@@ -972,11 +1044,6 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       return true;
     };
     const openCapture = async () => {
-      if (currentMode === 'scan') {
-        setStatus('Scan needs native LiDAR. Use Room scan when the native capture path is ready.');
-        setCameraState('Native scan is separate', 'Nothing was filed. LiDAR capture is deferred to the native track.');
-        return;
-      }
       if (typeof MediaStream === 'undefined' || !(cameraStream instanceof MediaStream)) {
         const started = await startCamera();
         if (!started) {
@@ -987,7 +1054,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
       }
       const capturedInline = currentMode === 'walkthru'
         ? startWalkthruRecording()
-        : captureStillFromVideo('photo');
+        : captureStillFromVideo(kindForMode());
       if (!(await capturedInline)) {
         setStatus('Camera unavailable here — using fallback file picker.');
         openFallbackCapture();
@@ -995,7 +1062,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     };
     const onSelectedFile = (file, kind) => {
       if (!file) return;
-      const objectUrl = kind === 'photo' && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
+      const objectUrl = (kind === 'photo' || kind === 'scan') && file.type?.startsWith('image/') ? URL.createObjectURL(file) : '';
       void rememberCapture({
         kind,
         name: file.name || `${kind} capture`,
@@ -1015,7 +1082,7 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
         activeCaptureSessionId = session.id;
         activeCaptureItemId = item.id;
         const captureKind = item.kind === 'video' ? 'walkthrough' : item.kind;
-        lastCapturePreviewUrl = item.kind === 'photo' ? URL.createObjectURL(item.blob) : '';
+        lastCapturePreviewUrl = item.kind === 'photo' || item.kind === 'scan' ? URL.createObjectURL(item.blob) : '';
         lastCapture = {
           kind: captureKind,
           name: item.name,
@@ -1055,7 +1122,9 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     });
     document.querySelector('#cam-shutter')?.addEventListener('click', () => void openCapture());
     document.querySelector('#cam-done')?.addEventListener('click', done);
-    photoInput?.addEventListener('change', () => onSelectedFile(photoInput instanceof HTMLInputElement ? photoInput.files?.[0] : null, 'photo'));
+    lastShot?.addEventListener('click', openLastShotReview);
+    reviewClose?.addEventListener('click', closeLastShotReview);
+    photoInput?.addEventListener('change', () => onSelectedFile(photoInput instanceof HTMLInputElement ? photoInput.files?.[0] : null, kindForMode() === 'scan' ? 'scan' : 'photo'));
     videoInput?.addEventListener('change', () => onSelectedFile(videoInput instanceof HTMLInputElement ? videoInput.files?.[0] : null, 'walkthrough'));
     window.addEventListener('pagehide', stopCamera);
     const stopCaptureQueue = installCaptureUploadQueue(capturePrincipalSnapshot(), {
@@ -1290,21 +1359,6 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     line-height: 1.35;
     font-size: 0.78rem;
   }
-  .cam-room-link {
-    position: absolute;
-    z-index: 5;
-    top: 3.36rem;
-    right: 0.78rem;
-    padding: 0.34rem 0.56rem;
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 999px;
-    background: rgba(5,7,11,0.42);
-    color: rgba(248,250,252,0.74);
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-decoration: none;
-    backdrop-filter: blur(14px);
-  }
   .cam-bottom-overlay {
     position: absolute;
     z-index: 5;
@@ -1362,9 +1416,13 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     place-items: center;
     gap: 0.18rem;
     width: 2.72rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
     color: rgba(248,250,252,0.74);
     font-size: 0.58rem;
     font-weight: 800;
+    cursor: pointer;
   }
   .cam-last-shot::before {
     content: '';
@@ -1490,6 +1548,9 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     color: #f8fafc;
     backdrop-filter: blur(16px);
   }
+  [data-grammar="canon"].f-cam1 .cam-captured.kg-card[hidden] {
+    display: none;
+  }
   .cam-captured__eyebrow {
     margin: 0;
     color: rgba(248,250,252,0.58);
@@ -1549,6 +1610,59 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     font-size: 0.72rem;
     line-height: 1.3;
   }
+  .cam-review-sheet[hidden] {
+    display: none;
+  }
+  [data-grammar="canon"].f-cam1 .cam-review-sheet.kg-card {
+    position: absolute;
+    z-index: 8;
+    left: max(0.82rem, env(safe-area-inset-left));
+    right: max(0.82rem, env(safe-area-inset-right));
+    bottom: calc(7.65rem + env(safe-area-inset-bottom));
+    display: grid;
+    gap: 0.48rem;
+    padding: 0.75rem;
+    border-color: rgba(255,255,255,0.16);
+    background: rgba(21, 27, 35, 0.94);
+    color: #f8fafc;
+    backdrop-filter: blur(18px);
+  }
+  [data-grammar="canon"].f-cam1 .cam-review-sheet.kg-card[hidden] {
+    display: none;
+  }
+  .cam-review-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+  .cam-review-media {
+    display: grid;
+    place-items: center;
+    min-height: 10.5rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)),
+      rgba(255,255,255,0.07);
+    background-size: cover;
+    background-position: center;
+    color: rgba(248,250,252,0.72);
+    font-size: 0.8rem;
+    font-weight: 850;
+  }
+  .cam-review-media.has-preview {
+    min-height: 13rem;
+  }
+  .cam-review-sheet strong {
+    font-size: 0.92rem;
+  }
+  .cam-review-sheet p {
+    margin: 0;
+    color: rgba(248,250,252,0.7);
+    line-height: 1.35;
+    font-size: 0.76rem;
+  }
   @media (max-height: 760px) {
     .cam-stage {
       min-height: 100dvh;
@@ -1580,6 +1694,9 @@ const modeLabel = (m: string): string => (m === 'walkthru' ? 'Walkthrough' : m =
     backdrop-filter: blur(16px);
     pointer-events: auto;
     touch-action: manipulation;
+  }
+  [data-grammar="canon"].f-cam1 .cam-route-panel.kg-card[hidden] {
+    display: none;
   }
   .cam-route-panel,
   .cam-route-panel * {

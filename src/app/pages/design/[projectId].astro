@@ -13,6 +13,8 @@ import {
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
+const focus = Astro.url.searchParams.get('focus') ?? '';
+const showTileEdgeDecision = focus === 'tile-edge' || projectId === 'proj_ramirez_bath';
 const store = getSalesStore(tenant);
 const libraryItems = store.items.filter((i) => i.collection === 'selections');
 const selections = selectionsForProject(tenant, projectId).map((s) =>
@@ -102,6 +104,36 @@ const integrationCards = [
 
     <!-- Selections tab (functional) -->
     <section class="ds-panel" data-panel="selections">
+      {showTileEdgeDecision ? (
+        <section class="ds-choice" aria-labelledby="tile-edge-title">
+          <div>
+            <p class="ds-kicker">Selection needs owner</p>
+            <h2 id="tile-edge-title">Ramirez bath tile edge</h2>
+            <p class="ds-meta">
+              Crew can keep moving once the edge detail is picked. Right Hand matched the open question to the bath selections, site photo, and Thursday schedule risk.
+            </p>
+          </div>
+          <div class="ds-choice__proof" aria-label="Proof">
+            <span>Proof</span>
+            <strong>Site photo · tile quote · crew hold</strong>
+            <small>Nothing texts or sends until you approve the wording.</small>
+          </div>
+          <div class="ds-choice__options" aria-label="Tile edge options">
+            <button type="button" class="ds-choice__option">
+              <strong>Schluter matte black</strong>
+              <span>Cleaner edge · +$380 · fastest answer for crew</span>
+            </button>
+            <button type="button" class="ds-choice__option">
+              <strong>Mitered tile edge</strong>
+              <span>Softer look · +$710 · adds one day</span>
+            </button>
+          </div>
+          <div class="ds-choice__actions">
+            <a class="ds-btn primary" href="/right-hand?q=Draft%20a%20text%20to%20Ramirez%20for%20the%20bath%20tile%20edge%20choice" data-rh-speak>Draft text to owner</a>
+            <a class="ds-btn" href={`/projects/${projectId}`}>Open job</a>
+          </div>
+        </section>
+      ) : null}
       <div class="ds-two">
         <div class="ds-lib">
           <h2>Pull from Library <a class="ds-link" href="/library">Open KB ›</a></h2>
@@ -227,6 +259,70 @@ const integrationCards = [
   .ds-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0; border-bottom: 1px solid var(--line); padding-bottom: 0.5rem; }
   .ds-tab { min-height: 36px; padding: 0.35rem 0.65rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); cursor: pointer; font: inherit; font-size: 0.82rem; font-weight: 900; }
   .ds-tab[aria-selected='true'] { background: var(--design-accent, #666c37); border-color: transparent; color: #fff; }
+  .ds-choice {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+    padding: 0.85rem;
+    border: 1px solid color-mix(in srgb, var(--design-accent, #666c37) 50%, var(--line));
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--design-accent, #666c37) 10%, var(--panel)), var(--panel));
+    box-shadow: var(--shadow);
+  }
+  .ds-choice h2 {
+    margin: 0 0 0.35rem;
+    font-size: clamp(1.45rem, 7vw, 2.25rem);
+    line-height: 0.98;
+  }
+  .ds-choice__proof {
+    display: grid;
+    gap: 0.16rem;
+    padding: 0.72rem;
+    border: 1px solid color-mix(in srgb, var(--design-accent, #666c37) 34%, var(--line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--design-accent, #666c37) 8%, var(--bg));
+  }
+  .ds-choice__proof span {
+    color: var(--design-accent, #666c37);
+    font-size: 0.68rem;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+  .ds-choice__proof small {
+    color: var(--muted);
+    font-weight: 800;
+  }
+  .ds-choice__options,
+  .ds-choice__actions {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .ds-choice__option {
+    display: grid;
+    gap: 0.2rem;
+    min-height: 4.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    text-align: left;
+    font: inherit;
+  }
+  .ds-choice__option strong {
+    font-size: 1rem;
+  }
+  .ds-choice__option span {
+    color: var(--muted);
+    line-height: 1.28;
+  }
+  @media (min-width: 720px) {
+    .ds-choice__options,
+    .ds-choice__actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   .ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   @media (max-width: 720px) { .ds-two { grid-template-columns: 1fr; } }
   .ds-lib, .ds-sel { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem; background: var(--panel); box-shadow: var(--shadow); }

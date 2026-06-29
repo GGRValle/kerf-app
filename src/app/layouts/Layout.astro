@@ -13,7 +13,6 @@ import RightHandConversationDock from '../components/RightHandConversationDock.a
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import { navForContext } from '../lib/nav.js';
 import { DEFAULT_ROLE_ROOT_CONTEXT, type LayoutProps, type RoleRoot } from '../lib/layout-props.js';
-import { ROLE_ROOT_COOKIE } from '../lib/roleSession.js';
 import { createSurfaceContext, type SurfaceContextInput } from '../lib/surfaceContext.js';
 import type { I18nKey } from '../../i18n/keys.js';
 import { readBuildStamp } from '../../shell/buildStamp.js';
@@ -36,7 +35,6 @@ const {
 
 const { t } = createLayoutContext({ username, locale: context.locale, roleRoot: context.roleRoot });
 const navItems = navForContext(context);
-const roleRoots: readonly RoleRoot[] = ['owner', 'pm', 'admin_ops', 'field_hand', 'sub'];
 const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
   owner: 'roleRoot.owner',
   pm: 'roleRoot.pm',
@@ -127,17 +125,10 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
             );
           })}
         </nav>
-        <label class="kerf-role-chip" aria-label={t('shell.role_switcher.aria')}>
+        <div class="kerf-role-chip kerf-role-chip--static" aria-label="Current access">
           <span class="kerf-role-chip__label">{t(ROLE_LABEL_KEYS[context.roleRoot])}</span>
-          <select id="kerf-role-switcher" data-cookie={ROLE_ROOT_COOKIE}>
-            {roleRoots.map((role) => (
-              <option value={role} selected={role === context.roleRoot}>
-                {t(ROLE_LABEL_KEYS[role])}
-              </option>
-            ))}
-          </select>
-        </label>
-        <a class="kerf-topbar-rh" href="/login" aria-label={`${operatorName} account`}>
+        </div>
+        <a class="kerf-topbar-rh" href="/settings/me" aria-label={`${operatorName} settings`}>
           <span aria-hidden="true">{operatorInitials}</span>
         </a>
       </header>
@@ -196,20 +187,6 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
     <script>
       const activeNav = document.querySelector('.kerf-nav-link.active');
       activeNav?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' });
-      const roleSelect = document.getElementById('kerf-role-switcher');
-      const cookieName = roleSelect?.getAttribute('data-cookie') || 'kerf_role_root';
-      const homePaths = {
-        owner: '/home/owner',
-        pm: '/home/pm',
-        admin_ops: '/home/admin-ops',
-        field_hand: '/home/field',
-        sub: '/home/sub',
-      };
-      roleSelect?.addEventListener('change', () => {
-        const role = roleSelect.value;
-        document.cookie = `${cookieName}=${encodeURIComponent(role)}; path=/; max-age=2592000; SameSite=Lax`;
-        window.location.href = homePaths[role] ?? '/';
-      });
     </script>
     <script is:inline>
       // PWA service-worker registration (Goal B PR-1). Best-effort; install

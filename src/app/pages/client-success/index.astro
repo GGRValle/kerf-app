@@ -1,31 +1,686 @@
 ---
-// F-CS1 · Client Success roster
 import Layout from '../../layouts/Layout.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
-import '../../styles/lane3.css';
+import { LANE6_CLIENTS } from '../../lib/lane6Fixtures.js';
+import {
+  getLane3Brain,
+  getLane3WarrantyForClient,
+  warrantyDaysRemaining,
+} from '../../lib/lane3Fixtures.js';
 
-const { t, context } = createLayoutContext();
+type AskStatus = 'ready' | 'sent' | 'needs_feedback';
+type ReferralStatus = 'candidate' | 'warm_intro' | 'thank_you';
+type SocialStatus = 'ready' | 'needs_permission' | 'needs_connection';
+
+const { context } = createLayoutContext();
+
+const clientSignals: Record<
+  string,
+  {
+    readonly project: string;
+    readonly stage: string;
+    readonly reviewAsk: AskStatus;
+    readonly feedback: string;
+    readonly referral: ReferralStatus;
+    readonly social: SocialStatus;
+    readonly nextTouch: string;
+    readonly proof: string;
+    readonly source: string;
+  }
+> = {
+  client_wegrzyn: {
+    project: 'Kitchen + primary bath',
+    stage: 'Closeout prep',
+    reviewAsk: 'ready',
+    feedback: 'Happy with cabinet punch; ask after final clean',
+    referral: 'candidate',
+    social: 'ready',
+    nextTouch: 'Draft Google review ask',
+    proof: '6 photos, signed proposal, final punch notes',
+    source: 'Field proof + client portal',
+  },
+  client_dunne: {
+    project: 'Primary bath refresh',
+    stage: 'Change-order approval',
+    reviewAsk: 'sent',
+    feedback: 'Waiting on tile layout reply',
+    referral: 'warm_intro',
+    social: 'needs_permission',
+    nextTouch: 'Follow up on approval and review timing',
+    proof: 'Selection packet and CO-003 draft',
+    source: 'Portal + Right Hand note',
+  },
+  client_hernandez: {
+    project: 'Cabinet warranty',
+    stage: 'Warranty care',
+    reviewAsk: 'needs_feedback',
+    feedback: 'Open cabinet adjustment; do not ask for review yet',
+    referral: 'thank_you',
+    social: 'needs_connection',
+    nextTouch: 'Schedule warranty walkthrough',
+    proof: 'Warranty claim and service note',
+    source: 'Warranty queue',
+  },
+};
+
+const clients = LANE6_CLIENTS.filter((client) => client.tenant_id === context.tenantId).map((client) => {
+  const brain = getLane3Brain(client.client_id);
+  const warranty = getLane3WarrantyForClient(client.client_id);
+  const signal = clientSignals[client.client_id] ?? {
+    project: 'Client work',
+    stage: client.status,
+    reviewAsk: 'ready' as const,
+    feedback: brain?.latest_note ?? 'No client feedback logged yet',
+    referral: 'candidate' as const,
+    social: 'needs_permission' as const,
+    nextTouch: brain?.next_action ?? 'Ask Right Hand for the next client touch',
+    proof: `${client.project_count} project${client.project_count === 1 ? '' : 's'} on record`,
+    source: 'Client record',
+  };
+  const warrantyLabel =
+    warranty === null
+      ? 'No warranty claim'
+      : warranty.claims_open > 0
+        ? `${warranty.claims_open} warranty item open`
+        : `${warranty.term_years} year warranty active`;
+  const warrantyTone = warranty === null || warranty.claims_open === 0 ? 'green' : 'amber';
+  const daysRemaining = warranty === null ? null : warrantyDaysRemaining(warranty, new Date('2026-06-29T12:00:00Z'));
+  return {
+    ...client,
+    ...signal,
+    brain,
+    warranty,
+    warrantyLabel,
+    warrantyTone,
+    daysRemaining,
+    searchText: [
+      client.display_name,
+      client.email,
+      client.phone,
+      client.address_line,
+      signal.project,
+      signal.stage,
+      signal.feedback,
+      signal.referral,
+      signal.social,
+      warrantyLabel,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase(),
+  };
+});
+
+const reviewReady = clients.filter((client) => client.reviewAsk === 'ready').length;
+const feedbackOpen = clients.filter((client) => client.reviewAsk === 'needs_feedback' || client.warranty?.claims_open).length;
+const referralReady = clients.filter((client) => client.referral === 'candidate' || client.referral === 'warm_intro').length;
+const socialReady = clients.filter((client) => client.social === 'ready').length;
+
+const reviewQueue = [
+  {
+    label: 'Ask ready',
+    value: `${reviewReady}`,
+    detail: 'review asks can be drafted after closeout proof',
+    tone: 'green',
+  },
+  {
+    label: 'Feedback first',
+    value: `${feedbackOpen}`,
+    detail: 'client has an open concern or warranty touch',
+    tone: 'amber',
+  },
+  {
+    label: 'Referral candidates',
+    value: `${referralReady}`,
+    detail: 'warm clients or active intro opportunities',
+    tone: 'blue',
+  },
+  {
+    label: 'Social proof ready',
+    value: `${socialReady}`,
+    detail: 'photos and permission are ready to package',
+    tone: 'green',
+  },
+] as const;
+
+const socialChannels = [
+  { name: 'Google reviews', state: 'Review ask drafts', href: '/right-hand' },
+  { name: 'Instagram', state: 'Project proof packets', href: '/connections' },
+  { name: 'Facebook', state: 'Referral posts and albums', href: '/connections' },
+  { name: 'Houzz', state: 'Portfolio copy and closeout photos', href: '/connections' },
+] as const;
+
+const rightHandMoves = [
+  'Draft a review ask only after the client is happy.',
+  'Turn strong closeout photos into a social proof packet.',
+  'Track every referral source back to the client who created it.',
+  'Keep warranty concerns ahead of review and referral asks.',
+] as const;
+
+function labelForAsk(status: AskStatus): string {
+  if (status === 'sent') return 'Asked';
+  if (status === 'needs_feedback') return 'Feedback first';
+  return 'Ask ready';
+}
+
+function toneForAsk(status: AskStatus): 'green' | 'amber' | 'blue' {
+  if (status === 'sent') return 'blue';
+  if (status === 'needs_feedback') return 'amber';
+  return 'green';
+}
+
+function labelForReferral(status: ReferralStatus): string {
+  if (status === 'warm_intro') return 'Warm intro';
+  if (status === 'thank_you') return 'Thank-you due';
+  return 'Referral ready';
+}
+
+function labelForSocial(status: SocialStatus): string {
+  if (status === 'ready') return 'Proof ready';
+  if (status === 'needs_connection') return 'Connect channel';
+  return 'Permission needed';
+}
 ---
 
-<Layout titleKey="f_cs.list_title" activeHref="/clients">
-  <article class="lane3-page" data-tenant-id={context.tenantId}>
-    <h1 class="lane6-title">{t('f_cs.list_title')}</h1>
-    <p class="lane6-subtitle">{t('f_cs.list_subtitle')}</p>
-    <ul class="lane6-list" id="cs-roster"></ul>
+<Layout
+  title="Client Success"
+  activeHref="/more"
+  surfaceContext={{
+    surface: 'client_success',
+    phase: 'client_care',
+  }}
+>
+  <article class="client-success" data-grammar="canon">
+    <header class="cs-hero">
+      <p class="cs-eyebrow">Client Success</p>
+      <h1>Every customer, every time.</h1>
+      <p>
+        Keep the client relationship active after the job: CRM, review ask status, feedback,
+        referrals, warranty, and social proof in one place.
+      </p>
+    </header>
+
+    <section class="cs-route" aria-label="Client search">
+      <div>
+        <span class="cs-eyebrow">Client CRM</span>
+        <h2>Find a client, review, referral, or warranty item.</h2>
+      </div>
+      <label class="cs-search">
+        <span class="sr-only">Search client success</span>
+        <input
+          id="client-success-search"
+          type="search"
+          placeholder="Search clients, reviews, referrals, warranty..."
+          autocomplete="off"
+        />
+      </label>
+      <div class="cs-filter-row" aria-label="Quick filters">
+        <button type="button" data-filter="">All clients</button>
+        <button type="button" data-filter="ask ready">Review asks</button>
+        <button type="button" data-filter="referral">Referrals</button>
+        <button type="button" data-filter="warranty">Warranty</button>
+        <button type="button" data-filter="proof ready">Social proof</button>
+      </div>
+    </section>
+
+    <section class="cs-score-grid" aria-label="Client success signals">
+      {reviewQueue.map((card) => (
+        <article class={`cs-score cs-score--${card.tone}`}>
+          <span>{card.label}</span>
+          <strong>{card.value}</strong>
+          <p>{card.detail}</p>
+        </article>
+      ))}
+    </section>
+
+    <section class="cs-one-thing" aria-label="Right Hand client move">
+      <div>
+        <span class="cs-eyebrow">Right Hand next</span>
+        <h2>Ask for the review after the proof is clean.</h2>
+        <p>
+          Wegrzyn is ready for a review draft and a social proof packet. Hernandez stays in
+          feedback-first mode until the warranty walk is resolved.
+        </p>
+      </div>
+      <a href="/right-hand" data-rh-speak>Ask Right Hand</a>
+    </section>
+
+    <section class="cs-layout" aria-label="Client success workspace">
+      <div class="cs-main">
+        <div class="cs-section-head">
+          <div>
+            <span class="cs-eyebrow">Active CRM</span>
+            <h2>Client relationships</h2>
+          </div>
+          <span id="client-success-count">{clients.length} clients</span>
+        </div>
+
+        <div class="cs-client-list" id="client-success-list">
+          {clients.map((client) => (
+            <article
+              class="cs-client-card"
+              data-client-card
+              data-search={client.searchText}
+            >
+              <div class="cs-client-card__top">
+                <div>
+                  <h3>{client.display_name}</h3>
+                  <p>{client.project} · {client.stage}</p>
+                </div>
+                <span class={`kg-chip ${toneForAsk(client.reviewAsk)}`}>{labelForAsk(client.reviewAsk)}</span>
+              </div>
+              <dl class="cs-client-facts">
+                <div>
+                  <dt>Next touch</dt>
+                  <dd>{client.nextTouch}</dd>
+                </div>
+                <div>
+                  <dt>Feedback</dt>
+                  <dd>{client.feedback}</dd>
+                </div>
+                <div>
+                  <dt>Proof</dt>
+                  <dd>{client.proof}</dd>
+                </div>
+              </dl>
+              <div class="cs-chip-row">
+                <span class={`kg-chip ${client.warrantyTone}`}>{client.warrantyLabel}</span>
+                <span class="kg-chip blue">{labelForReferral(client.referral)}</span>
+                <span class={`kg-chip ${client.social === 'ready' ? 'green' : 'amber'}`}>{labelForSocial(client.social)}</span>
+              </div>
+              <div class="cs-client-actions">
+                <a href={`/client-success/${client.client_id}`}>Open record</a>
+                <a href={`/clients/${client.client_id}`}>Client info</a>
+                {client.warranty !== null ? <a href={`/clients/${client.client_id}/warranty`}>Warranty</a> : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <aside class="cs-side" aria-label="Review, referral, and social programs">
+        <section class="cs-program">
+          <span class="cs-eyebrow">Review asks</span>
+          <h2>Status and feedback</h2>
+          <p>Every customer gets a review decision: ask now, feedback first, or already asked.</p>
+          <div class="cs-mini-list">
+            <a href="/right-hand" data-rh-speak>Draft review ask</a>
+            <a href="/client-success/client_hernandez">Resolve feedback first</a>
+            <a href="/reports">Review ask history</a>
+          </div>
+        </section>
+
+        <section class="cs-program">
+          <span class="cs-eyebrow">Referral program</span>
+          <h2>Track who brings work back.</h2>
+          <p>Keep referral candidates, warm intros, thank-you gifts, and source credit together.</p>
+          <div class="cs-referral-strip">
+            <strong>2 warm paths</strong>
+            <span>Wegrzyn review ask · Dunne intro</span>
+          </div>
+        </section>
+
+        <section class="cs-program">
+          <span class="cs-eyebrow">Social media connections</span>
+          <h2>Proof becomes content after approval.</h2>
+          <div class="cs-social-list">
+            {socialChannels.map((channel) => (
+              <a href={channel.href} data-rh-speak={channel.href === '/right-hand' ? true : undefined}>
+                <strong>{channel.name}</strong>
+                <span>{channel.state}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section class="cs-program">
+          <span class="cs-eyebrow">Agent rules</span>
+          <h2>Customer trust guardrails</h2>
+          <ul>
+            {rightHandMoves.map((move) => (
+              <li>{move}</li>
+            ))}
+          </ul>
+        </section>
+      </aside>
+    </section>
   </article>
-  <script>
-    const tenantId = document.querySelector('[data-tenant-id]')?.getAttribute('data-tenant-id') ?? 'tenant_ggr';
-    fetch(`/api/v1/client-success?tenant_id=${tenantId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const list = document.getElementById('cs-roster');
-        if (!list) return;
-        list.innerHTML = (data.clients ?? [])
-          .map(
-            (c) =>
-              `<li><a class="lane6-client-row" href="/client-success/${c.client_id}"><strong>${c.client_id}</strong></a> <span class="lane3-health ${c.health_label}">${c.health_label} · ${c.health_score}</span> · claims ${c.claims_open}</li>`,
-          )
-          .join('');
-      });
-  </script>
 </Layout>
+
+<script>
+  const search = document.getElementById('client-success-search');
+  const cards = Array.from(document.querySelectorAll('[data-client-card]'));
+  const count = document.getElementById('client-success-count');
+  const filterButtons = Array.from(document.querySelectorAll('[data-filter]'));
+
+  function applyClientSuccessFilter(rawValue) {
+    const value = String(rawValue || '').trim().toLowerCase();
+    let visible = 0;
+    for (const card of cards) {
+      const text = card.getAttribute('data-search') || '';
+      const match = value.length === 0 || text.includes(value);
+      card.toggleAttribute('hidden', !match);
+      if (match) visible += 1;
+    }
+    if (count) count.textContent = `${visible} client${visible === 1 ? '' : 's'}`;
+  }
+
+  search?.addEventListener('input', (event) => {
+    applyClientSuccessFilter(event.currentTarget.value);
+  });
+
+  for (const button of filterButtons) {
+    button.addEventListener('click', () => {
+      const value = button.getAttribute('data-filter') || '';
+      if (search) search.value = value;
+      applyClientSuccessFilter(value);
+    });
+  }
+</script>
+
+<style>
+  .client-success {
+    width: min(100%, 1180px);
+    margin: 0 auto;
+    padding: 1rem 1rem 6.5rem;
+    color: var(--ink);
+  }
+
+  .client-success h1,
+  .client-success h2,
+  .client-success h3,
+  .client-success p {
+    margin: 0;
+    letter-spacing: 0;
+  }
+
+  .cs-eyebrow {
+    display: inline-flex;
+    color: var(--gold);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .cs-hero {
+    display: grid;
+    gap: 0.35rem;
+    max-width: 48rem;
+    margin-bottom: 1rem;
+  }
+
+  .cs-hero h1 {
+    font-size: 2.35rem;
+    line-height: 1.02;
+  }
+
+  .cs-hero p,
+  .cs-route p,
+  .cs-score p,
+  .cs-client-card p,
+  .cs-client-facts dd,
+  .cs-program p,
+  .cs-program li,
+  .cs-social-list span,
+  .cs-referral-strip span {
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  .cs-route,
+  .cs-one-thing,
+  .cs-client-card,
+  .cs-program,
+  .cs-score {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--panel) 96%, var(--bg));
+  }
+
+  .cs-route {
+    display: grid;
+    grid-template-columns: minmax(15rem, 0.8fr) minmax(18rem, 1.2fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.85rem;
+  }
+
+  .cs-route h2 {
+    margin-top: 0.2rem;
+    font-size: 1.15rem;
+  }
+
+  .cs-search input {
+    width: 100%;
+    min-height: 3.1rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--panel);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 800;
+  }
+
+  .cs-filter-row {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .cs-filter-row button,
+  .cs-client-actions a,
+  .cs-one-thing a,
+  .cs-mini-list a,
+  .cs-social-list a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.15rem;
+    padding: 0.48rem 0.72rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .cs-filter-row button {
+    cursor: pointer;
+  }
+
+  .cs-score-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin: 0.85rem 0;
+  }
+
+  .cs-score {
+    display: grid;
+    gap: 0.22rem;
+    padding: 0.85rem;
+  }
+
+  .cs-score span {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .cs-score strong {
+    font-size: 1.85rem;
+    line-height: 1;
+  }
+
+  .cs-score--green { border-color: color-mix(in srgb, var(--green) 32%, var(--line)); }
+  .cs-score--amber { border-color: color-mix(in srgb, var(--gold) 40%, var(--line)); }
+  .cs-score--blue { border-color: color-mix(in srgb, var(--blue) 36%, var(--line)); }
+
+  .cs-one-thing {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0.9rem;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--gold) 12%, var(--panel)), color-mix(in srgb, var(--green) 10%, var(--panel)));
+  }
+
+  .cs-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+    gap: 0.85rem;
+  }
+
+  .cs-section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .cs-section-head > span {
+    color: var(--muted);
+    font-weight: 900;
+  }
+
+  .cs-client-list,
+  .cs-side,
+  .cs-mini-list,
+  .cs-social-list {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .cs-client-card {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .cs-client-card__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.8rem;
+    align-items: start;
+  }
+
+  .cs-client-card h3 {
+    font-size: 1.2rem;
+    line-height: 1.1;
+  }
+
+  .cs-client-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin: 0;
+  }
+
+  .cs-client-facts div {
+    min-width: 0;
+    padding: 0.7rem;
+    border-radius: 8px;
+    background: var(--panel);
+    border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  }
+
+  .cs-client-facts dt {
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .cs-client-facts dd {
+    margin: 0.18rem 0 0;
+  }
+
+  .cs-chip-row,
+  .cs-client-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .cs-program {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.85rem;
+  }
+
+  .cs-program h2 {
+    font-size: 1.05rem;
+  }
+
+  .cs-referral-strip {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--gold) 12%, var(--panel));
+    border: 1px solid color-mix(in srgb, var(--gold) 34%, var(--line));
+  }
+
+  .cs-social-list a {
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .cs-program ul {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding-left: 1.05rem;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 900px) {
+    .client-success {
+      padding-inline: 0.85rem;
+    }
+
+    .cs-hero h1 {
+      font-size: 1.9rem;
+    }
+
+    .cs-route,
+    .cs-layout,
+    .cs-one-thing {
+      grid-template-columns: 1fr;
+    }
+
+    .cs-score-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cs-client-facts {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

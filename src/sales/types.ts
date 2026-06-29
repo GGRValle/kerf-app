@@ -169,6 +169,8 @@ export interface EstimateLine {
   readonly line_type: SelectionLineType;
   readonly label: string;
   readonly quantity: number;
+  /** Unit of measure the quantity counts: HR, EA, SF, LF, LS, etc. */
+  readonly uom?: string;
   readonly unit_cost_cents: Cents;
   readonly markup_bps: number;
   /** Internal-only lines (e.g. line_type 'markup'/'fee') set this false. */

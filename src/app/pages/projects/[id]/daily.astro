@@ -1,0 +1,846 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { createLayoutContext } from '../../../lib/createLayoutContext.js';
+import { getApiDeps } from '../../../../api/lib/deps.js';
+import { getProjectRecordForTenant } from '../../../lib/projectRecords.js';
+import { listProjectNotes } from '../../../lib/lane3WorkFixtures.js';
+import { loadProjectAuditTrail } from '../../../../project/projectAuditProjection.js';
+import { deriveJobNotes, formatLogTimeLabel } from '../../../lib/projectDailyLog.js';
+
+const { context } = createLayoutContext();
+const { id } = Astro.params;
+const { tenantReader } = getApiDeps();
+const project = id ? await getProjectRecordForTenant(tenantReader, context.tenantId, id) : null;
+
+if (project === null) {
+  return Astro.redirect('/projects');
+}
+
+const projectHref = `/projects/${project.project_id}`;
+const dailyHref = `${projectHref}/daily`;
+const newDailyHref = `${projectHref}/daily-log`;
+const cameraHref = `/camera?project_id=${project.project_id}&return_to=${encodeURIComponent(dailyHref)}`;
+const auditEntries = await loadProjectAuditTrail(tenantReader, context.tenantId, project.project_id);
+const auditNotes = deriveJobNotes(auditEntries).map((note) => ({
+  id: note.entry_id,
+  title: note.headline,
+  body: note.detail,
+  at: note.at,
+  meta: formatLogTimeLabel(note.at),
+  media: note.media_count,
+  source: note.has_audio ? 'Voice' : 'Filed',
+  attention: note.needs_attention,
+  attentionLabel: note.attention_reason,
+}));
+const fixtureNotes = listProjectNotes(project.project_id).map((note) => ({
+  id: note.note_id,
+  title: note.evidence_label,
+  body: note.body,
+  at: note.captured_at,
+  meta: formatLogTimeLabel(note.captured_at),
+  media: 1,
+  source: 'Field proof',
+  attention: false,
+  attentionLabel: null,
+}));
+const dailyRows = auditNotes.length > 0 ? auditNotes : fixtureNotes;
+const photoCount = dailyRows.reduce((total, row) => total + row.media, 0);
+const attentionCount = dailyRows.filter((row) => row.attention).length;
+const proofPeople = ['Ana Morales', 'Marco Silva', 'Rigo Perez', 'Christian Asdal'] as const;
+const proofLocations = ['Kitchen', 'Primary bath', 'Entry', 'Exterior'] as const;
+const workTypes = ['Install', 'Demo', 'Finish', 'Coordination'] as const;
+const dailyReports = dailyRows.map((row, rowIndex) => {
+  const reporter = proofPeople[rowIndex % proofPeople.length];
+  const location = proofLocations[rowIndex % proofLocations.length];
+  const workType = workTypes[rowIndex % workTypes.length];
+  return {
+    ...row,
+    reporter,
+    location,
+    workType,
+    status: row.attention ? 'Needs office' : 'Filed',
+  };
+});
+const proofItems = dailyRows
+  .flatMap((row, rowIndex) => {
+    const itemCount = Math.max(1, Math.min(row.media, 3));
+    return Array.from({ length: itemCount }, (_, mediaIndex) => ({
+      id: `${row.id}-proof-${mediaIndex}`,
+      kind: rowIndex % 3 === 1 && mediaIndex === 0 ? 'Video' : 'Photo',
+      title: mediaIndex === 0 ? row.title : `${row.title} · detail ${mediaIndex + 1}`,
+      by: proofPeople[(rowIndex + mediaIndex) % proofPeople.length],
+      location: proofLocations[(rowIndex + mediaIndex) % proofLocations.length],
+      meta: row.meta,
+      attention: row.attention,
+    }));
+  })
+  .slice(0, 8);
+const videoCount = proofItems.filter((item) => item.kind === 'Video').length;
+const photoProofCount = proofItems.filter((item) => item.kind === 'Photo').length;
+const peopleOnProof = [...new Set(proofItems.map((item) => item.by))];
+const proofByPerson = peopleOnProof.map((person) => ({
+  person,
+  count: proofItems.filter((item) => item.by === person).length,
+  locations: [...new Set(proofItems.filter((item) => item.by === person).map((item) => item.location))],
+}));
+const latestDaily = dailyRows[0] ?? null;
+const latestReport = dailyReports[0] ?? null;
+const summarySentence = latestDaily
+  ? `${latestDaily.title}. ${latestDaily.body}`
+  : 'No daily progress has been filed yet. Start with photos, voice, or a field note and Right Hand will draft the summary for confirmation.';
+---
+
+<Layout
+  title="Project Daily"
+  activeHref="/projects"
+  surfaceContext={{
+    surface: 'daily_log',
+    project_id: project.project_id,
+    phase: 'reference',
+  }}
+>
+  <main class="project-daily" data-project-id={project.project_id} data-surface="daily_log_summary">
+    <header class="daily-hero">
+      <a class="daily-back" href={projectHref}>{project.project_name}</a>
+      <div class="daily-hero__copy">
+        <span class="daily-eyebrow">Daily summaries</span>
+        <h1>What happened on this job.</h1>
+        <p>{project.address_line}</p>
+      </div>
+      <div class="daily-hero__actions">
+        <a href={newDailyHref}>New daily log</a>
+        <a href={cameraHref}>Add proof</a>
+      </div>
+    </header>
+
+    <section class="daily-glance" aria-label="Daily progress at a glance">
+      <a href="#daily-reports">
+        <span>Daily reports</span>
+        <strong>{dailyReports.length}</strong>
+        <em>{latestReport ? latestReport.meta : 'none filed'}</em>
+      </a>
+      <a href="#proof-photos">
+        <span>Jobsite photos</span>
+        <strong>{photoProofCount}</strong>
+        <em>{peopleOnProof.length} people captured proof</em>
+      </a>
+      <a href="#proof-videos">
+        <span>Videos</span>
+        <strong>{videoCount}</strong>
+        <em>walkthroughs and clips</em>
+      </a>
+      <a href="/relay">
+        <span>Needs office</span>
+        <strong>{attentionCount}</strong>
+        <em>{attentionCount > 0 ? 'review queued' : 'clear today'}</em>
+      </a>
+    </section>
+
+    <section class="daily-brief" aria-label="Right Hand daily progress summary">
+      <div>
+        <span class="daily-eyebrow">Right Hand summary</span>
+        <h2>Daily progress at a glance.</h2>
+        <p>{summarySentence}</p>
+      </div>
+      <a href="/right-hand" data-rh-speak>Ask for summary</a>
+    </section>
+
+    <section class="daily-proof" aria-label="Jobsite proof">
+      <div class="daily-proof__head">
+        <div>
+          <span class="daily-eyebrow">Daily packet</span>
+          <h2>Reports, photos, videos, and who captured them.</h2>
+        </div>
+        <div class="daily-proof__tabs" role="tablist" aria-label="Proof filters">
+          <a class="active" href="#daily-reports">Reports</a>
+          <a href="#proof-photos">Photos</a>
+          <a href="#proof-videos">Videos</a>
+          <a href="#proof-people">Who took them</a>
+          <a href="/relay">Needs office</a>
+        </div>
+      </div>
+      <div class="daily-proof__stats">
+        <span>{dailyReports.length} reports</span>
+        <span>{photoProofCount} photos</span>
+        <span>{videoCount} video{videoCount === 1 ? '' : 's'}</span>
+        <span>{peopleOnProof.length} people</span>
+      </div>
+      <div class="daily-report-packages" id="daily-reports">
+        {dailyReports.length === 0 ? (
+          <article class="daily-empty">
+            <strong>No submitted daily reports yet.</strong>
+            <p>Start from voice or field proof. Right Hand will draft the daily, then the field lead confirms it.</p>
+          </article>
+        ) : (
+          dailyReports.map((row) => {
+            const reportProof = proofItems.filter((item) => item.title.startsWith(row.title)).slice(0, 4);
+            return (
+              <article class:list={['daily-report-card', row.attention ? 'daily-report-card--attention' : '']}>
+                <div class="daily-report-card__copy">
+                  <span>{row.meta} · {row.location} · {row.workType}</span>
+                  <h3>{row.title}</h3>
+                  <p>{row.body}</p>
+                  <div class="daily-row__chips">
+                    <span>By {row.reporter}</span>
+                    <span>{row.media} proof item{row.media === 1 ? '' : 's'}</span>
+                    <span>{row.status}</span>
+                  </div>
+                </div>
+                <div class="daily-report-card__media" aria-label={`Proof attached to ${row.title}`}>
+                  {reportProof.map((item) => (
+                    <a href="#proof-photos" class:list={['daily-mini-proof', item.kind === 'Video' ? 'daily-mini-proof--video' : '']}>
+                      <span>{item.kind === 'Video' ? '▶' : 'IMG'}</span>
+                    </a>
+                  ))}
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+      <div class="daily-proof__grid" id="proof-photos">
+        {proofItems.length === 0 ? (
+          <article class="proof-card proof-card--empty">
+            <strong>No jobsite proof yet.</strong>
+            <p>Use Capture or upload from the phone library. Right Hand can draft the daily once proof exists.</p>
+          </article>
+        ) : (
+          proofItems.map((item) => (
+            <article class:list={['proof-card', item.kind === 'Video' ? 'proof-card--video' : '', item.attention ? 'proof-card--attention' : '']}>
+              <div class="proof-card__thumb">
+                <span>{item.kind === 'Video' ? '▶' : 'IMG'}</span>
+              </div>
+              <div class="proof-card__body">
+                <span>{item.kind} · {item.location}</span>
+                <h3>{item.title}</h3>
+                <p>Captured by {item.by} · {item.meta}</p>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+      <div class="daily-video-strip" id="proof-videos">
+        {proofItems.filter((item) => item.kind === 'Video').length === 0 ? (
+          <article>
+            <strong>No walkthrough video filed yet.</strong>
+            <p>Videos will show here with the person who captured them and the daily they support.</p>
+          </article>
+        ) : (
+          proofItems.filter((item) => item.kind === 'Video').map((item) => (
+            <article>
+              <span>Video · {item.location}</span>
+              <strong>{item.title}</strong>
+              <p>Captured by {item.by} · {item.meta}</p>
+            </article>
+          ))
+        )}
+      </div>
+      <div class="daily-people-strip" id="proof-people">
+        {proofByPerson.map((person) => (
+          <article>
+            <span>{person.count}</span>
+            <strong>{person.person}</strong>
+            <p>{person.locations.join(' · ')}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="daily-list" id="daily-list" aria-label="Submitted daily logs">
+      {dailyRows.length === 0 ? (
+        <article class="daily-empty">
+          <strong>No dailies filed yet.</strong>
+          <p>Start from voice or field proof. Right Hand will draft the log, then you confirm it.</p>
+        </article>
+      ) : (
+        dailyRows.map((row) => (
+          <article class:list={['daily-row', row.attention ? 'daily-row--attention' : '']}>
+            <div class="daily-row__top">
+              <span>{row.meta}</span>
+              <span>{row.source}</span>
+            </div>
+            <h2>{row.title}</h2>
+            <p>{row.body}</p>
+            <div class="daily-row__chips">
+              <span>{project.project_name}</span>
+              <span>{project.address_line}</span>
+              <span>{row.media} photo{row.media === 1 ? '' : 's'}</span>
+              {row.attention ? <a href="/relay">Needs office</a> : <span>Filed</span>}
+            </div>
+            {row.attention && row.attentionLabel ? <p class="daily-row__attention">{row.attentionLabel}</p> : null}
+          </article>
+        ))
+      )}
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .project-daily {
+    --daily-ink: var(--ink, #17130c);
+    --daily-muted: var(--muted, #6f675d);
+    --daily-panel: var(--panel, #fffdf7);
+    --daily-line: var(--line, #e5ded0);
+    --daily-gold: var(--gold, #d9a928);
+    --daily-green: var(--green, #26875f);
+    display: grid;
+    gap: 0.82rem;
+    max-width: 58rem;
+    margin: 0 auto;
+    padding: 0.7rem 1rem 6.5rem;
+    color: var(--daily-ink);
+  }
+
+  .project-daily h1,
+  .project-daily h2,
+  .project-daily p {
+    margin: 0;
+    letter-spacing: 0;
+  }
+
+  .daily-hero,
+  .daily-filter,
+  .daily-glance,
+  .daily-pulse,
+  .daily-brief,
+  .daily-proof,
+  .daily-report-card,
+  .daily-video-strip article,
+  .daily-people-strip article,
+  .daily-row,
+  .daily-empty {
+    border: 1px solid var(--daily-line);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--daily-panel) 96%, var(--bg));
+  }
+
+  .daily-hero {
+    display: grid;
+    gap: 0.8rem;
+    padding: 0.95rem;
+    border-color: color-mix(in srgb, var(--daily-ink) 82%, var(--daily-gold));
+    background:
+      radial-gradient(circle at 85% 6%, color-mix(in srgb, var(--daily-gold) 23%, transparent), transparent 30%),
+      linear-gradient(135deg, color-mix(in srgb, var(--daily-ink) 96%, var(--daily-gold)), var(--daily-ink));
+    color: var(--bg);
+  }
+
+  .daily-back {
+    width: fit-content;
+    color: color-mix(in srgb, var(--bg) 78%, var(--daily-gold));
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .daily-eyebrow {
+    color: var(--daily-gold);
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .daily-hero h1 {
+    margin-top: 0.18rem;
+    color: var(--bg);
+    font-size: 1.65rem;
+    line-height: 1.04;
+  }
+
+  .daily-hero p {
+    margin-top: 0.28rem;
+    color: color-mix(in srgb, var(--bg) 72%, var(--daily-gold));
+    line-height: 1.35;
+  }
+
+  .daily-hero__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .daily-hero__actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.45rem;
+    border: 1px solid color-mix(in srgb, var(--daily-gold) 42%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--daily-gold) 16%, transparent);
+    color: var(--bg);
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  .daily-filter {
+    display: flex;
+    gap: 0.38rem;
+    overflow-x: auto;
+    padding: 0.52rem;
+  }
+
+  .daily-filter span,
+  .daily-row__chips span,
+  .daily-row__chips a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.65rem;
+    padding: 0.18rem 0.52rem;
+    border: 1px solid var(--daily-line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--daily-panel) 90%, var(--bg));
+    color: var(--daily-muted);
+    font-size: 0.78rem;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+
+  .daily-glance {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .daily-glance a {
+    display: grid;
+    align-content: start;
+    gap: 0.18rem;
+    min-height: 5.1rem;
+    padding: 0.74rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .daily-glance a + a {
+    border-left: 1px solid var(--daily-line);
+  }
+
+  .daily-glance span {
+    color: var(--daily-muted);
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .daily-glance strong {
+    font-size: 1.42rem;
+    line-height: 1;
+  }
+
+  .daily-glance em {
+    color: var(--daily-muted);
+    font-size: 0.78rem;
+    font-style: normal;
+    line-height: 1.18;
+  }
+
+  .daily-pulse {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .daily-pulse a {
+    display: grid;
+    gap: 0.12rem;
+    min-height: 4.2rem;
+    padding: 0.72rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .daily-pulse a + a {
+    border-left: 1px solid var(--daily-line);
+  }
+
+  .daily-pulse span {
+    color: var(--daily-muted);
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .daily-pulse strong {
+    font-size: 1.4rem;
+    line-height: 1;
+  }
+
+  .daily-brief {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.72rem;
+    padding: 0.82rem;
+    border-color: color-mix(in srgb, var(--daily-green) 38%, var(--daily-line));
+    background: color-mix(in srgb, var(--daily-green) 9%, var(--daily-panel));
+  }
+
+  .daily-brief h2,
+  .daily-proof h2 {
+    margin-top: 0.12rem;
+    font-size: 1.18rem;
+    line-height: 1.08;
+  }
+
+  .daily-brief p {
+    margin-top: 0.28rem;
+    color: var(--daily-muted);
+    line-height: 1.38;
+  }
+
+  .daily-brief a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.38rem 0.72rem;
+    border: 1px solid color-mix(in srgb, var(--daily-gold) 42%, var(--daily-line));
+    border-radius: 8px;
+    background: var(--daily-gold);
+    color: var(--daily-ink);
+    font-weight: 950;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .daily-proof {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.82rem;
+  }
+
+  .daily-proof__head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 0.72rem;
+  }
+
+  .daily-proof__tabs,
+  .daily-proof__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.36rem;
+  }
+
+  .daily-proof__tabs a,
+  .daily-proof__stats span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.9rem;
+    padding: 0.22rem 0.58rem;
+    border: 1px solid var(--daily-line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--daily-panel) 92%, var(--bg));
+    color: var(--daily-muted);
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .daily-proof__tabs .active {
+    border-color: color-mix(in srgb, var(--daily-gold) 52%, var(--daily-line));
+    background: color-mix(in srgb, var(--daily-gold) 20%, var(--daily-panel));
+    color: var(--daily-ink);
+  }
+
+  .daily-proof__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.52rem;
+  }
+
+  .daily-report-packages {
+    display: grid;
+    gap: 0.58rem;
+  }
+
+  .daily-report-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(7rem, 12rem);
+    align-items: stretch;
+    gap: 0.72rem;
+    padding: 0.7rem;
+    background: color-mix(in srgb, var(--daily-panel) 98%, var(--daily-gold));
+  }
+
+  .daily-report-card--attention {
+    border-color: color-mix(in srgb, var(--red, #cc4b3f) 42%, var(--daily-line));
+  }
+
+  .daily-report-card__copy {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .daily-report-card__copy > span {
+    color: var(--daily-gold);
+    font-size: 0.72rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .daily-report-card__copy h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.08;
+  }
+
+  .daily-report-card__copy p {
+    color: var(--daily-muted);
+    line-height: 1.32;
+  }
+
+  .daily-report-card__media {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .daily-mini-proof {
+    display: grid;
+    place-items: end start;
+    min-height: 4rem;
+    padding: 0.38rem;
+    border: 1px solid color-mix(in srgb, var(--daily-line) 72%, transparent);
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--daily-ink) 90%, var(--daily-gold)), transparent),
+      color-mix(in srgb, var(--daily-ink) 84%, var(--daily-green));
+    text-decoration: none;
+  }
+
+  .daily-mini-proof--video {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--daily-ink) 92%, var(--daily-green)), transparent),
+      color-mix(in srgb, var(--daily-ink) 84%, var(--daily-gold));
+  }
+
+  .daily-mini-proof span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.3rem;
+    padding: 0.12rem 0.34rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--daily-panel) 92%, transparent);
+    color: var(--daily-ink);
+    font-size: 0.64rem;
+    font-weight: 950;
+  }
+
+  .proof-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--daily-line);
+    border-radius: 9px;
+    background: var(--daily-panel);
+  }
+
+  .proof-card--attention {
+    border-color: color-mix(in srgb, var(--red, #cc4b3f) 42%, var(--daily-line));
+  }
+
+  .proof-card__thumb {
+    display: grid;
+    place-items: end start;
+    min-height: 7.4rem;
+    padding: 0.54rem;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--daily-ink) 92%, var(--daily-gold)), transparent),
+      radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--daily-gold) 46%, transparent), transparent 36%),
+      color-mix(in srgb, var(--daily-ink) 84%, var(--daily-green));
+  }
+
+  .proof-card--video .proof-card__thumb {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--daily-ink) 94%, var(--daily-green)), transparent),
+      radial-gradient(circle at 68% 36%, color-mix(in srgb, var(--daily-green) 46%, transparent), transparent 38%),
+      color-mix(in srgb, var(--daily-ink) 84%, var(--daily-gold));
+  }
+
+  .proof-card__thumb span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+    padding: 0.16rem 0.42rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--daily-panel) 92%, transparent);
+    color: var(--daily-ink);
+    font-size: 0.7rem;
+    font-weight: 950;
+  }
+
+  .proof-card__body {
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.58rem;
+  }
+
+  .proof-card__body span {
+    color: var(--daily-gold);
+    font-size: 0.68rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .proof-card__body h3 {
+    margin: 0;
+    font-size: 0.94rem;
+    line-height: 1.08;
+  }
+
+  .proof-card__body p {
+    color: var(--daily-muted);
+    font-size: 0.82rem;
+    line-height: 1.24;
+  }
+
+  .daily-video-strip,
+  .daily-people-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.52rem;
+  }
+
+  .daily-video-strip article,
+  .daily-people-strip article {
+    display: grid;
+    gap: 0.18rem;
+    padding: 0.68rem;
+  }
+
+  .daily-video-strip span,
+  .daily-people-strip span {
+    color: var(--daily-gold);
+    font-size: 0.7rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .daily-people-strip span {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: var(--daily-ink);
+    color: var(--daily-gold);
+    letter-spacing: 0;
+  }
+
+  .daily-video-strip strong,
+  .daily-people-strip strong {
+    font-size: 0.98rem;
+    line-height: 1.08;
+  }
+
+  .daily-video-strip p,
+  .daily-people-strip p {
+    color: var(--daily-muted);
+    font-size: 0.82rem;
+    line-height: 1.25;
+  }
+
+  .daily-list {
+    display: grid;
+    gap: 0.62rem;
+  }
+
+  .daily-row,
+  .daily-empty {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.78rem;
+  }
+
+  .daily-row--attention {
+    border-color: color-mix(in srgb, var(--red, #cc4b3f) 40%, var(--daily-line));
+  }
+
+  .daily-row__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    color: var(--daily-muted);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .daily-row h2 {
+    font-size: 1.02rem;
+    line-height: 1.08;
+  }
+
+  .daily-row p,
+  .daily-empty p {
+    color: var(--daily-muted);
+    line-height: 1.38;
+  }
+
+  .daily-row__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.32rem;
+  }
+
+  .daily-row__chips a {
+    color: var(--daily-ink);
+    text-decoration: none;
+  }
+
+  .daily-row__attention {
+    padding-top: 0.12rem;
+    color: var(--daily-ink) !important;
+    font-weight: 850;
+  }
+
+  @media (max-width: 720px) {
+    .project-daily {
+      padding-inline: 0.7rem;
+    }
+
+    .daily-hero h1 {
+      font-size: 1.38rem;
+    }
+
+    .daily-glance,
+    .daily-pulse {
+      grid-template-columns: 1fr;
+    }
+
+    .daily-glance a + a,
+    .daily-pulse a + a {
+      border-top: 1px solid var(--daily-line);
+      border-left: 0;
+    }
+
+    .daily-brief,
+    .daily-proof__head {
+      grid-template-columns: 1fr;
+    }
+
+    .daily-brief,
+    .daily-proof__head {
+      display: grid;
+    }
+
+    .daily-proof__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .daily-report-card,
+    .daily-video-strip,
+    .daily-people-strip {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

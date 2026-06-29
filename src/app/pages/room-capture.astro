@@ -73,13 +73,14 @@ const source = Astro.url.searchParams.get('src') ?? '';
 const scanId = Astro.url.searchParams.get('scan_id') ?? '';
 const freshScan =
   Astro.url.searchParams.get('mode') === 'start' ||
-  ((source === 'create' || source === 'camera') && scanId.length === 0);
+  ((source === 'start' || source === 'create' || source === 'camera') && scanId.length === 0);
+const backHref = source === 'start' ? '/start' : source === 'create' ? '/start' : source === 'camera' ? '/camera' : '/';
 ---
 
-<Layout titleKey="f_rc1.title" activeHref={freshScan ? '/camera' : '/field-capture'}>
+<Layout titleKey="f_rc1.title" activeHref="/camera">
   {freshScan ? (
     <article class="f-rc1 f-rc1-start">
-      <a class="room-back" href={source === 'create' ? '/create' : source === 'camera' ? '/camera' : '/'}>‹ Back</a>
+      <a class="room-back" href={backHref}>‹ Back</a>
       <header class="f-rc1-header">
         <div class="crumb">Room scan</div>
         <h1>Start room scan</h1>

@@ -13,7 +13,7 @@ const { t, context } = createLayoutContext();
 const capture = LANE23_TRANSCRIPT_CAPTURE;
 const fixtureDraftHref = `/draft-review/${LANE23_FIXTURE_DRAFT_ID}`;
 const loopPhases = [
-  { id: 'capture', label: 'Capture', href: '/field-capture' },
+  { id: 'capture', label: 'Capture', href: '/camera' },
   { id: 'review', label: 'Review', active: true, href: '/transcript-review' },
   { id: 'draft', label: 'Draft', href: fixtureDraftHref },
 ];
@@ -88,7 +88,7 @@ function formatMs(ms: number): string {
       </div>
 
       <div class="lane23-loop-actions">
-        <a class="lane23-btn" href="/field-capture">{t('nav.field_capture')}</a>
+        <a class="lane23-btn" href="/camera">{t('nav.field_capture')}</a>
         <a class="lane23-btn primary" href={fixtureDraftHref}>{t('review.transcript.continue_draft')}</a>
       </div>
       <p class="lane23-notice">{t('review.transcript.build_draft_preview')}</p>

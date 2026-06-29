@@ -17,10 +17,11 @@ test('SpeakFAB routes to Right Hand without debug handler', () => {
   assert.doesNotMatch(src, /console\.info/);
   assert.match(src, /5\.5rem/);
 });
-test('center Speak nav opens Right Hand and the phone bar uses Create/Camera', () => {
+test('center Speak nav opens Right Hand and the phone bar uses Start/Camera', () => {
   const src = read('src/app/lib/shellRoutes.ts');
   assert.match(src, /href: '\/right-hand', labelKey: 'shell\.nav\.speak'/);
-  assert.match(src, /href: '\/create', labelKey: 'shell\.nav\.create'/);
+  assert.match(src, /href: '\/start', labelKey: 'shell\.nav\.create'/);
+  assert.doesNotMatch(src, /href: '\/create', labelKey: 'shell\.nav\.create'/);
   assert.match(src, /href: '\/camera', labelKey: 'shell\.nav\.camera'/);
   assert.doesNotMatch(src, /href: '\/field-capture', labelKey: 'shell\.nav\.speak'/);
   assert.doesNotMatch(src, /href: '\/role-routing'/);

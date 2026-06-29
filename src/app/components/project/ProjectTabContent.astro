@@ -4,7 +4,6 @@ import Row from '../Row.astro';
 import PreviewNotice from './PreviewNotice.astro';
 import { formatCentsDisplay, type Lane23ProjectRecord, type ProjectTabId } from '../../lib/lane23Fixtures.js';
 import {
-  getProjectBrain,
   listProjectNotes,
   listProjectSelections,
   listAssignmentsForProject,
@@ -20,7 +19,6 @@ export interface Props {
 
 const { project, activeTab, labelFor: t, tenantId } = Astro.props;
 const previewBadge = t('action.preview.badge');
-const brain = getProjectBrain(project.project_id);
 const selections = listProjectSelections(project.project_id);
 const notes = listProjectNotes(project.project_id);
 const assignments = listAssignmentsForProject(
@@ -32,16 +30,6 @@ const assignments = listAssignmentsForProject(
 {activeTab === 'overview' ? (
   <Card title={t('project.tab.overview')}>
     <p>{t('project.panel.overview')}</p>
-    <p class="lane23-notice">{t('project.detail.budget')}: {formatCentsDisplay(project.budget_cents)}</p>
-    <p class="lane23-notice">{t('project.detail.phase')}: {project.phase}</p>
-    <div class="lane23-action-links">
-      <a class="lane23-btn-link" href={`/camera?project_id=${project.project_id}&return_to=/projects/${project.project_id}`}>
-        {t('project.overview.link_camera')}
-      </a>
-      <a class="lane23-btn-link" href={`/projects/${project.project_id}/portal-preview`}>{t('project.overview.link_portal')}</a>
-      <a class="lane23-btn-link" href="/schedule">{t('project.overview.link_schedule')}</a>
-      <a class="lane23-btn-link" href="/team-ops/subs">{t('project.overview.link_subs')}</a>
-    </div>
     {assignments.length > 0 && (
       <>
         <p class="lane23-notice">{t('project.overview.assignments')}</p>
@@ -90,12 +78,6 @@ const assignments = listAssignmentsForProject(
 )}
 
 <style>
-  .lane23-action-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0.75rem 0;
-  }
   .lane23-btn-link {
     display: inline-block;
     padding: 0.4rem 0.75rem;

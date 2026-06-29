@@ -75,7 +75,7 @@ test('POST /review/draft/reject emits suggestion.overridden + correction.classif
     });
     assert.equal(res.status, 200);
     const body = await res.json();
-    assert.equal(body.return_to, '/field-capture');
+    assert.equal(body.return_to, '/camera');
 
     const store = createPersistenceEventStore({ filepath: path.join(dir, 'events.jsonl') });
     const reader = createTenantScopedEventReader(store);
@@ -131,7 +131,7 @@ test('draft-review page wires phase strip links and accept/reject controls', () 
   assert.match(redirectSrc, /Astro\.redirect/);
 
   const src = readFileSync(path.join(ROOT, 'src/app/pages/draft-review/[draft_id].astro'), 'utf8');
-  assert.match(src, /href: '\/field-capture'/);
+  assert.match(src, /href: '\/camera'/);
   assert.match(src, /href: '\/transcript-review'/);
   assert.match(src, /id="lane23-draft-accept"/);
   assert.match(src, /\/api\/v1\/review\/draft\/accept/);

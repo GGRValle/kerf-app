@@ -504,6 +504,7 @@ export type I18nKey =
   | 'rh.relay.detail.open_project'
   | 'rh.relay.detail.open_draft'
   | 'rh.relay.detail.reviewed_status'
+  | 'nav.work'
   | 'nav.schedule'
   | 'nav.reports'
   | 'nav.settings'

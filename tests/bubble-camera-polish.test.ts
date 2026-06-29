@@ -40,9 +40,13 @@ test('camera: CAPTURE label, photo quiet (no Right Hand/listening/walkthrough), 
   const cam = read('src/app/pages/camera.astro');
   assert.match(cam, /cam-job-chip__label">CAPTURE</, 'top label CAPTURE');
   assert.match(cam, /modeLabel\(initialMode\)/, 'chip label is mode-specific');
+  assert.match(cam, />Scan ID</, 'camera scan mode is ID/document scan');
   assert.doesNotMatch(cam, /Photo · walkthru · scan/, 'no stale multi-mode chip copy');
+  assert.doesNotMatch(cam, /LiDAR|Native scan|Room scan/i, 'camera scan does not carry room/LiDAR language');
+  assert.doesNotMatch(cam, /href="\/room-capture/, 'room capture is not inside the camera surface');
   // Photo hero is the quiet session-card line; the old Right Hand copy is gone
   assert.match(cam, /Capture first\. Choose where it goes before filing\./, 'photo copy is the quiet line');
+  assert.match(cam, /Line up the ID or document/, 'scan copy is document-oriented');
   assert.doesNotMatch(cam, /Right Hand will suggest/, 'no "Right Hand will suggest" copy anywhere');
   // listening/REC pill stays gated to walkthru + recording (so photo never shows it)
   assert.match(cam, /recPill\.hidden = mode !== 'walkthru'/, 'listening/REC pill walkthru-gated');

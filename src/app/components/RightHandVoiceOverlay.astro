@@ -772,6 +772,26 @@ const { t } = createLayoutContext();
       scrollConversationToLatest('auto');
     };
 
+    const prefillComposerFromTrigger = (target: HTMLElement) => {
+      if (!captionInputEl) return;
+      const explicit = target.getAttribute('data-rh-prefill') ?? '';
+      let hinted = explicit;
+      if (!hinted && target instanceof HTMLAnchorElement) {
+        try {
+          const url = new URL(target.href, window.location.href);
+          if (url.origin === window.location.origin) hinted = url.searchParams.get('q') ?? '';
+        } catch {
+          hinted = '';
+        }
+      }
+      const prompt = hinted.trim();
+      if (prompt.length === 0) return;
+      captionInputEl.value = prompt;
+      overlay.dataset.typed = 'true';
+      growComposer();
+      captionInputEl.focus({ preventScroll: true });
+    };
+
     // ── Elapsed timer (mm:ss) — starts on overlay open, ticks every second,
     // cleared in teardown (§4 bounded window is the real guard; this is display).
     const fmtClock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -2428,6 +2448,7 @@ const { t } = createLayoutContext();
       const speakEvent = new CustomEvent('kerf:rh-speak', { cancelable: true });
       window.dispatchEvent(speakEvent);
       openOverlay({ restoreConversation: true });
+      prefillComposerFromTrigger(target);
     });
 
     overlay.querySelectorAll('[data-rhvo-dismiss]').forEach((el) => {

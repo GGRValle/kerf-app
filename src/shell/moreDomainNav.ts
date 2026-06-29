@@ -9,6 +9,7 @@ import type { RegisteredSurface } from '../contracts/lane1/registerSurface.js';
 
 const MORE_UTILITY_ROUTES = new Set([
   '/more',
+  '/start',
   '/create',
   '/camera',
   '/right-hand',
@@ -32,8 +33,8 @@ const DOMAIN_ROUTE_PRIORITY: Record<ShellBusinessDomain, readonly string[]> = {
   sales: ['/sales', '/decisions'],
   clients: ['/clients'],
   projects: ['/projects', '/draft-review'],
-  field: ['/field-capture', '/relay'],
-  schedule: ['/schedule'],
+  field: ['/relay', '/field-capture'],
+  schedule: ['/work', '/schedule'],
   money: ['/money'],
   people_admin_ops: ['/settings', '/reports'],
   client_success: ['/client-success', '/transcript-review'],

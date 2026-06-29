@@ -47,6 +47,17 @@ const proofItems = [
       </ul>
     </Card>
 
+    <Card eyebrow="Learning" title="Good / Fix trains the next draft">
+      <div class="decision-detail__learn">
+        <button type="button">Good</button>
+        <button type="button">Fix</button>
+      </div>
+      <p class="decision-detail__copy">
+        If you tap Fix, Right Hand keeps the correction with this job: what changed,
+        which proof was wrong or missing, and how the next estimate or message should read.
+      </p>
+    </Card>
+
     <Card eyebrow="Next move" title="Review, adjust, then send">
       <div class="decision-detail__actions">
         <a href="/change-orders/new?decision=co-wegrzyn-cabinet-wall">Edit change order</a>
@@ -140,6 +151,38 @@ const proofItems = [
     padding-left: 1.1rem;
     color: var(--text-muted, #5c6670);
     line-height: 1.4;
+  }
+
+  .decision-detail__copy {
+    margin: 0.75rem 0 0;
+    color: var(--text-muted, #5c6670);
+    line-height: 1.4;
+  }
+
+  .decision-detail__learn {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .decision-detail__learn button {
+    min-height: 2.85rem;
+    border: 1px solid var(--border, #d8dee6);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    color: inherit;
+    font: inherit;
+    font-weight: 950;
+  }
+
+  .decision-detail__learn button:first-child {
+    background: color-mix(in srgb, var(--field-green, #0f7a53) 13%, var(--surface, #fff));
+    border-color: color-mix(in srgb, var(--field-green, #0f7a53) 42%, var(--border, #d8dee6));
+  }
+
+  .decision-detail__learn button:last-child {
+    background: color-mix(in srgb, var(--right-hand, #c9a961) 17%, var(--surface, #fff));
+    border-color: color-mix(in srgb, var(--right-hand, #c9a961) 48%, var(--border, #d8dee6));
   }
 
   .decision-detail__actions a {

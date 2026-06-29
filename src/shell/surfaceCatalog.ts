@@ -69,19 +69,22 @@ reg('clients', '/clients', 'ClientsIndex', OWNER_PM_ADMIN, '/');
 reg('clients', '/clients/new', 'ClientNew', OWNER_PM_ADMIN, '/clients');
 reg('clients', '/clients/[id]', 'ClientDetail', OWNER_PM_ADMIN, '/clients');
 
-reg('schedule', '/schedule', 'Schedule', ['owner', 'pm', 'admin_ops', 'field_hand'], '/');
+reg('schedule', '/work', 'Work', ['owner', 'pm', 'admin_ops', 'field_hand'], '/');
+reg('schedule', '/schedule', 'Schedule', ['owner', 'pm', 'admin_ops', 'field_hand'], '/work');
 reg('people_admin_ops', '/team-ops/subs', 'TeamOpsSubs', ['owner', 'pm', 'admin_ops'], '/home/team-ops');
 reg('people_admin_ops', '/sub/portal', 'SubPortalDoor', ['sub'], '/home/sub');
 reg('people_admin_ops', '/sub/portal/s/[token]', 'SubPortalSession', ['sub'], '/sub/portal');
 reg('people_admin_ops', '/sub/portal/s/[token]/a/[assignmentId]', 'SubPortalAssignment', ['sub'], '/sub/portal/s/[token]');
 reg('people_admin_ops', '/settings', 'Settings', ALL_ROLES, '/');
 reg('people_admin_ops', '/settings/me', 'PersonalSettings', ALL_ROLES, '/settings');
+reg('people_admin_ops', '/settings/people', 'PeopleAccessSettings', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/connections', 'Connections', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/reports', 'Reports', OWNER_PM_ADMIN, '/');
 reg('people_admin_ops', '/role-routing', 'RoleRouting', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/wireframes', 'WireframeBuildMap', OWNER_PM_ADMIN, '/settings');
 reg('people_admin_ops', '/more', 'More', ALL_ROLES, '/');
-reg('people_admin_ops', '/create', 'Create', ALL_ROLES, '/');
+reg('people_admin_ops', '/start', 'Start', ALL_ROLES, '/');
+reg('people_admin_ops', '/create', 'CreateRedirect', ALL_ROLES, '/start');
 reg('people_admin_ops', '/camera', 'Camera', ALL_ROLES, '/');
 reg('home', '/right-hand', 'RightHandSpeak', ALL_ROLES, '/');
 

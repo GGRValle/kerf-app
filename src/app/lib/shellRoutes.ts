@@ -3,7 +3,7 @@ import type { RoleRoot } from './layout-props.js';
 export interface ShellNavLink { readonly href: string; readonly labelKey: I18nKey; }
 export interface HomeOperatorLoop { readonly href: string; readonly titleKey: I18nKey; readonly detailKey: I18nKey; }
 export const HOME_OPERATOR_LOOPS = [
-  { href: '/field-capture', titleKey: 'home.loop.capture.title', detailKey: 'home.loop.capture.detail' },
+  { href: '/camera', titleKey: 'home.loop.capture.title', detailKey: 'home.loop.capture.detail' },
   { href: '/relay', titleKey: 'home.loop.relay.title', detailKey: 'home.loop.relay.detail' },
   { href: '/projects', titleKey: 'home.loop.projects.title', detailKey: 'home.loop.projects.detail' },
   { href: '/draft-review', titleKey: 'home.loop.draft_review.title', detailKey: 'home.loop.draft_review.detail' },
@@ -16,7 +16,7 @@ export const HOME_OPERATOR_LOOPS = [
  */
 export const MOBILE_BOTTOM_NAV = [
   { href: '/', labelKey: 'shell.nav.home' },
-  { href: '/field-capture', labelKey: 'shell.nav.capture' },
+  { href: '/camera', labelKey: 'shell.nav.capture' },
   { href: '/relay', labelKey: 'shell.nav.relay' },
   { href: '/projects', labelKey: 'shell.nav.projects' },
   { href: '/more', labelKey: 'shell.nav.more' },
@@ -33,25 +33,25 @@ export interface ShellBottomNavSlot {
 }
 
 /**
- * Canon F-A1b owner phone tab bar — Home · Create · Speak · Camera · More.
+ * Canon F-A1b owner phone tab bar — Home · Start · Speak · Camera · More.
  * The center slot is the global Right Hand intake, not field capture.
  */
 export const OWNER_BOTTOM_NAV: readonly ShellBottomNavSlot[] = [
   { href: '/', labelKey: 'shell.nav.home', icon: 'home' },
-  { href: '/create', labelKey: 'shell.nav.create', icon: 'create' },
+  { href: '/start', labelKey: 'shell.nav.create', icon: 'create' },
   { href: '/right-hand', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
   { href: '/camera', labelKey: 'shell.nav.camera', icon: 'camera' },
   { href: '/more', labelKey: 'shell.nav.more', icon: 'more' },
 ] as const;
 
 /**
- * Canon F-A1b field-hand phone tab bar — Home · Create · Speak/Habla · Camera · More.
+ * Canon F-A1b field-hand phone tab bar — Home · Start · Speak/Habla · Camera · More.
  * Role-specific shortcuts move into the Create/Camera sheets so the bottom bar
  * stays stable across roles.
  */
 export const FIELD_BOTTOM_NAV: readonly ShellBottomNavSlot[] = [
   { href: '/', labelKey: 'shell.nav.home', icon: 'home' },
-  { href: '/create', labelKey: 'shell.nav.create', icon: 'create' },
+  { href: '/start', labelKey: 'shell.nav.create', icon: 'create' },
   { href: '/right-hand', labelKey: 'shell.nav.speak', icon: 'speak', speak: true },
   { href: '/camera', labelKey: 'shell.nav.camera', icon: 'camera' },
   { href: '/more', labelKey: 'shell.nav.more', icon: 'more' },
@@ -62,7 +62,7 @@ export function bottomNavForRole(roleRoot: RoleRoot): readonly ShellBottomNavSlo
   return roleRoot === 'field_hand' || roleRoot === 'sub' ? FIELD_BOTTOM_NAV : OWNER_BOTTOM_NAV;
 }
 export const MORE_NAV_LINKS = [
-  { href: '/schedule', labelKey: 'nav.schedule' },
+  { href: '/work', labelKey: 'nav.work' },
   { href: '/reports', labelKey: 'nav.reports' },
   { href: '/settings', labelKey: 'nav.settings' },
   { href: '/transcript-review', labelKey: 'nav.transcript_review' },

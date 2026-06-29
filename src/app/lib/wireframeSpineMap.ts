@@ -35,7 +35,7 @@ export interface WireframeReferenceEntry {
 
 const homeTabs: readonly WireframeTransition[] = [
   { trigger: 'Bottom Home', route: '/', face: 'F-A1_mobile_owner_home.html' },
-  { trigger: 'Bottom Start', route: '/create', face: 'F-S1_mobile_start_action_sheet.html' },
+  { trigger: 'Bottom Start', route: '/start', face: 'F-S1_mobile_start_action_sheet.html' },
   { trigger: 'Bottom Speak', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
   { trigger: 'Bottom Camera', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
   { trigger: 'Bottom More', route: '/more', face: 'F-D1_mobile_more_sidebar.html' },
@@ -76,7 +76,7 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Currently a role-home stub. Needs real PM home projection.',
     next: [
-      { trigger: 'Field capture shortcut', route: '/field-capture', face: 'F-E1_mobile_field_capture.html' },
+      { trigger: 'Camera shortcut', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
       { trigger: 'Projects shortcut', route: '/projects', face: 'F-PR1_mobile_projects_list.html' },
       { trigger: 'On me shortcut', route: '/on-me', face: 'F-TD1_mobile_global_todo.html' },
     ],
@@ -90,7 +90,7 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Current role home is a stub projection. F-AD admin landing remains a separate future/admin entry.',
     next: [
-      { trigger: 'Field capture shortcut', route: '/field-capture', face: 'F-E1_mobile_field_capture.html' },
+      { trigger: 'Camera shortcut', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
       { trigger: 'Projects shortcut', route: '/projects', face: 'F-PR1_mobile_projects_list.html' },
       { trigger: 'On me shortcut', route: '/on-me', face: 'F-TD1_mobile_global_todo.html' },
     ],
@@ -105,7 +105,7 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     notes: 'Current role home is a stub projection.',
     next: [
       { trigger: 'Subs / crew', route: '/team-ops/subs', face: 'F-SB1_mobile_subs_list.html' },
-      { trigger: 'Schedule', route: '/schedule', face: 'F-SC1_mobile_schedule_home.html' },
+      { trigger: 'Work', route: '/work', face: 'F-SC1_mobile_schedule_home.html' },
     ],
   },
   {
@@ -150,20 +150,32 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     ],
   },
   {
-    route: '/create',
-    appFile: 'src/app/pages/create.astro',
+    route: '/start',
+    appFile: 'src/app/pages/start.astro',
     domain: 'people_admin_ops',
     surface: 'Start action sheet',
     wireframes: ['F-S1_mobile_start_action_sheet.html'],
     status: 'mapped_pending_rebuild',
     notes: 'Start sheet exists as a page, but the canon sheet grammar was listed as a gap in Goal 0.',
     next: [
-      { trigger: 'New estimate', route: '/estimate/:projectId or /projects/new?src=create', face: 'F-EST1_mobile_estimate_builder.html', note: 'Canon face is now present; live route still needs the estimate-first/project-known decision.' },
-      { trigger: 'Daily log note', route: '/field-capture?src=create', face: 'F-E1_mobile_field_capture.html' },
-      { trigger: 'Change order', route: '/change-orders/new?src=create', face: 'F-CHG1_mobile_change_order_builder.html', note: 'Canon builder face is now present; live route is still pending on the CO branch.' },
-      { trigger: 'Invoice', route: '/money?src=create', face: 'F-MN1_mobile_money_home.html' },
-      { trigger: 'Room scan / LiDAR', route: '/room-capture?src=create', face: 'F-RC1_mobile_room_capture.html' },
+      { trigger: 'New estimate', route: '/estimate/:projectId or /projects/new?src=start', face: 'F-EST1_mobile_estimate_builder.html', note: 'Canon face is now present; live route still needs the estimate-first/project-known decision.' },
+      { trigger: 'Daily log note', route: '/field-capture?src=start', face: 'F-E1_mobile_field_capture.html' },
+      { trigger: 'Change order', route: '/change-orders/new?src=start', face: 'F-CHG1_mobile_change_order_builder.html', note: 'Canon builder face is now present; live route is still pending on the CO branch.' },
+      { trigger: 'Invoice', route: '/money?src=start', face: 'F-MN1_mobile_money_home.html' },
+      { trigger: 'Room scan / LiDAR', route: '/room-capture?src=start', face: 'F-RC1_mobile_room_capture.html' },
       { trigger: 'Ask Right Hand', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
+    ],
+  },
+  {
+    route: '/create',
+    appFile: 'src/app/pages/create.astro',
+    domain: 'people_admin_ops',
+    surface: 'Create redirect',
+    wireframes: ['F-S1_mobile_start_action_sheet.html'],
+    status: 'redirect',
+    notes: 'Legacy/create alias redirects to Start. Start is the canonical face.',
+    next: [
+      { trigger: 'Redirect', route: '/start', face: 'F-S1_mobile_start_action_sheet.html' },
     ],
   },
   {
@@ -189,12 +201,12 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     surface: 'Camera capture-first',
     wireframes: ['F-CAM1_mobile_camera.html'],
     status: 'canon_wired',
-    notes: 'Capture opens first, route panel appears after Done unless project is prefilled. Phone gate still owns actual viewport/tap validation.',
+    notes: 'Capture opens first; route panel appears only after Done. New-lead routing creates a placeholder lead shell instead of forcing intake.',
     next: [
       { trigger: 'Close X', route: 'return_to or /', face: 'previous face' },
       { trigger: 'Room scan', route: '/room-capture?src=camera&mode=start', face: 'F-RC1_mobile_room_capture.html' },
       { trigger: 'Search jobs', route: '/projects?src=camera', face: 'F-PR1_mobile_projects_list.html' },
-      { trigger: 'New client / lead', route: '/clients/new?src=camera', face: 'F-CL0a_mobile_client_create.html', note: 'Capture-first route when the evidence belongs to a new lead/client.' },
+      { trigger: 'New lead', route: '/sales/:deal_id?src=camera', face: 'F-SL3_mobile_lead_detail.html', note: 'Creates a placeholder lead shell so the field user can keep moving; Right Hand can fill details conversationally.' },
       { trigger: 'New project', route: '/projects/new?src=camera', face: 'F-PR0a_mobile_project_setup.html', note: 'Capture-first route when the job does not exist yet.' },
       { trigger: 'Save to review', route: '/relay?src=camera', face: 'F-FU1_mobile_field_updates_review.html', note: 'Holding path when destination is not known yet.' },
       { trigger: 'Confirm and file', route: '/projects/:id?src=camera', face: 'F-PR2_mobile_project_detail.html', note: 'Filed capture should surface Daily Log handoff.' },
@@ -226,9 +238,25 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Operational field home outside role-root home.',
     next: [
-      { trigger: 'Capture', route: '/field-capture', face: 'F-E1_mobile_field_capture.html' },
+      { trigger: 'Capture', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
       { trigger: 'Field detail', route: '/field-detail', face: 'F-FD1_mobile_field_detail.html' },
       { trigger: 'Projects', route: '/projects', face: 'F-PR1_mobile_projects_list.html' },
+    ],
+  },
+  {
+    route: '/work',
+    appFile: 'src/app/pages/work.astro',
+    domain: 'schedule',
+    surface: 'Work operations',
+    wireframes: ['F-SC1_mobile_schedule_home.html', 'F-SC2_desktop_schedule_home.html', 'F-FL1_mobile_foreman_home.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Combined Work area replacing separate Crew map and Company Schedule destinations. Owns active job map, timeline, crew dispatch, and field comms. Project schedule links route here filtered by project_id.',
+    next: [
+      { trigger: 'Project pin / job row', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Review selection', route: '/projects/:id/selections', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Tell Right Hand', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
+      { trigger: 'Add proof', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
+      { trigger: 'Comms review', route: '/relay', face: 'F-FU1_mobile_field_updates_review.html' },
     ],
   },
   {
@@ -241,7 +269,7 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     notes: 'Detail/drill face for a field item.',
     next: [
       { trigger: 'Back to field', route: '/field', face: 'F-C1_mobile_field_hand_home.html' },
-      { trigger: 'Capture', route: '/field-capture', face: 'F-E1_mobile_field_capture.html' },
+      { trigger: 'Capture', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
     ],
   },
   {
@@ -279,7 +307,7 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Review/classification surface for captured transcript facts.',
     next: [
-      { trigger: 'Field capture', route: '/field-capture', face: 'F-E1_mobile_field_capture.html' },
+      { trigger: 'Camera capture', route: '/camera', face: 'F-CAM1_mobile_camera.html' },
       { trigger: 'Continue draft', route: '/draft-review/:draft_id', face: 'F-G1_desktop_draft_review.html' },
     ],
   },
@@ -333,11 +361,57 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     notes: 'Project canonical home. Lenses should not become disconnected document surfaces.',
     next: [
       { trigger: 'Daily Log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html' },
+      { trigger: 'Daily summary', route: '/projects/:id/daily', face: 'F-DL1_mobile_daily_log.html' },
+      { trigger: 'Docs', route: '/projects/:id/docs', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Comms', route: '/projects/:id/comms', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Schedule', route: '/work?project_id=:id', face: 'F-SC1_mobile_schedule_home.html' },
       { trigger: 'Status', route: '/projects/:id/status', face: 'F-PS1_mobile_project_status.html' },
       { trigger: 'Portal preview', route: '/projects/:id/portal-preview', face: 'F-CS1_mobile_client_success.html' },
       { trigger: 'Work order', route: '/projects/:id/work-orders/:wid', face: 'F-W1_mobile_work_order.html' },
       { trigger: 'Closeout', route: '/projects/:id/closeout', face: 'F-CO1a_mobile_closeout.html' },
       { trigger: 'Camera landed Daily Log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html' },
+    ],
+  },
+  {
+    route: '/projects/:id/daily',
+    appFile: 'src/app/pages/projects/[id]/daily.astro',
+    domain: 'projects',
+    surface: 'Project daily summaries',
+    wireframes: ['F-DL1_mobile_daily_log.html', 'F-DL2_mobile_field_hand_daily_log_clockout.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Project-owned daily archive and proof gallery: submitted dailies, jobsite photos/videos, who captured them, Right Hand summary, and office-attention filters.',
+    next: [
+      { trigger: 'Back project', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'New daily log', route: '/projects/:id/daily-log', face: 'F-DL1_mobile_daily_log.html' },
+      { trigger: 'Add proof', route: '/camera?project_id=:id', face: 'F-CAM1_mobile_camera.html' },
+      { trigger: 'Ask for summary', route: '/right-hand', face: 'F-RH1_mobile_right_hand_voice_overlay.html' },
+      { trigger: 'Needs office', route: '/relay', face: 'F-FU1_mobile_field_updates_review.html' },
+    ],
+  },
+  {
+    route: '/projects/:id/docs',
+    appFile: 'src/app/pages/projects/[id]/docs.astro',
+    domain: 'projects',
+    surface: 'Project docs',
+    wireframes: ['F-PR2_mobile_project_detail.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Project-owned docs surface for signed estimates, contract package, plans, specs, and source proof. Dedicated docs face still needs design.',
+    next: [
+      { trigger: 'Back project', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Comms', route: '/projects/:id/comms', face: 'F-PR2_mobile_project_detail.html' },
+    ],
+  },
+  {
+    route: '/projects/:id/comms',
+    appFile: 'src/app/pages/projects/[id]/comms.astro',
+    domain: 'projects',
+    surface: 'Project comms',
+    wireframes: ['F-PR2_mobile_project_detail.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Project-owned communication surface for owner/PM thread, crew/sub messages, client-safe updates, and elevated field signals. Dedicated comms face still needs design.',
+    next: [
+      { trigger: 'Back project', route: '/projects/:id', face: 'F-PR2_mobile_project_detail.html' },
+      { trigger: 'Docs', route: '/projects/:id/docs', face: 'F-PR2_mobile_project_detail.html' },
     ],
   },
   {
@@ -818,7 +892,7 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     surface: 'Schedule',
     wireframes: ['F-SC1_mobile_schedule_home.html', 'F-SC2_desktop_schedule_home.html'],
     status: 'mapped_pending_rebuild',
-    notes: 'Schedule domain home.',
+    notes: 'Legacy schedule compatibility route. Operator-facing navigation now uses /work so map, timeline, crew, and comms live together.',
     next: [
       { trigger: 'Subs', route: '/team-ops/subs', face: 'F-SB1_mobile_subs_list.html' },
     ],
@@ -873,6 +947,18 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
       { trigger: 'Connections', route: '/connections', face: 'F-UTIL1b_desktop_connections_kb_blackboard.html' },
       { trigger: 'Build map', route: '/wireframes', face: 'F-SP1_desktop_settings.html' },
       { trigger: 'Project audit', route: '/audit/:packetId', face: 'F-H1_desktop_audit_detail.html' },
+    ],
+  },
+  {
+    route: '/settings/people',
+    appFile: 'src/app/pages/settings/people.astro',
+    domain: 'people_admin_ops',
+    surface: 'Company people settings',
+    wireframes: ['F-SP1_desktop_settings.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Company-admin controlled people setup: users, roles, permission profile, employee details, and pay metadata. Dedicated people-admin face still needs design.',
+    next: [
+      { trigger: 'Back settings', route: '/settings', face: 'F-SP1_desktop_settings.html' },
     ],
   },
   {
@@ -935,7 +1021,7 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     status: 'mapped_pending_rebuild',
     notes: 'Phone More sheet/sidebar. Holds secondary domains.',
     next: [
-      { trigger: 'Schedule', route: '/schedule', face: 'F-SC1_mobile_schedule_home.html' },
+      { trigger: 'Work', route: '/work', face: 'F-SC1_mobile_schedule_home.html' },
       { trigger: 'Reports', route: '/reports', face: 'F-RP1_mobile_reports_center.html' },
       { trigger: 'Settings', route: '/settings', face: 'F-SP1_desktop_settings.html' },
       { trigger: 'Transcript review', route: '/transcript-review', face: 'F-F1_desktop_transcript_review.html' },
@@ -1032,6 +1118,19 @@ const BASE_WIREFRAME_SPINE_MAP: readonly WireframeSpineEntry[] = [
     next: [
       { trigger: 'Sign in', route: 'role home', face: 'role-specific home face' },
       { trigger: 'Role demo continue', route: 'role home', face: 'role-specific home face' },
+    ],
+  },
+  {
+    route: '/login/field',
+    appFile: 'src/app/pages/login/field.astro',
+    domain: 'home',
+    surface: 'Field login',
+    wireframes: ['F-LND1_desktop_landing_login.html', 'F-FH1_mobile_field_hand_home.html'],
+    status: 'mapped_pending_rebuild',
+    notes: 'Field-friendly login door. Access remains permissioned by company admin/owner user setup rather than self-selected role choice.',
+    next: [
+      { trigger: 'Sign in', route: '/home/field', face: 'F-FH1_mobile_field_hand_home.html' },
+      { trigger: 'General sign in', route: '/login', face: 'F-LND1_desktop_landing_login.html' },
     ],
   },
   {
