@@ -22,7 +22,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maxim
     {store.deals.length === 0 ? (
       <p class="sl-empty">No deals yet for this tenant.</p>
     ) : (
-      <div class="sl-board">
+      <div class="sl-board kg-grid-auto">
         {columns.map((col) => (
           <section class="sl-col">
             <h2 class="sl-col-head">{col.label} <span class="sl-count">{col.deals.length}</span></h2>
@@ -47,7 +47,7 @@ const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maxim
   .sl-crumb { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0; color: var(--muted); font-weight: 900; }
   .sl-head h1 { margin: 0.1rem 0; }
   .sl-sub { color: var(--muted); margin: 0; }
-  .sl-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; }
+  .sl-board { --kg-cell: 190px; }
   .sl-col { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem; box-shadow: var(--shadow); }
   .sl-col-head { font-size: 0.85rem; margin: 0 0 0.5rem; display: flex; justify-content: space-between; }
   .sl-count { color: var(--muted); }

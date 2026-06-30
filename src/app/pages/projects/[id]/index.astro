@@ -135,7 +135,7 @@ const projectTaskItems = project
             </a>
             <p>{project.client_name} · {project.address_line}</p>
           </div>
-          <div class="project-money-story" aria-label="Project money story">
+          <div class="project-money-story kg-grid-auto" aria-label="Project money story">
             <a href={invoicesHref}>
               <span>Budget</span>
               <strong>{formatCentsDisplay(project.budget_cents)}</strong>
@@ -157,7 +157,7 @@ const projectTaskItems = project
         </div>
       </header>
 
-      <nav class="project-section-strip" aria-label="Project sections">
+      <nav class="project-section-strip kg-grid-auto" aria-label="Project sections">
         <a href="#project-tasks">Tasks</a>
         <a href={scheduleHref}>Schedule</a>
         <a href={dailySummaryHref}>Daily</a>
@@ -211,7 +211,7 @@ const projectTaskItems = project
         </a>
       </section>
 
-      <section class="project-board" aria-label="Project breakdown">
+      <section class="project-board kg-grid-aside" aria-label="Project breakdown">
         <div class="project-board__main">
           <section class="project-block project-block--tasks" id="project-tasks">
             <div class="project-block__head">
@@ -478,9 +478,8 @@ const projectTaskItems = project
   }
 
   .project-money-story {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(6.2rem, 1fr));
-    gap: 0.38rem;
+    --kg-cell: 10rem;
+    --kg-gap: 0.38rem;
     width: min(25rem, 46vw);
     align-self: stretch;
   }
@@ -594,9 +593,8 @@ const projectTaskItems = project
     position: sticky;
     top: var(--shell-top-offset, 0);
     z-index: 3;
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.32rem;
+    --kg-cell: 6.5rem;
+    --kg-gap: 0.32rem;
     margin-top: 0.62rem;
     padding: 0.42rem;
     border: 1px solid var(--line);
@@ -833,9 +831,8 @@ const projectTaskItems = project
   .project-wave i:nth-child(4) { height: 1rem; }
 
   .project-board {
-    display: grid;
-    grid-template-columns: minmax(0, 1.18fr) minmax(18rem, 0.82fr);
-    gap: 0.68rem;
+    --kg-main: 1.18fr;
+    --kg-gap: 0.68rem;
     margin-top: 0.68rem;
   }
 
@@ -986,7 +983,6 @@ const projectTaskItems = project
 
     .project-money-story {
       width: 100%;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .project-hero h1 {
@@ -994,7 +990,6 @@ const projectTaskItems = project
     }
 
     .project-section-strip {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
       position: static;
     }
 
@@ -1015,10 +1010,6 @@ const projectTaskItems = project
 
     .project-command {
       grid-template-columns: minmax(0, 1fr) 5.7rem;
-    }
-
-    .project-board {
-      grid-template-columns: 1fr;
     }
 
     .project-command__camera {

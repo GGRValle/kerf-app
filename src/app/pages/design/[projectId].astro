@@ -67,13 +67,13 @@ const integrationCards = [
     </nav>
 
     <section class="ds-panel ds-design-panel" data-panel="mood" hidden>
-      <div class="ds-board">
+      <div class="ds-board kg-grid-aside">
         <div>
           <p class="ds-kicker">Design Hand brief</p>
           <h2>Organic modern, ready to price.</h2>
           <p class="ds-meta">Right Hand kept the owner words, site photos, and approved selections together so the estimate does not drift from the look.</p>
         </div>
-        <div class="ds-swatches" aria-label="Mood palette">
+        <div class="ds-swatches kg-grid-auto" aria-label="Mood palette">
           {moodCards.map((card) => (
             <article class="ds-swatch">
               <span style={`--swatch:${card.color}`}></span>
@@ -86,7 +86,7 @@ const integrationCards = [
     </section>
 
     <section class="ds-panel ds-design-panel" data-panel="threed" hidden>
-      <div class="ds-model-card">
+      <div class="ds-model-card kg-grid-aside">
         <div class="ds-model" aria-label="Room model preview">
           <span class="ds-model__room"></span>
           <span class="ds-model__island"></span>
@@ -118,7 +118,7 @@ const integrationCards = [
             <strong>Site photo · tile quote · crew hold</strong>
             <small>Nothing texts or sends until you approve the wording.</small>
           </div>
-          <div class="ds-choice__options" aria-label="Tile edge options">
+          <div class="ds-choice__options kg-grid-auto" aria-label="Tile edge options">
             <button type="button" class="ds-choice__option">
               <strong>Schluter matte black</strong>
               <span>Cleaner edge · +$380 · fastest answer for crew</span>
@@ -128,13 +128,13 @@ const integrationCards = [
               <span>Softer look · +$710 · adds one day</span>
             </button>
           </div>
-          <div class="ds-choice__actions">
+          <div class="ds-choice__actions kg-grid-auto">
             <a class="ds-btn primary" href="/right-hand?q=Draft%20a%20text%20to%20Ramirez%20for%20the%20bath%20tile%20edge%20choice" data-rh-speak>Draft text to owner</a>
             <a class="ds-btn" href={`/projects/${projectId}`}>Open job</a>
           </div>
         </section>
       ) : null}
-      <div class="ds-two">
+      <div class="ds-two kg-grid-auto">
         <div class="ds-lib">
           <h2>Pull from Library <a class="ds-link" href="/library">Open KB ›</a></h2>
           {libraryItems.length === 0 ? <p class="ds-empty">No catalog selections.</p> : null}
@@ -171,18 +171,18 @@ const integrationCards = [
       </div>
     </section>
 
-    <section class="ds-panel ds-card-grid" data-panel="tools" hidden>
+    <section class="ds-panel ds-card-grid kg-grid" data-panel="tools" hidden>
       {toolCards.map((card) => (
-        <a class="ds-work-card" href={card.href}>
+        <a class="ds-work-card kg-span-4" href={card.href}>
           <strong>{card.title}</strong>
           <span>{card.detail}</span>
         </a>
       ))}
     </section>
 
-    <section class="ds-panel ds-card-grid" data-panel="integrations" hidden>
+    <section class="ds-panel ds-card-grid kg-grid" data-panel="integrations" hidden>
       {integrationCards.map((card) => (
-        <a class="ds-work-card" href={card.href}>
+        <a class="ds-work-card kg-span-4" href={card.href}>
           <strong>{card.title}</strong>
           <span>{card.detail}</span>
         </a>
@@ -295,8 +295,8 @@ const integrationCards = [
   }
   .ds-choice__options,
   .ds-choice__actions {
-    display: grid;
-    gap: 0.55rem;
+    --kg-cell: 14rem;
+    --kg-gap: 0.55rem;
   }
   .ds-choice__option {
     display: grid;
@@ -317,14 +317,7 @@ const integrationCards = [
     color: var(--muted);
     line-height: 1.28;
   }
-  @media (min-width: 720px) {
-    .ds-choice__options,
-    .ds-choice__actions {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  .ds-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  @media (max-width: 720px) { .ds-two { grid-template-columns: 1fr; } }
+  .ds-two { --kg-cell: 18rem; --kg-gap: 1rem; }
   .ds-lib, .ds-sel { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem; background: var(--panel); box-shadow: var(--shadow); }
   .ds-lib h2, .ds-sel h2 { font-size: 0.95rem; margin: 0 0 0.6rem; display: flex; justify-content: space-between; align-items: baseline; }
   .ds-link { font-size: 0.78rem; }
@@ -340,8 +333,11 @@ const integrationCards = [
   }
   .ds-board,
   .ds-model-card {
-    display: grid;
-    gap: 1rem;
+    --kg-gap: 1rem;
+    --kg-main: 0.9fr;
+    --kg-aside: 1.1fr;
+    --kg-aside-min: 0;
+    --kg-aside-align: center;
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 0.9rem;
@@ -362,11 +358,8 @@ const integrationCards = [
     font-size: 1.25rem;
     line-height: 1.05;
   }
-  .ds-swatches,
-  .ds-card-grid {
-    display: grid;
-    gap: 0.7rem;
-  }
+  .ds-swatches { --kg-cell: 8rem; --kg-gap: 0.7rem; }
+  .ds-card-grid { --kg-gap: 0.7rem; }
   .ds-swatch,
   .ds-work-card {
     display: grid;
@@ -414,15 +407,4 @@ const integrationCards = [
   .ds-model__island { width: 34%; height: 26%; left: 34%; top: 42%; background: #8b6a45; }
   .ds-model__cabinet { width: 22%; height: 48%; left: 10%; top: 22%; background: #66523b; }
   .ds-model__bath { width: 24%; height: 28%; right: 12%; top: 18%; background: #f3eee4; }
-  @media (min-width: 760px) {
-    .ds-board,
-    .ds-model-card {
-      grid-template-columns: 0.9fr 1.1fr;
-      align-items: center;
-    }
-    .ds-swatches,
-    .ds-card-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
 </style>

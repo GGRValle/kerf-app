@@ -123,7 +123,7 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
       </p>
     </header>
 
-    <section class="field-map" aria-label="Active job map">
+    <section class="field-map kg-grid-aside" aria-label="Active job map">
       <div class="field-map__copy">
         <span class="field-ops__eyebrow">Active map</span>
         <h2>{jobCountLabel}</h2>
@@ -144,9 +144,9 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
           </a>
         ))}
       </div>
-      <div class="field-map__jobs">
+      <div class="field-map__jobs kg-grid">
         {projectRows.map((row) => (
-          <a class="field-job-row" href={row.href}>
+          <a class="field-job-row kg-span-4" href={row.href}>
             <span class={`kg-chip ${row.tone}`}>{row.status}</span>
             <strong>{row.project.project_name}</strong>
             <small>{row.project.address_line}</small>
@@ -163,9 +163,9 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
         </div>
         <a class="field-action" href="/schedule">Open schedule</a>
       </div>
-      <div class="crew-grid">
+      <div class="crew-grid kg-grid">
         {crew.map((person) => (
-          <article class="crew-card">
+          <article class="crew-card kg-span-4">
             <div class="crew-card__top">
               <span class="crew-avatar" aria-label={`${person.name} headshot`}>
                 <span>{person.initials}</span>
@@ -272,10 +272,11 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
   }
 
   .field-map {
-    display: grid;
-    grid-template-columns: minmax(14rem, 0.72fr) minmax(18rem, 1.2fr);
-    gap: 0.85rem;
-    align-items: stretch;
+    --kg-main-min: 14rem;
+    --kg-main: 0.72fr;
+    --kg-aside-min: 18rem;
+    --kg-aside: 1.2fr;
+    --kg-gap: 0.85rem;
     margin: 1rem 0;
   }
 
@@ -367,9 +368,7 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
 
   .field-map__jobs {
     grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.65rem;
+    --kg-gap: 0.65rem;
     padding: 0.65rem;
   }
 
@@ -421,9 +420,7 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
   }
 
   .crew-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.75rem;
+    --kg-gap: 0.75rem;
   }
 
   .crew-card {
@@ -522,12 +519,6 @@ const jobCountLabel = projectRows.length === 1 ? 'One job moving now' : `${proje
 
     .field-ops h1 {
       font-size: 1.7rem;
-    }
-
-    .field-map,
-    .field-map__jobs,
-    .crew-grid {
-      grid-template-columns: 1fr;
     }
 
     .field-map__canvas {

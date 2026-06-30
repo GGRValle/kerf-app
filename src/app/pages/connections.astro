@@ -80,23 +80,23 @@ const guardrails = [
         Right Hand reads approved company sources, drafts the work, and shows its proof.
         Outside tools wait here until the owner or admin turns them on.
       </p>
-      <div class="connections-work" aria-label="Right Hand source status">
-        <div>
+      <div class="connections-work kg-grid" aria-label="Right Hand source status">
+        <div class="kg-span-4">
           <strong>{readySources.length}</strong>
           <span>Ready inside Right Hand</span>
         </div>
-        <div>
+        <div class="kg-span-4">
           <strong>{needsSetupCount}</strong>
           <span>Need setup</span>
         </div>
-        <div>
+        <div class="kg-span-4">
           <strong>0</strong>
           <span>Outbound sends allowed without approval</span>
         </div>
       </div>
     </header>
 
-    <section class="connections-decision kg-card" aria-labelledby="connections-next-title">
+    <section class="connections-decision kg-card kg-grid-aside" aria-labelledby="connections-next-title">
       <div>
         <span class="connections-state">Needs you</span>
         <h2 id="connections-next-title">Set up email next.</h2>
@@ -124,7 +124,7 @@ const guardrails = [
       </div>
     </section>
 
-    <div class="connections-layout">
+    <div class="connections-layout kg-grid-aside">
       <main class="connections-main" aria-label="Source list">
         <section class="connections-section" aria-labelledby="ready-title">
           <div class="connections-section-head">
@@ -298,9 +298,7 @@ const guardrails = [
   }
 
   .connections-work {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.55rem;
+    --kg-gap: 0.55rem;
   }
 
   .connections-work div {
@@ -329,10 +327,9 @@ const guardrails = [
   }
 
   .connections-decision {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(13rem, 18rem);
-    gap: 1rem;
-    align-items: stretch;
+    --kg-aside-min: 13rem;
+    --kg-aside: 18rem;
+    --kg-gap: 1rem;
     padding: 1rem;
     border-color: color-mix(in srgb, var(--conn-green) 36%, var(--conn-line));
     background:
@@ -447,10 +444,10 @@ const guardrails = [
   }
 
   .connections-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem);
-    gap: 1rem;
-    align-items: start;
+    --kg-aside-min: 17rem;
+    --kg-aside: 22rem;
+    --kg-gap: 1rem;
+    --kg-aside-align: start;
   }
 
   .connections-main,
@@ -638,12 +635,6 @@ const guardrails = [
   }
 
   @media (max-width: 820px) {
-    .connections-work,
-    .connections-decision,
-    .connections-layout {
-      grid-template-columns: 1fr;
-    }
-
     .connections-hero h1 {
       max-width: 11ch;
     }
@@ -652,10 +643,6 @@ const guardrails = [
   @media (max-width: 560px) {
     .connections-page {
       gap: 0.85rem;
-    }
-
-    .connections-work {
-      grid-template-columns: 1fr;
     }
 
     .connections-work div {

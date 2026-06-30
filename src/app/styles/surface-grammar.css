@@ -76,18 +76,64 @@
   --shadow: 0 16px 50px rgba(0, 0, 0, .38);
 }
 
-/* ---- Layout · 12-col grid (prototype .grid / .spanN) ---- */
-[data-grammar="canon"] .kg-grid {
+/* ---- Layout · 12-col grid (prototype .grid / .spanN) ----
+   Each grid container matches both as a descendant of the canon scope AND as the
+   canon scope element itself (`[data-grammar="canon"].kg-…`), so a page whose
+   ROOT is the layout grid speaks the grammar too (e.g. job invoices). */
+[data-grammar="canon"] .kg-grid,
+[data-grammar="canon"].kg-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 12px;
+  gap: var(--kg-gap, 12px);
 }
+[data-grammar="canon"] .kg-span-2 { grid-column: span 2; }
+[data-grammar="canon"] .kg-span-3 { grid-column: span 3; }
 [data-grammar="canon"] .kg-span-4 { grid-column: span 4; }
 [data-grammar="canon"] .kg-span-5 { grid-column: span 5; }
 [data-grammar="canon"] .kg-span-6 { grid-column: span 6; }
 [data-grammar="canon"] .kg-span-7 { grid-column: span 7; }
 [data-grammar="canon"] .kg-span-8 { grid-column: span 8; }
 [data-grammar="canon"] .kg-span-12 { grid-column: span 12; }
+/* Span items shrink below their content size — replaces the bespoke
+   minmax(0, 1fr) tracks the migrated pages used, so a long string can't
+   blow a column out. */
+[data-grammar="canon"] .kg-span-2,
+[data-grammar="canon"] .kg-span-3,
+[data-grammar="canon"] .kg-span-4,
+[data-grammar="canon"] .kg-span-5,
+[data-grammar="canon"] .kg-span-6,
+[data-grammar="canon"] .kg-span-7,
+[data-grammar="canon"] .kg-span-8,
+[data-grammar="canon"] .kg-span-12 { min-width: 0; }
+
+/* ---- Layout · extended grid vocabulary (Goal-0 grid migration) ----
+   The 9 secondary canon pages hand-rolled page-composition grids the 12-col
+   span system can't express (auto-fit galleries, asymmetric sidebars). These
+   primitives speak them in the shared grammar, so the parity gate's
+   parallel-grid rule covers them instead of waiving them. Per-instance knobs
+   (--kg-*) let a page keep its exact ratio / min-width / gap without a bespoke
+   grid-template-columns in its own <style>. Collapse on mobile mirrors the
+   prototype's single-column pattern; auto-fit stays fluid by design. */
+
+/* Auto-fit tiles & galleries — fluid column count; stays multi-up on phones. */
+[data-grammar="canon"] .kg-grid-auto,
+[data-grammar="canon"].kg-grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--kg-cell, 13rem), 1fr));
+  gap: var(--kg-gap, 12px);
+}
+
+/* Asymmetric main + sidebar. The aside carries a min-width floor the 12-col
+   span tracks can't; defaults match the canon prototype (1 : 0.82, 18rem aside). */
+[data-grammar="canon"] .kg-grid-aside,
+[data-grammar="canon"].kg-grid-aside {
+  display: grid;
+  grid-template-columns:
+    minmax(var(--kg-main-min, 0), var(--kg-main, 1fr))
+    minmax(var(--kg-aside-min, 18rem), var(--kg-aside, 0.82fr));
+  gap: var(--kg-gap, 12px);
+  align-items: var(--kg-aside-align, stretch);
+}
 
 /* ---- Card (prototype .card) ---- */
 [data-grammar="canon"] .kg-card {
@@ -130,12 +176,18 @@
 
 /* ---- Mobile (prototype @media: grid collapses, pagehead stacks) ---- */
 @media screen and (max-width: 600px) {
-  [data-grammar="canon"] .kg-grid { grid-template-columns: 1fr; }
+  [data-grammar="canon"] .kg-grid,
+  [data-grammar="canon"].kg-grid { grid-template-columns: 1fr; }
+  [data-grammar="canon"] .kg-span-2,
+  [data-grammar="canon"] .kg-span-3,
   [data-grammar="canon"] .kg-span-4,
   [data-grammar="canon"] .kg-span-5,
   [data-grammar="canon"] .kg-span-6,
   [data-grammar="canon"] .kg-span-7,
   [data-grammar="canon"] .kg-span-8,
   [data-grammar="canon"] .kg-span-12 { grid-column: span 1; }
+  /* Sidebar drops below main; auto-fit galleries stay fluid (no collapse rule). */
+  [data-grammar="canon"] .kg-grid-aside,
+  [data-grammar="canon"].kg-grid-aside { grid-template-columns: 1fr; }
   [data-grammar="canon"] .kg-pagehead { flex-direction: column; align-items: stretch; gap: 8px; }
 }

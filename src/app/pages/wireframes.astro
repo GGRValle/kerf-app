@@ -65,16 +65,16 @@ const hrefFor = (route: string) =>
       note="Client portals and redirects keep separate status. Future reference faces stay out of the launch claim."
     />
 
-    <section class="wireframe-stats" aria-label="Build status">
+    <section class="wireframe-stats kg-grid-auto" aria-label="Build status">
       <div class="kg-card"><span>Total routes</span><strong>{WIREFRAME_SPINE_MAP.length}</strong></div>
       <div class="kg-card"><span>Attached pages</span><strong>{attachedCount}</strong></div>
       <div class="kg-card"><span>Canon wired</span><strong>{wiredCount}</strong></div>
       <div class="kg-card"><span>Mobile rebuilds left</span><strong>{mobilePendingCount}</strong></div>
     </section>
 
-    <section class="wireframe-train" aria-label="Mobile-first train">
+    <section class="wireframe-train kg-grid" aria-label="Mobile-first train">
       {trainCards.map((card) => (
-        <a class="kg-card" href={card.href}>
+        <a class="kg-card kg-span-3" href={card.href}>
           <span>{card.count}</span>
           <strong>{card.label}</strong>
           <small>{card.detail}</small>
@@ -136,14 +136,13 @@ const hrefFor = (route: string) =>
     gap: 0.7rem;
   }
 
-  .wireframe-stats,
-  .wireframe-train {
-    display: grid;
-    gap: 0.65rem;
+  .wireframe-stats {
+    --kg-cell: 9rem;
+    --kg-gap: 0.65rem;
   }
 
-  .wireframe-stats {
-    grid-template-columns: 1fr 1fr;
+  .wireframe-train {
+    --kg-gap: 0.65rem;
   }
 
   .wireframe-stats .kg-card,
@@ -172,13 +171,6 @@ const hrefFor = (route: string) =>
 
   .wireframe-train strong {
     font-size: 1rem;
-  }
-
-  @media (min-width: 760px) {
-    .wireframe-stats,
-    .wireframe-train {
-      grid-template-columns: repeat(4, 1fr);
-    }
   }
 
   .wireframe-row {
