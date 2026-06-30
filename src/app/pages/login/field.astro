@@ -16,7 +16,7 @@ if (existing !== null) {
   return Astro.redirect(safeNextPath(Astro.url.searchParams.get('next')) ?? roleHomePath(existing.roleRoot));
 }
 
-const nextParam = safeNextPath(Astro.url.searchParams.get('next')) ?? '/home/field';
+const nextParam = safeNextPath(Astro.url.searchParams.get('next')) ?? '';
 const hasError = Astro.url.searchParams.get('error') !== null;
 ---
 
@@ -24,8 +24,15 @@ const hasError = Astro.url.searchParams.get('error') !== null;
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Sign in to Field Hand</title>
+    {/* Field Hand is also installable through the same PWA shell. */}
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0A0D11" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Right Hand" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/180.png" />
   </head>
   <body>
     <LoginSurface
@@ -35,5 +42,16 @@ const hasError = Astro.url.searchParams.get('error') !== null;
       hasError={hasError}
       nextParam={nextParam}
     />
+    <script is:inline>
+      // Register from the auth doorway too; the shell pages repeat this after login.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => registration.update())
+            .catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

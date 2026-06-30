@@ -51,24 +51,20 @@ const formNext = nextParam || (isField ? '/home/field' : '');
           <p class="login-error" role="alert">That sign-in did not work. Check the password and try again.</p>
         ) : null}
         <input type="hidden" name="next" value={formNext} />
-        {isField ? (
-          <input type="hidden" name="username" value="field" autocomplete="username" />
-        ) : (
-          <label class="login-field">
-            <span>Username</span>
-            <input
-              type="text"
-              name="username"
-              autocomplete="username"
-              autocapitalize="none"
-              autocorrect="off"
-              spellcheck="false"
-              required
-            />
-          </label>
-        )}
         <label class="login-field">
-          <span>{isField ? 'Field password' : 'Password'}</span>
+          <span>Username</span>
+          <input
+            type="text"
+            name="username"
+            autocomplete="username"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            required
+          />
+        </label>
+        <label class="login-field">
+          <span>Password</span>
           <input type="password" name="password" autocomplete="current-password" required />
         </label>
         <button type="submit">{isField ? 'Open Field Hand' : 'Open Right Hand'}</button>

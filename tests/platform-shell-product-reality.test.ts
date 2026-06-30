@@ -177,10 +177,12 @@ test('login and layout brand use Right Hand in user-facing copy', () => {
   assert.match(read('src/i18n/en.ts'), /'layout\.brand': 'Right Hand'/);
   assert.match(login, /mode="right-hand"/);
   assert.match(fieldLogin, /mode="field-hand"/);
-  assert.match(fieldLogin, /\/home\/field/);
   assert.match(loginSurface, /Field Hand sign-in/);
   assert.match(loginSurface, /Owner \/ office sign-in/);
   assert.match(loginSurface, /role and permissions come from the company account/);
+  assert.match(loginSurface, /name="username"/);
+  assert.doesNotMatch(loginSurface, /type="hidden"\s+name="username"\s+value="field"/);
+  assert.doesNotMatch(loginSurface, /Field password/);
   assert.doesNotMatch(loginSurface, /type="radio"/);
   assert.doesNotMatch(loginSurface, /Project manager/);
   assert.doesNotMatch(loginSurface, /Admin \/ ops/);
