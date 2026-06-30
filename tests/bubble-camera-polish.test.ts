@@ -1,7 +1,7 @@
 /**
  * Chrome/Bubble + Camera polish.
  * Bubble: parked affordance is one-per-breakpoint — desktop keeps the side pill
- * (hidden <900px), mobile lights the center dock action via body.rh-reengage.
+ * (hidden <1100px), phone/tablet lights the center dock action via body.rh-reengage.
  * The center action keeps a visible Speak/Habla label; "Tap to reengage"
  * swaps in only when parked. Camera: per-mode CAPTURE label; photo stays quiet
  * (no Right Hand/listening/walkthrough language); listening/REC is walkthru-only.
@@ -19,7 +19,7 @@ test('overlay drives a body.rh-reengage flag; side pill is desktop-only', () => 
   const overlay = read('src/app/components/RightHandVoiceOverlay.astro');
   assert.match(overlay, /classList\.add\('rh-reengage'\)/, 'showResumeBubble sets the flag');
   assert.match(overlay, /classList\.remove\('rh-reengage'\)/, 'hideResumeBubble clears it (on engage too)');
-  assert.match(overlay, /max-width: 899px\)\s*\{\s*\.rhvo-bubble\s*\{\s*display: none/, 'pill hidden on mobile');
+  assert.match(overlay, /max-width: 1099px\)\s*\{\s*\.rhvo-bubble\s*\{\s*display: none/, 'pill hidden on phone/tablet');
 });
 
 test('mobile center action is a visible dock tile; Tap-to-reengage only under body.rh-reengage', () => {

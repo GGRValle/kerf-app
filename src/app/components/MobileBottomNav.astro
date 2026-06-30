@@ -136,8 +136,8 @@ const ICONS: Record<ShellNavIcon, string> = {
 
   /* Parked conversation (body.rh-reengage, set by the Right Hand overlay on
      close): the center action swaps to "Tap to reengage" + a subtle
-     dock glow. This is the MOBILE reengage path; desktop keeps the side
-     pill (this nav is hidden >=900px). One affordance per breakpoint. */
+     dock glow. This is the phone/tablet reengage path; desktop keeps the side
+     pill (this nav is hidden >=1100px). One affordance per breakpoint. */
   .mbn-reengage-hint {
     display: none;
     white-space: nowrap;
@@ -167,7 +167,7 @@ const ICONS: Record<ShellNavIcon, string> = {
     }
   }
 
-  @media (min-width: 900px) {
+  @media (min-width: 1100px) {
     .mobile-bottom-nav {
       display: none;
     }

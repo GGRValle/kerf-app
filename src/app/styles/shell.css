@@ -117,6 +117,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .kerf-brand {
@@ -127,6 +128,7 @@ body {
   letter-spacing: -0.01em;
   color: var(--text);
   text-decoration: none;
+  min-width: 0;
 }
 
 .kerf-brand-tagline {
@@ -219,18 +221,47 @@ body {
 }
 
 /*
- * Mobile (iPhone width): the horizontal desktop web nav strip is replaced by
- * canon phone-app chrome — a clean brand header with the Right Hand avatar,
- * plus the fixed MobileBottomNav + Speak affordance. No clipped
- * "Kerf · Home · Capture…" strip.
+ * Phone + tablet app chrome: the horizontal desktop web nav strip is replaced
+ * by canon app chrome — a clean brand header with the Right Hand avatar, plus
+ * the fixed MobileBottomNav + Speak affordance. The desktop rail waits until
+ * 1100px so iPad portrait and split-screen widths do not get squeezed chrome.
  */
-@media (max-width: 899px) {
+@media (max-width: 1099px) {
+  .kerf-topbar {
+    gap: 0.5rem;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+
+  .kerf-brand {
+    font-size: clamp(0.96rem, 5.2vw, 1.2rem);
+  }
+
+  .kerf-brand-tagline {
+    max-width: 13.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: clamp(0.58rem, 3vw, 0.68rem);
+  }
+
+  .kerf-signout {
+    padding: 0.34rem 0.52rem;
+    font-size: 0.68rem;
+  }
+
+  .kerf-topbar-rh {
+    width: 2.05rem;
+    height: 2.05rem;
+    font-size: 0.66rem;
+  }
+
   .kerf-nav {
     display: none;
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .kerf-topbar {
     justify-content: flex-start;
   }
@@ -273,7 +304,7 @@ body {
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1099px) {
   .kerf-role-chip {
     display: none;
   }
