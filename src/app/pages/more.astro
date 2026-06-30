@@ -21,7 +21,20 @@ const fieldWorkAreas = [
   { href: '/schedule', title: 'Schedule', detail: 'Today, assignments, proof, start windows.' },
 ] as const;
 
+const ownerDetailLinks = [
+  { href: '/settings/people', title: 'People & permissions', detail: 'Add users, roles, employee records, pay, and access.' },
+  { href: '/connections', title: 'Connections', detail: 'What Right Hand can use: sources, files, and outside tools.' },
+  { href: '/library', title: 'Knowledge base', detail: 'Standards, templates, lessons, and company memory.' },
+  { href: '/settings', title: 'Company settings', detail: 'Tenant setup, audit, app status, and account controls.' },
+] as const;
+
+const fieldDetailLinks = [
+  { href: '/settings/me', title: 'My access', detail: 'Account, language, and field profile.' },
+  { href: '/connections', title: 'Saved proof', detail: 'Local capture and sync status for work you filed.' },
+] as const;
+
 const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
+const detailLinks = isFieldRole ? fieldDetailLinks : ownerDetailLinks;
 ---
 
 <Layout titleKey="shell.more.title" activeHref="/more">
@@ -47,6 +60,21 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
           ))}
         </nav>
       </aside>
+
+      <section class="more-page__details" aria-labelledby="more-details-title">
+        <div class="more-page__details-head">
+          <p>Keep the company wired</p>
+          <h2 id="more-details-title">Company details</h2>
+        </div>
+        <div class="more-page__detail-grid">
+          {detailLinks.map((item) => (
+            <a href={item.href}>
+              <span>{item.title}</span>
+              <small>{item.detail}</small>
+            </a>
+          ))}
+        </div>
+      </section>
     </section>
   </section>
 </Layout>
@@ -55,6 +83,7 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
   .more-page {
     display: grid;
     gap: 0.85rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
 
   .more-page__shell {
@@ -62,7 +91,8 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
     gap: 1rem;
   }
 
-  .more-page__sidebar {
+  .more-page__sidebar,
+  .more-page__details {
     display: grid;
     gap: 0.9rem;
     padding: 1rem;
@@ -78,11 +108,19 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
   }
 
   .more-page__sidebar-head p,
-  .more-page__sidebar-head h2 {
+  .more-page__sidebar-head h2,
+  .more-page__details-head p,
+  .more-page__details-head h2 {
     margin: 0;
   }
 
-  .more-page__sidebar-head p {
+  .more-page__details-head {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .more-page__sidebar-head p,
+  .more-page__details-head p {
     color: var(--text-muted, #5c6670);
     font-size: 0.68rem;
     font-weight: 900;
@@ -90,12 +128,14 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
     text-transform: uppercase;
   }
 
-  .more-page__sidebar-head h2 {
+  .more-page__sidebar-head h2,
+  .more-page__details-head h2 {
     font-size: 1.18rem;
     line-height: 1.05;
   }
 
-  .more-page__nav a {
+  .more-page__nav a,
+  .more-page__detail-grid a {
     border: 1px solid var(--border, #d8dee6);
     border-radius: 8px;
     color: inherit;
@@ -104,35 +144,50 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
     box-shadow: 0 10px 24px rgba(24, 23, 19, 0.06);
   }
 
-  .more-page__nav a:hover {
+  .more-page__nav a:hover,
+  .more-page__detail-grid a:hover {
     border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
   }
 
-  .more-page__nav a span {
+  .more-page__nav a span,
+  .more-page__detail-grid a span {
     font-weight: 700;
     font-size: 1rem;
   }
 
-  .more-page__nav a small {
+  .more-page__nav a small,
+  .more-page__detail-grid a small {
     color: var(--text-muted, #5c6670);
     line-height: 1.35;
     font-weight: 500;
     font-size: 0.72rem;
   }
 
-  .more-page__nav {
+  .more-page__nav,
+  .more-page__detail-grid {
     display: grid;
     gap: 0.55rem;
   }
 
-  .more-page__nav a {
+  .more-page__nav a,
+  .more-page__detail-grid a {
     display: grid;
     gap: 0.12rem;
     padding: 0.75rem 0.85rem;
   }
 
+  .more-page__detail-grid a {
+    background: color-mix(in srgb, var(--surface, #fff) 92%, var(--right-hand, #c9a961) 8%);
+  }
+
   .more-page__nav a::after {
     content: none;
+  }
+
+  @media (max-width: 600px) {
+    .more-page {
+      padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   @media (min-width: 860px) {
@@ -140,18 +195,25 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
       max-width: 64rem;
     }
 
-    .more-page__sidebar {
+    .more-page__sidebar,
+    .more-page__details {
       gap: 1rem;
       padding: 1.1rem;
     }
 
-    .more-page__nav {
+    .more-page__nav,
+    .more-page__detail-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.75rem;
     }
 
     .more-page__nav a {
       min-height: 6.25rem;
+      align-content: start;
+      padding: 0.95rem;
+    }
+
+    .more-page__detail-grid a {
       align-content: start;
       padding: 0.95rem;
     }

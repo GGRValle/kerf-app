@@ -36,6 +36,9 @@ test('More page uses the job spine instead of the old client/module domain list'
     assert.match(src, new RegExp(`title: '${label}'`));
   }
   assert.match(src, /Job spine work areas/);
+  assert.match(src, /Company details/);
+  assert.match(src, /People & permissions/);
+  assert.match(src, /Knowledge base/);
   assert.doesNotMatch(src, /moreDomainLinksForRole/);
   assert.doesNotMatch(src, /MORE_NAV_LINKS/);
   assert.doesNotMatch(src, /title: 'Clients'/);
@@ -264,6 +267,37 @@ test('top bar exposes sign out without hiding account settings', () => {
   assert.match(layout, /href="\/logout">\{t\('layout\.sign_out'\)\}<\/a>/);
   assert.match(layout, /href="\/settings\/me"/);
   assert.match(styles, /\.kerf-signout/);
+  assert.match(styles, /@media \(max-width: 1099px\)/);
+  assert.match(styles, /@media \(min-width: 1100px\)/);
+  assert.match(styles, /\.kerf-brand-tagline[\s\S]*text-overflow: ellipsis/);
+  assert.match(styles, /\.kerf-topbar-rh[\s\S]*width: 2\.05rem/);
+});
+
+test('mobile route bar and More page leave room for phone chrome', () => {
+  const home = read('src/app/components/RightHandHomeSurface.astro');
+  const more = read('src/app/pages/more.astro');
+
+  assert.match(home, /@media screen and \(max-width: 600px\)/);
+  assert.match(home, /\.icon-btn[\s\S]*width: 2\.55rem/);
+  assert.match(home, /\.route-bar input[\s\S]*font-size: clamp\(0\.8rem, 4\.2vw, 0\.95rem\)/);
+  assert.match(more, /padding-bottom: calc\(7rem \+ env\(safe-area-inset-bottom, 0px\)\)/);
+  assert.match(more, /more-page__details/);
+});
+
+test('tablet widths keep app chrome instead of squeezed desktop rail', () => {
+  const shell = read('src/app/styles/shell.css');
+  const nav = read('src/app/components/MobileBottomNav.astro');
+  const dock = read('src/app/components/RightHandConversationDock.astro');
+  const overlay = read('src/app/components/RightHandVoiceOverlay.astro');
+  const speakFab = read('src/app/components/SpeakFAB.astro');
+
+  assert.match(shell, /@media \(max-width: 1099px\)[\s\S]*?\.kerf-nav[\s\S]*?display: none/);
+  assert.match(shell, /@media \(min-width: 1100px\)[\s\S]*?\.kerf-shell--desktop-rh \.kerf-shell__body/);
+  assert.match(nav, /@media \(min-width: 1100px\)[\s\S]*?\.mobile-bottom-nav[\s\S]*?display: none/);
+  assert.match(dock, /@media \(min-width: 1100px\)[\s\S]*?\.kerf-rh-dock[\s\S]*?display: flex/);
+  assert.match(overlay, /@media \(max-width: 1099px\) \{ \.rhvo-bubble \{ display: none; \} \}/);
+  assert.match(speakFab, /@media\(max-width:1099px\)\{\.speak-fab\{display:none\}\}/);
+  assert.doesNotMatch(shell + nav + dock + overlay + speakFab, /899px|900px/);
 });
 
 test('Field Hand is sun-readable and camera scan means ID or document', () => {
