@@ -11,14 +11,15 @@ const MANIFEST = {
   name: 'Right Hand',
   short_name: 'Right Hand',
   description: 'Your contractor operating partner — estimates, proposals, and the field.',
-  // Role-routed home; a crew member lands on the Field Hand surface.
-  start_url: '/?source=pwa',
+  // Owner-first install surface; unauthenticated launches still route through login.
+  start_url: '/home/owner?source=pwa',
   scope: '/',
   display: 'standalone',
   orientation: 'portrait-primary',
   background_color: '#0A0D11',
   theme_color: '#0A0D11',
   icons: [
+    { src: '/icons/180.png', sizes: '180x180', type: 'image/png', purpose: 'any' },
     { src: '/icons/192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
     { src: '/icons/512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
     { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },

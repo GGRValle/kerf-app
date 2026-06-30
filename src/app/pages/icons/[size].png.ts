@@ -27,6 +27,7 @@ function iconSvg(size: number, maskable: boolean): string {
 }
 
 const SIZES: Record<string, { size: number; maskable: boolean }> = {
+  '180': { size: 180, maskable: false },
   '192': { size: 192, maskable: false },
   '512': { size: 512, maskable: false },
   'maskable-512': { size: 512, maskable: true },
