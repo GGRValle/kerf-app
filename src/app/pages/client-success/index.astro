@@ -200,7 +200,7 @@ function labelForSocial(status: SocialStatus): string {
       </p>
     </header>
 
-    <section class="cs-route" aria-label="Client search">
+    <section class="cs-route kg-grid-aside" aria-label="Client search">
       <div>
         <span class="cs-eyebrow">Client CRM</span>
         <h2>Find a client, review, referral, or warranty item.</h2>
@@ -223,7 +223,7 @@ function labelForSocial(status: SocialStatus): string {
       </div>
     </section>
 
-    <section class="cs-score-grid" aria-label="Client success signals">
+    <section class="cs-score-grid kg-grid-auto" aria-label="Client success signals">
       {reviewQueue.map((card) => (
         <article class={`cs-score cs-score--${card.tone}`}>
           <span>{card.label}</span>
@@ -245,7 +245,7 @@ function labelForSocial(status: SocialStatus): string {
       <a href="/right-hand" data-rh-speak>Ask Right Hand</a>
     </section>
 
-    <section class="cs-layout" aria-label="Client success workspace">
+    <section class="cs-layout kg-grid-aside" aria-label="Client success workspace">
       <div class="cs-main">
         <div class="cs-section-head">
           <div>
@@ -269,16 +269,16 @@ function labelForSocial(status: SocialStatus): string {
                 </div>
                 <span class={`kg-chip ${toneForAsk(client.reviewAsk)}`}>{labelForAsk(client.reviewAsk)}</span>
               </div>
-              <dl class="cs-client-facts">
-                <div>
+              <dl class="cs-client-facts kg-grid">
+                <div class="kg-span-4">
                   <dt>Next touch</dt>
                   <dd>{client.nextTouch}</dd>
                 </div>
-                <div>
+                <div class="kg-span-4">
                   <dt>Feedback</dt>
                   <dd>{client.feedback}</dd>
                 </div>
-                <div>
+                <div class="kg-span-4">
                   <dt>Proof</dt>
                   <dd>{client.proof}</dd>
                 </div>
@@ -439,10 +439,12 @@ function labelForSocial(status: SocialStatus): string {
   }
 
   .cs-route {
-    display: grid;
-    grid-template-columns: minmax(15rem, 0.8fr) minmax(18rem, 1.2fr);
-    gap: 0.75rem;
-    align-items: center;
+    --kg-main-min: 15rem;
+    --kg-main: 0.8fr;
+    --kg-aside-min: 18rem;
+    --kg-aside: 1.2fr;
+    --kg-aside-align: center;
+    --kg-gap: 0.75rem;
     padding: 0.85rem;
   }
 
@@ -494,9 +496,8 @@ function labelForSocial(status: SocialStatus): string {
   }
 
   .cs-score-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.7rem;
+    --kg-cell: 9rem;
+    --kg-gap: 0.7rem;
     margin: 0.85rem 0;
   }
 
@@ -535,9 +536,9 @@ function labelForSocial(status: SocialStatus): string {
   }
 
   .cs-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
-    gap: 0.85rem;
+    --kg-main: 1.35fr;
+    --kg-aside: 0.65fr;
+    --kg-gap: 0.85rem;
   }
 
   .cs-section-head {
@@ -580,9 +581,7 @@ function labelForSocial(status: SocialStatus): string {
   }
 
   .cs-client-facts {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.65rem;
+    --kg-gap: 0.65rem;
     margin: 0;
   }
 
@@ -669,17 +668,7 @@ function labelForSocial(status: SocialStatus): string {
       font-size: 1.9rem;
     }
 
-    .cs-route,
-    .cs-layout,
     .cs-one-thing {
-      grid-template-columns: 1fr;
-    }
-
-    .cs-score-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .cs-client-facts {
       grid-template-columns: 1fr;
     }
   }

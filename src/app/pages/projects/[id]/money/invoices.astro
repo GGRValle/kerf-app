@@ -36,7 +36,7 @@ const statusTone = {
     phase: 'money_guard',
   }}
 >
-  <article class="job-invoices" data-grammar="canon">
+  <article class="job-invoices kg-grid-aside" data-grammar="canon">
     <header class="ji-head kg-pagehead">
       <a class="ji-back" href={`/projects/${projectId}`}>Back to job</a>
       <span class="kg-chip kg-routechip">Project money</span>
@@ -46,7 +46,7 @@ const statusTone = {
       <p class="ji-eyebrow">Invoices</p>
       <h1>{project.project_name}</h1>
       <p>Deposit, progress, and final invoices live under this job. Money can find them, but the job owns the invoice set.</p>
-      <div class="ji-stats">
+      <div class="ji-stats kg-grid-auto">
         <div>
           <span>Contract</span>
           <strong>{formatInvoiceMoney(contractTotal)}</strong>
@@ -89,7 +89,7 @@ const statusTone = {
       <span>{activeInvoice.line_ids.join(', ')}. Draft totals stay tied to the signed contract.</span>
     </aside>
 
-    <div class="ji-actions">
+    <div class="ji-actions kg-grid-auto">
       <a class="ji-btn ji-btn--primary" href={`/money/invoices/${activeInvoice.id}?return_to=${encodeURIComponent(`/projects/${projectId}/money/invoices`)}`}>Open detail</a>
       <a class="ji-btn" href="/money">Open Money</a>
     </div>
@@ -98,9 +98,18 @@ const statusTone = {
 
 <style>
   .job-invoices {
-    display: grid;
-    gap: 0.85rem;
+    --kg-gap: 0.85rem;
+    --kg-main: 1.1fr;
+    --kg-aside: 0.9fr;
+    --kg-aside-min: 280px;
+    --kg-aside-align: start;
     padding-bottom: 5.5rem;
+  }
+
+  .ji-head,
+  .ji-summary,
+  .ji-actions {
+    grid-column: 1 / -1;
   }
 
   .ji-back {
@@ -137,9 +146,8 @@ const statusTone = {
   }
 
   .ji-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    --kg-cell: 8rem;
+    --kg-gap: 8px;
     margin-top: 0.85rem;
   }
 
@@ -214,9 +222,8 @@ const statusTone = {
   }
 
   .ji-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    --kg-cell: 7rem;
+    --kg-gap: 8px;
   }
 
   .ji-btn {
@@ -238,20 +245,4 @@ const statusTone = {
     color: #181713;
   }
 
-  @media (min-width: 760px) {
-    .job-invoices {
-      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
-      align-items: start;
-    }
-
-    .ji-head,
-    .ji-summary,
-    .ji-actions {
-      grid-column: 1 / -1;
-    }
-
-    .ji-stats {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
 </style>

@@ -91,36 +91,16 @@ test('parity gate avoids false positives: a full red border and a kv grid are NO
 // Vacuous today (no page has opted in — Goal 0 is scoped); arms per-surface as
 // Cursor A/B/C flip surfaces to canon. This is the line that fails their PR.
 
-// Canon-STYLED pages whose custom CSS grids the current kg-grid 12-col system
-// cannot express yet (icon gutters, asymmetric sidebars, auto-fit galleries,
-// 3-col auto-sides). The parallel-grid rule is WAIVED for these — and ONLY that
-// rule; every other canon rule (superseded tokens, raw hex, red row-rail, debug
-// card, singleton chrome, SurfaceContext) still gates them. Deliberate, documented
-// scope while a kg-grid extension + per-page migration lands as a follow-up. Drop a
-// page from this set the moment its grids convert to kg-grid / kg-span-N.
-const GRID_MIGRATION_PENDING: ReadonlySet<string> = new Set(
-  [
-    'src/app/pages/connections.astro',
-    'src/app/pages/field.astro',
-    'src/app/pages/schedule.astro',
-    'src/app/pages/wireframes.astro',
-    'src/app/pages/sales/index.astro',
-    'src/app/pages/client-success/index.astro',
-    'src/app/pages/projects/[id]/index.astro',
-    'src/app/pages/projects/[id]/money/invoices.astro',
-    'src/app/pages/design/[projectId].astro',
-  ].map((p) => path.normalize(p)),
-);
+// The grid-migration waiver is RETIRED. Every formerly-waived secondary page now
+// expresses its page-composition grids in the canon grammar (kg-grid / kg-span-N,
+// kg-grid-auto, kg-grid-aside — see src/app/styles/surface-grammar.css), so the
+// parallel-grid rule gates EVERY [data-grammar="canon"] page with no exception path.
 
 test('parity gate: every [data-grammar="canon"] page conforms (auto-gates Cursor PRs)', () => {
   const optedIn = pageSurfaces().filter((rel) => read(rel).includes(CANON_OPT_IN));
   const failures: string[] = [];
   for (const rel of optedIn) {
-    let v = canonViolations(read(rel));
-    // Grid-migration-pending pages: waive ONLY the parallel-grid violation (see note above).
-    if (GRID_MIGRATION_PENDING.has(path.normalize(rel))) {
-      v = v.filter((x) => !/parallel grid/.test(x));
-    }
+    const v = canonViolations(read(rel));
     if (v.length) failures.push(`${rel}:\n   - ${v.join('\n   - ')}`);
   }
   assert.equal(
@@ -130,7 +110,7 @@ test('parity gate: every [data-grammar="canon"] page conforms (auto-gates Cursor
   );
   console.log(
     `[surface-parity] ${optedIn.length} page(s) opted into canon; all conform ` +
-      `(${GRID_MIGRATION_PENDING.size} grid-migration-pending, grid rule waived).`,
+      `(grid-migration waiver retired — parallel-grid fully enforced).`,
   );
 });
 
