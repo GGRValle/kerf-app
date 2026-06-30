@@ -14,16 +14,15 @@ export interface NavItem {
 /** Data-driven nav — role-filtered via navForRole · domain-filtered via navForContext. */
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: '/', labelKey: 'nav.home', domain: 'home', roleRoots: ROLE_ROOTS_ALL },
-  { href: '/camera', labelKey: 'nav.field_capture', domain: 'capture', roleRoots: ['owner', 'pm', 'field_hand'] },
-  { href: '/transcript-review', labelKey: 'nav.transcript_review', domain: 'comms', roleRoots: ['owner', 'pm', 'admin_ops'] },
-  { href: '/draft-review', labelKey: 'nav.draft_review', domain: 'projects', roleRoots: ['owner', 'pm'] },
-  { href: '/money', labelKey: 'nav.money', domain: 'money', roleRoots: ['owner', 'pm', 'admin_ops'] },
+  { href: '/start', labelKey: 'shell.nav.create', domain: 'start', roleRoots: ROLE_ROOTS_ALL },
+  { href: '/design/proj_wegrzyn_kitchen', labelKey: 'nav.design', domain: 'projects', roleRoots: ['owner', 'pm'] },
+  { href: '/sales', labelKey: 'shell.domain.sales', domain: 'sales', roleRoots: ['owner'] },
   { href: '/projects', labelKey: 'nav.projects', domain: 'projects', roleRoots: ['owner', 'pm', 'admin_ops'] },
   { href: '/schedule', labelKey: 'nav.schedule', domain: 'schedule', roleRoots: ['owner', 'pm', 'admin_ops', 'field_hand'] },
-  { href: '/relay', labelKey: 'nav.relay', domain: 'field', roleRoots: ['owner', 'pm', 'field_hand'] },
-  { href: '/reports', labelKey: 'nav.reports', domain: 'reports', roleRoots: ['owner', 'pm', 'admin_ops'] },
+  { href: '/money', labelKey: 'nav.money', domain: 'money', roleRoots: ['owner', 'pm', 'admin_ops'] },
+  { href: '/camera', labelKey: 'nav.field_capture', domain: 'capture', roleRoots: ['owner', 'pm', 'field_hand'] },
   { href: '/settings', labelKey: 'nav.settings', domain: 'settings', roleRoots: ROLE_ROOTS_ALL },
-  { href: '/kb-ingestion', labelKey: 'nav.cost_kb', domain: 'purchasing', roleRoots: ['owner', 'admin_ops'] },
+  { href: '/more', labelKey: 'shell.nav.more', domain: 'settings', roleRoots: ROLE_ROOTS_ALL },
 ] as const;
 
 export function navForRole(roleRoot: RoleRoot): readonly NavItem[] {

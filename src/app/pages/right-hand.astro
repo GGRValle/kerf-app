@@ -17,12 +17,12 @@ const actions = [
   {
     href: '/blackboard',
     title: 'Open blackboard',
-    detail: 'Review company learning, agent notes, and system-wide operating memory.',
+    detail: 'Review company learning, notes, and the work Right Hand keeps improving.',
   },
   {
     href: '/',
     title: 'Back to work',
-    detail: 'Return to the operating loop. Use the mic or Ask buttons to talk to Right Hand.',
+    detail: 'Return home. Use the right rail to talk to Right Hand.',
   },
 ] as const;
 
@@ -43,16 +43,15 @@ const backHref =
   <section class="rh-fallback" aria-labelledby="rh-fallback-title" data-grammar="canon">
     {backHref ? <a class="rh-fallback__back" href={backHref}>‹ Back</a> : null}
     <RhSummary
-      headline="Right Hand learning"
-      detail="The mic and Ask buttons open the working conversation. This page is for Knowledge Base, system learning, and onboarding."
+      headline="Right Hand"
+      detail="On desktop, talk or type in the rail on the right. Capture stays in Camera."
       tone="blue"
     />
 
-    <Card eyebrow="Knowledge Base · onboarding" title="How Right Hand works">
+    <Card eyebrow="Learning" title="How Right Hand works">
       <p class="rh-fallback__copy">
-        Right Hand is the conversational layer over the operating system. It can
-        draft, route, summarize, and prepare work, but sends, money, files, and
-        durable writes stay behind the visible approval gates.
+        Tell Right Hand what happened. It can draft, route, summarize, and prepare
+        the work. Sends, money, files, and approvals still come back for your call.
       </p>
       <div class="rh-fallback__actions">
         {actions.map((action) => (
