@@ -69,12 +69,21 @@ test('home index uses the Right Hand home surface', () => {
   assert.match(src, /RoleHomeSurface/);
   assert.match(src, /home\.title/);
 });
-test('nav includes schedule, reports, and settings without making audit top-nav', () => {
+test('desktop nav follows the job spine without old review shelves as top nav', () => {
   const src = read('src/app/lib/nav.ts');
+  assert.match(src, /\/start/);
+  assert.match(src, /\/design\/proj_wegrzyn_kitchen/);
+  assert.match(src, /\/sales/);
+  assert.match(src, /\/projects/);
   assert.match(src, /\/schedule/);
-  assert.match(src, /\/reports/);
-  assert.match(src, /domain: 'reports'/);
+  assert.match(src, /\/money/);
+  assert.match(src, /\/camera/);
   assert.match(src, /\/settings/);
+  assert.match(src, /\/more/);
+  assert.doesNotMatch(src, /\/transcript-review/);
+  assert.doesNotMatch(src, /\/draft-review/);
+  assert.doesNotMatch(src, /\/reports/);
+  assert.doesNotMatch(src, /\/kb-ingestion/);
   assert.doesNotMatch(src, /domain: 'audit'/);
   assert.doesNotMatch(src, /href: '\/role-routing'/);
 });

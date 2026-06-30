@@ -28,7 +28,7 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
   <section class="more-page" aria-labelledby="more-title">
     <RhSummary
       headline="More"
-      detail="Open the work area you need. The job spine stays here; home stays focused on decisions."
+      detail="Open the part of the job you need. Home stays focused on what needs your call."
       tone="green"
     />
 
@@ -59,13 +59,13 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
 
   .more-page__shell {
     display: grid;
-    gap: 0.85rem;
+    gap: 1rem;
   }
 
   .more-page__sidebar {
     display: grid;
-    gap: 0.72rem;
-    padding: 0.85rem;
+    gap: 0.9rem;
+    padding: 1rem;
     border: 1px solid var(--border, #d8dee6);
     border-radius: 8px;
     background: var(--surface, #fff);
@@ -95,11 +95,6 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
     line-height: 1.05;
   }
 
-  .more-page__actions {
-    display: grid;
-    gap: 0.65rem;
-  }
-
   .more-page__nav a {
     border: 1px solid var(--border, #d8dee6);
     border-radius: 8px;
@@ -109,29 +104,15 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
     box-shadow: 0 10px 24px rgba(24, 23, 19, 0.06);
   }
 
-  .more-page__action {
-    display: grid;
-    gap: 0.15rem;
-    padding: 0.85rem;
-    border: 1px solid var(--border, #d8dee6);
-    border-radius: 8px;
-    color: inherit;
-    text-decoration: none;
-    background: var(--surface, #fff);
-    box-shadow: 0 10px 24px rgba(24, 23, 19, 0.06);
-  }
-
-  .more-page__action:hover,
   .more-page__nav a:hover {
     border-color: color-mix(in srgb, var(--right-hand, #c9a961) 45%, var(--border, #d8dee6));
   }
 
-  .more-page__action span,
   .more-page__nav a span {
     font-weight: 700;
+    font-size: 1rem;
   }
 
-  .more-page__action small,
   .more-page__nav a small {
     color: var(--text-muted, #5c6670);
     line-height: 1.35;
@@ -155,14 +136,24 @@ const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
   }
 
   @media (min-width: 860px) {
-    .more-page__shell {
-      grid-template-columns: minmax(15rem, 0.42fr) minmax(0, 0.58fr);
-      align-items: start;
+    .more-page {
+      max-width: 64rem;
     }
 
     .more-page__sidebar {
-      position: sticky;
-      top: 1rem;
+      gap: 1rem;
+      padding: 1.1rem;
+    }
+
+    .more-page__nav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .more-page__nav a {
+      min-height: 6.25rem;
+      align-content: start;
+      padding: 0.95rem;
     }
   }
 </style>

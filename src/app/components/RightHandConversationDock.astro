@@ -1,7 +1,8 @@
 ---
 /**
- * F-RH3/RH4 · right-docked, bottom-anchored conversation (desktop shell).
- * Speak opens the global voice overlay; this dock is the persistent projection surface.
+ * Desktop Right Hand rail.
+ * Desktop keeps the microphone and typed discussion in the right rail; capture
+ * stays a separate app path. Mobile uses the bottom Speak slot instead.
  */
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 import type { I18nKey } from '../../i18n/keys.js';
@@ -17,19 +18,39 @@ const ROLE_LABEL_KEYS: Record<RoleRoot, I18nKey> = {
 };
 const operatorName = context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner'
   ? 'Christian'
-  : context.roleRoot;
+  : context.roleRoot.replace(/[_-]+/g, ' ');
 ---
 
 <aside class="kerf-rh-dock" aria-label={t('shell.conversation.aria')}>
   <header class="kerf-rh-dock__head">
-    <span class="kerf-rh-dock__brand">{t('right_hand.title')}</span>
+    <div>
+      <span class="kerf-rh-dock__brand">{t('right_hand.title')}</span>
+      <strong>{t('shell.conversation.desktop_title')}</strong>
+    </div>
     <span class="kerf-rh-dock__role">{t(ROLE_LABEL_KEYS[context.roleRoot])}</span>
   </header>
+
   <div class="kerf-rh-dock__thread" id="kerf-rh-dock-thread">
     <p class="kerf-rh-dock__hint">{t('shell.conversation.hint')}</p>
+    <div class="kerf-rh-dock__proof" aria-label={t('shell.conversation.proof_label')}>
+      <span>{t('shell.conversation.proof_saved')}</span>
+      <span>{t('shell.conversation.proof_review')}</span>
+      <span>{t('shell.conversation.proof_gate')}</span>
+    </div>
   </div>
+
+  <div class="kerf-rh-dock__split" aria-label={t('shell.conversation.split_label')}>
+    <a class="kerf-rh-dock__mic" href="/right-hand" data-rh-speak>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+        <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z" />
+      </svg>
+      <span>{t('shell.conversation.talk')}</span>
+    </a>
+    <a class="kerf-rh-dock__capture" href="/camera">{t('shell.conversation.capture')}</a>
+  </div>
+
   <form class="kerf-rh-dock__composer" action="/right-hand" method="get">
-    <button type="button" class="kerf-rh-dock__import" aria-label={t('shell.conversation.import')}>+</button>
     <label class="sr-only" for="kerf-rh-dock-input">{t('shell.conversation.input_label')}</label>
     <textarea
       id="kerf-rh-dock-input"
@@ -37,90 +58,196 @@ const operatorName = context.tenantId === 'tenant_ggr' && context.roleRoot === '
       rows="2"
       placeholder={t('shell.conversation.placeholder')}
     ></textarea>
-    <a class="kerf-rh-dock__speak" href="/right-hand" data-rh-speak>{t('shell.nav.speak')}</a>
+    <button type="submit" class="kerf-rh-dock__send">{t('shell.conversation.send')}</button>
   </form>
-  <p class="kerf-rh-dock__meta">Hi {operatorName} — mic stays available while you confirm durable writes.</p>
+
+  <p class="kerf-rh-dock__meta">{t('shell.conversation.meta').replace('{name}', operatorName)}</p>
 </aside>
 
 <style>
   .kerf-rh-dock {
     display: none;
   }
+
   @media (min-width: 900px) {
     .kerf-rh-dock {
       display: flex;
       flex-direction: column;
       border-left: 1px solid var(--border);
-      background: var(--surface);
-      min-height: calc(100dvh - 3.5rem);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--right-hand) 8%, transparent), transparent 10rem),
+        var(--surface);
+      min-height: calc(100dvh - var(--kerf-topbar-height, 4rem));
       position: sticky;
-      top: 3.5rem;
+      top: var(--kerf-topbar-height, 4rem);
       align-self: start;
+      box-shadow: -18px 0 42px rgba(24, 23, 19, 0.06);
     }
+
     .kerf-rh-dock__head {
       display: flex;
       justify-content: space-between;
-      padding: 0.75rem 1rem;
+      gap: 1rem;
+      padding: 1rem;
       border-bottom: 1px solid var(--border-soft);
-      font-size: 0.75rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--text-muted);
+      color: var(--text);
     }
+
+    .kerf-rh-dock__head div {
+      display: grid;
+      gap: 0.18rem;
+      min-width: 0;
+    }
+
     .kerf-rh-dock__brand {
       color: var(--right-hand, #c9a961);
-      font-weight: 700;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
+
+    .kerf-rh-dock__head strong {
+      font-size: 1rem;
+      line-height: 1.1;
+    }
+
+    .kerf-rh-dock__role {
+      align-self: start;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.28rem 0.52rem;
+      color: var(--text-muted);
+      background: var(--surface-2);
+      font-size: 0.68rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
     .kerf-rh-dock__thread {
       flex: 1;
       padding: 1rem;
       overflow-y: auto;
-      font-size: 0.85rem;
-      color: var(--text-muted);
     }
+
+    .kerf-rh-dock__hint {
+      margin: 0;
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.42;
+      font-weight: 750;
+    }
+
+    .kerf-rh-dock__proof {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+    }
+
+    .kerf-rh-dock__proof span {
+      display: block;
+      padding: 0.62rem 0.7rem;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 74%, transparent);
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      line-height: 1.3;
+      font-weight: 750;
+    }
+
+    .kerf-rh-dock__split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.5rem;
+      padding: 0 1rem 0.75rem;
+    }
+
+    .kerf-rh-dock__mic,
+    .kerf-rh-dock__capture,
+    .kerf-rh-dock__send {
+      min-height: 2.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.42rem;
+      color: inherit;
+      text-decoration: none;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .kerf-rh-dock__mic {
+      border-color: color-mix(in srgb, var(--right-hand) 50%, var(--border));
+      background: var(--right-hand);
+      color: #181713;
+      box-shadow: 0 12px 24px rgba(214, 173, 54, 0.18);
+    }
+
+    .kerf-rh-dock__mic svg {
+      width: 1rem;
+      height: 1rem;
+      fill: currentColor;
+    }
+
+    .kerf-rh-dock__capture {
+      padding-inline: 0.85rem;
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .kerf-rh-dock__capture:hover,
+    .kerf-rh-dock__send:hover {
+      border-color: color-mix(in srgb, var(--right-hand) 44%, var(--border));
+    }
+
+    .kerf-rh-dock__send {
+      padding-inline: 0.82rem;
+      background: var(--text);
+      color: var(--surface);
+    }
+
     .kerf-rh-dock__composer {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 0.5rem;
       padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid var(--border);
       align-items: end;
     }
-    .kerf-rh-dock__import {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      color: var(--text);
-      cursor: pointer;
-    }
+
     .kerf-rh-dock textarea {
       width: 100%;
       resize: vertical;
-      min-height: 2.5rem;
+      min-height: 2.65rem;
       max-height: 8rem;
-      border-radius: 10px;
+      border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      padding: 0.5rem 0.65rem;
+      padding: 0.62rem 0.7rem;
       font: inherit;
     }
-    .kerf-rh-dock__speak {
-      text-decoration: none;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--accent);
-      white-space: nowrap;
+
+    .kerf-rh-dock textarea:focus {
+      outline: 2px solid color-mix(in srgb, var(--right-hand) 42%, transparent);
+      outline-offset: 2px;
     }
+
     .kerf-rh-dock__meta {
       margin: 0;
-      padding: 0 1rem 0.75rem;
+      padding: 0 1rem 0.85rem;
       font-size: 0.7rem;
       color: var(--text-muted);
+      line-height: 1.3;
     }
   }
+
   .sr-only {
     position: absolute;
     width: 1px;

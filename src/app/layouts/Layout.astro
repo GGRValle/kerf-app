@@ -6,7 +6,6 @@ import '../styles/shell.css';
 // docs/SURFACE_GRAMMAR.md.
 import '../styles/surface-grammar.css';
 import '../../shell/surfaceCatalog.js';
-import SpeakFAB from '../components/SpeakFAB.astro';
 import MobileBottomNav from '../components/MobileBottomNav.astro';
 import RightHandVoiceOverlay from '../components/RightHandVoiceOverlay.astro';
 import RightHandConversationDock from '../components/RightHandConversationDock.astro';
@@ -142,7 +141,6 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
       <MobileBottomNav activeHref={activeHref} roleRoot={context.roleRoot} />
       <!-- One Right Hand bubble everywhere: the functional voice overlay
            (unified — the presentation-only F-RH7 .rhb was removed). -->
-      <SpeakFAB />
       <RightHandVoiceOverlay />
     </div>
     <script define:vars={{ emittedSurfaceContext }}>

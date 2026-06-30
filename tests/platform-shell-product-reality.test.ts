@@ -206,13 +206,21 @@ test('login and layout brand use Right Hand in user-facing copy', () => {
 test('app shell uses Right Hand contractor skin with explicit dark mode', () => {
   const shell = read('src/app/styles/shell.css');
   const layout = read('src/app/layouts/Layout.astro');
+  const dock = read('src/app/components/RightHandConversationDock.astro');
 
   assert.match(shell, /--kerf-bg: #f7f6f1/);
+  assert.match(shell, /--kerf-desktop-rail/);
   assert.match(shell, /:root\[data-theme='dark'\]/);
   assert.match(shell, /linear-gradient\(rgba\(24, 23, 19, 0\.035\) 1px, transparent 1px\)/);
   assert.match(shell, /background-size: 22px 22px/);
   assert.match(layout, /kerf-brand-tagline/);
   assert.match(layout, /From capture to completion\./);
+  assert.doesNotMatch(layout, /SpeakFAB/);
+  assert.match(layout, /RightHandConversationDock/);
+  assert.match(dock, /kerf-rh-dock__mic/);
+  assert.match(dock, /href="\/camera"/);
+  assert.match(dock, /data-rh-speak/);
+  assert.doesNotMatch(dock, /V1|active turn stacks|system/i);
 });
 
 test('owner home is decision-first with agent work summarized behind it', () => {
@@ -300,4 +308,12 @@ test('mobile bottom nav uses the Right Hand dock design', () => {
   assert.doesNotMatch(topNav, /href: '\/decisions'/);
   assert.doesNotMatch(topNav, /href: '\/blackboard'/);
   assert.doesNotMatch(topNav, /href: '\/clients'/);
+  assert.doesNotMatch(topNav, /href: '\/transcript-review'/);
+  assert.doesNotMatch(topNav, /href: '\/draft-review'/);
+  assert.doesNotMatch(topNav, /href: '\/reports'/);
+  assert.doesNotMatch(topNav, /href: '\/kb-ingestion'/);
+  assert.match(topNav, /href: '\/start'/);
+  assert.match(topNav, /href: '\/design\/proj_wegrzyn_kitchen'/);
+  assert.match(topNav, /href: '\/sales'/);
+  assert.match(topNav, /href: '\/more'/);
 });

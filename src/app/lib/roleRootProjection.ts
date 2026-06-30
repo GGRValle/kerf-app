@@ -30,7 +30,7 @@ const ROLE_VISIBLE: Record<RoleRoot, readonly LayerADomainId[]> = {
   owner: ALL_DOMAINS,
   pm: ['home','start','projects','schedule','money','team_ops','settings','field','comms','clients','capture'],
   admin_ops: ['home','start','projects','schedule','money','team_ops','settings','audit','hr','purchasing','reports','comms'],
-  field_hand: ['home','capture','schedule','time','work_orders','comms','settings'],
+  field_hand: ['home','start','capture','schedule','time','work_orders','comms','settings'],
   sub: ['home','work_orders','invoices','comms','settings'],
 };
 const ROLE_CAPABILITIES: Record<RoleRoot, RoleSurfaceCapabilities> = {

@@ -351,6 +351,33 @@ const backgroundWork = [
       grid-auto-flow: row;
     }
   }
+
+  @media screen and (min-width: 900px) {
+    .rh-home {
+      max-width: none;
+      margin: 0;
+      --kg-gap: 1rem;
+    }
+
+    .route-bar {
+      grid-template-columns: minmax(0, 1fr) auto;
+      max-width: 58rem;
+    }
+
+    .route-bar .icon-btn--dark[data-rh-speak] {
+      display: none;
+    }
+
+    .rh-section[aria-labelledby='rh-deck-title'],
+    .rh-section[aria-labelledby='rh-pulse-title'] {
+      grid-column: span 6;
+    }
+
+    .rh-section[aria-labelledby='rh-one-title'],
+    .rh-section[aria-labelledby='rh-handled-title'] {
+      grid-column: span 12;
+    }
+  }
 </style>
 
 <!-- Canon overrides for the shared attention card (injected into .rh-home by the

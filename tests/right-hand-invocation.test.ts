@@ -46,15 +46,17 @@ test('right hand overlay can prefill the composer from a q hint', () => {
   assert.match(overlay, /openOverlay\(\{ restoreConversation: true \}\);\s*prefillComposerFromTrigger\(target\);/);
 });
 
-test('right hand page is reserved for knowledge base and onboarding', () => {
+test('right hand page points desktop talk to the rail and capture to Camera', () => {
   const page = src('rightHand');
-  assert.match(page, /Right Hand learning/);
-  assert.match(page, /Knowledge Base/);
-  assert.match(page, /onboarding/);
+  assert.match(page, /On desktop, talk or type in the rail on the right/);
+  assert.match(page, /Capture stays in Camera/);
+  assert.match(page, /Learning/);
   assert.match(page, /Review staged learning/);
   assert.match(page, /Open blackboard/);
+  assert.match(page, /Use the right rail to talk to Right Hand/);
   assert.doesNotMatch(page, /Where do you want to go\?/);
   assert.doesNotMatch(page, /This page is the fallback if the voice overlay does not open/);
+  assert.doesNotMatch(page, /system learning|operating system/i);
 });
 
 test('more puts schedule in the old crew work-area slot, not support', () => {
