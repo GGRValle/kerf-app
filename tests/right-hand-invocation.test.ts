@@ -59,7 +59,7 @@ test('right hand page is reserved for knowledge base and onboarding', () => {
 
 test('more puts schedule in the old crew work-area slot, not support', () => {
   const more = src('more');
-  assert.match(more, /title: 'Schedule'/);
+  assert.match(more, /title: 'Schedule & Crew'/);
   assert.match(more, /Crew map, dispatch, job timing, blockers/);
   assert.doesNotMatch(more, /title: 'Crew', detail: 'Field proof/);
   assert.doesNotMatch(more, /title: 'Schedule', detail: 'Crew map and start windows/);

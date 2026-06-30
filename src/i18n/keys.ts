@@ -108,6 +108,7 @@ export type I18nKey =
   | 'layout.brand'
   | 'layout.brand_tagline'
   | 'layout.nav.primary'
+  | 'layout.sign_out'
   | 'layout.speak_fab.label'
   | 'layout.speak_fab.title'
   | 'route_shell.detail'

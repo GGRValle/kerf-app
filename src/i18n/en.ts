@@ -100,6 +100,7 @@ export const EN: TranslationMap = {
   'layout.brand': 'Right Hand',
   'layout.brand_tagline': 'From capture to completion.',
   'layout.nav.primary': 'Primary navigation',
+  'layout.sign_out': 'Sign out',
   'layout.speak_fab.label': 'Talk to Right Hand',
   'layout.speak_fab.title': 'Talk to Right Hand',
   'route_shell.detail': 'This screen is a preview shell — your jobs and events are unchanged.',

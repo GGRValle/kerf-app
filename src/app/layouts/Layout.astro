@@ -128,6 +128,7 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
         <div class="kerf-role-chip kerf-role-chip--static" aria-label="Current access">
           <span class="kerf-role-chip__label">{t(ROLE_LABEL_KEYS[context.roleRoot])}</span>
         </div>
+        <a class="kerf-signout" href="/logout">{t('layout.sign_out')}</a>
         <a class="kerf-topbar-rh" href="/settings/me" aria-label={`${operatorName} settings`}>
           <span aria-hidden="true">{operatorInitials}</span>
         </a>

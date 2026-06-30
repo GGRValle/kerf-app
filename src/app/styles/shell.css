@@ -162,6 +162,28 @@ body {
   background: var(--kerf-text);
 }
 
+.kerf-signout + .kerf-topbar-rh {
+  margin-left: 0;
+}
+
+.kerf-signout {
+  flex-shrink: 0;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.kerf-signout:hover {
+  color: var(--kerf-text);
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+}
+
 .kerf-nav-link {
   flex-shrink: 0;
   scroll-snap-align: center;

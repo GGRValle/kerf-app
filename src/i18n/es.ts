@@ -106,6 +106,7 @@ export const ES: TranslationMap = {
   'layout.brand': 'Right Hand',
   'layout.brand_tagline': 'De la captura a la entrega.',
   'layout.nav.primary': 'Navegación principal',
+  'layout.sign_out': 'Cerrar sesión',
   'layout.speak_fab.label': 'Hablar con Mano Derecha',
   'layout.speak_fab.title': 'Hablar con Mano Derecha',
   'route_shell.detail': 'Esta pantalla es una vista previa — sus trabajos y eventos no cambian.',

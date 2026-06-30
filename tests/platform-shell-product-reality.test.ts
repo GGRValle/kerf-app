@@ -32,7 +32,7 @@ test('RoleHomeSurface hides F-xx wireframe codes outside dev/debug', () => {
 test('More page uses the job spine instead of the old client/module domain list', () => {
   const src = read('src/app/pages/more.astro');
 
-  for (const label of ['Start', 'Design', 'Sales', 'Project', 'Crew', 'Money', 'Success']) {
+  for (const label of ['Start', 'Design', 'Sales', 'Project', 'Schedule & Crew', 'Money', 'Success']) {
     assert.match(src, new RegExp(`title: '${label}'`));
   }
   assert.match(src, /Job spine work areas/);
@@ -217,8 +217,8 @@ test('owner home is decision-first with agent work summarized behind it', () => 
 
   // Decision-first ORDER: the ask/route bar leads, then the one thing, then handled work summarized behind it.
   // Loop-first migration (PR #424): the old fixture-snapshot assertions (Ortiz fixture, /proj_ramirez_bath,
-  // evidence-strip) and the forbid-loop-strip/forbid-rh-brain rules were the PRE-redesign home and are now
-  // superseded by right-hand-loop-shell.test.ts, which owns the loop-strip / rh-brain / route-anywhere structure.
+  // evidence-strip) and the forbid-rh-brain rules were the PRE-redesign home and are now superseded by
+  // right-hand-loop-shell.test.ts, which owns the route-anywhere structure and blocks the duplicate chip row.
   // This test keeps the decision-first guard that survives the redesign; it does not assert the old markup.
   assert.match(src, /Find a job, invoice, crew, or log/);
   assert.match(src, /The one thing/);
@@ -238,11 +238,21 @@ test('More is domain navigation, not a second Right Hand ask loop', () => {
   assert.match(src, /title: 'Design'/);
   assert.match(src, /title: 'Project'/);
   assert.match(src, /title: 'Success'/);
-  assert.match(src, /Common paths/);
+  assert.match(src, /title: 'Schedule & Crew'/);
+  assert.doesNotMatch(src, /Common paths/);
   assert.doesNotMatch(src, /title: 'Clients'/);
   assert.doesNotMatch(src, /shell\.domain\.clients/);
   assert.doesNotMatch(src, /Ask Right Hand to route you/);
   assert.doesNotMatch(src, /action="\/right-hand"/);
+});
+
+test('top bar exposes sign out without hiding account settings', () => {
+  const layout = read('src/app/layouts/Layout.astro');
+  const styles = read('src/app/styles/shell.css');
+
+  assert.match(layout, /href="\/logout">\{t\('layout\.sign_out'\)\}<\/a>/);
+  assert.match(layout, /href="\/settings\/me"/);
+  assert.match(styles, /\.kerf-signout/);
 });
 
 test('Field Hand is sun-readable and camera scan means ID or document', () => {
