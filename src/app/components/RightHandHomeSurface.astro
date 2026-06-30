@@ -5,19 +5,6 @@ const { context } = createLayoutContext();
 const operatorName =
   context.tenantId === 'tenant_ggr' && context.roleRoot === 'owner' ? 'Christian' : 'there';
 
-// The owner front door is the BUSINESS LOOP, not a list of SaaS domains. Each
-// stage is route-anywhere: tap to land on the real surface for that part of the
-// loop. Stage order is the loop order (capture → completion).
-const loopStages = [
-  { label: 'Start', href: '/camera' },
-  { label: 'Design', href: '/design/proj_wegrzyn_kitchen' },
-  { label: 'Sales', href: '/sales' },
-  { label: 'Project', href: '/projects' },
-  { label: 'Crew', href: '/team-ops/subs' },
-  { label: 'Money', href: '/money' },
-  { label: 'Success', href: '/client-success' },
-];
-
 // Background work is a HONEST count of what Right Hand carried, with no fake
 // attention rows. Real attention items are projected live in the script below.
 const backgroundWork = [
@@ -44,19 +31,13 @@ const backgroundWork = [
     </a>
   </form>
 
-  <nav class="loop-strip kg-span-12" aria-label="From capture to completion">
-    {loopStages.map((stage) => (
-      <a class="kg-chip loop-strip__stage" href={stage.href}>{stage.label}</a>
-    ))}
-  </nav>
-
   <section class="agent-read kg-span-12" aria-label="Right Hand readout">
     <p>Morning, <strong>{operatorName}</strong>.</p>
   </section>
 
   <section class="rh-section kg-span-12" aria-labelledby="rh-one-title">
     <div class="rh-brain" data-attention-band="one">
-      <span class="rh-brain__kicker">Needs you</span>
+      <span class="kg-chip rh-brain__kicker">Needs you</span>
       <h2 id="rh-one-title">The one thing</h2>
     </div>
     <div class="aa-slot" id="rh-one-thing" data-empty="Nothing needs you right now">
@@ -136,8 +117,33 @@ const backgroundWork = [
     }
   }
 
+  function signatureFor(item: AttentionProjection): string {
+    return [
+      item.source,
+      item.headline.trim().toLowerCase(),
+      item.detail.trim().toLowerCase(),
+      (item.domain || '').trim().toLowerCase(),
+    ].join('|');
+  }
+
+  function uniqueByContent(items: readonly AttentionProjection[]): AttentionProjection[] {
+    const seen = new Set<string>();
+    const unique: AttentionProjection[] = [];
+    for (const item of items) {
+      const signature = signatureFor(item);
+      if (seen.has(signature)) continue;
+      seen.add(signature);
+      unique.push(item);
+    }
+    return unique;
+  }
+
   function render(live: readonly AttentionProjection[]) {
-    const { oneThing, onDeck, pulse } = composeHomeAttentionSections({ live });
+    const { oneThing, onDeck, pulse } = composeHomeAttentionSections({
+      live: uniqueByContent(live),
+      onDeckLimit: 3,
+      pulseLimit: 4,
+    });
     fillSlot('rh-one-thing', oneThing ? [oneThing] : [], 'one');
     fillSlot('rh-on-deck', onDeck, 'deck');
     fillSlot('rh-pulse', pulse, 'pulse');
@@ -242,16 +248,6 @@ const backgroundWork = [
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
-  }
-
-  .loop-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-
-  .loop-strip__stage {
-    text-decoration: none;
   }
 
   .agent-read {

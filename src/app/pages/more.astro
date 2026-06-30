@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Card from '../components/Card.astro';
 import RhSummary from '../components/RhSummary.astro';
 import { createLayoutContext } from '../lib/createLayoutContext.js';
 
@@ -12,7 +11,7 @@ const ownerWorkAreas = [
   { href: '/design/proj_wegrzyn_kitchen', title: 'Design', detail: 'Selections, visual choices, owner questions.' },
   { href: '/sales', title: 'Sales', detail: 'Leads, estimates, proposals, signatures.' },
   { href: '/projects', title: 'Project', detail: 'Jobs, scope, dailies, files.' },
-  { href: '/schedule', title: 'Crew', detail: 'Crew map, dispatch, job timing, blockers.' },
+  { href: '/schedule', title: 'Schedule & Crew', detail: 'Crew map, dispatch, job timing, blockers.' },
   { href: '/money', title: 'Money', detail: 'Invoices, bills, margin, exports.' },
   { href: '/client-success', title: 'Success', detail: 'Closeout, warranty, referrals.' },
 ] as const;
@@ -23,12 +22,6 @@ const fieldWorkAreas = [
 ] as const;
 
 const workAreas = isFieldRole ? fieldWorkAreas : ownerWorkAreas;
-
-const quickLinks = [
-  { href: '/settings', title: 'Settings', detail: 'Company preferences, people, permissions.' },
-  { href: '/connections', title: 'Sources', detail: 'What Right Hand can use with proof.' },
-  { href: '/kb-ingestion', title: 'Knowledge', detail: 'Staged costs and learning review.' },
-] as const;
 ---
 
 <Layout titleKey="shell.more.title" activeHref="/more">
@@ -54,21 +47,6 @@ const quickLinks = [
           ))}
         </nav>
       </aside>
-
-      <div class="more-page__main">
-        {quickLinks.length > 0 ? (
-          <Card eyebrow="Common paths" title="Settings and sources">
-            <div class="more-page__actions">
-              {quickLinks.map((item) => (
-                <a class="more-page__action" href={item.href}>
-                  <span>{item.title}</span>
-                  <small>{item.detail}</small>
-                </a>
-              ))}
-            </div>
-          </Card>
-        ) : null}
-      </div>
     </section>
   </section>
 </Layout>
