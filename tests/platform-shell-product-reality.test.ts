@@ -182,6 +182,7 @@ test('login and layout brand use Right Hand in user-facing copy', () => {
   assert.match(loginSurface, /role and permissions come from the company account/);
   assert.match(loginSurface, /name="username"/);
   assert.doesNotMatch(loginSurface, /type="hidden"\s+name="username"\s+value="field"/);
+  assert.doesNotMatch(loginSurface, /isField\s*\?\s*'\/home\/field'/);
   assert.doesNotMatch(loginSurface, /Field password/);
   assert.doesNotMatch(loginSurface, /type="radio"/);
   assert.doesNotMatch(loginSurface, /Project manager/);
