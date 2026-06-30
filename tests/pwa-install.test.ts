@@ -78,3 +78,16 @@ test('PWA: Layout wires manifest + iOS standalone chrome + update-checking SW re
   assert.match(src, /serviceWorker[\s\S]*register\('\/sw\.js'\)/);
   assert.match(src, /registration\.update\(\)/);
 });
+
+test('PWA: auth doorways also carry install metadata and register the service worker', () => {
+  for (const page of ['src/app/pages/login.astro', 'src/app/pages/login/field.astro']) {
+    const src = read(page);
+    assert.match(src, /rel="manifest"\s+href="\/manifest\.webmanifest"/);
+    assert.match(src, /viewport-fit=cover/);
+    assert.match(src, /name="theme-color"\s+content="#0A0D11"/);
+    assert.match(src, /apple-mobile-web-app-capable/);
+    assert.match(src, /rel="apple-touch-icon"\s+sizes="180x180"\s+href="\/icons\/180\.png"/);
+    assert.match(src, /serviceWorker[\s\S]*register\('\/sw\.js'\)/);
+    assert.match(src, /registration\.update\(\)/);
+  }
+});
