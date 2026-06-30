@@ -78,17 +78,17 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
 <html lang={context.locale}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="kerf-build-commit" content={buildCommit} />
     <meta name="kerf-build-dirty" content={buildDirty} />
     <title>{pageTitle}</title>
     {/* PWA install (Goal B PR-1): manifest + standalone chrome + home-screen icon. */}
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#f7f6f1" />
+    <meta name="theme-color" content="#0A0D11" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Right Hand" />
-    <link rel="apple-touch-icon" href="/icons/192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/180.png" />
   </head>
   <body data-active-href={activeHref}>
     <div
@@ -190,12 +190,15 @@ const emittedSurfaceContextJson = JSON.stringify(emittedSurfaceContext);
       activeNav?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' });
     </script>
     <script is:inline>
-      // PWA service-worker registration (Goal B PR-1). Best-effort; install
-      // works once /sw.js + /manifest.webmanifest are reachable. The SW caches
-      // only hashed build assets — never money/API responses.
+      // PWA service-worker registration. Best-effort; install works once
+      // /sw.js + /manifest.webmanifest are reachable. The SW cache is
+      // build-stamped and never stores money/API responses.
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => registration.update())
+            .catch(() => {});
         });
       }
     </script>

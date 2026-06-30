@@ -83,6 +83,7 @@ export function isAuthExemptPath(pathname: string): boolean {
     // Public static assets only — no tenant data, same class as favicon.
     pathname === '/manifest.webmanifest' ||
     pathname === '/sw.js' ||
+    pathname === '/icons/180.png' ||
     pathname === '/icons/192.png' ||
     pathname === '/icons/512.png' ||
     pathname === '/icons/maskable-512.png' ||
