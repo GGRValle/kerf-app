@@ -1,10 +1,12 @@
 /**
  * Chrome/Bubble + Camera polish.
  * Bubble: parked affordance is one-per-breakpoint — desktop keeps the side pill
- * (hidden <900px), mobile lights the center dock action via body.rh-reengage.
- * The center action keeps a visible Speak/Habla label; "Tap to reengage"
- * swaps in only when parked. Camera: per-mode CAPTURE label; photo stays quiet
- * (no Right Hand/listening/walkthrough language); listening/REC is walkthru-only.
+ * (hidden <900px), mobile lights the center dock FAB via body.rh-reengage.
+ * The center action is an elevated 52px FAB with a visible Speak/Habla label;
+ * when parked the FAB gains a pulsing amber ring and the label swaps to the
+ * short "Resume" (static ring under prefers-reduced-motion). Camera: per-mode
+ * CAPTURE label; photo stays quiet (no Right Hand/listening/walkthrough
+ * language); listening/REC is walkthru-only.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,18 +24,37 @@ test('overlay drives a body.rh-reengage flag; side pill is desktop-only', () => 
   assert.match(overlay, /max-width: 899px\)\s*\{\s*\.rhvo-bubble\s*\{\s*display: none/, 'pill hidden on mobile');
 });
 
-test('mobile center action is a visible dock tile; Tap-to-reengage only under body.rh-reengage', () => {
+test('mobile center action is an elevated FAB; parked state is a distinct Resume + pulsing-ring affordance', () => {
   const nav = read('src/app/components/MobileBottomNav.astro');
   assert.equal((nav.match(/class="mbn-fab"/g) || []).length, 1, 'one center mic (one-mic rule)');
+  // Normal state: the "Speak" label is visible (rendered from the i18n slot label).
   assert.match(nav, /\.mbn-speak-label\s*\{[^}]*display:\s*block/, 'dormant Speak label is visible');
   assert.doesNotMatch(nav, /\.mbn-speak-label\s*\{[^}]*visibility:\s*hidden/, 'Speak label is not hidden');
   assert.match(nav, /class="mbn-speak"[\s\S]*?aria-label=\{t\(slot\.labelKey\)\}/, 'a11y name kept on the speak link');
-  // Reengage hint: hidden by default, shown ONLY under body.rh-reengage
-  assert.match(nav, /class="mbn-reengage-hint"[^>]*>Tap to reengage</, 'reengage hint present');
-  assert.match(nav, /\.mbn-reengage-hint\s*\{[^}]*display:\s*none/, 'hint hidden by default');
-  assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-speak-label\s*\{\s*display: none/, 'label swaps out on reengage');
-  assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-reengage-hint\s*\{\s*display: block/, 'hint shows on reengage');
-  assert.match(nav, /body\.rh-reengage\)\s*\.mbn-speak\s*\{\s*animation: mbn-reengage-glow/, 'dock action glows on reengage');
+  // Elevated FAB: 52px circle, amber, raised above the dock with a surface ring.
+  assert.match(nav, /\.mbn-fab\s*\{[^}]*width:\s*52px/, 'FAB is 52px');
+  assert.match(nav, /\.mbn-fab\s*\{[^}]*border-radius:\s*50%/, 'FAB is circular');
+  assert.match(nav, /\.mbn-fab\s*\{[^}]*margin-top:\s*-26px/, 'FAB is raised above the dock line');
+  // Parked (body.rh-reengage): the FAB pulses AND the label swaps to the short "Resume".
+  assert.match(nav, /class="mbn-speak-label mbn-speak-label--resume"[^>]*>Resume</, 'Resume label present for parked state');
+  assert.match(nav, /\.mbn-speak-label--resume\s*\{[^}]*display:\s*none/, 'Resume label hidden by default');
+  assert.match(
+    nav,
+    /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-speak-label:not\(\.mbn-speak-label--resume\)\s*\{\s*display:\s*none/,
+    'Speak label swaps out on reengage',
+  );
+  assert.match(
+    nav,
+    /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-speak-label--resume\s*\{\s*display:\s*block/,
+    'Resume label shows on reengage',
+  );
+  assert.match(
+    nav,
+    /body\.rh-reengage\)\s*\.mbn-speak\s*\.mbn-fab\s*\{\s*animation:\s*mbn-reengage-pulse/,
+    'FAB pulses on reengage (distinct, visible affordance)',
+  );
+  // Reduced motion: the pulse is replaced by a static ring so the parked state stays visible.
+  assert.match(nav, /prefers-reduced-motion: reduce[\s\S]*?body\.rh-reengage\)[\s\S]*?\.mbn-fab\s*\{[\s\S]*?animation:\s*none/, 'reduced-motion swaps the pulse for a static ring');
 });
 
 test('camera: CAPTURE label, photo quiet (no Right Hand/listening/walkthrough), REC walkthru-only', () => {

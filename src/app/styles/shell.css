@@ -228,6 +228,39 @@ body {
   .kerf-nav {
     display: none;
   }
+
+  /* Canon F-A1 .top-chrome: a compact greeting bar (~50px) with a small
+     avatar — not the stacked brand + tagline + role chip + sign-out stack.
+     Mobile-only; desktop (>=900px) keeps the full topbar untouched. */
+  .kerf-topbar {
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem calc(0.4rem + env(safe-area-inset-top, 0px));
+    padding-top: max(0.4rem, env(safe-area-inset-top, 0px));
+    min-height: 50px;
+  }
+  .kerf-brand {
+    font-size: 0.95rem;
+  }
+  /* Tagline is desktop-only chrome; the compact bar drops it. */
+  .kerf-brand-tagline {
+    display: none;
+  }
+  /* Sign-out stays reachable (settings/me hosts none) but shrinks to fit the
+     compact bar — never display:none. */
+  .kerf-signout {
+    margin-left: auto;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.64rem;
+  }
+  .kerf-signout + .kerf-topbar-rh {
+    margin-left: 0.4rem;
+  }
+  /* Canon avatar ~30px. */
+  .kerf-topbar-rh {
+    width: 1.9rem;
+    height: 1.9rem;
+    font-size: 0.64rem;
+  }
 }
 
 @media (min-width: 900px) {
