@@ -2,11 +2,12 @@
 // F-SL3/F-SL4 · Deal detail · /sales/:id (Lane 2)
 import Layout from '../../layouts/Layout.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
-import { dealById, dealStageLabel } from '../../../sales/index.js';
+import { dealById, dealStageLabel, loadSalesStore } from '../../../sales/index.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
 const id = Astro.params.id ?? '';
+await loadSalesStore(tenant);
 const deal = dealById(tenant, id);
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 const projectId = deal?.project_id ?? (deal ? `proj_${deal.id}` : '');

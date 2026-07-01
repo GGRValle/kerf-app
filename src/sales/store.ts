@@ -1,12 +1,11 @@
 /**
- * Lane 2 · Tenant-scoped in-memory store + seed fixtures.
+ * Lane 2 · Tenant-scoped sales store + seed fixtures.
  *
  * Wall 1 (tenant isolation): every read/write is keyed by tenant; a tenant
- * never sees another tenant's catalog, deals, selections, or estimates. This is
- * an in-memory store for the drivable V1 slice — durable persistence is the
- * fix-queue follow-up (stated honestly in the report). Mutations here back the
- * API's durable writes; reads back the surfaces.
+ * never sees another tenant's catalog, deals, selections, or estimates.
  */
+import pg from 'pg';
+
 import type { PersistenceTenantId } from '../persistence/events.js';
 import type { ProjectSelectionInstance } from '../contracts/lane1/selection.js';
 import type {
@@ -18,6 +17,8 @@ import type {
   EstimateLine,
 } from './types.js';
 import type { ProposalDraftSummary } from './proposalDraft.js';
+
+const { Pool } = pg;
 
 export interface TenantSalesStore {
   deals: Deal[];
@@ -32,7 +33,29 @@ export interface TenantSalesStore {
   proposalDrafts: ProposalDraftSummary[];
 }
 
+export type SalesStoreRecordKind =
+  | 'deal'
+  | 'item'
+  | 'assembly'
+  | 'template'
+  | 'vendor'
+  | 'selection'
+  | 'estimate_line'
+  | 'proposal_draft';
+
+export interface SalesStorePersistence {
+  loadTenant(tenant: PersistenceTenantId): Promise<TenantSalesStore>;
+  saveTenant(tenant: PersistenceTenantId, store: TenantSalesStore): Promise<void>;
+}
+
+interface SalesStoreRecord {
+  readonly kind: SalesStoreRecordKind;
+  readonly entityId: string;
+  readonly value: unknown;
+}
+
 const STORES = new Map<PersistenceTenantId, TenantSalesStore>();
+const HYDRATED_TENANTS = new Set<PersistenceTenantId>();
 
 const ALL_TENANTS: readonly PersistenceTenantId[] = ['tenant_ggr', 'tenant_valle', 'tenant_hpg'];
 
@@ -100,23 +123,237 @@ function seedEmpty(tenant: PersistenceTenantId): TenantSalesStore {
   };
 }
 
+function seedTenant(tenant: PersistenceTenantId): TenantSalesStore {
+  return tenant === 'tenant_ggr' ? seedGgr() : seedEmpty(tenant);
+}
+
+function emptyTenantStore(): TenantSalesStore {
+  return {
+    deals: [],
+    items: [],
+    assemblies: [],
+    templates: [],
+    vendors: [],
+    selections: [],
+    estimateLines: [],
+    proposalDrafts: [],
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+}
+
+function str(row: Record<string, unknown>, key: string): string | null {
+  const value = row[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function sameTenant(row: Record<string, unknown>, tenant: PersistenceTenantId): boolean {
+  return row['tenant'] === tenant;
+}
+
+function parseSalesRecord(kind: SalesStoreRecordKind, tenant: PersistenceTenantId, value: unknown): unknown | null {
+  const row = asRecord(value);
+  if (!row) return null;
+  switch (kind) {
+    case 'deal':
+      return str(row, 'id') && sameTenant(row, tenant) ? value as Deal : null;
+    case 'item':
+      return str(row, 'id') && sameTenant(row, tenant) ? value as CatalogItem : null;
+    case 'assembly':
+      return str(row, 'id') && sameTenant(row, tenant) ? value as CatalogAssembly : null;
+    case 'template':
+      return str(row, 'id') && sameTenant(row, tenant) ? value as CatalogTemplate : null;
+    case 'vendor':
+      return str(row, 'id') && sameTenant(row, tenant) ? value as CatalogVendor : null;
+    case 'selection':
+      return str(row, 'id') && str(row, 'project_id') ? value as ProjectSelectionInstance : null;
+    case 'estimate_line':
+      return str(row, 'id') && str(row, 'project_id') && sameTenant(row, tenant) ? value as EstimateLine : null;
+    case 'proposal_draft':
+      return str(row, 'proposal_id') && str(row, 'project_id') ? value as ProposalDraftSummary : null;
+  }
+}
+
+function storeRecords(store: TenantSalesStore): SalesStoreRecord[] {
+  return [
+    ...store.deals.map((row) => ({ kind: 'deal' as const, entityId: row.id, value: row })),
+    ...store.items.map((row) => ({ kind: 'item' as const, entityId: row.id, value: row })),
+    ...store.assemblies.map((row) => ({ kind: 'assembly' as const, entityId: row.id, value: row })),
+    ...store.templates.map((row) => ({ kind: 'template' as const, entityId: row.id, value: row })),
+    ...store.vendors.map((row) => ({ kind: 'vendor' as const, entityId: row.id, value: row })),
+    ...store.selections.map((row) => ({ kind: 'selection' as const, entityId: row.id, value: row })),
+    ...store.estimateLines.map((row) => ({ kind: 'estimate_line' as const, entityId: row.id, value: row })),
+    ...store.proposalDrafts.map((row) => ({ kind: 'proposal_draft' as const, entityId: row.proposal_id, value: row })),
+  ].filter((record) => record.entityId.length > 0);
+}
+
+function applyLoadedRecord(store: TenantSalesStore, kind: SalesStoreRecordKind, value: unknown): void {
+  switch (kind) {
+    case 'deal':
+      store.deals.push(value as Deal);
+      return;
+    case 'item':
+      store.items.push(value as CatalogItem);
+      return;
+    case 'assembly':
+      store.assemblies.push(value as CatalogAssembly);
+      return;
+    case 'template':
+      store.templates.push(value as CatalogTemplate);
+      return;
+    case 'vendor':
+      store.vendors.push(value as CatalogVendor);
+      return;
+    case 'selection':
+      store.selections.push(value as ProjectSelectionInstance);
+      return;
+    case 'estimate_line':
+      store.estimateLines.push(value as EstimateLine);
+      return;
+    case 'proposal_draft':
+      store.proposalDrafts.push(value as ProposalDraftSummary);
+      return;
+  }
+}
+
+function parseKind(value: unknown): SalesStoreRecordKind | null {
+  switch (value) {
+    case 'deal':
+    case 'item':
+    case 'assembly':
+    case 'template':
+    case 'vendor':
+    case 'selection':
+    case 'estimate_line':
+    case 'proposal_draft':
+      return value;
+    default:
+      return null;
+  }
+}
+
+export function createPgSalesStore(connectionString: string): SalesStorePersistence {
+  const pool = new Pool({ connectionString });
+  let ready: Promise<void> | null = null;
+
+  async function ensureReady(): Promise<void> {
+    ready ??= (async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS right_hand_sales_store (
+          tenant_id text NOT NULL,
+          kind text NOT NULL,
+          entity_id text NOT NULL,
+          updated_at timestamptz NOT NULL DEFAULT now(),
+          sales_row jsonb NOT NULL,
+          PRIMARY KEY (tenant_id, kind, entity_id)
+        )
+      `);
+      await pool.query(
+        'CREATE INDEX IF NOT EXISTS right_hand_sales_store_tenant_kind_idx ON right_hand_sales_store (tenant_id, kind, updated_at DESC)',
+      );
+    })();
+    await ready;
+  }
+
+  return {
+    async loadTenant(tenant) {
+      await ensureReady();
+      const res = await pool.query(
+        'SELECT kind, sales_row FROM right_hand_sales_store WHERE tenant_id = $1 ORDER BY kind, entity_id',
+        [tenant],
+      );
+      if (res.rows.length === 0) {
+        const seeded = seedTenant(tenant);
+        await this.saveTenant(tenant, seeded);
+        return seeded;
+      }
+
+      const loaded = emptyTenantStore();
+      for (const row of res.rows as Array<{ kind: unknown; sales_row: unknown }>) {
+        const kind = parseKind(row.kind);
+        if (!kind) continue;
+        const parsed = parseSalesRecord(kind, tenant, row.sales_row);
+        if (parsed) applyLoadedRecord(loaded, kind, parsed);
+      }
+      return loaded;
+    },
+
+    async saveTenant(tenant, store) {
+      await ensureReady();
+      const records = storeRecords(store);
+      for (const record of records) {
+        await pool.query(
+          `INSERT INTO right_hand_sales_store
+            (tenant_id, kind, entity_id, updated_at, sales_row)
+           VALUES ($1, $2, $3, now(), $4::jsonb)
+           ON CONFLICT (tenant_id, kind, entity_id) DO UPDATE SET
+            updated_at = EXCLUDED.updated_at,
+            sales_row = EXCLUDED.sales_row`,
+          [tenant, record.kind, record.entityId, JSON.stringify(record.value)],
+        );
+      }
+    },
+  };
+}
+
+let cachedPersistence: SalesStorePersistence | null = null;
+
+function configuredSalesPersistence(): SalesStorePersistence | null {
+  if (process.env['RIGHT_HAND_SALES_STORE'] === 'memory') return null;
+  const connectionString = process.env['DATABASE_URL'] ?? process.env['POSTGRES_URL'];
+  if (!connectionString) return null;
+  cachedPersistence ??= createPgSalesStore(connectionString);
+  return cachedPersistence;
+}
+
 /** Get (and lazily seed) the tenant's store. Tenant isolation: never cross-tenant. */
 export function getSalesStore(tenant: PersistenceTenantId): TenantSalesStore {
   let store = STORES.get(tenant);
   if (!store) {
-    store = tenant === 'tenant_ggr' ? seedGgr() : seedEmpty(tenant);
+    store = seedTenant(tenant);
     STORES.set(tenant, store);
   }
   return store;
+}
+
+/** Load the tenant snapshot from Postgres when configured; memory remains test/dev fallback. */
+export async function loadSalesStore(tenant: PersistenceTenantId): Promise<TenantSalesStore> {
+  const persistence = configuredSalesPersistence();
+  if (!persistence) return getSalesStore(tenant);
+  if (!HYDRATED_TENANTS.has(tenant)) {
+    const store = await persistence.loadTenant(tenant);
+    STORES.set(tenant, store);
+    HYDRATED_TENANTS.add(tenant);
+  }
+  return getSalesStore(tenant);
+}
+
+/** Persist the current tenant snapshot after confirmed durable writes. */
+export async function persistSalesStore(tenant: PersistenceTenantId): Promise<void> {
+  const persistence = configuredSalesPersistence();
+  if (!persistence) return;
+  await persistence.saveTenant(tenant, getSalesStore(tenant));
+  HYDRATED_TENANTS.add(tenant);
 }
 
 /** Reset a tenant's store to seed (tests). */
 export function resetSalesStore(tenant?: PersistenceTenantId): void {
   if (tenant) {
     STORES.delete(tenant);
+    HYDRATED_TENANTS.delete(tenant);
     return;
   }
-  for (const t of ALL_TENANTS) STORES.delete(t);
+  for (const t of ALL_TENANTS) {
+    STORES.delete(t);
+    HYDRATED_TENANTS.delete(t);
+  }
+}
+
+export function resetSalesPersistenceForTests(): void {
+  cachedPersistence = null;
+  HYDRATED_TENANTS.clear();
 }
 
 export function dealById(tenant: PersistenceTenantId, dealId: string): Deal | undefined {
