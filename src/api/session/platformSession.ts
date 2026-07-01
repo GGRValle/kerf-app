@@ -43,8 +43,9 @@ const SESSION_BY_TOKEN: Readonly<Record<string, PlatformSession>> = {
   },
   // field_hand + sub carry NO sensitive capability (Wall 2). Present so the RBAC
   // behavioral test can prove they are denied money / margin / pay / send.
-  // NOTE (auth hardening, Goal 3): this whole dogfood table resolves in prod —
-  // env-gate to non-prod before real multi-tenant launch.
+  // Every psess_test_* below resolves ONLY outside production — see
+  // dogfoodTokensEnabled() / lookupDogfoodSession(): on the live app they return
+  // null, so no hardcoded token authenticates. Real login is the shell cookie.
   psess_test_ggr_field: {
     token: 'psess_test_ggr_field',
     tenantId: 'tenant_ggr',
@@ -99,11 +100,29 @@ function sessionFromBasicAuth(authorization: string | undefined): PlatformSessio
   }
 }
 
+/**
+ * Dogfood/test tokens (SESSION_BY_TOKEN) are hardcoded, password-less principals
+ * — psess_test_ggr_owner would otherwise be a standing owner login that walks
+ * around the RBAC role wall. They resolve ONLY outside production. The live app
+ * sets NODE_ENV=production (fly.toml + Dockerfile) AND the Fly runtime sets
+ * FLY_APP_NAME; either signal disables them (belt + suspenders — a misconfigured
+ * NODE_ENV still can't reopen the hole on Fly). Mirrors the NODE_ENV==='production'
+ * gate already used by isBasicAuthEnabled. Real login is the signed shell cookie.
+ */
+function dogfoodTokensEnabled(): boolean {
+  return process.env['NODE_ENV'] !== 'production' && !process.env['FLY_APP_NAME'];
+}
+
+function lookupDogfoodSession(token: string): PlatformSession | null {
+  if (!dogfoodTokensEnabled()) return null;
+  return SESSION_BY_TOKEN[token] ?? null;
+}
+
 function sessionFromBearer(authorization: string | undefined): PlatformSession | null {
   if (!authorization?.startsWith('Bearer ')) return null;
   const token = authorization.slice(7).trim();
   if (!isPlatformSessionToken(token)) return null;
-  return SESSION_BY_TOKEN[token] ?? null;
+  return lookupDogfoodSession(token);
 }
 
 /** Resolve tenant + role from credential only (Wall 1). */
@@ -117,7 +136,7 @@ export function resolvePlatformSession(
     sessionFromBearer(authorization) ??
     (() => {
       const token = sessionTokenFromCookieHeader(cookieHeader);
-      return token ? SESSION_BY_TOKEN[token] ?? null : null;
+      return token ? lookupDogfoodSession(token) : null;
     })() ??
     (shellSession
       ? {
