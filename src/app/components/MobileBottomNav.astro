@@ -42,7 +42,7 @@ const ICONS: Record<ShellNavIcon, string> = {
       >
         <span class="mbn-fab" set:html={ICONS[slot.icon]} />
         <span class="mbn-speak-label">{t(slot.labelKey)}</span>
-        <span class="mbn-reengage-hint" aria-hidden="true">Tap to reengage</span>
+        <span class="mbn-speak-label mbn-speak-label--resume" aria-hidden="true">Resume</span>
       </a>
     ) : (
       <a class="mbn-tab" href={slot.href} aria-current={isActive(slot.href) ? 'page' : undefined}>
@@ -112,58 +112,96 @@ const ICONS: Record<ShellNavIcon, string> = {
     background: var(--kerf-surface-2);
   }
 
-  /* Center Speak slot: same dock geometry, stronger action color. */
+  /* Center Speak slot: the canon F-A1 elevated FAB. The grid cell itself stays
+     transparent and 1-of-5 wide; the 52px circular mic (.mbn-fab) is RAISED so
+     it floats above the dock line, and the label sits below it. */
   .mbn-speak {
-    color: #181713;
-    background: var(--kerf-amber);
-    box-shadow: 0 8px 18px rgba(229, 185, 63, 0.22);
+    background: transparent;
+    color: var(--kerf-text-dim);
+    box-shadow: none;
+    overflow: visible;
   }
   .mbn-fab {
     display: inline-flex;
-    width: 20px;
-    height: 20px;
-    color: currentColor;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-top: -26px;
+    border-radius: 50%;
+    background: var(--kerf-amber);
+    color: #181713;
+    border: 3px solid var(--kerf-surface);
+    box-shadow: 0 6px 18px rgba(229, 185, 63, 0.4);
     pointer-events: none;
   }
   .mbn-fab :global(svg.mbn-mic) {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     fill: currentColor;
   }
   .mbn-speak-label {
     display: block;
+    color: var(--kerf-text-mute);
+    font-weight: 800;
+  }
+  /* "Resume" label only renders when parked (see body.rh-reengage below). */
+  .mbn-speak-label--resume {
+    display: none;
   }
 
   /* Parked conversation (body.rh-reengage, set by the Right Hand overlay on
-     close): the center action swaps to "Tap to reengage" + a subtle
-     dock glow. This is the MOBILE reengage path; desktop keeps the side
-     pill (this nav is hidden >=900px). One affordance per breakpoint. */
-  .mbn-reengage-hint {
+     close): the elevated FAB gains a clear pulsing amber ring and the label
+     reads "Resume" instead of "Speak". This is the MOBILE reengage path;
+     desktop keeps the side pill (this nav is hidden >=900px). One affordance
+     per breakpoint. Tap still routes to /right-hand. */
+  :global(body.rh-reengage) .mbn-speak .mbn-speak-label:not(.mbn-speak-label--resume) {
     display: none;
-    white-space: nowrap;
-    font-size: 0.58rem;
-    font-weight: 900;
-    color: currentColor;
   }
-  :global(body.rh-reengage) .mbn-speak .mbn-speak-label { display: none; }
-  :global(body.rh-reengage) .mbn-speak .mbn-reengage-hint { display: block; }
-  :global(body.rh-reengage) .mbn-speak {
-    animation: mbn-reengage-glow 2.4s ease-in-out infinite;
+  :global(body.rh-reengage) .mbn-speak .mbn-speak-label--resume {
+    display: block;
+    color: var(--kerf-amber);
   }
-  .mobile-bottom-nav[data-role-root='field_hand'] .mbn-speak,
-  .mobile-bottom-nav[data-role-root='sub'] .mbn-speak {
+  :global(body.rh-reengage) .mbn-speak .mbn-fab {
+    animation: mbn-reengage-pulse 2.2s ease-in-out infinite;
+  }
+  .mobile-bottom-nav[data-role-root='field_hand'] .mbn-fab,
+  .mobile-bottom-nav[data-role-root='sub'] .mbn-fab {
     background: var(--field-green);
     color: #fff;
-    box-shadow: 0 8px 18px rgba(15, 122, 83, 0.22);
+    box-shadow: 0 6px 18px rgba(15, 122, 83, 0.4);
   }
-  @keyframes mbn-reengage-glow {
-    0%, 100% { box-shadow: 0 8px 18px rgba(229, 185, 63, 0.22); }
-    50% { box-shadow: 0 9px 24px rgba(229, 185, 63, 0.52), 0 0 0 4px rgba(229, 185, 63, 0.12); }
+  /* Green-variant reengage pulse (field_hand / sub). body.rh-reengage is an
+     ancestor of the nav, so it must lead the selector. */
+  :global(body.rh-reengage) .mobile-bottom-nav[data-role-root='field_hand'] .mbn-fab,
+  :global(body.rh-reengage) .mobile-bottom-nav[data-role-root='sub'] .mbn-fab {
+    animation-name: mbn-reengage-pulse-field;
   }
+  @keyframes mbn-reengage-pulse {
+    0%, 100% {
+      box-shadow: 0 6px 18px rgba(229, 185, 63, 0.4), 0 0 0 0 rgba(229, 185, 63, 0);
+    }
+    50% {
+      box-shadow: 0 6px 18px rgba(229, 185, 63, 0.4), 0 0 0 6px rgba(229, 185, 63, 0.28);
+    }
+  }
+  @keyframes mbn-reengage-pulse-field {
+    0%, 100% {
+      box-shadow: 0 6px 18px rgba(15, 122, 83, 0.4), 0 0 0 0 rgba(15, 122, 83, 0);
+    }
+    50% {
+      box-shadow: 0 6px 18px rgba(15, 122, 83, 0.4), 0 0 0 6px rgba(15, 122, 83, 0.3);
+    }
+  }
+  /* Reduced motion: no pulse — a static amber ring marks the parked state. */
   @media (prefers-reduced-motion: reduce) {
-    :global(body.rh-reengage) .mbn-speak {
+    :global(body.rh-reengage) .mbn-speak .mbn-fab {
       animation: none;
-      box-shadow: 0 9px 24px rgba(229, 185, 63, 0.44);
+      box-shadow: 0 6px 18px rgba(229, 185, 63, 0.4), 0 0 0 4px rgba(229, 185, 63, 0.3);
+    }
+    :global(body.rh-reengage) .mobile-bottom-nav[data-role-root='field_hand'] .mbn-fab,
+    :global(body.rh-reengage) .mobile-bottom-nav[data-role-root='sub'] .mbn-fab {
+      box-shadow: 0 6px 18px rgba(15, 122, 83, 0.4), 0 0 0 4px rgba(15, 122, 83, 0.32);
     }
   }
 

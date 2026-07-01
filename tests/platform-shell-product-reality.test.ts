@@ -297,13 +297,16 @@ test('mobile bottom nav uses the Right Hand dock design', () => {
   assert.match(nav, /grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
   assert.match(nav, /border-radius: 8px/);
   assert.match(nav, /backdrop-filter: blur\(18px\)/);
-  assert.match(nav, /\.mbn-speak\s*\{[\s\S]*?background: var\(--kerf-amber\)/);
+  // Canon F-A1: the amber action color lives on the elevated FAB circle
+  // (.mbn-fab), which floats above the dock; the .mbn-speak cell stays a
+  // transparent 1-of-5 grid column.
+  assert.match(nav, /\.mbn-fab\s*\{[\s\S]*?background: var\(--kerf-amber\)/);
+  assert.match(nav, /\.mbn-fab\s*\{[\s\S]*?border-radius: 50%/);
   assert.match(nav, /\.mbn-speak-label\s*\{[\s\S]*?display: block/);
   assert.match(routes, /href: '\/start', labelKey: 'shell\.nav\.create'/);
   assert.doesNotMatch(routes, /href: '\/create', labelKey: 'shell\.nav\.create'/);
-  assert.match(nav, /data-role-root='field_hand'[\s\S]*?\.mbn-speak/);
+  assert.match(nav, /data-role-root='field_hand'[\s\S]*?\.mbn-fab/);
   assert.match(nav, /background: var\(--field-green\)/);
-  assert.doesNotMatch(nav, /border-radius: 50%/);
   assert.doesNotMatch(nav, /visibility:\s*hidden/);
   assert.doesNotMatch(topNav, /href: '\/decisions'/);
   assert.doesNotMatch(topNav, /href: '\/blackboard'/);
