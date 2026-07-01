@@ -34,7 +34,7 @@ import {
 } from '../src/api/lib/rightHandAssemblyStore.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
-import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM } from './helpers/authenticatedApiRouter.js';
+import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM, PLATFORM_SESSION_VALLE_OWNER } from './helpers/authenticatedApiRouter.js';
 import { createMemoryInvoiceLedgerStore } from '../src/api/lib/invoiceLedgerStore.js';
 
 const NOW = new Date('2026-06-13T12:00:00.000Z');
@@ -359,7 +359,7 @@ test('ADV D-065: Valle cannot save a standard against GGR estimate id even with 
 
     const valleSave = await app.request('/right-hand/estimates/rhe_d065/save-rate-standard', {
       method: 'POST',
-      headers: { ...J, Authorization: PLATFORM_SESSION_VALLE_PM },
+      headers: { ...J, Authorization: PLATFORM_SESSION_VALLE_OWNER },
       body: JSON.stringify({ confirmed: true, consequence: 'tenant_rate_standard', line_ids: ['l1'] }),
     });
     assert.equal(valleSave.status, 404); // the estimate doesn't exist in Valle's tenant scope

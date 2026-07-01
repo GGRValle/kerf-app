@@ -4,11 +4,14 @@ import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { authorizeCapability } from '../authz/requireCapability.js';
 
 export const moneyRoutes = new Hono<{ Variables: ApiVariables }>();
 
 /** Phase 1I · export/print egress only — records export.requested; no money mutation. */
 moneyRoutes.post('/money/export', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const body = await c.req.json<{
     surface?: string;

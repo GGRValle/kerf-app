@@ -41,6 +41,20 @@ const SESSION_BY_TOKEN: Readonly<Record<string, PlatformSession>> = {
     tenantId: 'tenant_hpg',
     roleRoot: 'admin_ops',
   },
+  // field_hand + sub carry NO sensitive capability (Wall 2). Present so the RBAC
+  // behavioral test can prove they are denied money / margin / pay / send.
+  // NOTE (auth hardening, Goal 3): this whole dogfood table resolves in prod —
+  // env-gate to non-prod before real multi-tenant launch.
+  psess_test_ggr_field: {
+    token: 'psess_test_ggr_field',
+    tenantId: 'tenant_ggr',
+    roleRoot: 'field_hand',
+  },
+  psess_test_ggr_sub: {
+    token: 'psess_test_ggr_sub',
+    tenantId: 'tenant_ggr',
+    roleRoot: 'sub',
+  },
 };
 
 export function isPlatformSessionToken(raw: string): boolean {

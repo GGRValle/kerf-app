@@ -5,6 +5,7 @@ import { getApiDeps } from '../lib/deps.js';
 import { getLane6ProposalForTenant } from '../../app/lib/lane6Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { authorizeCapability } from '../authz/requireCapability.js';
 import { tenantEvidenceClassForOverride } from '../../proposal/sendGate.js';
 import {
   assertValidConfidence,
@@ -179,6 +180,8 @@ reviewRoutes.post('/review/draft/correct', async (c) => {
 });
 
 reviewRoutes.post('/review/draft/accept', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const body = await c.req.json<DraftAcceptBody>();
   const tenant = requireApiTenant(c);
   if (!body.proposal_id || !body.project_id) {

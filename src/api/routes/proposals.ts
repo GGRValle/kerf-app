@@ -4,6 +4,7 @@ import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { authorizeCapability } from '../authz/requireCapability.js';
 import { getLane6ProposalForTenant } from '../../app/lib/lane6Fixtures.js';
 import { evaluateSendGate, tenantEvidenceClassForOverride } from '../../proposal/sendGate.js';
 import { renderProposalHtml } from '../../proposal/render.js';
@@ -11,6 +12,8 @@ import { renderProposalHtml } from '../../proposal/render.js';
 export const proposalRoutes = new Hono<{ Variables: ApiVariables }>();
 
 proposalRoutes.get('/proposals/:id', (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const proposal = getLane6ProposalForTenant(c.req.param('id'), tenant);
   if (proposal === null) {
@@ -20,6 +23,8 @@ proposalRoutes.get('/proposals/:id', (c) => {
 });
 
 proposalRoutes.get('/proposals/:id/preview-html', (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const proposal = getLane6ProposalForTenant(c.req.param('id'), tenant);
   if (proposal === null) {
@@ -30,6 +35,8 @@ proposalRoutes.get('/proposals/:id/preview-html', (c) => {
 
 /** F-PV2 · evaluate send gate and persist send_gate.evaluated on every load. */
 proposalRoutes.post('/proposals/:id/send-gate', async (c) => {
+  const authz = authorizeCapability(c, 'proposal.send');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const proposalId = c.req.param('id');
   const tenant = requireApiTenant(c);
   const proposal = getLane6ProposalForTenant(proposalId, tenant);
@@ -68,6 +75,8 @@ proposalRoutes.post('/proposals/:id/send-gate', async (c) => {
 });
 
 proposalRoutes.post('/proposals/:id/send', async (c) => {
+  const authz = authorizeCapability(c, 'proposal.send');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const proposalId = c.req.param('id');
   const tenant = requireApiTenant(c);
   const body = await c.req.json<{ send_gate_event_id: string; override_reason?: string }>();

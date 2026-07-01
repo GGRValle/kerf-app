@@ -5,6 +5,7 @@ import type { ApiVariables } from '../../src/api/lib/tenantContext.js';
 
 export const PLATFORM_SESSION_GGR_OWNER = 'Bearer psess_test_ggr_owner';
 export const PLATFORM_SESSION_VALLE_PM = 'Bearer psess_test_valle_pm';
+export const PLATFORM_SESSION_VALLE_OWNER = 'Bearer psess_test_valle_owner';
 
 function withDefaultPlatformSession(app: Hono<{ Variables: ApiVariables }>): Hono<{ Variables: ApiVariables }> {
   const baseRequest = app.request.bind(app);

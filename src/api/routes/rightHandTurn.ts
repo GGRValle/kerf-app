@@ -87,6 +87,7 @@ import { makeAnthropicModelCaller } from '../../estimator/orchestration/anthropi
 import { getLane23Project, getLane23ProjectForTenant, listLane23Projects } from '../../app/lib/lane23Fixtures.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiSession, requireApiTenant } from '../lib/tenantContext.js';
+import { authorizeCapability } from '../authz/requireCapability.js';
 import {
   resolveTurnWithModel,
   type KnownEntityContext,
@@ -818,6 +819,8 @@ rightHandTurnRoutes.delete('/right-hand/conversation', async (c) => {
 });
 
 rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   let body: Record<string, unknown>;
   try {
     body = await c.req.json<Record<string, unknown>>();
@@ -987,6 +990,8 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
 });
 
 rightHandTurnRoutes.get('/right-hand/estimates/search', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const query = c.req.query('q') ?? '';
   const drafts = await estimateStoreFor(resolveDeps()).search(tenant, query);
@@ -1007,6 +1012,8 @@ rightHandTurnRoutes.get('/right-hand/estimates/search', async (c) => {
 });
 
 rightHandTurnRoutes.get('/right-hand/estimates/:estimateId', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
@@ -1020,6 +1027,8 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId', async (c) => {
  * no library write. Beats 1/2 stay conversational + explicit (write-back card).
  */
 rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   let body: Record<string, unknown>;
   try {
@@ -1091,6 +1100,8 @@ rightHandTurnRoutes.patch('/right-hand/estimates/:estimateId/lines/:lineId', asy
  * No rate standard/library write happens here.
  */
 rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/use-here', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const session = requireApiSession(c);
   let body: Record<string, unknown>;
@@ -1145,6 +1156,8 @@ rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/use-here', async (c)
  * D-065 Beat 2: Save as standard. Separate explicit tenant-scoped library write.
  */
 rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/save-rate-standard', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const session = requireApiSession(c);
   let body: Record<string, unknown>;
@@ -1194,12 +1207,16 @@ rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/save-rate-standard',
 });
 
 rightHandTurnRoutes.get('/right-hand/rate-standards', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const standards = await rateStandardStoreFor(resolveDeps()).search(tenant, c.req.query('q') ?? '');
   return c.json({ standards });
 });
 
 rightHandTurnRoutes.get('/right-hand/rate-standards/:standardId', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const standard = await rateStandardStoreFor(resolveDeps()).read(tenant, c.req.param('standardId'));
   if (!standard) return c.json({ error: 'rate_standard_not_found' }, 404);
@@ -1207,6 +1224,8 @@ rightHandTurnRoutes.get('/right-hand/rate-standards/:standardId', async (c) => {
 });
 
 rightHandTurnRoutes.post('/right-hand/rate-standards/:standardId/select', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const standard = await rateStandardStoreFor(resolveDeps()).read(tenant, c.req.param('standardId'));
   if (!standard) return c.json({ error: 'rate_standard_not_found' }, 404);
@@ -1232,6 +1251,8 @@ rightHandTurnRoutes.post('/right-hand/rate-standards/:standardId/select', async 
  * separate, untouched consequence edge — this endpoint only renders.
  */
 rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
@@ -1273,6 +1294,8 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/proposal', async (c) 
  * ?format=json for the operator shape. Send wall untouched.
  */
 rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const deps = resolveDeps();
   const draft = await estimateStoreFor(deps).read(tenant, c.req.param('estimateId'));
@@ -1344,6 +1367,8 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/invoice', async (c) =
  * this is the first ledger write and requires the consequence tuple.
  */
 rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/invoice/issue', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const session = requireApiSession(c);
   let body: Record<string, unknown>;
@@ -1476,6 +1501,8 @@ rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/invoice/issue', asyn
  * Values from the graph; the graph stays truth.
  */
 rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/workbook', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const draft = await estimateStoreFor(resolveDeps()).read(tenant, c.req.param('estimateId'));
   if (!draft) return c.json({ error: 'estimate_not_found' }, 404);
@@ -1502,6 +1529,8 @@ rightHandTurnRoutes.get('/right-hand/estimates/:estimateId/workbook', async (c) 
  * operator judgment, not system policy: no contract check, no stage check.
  */
 rightHandTurnRoutes.post('/right-hand/deals/:dealId/convert-to-project', async (c) => {
+  const authz = authorizeCapability(c, 'sales.view');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   requireApiSession(c);
   const dealId = c.req.param('dealId');
@@ -1571,6 +1600,8 @@ rightHandTurnRoutes.post('/right-hand/deals/:dealId/convert-to-project', async (
 });
 
 rightHandTurnRoutes.post('/right-hand/estimates/:estimateId/workbook-import', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const store = estimateStoreFor(resolveDeps());
   const draft = await store.read(tenant, c.req.param('estimateId'));
