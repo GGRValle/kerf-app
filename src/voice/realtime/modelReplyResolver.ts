@@ -164,8 +164,8 @@ export const APPROVED_REPLY_BRAINS = [
     provider: 'anthropic',
   },
   {
-    endpoint: 'anthropic://claude-sonnet-4-6',
-    model: 'claude-sonnet-4-6',
+    endpoint: 'anthropic://claude-sonnet-5',
+    model: 'claude-sonnet-5',
     provider: 'anthropic',
   },
   {

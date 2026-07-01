@@ -1794,7 +1794,7 @@ test('reply route can run the reply brain through Anthropic with Groq-shaped par
       GROQ_API_KEY: undefined,
       ANTHROPIC_API_KEY: 'sk-ant-test-secret',
       ANTHROPIC_BASE_URL: 'https://anthropic.invalid',
-      REPLY_BRAIN: 'anthropic://claude-sonnet-4-6',
+      REPLY_BRAIN: 'anthropic://claude-sonnet-5',
     },
     now: () => new Date('2026-06-07T18:00:00.000Z'),
     anthropicDepsFactory: (apiKey, baseUrl): AnthropicClientDeps => ({
@@ -1862,8 +1862,8 @@ test('reply route can run the reply brain through Anthropic with Groq-shaped par
   assert.equal(body.updated_working_draft?.proposed_artifact, 'estimate_draft');
   assert.ok(body.updated_working_draft?.scope?.includes('60 LF white oak cabinets'));
   assert.match(body.next_question ?? '', /flooring run/i);
-  assert.equal(capturedAnthropic?.endpoint, 'anthropic://claude-sonnet-4-6');
-  assert.equal(capturedAnthropic?.model, 'claude-sonnet-4-6');
+  assert.equal(capturedAnthropic?.endpoint, 'anthropic://claude-sonnet-5');
+  assert.equal(capturedAnthropic?.model, 'claude-sonnet-5');
   assert.match(capturedAnthropic?.system ?? '', /trusted operating partner/);
   assert.equal(capturedAnthropic?.messages.length, 1);
   assert.equal(capturedAnthropic?.messages[0]?.role, 'user');
@@ -1915,7 +1915,7 @@ test('reply route falls back humbly when Anthropic reply brain is selected witho
     env: {
       GROQ_API_KEY: 'gsk-test-secret',
       ANTHROPIC_API_KEY: undefined,
-      REPLY_BRAIN: 'anthropic://claude-sonnet-4-6',
+      REPLY_BRAIN: 'anthropic://claude-sonnet-5',
     },
     now: () => new Date('2026-06-07T18:00:00.000Z'),
     groqDepsFactory: () => ({} as never),

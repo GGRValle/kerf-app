@@ -12,8 +12,13 @@ import type {
 import type { ProjectContext } from './orchestrator.js';
 import type { WholeCaptureHypothesis } from './whole-capture-hypothesis.js';
 
-export const SYNTHESIS_LLM_ENDPOINT = 'anthropic://claude-sonnet-4-6' as const;
-export const SYNTHESIS_LLM_MODEL = 'claude-sonnet-4-6' as const;
+// Frontier captain = Claude Sonnet 5 (founder directive 2026-06-30; D-069
+// brain-tier lineage). Interim best-available frontier until Fable 5 returns to
+// this seat — same Anthropic client, one-line model swap. Was claude-sonnet-4-6
+// (D-047). The deterministic gates still own every consequential action; the
+// stronger model only proposes.
+export const SYNTHESIS_LLM_ENDPOINT = 'anthropic://claude-sonnet-5' as const;
+export const SYNTHESIS_LLM_MODEL = 'claude-sonnet-5' as const;
 
 export interface FrontierSynthesisLlmClient {
   readonly tenantId: string;

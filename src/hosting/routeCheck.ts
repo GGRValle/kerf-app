@@ -75,12 +75,17 @@ export const APPROVED_HOSTING_ENDPOINTS = [
     status: 'approved',
   },
   {
-    endpoint: 'anthropic://claude-sonnet-4-6',
+    // Frontier captain = Claude Sonnet 5 (founder directive 2026-06-30; D-069
+    // brain-tier lineage — conductor to confirm the formal decision id).
+    // Interim best-available frontier until Fable 5 returns to this seat; same
+    // Anthropic client, one-line model swap. Supersedes the prior
+    // claude-sonnet-4-6 frontier approval (D-047).
+    endpoint: 'anthropic://claude-sonnet-5',
     provider: 'anthropic',
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     tier: 'frontier',
-    approved_by_decision: 'D-047',
-    approved_at: '2026-05-21T00:00:00.000Z',
+    approved_by_decision: 'D-069',
+    approved_at: '2026-06-30T00:00:00.000Z',
     status: 'approved',
   },
   {
