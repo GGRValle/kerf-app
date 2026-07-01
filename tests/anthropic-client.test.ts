@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  ANTHROPIC_CLAUDE_SONNET_4_6_PRICING,
+  ANTHROPIC_CLAUDE_SONNET_5_PRICING,
   anthropicChat,
   completionCostNanoUsd,
   type AnthropicChatRequest,
@@ -11,8 +11,8 @@ import {
 import type { ISO8601 } from '../src/blackboard/types.js';
 
 const SONNET_REQUEST: AnthropicChatRequest = {
-  endpoint: 'anthropic://claude-sonnet-4-6',
-  model: 'claude-sonnet-4-6',
+  endpoint: 'anthropic://claude-sonnet-5',
+  model: 'claude-sonnet-5',
   system: 'You are Kerf Right Hand.',
   messages: [{ role: 'user', content: 'Summarize this field capture.' }],
   tenantId: 'tenant_ggr',
@@ -72,7 +72,7 @@ test('anthropicChat sends Messages API request with required headers', async () 
   const { deps, calls } = makeDeps({
     body: {
       content: [{ type: 'text', text: 'ok' }],
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       stop_reason: 'end_turn',
       usage: { input_tokens: 100, output_tokens: 40 },
     },
@@ -89,7 +89,7 @@ test('anthropicChat sends Messages API request with required headers', async () 
   assert.equal(headers['anthropic-version'], '2023-06-01');
   assert.equal(headers['content-type'], 'application/json');
   const body = JSON.parse(init.body as string);
-  assert.equal(body.model, 'claude-sonnet-4-6');
+  assert.equal(body.model, 'claude-sonnet-5');
   assert.equal(body.max_tokens, 256);
   assert.equal(body.system, 'You are Kerf Right Hand.');
 });
@@ -98,7 +98,7 @@ test('anthropicChat returns success result with parsed usage + cost', async () =
   const { deps } = makeDeps({
     body: {
       content: [{ type: 'text', text: '{"ok":true}' }],
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       stop_reason: 'end_turn',
       usage: { input_tokens: 1000, output_tokens: 200 },
     },
@@ -114,7 +114,7 @@ test('anthropicChat returns success result with parsed usage + cost', async () =
   assert.equal(result.totalTokens, 1200);
   assert.equal(result.latencyMs, 140);
   assert.equal(result.route.allowed, true);
-  assert.equal(result.costNanoUsd, completionCostNanoUsd(1000, 200, ANTHROPIC_CLAUDE_SONNET_4_6_PRICING));
+  assert.equal(result.costNanoUsd, completionCostNanoUsd(1000, 200, ANTHROPIC_CLAUDE_SONNET_5_PRICING));
 });
 
 test('anthropicChat refuses to call network when route check rejects model', async () => {

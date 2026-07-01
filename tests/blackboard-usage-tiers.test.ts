@@ -71,7 +71,7 @@ test('usage_event tracks tokens consumed per agent invocation', async () => {
     agentId: ACTORS.cosAgent.id,
     workflow: 'invoice_followup',
     modelProvider: 'anthropic',
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     inputTokens: 12_000,
     outputTokens: 1_400,
     totalTokens: 13_400,

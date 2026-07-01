@@ -7,7 +7,7 @@ import {
 } from '../../hosting/index.js';
 import type { EntityId, ISO8601 } from '../../blackboard/types.js';
 import {
-  ANTHROPIC_CLAUDE_SONNET_4_6_PRICING,
+  ANTHROPIC_CLAUDE_SONNET_5_PRICING,
   completionCostNanoUsd,
   type NanoUsd,
   type TokenPricingNanoUsdPerMillion,
@@ -90,7 +90,7 @@ export const DEFAULT_ANTHROPIC_TIMEOUT_MS = 30_000;
 export function defaultAnthropicClientDeps(
   apiKey: string,
   baseUrl = 'https://api.anthropic.com',
-  pricing: TokenPricingNanoUsdPerMillion = ANTHROPIC_CLAUDE_SONNET_4_6_PRICING,
+  pricing: TokenPricingNanoUsdPerMillion = ANTHROPIC_CLAUDE_SONNET_5_PRICING,
 ): AnthropicClientDeps {
   return {
     fetch: globalThis.fetch,
@@ -236,7 +236,7 @@ export async function anthropicChat(
     costNanoUsd: completionCostNanoUsd(
       inputTokens,
       outputTokens,
-      deps.pricing ?? ANTHROPIC_CLAUDE_SONNET_4_6_PRICING,
+      deps.pricing ?? ANTHROPIC_CLAUDE_SONNET_5_PRICING,
     ),
     finishReason: parsed.stop_reason ?? null,
     route,

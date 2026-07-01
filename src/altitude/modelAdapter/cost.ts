@@ -54,6 +54,16 @@ export const ANTHROPIC_CLAUDE_SONNET_4_6_PRICING: TokenPricingNanoUsdPerMillion 
 };
 
 /**
+ * Claude Sonnet 5 pricing — assumed Sonnet-tier ($3/M in, $15/M out), matching
+ * Sonnet 4.6. VERIFY against Anthropic's current published pricing before
+ * per-tenant billing goes live; if it differs, this is the only line to change.
+ */
+export const ANTHROPIC_CLAUDE_SONNET_5_PRICING: TokenPricingNanoUsdPerMillion = {
+  input: 3_000_000_000,
+  output: 15_000_000_000,
+};
+
+/**
  * Compute cost for a single completion in nano-USD.
  * Pure integer math: `(tokens * priceNanoUsdPerMillion) / 1_000_000`, with
  * Math.round to absorb the integer division remainder. Over a 15-case run

@@ -34,6 +34,7 @@ export {
   nanoUsdToUsdString,
   GROQ_LLAMA_4_SCOUT_PRICING,
   ANTHROPIC_CLAUDE_SONNET_4_6_PRICING,
+  ANTHROPIC_CLAUDE_SONNET_5_PRICING,
   type NanoUsd,
   type TokenPricingNanoUsdPerMillion,
 } from './cost.js';
