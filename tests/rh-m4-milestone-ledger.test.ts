@@ -26,7 +26,7 @@ import {
 } from '../src/api/lib/rightHandAssemblyStore.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
-import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM } from './helpers/authenticatedApiRouter.js';
+import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM, PLATFORM_SESSION_VALLE_OWNER } from './helpers/authenticatedApiRouter.js';
 
 const NOW = new Date('2026-06-14T12:00:00.000Z');
 const J = { 'content-type': 'application/json' } as const;
@@ -232,7 +232,7 @@ test('M4: cross-tenant invoice read and issue cannot touch the GGR ledger', asyn
 
     const valleIssue = await app.request('/right-hand/estimates/rhe_m4/invoice/issue', {
       method: 'POST',
-      headers: { ...J, authorization: PLATFORM_SESSION_VALLE_PM },
+      headers: { ...J, authorization: PLATFORM_SESSION_VALLE_OWNER },
       body: JSON.stringify({ confirmed: true, consequence: 'issue_invoice_milestone', milestone: 'down_payment' }),
     });
     assert.equal(valleIssue.status, 404);

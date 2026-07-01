@@ -14,7 +14,7 @@ import { renderEstimateWorkbook } from '../src/api/lib/estimateWorkbook.js';
 import { createMemoryInvoiceLedgerStore } from '../src/api/lib/invoiceLedgerStore.js';
 import { resetApiDepsForTests } from '../src/api/lib/deps.js';
 import { __setRightHandTurnDepsForTests } from '../src/api/routes/rightHandTurn.js';
-import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM } from './helpers/authenticatedApiRouter.js';
+import { createAuthenticatedApiRouter, PLATFORM_SESSION_VALLE_PM, PLATFORM_SESSION_VALLE_OWNER } from './helpers/authenticatedApiRouter.js';
 
 const NOW = new Date('2026-06-13T12:00:00.000Z');
 
@@ -251,13 +251,13 @@ test('D-065 Beat 2 Save as standard requires separate confirmation and is tenant
 
     const valleSelect = await app.request(`/right-hand/rate-standards/${encodeURIComponent(standardId)}/select`, {
       method: 'POST',
-      headers: { Authorization: PLATFORM_SESSION_VALLE_PM },
+      headers: { Authorization: PLATFORM_SESSION_VALLE_OWNER },
     });
     assert.equal(valleSelect.status, 404);
 
     const valleSave = await app.request('/right-hand/estimates/rhe_d065/save-rate-standard', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', Authorization: PLATFORM_SESSION_VALLE_PM },
+      headers: { 'content-type': 'application/json', Authorization: PLATFORM_SESSION_VALLE_OWNER },
       body: JSON.stringify({ confirmed: true, consequence: 'tenant_rate_standard', line_ids: ['l1'] }),
     });
     assert.equal(valleSave.status, 404);
@@ -334,7 +334,7 @@ test('D-065 graduation fails closed for unknown ids, invalid money, invalid quan
 
     const mismatchedTenant = await app.request('/right-hand/estimates/rhe_d065/use-here', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', Authorization: PLATFORM_SESSION_VALLE_PM },
+      headers: { 'content-type': 'application/json', Authorization: PLATFORM_SESSION_VALLE_OWNER },
       body: JSON.stringify({ confirmed: true, line_ids: ['l1'] }),
     });
     assert.equal(mismatchedTenant.status, 404);

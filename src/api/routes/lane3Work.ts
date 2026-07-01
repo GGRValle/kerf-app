@@ -12,6 +12,7 @@ import {
   tenantParamConflictsWithScope,
   type ApiVariables,
 } from '../lib/tenantContext.js';
+import { authorizeCapability } from '../authz/requireCapability.js';
 import {
   assignmentVisibleToSub,
   COMPLIANCE_ROWS,
@@ -415,6 +416,8 @@ lane3WorkRoutes.get('/sub/portal/session/:token/assignments/:assignmentId', (c) 
 });
 
 lane3WorkRoutes.get('/team-ops/compliance', (c) => {
+  const authz = authorizeCapability(c, 'pay.view');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const attention: AttentionArtifact[] = COMPLIANCE_ROWS.filter((r) => r.days_until_expiry <= 30).map(
     (r) => ({

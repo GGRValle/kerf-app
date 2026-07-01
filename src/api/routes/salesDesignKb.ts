@@ -11,6 +11,7 @@ import { Hono } from 'hono';
 import type { PersistenceTenantId } from '../../persistence/events.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { authorizeCapability } from '../authz/requireCapability.js';
 import {
   getSalesStore,
   dealById,
@@ -49,12 +50,16 @@ async function readConfirmed(c: { req: { json: () => Promise<unknown> } }): Prom
 // ── Sales pipeline (F-SL*) ────────────────────────────────────────────────────
 
 salesDesignKbRoutes.get('/sales/deals', (c) => {
+  const authz = authorizeCapability(c, 'sales.view');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const store = getSalesStore(tenant);
   return c.json({ tenant, columns: pipelineColumns(store.deals), deals: store.deals });
 });
 
 salesDesignKbRoutes.post('/sales/deals', async (c) => {
+  const authz = authorizeCapability(c, 'sales.view');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const { confirmed, body } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
@@ -83,6 +88,8 @@ salesDesignKbRoutes.post('/sales/deals', async (c) => {
 });
 
 salesDesignKbRoutes.get('/sales/deals/:id', (c) => {
+  const authz = authorizeCapability(c, 'sales.view');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const deal = dealById(tenant, c.req.param('id'));
   if (!deal) return c.json({ error: 'deal_not_found' }, 404);
@@ -90,6 +97,8 @@ salesDesignKbRoutes.get('/sales/deals/:id', (c) => {
 });
 
 salesDesignKbRoutes.post('/sales/deals/:id/enter-design', async (c) => {
+  const authz = authorizeCapability(c, 'sales.view');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const { confirmed } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
@@ -104,6 +113,8 @@ salesDesignKbRoutes.post('/sales/deals/:id/enter-design', async (c) => {
 // ── Knowledge Base / Libraries (F-LIB1) ──────────────────────────────────────
 
 salesDesignKbRoutes.get('/kb/collections', (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const store = getSalesStore(tenant);
   const counts: Record<string, number> = {
@@ -128,6 +139,8 @@ salesDesignKbRoutes.get('/kb/collections', (c) => {
 });
 
 salesDesignKbRoutes.get('/kb/items', (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const collection = c.req.query('collection');
   const store = getSalesStore(tenant);
@@ -136,6 +149,8 @@ salesDesignKbRoutes.get('/kb/items', (c) => {
 });
 
 salesDesignKbRoutes.get('/kb/ladder', (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const store = getSalesStore(tenant);
   const ladder = store.templates.map((tpl) => ({
@@ -151,6 +166,8 @@ salesDesignKbRoutes.get('/kb/ladder', (c) => {
 });
 
 salesDesignKbRoutes.post('/kb/import', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const { confirmed, body } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
@@ -234,11 +251,15 @@ function estimatePayload(tenant: PersistenceTenantId, projectId: string) {
 }
 
 salesDesignKbRoutes.get('/estimate/:projectId', (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   return c.json(estimatePayload(tenant, c.req.param('projectId')));
 });
 
 salesDesignKbRoutes.post('/estimate/:projectId/seed-from-selections', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('projectId');
   const { confirmed } = await readConfirmed(c);
@@ -267,6 +288,8 @@ salesDesignKbRoutes.post('/estimate/:projectId/seed-from-selections', async (c) 
 });
 
 salesDesignKbRoutes.post('/estimate/:projectId/lines', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('projectId');
   const { confirmed, body } = await readConfirmed(c);
@@ -298,6 +321,8 @@ salesDesignKbRoutes.post('/estimate/:projectId/lines', async (c) => {
 });
 
 salesDesignKbRoutes.post('/estimate/:projectId/generate-proposal', async (c) => {
+  const authz = authorizeCapability(c, 'money.write');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('projectId');
   const { confirmed } = await readConfirmed(c);

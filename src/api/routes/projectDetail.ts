@@ -4,6 +4,7 @@ import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
+import { authorizeCapability } from '../authz/requireCapability.js';
 import {
   getProjectRecordForTenant,
   listProjectRecordsForTenant,
@@ -20,6 +21,8 @@ projectDetailRoutes.get('/projects/detail/fixtures', async (c) => {
 });
 
 projectDetailRoutes.get('/projects/detail/:id', async (c) => {
+  const authz = authorizeCapability(c, 'money.read');
+  if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const { tenantReader } = getApiDeps();
   const project = await getProjectRecordForTenant(tenantReader, tenant, c.req.param('id'));
