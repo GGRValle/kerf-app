@@ -87,6 +87,10 @@ export interface AnthropicClientDeps {
 
 export const DEFAULT_ANTHROPIC_TIMEOUT_MS = 30_000;
 
+function supportsAnthropicTemperature(model: string): boolean {
+  return model !== 'claude-sonnet-5';
+}
+
 export function defaultAnthropicClientDeps(
   apiKey: string,
   baseUrl = 'https://api.anthropic.com',
@@ -140,7 +144,9 @@ export async function anthropicChat(
     max_tokens: request.maxTokens,
     messages: request.messages,
     ...(request.system !== undefined ? { system: request.system } : {}),
-    ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
+    ...(request.temperature !== undefined && supportsAnthropicTemperature(request.model)
+      ? { temperature: request.temperature }
+      : {}),
   });
 
   const timeoutMs = deps.timeoutMs ?? DEFAULT_ANTHROPIC_TIMEOUT_MS;
