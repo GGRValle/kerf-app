@@ -22,8 +22,8 @@ const backgroundWork = [
         <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z" />
       </svg>
     </a>
-    <label class="sr-only" for="rh-route-anywhere">Find a job, invoice, crew, or log</label>
-    <input id="rh-route-anywhere" name="q" type="search" placeholder="Find a job, invoice, crew, or log" />
+    <label class="sr-only" for="rh-route-anywhere">Find a job, invoice, or crew</label>
+    <input id="rh-route-anywhere" name="q" type="search" placeholder="Find a job, invoice, or crew" />
     <a class="icon-btn" href="/camera" aria-label="Open camera">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8.5 5 7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-1.5-2zM12 17a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
@@ -349,6 +349,11 @@ const backgroundWork = [
   @media screen and (max-width: 600px) {
     .handled-grid {
       grid-auto-flow: row;
+    }
+    /* Keep the route-bar placeholder from clipping between the mic + camera
+       buttons on narrow phones (the 900-weight font runs wide). */
+    .route-bar input {
+      font-size: 0.9rem;
     }
   }
 
