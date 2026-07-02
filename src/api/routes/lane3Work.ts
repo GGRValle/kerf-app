@@ -4,6 +4,7 @@ import type { PersistenceTenantId } from '../../persistence/events.js';
 import { appendDailyLogEntryAndSurface } from '../lib/dailyLogCommit.js';
 import { appendValidatedEvent, generateEventId } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import { PORTAL_DOORS_DISABLED_BODY, portalClientDoorsEnabled } from '../lib/portalDoorsGate.js';
 import { persistCaptureUpload, type CaptureUploadDestinationKind } from '../lib/captureUploadReceiptStore.js';
 import {
   requireApiSession,
@@ -365,6 +366,7 @@ lane3WorkRoutes.post('/schedule/assignments/:id/message-sub', async (c) => {
 });
 
 lane3WorkRoutes.get('/sub/portal/session/:token', (c) => {
+  if (!portalClientDoorsEnabled()) return c.json(PORTAL_DOORS_DISABLED_BODY, 403);
   const token = c.req.param('token');
   const session = resolveSubToken(token);
   if (session === null) {
@@ -390,6 +392,7 @@ lane3WorkRoutes.get('/sub/portal/session/:token', (c) => {
 });
 
 lane3WorkRoutes.get('/sub/portal/session/:token/assignments/:assignmentId', (c) => {
+  if (!portalClientDoorsEnabled()) return c.json(PORTAL_DOORS_DISABLED_BODY, 403);
   const token = c.req.param('token');
   const assignmentId = c.req.param('assignmentId');
   const session = resolveSubToken(token);
