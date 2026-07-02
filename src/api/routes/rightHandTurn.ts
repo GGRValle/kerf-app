@@ -63,7 +63,13 @@ import { createPgEventLog } from '../lib/sharedEstimateEventLog.js';
 import { makeGroqModelCaller, type ModelCaller } from '../../estimator/orchestration/index.js';
 import { runEstimate } from '../../runner/estimateRunner.js';
 import { createFixtureTenantStore } from '../../tenant/index.js';
-import { upsertEstimatingDeal, dealById, markDealConverted } from '../../sales/index.js';
+import {
+  upsertEstimatingDeal,
+  dealById,
+  loadSalesStore,
+  markDealConverted,
+  persistSalesStore,
+} from '../../sales/index.js';
 import { applyRungZeroLineEdit } from '../lib/rightHandAssemblyStore.js';
 import { renderEstimateWorkbook, ingestEstimateWorkbook } from '../lib/estimateWorkbook.js';
 import { projectProposalFromEstimate } from '../lib/estimateProposalProjection.js';
@@ -937,6 +943,7 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     },
     now,
   });
+  await loadSalesStore(tenant);
   const deal = upsertEstimatingDeal({
     tenant,
     dealId,
@@ -946,6 +953,7 @@ rightHandTurnRoutes.post('/right-hand/assemble-estimate', async (c) => {
     source: 'Right Hand',
     createdAt: requestedAt,
   });
+  await persistSalesStore(tenant);
   await estimateStoreFor(routeDeps).save(draft);
 
   const snapshot = buildRightHandConversationSnapshot({
@@ -1534,6 +1542,7 @@ rightHandTurnRoutes.post('/right-hand/deals/:dealId/convert-to-project', async (
   const tenant = requireApiTenant(c);
   requireApiSession(c);
   const dealId = c.req.param('dealId');
+  await loadSalesStore(tenant);
   const deal = dealById(tenant, dealId);
   if (!deal) {
     return c.json({ error: 'deal_not_found', operator_message: 'That lead is not on the board. Nothing was created.' }, 404);
@@ -1579,6 +1588,7 @@ rightHandTurnRoutes.post('/right-hand/deals/:dealId/convert-to-project', async (
     });
   }
   const converted = markDealConverted({ tenant, dealId, projectId });
+  await persistSalesStore(tenant);
   return c.json({
     ok: true,
     project_id: projectId,

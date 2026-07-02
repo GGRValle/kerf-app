@@ -3,7 +3,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import {
-  getSalesStore,
+  loadSalesStore,
   selectionsForProject,
   catalogItemById,
   toSelectionView,
@@ -15,7 +15,7 @@ const tenant = context.tenantId;
 const projectId = Astro.params.projectId ?? '';
 const focus = Astro.url.searchParams.get('focus') ?? '';
 const showTileEdgeDecision = focus === 'tile-edge' || projectId === 'proj_ramirez_bath';
-const store = getSalesStore(tenant);
+const store = await loadSalesStore(tenant);
 const libraryItems = store.items.filter((i) => i.collection === 'selections');
 const selections = selectionsForProject(tenant, projectId).map((s) =>
   toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_ref)?.label ?? s.library_ref }),

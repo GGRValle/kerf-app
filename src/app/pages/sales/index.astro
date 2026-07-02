@@ -2,11 +2,11 @@
 // F-SL2 · Sales pipeline · /sales (Lane 2)
 import Layout from '../../layouts/Layout.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
-import { getSalesStore, pipelineColumns, dealStageLabel } from '../../../sales/index.js';
+import { loadSalesStore, pipelineColumns, dealStageLabel } from '../../../sales/index.js';
 
 const { context } = createLayoutContext();
 const tenant = context.tenantId;
-const store = getSalesStore(tenant);
+const store = await loadSalesStore(tenant);
 const columns = pipelineColumns(store.deals);
 const fmt = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 ---

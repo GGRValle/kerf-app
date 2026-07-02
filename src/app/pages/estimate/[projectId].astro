@@ -5,6 +5,7 @@ import PhaseStrip from '../../components/PhaseStrip.astro';
 import { createLayoutContext } from '../../lib/createLayoutContext.js';
 import {
   estimateLinesForProject,
+  loadSalesStore,
   lineBreakdown,
   estimateTotals,
   clientVisibleLines,
@@ -25,6 +26,7 @@ const rightHandConversationId = Astro.url.searchParams.get('rh_conversation') ??
 const rightHandDraft = rightHandEstimateId ? await getRightHandEstimateStore().read(tenant, rightHandEstimateId) : null;
 const isLeadStageEstimate = rightHandDraft?.anchor_type === 'deal';
 const dealId = rightHandDraft?.deal_id ?? Astro.url.searchParams.get('deal_id') ?? '';
+await loadSalesStore(tenant);
 const lines = estimateLinesForProject(tenant, projectId);
 const breakdowns = lines.map(lineBreakdown);
 const totals = estimateTotals(lines);
