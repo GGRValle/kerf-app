@@ -92,6 +92,7 @@ test('anthropicChat sends Messages API request with required headers', async () 
   assert.equal(body.model, 'claude-sonnet-5');
   assert.equal(body.max_tokens, 256);
   assert.equal(body.system, 'You are Kerf Right Hand.');
+  assert.equal('temperature' in body, false);
 });
 
 test('anthropicChat returns success result with parsed usage + cost', async () => {

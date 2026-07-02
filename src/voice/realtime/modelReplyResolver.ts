@@ -516,6 +516,21 @@ function violatesHonestyFloor(reply: string, input: ResolveReplyInput, claimsDur
   return false;
 }
 
+function plainTextModelReplyFallback(content: string, input: ResolveReplyInput): ResolveReplyResult | null {
+  const reply = cleanText(content, '', 320);
+  if (!reply) return null;
+  if (/[{}\[\]]/.test(reply)) return null;
+  if (/^```|^json\b/i.test(reply)) return null;
+  if (/\b(mode|claims_durable_action|updated_working_draft|proposed_action)\b\s*[:=]/i.test(reply)) return null;
+  if (violatesHonestyFloor(reply, input, false, false)) return null;
+  return {
+    reply,
+    mode: 'peer_update',
+    authority: 'llm_inferred',
+    claims_durable_action: false,
+  };
+}
+
 function normalized(value: string): string {
   return value
     .toLowerCase()
@@ -1030,7 +1045,11 @@ export async function resolveReplyWithModel(
   }
 
   const parsed = parseModelJsonObject(result.content);
-  if (!parsed) return humbleReplyFallback(input, 'model_invalid_json');
+  if (!parsed) {
+    const plainTextReply = plainTextModelReplyFallback(result.content, input);
+    if (plainTextReply) return plainTextReply;
+    return humbleReplyFallback(input, 'model_invalid_json');
+  }
 
   const reply = cleanText(parsed['reply'], '');
   const claimsDurableAction = parsed['claims_durable_action'];

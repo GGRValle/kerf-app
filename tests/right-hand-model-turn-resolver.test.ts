@@ -724,6 +724,86 @@ test('reply resolver still falls back on truly unparseable JSON', async () => {
   assert.equal(result.fallback_reason, 'model_invalid_json');
 });
 
+test('reply resolver accepts plain model reply when JSON mode is not honored', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up and counter drops need template Monday.',
+    intent: 'job_note',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'This is for the Clem project.',
+      draftText: trp.heard_text,
+      currentPath: '/',
+      userRole: 'owner',
+      tenantId: 'tenant_ggr' as never,
+      knownEntities: [{ type: 'project', id: 'proj_clem', label: 'Clem project' }],
+      trp,
+      now: () => new Date('2026-06-09T12:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: 'Got it, Clem — cabinets are wrapping and counter template is Monday.',
+        model: req.model,
+        inputTokens: 50,
+        outputTokens: 12,
+        totalTokens: 62,
+        latencyMs: 20,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T12:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'llm_inferred');
+  assert.equal(result.mode, 'peer_update');
+  assert.equal(result.claims_durable_action, false);
+  assert.equal(result.reply, 'Got it, Clem — cabinets are wrapping and counter template is Monday.');
+});
+
+test('reply resolver rejects plain model reply that claims an unbacked durable action', async () => {
+  const trp = buildTurnResolutionPacket({
+    heardText: 'Clem cabinets are wrapping up and counter drops need template Monday.',
+    intent: 'job_note',
+  });
+  const result = await resolveReplyWithModel(
+    {
+      latestText: 'This is for the Clem project.',
+      draftText: trp.heard_text,
+      currentPath: '/',
+      userRole: 'owner',
+      tenantId: 'tenant_ggr' as never,
+      knownEntities: [{ type: 'project', id: 'proj_clem', label: 'Clem project' }],
+      trp,
+      now: () => new Date('2026-06-09T12:00:00.000Z'),
+    },
+    {
+      tenantId: 'tenant_ggr',
+      groqChat: async (req) => ({
+        ok: true,
+        content: 'Filed to Clem.',
+        model: req.model,
+        inputTokens: 50,
+        outputTokens: 12,
+        totalTokens: 62,
+        latencyMs: 20,
+        costNanoUsd: 1_000 as never,
+        finishReason: 'stop',
+        route: {} as never,
+        invocationId: req.invocationId,
+        completedAt: '2026-06-09T12:00:00.000Z',
+      }),
+    },
+  );
+
+  assert.equal(result.authority, 'humble_fallback');
+  assert.equal(result.fallback_reason, 'model_invalid_json');
+});
+
 test('reply resolver returns closed assemble_estimate action only when model emits the token', async () => {
   const text = 'Take me to the estimate.';
   const trp = buildTurnResolutionPacket({ heardText: text, intent: 'job_intake' });
