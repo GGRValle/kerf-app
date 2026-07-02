@@ -14,6 +14,8 @@ import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 import { authorizeCapability } from '../authz/requireCapability.js';
 import {
   getSalesStore,
+  loadSalesStore,
+  persistSalesStore,
   dealById,
   catalogItemById,
   enterDesign,
@@ -49,11 +51,11 @@ async function readConfirmed(c: { req: { json: () => Promise<unknown> } }): Prom
 
 // ── Sales pipeline (F-SL*) ────────────────────────────────────────────────────
 
-salesDesignKbRoutes.get('/sales/deals', (c) => {
+salesDesignKbRoutes.get('/sales/deals', async (c) => {
   const authz = authorizeCapability(c, 'sales.view');
   if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   return c.json({ tenant, columns: pipelineColumns(store.deals), deals: store.deals });
 });
 
@@ -61,6 +63,7 @@ salesDesignKbRoutes.post('/sales/deals', async (c) => {
   const authz = authorizeCapability(c, 'sales.view');
   if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
+  await loadSalesStore(tenant);
   const { confirmed, body } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
   const clean = (value: unknown, fallback: string) => {
@@ -84,13 +87,15 @@ salesDesignKbRoutes.post('/sales/deals', async (c) => {
     source: clean(body['source'], 'Camera capture'),
     createdAt: new Date().toISOString(),
   });
+  await persistSalesStore(tenant);
   return c.json({ ok: true, deal, ...tenantOverrideFlags(c) }, 201);
 });
 
-salesDesignKbRoutes.get('/sales/deals/:id', (c) => {
+salesDesignKbRoutes.get('/sales/deals/:id', async (c) => {
   const authz = authorizeCapability(c, 'sales.view');
   if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
+  await loadSalesStore(tenant);
   const deal = dealById(tenant, c.req.param('id'));
   if (!deal) return c.json({ error: 'deal_not_found' }, 404);
   return c.json({ deal });
@@ -102,21 +107,22 @@ salesDesignKbRoutes.post('/sales/deals/:id/enter-design', async (c) => {
   const tenant = requireApiTenant(c);
   const { confirmed } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const idx = store.deals.findIndex((d) => d.id === c.req.param('id'));
   if (idx < 0) return c.json({ error: 'deal_not_found' }, 404);
   const projectId = store.deals[idx]!.project_id ?? `proj_${store.deals[idx]!.id}`;
   store.deals[idx] = enterDesign(store.deals[idx]!, projectId);
+  await persistSalesStore(tenant);
   return c.json({ deal: store.deals[idx], project_id: projectId });
 });
 
 // ── Knowledge Base / Libraries (F-LIB1) ──────────────────────────────────────
 
-salesDesignKbRoutes.get('/kb/collections', (c) => {
+salesDesignKbRoutes.get('/kb/collections', async (c) => {
   const authz = authorizeCapability(c, 'money.read');
   if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const counts: Record<string, number> = {
     cost: store.items.filter((i) => i.collection === 'cost').length,
     selections: store.items.filter((i) => i.collection === 'selections').length,
@@ -138,21 +144,21 @@ salesDesignKbRoutes.get('/kb/collections', (c) => {
   });
 });
 
-salesDesignKbRoutes.get('/kb/items', (c) => {
+salesDesignKbRoutes.get('/kb/items', async (c) => {
   const authz = authorizeCapability(c, 'money.read');
   if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
   const collection = c.req.query('collection');
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const items = collection ? store.items.filter((i) => i.collection === collection) : store.items;
   return c.json({ tenant, items });
 });
 
-salesDesignKbRoutes.get('/kb/ladder', (c) => {
+salesDesignKbRoutes.get('/kb/ladder', async (c) => {
   const authz = authorizeCapability(c, 'money.read');
   if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const ladder = store.templates.map((tpl) => ({
     template: { id: tpl.id, label: tpl.label },
     assemblies: templateAssemblies(tpl, store.assemblies).map((asm) => ({
@@ -176,7 +182,7 @@ salesDesignKbRoutes.post('/kb/import', async (c) => {
   if (label.length === 0 || !Number.isInteger(unitCents)) {
     return c.json({ error: 'invalid_import', reason: 'label and integer unit_cost_cents required' }, 400);
   }
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const item = {
     id: `cat_import_${store.items.length + 1}`,
     tenant,
@@ -189,15 +195,16 @@ salesDesignKbRoutes.post('/kb/import', async (c) => {
     pricing_mode: 'unit' as const,
   };
   store.items.push(item);
+  await persistSalesStore(tenant);
   return c.json({ imported: item });
 });
 
 // ── Design workspace · Selections tab (F-DS1) ────────────────────────────────
 
-salesDesignKbRoutes.get('/design/:projectId/selections', (c) => {
+salesDesignKbRoutes.get('/design/:projectId/selections', async (c) => {
   const tenant = requireApiTenant(c);
   const projectId = c.req.param('projectId');
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const views = store.selections
     .filter((s) => s.project_id === projectId)
     .map((s) => toSelectionView(s, { tenant, label: catalogItemById(tenant, s.library_ref)?.label ?? s.library_ref }));
@@ -209,12 +216,14 @@ salesDesignKbRoutes.post('/design/:projectId/pull', async (c) => {
   const projectId = c.req.param('projectId');
   const { confirmed, body } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
+  await loadSalesStore(tenant);
   const itemId = typeof body['item_id'] === 'string' ? (body['item_id'] as string) : '';
   const item = catalogItemById(tenant, itemId);
   if (!item) return c.json({ error: 'item_not_found' }, 404);
   const instance = pullFromLibrary({ item, project_id: projectId, confirmed: true });
   const store = getSalesStore(tenant);
   store.selections.push(instance);
+  await persistSalesStore(tenant);
   return c.json({ selection: toSelectionView(instance, { tenant, label: item.label }) });
 });
 
@@ -222,7 +231,7 @@ salesDesignKbRoutes.post('/design/:projectId/selections/:selId/approve', async (
   const tenant = requireApiTenant(c);
   const { confirmed } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'durable_write' }, 409);
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const idx = store.selections.findIndex(
     (s) => s.id === c.req.param('selId') && s.project_id === c.req.param('projectId'),
   );
@@ -233,13 +242,14 @@ salesDesignKbRoutes.post('/design/:projectId/selections/:selId/approve', async (
     return c.json({ error: 'illegal_transition', reason: err instanceof Error ? err.message : String(err) }, 409);
   }
   const label = catalogItemById(tenant, store.selections[idx]!.library_ref)?.label ?? store.selections[idx]!.library_ref;
+  await persistSalesStore(tenant);
   return c.json({ selection: toSelectionView(store.selections[idx]!, { tenant, label }) });
 });
 
 // ── Estimate builder (F-EST1) ─────────────────────────────────────────────────
 
-function estimatePayload(tenant: PersistenceTenantId, projectId: string) {
-  const store = getSalesStore(tenant);
+async function estimatePayload(tenant: PersistenceTenantId, projectId: string) {
+  const store = await loadSalesStore(tenant);
   const lines = store.estimateLines.filter((l) => l.project_id === projectId);
   return {
     tenant,
@@ -250,11 +260,11 @@ function estimatePayload(tenant: PersistenceTenantId, projectId: string) {
   };
 }
 
-salesDesignKbRoutes.get('/estimate/:projectId', (c) => {
+salesDesignKbRoutes.get('/estimate/:projectId', async (c) => {
   const authz = authorizeCapability(c, 'money.read');
   if (!authz.ok) return c.json({ ok: false, error: authz.error }, authz.status);
   const tenant = requireApiTenant(c);
-  return c.json(estimatePayload(tenant, c.req.param('projectId')));
+  return c.json(await estimatePayload(tenant, c.req.param('projectId')));
 });
 
 salesDesignKbRoutes.post('/estimate/:projectId/seed-from-selections', async (c) => {
@@ -264,7 +274,7 @@ salesDesignKbRoutes.post('/estimate/:projectId/seed-from-selections', async (c) 
   const projectId = c.req.param('projectId');
   const { confirmed } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'money_write' }, 409);
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const approved = store.selections.filter((s) => s.project_id === projectId && s.lifecycle === 'approved');
   for (const sel of approved) {
     if (store.estimateLines.some((l) => l.source_selection_id === sel.id)) continue;
@@ -284,7 +294,8 @@ salesDesignKbRoutes.post('/estimate/:projectId/seed-from-selections', async (c) 
       source_selection_id: sel.id,
     });
   }
-  return c.json(estimatePayload(tenant, projectId));
+  await persistSalesStore(tenant);
+  return c.json(await estimatePayload(tenant, projectId));
 });
 
 salesDesignKbRoutes.post('/estimate/:projectId/lines', async (c) => {
@@ -302,7 +313,7 @@ salesDesignKbRoutes.post('/estimate/:projectId/lines', async (c) => {
   if (label.length === 0 || !Number.isInteger(unitCostCents)) {
     return c.json({ error: 'invalid_line', reason: 'label and integer unit_cost_cents required' }, 400);
   }
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const line: EstimateLine = {
     id: `el_manual_${store.estimateLines.length + 1}`,
     estimate_id: `est_${projectId}`,
@@ -317,7 +328,8 @@ salesDesignKbRoutes.post('/estimate/:projectId/lines', async (c) => {
     client_visible: body['client_visible'] !== false,
   };
   store.estimateLines.push(line);
-  return c.json(estimatePayload(tenant, projectId));
+  await persistSalesStore(tenant);
+  return c.json(await estimatePayload(tenant, projectId));
 });
 
 salesDesignKbRoutes.post('/estimate/:projectId/generate-proposal', async (c) => {
@@ -327,7 +339,7 @@ salesDesignKbRoutes.post('/estimate/:projectId/generate-proposal', async (c) => 
   const projectId = c.req.param('projectId');
   const { confirmed } = await readConfirmed(c);
   if (!confirmed) return c.json({ error: 'confirm_required', gate: 'money_write' }, 409);
-  const store = getSalesStore(tenant);
+  const store = await loadSalesStore(tenant);
   const lines = store.estimateLines.filter((l) => l.project_id === projectId);
   if (lines.length === 0) return c.json({ error: 'empty_estimate' }, 409);
   const deal = store.deals.find((d) => d.project_id === projectId);
@@ -340,6 +352,7 @@ salesDesignKbRoutes.post('/estimate/:projectId/generate-proposal', async (c) => 
       confirmed: true,
     });
     store.proposalDrafts.push(result.draft);
+    await persistSalesStore(tenant);
     return c.json({
       draft: result.draft,
       attention: result.pair.attention,
