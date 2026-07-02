@@ -19,7 +19,7 @@ const tenantId = 'tenant_ggr';
     </header>
     <main class="lane3-page">
       <h1>Sign in</h1>
-      <p class="lane6-subtitle">Use the email on your proposal. Demo: mgrace.wegrzyn@example.com</p>
+      <p class="lane6-subtitle">Use the email on your proposal.</p>
       <form id="portal-login-form">
         <label>
           Email
@@ -45,7 +45,10 @@ const tenantId = 'tenant_ggr';
         if (!res.ok) {
           if (err) {
             err.hidden = false;
-            err.textContent = 'Could not sign in. Check your email.';
+            err.textContent =
+              res.status === 403 && data?.error === 'portal_login_disabled'
+                ? 'The client portal is not open yet. Your project team will send an invite when it is ready.'
+                : 'Could not sign in. Check your email.';
           }
           return;
         }

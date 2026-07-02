@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 import { appendValidatedEvent } from '../lib/eventEmit.js';
 import { getApiDeps } from '../lib/deps.js';
+import { PORTAL_DOORS_DISABLED_BODY, portalClientDoorsEnabled } from '../lib/portalDoorsGate.js';
 import type { ApiVariables } from '../lib/tenantContext.js';
 import { requireApiTenant, tenantOverrideFlags } from '../lib/tenantContext.js';
 import {
@@ -69,6 +70,7 @@ clientPortalRoutes.get('/portal/preview', (c) => {
 
 /** Client portal session — token is the scope; tenant never from query/body. */
 clientPortalRoutes.get('/portal/session/:token', (c) => {
+  if (!portalClientDoorsEnabled()) return c.json(PORTAL_DOORS_DISABLED_BODY, 403);
   const token = c.req.param('token');
   const projectId = c.req.query('project_id');
   const session = resolveSession(token);
@@ -107,6 +109,7 @@ clientPortalRoutes.get('/portal/session/:token', (c) => {
 });
 
 clientPortalRoutes.post('/portal/session/:token/approvals/:approvalId/confirm', async (c) => {
+  if (!portalClientDoorsEnabled()) return c.json(PORTAL_DOORS_DISABLED_BODY, 403);
   const token = c.req.param('token');
   const approvalId = c.req.param('approvalId');
   const body = await c.req.json<{ confirmed?: boolean }>().catch(() => ({ confirmed: false }));
@@ -205,6 +208,7 @@ clientPortalRoutes.get('/client-success/:clientId', (c) => {
 });
 
 clientPortalRoutes.post('/portal/login', async (c) => {
+  if (!portalClientDoorsEnabled()) return c.json(PORTAL_DOORS_DISABLED_BODY, 403);
   const body = await c.req.json<{ email?: string }>();
   const email = body.email?.trim().toLowerCase() ?? '';
   if (email.length === 0) return c.json({ error: 'email_required' }, 400);
